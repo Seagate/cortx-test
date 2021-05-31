@@ -26,6 +26,7 @@ from commons import commands
 from commons import constants
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons import cortxlogging as log
 from commons.utils import assert_utils
 from config import CSM_CFG
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
@@ -58,6 +59,8 @@ class TestCliS3ACC:
         cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
         cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
+        cls.start_log_format = "##### Test started -  "
+        cls.end_log_format = "##### Test Ended -  "
         cls.logger.info("ENDED : Setup operations at test suit level")
 
     def setup_method(self):
@@ -121,6 +124,7 @@ class TestCliS3ACC:
         """
         Verify that S3 account should be deleted successfully on executing delete command
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -137,6 +141,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -147,6 +152,7 @@ class TestCliS3ACC:
         Verify that appropriate error msg should be returned when s3 account tries to
         delete different s3 account
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -173,6 +179,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Access denied")
         self.logger.info(
             "Deleting different account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -183,7 +190,8 @@ class TestCliS3ACC:
         Test that appropriate error should be returned when CSM user/admin enters invalid password
         while creating S3 account
         """
-        dummy_pwd = "seagate"
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
+        dummy_pwd = CSM_CFG["CliConfig"]["s3_account"]["invalid_password"]
         error_msg = "Password Policy Not Met"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -194,6 +202,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Creating S3 account with invalid password failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -204,6 +213,7 @@ class TestCliS3ACC:
         Test that appropriate error should be thrown when CSM user/admin tries to
         create duplicate S3 user
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         error_msg = "attempted to create an account that already exists"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -219,6 +229,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info(
             "Creating duplicate S3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -229,6 +240,7 @@ class TestCliS3ACC:
         Verify that error msg is returned when command to list s3 users contains
         incorrect/invalid format
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         output_format = "text"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -244,6 +256,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Listing S3 accounts with invalid format failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -254,6 +267,7 @@ class TestCliS3ACC:
         Verify that s3 account is not deleted when user selects "no" on confirmation
         :avocado: tags=s3_account_user_cli
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         delete_s3acc_cmd = "s3accounts delete {}".format(self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -279,6 +293,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], self.s3acc_name)
         self.logger.info(
             "Verified that account is not deleted with 'no' on confirmation")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -289,6 +304,7 @@ class TestCliS3ACC:
         verify that appropriate error should be returned when S3 account user try to
         delete different multiple s3 accounts simultaneously
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         dummy_acc1 = "cli_s3acc_{}".format(int(time.time()))
         dummy_acc2 = "cli_s3acc_{}".format(int(time.time()))
         error_msg = "Access denied"
@@ -323,6 +339,7 @@ class TestCliS3ACC:
             account_name=acc_names)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -333,6 +350,7 @@ class TestCliS3ACC:
         Verify that appropriate error msg should be returned when command to delete s3 user contains
         incorrect/invalid account_name
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         dummy_acc = "cli_s3acc_{}".format(int(time.time()))
         error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -355,6 +373,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Performing delete operation with invalid s3 account name is failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -364,6 +383,7 @@ class TestCliS3ACC:
         """
         Test that S3 account is able to login to csmcli passing username as parameter
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -382,6 +402,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info(
             "Successfully logged into CORTX CLI by passing username as parameter")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -392,6 +413,7 @@ class TestCliS3ACC:
         Test that s3 account, csm admin and csm user can login to csm interactive session
         without passing username as direct parameter in command
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
         csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
@@ -436,6 +458,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -445,6 +468,7 @@ class TestCliS3ACC:
         """
         Test s3 account user can update his password through csmcli
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -477,6 +501,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -487,6 +512,7 @@ class TestCliS3ACC:
         Test that appropriate error should be returned when s3 account user try to delete
         s3 account containing buckets
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
         error_msg = "Account cannot be deleted as it owns some resources"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -512,6 +538,7 @@ class TestCliS3ACC:
         resp = self.s3bkt_obj.delete_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted bucket %s", bucket_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -522,6 +549,7 @@ class TestCliS3ACC:
         Test that duplicate users should not be created between csm users
         and s3 account users in CSM CLI
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         error_msg = "name already exists"
         resp = self.csm_user_obj.create_csm_user_cli(
             csm_user_name=self.s3acc_name,
@@ -540,6 +568,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -549,6 +578,7 @@ class TestCliS3ACC:
         """
         Verify that list of all existing S3 accounts should be returned in given <format>
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -564,6 +594,7 @@ class TestCliS3ACC:
         resp = self.s3acc_obj.show_s3account_cortx_cli(output_format="xml")
         assert_utils.assert_exact_string(resp[1], self.s3acc_name)
         self.logger.info("Successfully listed S3 accounts in xml format")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -574,6 +605,7 @@ class TestCliS3ACC:
         Test that error should be returned when s3 user enters different passwords in
         both password and confirm password
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         error_msg = "password do not match"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -583,6 +615,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -593,6 +626,7 @@ class TestCliS3ACC:
         Test that error should be returned when s3 user enters incorrect account name
         while resetting account password
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         dummy_acc = "cli_s3acc_{}".format(int(time.time()))
         error_msg = "Access denied"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -614,6 +648,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Update s3 account password failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -623,6 +658,7 @@ class TestCliS3ACC:
         """
         Test that password is not updated when user selects "NO" on update password confirmation
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -649,6 +685,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info(
             "Verified s3account password not updated when user selects 'No' on confirmation")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -659,6 +696,7 @@ class TestCliS3ACC:
         Test that new password should be of 8 characters long which consist
         atleast one lowercase, one uppercase, one nemeric and one special character
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         dummy_pwds = [
             "Sea@123",
             "seagate@123",
@@ -686,6 +724,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Update s3 account password failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -695,6 +734,7 @@ class TestCliS3ACC:
         """
         Verify that CSM Admin can create S3 account
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -705,6 +745,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], self.s3acc_name)
         self.logger.info(
             "Successfully verified that admin user can create S3 account")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -715,6 +756,7 @@ class TestCliS3ACC:
         Verify that only S3 account user must able
         to perform s3iamuser create/delete/show operations
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -740,6 +782,7 @@ class TestCliS3ACC:
         resp = self.iam_user_obj.delete_iam_user(iam_user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -750,6 +793,7 @@ class TestCliS3ACC:
         Test that s3_account user can perform list, create, delete operation on buckets
         created by S3_account owner using CLI
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -772,6 +816,7 @@ class TestCliS3ACC:
         resp = self.s3bkt_obj.delete_bucket_cortx_cli(bucket_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted buckets %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -782,6 +827,7 @@ class TestCliS3ACC:
         Verify that Secret key and access key should not be visible on login
         using s3 credentials on CSM Cli
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         key_var = ["Access Key", "Secret Key"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -797,6 +843,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, login[0], login[1])
         result = all(key not in login[1] for key in key_var)
         assert_utils.assert_equals(True, result, login[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -807,6 +854,7 @@ class TestCliS3ACC:
         Test that s3_account user can only list commands using help (-h)
         to which the user has access to.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -825,6 +873,7 @@ class TestCliS3ACC:
         for cmd in constants.S3ACCOUNT_HELP_CMDS:
             assert_utils.assert_exact_string(resp[1], cmd)
         self.logger.info("Successfully verified help response for s3 account")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -834,6 +883,7 @@ class TestCliS3ACC:
         """
         Test User should able to perform s3 operations after login using s3 credentials on CSM Cli
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
@@ -873,6 +923,7 @@ class TestCliS3ACC:
         resp = self.iam_user_obj.delete_iam_user(iam_user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -883,6 +934,7 @@ class TestCliS3ACC:
         Test that s3_account user cannot perform list, update, create, delete
         operation on csm_users using CLI.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         csm_user_opt = "'users'"
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -903,6 +955,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, result, resp[1])
         self.logger.info(
             "Verified csm user option is not available in s3 account help")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -913,6 +966,7 @@ class TestCliS3ACC:
         Test that s3_account user can perform list, create, delete operation on
         iam_users using CLI created by owner S3_account
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -938,6 +992,7 @@ class TestCliS3ACC:
         resp = self.iam_user_obj.delete_iam_user(iam_user_name)
         assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
         self.logger.info("Deleted IAM user %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -948,6 +1003,7 @@ class TestCliS3ACC:
         Test that s3_account user cannot perform delete (except owner)
         create operation on s3_accounts using CLI
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -984,6 +1040,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.logger.info(
             "Creating s3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -994,6 +1051,7 @@ class TestCliS3ACC:
         Test that s3_account user can perform list, update, delete operation on
         owner s3_accounts using CLI
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -1026,6 +1084,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1035,6 +1094,7 @@ class TestCliS3ACC:
         """
         Test that s3_account user cannot list, update alert using CLI
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -1053,6 +1113,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "invalid choice")
         self.logger.info(
             "List alert with s3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1062,6 +1123,7 @@ class TestCliS3ACC:
         """
         Test that S3 user is not permitted to create S3 account
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -1084,6 +1146,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.logger.info(
             "Creating s3 account failed with error %s", resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1093,6 +1156,7 @@ class TestCliS3ACC:
         """
         Test that help opens on executing "-h" option with commands
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -1133,6 +1197,7 @@ class TestCliS3ACC:
                 assert_utils.assert_exact_string(resp[1], option)
         self.logger.info(
             "Successfully verified help responses for all s3 account commands")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1142,6 +1207,7 @@ class TestCliS3ACC:
         """
         Test that csm Admin user is able to reset the s3 account users password through cortxcli.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         self.logger.info("Creating s3 account %s", self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
@@ -1165,6 +1231,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Logged in cortxcli using new password")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1175,6 +1242,7 @@ class TestCliS3ACC:
         Test that csm user with Manage rights is able
         to reset the s3 account users password through cortxcli.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
@@ -1227,6 +1295,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info(
             "Successfully logged in to CORTX CLI with new password")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1236,6 +1305,7 @@ class TestCliS3ACC:
         """
         Test that s3 account user is able to reset is own password through cortxcli.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -1268,6 +1338,7 @@ class TestCliS3ACC:
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1278,6 +1349,7 @@ class TestCliS3ACC:
         Test that s3 account user is not able to reset
         password of other s3 account user through cortxcli.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         s3acc_name_list = []
         for i in range(2):
@@ -1306,6 +1378,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Reset password of another s3 account is failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1316,6 +1389,7 @@ class TestCliS3ACC:
         Test that csm user with monitor role is not
         able to reset is password of s3 account user through cortxcli.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
@@ -1357,6 +1431,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Invalid choice")
         self.logger.info(
             "Verified reset password of S3 account using CSM monitor user")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1366,7 +1441,8 @@ class TestCliS3ACC:
         """
         Test that reset password for s3 account does not accept invalid password.
         """
-        dummy_pwds = "seagate"
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
+        dummy_pwds = CSM_CFG["CliConfig"]["s3_account"]["invalid_password"]
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -1387,6 +1463,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Reset password with invalid password is falied with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1396,6 +1473,7 @@ class TestCliS3ACC:
         """
         Test that reset password for s3 account does not accept invalid password.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
             account_email=self.s3acc_email,
@@ -1415,6 +1493,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Reset password with invalid account name is falied with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1424,6 +1503,7 @@ class TestCliS3ACC:
         """
         Test that S3 account user is able to reset password of it's Child IAM user
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -1450,6 +1530,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info(
             "Verified reset password of IAM user operation is perfomed successfully")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1460,6 +1541,7 @@ class TestCliS3ACC:
         Test that S3 account user is not able to reset
          password of IAM user who are not created under his account.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -1504,6 +1586,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], "Access denied")
         self.logger.info(
             "Verified reset password of IAM user operation is perfomed successfully")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1513,6 +1596,7 @@ class TestCliS3ACC:
         """
         Test that reset password for IAM user does not accept invalid password.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         invalid_pwds = "seagate"
@@ -1541,6 +1625,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Verify reset password with invalid password is failed with error %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1550,6 +1635,7 @@ class TestCliS3ACC:
         """
         Test that reset password for IAM user does not accept invalid IAM user name.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         iam_user_name = "{0}{1}".format("cli_iam_user", str(int(time.time())))
         iam_user_pwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -1577,6 +1663,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Verify reset password with invalid user name is failed with erro %s",
             resp[1])
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1586,6 +1673,7 @@ class TestCliS3ACC:
         """
         Test that any CSM user is not able to reset password for any IAM user
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
         csm_user_email = "{0}{1}".format(csm_user_name, "@seagate.com")
@@ -1645,6 +1733,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info(
             "Successfully logged in to CORTX CLI with new password")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1655,6 +1744,7 @@ class TestCliS3ACC:
         Test that user is able to view the help document
         for reset s3 account password command with -h parameter.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         self.logger.info("Creating s3 account %s", self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -1676,6 +1766,7 @@ class TestCliS3ACC:
         self.logger.debug(resp)
         self.logger.info(
             "Performed help command for reset password of S3 account")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1686,6 +1777,7 @@ class TestCliS3ACC:
         Test that user is able to view the help document for
         16reset IAM user password command with -h parameter.
         """
+        self.logger.info("%s %s", self.start_log_format, log.get_frame())
         self.logger.info("Creating s3 account %s", self.s3acc_name)
         resp = self.s3acc_obj.create_s3account_cortx_cli(
             account_name=self.s3acc_name,
@@ -1707,3 +1799,4 @@ class TestCliS3ACC:
         self.logger.debug(resp)
         self.logger.info(
             "Performed help command for reset password of IAM user")
+        self.logger.info("%s %s", self.end_log_format, log.get_frame())
