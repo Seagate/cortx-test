@@ -190,8 +190,12 @@ def main():
     run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
-    run_cmd("python3.7 tools/setup_update/setup_entry.py "
-            "--dbuser {} --dbpassword {}".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
+    output = run_cmd("python3.7 tools/setup_update/setup_entry.py "
+                     "--dbuser {} --dbpassword {}".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
+    if "Entry already exits" in str(output):
+        print("DB already exists for target: {}, so will update it.".format(setupname))
+        run_cmd("python3.7 tools/setup_update/setup_entry.py "
+                "--dbuser {} --dbpassword {} --new_entry False".format(json_data['DB_USER'], json_data['DB_PASSWORD']))
     os.environ["TARGET"] = setupname
     print("Setting up chrome")
     setup_chrome()

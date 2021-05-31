@@ -1022,7 +1022,6 @@ class TestCortxcli:
     @pytest.mark.skip(reason="Duplicate to test_2430")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-7195")
     @CTFailOn(error_handler)
     def test_2397(self):
