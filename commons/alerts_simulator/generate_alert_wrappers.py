@@ -374,7 +374,7 @@ class GenerateAlertWrapper:
             LOGGER.info("Picking two random drives from disk group %s", disk_group)
             drives = random.sample(drive_list, 2)
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
-                drives = drives[-1]
+                drives = [drives[-1]]
             LOGGER.info("Removing drive : %s", drives)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
@@ -432,8 +432,12 @@ class GenerateAlertWrapper:
                         disk_group_dict[disk_group]['raidtype'])
 
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT" and \
-                    [disk_group_dict[disk_group]['health'] == "RCON" or
-                     disk_group_dict[disk_group]['health'] == "RBAL"]:
+                    disk_group_dict[disk_group].get('job', False):
+                LOGGER.info("No intermediate job is running")
+            elif disk_group_dict[disk_group]['raidtype'] == "ADAPT" and \
+                    [disk_group_dict[disk_group]['job'] == "RCON" or
+                     disk_group_dict[disk_group]['job'] == "RBAL" or
+                     disk_group_dict[disk_group]['job'] == "EXPD"]:
                 LOGGER.info("Wait for %s job to complete.",
                             disk_group_dict[disk_group]['health'])
                 poll_status, poll_percent = controller_obj.poll_dg_recon_status(
@@ -455,7 +459,7 @@ class GenerateAlertWrapper:
             if not resp[0]:
                 return resp[0], f"Failed to add drives {phy_num} to disk " \
                                 f"group {disk_group}"
-
+            time.sleep(15)
             LOGGER.info("Adding drives to the disk group %s", disk_group)
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
                 LOGGER.info("Check usage of drives %s", phy_num)
@@ -488,7 +492,8 @@ class GenerateAlertWrapper:
             LOGGER.info("Check if reconstruction of disk group is started")
             status, disk_group_dict = controller_obj.get_show_disk_group()
             if disk_group_dict[disk_group]['job'] == 'RCON' or \
-                    disk_group_dict[disk_group]['job'] == 'RBAL':
+                    disk_group_dict[disk_group]['job'] == 'RBAL' or \
+                    disk_group_dict[disk_group]['job'] == 'EXPD':
                 LOGGER.info("Successfully started recovery of disk "
                             "group %s", disk_group)
             else:

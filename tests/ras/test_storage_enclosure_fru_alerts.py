@@ -716,7 +716,7 @@ class TestStorageAlerts:
         LOGGER.info("Step 5: Polling progress of reconstruction job of disk "
                     "group")
         poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
-            disk_group=disk_group, percent=98)
+            disk_group=disk_group, percent=95)
         if poll_status:
             df['Iteration0']['Step5'] = 'Fail'
             LOGGER.error("Expected reconstruction percent <100. Actual: %s",
@@ -729,19 +729,26 @@ class TestStorageAlerts:
                 "Step 6: Rebooted node: %s, Response: %s", self.host, resp)
 
         time.sleep(self.cm_cfg["reboot_delay"])
-        LOGGER.info("Step 7: Checking if disk group is reconstructed "
-                    "successfully")
-        poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
-            disk_group=disk_group)
-        if poll_status:
-            LOGGER.info("Step 7: Successfully recovered disk group %s \n "
-                        "Reconstruction percent = %s", disk_group,
-                        poll_percent)
+        LOGGER.info("Step 7: Checking health state of disk group %s",
+                    disk_group)
+        status, disk_group_dict = self.controller_obj.get_show_disk_group()
+        if disk_group_dict[disk_group]['health'] == 'OK':
+            LOGGER.info("Step 7: Disk group %s is in healthy state", disk_group)
         else:
-            LOGGER.error("Step 7: Failed to recover disk group %s", disk_group)
-            df['Iteration0']['Step7'] = 'Fail'
-            LOGGER.error("Expected reconstruction percent: 100. Actual: %s",
-                         resp[1])
+            LOGGER.info("Step 7: Checking if disk group is reconstructed "
+                        "successfully")
+            poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
+                                        disk_group=disk_group)
+            if poll_status:
+                LOGGER.info("Step 7: Successfully recovered disk group %s \n "
+                            "Reconstruction percent = %s", disk_group,
+                            poll_percent)
+            else:
+                LOGGER.error("Step 7: Failed to recover disk group %s",
+                             disk_group)
+                df['Iteration0']['Step7'] = 'Fail'
+                LOGGER.error("Expected reconstruction percent: 100. Actual: %s",
+                             resp[1])
 
         if self.start_msg_bus:
             LOGGER.info("Step 8: Verifying alert logs for fault_resolved "
