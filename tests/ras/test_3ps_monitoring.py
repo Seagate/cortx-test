@@ -61,7 +61,10 @@ class Test3PSvcMonitoring:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
-        cls.external_svcs = const.SVCS_3P_ENABLED_VM
+        if CMN_CFG["setup_type"] == "VM":
+            cls.external_svcs = const.SVCS_3P_ENABLED_VM
+        else:
+            cls.external_svcs = const.SVCS_3P
         LOGGER.info("Completed setup_class")
 
     def setup_method(self):
