@@ -7,7 +7,7 @@
 "is_setup_free": true,
 "nodes":[
     {
-        "host": "eos-node-0",
+        "host": "srv-node-0",
         "hostname": "node 0 hostname",
         "ip": "node 0 ip",
         "username": "node 0 username",
@@ -17,7 +17,7 @@
         "mgmt_ip": ""
     },
     {
-        "host": "eos-node-1",
+        "host": "srv-node-1",
         "hostname": "node 1 hostname",
         "ip": "node 1 ip address",
         "username": "node 1 username",
