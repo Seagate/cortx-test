@@ -15,7 +15,7 @@ Open URL In Headless
     [Documentation]  Test keyword is for opening the URL in the browser in headless mode, with specific options.
     [Arguments]  ${url}  ${browser}
     open browser  ${url}  ${browser}    options=add_argument('--ignore-ssl-errors');add_argument('--ignore-certificate-errors');add_argument('--no-sandbox');add_argument('--headless')
-    maximize browser window
+    Set Window Size  ${1366}  ${768}
 
 Enter Username And Password
     [Documentation]  Test keyword is for entering the username and password on login form.
@@ -30,7 +30,7 @@ Click Sigin Button and Verify Button Disabled
 
 Click Sigin Button
     [Documentation]  This keyword is for entering the username and password on login form.
-    Wait Until Element Is Visible  ${signin_button_id}  timeout=10
+    Wait Until Element Is Visible  ${signin_button_id}  timeout=30
     click button    ${signin_button_id}
     Sleep  5s  #  Sigin take some initial time
 
@@ -106,8 +106,9 @@ Re-login
     [Documentation]  Functionality to Logout and login again
     [Arguments]  ${user_name}  ${password}  ${page}  ${Logout}=${True}
     Run Keyword If  '${Logout}' == 'True'  CSM GUI Logout
+    wait for page or element to load
     Wait Until Element Is Visible  ${csm username id}  timeout=60
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
-    sleep  5s
+    wait for page or element to load
     Navigate To Page  ${page}

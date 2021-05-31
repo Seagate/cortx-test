@@ -172,8 +172,13 @@ class Host:
             if exc:
                 if err:
                     raise IOError(err)
-                raise IOError(stdout.readlines())
-            return err
+                else:
+                    raise IOError(stdout.readlines())
+            else:
+                if err:
+                    return stdout.read(read_nbytes), err
+                else:
+                    return stdout.read(read_nbytes)
         if inputs:
             stdin.write('\n'.join(inputs))
             stdin.write('\n')

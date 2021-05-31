@@ -32,6 +32,7 @@ import time
 import datetime
 import pytest
 import requests
+import tempfile
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -51,25 +52,23 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
-
+from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
 CACHE = LRUCache(1024 * 10)
 CACHE_JSON = 'nodes-cache.yaml'
 REPORT_CLIENT = None
+DT_PATTERN = '%Y-%m-%d_%H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
-logging.getLogger('boto3').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
-logging.getLogger('nose').setLevel(logging.WARNING)
-logging.getLogger("paramiko").setLevel(logging.WARNING)
+
 
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
               "tags")
-
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
+SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 
 def _get_items_from_cache():
@@ -192,7 +191,7 @@ def pytest_addoption(parser):
         "--build", action="store", default=None, help="Build number"
     )
     parser.addoption(
-        "--build_type", action="store", default='Release', help="Build Type(Release)"
+        "--build_type", action="store", default='stable', help="Build Type(Release)"
     )
     parser.addoption(
         "--tp_ticket", action="store", default='', help="Test Plan ticket"
@@ -217,6 +216,14 @@ def pytest_addoption(parser):
     parser.addoption(
         "--db_update", action="store", default=True,
         help="Decide whether to update reporting DB."
+    )
+    parser.addoption(
+        "--data_integrity_chk", action="store", default=False,
+        help="Decide whether to perform DI Check or not for a I/O test case."
+    )
+    parser.addoption(
+        "--jira_update", action="store", default=True,
+        help="Decide whether to update Jira."
     )
 
 
@@ -270,19 +277,28 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def get_test_metadata_from_tp_meta(item):
-    tests_meta = Globals.tp_meta['test_meta']
-    flg = Globals.tp_meta['test_plan_label']
-    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
-    te_meta = Globals.tp_meta['te_meta']
-    te_label = te_meta['te_label'][0]
-    te_component = Globals.tp_meta['te_meta']['te_components']
+    tp_meta = Globals.tp_meta
+    tests_meta = tp_meta['test_meta']
+    flg = tp_meta['test_plan_label']
+    tp_label = tp_meta['test_plan_label'][0] if flg else 'default'  # first is significant
+    te_meta = tp_meta['te_meta']
+    te_label = te_meta['te_label'][0] if te_meta['te_label'] else ''
+    te_component = tp_meta['te_meta']['te_components']
     test_id = CACHE.lookup(item.nodeid)
+    # tp_meta with defaults
+
     for it in tests_meta:
         if it['test_id'] == test_id:
             it['tp_label'] = tp_label
             it['te_label'] = te_label
             it['te_component'] = te_component
+            it['build'] = tp_meta['build']
+            it['branch'] = tp_meta['branch']
+            it['platform_type'] = tp_meta['platform_type']
+            it['server_type'] = tp_meta['server_type']
+            it['enclosure_type'] = tp_meta['enclosure_type']
             return it
+    return dict()
 
 
 def get_marks_for_test_item(item):
@@ -294,44 +310,79 @@ def get_marks_for_test_item(item):
     return marks
 
 
+def _capture_exec_info(report, call):
+    """Inner function to capture exec info. Needs improvement."""
+    exec_info = None
+    if call.excinfo is None:
+        return exec_info
+    if hasattr(report, "wasxfail"):
+        # Exception was expected.
+        return exec_info
+    return call.excinfo.value
+
+
+def capture_exec_info(report, call, item):
+    """Purpose is to accurately find exception info."""
+    exec_info = None
+    if item.rep_setup.failed or item.rep_teardown.failed:
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+        return None
+    return exec_info
+
+
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
-    _item_dict = get_test_metadata_from_tp_meta(item)
+    _item_dict = get_test_metadata_from_tp_meta(item) # item dict has all item, tp and te metadata
     marks = get_marks_for_test_item(item)
+    are_logs_collected = True
     if final_result == 'FAIL':
         health_chk_res = "TODO"
-        are_logs_collected = False
-        log_path = "TODO"
-    elif final_result == 'PASS':
+    elif final_result in ['PASS', 'BLOCKED']:
         health_chk_res = "NA"
-        are_logs_collected = False
-        log_path = "NA"
+    log_path = getattr(item, 'logpath')
+    nodes = len(CMN_CFG['nodes'])  # number of target hosts
+    nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
+    exec_info = ''
+    try:
+        call_duration = getattr(item, 'call_duration')
+    except AttributeError:
+        call_duration = 0
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
                        client_hostname=system_utils.get_host_name(),
-                       execution_type="Automated",
+                       execution_type=_item_dict['execution_type'],
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
-                       testPlanLabel=_item_dict['tp_label'],  # get from TP    tp.fields.labels
-                       testExecutionLabel=_item_dict['te_label'],  # get from TE  te.fields.labels
-                       nodes=len(item.config.option.nodes),  # number of target hosts
-                       nodes_hostnames=item.config.option.nodes,
+                       testPlanLabel=_item_dict['tp_label'],  # get from TP
+                       testExecutionLabel=_item_dict['te_label'],  # get from TE
+                       nodes=nodes,
+                       nodes_hostnames=nodes_hostnames,
                        test_exec_id=item.config.option.te_tkt,
-                       test_exec_time=call.duration,
+                       test_exec_time=call_duration,
                        test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
-                       test_result=final_result,
+                       test_result=final_result, # call start needs correction
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=marks,  # in mem te_meta
                        test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
-                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/ Pytest
+                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest check marks
                        latest=True,
-                       feature='Test',  # feature Should be read from master test plan board.
+                       # feature is read from individual test case Jira.
+                       feature=_item_dict.get('test_domain', 'None'),
+                       dr_id=_item_dict['dr_id'],
+                       feature_id=_item_dict['feature_id'],
+                       platform_type=_item_dict['platform_type'],
+                       server_type=_item_dict['server_type'],
+                       enclosure_type=_item_dict['enclosure_type'],
+                       failure_string=exec_info,
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -343,10 +394,30 @@ def pytest_configure(config):
     """pytest configure hook runs before collection."""
     if not config.option.nodes:
         config.option.nodes = []  # CMN_CFG.nodes
+    if not config.option.local:
+        jira_update = ast.literal_eval(str(config.option.jira_update))
+        if jira_update:
+            Globals.JIRA_UPDATE = True
+            LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+        else:
+            Globals.JIRA_UPDATE = False
 
     # Handle parallel execution.
-    if not hasattr(config, 'slaveinput'):
-        pass
+    if not hasattr(config, 'workerinput'):
+        config.shared_directory = tempfile.mkdtemp()
+
+
+def pytest_configure_node(node):
+    """xdist hook."""
+    if not node.config.option.local:
+        jira_update = ast.literal_eval(str(node.config.option.jira_update))
+        if jira_update:
+            Globals.JIRA_UPDATE = True
+            LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
+        else:
+            Globals.JIRA_UPDATE = False
+
+    node.workerinput['shared_dir'] = node.config.shared_directory
 
 
 def pytest_sessionstart(session: Session) -> None:
@@ -372,8 +443,11 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
-        if _logger.name in ('boto3', 'botocore', 'nose', 'paramiko'):
+        if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
+    # Handle Place holders logging
+    for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
+        logging.getLogger(pkg).setLevel(logging.WARNING)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -441,6 +515,15 @@ def pytest_collection(session):
             write = csv.writer(test_file)
             for test in selected_tests:
                 write.writerow([test])
+        if is_parallel:
+            te_selected_csv = str(config.option.te_tkt) + "_parallel.csv"
+        else:
+            te_selected_csv = str(config.option.te_tkt) + "_non_parallel.csv"
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, te_selected_csv), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
         items[:] = selected_items
     cache_home = os.path.join(os.getcwd(), LOG_DIR)
     cache_path = os.path.join(cache_home, CACHE_JSON)
@@ -470,6 +553,21 @@ def pytest_collection(session):
     return items
 
 
+# pylint: disable=too-many-arguments
+def db_and_jira_update(task, test_id, item, call, status, db_user, db_pass):
+    try:
+        jira_update = ast.literal_eval(str(item.config.option.jira_update))
+        db_update = ast.literal_eval(str(item.config.option.db_update))
+        if jira_update:
+            task.update_test_jira_status(item.config.option.te_tkt, test_id, status)
+        if db_update:
+            payload = create_report_payload(item, call, status, db_user, db_pass)
+            REPORT_CLIENT.create_db_entry(**payload)
+    except (requests.exceptions.RequestException, Exception) as fault:
+        LOGGER.exception(str(fault))
+        LOGGER.error("Failed to execute DB update for %s", test_id)
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """
@@ -486,51 +584,82 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     setattr(item, "rep_" + report.when, report)
-    # print(rep)
+    try:
+        attr = getattr(item, 'call_duration')
+    except AttributeError as attr_error:
+        LOGGER.debug('Exception %s occurred', str(attr_error))
+        setattr(item, "call_duration", call.duration)
+    else:
+        setattr(item, "call_duration", call.duration + attr)
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
     pass_file = 'passed_tests.log'
     current_file = 'other_test_calls.log'
+    jira_update = ast.literal_eval(str(item.config.option.jira_update))
+    db_update = ast.literal_eval(str(item.config.option.db_update))
     if not _local:
-        db_user, db_pass = get_db_credential()
-        jira_id, jira_pwd = get_jira_credential()
-        task = jira_utils.JiraTask(jira_id, jira_pwd)
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
             try:
+                remote_path = os.path.join(params.NFS_BASE_DIR,
+                                           Globals.BUILD, Globals.TP_TKT,
+                                           Globals.TE_TKT, test_id,
+                                           datetime.datetime.fromtimestamp(
+                                               time.time()).strftime(DT_PATTERN)
+                                           )
+                setattr(report, "logpath", remote_path)
+                setattr(item, "logpath", remote_path)
+                if jira_update:
+                    db_user, db_pass = get_db_credential()
+                    jira_id, jira_pwd = get_jira_credential()
+                    task = jira_utils.JiraTask(jira_id, jira_pwd)
+
                 if item.rep_setup.failed or item.rep_teardown.failed:
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                        if db_update:
+                            # capture exec info
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                        if db_update:
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
-                    if item.config.option.db_update:
-                        try:
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                        if db_update:
                             payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
-                        except requests.exceptions.RequestException as fault:
-                            LOGGER.exception(str(fault))
-                            LOGGER.error("Failed to execute DB update for %s", test_id)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
                 elif item.rep_setup.skipped and \
                         (item.rep_teardown.skipped or item.rep_teardown.passed):
                     # Jira reporting of skipped cases does not contain skipped option
-                    # Keeping it todo_status and skipping db update for now
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+                    # Reporting it blocked and updating db.
+                    try:
+                        if jira_update:
+                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+                        if db_update:
+                            payload = create_report_payload(item, call, 'BLOCKED', db_user, db_pass)
+                            REPORT_CLIENT.create_db_entry(**payload)
+                    except (requests.exceptions.RequestException, Exception) as fault:
+                        LOGGER.exception(str(fault))
+                        LOGGER.error("Failed to execute DB update for %s", test_id)
+
             except Exception as exception:
                 LOGGER.error("Exception %s occurred in reporting for test %s.",
                              str(exception), test_id)
@@ -556,6 +685,7 @@ def pytest_runtest_makereport(item, call):
             else:
                 extra = ""
             f.write(report.nodeid + extra + "\n")
+
 
 def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     """
@@ -598,11 +728,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                 for rec in logs:
                     fp.write(rec + '\n')
         return
-    jira_id, jira_pwd = get_jira_credential()
-    task = jira_utils.JiraTask(jira_id, jira_pwd)
     test_id = CACHE.lookup(report.nodeid)
     if report.when == 'setup':
-        task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
+        if Globals.JIRA_UPDATE:
+            jira_id, jira_pwd = get_jira_credential()
+            task = jira_utils.JiraTask(jira_id, jira_pwd)
+            task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
     elif report.when == 'call':
         pass
     elif report.when == 'teardown':
@@ -618,12 +749,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR,
-                                   Globals.BUILD, Globals.TP_TKT,
-                                   Globals.TE_TKT, test_id,
-                                   datetime.datetime.fromtimestamp(
-                                       time.time()).strftime('%Y-%m-%d_%H:%M:%S')
-                                   )
+        remote_path = getattr(report, 'logpath')
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -635,16 +761,19 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(resp[1])
-        data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-        if data:
-            resp = task.update_execution_details(data=data, test_id=test_id,
-                                                 comment=comment)
-            if resp:
-                LOGGER.info("Added execution details comment in: %s", test_id)
+        if Globals.JIRA_UPDATE:
+            jira_id, jira_pwd = get_jira_credential()
+            task = jira_utils.JiraTask(jira_id, jira_pwd)
+            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
+            if data:
+                resp = task.update_execution_details(data=data, test_id=test_id,
+                                                     comment=comment)
+                if resp:
+                    LOGGER.info("Added execution details comment in: %s", test_id)
+                else:
+                    LOGGER.error("Failed to comment to %s", test_id)
             else:
-                LOGGER.error("Failed to comment to %s", test_id)
-        else:
-            LOGGER.error("Failed to add log file path to %s", test_id)
+                LOGGER.error("Failed to add log file path to %s", test_id)
 
 
 @pytest.fixture(scope='function')
@@ -655,4 +784,3 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-

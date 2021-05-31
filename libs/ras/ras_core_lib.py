@@ -23,6 +23,7 @@
 import os
 import logging
 import time
+import json
 from typing import Tuple, Any, Union, List
 from commons.helpers import node_helper
 from commons import constants as cmn_cons
@@ -129,7 +130,7 @@ class RASCoreLib:
         """
         self.install_screen_on_machine()
         time.sleep(5)
-        LOGGER.debug("RabbitMQ command: %s", cmd)
+        LOGGER.debug("Command to be run: %s", cmd)
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
         LOGGER.info("Running command %s", screen_cmd)
         response = self.node_utils.execute_cmd(cmd=screen_cmd,
@@ -168,6 +169,30 @@ class RASCoreLib:
         response = self.run_cmd_on_screen(cmd=cmd)
 
         return response
+
+    def start_message_bus_reader_cmd(self) -> bool:
+        """
+        Function will check for the alerts in message bus.
+
+        :return: Command response along with status(True/False)
+        :rtype: bool
+        """
+        file_path = cmn_cons.MSG_BUS_READER_PATH
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_PATH
+        LOGGER.debug("Copying file to %s", self.host)
+        self.node_utils.copy_file_to_remote(
+            local_path=local_path_msg_bus, remote_path=file_path)
+        copy_res = self.node_utils.path_exists(file_path)
+        if not copy_res:
+            LOGGER.debug('Failed to copy the file')
+            return copy_res
+        self.change_file_mode(path=file_path)
+
+        cmd = common_commands.START_MSG_BUS_READER_CMD
+        LOGGER.debug("MSG Bus Reader command: %s", cmd)
+        response = self.run_cmd_on_screen(cmd=cmd)
+
+        return response[0]
 
     def check_status_file(self) -> Tuple[Union[List[str], str, bytes]]:
         """
@@ -451,7 +476,7 @@ class RASCoreLib:
             Tuple[Union[List[str], str, bytes]]:
         """
         Function generate err log on the using logger command on the
-        rabbitmq channel.
+        message bus channel.
 
         :param str logger_alert_cmd: command to be executed
         :return: response in tuple
@@ -540,19 +565,19 @@ class RASCoreLib:
                         "services")
             time.sleep(common_cfg["sleep_val"])
 
-        LOGGER.info("Checking status of sspl and rabbitmq services")
+        LOGGER.info("Checking status of sspl and kafka services")
         resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         resp = self.s3obj.get_s3server_service_status(
-            service=common_cfg["service"]["rabitmq_service"],
+            service=common_cfg["service"]["kafka_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         LOGGER.info(
-            "Verified sspl and rabbitmq services are in running state")
+            "Verified sspl and kafka services are in running state")
         time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Fetching sspl alert response")
@@ -574,7 +599,7 @@ class RASCoreLib:
         LOGGER.debug(
             "======================================================")
         LOGGER.info(
-            "Checking if alerts are generated on rabbitmq channel")
+            "Checking if alerts are generated on message bus")
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
@@ -738,3 +763,104 @@ class RASCoreLib:
                     return False, f"{host_name} : {result[1]}"
 
         return True, f"{host_name} : {result[1]}"
+
+    def get_conf_store_vals(self, url: str, field: str) -> dict:
+        """
+        This will get the values from any yaml/json file using conf store
+        :param url: url of the yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: field value
+        :rtype: str
+        """
+        cmd = common_commands.CONF_GET_CMD.format(url, field)
+        LOGGER.info("Running command: %s", cmd)
+        result = run_remote_cmd(hostname=self.host, username=self.username,
+                                password=self.pwd, cmd=cmd)
+        result = result[1].decode('utf-8').strip().split('\n')
+        LOGGER.info("Response: %s", result)
+        res = json.loads(result[0])
+        return res[0]
+
+    def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
+        """
+        This will get the values for storage_enclosure
+        :param field: field whose value needs to be extracted (
+        storage_enclosure)
+        :return: True/False, field value
+        :rtype: bool, str
+        """
+        url = cmn_cons.SSPL_GLOBAL_CONF_URL
+        e_field = 'storage_enclosure'
+        result = self.get_conf_store_vals(url=url, field=e_field)
+        for key, value in result.items():
+            if isinstance(value, dict):
+                for r_key, r_val in self.recursive_items(value, field):
+                    if r_key == field:
+                        return True, r_val
+            else:
+                if key == field:
+                    vals = value
+                    return True, vals
+        return False, "No value found"
+
+    def recursive_items(self, dictionary: dict, field: str):
+        """
+        This will recursively traverse the yaml/json file
+        :param dictionary: dictionary from yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: key, value generator
+        :rtype: generator
+        """
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                if key == field:
+                    yield key, value
+                else:
+                    yield from self.recursive_items(value, field)
+            else:
+                yield key, value
+
+    def set_conf_store_vals(self, url: str, encl_vals: dict):
+        """
+        This will set values in yaml/json file using conf store
+        :param url: url of yaml/json file
+        :param encl_vals: dict of {field: value}
+        :return: None
+        """
+        for key, value in encl_vals.items():
+            k = eval(f"cmn_cons.{key}")
+            cmd = common_commands.CONF_SET_CMD.format(url, f"{k}={value}")
+            LOGGER.info("Running command: %s", cmd)
+            result = run_remote_cmd(hostname=self.host,
+                                    username=self.username,
+                                    password=self.pwd, cmd=cmd)
+            result = result[0].decode('utf-8').strip().split('\n')
+            LOGGER.info("Response: %s", result)
+
+    def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:
+        """
+        This will encrypt the password/secret key
+        :param string: string to be encrypted
+        :return: True/False, encrypted string
+        :rtype: bool, str
+        """
+        local_path = cmn_cons.ENCRYPTOR_FILE_PATH
+        path = "/root/encryptor.py"
+        password = string
+
+        self.node_utils.copy_file_to_remote(local_path=local_path,
+                                            remote_path=path)
+        if not self.node_utils.path_exists(path=path):
+            return False, "Failed to copy the file"
+        self.change_file_mode(path=path)
+        LOGGER.info("Getting cluster id")
+        cluster_id = self.get_cluster_id()
+        cluster_id = cluster_id[1].decode("utf-8")
+        cluster_id = " ".join(cluster_id.split())
+        cluster_id = cluster_id.split(' ')[-1]
+
+        LOGGER.info("Encrypting the password")
+        val = self.encrypt_pwd(password, cluster_id)
+        val = (val[1].split()[-1]).decode("utf-8")
+        val = (repr(val)[2:-1]).replace('\'', '')
+        return True, val

@@ -16,10 +16,10 @@ Force Tags  CSM_GUI  CSM_login
 
 *** Test Cases ***
 
-test_1111  # TODO: correct test ID, correct Tag
+TEST-17997
     [Documentation]  Test that about section has ssl details
-    [Tags]  Priority_High  Smoke_test  R2
-    Navigate To About 
+    [Tags]  Priority_High  R2 TEST-17997
+    Navigate To About
     Click Issuer Option
     Click Subject Option
     Verify Subject Details

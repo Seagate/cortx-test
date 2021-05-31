@@ -12,7 +12,6 @@ Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
 Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
 Resource    ${EXECDIR}/resources/common/common.robot
 Variables   ${EXECDIR}/resources/common/common_variables.py
-Variables   ${EXECDIR}/resources/common/common_variables.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -31,7 +30,7 @@ ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${sw_version}  891
 
 *** Keywords ***
@@ -149,14 +148,13 @@ TEST-1037
     [Tags]  Priority_High  CFT_Test  TEST-1037
     ${test_id}    Set Variable    TEST-1037
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  3s
+    wait for page or element to load
     Capture Page Screenshot  ${test_id}_s3_user.png
-    Re-login  ${S3_account_name}  ${password}  MANAGE_MENU_ID
-    sleep  3s  # Took time to load s3 account
+    Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load  # Took time to load s3 account
     Verify Absence of Admin User Section
-    Verify Presence of Edit And Delete
     Capture Page Screenshot  ${test_id}_absence_of_CSM_and_presence_of_edit_and_delete.png
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
@@ -174,11 +172,11 @@ TEST-4932
     Verify Audit Log Downloaded  ${Download_File_Path}  csm
     Capture Page Screenshot  ${test_id}_CSM_audit_log_downloaded.png
     View Audit Log  S3  One day
-    Sleep  5s  #S3 Audit takes a while
+    wait for page or element to load
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_S3_audit_log_generated.png
     Download Audit Log  S3  One day
-    Sleep  5s  #S3 Audit takes a while
+    wait for page or element to load
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
     Capture Page Screenshot  ${test_id}_S3_audit_log_downloaded.png
 
@@ -188,9 +186,10 @@ TEST-7820
     ...  Reference : https://jts.seagate.com/browse/TEST-7820
     [Tags]  SW_Update  TEST-7820
     Navigate To Page  MAINTENANCE_MENU_ID  SW_UPDATE_TAB_ID
-    Click On Upload New Software File Button
-    ${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
-    Upload File  CHOOSE_SW_UPDATE_FILE_BTN_ID  ${path}
+    # The below code shall now work on VM
+    #Click On Upload New Software File Button
+    #${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
+    #Upload File  CHOOSE_SW_UPDATE_FILE_BTN_ID  ${path}
     # These following lines should be executed in case you have the proper machine
     #Click On Upload New Software File Button
     #Click On Start Software Update Button
@@ -201,9 +200,10 @@ TEST-6150
     ...  Reference : https://jts.seagate.com/browse/TEST-6150
     [Tags]  FW_Update  TEST-6150
     Navigate To Page  MAINTENANCE_MENU_ID  FW_UPDATE_TAB_ID
-    Click On Upload New Firmware File Button
-    ${path}=  Download Firmware Binary  ${Download_File_Path}
-    Upload File  CHOOSE_FW_UPDATE_FILE_BTN_ID  ${path}
+    # The below code shall now work on VM
+    #Click On Upload New Firmware File Button
+    #${path}=  Download Firmware Binary  ${Download_File_Path}
+    #Upload File  CHOOSE_FW_UPDATE_FILE_BTN_ID  ${path}
     # These following lines should be executed in case you have the proper machine
     #Click On Upload New Firmware File Button
     #Click On Start Firmware Update Button

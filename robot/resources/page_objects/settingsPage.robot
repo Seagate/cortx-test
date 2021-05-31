@@ -4,7 +4,7 @@ Resource   ${EXECDIR}/resources/common/common.robot
 Variables  ${EXECDIR}/resources/common/element_locators.py
 
 *** Variables ***
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${default_file_name}  s3server.pem
 
 *** Keywords ***
@@ -22,12 +22,12 @@ Click On Install New SSL Button
 
 Click On Start SSL Update Button
     [Documentation]  Perform click operation on tart Software Update Button
-    Wait Until Element Is Enabled  ${INSTALL_SSL_FILE_PEM_ID}  timeout=10
+    Wait Until Element Is Enabled  ${INSTALL_SSL_FILE_PEM_ID}  timeout=30
     Click button    ${INSTALL_SSL_FILE_PEM_ID}
 
 Click On Confirmation Button
     [Documentation]  Perform click operation on popup of Confirmation
-    Wait Until Element Is Enabled  ${CONFIRMAATION_INSTALL_SSL_ID}  timeout=10
+    Wait Until Element Is Enabled  ${CONFIRMAATION_INSTALL_SSL_ID}  timeout=30
     Click button    ${CONFIRMAATION_INSTALL_SSL_ID}
 
 Install uploaded SSL

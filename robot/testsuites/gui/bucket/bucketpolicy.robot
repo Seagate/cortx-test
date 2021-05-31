@@ -32,9 +32,9 @@ Login To S3 Account
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
-    sleep  3s
+    wait for page or element to load
     Re-login  ${S3_account_name}  ${s3password}  BUCKET_TAB_ID
     Click On Create Bucket Form
     ${bucketname}=  Generate New User Name
@@ -132,6 +132,7 @@ TEST-4227
     Click On Update Bucket Policy
     ${new_policy}=  update_json_policy  ${policy}
     Log To Console And Report  ${new_policy}
+    wait for page or element to load
     Click On Edit Bucket Icon
     Add Json Policy To Bucket  ${new_policy}
     Click On Update Bucket Policy

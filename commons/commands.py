@@ -29,6 +29,9 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
+CONF_GET_CMD = "conf '{}' get '{}'"
+CONF_SET_CMD = "conf '{}' set '{}'"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -378,3 +381,7 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 # S3 bench
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
               "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
+
+# FailtTolerance commands.
+UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
+    ' -X PUT http://127.0.0.1:28081​'

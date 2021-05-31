@@ -14,9 +14,10 @@ Click On Cancel Button
 
 Click On Confirm Button
     [Documentation]  Perform click operation on confirm pop up button
-    wait for page or element to load  5s
+    wait for page or element to load
     Wait Until Element Is Visible  ${NEW_USER_CONFIRM_OK_BUTTON_ID}  timeout=60
-    Click button    ${NEW_USER_CONFIRM_OK_BUTTON_ID}
+    log to console and report  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
+    Click element  ${NEW_USER_CONFIRM_OK_BUTTON_ID}
 
 Verify A Form Got Open To Create CSM Users
     [Documentation]  Verify the Form elements should be present
@@ -67,9 +68,8 @@ Delete CSM User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
-    Sleep  3s
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
-    Sleep  3s
     click on confirm button
 
 Verify Only Valid User Allowed For Username
@@ -127,19 +127,19 @@ Verify Mismatch Password Error
     Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${value}
     Page Should Contain Element  ${PASSWORD_MISS_MATCH_MSG_ID}
     ${text}=  get text  ${PASSWORD_MISS_MATCH_MSG_ID}
-    should be equal  ${text}  ${mismatch password msg}
+    should be equal  ${text}  ${MISSMATCH_PASSWORD_MESSAGE}
 
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Absence of Edit And Delete Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  5s
+    wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
     Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
 
 Verify Absence of Reset Passwrod Button on S3account
     [Documentation]  Verify Absence of Reset Passwrod Button Button on S3account
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  5s
+    wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
 Verify Absence of Admin User Section
@@ -274,10 +274,10 @@ Edit S3 User Password
     [Documentation]  This keyword is to edit s3 account password.
     [Arguments]  ${s3_account_name}  ${password}  ${confirm_password}
     log to console and report   editing S3 account ${s3_account_name}
-    Click on edit s3 account option
+    Action On The Table Element  ${S3_ACCOUNT_RESET_PASSWORD_XPATH}  ${s3_account_name}
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
-    wait for page or element to load  5s
+    wait for page or element to load
     wait until element is visible  ${LOG_OUT_ID}  timeout=20
     CSM GUI Logout
     Reload Page
@@ -302,3 +302,31 @@ Verify bucket Section Not Present
     Navigate To Page  MANAGE_MENU_ID
     wait for page or element to load  3s
     Page Should Not Contain Element  ${BUCKETS_TAB_ID}
+
+Verify Invalid Password Not Accepted By Edit S3 Account
+    [Documentation]  Functionality to validate only correct pawwsord allowed
+    FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
+      wait until element is visible  ${S3_ACCOUNT_REST_OPTION_ID}  timeout=30
+      Click Element  ${S3_ACCOUNT_REST_OPTION_ID}
+      Log To Console And Report  Inserting values ${value}
+      wait for page or element to load  1s
+      Input Text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${value}
+      Verify message  S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID  ${INVALID_PASSWORD_MSG}
+      Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}
+    END
+
+Verify Mismatch Password Error For Edit S3account
+    [Documentation]  Functionality to erify Mismatch Password Error For Edit S3account
+    wait until element is visible  ${S3_ACCOUNT_REST_OPTION_ID}  timeout=30
+    Click Element  ${S3_ACCOUNT_REST_OPTION_ID}
+    ${password}=  Generate New Password
+    Log To Console And Report  Verifying miss match pasword
+    Input Text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${password}
+    ${value}=  CATENATE  ${password}  new
+    Log To Console And Report  ${value}
+    Input Text  ${S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID}  ${value}
+    Verify message  S3ACCOUNT_MISS_MATCH_PASSWORD_ERROR_MSG_ID  ${INVALID_S3_CONFIRM_PASSWORD_MESSAGE}
+    ${status}=  Get Element Attribute  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}  disabled
+    Log To Console And Report  Status of S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID is ${status}
+    Should be equal  ${status}  true
+    Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}

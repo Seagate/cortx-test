@@ -17,7 +17,7 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-
+import argparse
 import configparser
 import json
 import sys
@@ -39,6 +39,9 @@ TIMINGS_PARAMETERS = {
     "startNodeTime": "Start Node",
     "stopNodeTime": "Stop Node"
 }
+
+COMPONENT_LIST = ["Automation", "CSM", "CFT", "doc", "Foundation", "HA", "hare", "Monitor",
+                  "Motr", "Provisioner", "S3Server", "UDX"]
 
 
 def get_timings_db_details():
@@ -152,6 +155,24 @@ def get_timing_summary(test_plan_ids, builds, rest_ep, db_username, db_password)
             if parameter_data:
                 row.append(round_off(sum(x[param] for x in parameter_data) / len(parameter_data)))
             else:
-                row.append("NA")
+                row.append("-")
         data.extend([row])
     return data
+
+
+def get_args():
+    """Parse arguments and collect database information"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('test_plans', help='Space separated Testplans', nargs='+')
+
+    args = parser.parse_args()
+
+    if len(args.test_plans) > 4:
+        print("Please provide less than 4 space separated test plans")
+        exit(1)
+    else:
+        test_plans = args.test_plans
+        for _ in range(4 - len(args.test_plans)):
+            test_plans.append(None)
+        uri, db_name, db_collection = get_perf_db_details()
+        return test_plans, uri, db_name, db_collection

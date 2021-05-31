@@ -27,6 +27,7 @@ import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
+from commons.utils.system_utils import check_ping
 
 LOG = logging.getLogger(__name__)
 
@@ -54,13 +55,17 @@ class Health(Host):
         Find all ports exposed through firewall permanent service for given
         component
         """
-        output = self.execute_cmd(
-            commands.FIREWALL_CMD.format(service), read_lines=True)
-        ports = []
-        for word in output:
-            ports.append(word.split())
-        if not ports:
-            LOG.error("Does Not Found Running Service %s", service)
+        try:
+            output = self.execute_cmd(
+                commands.FIREWALL_CMD.format(service), read_lines=True)
+            ports = []
+            for port in output[0].split():
+                ports.append(port.split("/")[0])
+            if not ports:
+                LOG.error("Does Not Found Running Service %s", service)
+                return None
+        except OSError as error:
+            LOG.error(error)
             return None
         return ports
 
@@ -267,11 +272,11 @@ class Health(Host):
         """
         hctl_command = commands.HCTL_STATUS_CMD_JSON
         LOG.info("Executing Command %s on node %s",
-            hctl_command, self.hostname)
-        result = self.execute_cmd(hctl_command,read_lines=False)
+                 hctl_command, self.hostname)
+        result = self.execute_cmd(hctl_command, read_lines=False)
         result = result.decode("utf-8")
         LOG.info("Response of the command %s:\n %s ",
-            hctl_command, result)
+                 hctl_command, result)
         result = json.loads(result)
 
         return result
@@ -284,9 +289,9 @@ class Health(Host):
         response = self.hctl_status_json()
         LOG.info("HCTL response : \n%s", response)
         avail_cap = response['filesystem']['stats']['fs_avail_disk']
-        LOG.info("Available Capacity : %s",avail_cap)
+        LOG.info("Available Capacity : %s", avail_cap)
         total_cap = response['filesystem']['stats']['fs_total_disk']
-        LOG.info("Total Capacity : %s",total_cap)
+        LOG.info("Total Capacity : %s", total_cap)
         used_cap = total_cap - avail_cap
         LOG.info("Used Capacity : %s", used_cap)
         return total_cap, avail_cap, used_cap
@@ -333,3 +338,101 @@ class Health(Host):
             return False, resp
 
         return True, resp
+
+    def check_node_health(self) -> tuple:
+        """
+        Check the node health and return True if all services up and running.
+
+        1. Checking online status of node.
+        2. Check hax, confd, ioservice, s3server services up and running.
+        3. Check corosync, pacemaker, pcsd Daemons up and running.
+        4. Check kibana, csm-agent, csm-web  resource groups up and running.
+        5. Check s3auth, io_group, sspl-ll, s3backprod resources up and running.
+        :return: True or False, response.
+        """
+        LOG.info("Checking online status of %s node", self.hostname)
+        response = check_ping(self.hostname)
+        if not response:
+            return response, "Node {} is offline.".format(self.hostname)
+        LOG.info("Node %s is online.", self.hostname)
+
+        LOG.info("Checking hctl status for %s node", self.hostname)
+        response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True)
+        services = ["hax", "confd", "ioservice", "s3server"]
+        LOG.info("Checking status of services: %s", services)
+        LOG.info(response)
+        for line in response[1]:
+            if any([True if service in line else False for service in services]):
+                if not line.strip().startswith("[started]"):
+                    LOG.error("service down: %s", line)
+                    return False, response[0]
+        if "Cluster is not running" in ",".join(response[1]) or not response[0]:
+            return False, response[1]
+        LOG.info("Services: %s up and running", services)
+
+        LOG.info("Checking pcs status for %s node", self.hostname)
+        response = self.pcs_resource_cleanup(options="--all")
+        if "Cleaned up all resources on all nodes" not in str(response):
+            return False, "Failed to clean up all resources on all nodes"
+        time.sleep(10)
+        response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True)
+        LOG.info(response)
+        if "cluster is not currently running on this node" in ",".join(response[1]):
+            LOG.info("cluster is not currently running on this node: %s", self.hostname)
+            return False, "cluster is not currently running on this node: {}".format(self.hostname)
+
+        daemons = ["corosync", "pacemaker", "pcsd"]
+        LOG.info("Checking status of Daemons: %s", daemons)
+        for line in response[1]:
+            if any([True if daemon in line else False for daemon in daemons]):
+                if "active/enabled" not in line:
+                    return False, "daemons down: {}".format(line)
+        LOG.info("Daemons are active/enabled: %s", daemons)
+
+        resource_group = ["kibana", "csm-agent", "csm-web", "s3backprod"]
+        LOG.info("Checking status of resource group: %s", resource_group)
+        for line in response[1]:
+            if any([True if resource in line else False for resource in resource_group]):
+                if "Started" not in line:
+                    return False, "resource down: {}".format(line)
+        LOG.info("All resource groups are running: %s", resource_group)
+
+        resources = ["s3auth", "io_group", "sspl-ll"]
+        LOG.info("Checking status of resources: %s", resources)
+        for line in response[1]:
+            if any([True if resource in line else False for resource in resources]):
+                if "Started" not in response[1][response[1].index(line) + 1]:
+                    return False, "resource down: {}".format(
+                        " ".join([line, response[1][response[1].index(line) + 1]]))
+        LOG.info("All resources are running: %s", resources)
+
+        if "Stopped" in ",".join(response[1]) or not response[0]:
+            return False, response[1]
+
+        return True, "cluster {} up and running.".format(self.hostname)
+
+    def pcs_restart_cluster(self):
+        """
+        Function starts and stops the cluster using the pcs command.
+
+        command used:
+            pcs cluster stop --all
+            pcs cluster start --all
+            pcs resource cleanup --all
+        :return: (Boolean and response)
+        """
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=True)
+        LOG.info(resp)
+        time.sleep(10)
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=False)
+        LOG.info(resp)
+        time.sleep(30)  # Hardcoded: Default time is between 10 to 30 seconds.
+        response = self.pcs_resource_cleanup(options="--all")
+        if "Cleaned up all resources on all nodes" not in str(response):
+            return False, "Failed to clean up all resources on all nodes"
+        time.sleep(10)
+        response = self.check_node_health()
+        time.sleep(10)
+        LOG.info(response)
+
+        return response

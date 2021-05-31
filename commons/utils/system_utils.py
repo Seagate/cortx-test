@@ -28,6 +28,8 @@ import random
 import shutil
 import socket
 import builtins
+import errno
+import string
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
@@ -382,6 +384,14 @@ def make_dirs(dpath: str, mode: int = None) -> str:
         return str(error)
 
     return dpath
+
+
+def mkdirs(pth):
+    try:
+        os.makedirs(pth, exist_ok=True)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def remove_dir(dpath: str) -> bool:
@@ -992,3 +1002,31 @@ def configre_minio_cloud(minio_repo=None,
     except Exception as error:
         LOGGER.error(str(error))
         return False
+
+
+def random_metadata_generator(
+        size: int = 6,
+        chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
+    """
+    Generate random string of given size
+
+    :param size: Length of string
+    :param chars: Characters from which random selection is done
+    :return: str
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+def create_file_fallocate(filepath=None, size="1MB", option="l"):
+    """
+    Create file using tool fallocate.
+
+    :param filepath: Absolute/Relative filepath.
+    :param size: file size: 1k, 33k, 1MB, 4MB etc.
+    :param option: options supported by fallocate tool.
+    :return: True/False, response.
+    """
+    command = "fallocate -{} {} {}".format(option, size, filepath)
+    resp = run_local_cmd(command)
+
+    return os.path.exists(filepath), resp[1]
