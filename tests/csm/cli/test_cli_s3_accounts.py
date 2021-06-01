@@ -26,6 +26,7 @@ from commons import commands
 from commons import constants
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons import cortxlogging as log
 from commons.utils import assert_utils
 from config import CSM_CFG
 from libs.csm.cli.cli_alerts_lib import CortxCliAlerts
@@ -55,6 +56,8 @@ class TestCliS3ACC:
         cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
         cls.s3acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
+        cls.start_log_format = "##### Test started -  "
+        cls.end_log_format = "##### Test Ended -  "
         cls.logger.info("ENDED : Setup operations at test suit level")
 
     def setup_method(self):
