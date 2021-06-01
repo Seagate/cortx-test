@@ -61,7 +61,7 @@ class CortxCliS3AccessKeys(CortxCli):
                 response_dict["secret_key"] = response[0][1]
                 return True, response_dict
 
-        return False, response_dict
+        return False, response
 
     def delete_s3access_key(self,
                             access_key: str,
