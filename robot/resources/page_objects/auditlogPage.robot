@@ -1,9 +1,9 @@
 *** Settings ***
 Library    OperatingSystem
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
-Variables  ${EXECDIR}/resources/common/common_variables.py
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
+Variables  ${RESOURCES}/resources/common/common_variables.py
 
 *** Keywords ***
 
