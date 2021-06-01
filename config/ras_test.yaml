@@ -1,3 +1,7 @@
+alert_type:
+  alert_fault: "fault"
+  alert_fault_resolved: "fault_resolved"
+
 test_3005:
   alert: True
   du_val: 8
@@ -215,9 +219,7 @@ test_5343:
 
 test_22060:
   disk_group: "dg00"
-  alert_fault: "fault"
-  resource_type: "node:os:raid_data"
-  alert_fault_resolved: "fault_resolved"
+  resource_type: "node:enclosure:disk-group"
   enclid: 0
   ctrl_name: ['A', 'B']
   operation_fault: "Disabled"
