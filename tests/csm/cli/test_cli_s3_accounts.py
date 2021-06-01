@@ -45,12 +45,12 @@ class TestCliS3ACC:
         """
         cls.logger = logging.getLogger(__name__)
         cls.logger.info("STARTED : Setup operations at test suit level")
-        cls.s3acc_obj = CortxCliS3AccountOperations()
-        cls.s3acc_obj.open_connection()
-        cls.s3bkt_obj = CortxCliS3BucketOperations(session_obj=cls.s3acc_obj.session_obj)
-        cls.csm_user_obj = CortxCliCsmUser(session_obj=cls.s3acc_obj.session_obj)
-        cls.iam_user_obj = CortxCliIamUser(session_obj=cls.s3acc_obj.session_obj)
-        cls.alert_obj = CortxCliAlerts(session_obj=cls.s3acc_obj.session_obj)
+        # cls.s3acc_obj = CortxCliS3AccountOperations()
+        # cls.s3acc_obj.open_connection()
+        # cls.s3bkt_obj = CortxCliS3BucketOperations(session_obj=cls.s3acc_obj.session_obj)
+        # cls.csm_user_obj = CortxCliCsmUser(session_obj=cls.s3acc_obj.session_obj)
+        # cls.iam_user_obj = CortxCliIamUser(session_obj=cls.s3acc_obj.session_obj)
+        # cls.alert_obj = CortxCliAlerts(session_obj=cls.s3acc_obj.session_obj)
         cls.s3acc_prefix = "cli_s3acc"
         cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
@@ -65,6 +65,12 @@ class TestCliS3ACC:
             - Login to CORTX CLI as admin user
         """
         self.logger.info("STARTED : Setup operations at test function level")
+        self.s3acc_obj = CortxCliS3AccountOperations()
+        self.s3acc_obj.open_connection()
+        self.s3bkt_obj = CortxCliS3BucketOperations(session_obj=self.s3acc_obj.session_obj)
+        self.csm_user_obj = CortxCliCsmUser(session_obj=self.s3acc_obj.session_obj)
+        self.iam_user_obj = CortxCliIamUser(session_obj=self.s3acc_obj.session_obj)
+        self.alert_obj = CortxCliAlerts(session_obj=self.s3acc_obj.session_obj)
         self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
         login = self.s3acc_obj.login_cortx_cli()
@@ -93,16 +99,18 @@ class TestCliS3ACC:
                 username=acc, password=self.s3acc_password)
             self.s3acc_obj.delete_s3account_cortx_cli(account_name=acc)
             self.s3acc_obj.logout_cortx_cli()
+        self.s3acc_obj.close_connection()
+        del self.s3acc_obj
         self.logger.info("ENDED : Teardown operations at test function level")
 
-    @classmethod
-    def teardown_class(cls):
-        """
-        Teardown any state that was previously setup with a setup_class
-        """
-        cls.logger.info("STARTED : Teardown operations at test suit level")
-        cls.s3acc_obj.close_connection()
-        cls.logger.info("ENDED : Teardown operations at test suit level")
+    # @classmethod
+    # def teardown_class(cls):
+    #     """
+    #     Teardown any state that was previously setup with a setup_class
+    #     """
+    #     cls.logger.info("STARTED : Teardown operations at test suit level")
+    #     cls.s3acc_obj.close_connection()
+    #     cls.logger.info("ENDED : Teardown operations at test suit level")
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
