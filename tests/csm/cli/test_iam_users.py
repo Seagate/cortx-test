@@ -62,12 +62,12 @@ class TestCliIAMUser:
         cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.logger.info("Creating s3 account with name %s", cls.s3acc_name)
         resp = cls.s3acc_obj.login_cortx_cli()
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = cls.s3acc_obj.create_s3account_cortx_cli(
             account_name=cls.s3acc_name,
             account_email=cls.s3acc_email,
             password=cls.acc_password)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         cls.s3acc_obj.logout_cortx_cli()
         cls.logger.info("Created s3 account")
         cls.START_LOG_FORMAT = "##### Test started -  "
@@ -83,8 +83,7 @@ class TestCliIAMUser:
         self.logger.info("Login to CORTX CLI using s3 account")
         login = self.iam_obj.login_cortx_cli(
             username=self.s3acc_name, password=self.acc_password)
-        assert_utils.assert_equals(
-            login[0], True, "Server authentication check failed")
+        assert_utils.assert_true(login[0], login[1])
         self.user_name = "{0}{1}".format("iam_user", str(int(time.time())))
         self.logger.info("ENDED : Setup operations for test function")
 
@@ -121,11 +120,10 @@ class TestCliIAMUser:
         cls.logger.info("Deleting s3 account %s", cls.s3acc_name)
         resp = cls.s3acc_obj.login_cortx_cli(
             username=cls.s3acc_name, password=cls.acc_password)
-        assert_utils.assert_equals(
-            resp[0], True, "Server authentication check failed")
+        assert_utils.assert_true(resp[0], resp[1])
         resp = cls.s3acc_obj.delete_s3account_cortx_cli(
             account_name=cls.s3acc_name)
-        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         cls.s3acc_obj.logout_cortx_cli()
         cls.iam_obj.close_connection()
         cls.logger.info("Deleted s3 account %s", cls.s3acc_name)
@@ -188,7 +186,7 @@ class TestCliIAMUser:
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=self.iam_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1],
             "The request was rejected because it attempted"
@@ -226,7 +224,7 @@ class TestCliIAMUser:
             user_name=invalid_username,
             password=self.iam_password,
             confirm_password=self.iam_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1], "Invalid request message received")
         self.logger.info(
@@ -247,7 +245,7 @@ class TestCliIAMUser:
             user_name="",
             password=self.iam_password,
             confirm_password=self.iam_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1], "The following arguments are required: user_name")
         self.logger.info(
@@ -269,7 +267,7 @@ class TestCliIAMUser:
             user_name=self.user_name,
             password=invalid_password,
             confirm_password=invalid_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1], "Invalid request message received")
         self.logger.info(
@@ -292,7 +290,7 @@ class TestCliIAMUser:
             user_name=self.user_name,
             password=self.iam_password,
             confirm_password=mismatch_pwd)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "password do not match")
         self.logger.info(
             "Verified that user is not created in case of mismatch password")
@@ -309,7 +307,7 @@ class TestCliIAMUser:
         user_name = "invalid_user"
         self.logger.info("Verifying delete non existing IAM user")
         resp = self.iam_obj.delete_iam_user(user_name=user_name)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1],
             "The request was rejected because it referenced a user that does not exist")
@@ -341,11 +339,11 @@ class TestCliIAMUser:
         self.logger.info("Verified that iam user is created")
         self.logger.info("Verifying iam user is not able to login cortxcli")
         logout = self.iam_obj.logout_cortx_cli()
-        assert_utils.assert_equals(logout[0], True, logout)
+        assert_utils.assert_true(logout[0], logout[1])
         login = self.iam_obj.login_cortx_cli(
             username=self.user_name,
             password=self.iam_password)
-        assert_utils.assert_equals(login[0], False, resp)
+        assert_utils.assert_false(login[0], login[1])
         self.iam_obj.login_cortx_cli(
             username=self.s3acc_name,
             password=self.acc_password)
@@ -439,7 +437,7 @@ class TestCliIAMUser:
         resp = self.iam_obj.login_cortx_cli(
             username=self.user_name,
             password=invalid_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1], "Server authentication check failed")
         self.iam_obj.login_cortx_cli(
@@ -466,7 +464,7 @@ class TestCliIAMUser:
         resp = self.iam_obj.login_cortx_cli(
             username=invalid_user,
             password=self.iam_password)
-        assert_utils.assert_equals(resp[0], False, resp)
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
             resp[1], "Server authentication check failed")
         self.iam_obj.login_cortx_cli(
@@ -576,7 +574,7 @@ class TestCliIAMUser:
         self.logger.info("Deleting access key of IAM user %s", self.user_name)
         resp = self.access_key_obj.delete_s3access_key(
             access_key=iam_access_key, user_name=self.user_name)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted access key of IAM user %s", self.user_name)
         self.logger.info(
             "Verify access key is deleted for IAM user %s",
@@ -622,7 +620,7 @@ class TestCliIAMUser:
             access_key=iam_access_key,
             user_name=self.user_name,
             status=access_key_status)
-        assert_utils.assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Updated status of access key of user %s",
             self.user_name)
@@ -673,7 +671,7 @@ class TestCliIAMUser:
             "Verify IAM user can not have more than two access keys")
         resp = self.access_key_obj.create_s3_iam_access_key(
             user_name=self.user_name)
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "exceeded quota")
         self.logger.info(resp)
         self.logger.info(
@@ -682,14 +680,14 @@ class TestCliIAMUser:
         self.logger.info("Verify invalid user name for delete option")
         resp = self.access_key_obj.delete_s3access_key(
             access_key="AA-FGH-@r", user_name="dummy_iam_user")
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_false(resp[0], resp[1])
         self.logger.info("Verified invalid user name for delete option")
         self.logger.info("Updating status of invalid access key")
         resp = self.access_key_obj.update_s3access_key(
             access_key="invalid-access-key",
             user_name=self.user_name,
             status=access_key_status)
-        assert_utils.assert_equals(False, resp[0], resp[1])
+        assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "access key that does not exist")
         self.logger.info(
             "Updating status of invalid access key is failed with error %s",
