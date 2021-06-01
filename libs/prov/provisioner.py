@@ -390,7 +390,7 @@ class Provisioner:
             if inactive_ports:
                 return False, inactive_ports
 
-            return True, inactive_ports
+            return True, active_ports
         except Exception as error:
             LOGGER.error(
                 "An error occurred in %s:",

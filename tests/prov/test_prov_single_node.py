@@ -51,7 +51,6 @@ class TestProvSingleNode:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.setup_type = CMN_CFG["setup_type"]
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.build = os.getenv("Build", None)
         cls.build = "{}/{}".format(cls.build,
@@ -168,6 +167,27 @@ class TestProvSingleNode:
         """
         Prov test to verify services running on respective nodes
         """
+        LOGGER.info("Check that all cortx services are up")
+        resp = self.nd_obj.execute_cmd(
+            cmd=common_cmds.CMD_PCS_STATUS_FULL, read_lines=True)
+        LOGGER.info("PCS status: %s", resp)
+        for line in resp:
+            assert_utils.assert_not_in(
+                PROV_CFG["system"]["stopped"],
+                line,
+                "Some services are not up")
+        LOGGER.info(
+            "Verifying third party services running on node %s",
+            self.nd_obj.hostname)
+        resp = self.nd_obj.send_systemctl_cmd(
+            command="is-active",
+            services=PROV_CFG["services"]["all"],
+            decode=True,
+            exc=False)
+        assert_utils.assert_equal(
+            resp.count(
+                PROV_CFG["system"]["active"]), len(
+                PROV_CFG["services"]["all"]))
         LOGGER.info("Checking all services are running on respective ports")
         self.nd_obj.send_systemctl_cmd(
             command="start", services=[

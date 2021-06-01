@@ -1,7 +1,7 @@
 system:
   offline: "offline"
   stopped: "Stopped"
-  active: "active (running)"
+  active: "active"
 services:
   all:
     - "firewalld"

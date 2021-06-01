@@ -213,22 +213,25 @@ class TestProvThreeNode:
             LOGGER.info(
                 "Verifying third party services running on node %s",
                 node.hostname)
-            node.send_systemctl_cmd(
-                command="start", services=[
-                    PROV_CFG["services"]["all"][0]])
-            for service in PROV_CFG["services"]["all"]:
-                resp = node.execute_cmd(
-                    cmd=common_cmds.SYSTEM_CTL_STATUS_CMD.format(service),
-                    read_lines=False)
-                assert_utils.assert_exact_string(
-                    str(resp), PROV_CFG["system"]["active"])
+            resp = self.nd_obj.send_systemctl_cmd(
+                command="is-active",
+                services=PROV_CFG["services"]["all"],
+                decode=True,
+                exc=False)
+            assert_utils.assert_equal(
+                resp.count(
+                    PROV_CFG["system"]["active"]), len(
+                    PROV_CFG["services"]["all"]))
             if self.setup_type == "HW":
-                for service in PROV_CFG["services"]["hw_specific"]:
-                    resp = node.execute_cmd(
-                        cmd=common_cmds.SYSTEM_CTL_STATUS_CMD.format(service),
-                        read_lines=False)
-                    assert_utils.assert_exact_string(
-                        str(resp), PROV_CFG["system"]["active"])
+                resp = node.send_systemctl_cmd(
+                    command="is-active",
+                    services=PROV_CFG["services"]["hw_specific"],
+                    decode=True,
+                    exc=False)
+                assert_utils.assert_equal(
+                    resp.count(
+                        PROV_CFG["system"]["active"]), len(
+                        PROV_CFG["services"]["hw_specific"]))
 
         health_obj_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
         for node in health_obj_list:
