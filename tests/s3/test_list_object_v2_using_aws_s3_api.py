@@ -30,6 +30,7 @@ from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import AWScliS3api
 
@@ -49,6 +50,10 @@ class TestListObjectV2:
         prerequisite test steps if any and cleanup.
         """
         self.log = logging.getLogger(__name__)
+        resp = system_utils.path_exists(S3_CFG["aws_config_path"])
+        assert_utils.assert_true(
+            resp, "config path not exists: {}".format(
+                S3_CFG["aws_config_path"]))
         self.bucket_name = "s3bkt-listobjectv2-{}".format(
             time.perf_counter_ns())
         self.object_prefix = "s3obj-listobjectv2"
