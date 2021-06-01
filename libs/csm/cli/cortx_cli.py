@@ -81,7 +81,12 @@ class CortxCli(CortxCliClient):
         :return: output of executed command
         """
         try:
-            default_patterns = ["Error", "exception", "Session expired", "usage:", "command not found"]
+            default_patterns = [
+                "Error",
+                "exception",
+                "Session expired",
+                "usage:",
+                "command not found"]
             default_patterns.extend(patterns)
             self.log.debug("Default patterns : %s", default_patterns)
             index, output = super().execute_cli_commands(
