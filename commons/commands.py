@@ -391,9 +391,13 @@ CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {
 CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
                           "--body {3} --upload-id {4}"
 CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
-CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
-                                "--bucket {1} --key {2} --upload-id {3}"
+CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload " \
+                                "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+# Upload directory recursively to s3.
+CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
+CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
+CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 
 # jCloud commands.
 CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
@@ -406,4 +410,4 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
-    ' -X PUT http://127.0.0.1:28081​'
+                        ' -X PUT http://127.0.0.1:28081​'
