@@ -118,7 +118,7 @@ class S3Lib:
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
         metadata = kwargs.get("metadata", None)  # metadata dict.
-        content_md5 = kwargs.get("content_md5", None)  # base64-encoded 128-bit MD5 digest of the message.
+        content_md5 = kwargs.get("content_md5")  # base64-encoded 128-bit MD5 digest of the message.
         LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, m_key: %s, m_value: %s",
                      bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
