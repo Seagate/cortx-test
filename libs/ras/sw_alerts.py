@@ -27,6 +27,7 @@ import time
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
+from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
