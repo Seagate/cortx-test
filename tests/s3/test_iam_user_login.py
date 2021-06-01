@@ -149,6 +149,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
     def test_2846(self):
@@ -423,6 +424,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)
     def test_2858(self):
@@ -754,6 +756,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
     def test_2897(self):
