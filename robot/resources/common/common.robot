@@ -4,12 +4,13 @@ Library    SeleniumLibrary    screenshot_root_directory=reports/screenshots
 Library    String
 Library    DateTime
 Library    Collections
-Library    ${EXECDIR}/utils/Download.py
-Library    ${EXECDIR}/utils/create-SSL.py
-Library    ${EXECDIR}/utils/generate_bucket_policy.py
-Library    ${EXECDIR}/utils/general_utility.py
-Variables  ${EXECDIR}/resources/common/common_variables.py
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Library    ${RESOURCES}/utils/Download.py
+Library    ${RESOURCES}/utils/create-SSL.py
+Library    ${RESOURCES}/utils/generate_bucket_policy.py
+Library    ${RESOURCES}/utils/general_utility.py
+Variables  ${RESOURCES}/resources/common/common_variables.py
+Variables  ${RESOURCES}/resources/common/element_locators.py
+
 
 *** Keywords ***
 

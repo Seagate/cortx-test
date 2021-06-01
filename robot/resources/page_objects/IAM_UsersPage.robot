@@ -1,6 +1,6 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/common/common.robot
+Resource   ${RESOURCES}/resources/common/common.robot
 
 *** Variables ***
 ${invalid_IAM_account_password}  TestPass
