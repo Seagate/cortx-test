@@ -79,15 +79,6 @@ class TestCliBucketPolicy:
         assert_utils.assert_equals(True, resp[0], resp[1])
         cls.s3acc_obj.logout_cortx_cli()
         cls.log.info("Created s3 account")
-        cls.bkt_policy = [{
-            "Sid": "{0}",
-            "Action": [
-                "s3:DeleteObject",
-                "s3:AbortMultipartUpload",
-                "s3:GetObject"],
-            "Effect": "Allow",
-            "Resource": "arn:aws:s3:::{0}/*",
-            "Principal": "*"}]
         cls.bkt_policy_msg = "Bucket Policy Updated Successfully"
         cls.policy_file_path = os.path.join(
             str(os.getcwdb().decode()), "bkt_policy.json")
@@ -110,6 +101,15 @@ class TestCliBucketPolicy:
         self.user_name = "{0}{1}".format(
             "auto_csm_user", str(int(time.time())))
         self.email_id = "{0}{1}".format(self.user_name, "@seagate.com")
+        self.bkt_policy = [{
+            "Sid": "{0}",
+            "Action": [
+                "s3:DeleteObject",
+                "s3:AbortMultipartUpload",
+                "s3:GetObject"],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::{0}/*",
+            "Principal": "*"}]
         self.policy_id = f"Policy{uuid.uuid4()}"
         self.policy_sid = f"Stmt{uuid.uuid4()}"
         self.log.info("ENDED : Setup operations for test function")
@@ -136,8 +136,8 @@ class TestCliBucketPolicy:
             resp = S3H_OBJ.is_s3_server_path_exists(
                 self.remote_file_path,
                 each_node,
-                CMN_CFG["csm"]["csm_admin_user"]["username"],
-                CMN_CFG["csm"]["csm_admin_user"]["password"])
+                CMN_CFG["nodes"][0]["username"],
+                CMN_CFG["nodes"][0]["password"])
             if resp[0]:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
@@ -262,6 +262,7 @@ class TestCliBucketPolicy:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10800")
     @CTFailOn(error_handler)
     def test_6170_delete_bucket_policy(self):

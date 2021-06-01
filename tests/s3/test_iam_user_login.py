@@ -30,81 +30,51 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import cortxcli_test_lib
 
 
-class TestUserLoginProfileTests():
+class TestUserLoginProfileTests:
     """User Login Profile Test Suite."""
-
-    @classmethod
-    def setup_class(cls):
-        """It will perform all prerequisite test suite steps if any."""
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: Setup operations at suit level")
-        cls.cli_obj_class = cortxcli_test_lib.CortxCliTestLib()
-        cls.user_name_prefix = "iamuser"
-        cls.acc_name_prefix = "iamaccount"
-        cls.default_acc = "iamaccount{}".format(time.perf_counter_ns())
-        cls.default_acc_mail = "{}@seagate.com".format(cls.default_acc)
-        cls.default_acc_pass = S3_CFG["CliConfig"]["s3_account"]["password"]
-        create_account = cls.cli_obj_class.create_account_cortxcli(
-            account_name=cls.default_acc,
-            account_email=cls.default_acc_mail,
-            password=cls.default_acc_pass)
-        assert create_account[0], create_account[1]
-        cls.log.debug("Successfully created s3 account %s", create_account[1])
-        access_key = create_account[1]["access_key"]
-        secret_key = create_account[1]["secret_key"]
-        cls.iam_test_obj = iam_test_lib.IamTestLib(
-            access_key=access_key, secret_key=secret_key)
-        cls.log.info("ENDED: Setup operations at suit level")
 
     def setup_method(self):
         """Setup method."""
+        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
-        self.user_name = "{}{}".format(self.user_name_prefix, time.perf_counter_ns())
-        self.account_name = "iamaccount{}".format(time.perf_counter_ns())
+        self.default_acc = "iamaccount{}".format(int(time.perf_counter_ns()))
+        self.default_acc_mail = "{}@seagate.com".format(self.default_acc)
+        self.default_acc_pass = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        create_account = self.cli_obj.create_account_cortxcli(
+            account_name=self.default_acc,
+            account_email=self.default_acc_mail,
+            password=self.default_acc_pass)
+        assert create_account[0], create_account[1]
+        self.log.debug("Successfully created s3 account %s", create_account[1])
+        access_key = create_account[1]["access_key"]
+        secret_key = create_account[1]["secret_key"]
+        self.iam_test_obj = iam_test_lib.IamTestLib(
+            access_key=access_key, secret_key=secret_key)
+        self.user_name = "{}{}".format("iamuser", int(time.perf_counter_ns()))
+        self.account_name = "iamaccount{}".format(int(time.perf_counter_ns()))
         self.email_id = "@seagate.com"
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.users_list = list()
+        self.account_list = list()
         self.log.info("ENDED: Setup operations")
 
-    @classmethod
-    def teardown_class(cls):
+    def teardown_method(self):
         """Teardown method."""
-        cls.log.info("STARTED: Teardown operations at suit level")
-        all_users = cls.iam_test_obj.list_users()[1]
-        iam_users_list = [user["UserName"]
-                          for user in all_users if
-                          cls.user_name_prefix in user["UserName"]]
-        cls.log.debug("IAM users: %s", iam_users_list)
-        if iam_users_list:
-            cls.log.debug("Deleting IAM users...")
-            for user in iam_users_list:
-                res = cls.iam_test_obj.list_access_keys(user)
-                if res[0]:
-                    cls.log.debug("Deleting user access key...")
-                    keys_meta = res[1]["AccessKeyMetadata"]
-                    for key in keys_meta:
-                        cls.iam_test_obj.delete_access_key(
-                            user, key["AccessKeyId"])
-                    cls.log.debug("Deleted user access key")
-                cls.iam_test_obj.delete_user(user)
-                cls.log.debug("Deleted user : %s", user)
-        all_accounts = cls.cli_obj_class.list_accounts_cortxcli()
-        iam_accounts = [acc["account_name"]
-                        for acc in all_accounts if cls.acc_name_prefix in acc["account_name"]]
-        cls.log.debug("IAM accounts: %s", iam_accounts)
-        if iam_accounts:
-            cls.log.debug("Deleting IAM accounts...")
-            for acc in iam_accounts:
-                cls.log.debug("Deleting %s account", acc)
-                cls.cli_obj_class.login_cortx_cli(
-                    username=acc, password=cls.default_acc_pass)
-                cls.cli_obj_class.delete_all_buckets_cortx_cli()
-                cls.cli_obj_class.delete_all_iam_users()
-                cls.cli_obj_class.logout_cortx_cli()
-                cls.cli_obj_class.delete_account_cortxcli(
-                    account_name=acc, password=cls.default_acc_pass)
-        cls.log.info("ENDED: Teardown operations at suit level")
+        self.log.info("STARTED: Teardown operations")
+        for acc in self.account_list:
+            self.log.debug("Deleting %s account", acc)
+            self.cli_obj.login_cortx_cli(
+                username=acc, password=self.default_acc_pass)
+            # self.cli_obj_class.delete_all_buckets_cortx_cli()
+            for user in self.users_list:
+                self.cli_obj.delete_iam_user(user)
+            self.cli_obj.logout_cortx_cli()
+            self.cli_obj.delete_account_cortxcli(
+                account_name=acc, password=self.default_acc_pass)
+        del self.cli_obj
+        self.log.info("ENDED: Teardown operations")
 
     def create_user_and_access_key(
             self,
@@ -179,6 +149,7 @@ class TestUserLoginProfileTests():
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
     def test_2846(self):
@@ -187,6 +158,7 @@ class TestUserLoginProfileTests():
             "STARTED:Verify update-login-profile (password change) for IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9824"]["password"],
@@ -228,6 +200,7 @@ class TestUserLoginProfileTests():
                       " for IAM user with 'Blank' or 'NO' password")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9826"]["password"],
@@ -254,6 +227,7 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Provide password length 128 valid "
                       "characters long")
         resp = self.iam_test_obj.create_user(self.user_name)
+        self.users_list.append(self.user_name)
         assert_true(resp[0], resp[1])
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
@@ -276,6 +250,7 @@ class TestUserLoginProfileTests():
                       " valid characters long")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9829"]["password"],
@@ -303,6 +278,7 @@ class TestUserLoginProfileTests():
                       "--password-reset-required option")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9830"]["password"],
@@ -326,6 +302,7 @@ class TestUserLoginProfileTests():
                       " not have the login profile created")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         try:
             self.iam_test_obj.update_user_login_profile(
                 self.user_name, self.test_cfg["test_9831"]["password"])
@@ -350,6 +327,7 @@ class TestUserLoginProfileTests():
             " combinations of special characters  _+=,.@-")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -374,6 +352,7 @@ class TestUserLoginProfileTests():
                       "--no-password-reset-required")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9833"]["password"],
@@ -388,7 +367,7 @@ class TestUserLoginProfileTests():
 
     # Both --password-reset-required and --no-password-reset-required cannot be provided
     # using boto3, hence skipping the test.
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Not Supported cortxcli and BOTO3 Lib")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5677")
@@ -401,6 +380,7 @@ class TestUserLoginProfileTests():
                       "--password-reset-required")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name, self.test_cfg["test_9834"]["password"])
         assert_true(resp[0], resp[1])
@@ -424,6 +404,7 @@ class TestUserLoginProfileTests():
                       "password and reset flag enabled")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -443,6 +424,7 @@ class TestUserLoginProfileTests():
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)
     def test_2858(self):
@@ -451,6 +433,7 @@ class TestUserLoginProfileTests():
             "STARTED: Create a login profile for the existing IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -492,6 +475,7 @@ class TestUserLoginProfileTests():
                       "character or without password for existing user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         try:
             self.iam_test_obj.create_user_login_profile(
                 self.user_name,
@@ -516,6 +500,7 @@ class TestUserLoginProfileTests():
                       " characters for existing user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9840"]["password"],
@@ -534,6 +519,7 @@ class TestUserLoginProfileTests():
                       "than 128 characters for existing user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         try:
             self.iam_test_obj.create_user_login_profile(
                 self.user_name,
@@ -558,6 +544,7 @@ class TestUserLoginProfileTests():
                       " special characters only")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9842"]["password"],
@@ -606,6 +593,7 @@ class TestUserLoginProfileTests():
             self.log.debug("Creating a user with name: %s", new_user_name)
             resp = self.iam_test_obj.create_user(new_user_name)
             assert_true(resp[0], resp[1])
+            self.users_list.append(new_user_name)
             resp = self.iam_test_obj.create_user_login_profile(
                 new_user_name, self.test_cfg["test_9832"]["password"], True)
             assert_true(resp[0], resp[1])
@@ -622,6 +610,7 @@ class TestUserLoginProfileTests():
                       "--no-password-reset-required option")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -642,6 +631,7 @@ class TestUserLoginProfileTests():
             "--password-reset-required option")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -664,6 +654,7 @@ class TestUserLoginProfileTests():
             "--password-reset-required --no-password-reset-required .")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"]
@@ -675,7 +666,7 @@ class TestUserLoginProfileTests():
 
     # Both --password-reset-required and --no-password-reset-required cannot be provided
     # using boto3, hence skipping the test.
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Not supported by cortxcli and boto3 lib")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5690")
@@ -688,6 +679,7 @@ class TestUserLoginProfileTests():
             "--no-password-reset-required --password-reset-required .")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile_s3iamcli_with_both_reset_options(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -708,6 +700,7 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify get-login-profile for s3 IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
@@ -748,6 +741,7 @@ class TestUserLoginProfileTests():
             "IAM user (IAM user with no profile created)")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.users_list.append(self.user_name)
         try:
             self.iam_test_obj.get_user_login_profile(self.user_name)
         except CTException as error:
@@ -762,6 +756,7 @@ class TestUserLoginProfileTests():
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
     def test_2897(self):
@@ -769,21 +764,24 @@ class TestUserLoginProfileTests():
         self.log.info("STARTED: Verify password change for IAM user")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.cli_obj.create_account_cortxcli(self.account_name,
-                                                    email_id,
-                                                    self.s3acc_passwd)
-        assert_true(resp[0], resp[1])
+        self.create_account_and_user(
+            self.account_name,
+            email_id,
+            self.user_name,
+            self.test_cfg["test_9832"]["password"])
+        self.users_list.append(self.user_name)
+        self.account_list.append(self.account_name)
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_passwd)
         assert_true(login[0], login[1])
-        resp = self.cli_obj.create_user_cortxcli(self.user_name,
-                                                 self.test_cfg["test_9832"]["password"])
-        assert_true(resp[0], resp[1])
         resp = self.cli_obj.reset_iamuser_password_cortxcli(
             self.user_name, self.test_cfg["test_9876"]["new_password"])
         assert_true(resp[0], resp[1])
-        self.cli_obj.logout_cortx_cli()
+        if resp[0]:
+            self.cli_obj.logout_cortx_cli()
+        else:
+            self.log.debug(resp[1])
         self.log.info("ENDED: Verify password change for IAM user")
 
     @pytest.mark.parallel
@@ -799,7 +797,7 @@ class TestUserLoginProfileTests():
             login = self.cli_obj.login_cortx_cli(
                 username=self.default_acc, password=self.default_acc_pass)
             assert_true(login[0], login[1])
-            self.cli_obj.reset_iamuser_password(
+            status, response = self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, self.test_cfg["test_9876"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -808,7 +806,10 @@ class TestUserLoginProfileTests():
                 error.message,
                 error.message)
         finally:
-            self.cli_obj.logout_cortx_cli()
+            if login[0] and status:
+                self.cli_obj.logout_cortx_cli()
+            else:
+                self.log.debug(response)
         self.log.info("ENDED: Verify password change for a "
                       "non-existing IAM user")
 
@@ -826,11 +827,13 @@ class TestUserLoginProfileTests():
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
+        self.account_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         try:
             login = self.cli_obj.login_cortx_cli(
                 username=self.account_name, password=self.s3acc_passwd)
             assert_true(login[0], login[1])
-            self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, self.test_cfg["test_2899"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -839,7 +842,10 @@ class TestUserLoginProfileTests():
                 error.message,
                 error.message)
         finally:
-            self.cli_obj.logout_cortx_cli()
+            if login[0]:
+                self.cli_obj.logout_cortx_cli()
+            else:
+                self.log.debug(login[1])
         self.log.info("ENDED: Provide only six character length in password")
 
     @pytest.mark.parallel
@@ -856,11 +862,13 @@ class TestUserLoginProfileTests():
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
+        self.account_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         try:
             login = self.cli_obj.login_cortx_cli(
                 username=self.account_name, password=self.s3acc_passwd)
             assert_true(login[0], login[1])
-            self.cli_obj.reset_iamuser_password(
+            self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, self.test_cfg["test_9879"]["new_password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -869,56 +877,11 @@ class TestUserLoginProfileTests():
                 error.message,
                 error.message)
         finally:
-            self.cli_obj.logout_cortx_cli()
+            if login[0]:
+                self.cli_obj.logout_cortx_cli()
+            else:
+                self.log.debug(login[1])
         self.log.info("ENDED: Provide only one character length in password")
-
-    #  #Duplicate of test_2850
-    # def test_9880(self):
-    #     """
-    #     Provide password length 128 valid characters long
-    #
-    #     """
-    #     self.log.info("Provide password length 128 valid characters long")
-    #     resp = self.create_user_and_access_key(
-    #         self.user_name,
-    #         self.test_cfg["test_9832"]["password"])
-    #     user_access_key = resp[0]
-    #     user_secret_key = resp[1]
-    #     resp = self.iam_test_obj.change_user_password(
-    #         self.test_cfg["test_9832"]["password"],
-    #         self.test_cfg["test_9840"]["new_password"],
-    #         user_access_key,
-    #         user_secret_key)
-    #     assert_true(resp[0], resp[1])
-    #     self.log.info("Provide password length 128 valid characters long")
-
-    # def test_2851(self): # Duplicate
-    #     """
-    #     Provide password length more than 128 valid characters long
-    #
-    #     """
-    #     self.log.info(
-    #         "Provide password length more than 128 valid characters long")
-    #     test_9881_cfg = USER_CONFIG["test_9881"]
-    #     resp = self.create_user_and_access_key(
-    #         self.user_name,
-    #         self.test_cfg["test_9832"]["password"])
-    #     user_access_key = resp[0]
-    #     user_secret_key = resp[1]
-    #     try:
-    #         self.iam_test_obj.change_user_password(
-    #             self.test_cfg["test_9832"]["password"],
-    #             self.test_cfg["test_9841"]["new_password"],
-    #             user_access_key,
-    #             user_secret_key)
-    #     except CTException as error:
-    #         self.log.debug(error.message)
-    #         assert_in(
-    #             "InvalidParameterValue",
-    #             error.message,
-    #             error.message)
-    #     self.log.info(
-    #         "Provide password length more than128 valid characters long")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -935,23 +898,26 @@ class TestUserLoginProfileTests():
                       "characters ~,$,?,&,\\n,\\t,<,>")
         email_id = "{0}{1}".format(
             self.account_name, self.email_id)
-        resp = self.cli_obj.create_account_cortxcli(self.account_name,
-                                                    email_id,
-                                                    self.s3acc_passwd)
-        assert_true(resp[0], resp[1])
+        self.create_account_and_user(
+            self.account_name,
+            email_id,
+            self.user_name,
+            self.test_cfg["test_9832"]["password"])
+        self.account_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_passwd)
         assert_true(login[0], login[1])
-        resp = self.cli_obj.create_user_cortxcli(self.user_name,
-                                                 self.test_cfg["test_9832"]["password"])
-        assert_true(resp[0], resp[1])
         for new_password in self.test_cfg["test_9882"]["list_special_char_pwd"]:
             self.log.debug(new_password)
             resp = self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, new_password)
             assert_true(resp[0], resp[1])
-        self.cli_obj.logout_cortx_cli()
+        if resp[0]:
+            self.cli_obj.logout_cortx_cli()
+        else:
+            self.log.debug(resp[1])
         self.log.info("ENDED: Password with allowed special "
                       "characters ~,$,?,&,\\n,\\t,<,>")
 
@@ -969,12 +935,14 @@ class TestUserLoginProfileTests():
             email_id,
             self.user_name,
             self.test_cfg["test_9832"]["password"])
+        self.account_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name,
             password=self.s3acc_passwd)
         assert_true(login[0], login[1])
         try:
-            self.cli_obj.reset_iamuser_password(
+            status, response = self.cli_obj.reset_iamuser_password_cortxcli(
                 self.user_name, self.test_cfg["test_9832"]["password"])
         except CTException as error:
             self.log.debug(error.message)
@@ -983,7 +951,10 @@ class TestUserLoginProfileTests():
                 error.message,
                 error.message)
         finally:
-            self.cli_obj.logout_cortx_cli()
+            if login[0] and status:
+                self.cli_obj.logout_cortx_cli()
+            else:
+                self.log.debug(response)
         self.log.info("ENDED: Verify change password with old password")
 
     # Access key and secret key is not needed for resetting iam user password using cortxcli
@@ -1001,6 +972,7 @@ class TestUserLoginProfileTests():
         self.create_user_and_access_key(
             self.user_name,
             self.test_cfg["test_9832"]["password"])
+        self.users_list.append(self.user_name)
         try:
             self.iam_test_obj.change_user_password(
                 self.test_cfg["test_9832"]["password"],
@@ -1221,6 +1193,8 @@ class TestUserLoginProfileTests():
             self.user_name,
             self.test_cfg["test_9927"]["user_password"],
             user_profile=True)
+        self.account_list.append(self.account_name)
+        self.users_list.append(self.user_name)
         self.log.info(
             "Performing s3 operations using invalid temporary credentials")
         try:
