@@ -42,19 +42,21 @@ class Provisioner:
     def build_job(
             job_name: str,
             parameters: dict = None,
-            token: str = None) -> dict:
+            token: str = None,
+            jen_url: str = prm.JENKINS_URL) -> dict:
         """
         Helper function to start the jenkins job.
         :param job_name: Name of the jenkins job
         :param parameters: Dict of different parameters to be passed
         :param token: Authentication Token for jenkins job
+        :param jen_url: Jenkins url
         :return: build info dict
         """
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         try:
             jenkins_server_obj = jenkins.Jenkins(
-                prm.JENKINS_URL, username=username, password=password)
+                jen_url, username=username, password=password)
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
             completed_build_number = jenkins_server_obj.get_job_info(
                 job_name)['lastCompletedBuild']['number']
@@ -366,3 +368,38 @@ class Provisioner:
                 return False, error
 
         return True, "Deployment Completed"
+
+    @staticmethod
+    def verify_services_ports(
+            health_obj: object,
+            services_ports: dict) -> tuple:
+        """
+        :param health_obj: Health object of the node to verify services on
+        :param services_ports: Dictonary containing services names with expected running ports
+        :return: True/False and list of inactive ports if any
+        """
+        try:
+            inactive_ports = list()
+            for service in services_ports:
+                LOGGER.info("Fetching ports for service: %s", service)
+                active_ports = health_obj.get_ports_for_firewall_cmd(service)
+                LOGGER.debug(active_ports)
+                for port in services_ports[service]:
+                    if port not in active_ports:
+                        LOGGER.error(
+                            "%s is not running on port %s", service, port)
+                        inactive_ports.append(port)
+            if inactive_ports:
+                return False, inactive_ports
+
+            return True, active_ports
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.verify_services_ports.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+
+            return False, error

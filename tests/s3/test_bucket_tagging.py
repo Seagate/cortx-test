@@ -39,59 +39,37 @@ TAG_OBJ = S3TaggingTestLib()
 
 
 class TestBucketTagging:
-    """Bucket Tagging Testsuite."""
+    """Bucket tagging test suite."""
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
-        Function will be invoked prior to each test case.
+        Summary: Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        Description: It will perform all prerequisite and cleanup test.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.test_file = "obj_tag{}.txt"
-        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestBucketTagging")
-        if not system_utils.path_exists(cls.test_dir_path):
-            system_utils.make_dirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.log.info("Test data directory path: %s", cls.test_dir_path)
-        cls.log.info("ENDED: setup test suite operations.")
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if system_utils.path_exists(cls.test_dir_path):
-            system_utils.remove_dirs(cls.test_dir_path)
-        cls.log.info("Removed test directory: %s", cls.test_dir_path)
-        cls.log.info("ENDED: teardown test suite operations.")
-
-    def setup_method(self):
-        """Function to perform the clean up if any before each test."""
-        self.log.info("STARTED: Test setup operations.")
-
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: setup test suite operations.")
+        self.test_file = "obj_tag{}.txt"
+        self.test_dir_path = os.path.join(
+            TEST_DATA_FOLDER, "TestBucketTagging")
+        if not system_utils.path_exists(self.test_dir_path):
+            system_utils.make_dirs(self.test_dir_path)
+            self.log.info("Created path: %s", self.test_dir_path)
+        self.log.info("Test data directory path: %s", self.test_dir_path)
         self.test_file_path = os.path.join(
-            self.test_dir_path, self.test_file.format(str(int(time.time()))))
-        self.bucket_name = "{}-{}".format("tagbucket", str(int(time.time())))
+            self.test_dir_path, self.test_file.format(time.perf_counter_ns()))
+        self.bucket_name = "tagbucket-{}".format(time.perf_counter_ns())
         self.log.info("ENDED: Test setup operations.")
-
-    def teardown_method(self):
-        """Function to perform the clean up after each test."""
+        yield
         self.log.info("STARTED: Test teardown operations.")
-        resp = S3_OBJ.bucket_list()
-        pref_list = [each_bucket for each_bucket in resp[1]
-                     if each_bucket == self.bucket_name]
-        if pref_list:
-            self.log.info("Bucket list: %s", pref_list)
-            status, resp = S3_OBJ.delete_multiple_buckets(pref_list)
-            assert_utils.assert_true(status, resp)
+        resp = S3_OBJ.bucket_list()[1]
+        if self.bucket_name in resp:
+            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp)
         self.log.info("ENDED: Test teardown operations.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
@@ -131,6 +109,7 @@ class TestBucketTagging:
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Verify PUT Bucket tagging")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5517")
     @CTFailOn(error_handler)
@@ -169,6 +148,7 @@ class TestBucketTagging:
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: Verify GET Bucket tagging")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
@@ -213,6 +193,7 @@ class TestBucketTagging:
             "NoSuchTagSetError")
         self.log.info("ENDED: Verify DELETE Bucket tagging")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5533")
     @CTFailOn(error_handler)
@@ -254,6 +235,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Create a tag whose key is up to 128 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5534")
     @CTFailOn(error_handler)
@@ -294,6 +276,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Create a tag whose key is more than 128 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5535")
     @CTFailOn(error_handler)
@@ -338,6 +321,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Create a tag having values up to 256 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5536")
     @CTFailOn(error_handler)
@@ -383,6 +367,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Create a tag having values more than 512 Unicode characters in length")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
@@ -424,6 +409,7 @@ class TestBucketTagging:
         self.log.info("Step 3: Retrieved tags of a bucket")
         self.log.info("ENDED: Create Bucket tags, up to 50")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5529")
     @CTFailOn(error_handler)
@@ -461,6 +447,7 @@ class TestBucketTagging:
             "InvalidTagError")
         self.log.info("ENDED: Create Bucket tags, more than 50")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5521")
     @CTFailOn(error_handler)
@@ -504,6 +491,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Verify bucket Tag Keys with case sensitive labels")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5520")
     @CTFailOn(error_handler)
@@ -546,6 +534,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Verify bucket tag Values with case sensitive labels")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5526")
     @CTFailOn(error_handler)
@@ -585,6 +574,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Create multiple tags with tag keys having special characters")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5527")
     @CTFailOn(error_handler)
@@ -622,6 +612,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Create multiple tags with tag keys having"
                       " invalid special characters")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5524")
     @CTFailOn(error_handler)
@@ -660,6 +651,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Create multiple tags with tag values having "
                       "invalid special character")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5531")
     @CTFailOn(error_handler)
@@ -693,6 +685,7 @@ class TestBucketTagging:
             "MalformedXML")
         self.log.info("ENDED: Create bucket tags with duplicate keys")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5512")
     @CTFailOn(error_handler)
@@ -736,6 +729,7 @@ class TestBucketTagging:
         self.log.info("Step 3: Retrieved tag of a bucket")
         self.log.info("ENDED: verify values in a tag set should be unique")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5530")
     @CTFailOn(error_handler)
@@ -769,6 +763,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5523")
     @CTFailOn(error_handler)
@@ -776,8 +771,7 @@ class TestBucketTagging:
         """Delete Bucket having tags associated with Bucket and its Objects."""
         self.log.info(
             "STARTED: Delete Bucket having tags associated with Bucket and its Objects")
-        obj_name = "{}{}".format("tagobj2449",
-                                 str(int(time.time())))
+        obj_name = "{}{}".format("tagobj2449", time.perf_counter_ns())
         self.log.info(
             "Step 1: Creating a bucket %s and uploading an object %s",
             self.bucket_name, obj_name)
@@ -874,6 +868,7 @@ class TestBucketTagging:
             "ENDED: Delete Bucket having tags associated with Bucket and its Objects")
 
     # Raised bug EOS-2528, Uncomment when fixed
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5522")
     @CTFailOn(error_handler)
@@ -904,6 +899,7 @@ class TestBucketTagging:
         self.log.info("ENDED: Verification of max. no. of Buckets user can "
                       "create with max no. of tags per Bucket")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5513")
     @CTFailOn(error_handler)
@@ -932,6 +928,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Verify PUT bucket tagging to non-existing bucket")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5516")
     @CTFailOn(error_handler)
@@ -972,6 +969,7 @@ class TestBucketTagging:
         self.log.info(
             "ENDED: Verify GET bucket tagging to non-existing bucket")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5518")
     @CTFailOn(error_handler)
