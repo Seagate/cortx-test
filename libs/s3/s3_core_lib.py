@@ -112,11 +112,13 @@ class S3Lib:
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return: response.
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
         metadata = kwargs.get("metadata", None)  # metadata dict.
+        content_md5 = kwargs.get("content_md5")  # base64-encoded 128-bit MD5 digest of the message.
         LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, m_key: %s, m_value: %s",
                      bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
@@ -133,6 +135,12 @@ class S3Lib:
                     Key=object_name,
                     Body=data,
                     Metadata=metadata)
+            elif content_md5:
+                response = self.s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=object_name,
+                    Body=data,
+                    ContentMD5=content_md5)
             else:
                 response = self.s3_client.put_object(
                     Bucket=bucket_name, Key=object_name, Body=data)
@@ -408,13 +416,21 @@ class Multipart(S3Lib):
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return:
         """
         upload_id = kwargs.get("upload_id", None)
         part_number = kwargs.get("part_number", None)
-        response = self.s3_client.upload_part(
-            Body=body, Bucket=bucket_name, Key=object_name,
-            UploadId=upload_id, PartNumber=part_number)
+        content_md5 = kwargs.get("content_md5", None)
+        if content_md5:
+            response = self.s3_client.upload_part(
+                Body=body, Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                ContentMD5=content_md5)
+        else:
+            response = self.s3_client.upload_part(
+                Body=body, Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number)
         logging.debug(response)
 
         return response
