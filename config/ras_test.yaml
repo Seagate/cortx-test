@@ -1,6 +1,20 @@
-alert_type:
-  alert_fault: "fault"
-  alert_fault_resolved: "fault_resolved"
+alert_types:
+  fault: "fault"
+  resolved: "fault_resolved"
+  missing: "missing"
+  insertion: "insertion"
+  get: "get"
+
+network_interfaces:
+  VM:
+    MGMT: "eth0"
+    PUBLIC_DATA: "eth1"
+    PRIVATE_DATA: "eth3"
+  HW:
+    #Check network interface names when R2 HW is available
+    MGMT: "eno1"
+    PUBLIC_DATA: "enp175s0f0"
+    PRIVATE_DATA: "enp175s0f1"
 
 test_3005:
   alert: True
@@ -225,3 +239,12 @@ test_22060:
   operation_fault: "Disabled"
   operation_fault_resolved: "Enabled"
   csm_error_msg: "Failed to get alerts using CSM REST API"
+
+mgmt_nw_port_fault:
+  generate_fault: "down"
+  resolve_fault: "up"
+  resource_id: "eno1"
+  resource_id_monitor : '"resource_id": "eno1"'
+  resource_id_csm : '"resource_id":"eno1"'
+  resource_type: "node:interface:nw"
+  error_msg: "Failed to put management network port"
