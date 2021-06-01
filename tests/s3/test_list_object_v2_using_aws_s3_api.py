@@ -37,7 +37,7 @@ S3_OBJ = S3TestLib()
 AWS_CLI_OBJ = AWScliS3api()
 
 
-class TestObjectV2List:
+class TestListObjectV2:
     """List-Object-V2 TestSuite."""
 
     @pytest.fixture(autouse=True)
@@ -49,9 +49,13 @@ class TestObjectV2List:
         prerequisite test steps if any and cleanup.
         """
         self.log = logging.getLogger(__name__)
-        self.bucket_name = "s3bkt-{}".format(time.perf_counter_ns())
-        self.object_prefix = "s3obj"
-        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectV2List")
+        self.bucket_name = "s3bkt-listobjectv2-{}".format(
+            time.perf_counter_ns())
+        self.object_prefix = "s3obj-listobjectv2"
+        self.folder_path = os.path.join(
+            TEST_DATA_FOLDER,
+            "TestObjectV2List{}".format(
+                time.perf_counter_ns()))
         if not system_utils.path_exists(self.folder_path):
             system_utils.make_dirs(self.folder_path)
         self.log.info("Test data path: %s", self.folder_path)
@@ -88,6 +92,7 @@ class TestObjectV2List:
 
         return resp[1]
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15187")
     @CTFailOn(error_handler)
@@ -99,6 +104,7 @@ class TestObjectV2List:
         resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15188")
     @CTFailOn(error_handler)
@@ -109,6 +115,7 @@ class TestObjectV2List:
         resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name, delimiter="//")
         assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15189")
     @CTFailOn(error_handler)
@@ -124,6 +131,7 @@ class TestObjectV2List:
         for rdict in resp[1]["Contents"]:
             assert_utils.assert_in(self.object_prefix, rdict["Key"])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15190")
     @CTFailOn(error_handler)
@@ -137,6 +145,7 @@ class TestObjectV2List:
             self.bucket_name, prefix=self.object_prefix, delimiter='//')
         assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15191")
     @CTFailOn(error_handler)
@@ -157,6 +166,7 @@ class TestObjectV2List:
             starting_token=NextToken)
         assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15194")
     @CTFailOn(error_handler)
@@ -171,6 +181,7 @@ class TestObjectV2List:
             self.bucket_name, no_fetch_owner=None)
         assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-15192")
     @CTFailOn(error_handler)
