@@ -102,16 +102,22 @@ class S3MultipartTestLib(Multipart):
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        :param upload_id: Id of complete multipart upload.
-        :param part_number: upload part no.
+        :keyword upload_id: Id of complete multipart upload.
+        :keyword part_number: upload part no.
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return: (Boolean, response)
         """
         try:
             upload_id = kwargs.get("upload_id", None)
             part_number = kwargs.get("part_number", None)
+            content_md5 = kwargs.get("content_md5", None)
             LOGGER.info("uploading part")
-            response = super().upload_part(body, bucket_name, object_name,
-                                           upload_id=upload_id, part_number=part_number)
+            if content_md5:
+                response = super().upload_part(body, bucket_name, object_name,
+                                               upload_id=upload_id, part_number=part_number, content_md5=content_md5)
+            else:
+                response = super().upload_part(body, bucket_name, object_name,
+                                               upload_id=upload_id, part_number=part_number)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
