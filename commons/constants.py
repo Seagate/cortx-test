@@ -277,16 +277,25 @@ class SwAlerts:
         "elasticsearch.service",
         "statsd.service",
         "rsyslog.service",
-        "haproxy.service",
+#        "haproxy.service",  # commented due to defect EOS-20842
+        "hare-consul-agent.service",
+        "lnet.service",
         "slapd.service",
         "lnet.service",
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service",
-        "Kafka"]
+        "scsi-network-relay.service"]
 
+    SVCS_3P_UNAVAIL_VM = [
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"]
+
+    SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
+
+    SVC_LOAD_TIMEOUT_SEC = 30
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
