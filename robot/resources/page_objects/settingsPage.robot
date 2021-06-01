@@ -1,7 +1,7 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Variables ***
 ${Download_File_Path}  /root/Downloads

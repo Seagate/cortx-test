@@ -1,15 +1,15 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/page_objects/bucket_page.robot
-Resource   ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/common_variables.py
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource   ${RESOURCES}/resources/page_objects/IAM_UsersPage.robot
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/common_variables.py
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
