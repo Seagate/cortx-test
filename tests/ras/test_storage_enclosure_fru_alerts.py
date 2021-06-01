@@ -102,11 +102,6 @@ class TestStorageAlerts:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
-        # LOGGER.info("Restarting sspl service")
-        # resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        # assert resp, "Failed to restart sspl-ll"
-        # time.sleep(self.cm_cfg["sspl_timeout"])
-
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
@@ -125,10 +120,9 @@ class TestStorageAlerts:
         service = self.cm_cfg["service"]
         # services = [service["sspl_service"], service["kafka_service"],
         #             service["csm_web"], service["csm_agent"]]
-        resp = self.s3obj.get_s3server_service_status(
-            service=service["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
 
         # for svc in services:
         #     LOGGER.info("Checking status of %s service", svc)
@@ -202,10 +196,9 @@ class TestStorageAlerts:
         # time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        resp = self.s3obj.get_s3server_service_status(
-            service=service["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
 
         LOGGER.info("Successfully performed Teardown operation")
 
