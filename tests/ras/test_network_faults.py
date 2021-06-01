@@ -114,10 +114,9 @@ class TestNetworkFault:
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"],
                     service["csm_web"], service["csm_agent"]]
-        resp = self.s3obj.get_s3server_service_status(
-            service=service["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
 
         for svc in services:
             LOGGER.info("Checking status of %s service", svc)
@@ -182,6 +181,10 @@ class TestNetworkFault:
         # self.health_obj.restart_pcs_resource(
         #     resource=self.cm_cfg["sspl_resource_id"])
         # time.sleep(self.cm_cfg["sleep_val"])
+        service = self.cm_cfg["service"]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
 
