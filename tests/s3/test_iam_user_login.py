@@ -62,7 +62,7 @@ class TestUserLoginProfileTests:
 
     def teardown_method(self):
         """Teardown method."""
-        # self.log.info("STARTED: Teardown operations")
+        self.log.info("STARTED: Teardown operations")
         for acc in self.account_list:
             self.log.debug("Deleting %s account", acc)
             self.cli_obj.login_cortx_cli(
