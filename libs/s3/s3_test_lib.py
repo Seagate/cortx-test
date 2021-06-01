@@ -22,6 +22,7 @@
 
 import os
 import time
+import ast
 import logging
 from time import perf_counter
 from random import randint
@@ -847,7 +848,7 @@ class AWScliS3api:
         else:
             status, output = run_local_cmd(
                 commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(bucket_name))
-        output = eval(eval(output.strip('b'))) if output else output
+        output = ast.literal_eval(ast.literal_eval(output.strip('b'))) if output else output
         LOGGER.info("list-objects-v2: %s", output)
         if status:
             return status, output
