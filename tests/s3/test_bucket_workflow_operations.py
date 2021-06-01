@@ -81,6 +81,8 @@ class TestBucketWorkflowOperations:
         for acc in self.account_list:
             self.cortx_obj.delete_account_cortxcli(
                 account_name=acc, password=self.s3acc_password)
+        self.cortx_obj.close_connection()
+        del self.cortx_obj
         self.log.info("ENDED: Setup test operations.")
 
     @pytest.mark.parallel
