@@ -22,6 +22,7 @@ This library contains methods for S3 Account operations using CORTX CLI
 """
 
 import logging
+from typing import Tuple
 from commons import commands
 from libs.csm.cli.cortx_cli import CortxCli
 
@@ -146,3 +147,16 @@ class CortxCliS3AccountOperations(CortxCli):
                         return True, response
 
         return False, response
+
+    def help_option(self, command: str = None) -> Tuple[bool, str]:
+        """
+        This function will check the help response
+        :param str command: Command whose help response to be validated
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Performing help option on command %s", command)
+        output = self.execute_cli_commands(cmd=command, patterns=["usage:"])[1]
+        if "error" in output.lower() or "exception" in output.lower():
+            return False, output
+
+        return True, output
