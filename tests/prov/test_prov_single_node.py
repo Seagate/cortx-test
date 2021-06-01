@@ -189,9 +189,6 @@ class TestProvSingleNode:
                 PROV_CFG["system"]["active"]), len(
                 PROV_CFG["services"]["all"]))
         LOGGER.info("Checking all services are running on respective ports")
-        self.nd_obj.send_systemctl_cmd(
-            command="start", services=[
-                PROV_CFG["services"]["all"][0]])
         resp = self.prov_obj.verify_services_ports(
             self.hlt_obj, PROV_CFG["service_ports"])
         assert_utils.assert_true(resp[0], resp[1])
