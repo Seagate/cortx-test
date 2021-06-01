@@ -1,16 +1,24 @@
-prereq:
-  count: 2
-  os_release: "CentOS Linux release 7.8.2003 (Core)"
-  kernel: "3.10.0-1127.el7.x86_64"
-deploy:
-  job_name: "QA-R2-Single-Node-Deployment"
-  success_msg: "SUCCESS"
 system:
   offline: "offline"
   stopped: "Stopped"
-  active: "active (running)"
+  active: "active"
 services:
-  firewall: "firewalld"
+  all:
+    - "firewalld"
+    - "hare-consul-agent.service"
+    - "elasticsearch.service"
+    - "statsd.service"
+    - "rsyslog.service"
+    - "haproxy.service"
+    - "slapd.service"
+    - "glusterd.service"
+    - "kafka-zookeeper.service"
+    - "salt-master.service"
+    - "salt-minion.service"
+    - "lnet.service"
+  hw_specific:
+    - "multipathd.service"
+    - "scsi-network-relay.service"
 service_ports:
   csm: ["28100"]
   dhclient: ["68"]
@@ -26,6 +34,15 @@ service_ports:
   uds: ["5000"]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
 cluster_start_msg: "Cluster start operation performed"
+
+single-node:
+  prereq:
+    count: 2
+    os_release: "CentOS Linux release 7.8.2003 (Core)"
+    kernel: "3.10.0-1127.el7.x86_64"
+  deploy:
+    job_name: "QA-R2-Single-Node-Deployment"
+    success_msg: "SUCCESS"
 
 3-node-vm:
   prereq:
