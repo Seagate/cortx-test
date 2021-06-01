@@ -27,8 +27,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import make_dirs, cleanup_dir, path_exists
+from commons.utils.system_utils import make_dirs, remove_file, path_exists
 from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 
@@ -41,23 +40,65 @@ IAM_TEST_OBJ = iam_test_lib.IamTestLib()
 class TestAllUsers:
     """All Users Object ACL Testsuite."""
 
-    @classmethod
-    def setup_class(cls):
+    def setup_method(self):
         """
-        Function will be invoked prior to each test case.
+        Function will be invoked before running each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        It will perform all prerequisite steps required for test execution.
+        It will create a bucket and upload an object to that bucket.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.test_file = "all_users_obj_acl.txt"
-        cls.mb_count = 5
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata")
-        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        cls.log.info("Test file path: %s", cls.test_file_path)
-        cls.err_msg = "Access Denied"
-        cls.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
-        cls.log.info("ENDED: setup test suite operations.")
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: Setup operations")
+        self.err_msg = "Access Denied"
+        self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
+        self.test_file = "{}{}".format("all_users_obj_acl", time.perf_counter_ns())
+        self.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        if not path_exists(self.test_dir_path):
+            resp = make_dirs(self.test_dir_path)
+            self.log.info("Created Directory path: %s", resp)
+        self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
+        self.log.info("Test file path: %s", self.test_file_path)
+        self.bucket_name = "allusersobjacl-bkt{}".format(time.perf_counter_ns())
+        self.obj_name = "allusersobj{}".format(time.perf_counter_ns())
+        self.log.info("Creating a bucket and putting an object into bucket")
+        resp = S3_TEST_OBJ.create_bucket_put_object(
+            self.bucket_name,
+            self.obj_name,
+            self.test_file_path,
+            mb_count=5)
+        assert resp[0], resp[1]
+        self.log.info(
+            "Created a bucket and put an object into bucket successfully")
+        self.log.info("Setting bucket ACL to FULL_CONTROL for all users")
+        resp = ACL_OBJ.put_bucket_acl(
+            self.bucket_name,
+            grant_full_control=self.group_uri)
+        assert resp[0], resp[1]
+        self.log.info("Set bucket ACL to FULL_CONTROL for all users")
+        self.log.info("ENDED: Setup operations")
+
+    def teardown_method(self):
+        """
+        Function will be invoked after running each test case.
+
+        It will clean all resources which are getting created during
+        test execution such as S3 buckets and the objects present into that bucket.
+        """
+        self.log.info("STARTED: Teardown operations")
+        self.log.info("Clean : %s", self.test_dir_path)
+        if path_exists(self.test_file_path):
+            resp = remove_file(self.test_file_path)
+            self.log.info(
+                "cleaned path: %s, resp: %s",
+                self.test_file_path,
+                resp)
+        self.log.info("Deleting buckets...")
+        status, response = S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
+        if status:
+            self.log.info("Deleted %s", self.bucket_name)
+        else:
+            self.log.info(response)
+        self.log.info("ENDED: Teardown operations")
 
     def put_object_acl(self, acl):
         """helper method to put object acl and verify it."""
@@ -99,68 +140,6 @@ class TestAllUsers:
         assert resp[0], resp[1]
         assert permission == resp[1]["Grants"][0]["Permission"], resp[1]
         self.log.info("Step 2: Verified that object's acl is changed")
-
-    def setup_method(self):
-        """
-        Function will be invoked before running each test case.
-
-        It will perform all prerequisite steps required for test execution.
-        It will create a bucket and upload an object to that bucket.
-        """
-        self.log.info("STARTED: Setup operations")
-        if not path_exists(self.test_dir_path):
-            resp = make_dirs(self.test_dir_path)
-            self.log.info("Created path: %s", resp)
-        self.bucket_name = "allusersobjacl-bkt{}".format(str(int(time.time())))
-        self.obj_name = "allusersobj{}".format(str(int(time.time())))
-        self.log.info("Creating a bucket and putting an object into bucket")
-        try:
-            S3_TEST_OBJ.delete_bucket(bucket_name=self.bucket_name, force=True)
-        except Exception as berr:
-            self.log.warning(berr)
-        resp = S3_TEST_OBJ.create_bucket_put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.test_file_path,
-            self.mb_count)
-        assert resp[0], resp[1]
-        self.log.info(
-            "Created a bucket and put an object into bucket successfully")
-        self.log.info("Setting bucket ACL to FULL_CONTROL for all users")
-        resp = ACL_OBJ.put_bucket_acl(
-            self.bucket_name,
-            grant_full_control=self.group_uri)
-        assert resp[0], resp[1]
-        self.log.info("Set bucket ACL to FULL_CONTROL for all users")
-        self.log.info("ENDED: Setup operations")
-
-    def teardown_method(self):
-        """
-        Function will be invoked after running each test case.
-
-        It will clean all resources which are getting created during
-        test execution such as S3 buckets and the objects present into that bucket.
-        """
-        self.log.info("STARTED: Teardown operations")
-        self.log.info("Clean : %s", self.test_dir_path)
-        if path_exists(self.test_dir_path):
-            resp = cleanup_dir(self.test_dir_path)
-            self.log.info(
-                "cleaned path: %s, resp: %s",
-                self.test_dir_path,
-                resp)
-        bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        bucket_name = "allusersobjacl-bkt"
-        all_users_buckets = [
-            bucket for bucket in bucket_list if bucket_name in bucket]
-        self.log.info("Deleting buckets...")
-        for bucket in all_users_buckets:
-            ACL_OBJ.put_bucket_acl(
-                bucket, grant_full_control=self.group_uri)
-        if all_users_buckets:
-            S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
-        self.log.info("Deleted buckets.")
-        self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -792,7 +771,7 @@ class TestAllUsers:
             "Step 3: Get object acl from that bucket using unsigned account")
         resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
-        assert "FULL_CONTROL" == resp[1]["Grants"][0]["Permission"], resp[1]
+        assert resp[1]["Grants"][0]["Permission"] == "FULL_CONTROL", resp[1]
         self.log.info(
             "ENDED:Read an object ACL from bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission on object")
@@ -824,7 +803,7 @@ class TestAllUsers:
         self.log.info("Step 4: Verifying that object's acl is changed")
         resp = ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
-        assert "WRITE_ACP" == resp[1]["Grants"][0]["Permission"], resp[1]
+        assert resp[1]["Grants"][0]["Permission"] == "WRITE_ACP", resp[1]
         self.log.info("Step 4: Verified that object's acl is changed")
         self.log.info(
             "ENDED:Update an object ACL in bucket without Authentication "
