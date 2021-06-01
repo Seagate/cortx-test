@@ -842,15 +842,16 @@ class ControllerLib:
 
         return "False", "File not found : telnet_operations.py"
 
-    def add_spares_dg(self, drives: list, disk_group: str):
+    def add_spares_dg(self, drives: list, disk_group: str) -> Tuple[bool, str]:
         """
+        Function to add spare drives in disk group
 
-        Args:
-            drives:
-            disk_group:
-
-        Returns:
-
+        :param drives: List of drives to be added
+        :type: list
+        :param disk_group: Disk group in which drives to be added
+        :type: str
+        :return: status, message
+        :rtype: bool, str
         """
         if self.copy:
             try:
@@ -909,12 +910,12 @@ class ControllerLib:
 
     def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, any]:
         """
+        Function to get drives in disk group
 
-        Args:
-            disk_group:
-
-        Returns:
-
+        :param disk_group: Disk group name
+        :type: str
+        :return: status, drive_list
+        :rtype: bool, list
         """
         drive_list = []
         status, drive_dict = self.get_show_disks()
@@ -933,14 +934,14 @@ class ControllerLib:
             LOGGER.error("Failed to get drive details")
             return status, drive_dict
 
-    def get_drive_usage(self, phy_num: list):
+    def get_drive_usage(self, phy_num: list) -> Tuple[bool, dict]:
         """
+        Function to get usage of drives
 
-        Args:
-            phy_num:
-
-        Returns:
-
+        :param phy_num: List of drives
+        :type: list
+        :return: status, dict of usages
+        :rtype: bool, dict
         """
         drive_usage_dict = {}
         status, drive_dict = self.get_show_disks()
@@ -962,9 +963,12 @@ class ControllerLib:
 
     def poll_dg_recon_status(self, disk_group: str) -> Tuple[bool, int]:
         """
+        Function to poll disk group reconstruction progress
 
-        Returns:
-
+        :param disk_group: Disk group in which drives to be added
+        :type: str
+        :return: status, progress percent
+        :rtype: bool, int
         """
         LOGGER.info("Polling disk group reconstruction percent")
         recon_percent = 0

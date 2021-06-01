@@ -409,9 +409,7 @@ class TestStorageAlerts:
     @pytest.mark.tags("22060")
     def test_basic_dg_alerts_22060(self):
         """
-
-        Returns:
-
+        Test alerts when disk group is in degraded/OK health
         """
         LOGGER.info("STARTED: Test Disk group failure faults")
 

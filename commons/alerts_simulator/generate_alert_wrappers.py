@@ -343,9 +343,25 @@ class GenerateAlertWrapper:
     def create_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
                                    h_pwd, input_parameters):
         """
+        Wrapper for generating disk group failure.
 
-        Returns:
-
+        :param encl_ip: IP of the enclosure
+        :type: str
+        :param encl_user: Username of the enclosure
+        :type: str
+        :param encl_pwd: Password of the enclosure
+        :type: str
+        :param host: hostname or IP of the host
+        :type: str
+        :param h_user: Username of the host
+        :type: str
+        :param h_pwd: Password of the host
+        :type: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: Returns stdout response
+        :rtype: bool, str
         """
         enclid = input_parameters["enclid"]
         ctrl_name = input_parameters["ctrl_name"]
@@ -402,9 +418,25 @@ class GenerateAlertWrapper:
     def resolve_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
                                     h_pwd, input_parameters):
         """
+        Wrapper for resolving disk group failure.
 
-        Returns:
-
+        :param encl_ip: IP of the enclosure
+        :type: str
+        :param encl_user: Username of the enclosure
+        :type: str
+        :param encl_pwd: Password of the enclosure
+        :type: str
+        :param host: hostname or IP of the host
+        :type: str
+        :param h_user: Username of the host
+        :type: str
+        :param h_pwd: Password of the host
+        :type: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: Returns stdout response
+        :rtype: bool, str
         """
         enclid = input_parameters["enclid"]
         ctrl_name = input_parameters["ctrl_name"]
