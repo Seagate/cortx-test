@@ -52,7 +52,6 @@ class TestAllUsers:
         self.err_msg = "Access Denied"
         self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
         self.test_file = "{}{}".format("all_users_obj_acl", time.perf_counter_ns())
-        self.mb_count = 5
         self.test_dir_path = os.path.join(os.getcwd(), "testdata")
         if not path_exists(self.test_dir_path):
             resp = make_dirs(self.test_dir_path)
@@ -66,7 +65,7 @@ class TestAllUsers:
             self.bucket_name,
             self.obj_name,
             self.test_file_path,
-            self.mb_count)
+            mb_count=5)
         assert resp[0], resp[1]
         self.log.info(
             "Created a bucket and put an object into bucket successfully")
