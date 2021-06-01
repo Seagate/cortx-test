@@ -40,35 +40,18 @@ NO_AUTH_OBJ_WITHOUT_CERT = S3LibNoAuth(s3_cert_path=None)
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
-        Function will be invoked prior to each test case.
+        Summary: Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        Description: It will perform all prerequisite and cleanup test.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.bucket_name = None
-        cls.log.info("ENDED: setup test suite operations.")
-
-    def setup_method(self):
-        """
-        Function will be invoked before each test case execution.
-
-        It will perform prerequisite test steps if any.
-        """
-        self.log.info("STARTED: Test setup operations.")
-        self.bucket_name = "-".join(["putbk", str(time.time())])
-        self.log.info("ENDED: Test setup operations.")
-
-    def teardown_method(self):
-        """
-        Function will be invoked after running each test case.
-
-        It will clean all resources such as S3 buckets and the objects present into that bucket
-        which are getting created during test execution .
-        """
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: setup test operations.")
+        self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
+        self.log.info("ENDED: setup test operations.")
+        yield
         self.log.info("STARTED: Test teardown operations.")
         status, bktlist = S3T_OBJ.bucket_list()
         assert_utils.assert_true(status, bktlist)
@@ -111,6 +94,7 @@ class TestPutBucket:
                 error.message,
                 error.message)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5838')
     @CTFailOn(error_handler)
@@ -123,6 +107,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5839')
     @CTFailOn(error_handler)
@@ -137,6 +122,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket with ip address format where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5840')
     @CTFailOn(error_handler)
@@ -149,6 +135,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Create multiple buckets where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5841')
     @CTFailOn(error_handler)
