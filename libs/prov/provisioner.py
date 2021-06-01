@@ -42,19 +42,21 @@ class Provisioner:
     def build_job(
             job_name: str,
             parameters: dict = None,
-            token: str = None) -> dict:
+            token: str = None,
+            jen_url: str = prm.JENKINS_URL) -> dict:
         """
         Helper function to start the jenkins job.
         :param job_name: Name of the jenkins job
         :param parameters: Dict of different parameters to be passed
         :param token: Authentication Token for jenkins job
+        :param jen_url: Jenkins url
         :return: build info dict
         """
         username = pswdmanager.decrypt(common_cnst.JENKINS_USERNAME)
         password = pswdmanager.decrypt(common_cnst.JENKINS_PASSWORD)
         try:
             jenkins_server_obj = jenkins.Jenkins(
-                prm.JENKINS_URL, username=username, password=password)
+                jen_url, username=username, password=password)
             LOGGER.debug("Jenkins_server obj: %s", jenkins_server_obj)
             completed_build_number = jenkins_server_obj.get_job_info(
                 job_name)['lastCompletedBuild']['number']
