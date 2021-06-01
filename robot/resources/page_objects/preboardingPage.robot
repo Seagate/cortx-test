@@ -1,8 +1,8 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Keywords ***
 
