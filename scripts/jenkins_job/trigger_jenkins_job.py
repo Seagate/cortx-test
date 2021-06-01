@@ -44,7 +44,7 @@ def trigger_jenkins_job(job_name, jen_url, parameters, token):
         "Job is not successful, please check the url.")
 
 
-def trigger_deploy_destroy__job(job, hostnames, node_ps, token, build='', mgmt_vip=''):
+def trigger_deploy_destroy_job(job, hostnames, node_ps, token, build='', mgmt_vip=''):
     """
     Function for triggering 1/3N deployment and destroy jenkins job
     """
