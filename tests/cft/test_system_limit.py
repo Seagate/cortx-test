@@ -197,8 +197,8 @@ class TestS3IOSystemLimits:
         """
         buckets = []
         for s3_acc in self.created_s3_users:
-            for _ in range(count):
-                bucket_name = self.bucket_prefix + str(int(time.time()))
+            for num in range(count):
+                bucket_name = f"{self.bucket_prefix}-{s3_acc['account_name']}-{str(num)}"
                 self.log.info("Creating new S3 bucket...")
                 res = self.s3_bucket_obj.create_s3_bucket_for_given_account(
                     bucket_name,

@@ -57,11 +57,11 @@ class CortxCliS3AccessKeys(CortxCli):
             if "Access Key" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 response = self.split_table_response(response)
-                response_dict["access_key"] = response[0][1]
-                response_dict["secret_key"] = response[0][2]
+                response_dict["access_key"] = response[0][0]
+                response_dict["secret_key"] = response[0][1]
                 return True, response_dict
 
-        return False, response_dict
+        return False, response
 
     def delete_s3access_key(self,
                             access_key: str,
@@ -102,7 +102,7 @@ class CortxCliS3AccessKeys(CortxCli):
         command = "{0} {1} -f {2}".format(
             commands.CMD_SHOW_ACCESS_KEY, user_name, output_format)
         LOGGER.info("Listing s3accesskey of user %s", user_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])[1]
         if output_format == "json":
             response = self.format_str_to_dict(response)
         if output_format == "xml":

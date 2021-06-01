@@ -40,7 +40,7 @@ DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
-MSG_BUS_READER_PATH = "/root/read_message_bus.py"
+MSG_BUS_READER_PATH = "scripts/server_scripts/read_message_bus.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
@@ -80,6 +80,15 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
+CONF_STORE_ENCL_KEY = "storage_enclosure>enc_614f595926904dd0ab0f68395bfa7f11>controller"
+CONF_PRIMARY_IP = CONF_STORE_ENCL_KEY + ">primary>ip"
+CONF_PRIMARY_PORT = CONF_STORE_ENCL_KEY + ">primary>port"
+CONF_SECONDARY_IP = CONF_STORE_ENCL_KEY + ">secondary>ip"
+CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
+CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
+CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
+CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -255,6 +264,7 @@ JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
 JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
+PIP_CONFIG = "/etc/pip.conf"
 
 #Locking server
 SHARED_LOCK = 'shared'
