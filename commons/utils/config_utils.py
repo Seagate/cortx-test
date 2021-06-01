@@ -206,7 +206,7 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         return None
 
 
-def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
+def update_config_ini(path: str, section: str, key: str, value: str, add_section: bool = True) -> bool:
     """
     Update config file value as per the section and key.
 
@@ -214,6 +214,7 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     :param section: Section name
     :param key: Section key name
     :param value: new value
+    :param add_section: If true will add given missing section in given config
     :return: boolean
     """
     config = ConfigParser()
@@ -223,8 +224,11 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
             config.set(section, key, value)
         except NoSectionError as error:
             LOG.warning(error)
-            config.add_section(section)
-            config.set(section, key, value)
+            if add_section:
+                config.add_section(section)
+                config.set(section, key, value)
+            else:
+                raise error
         with open(path, "w") as configfile:
             config.write(configfile)
     except TypeError as error:
