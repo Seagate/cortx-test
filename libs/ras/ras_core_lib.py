@@ -764,24 +764,6 @@ class RASCoreLib:
 
         return True, f"{host_name} : {result[1]}"
 
-    def toggle_nw_status(self, device, status):
-        """
-        Toggle network device status using ip set command.
-        :param str device: Name of the ip network device
-        :param str status: Expect status like up/down
-        :return: True/False
-        :rtype: Boolean
-        """
-        LOGGER.info(f"Changing {device} n/w device status to {status}")
-        cmd = common_commands.IP_LINK_CMD.format(device, status)
-        res = run_remote_cmd(
-                hostname=self.host, username=self.username, password=self.pwd,
-                cmd=cmd, read_lines=True)
-        LOGGER.debug(f"Command: {cmd}, response: {res}")
-
-        LOGGER.debug(res)
-        return res[0]
-
     def get_conf_store_vals(self, url: str, field: str) -> dict:
         """
         This will get the values from any yaml/json file using conf store
