@@ -50,6 +50,7 @@ class TestProvThreeNode:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
+        cls.setup_type = CMN_CFG["setup_type"]
         cls.build = os.getenv("Build", None)
         cls.build = "{}/{}".format(cls.build,
                                    "prod") if cls.build else "last_successful_prod"
@@ -131,7 +132,8 @@ class TestProvThreeNode:
                 nd_obj.hostname)
             resp = self.prov_obj.install_pre_requisites(
                 node_obj=nd_obj, build_url=self.build_url)
-            assert_utils.assert_true(resp[0], "Provisioner Installation Failed")
+            assert_utils.assert_true(
+                resp[0], "Provisioner Installation Failed")
             LOGGER.info("Provisioner Version: %s", resp[1])
 
         LOGGER.info("Creating config.ini file")
@@ -187,3 +189,57 @@ class TestProvThreeNode:
         for line in resp:
             assert_utils.assert_not_in(
                 test_cfg["stopped"], line, "Some services are not up")
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.tags("TEST-21919")
+    @CTFailOn(error_handler)
+    def test_verify_services_three_node_vm(self):
+        """
+        Prov test for verification of all services on deployed system
+        """
+        LOGGER.info("Check that all cortx services are up")
+        resp = self.nd1_obj.execute_cmd(
+            cmd=common_cmds.CMD_PCS_STATUS_FULL, read_lines=True)
+        LOGGER.info("PCS status: %s", resp)
+        for line in resp:
+            assert_utils.assert_not_in(
+                PROV_CFG["system"]["stopped"],
+                line,
+                "Some services are not up")
+
+        LOGGER.info("Check that all third party services are up")
+        node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
+        for node in node_obj_list:
+            LOGGER.info(
+                "Verifying third party services running on node %s",
+                node.hostname)
+            resp = self.nd_obj.send_systemctl_cmd(
+                command="is-active",
+                services=PROV_CFG["services"]["all"],
+                decode=True,
+                exc=False)
+            assert_utils.assert_equal(
+                resp.count(
+                    PROV_CFG["system"]["active"]), len(
+                    PROV_CFG["services"]["all"]))
+            if self.setup_type == "HW":
+                resp = node.send_systemctl_cmd(
+                    command="is-active",
+                    services=PROV_CFG["services"]["hw_specific"],
+                    decode=True,
+                    exc=False)
+                assert_utils.assert_equal(
+                    resp.count(
+                        PROV_CFG["system"]["active"]), len(
+                        PROV_CFG["services"]["hw_specific"]))
+
+        health_obj_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
+        for node in health_obj_list:
+            LOGGER.info(
+                "Checking all services are running on respective ports")
+            resp = self.prov_obj.verify_services_ports(
+                node, PROV_CFG["service_ports"])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Verified all the services running on node %s",
+                node.hostname)

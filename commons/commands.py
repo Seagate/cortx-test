@@ -373,6 +373,7 @@ CMD_SALT_GET_CLUSTER_ID = "salt '*' grains.get cluster_id"
 CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
+CMD_PCS_STATUS_FULL = "pcs status --full"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
