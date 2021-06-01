@@ -1,17 +1,20 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/dashboardPage.robot
-Resource    ${EXECDIR}/resources/page_objects/alertPage.robot
-Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
-Resource    ${EXECDIR}/resources/page_objects/auditlogPage.robot
-Resource    ${EXECDIR}/resources/page_objects/softwareUpdatepage.robot
-Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource    ${EXECDIR}/resources/common/common.robot
-Variables   ${EXECDIR}/resources/common/common_variables.py
+
+Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
+Resource    ${RESOURCES}/resources/page_objects/alertPage.robot
+Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${RESOURCES}/resources/page_objects/auditlogPage.robot
+Resource    ${RESOURCES}/resources/page_objects/softwareUpdatepage.robot
+Resource    ${RESOURCES}/resources/page_objects/firmwareUpdatepage.robot
+Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource    ${RESOURCES}/resources/common/common.robot
+Variables   ${RESOURCES}/resources/common/common_variables.py
+Variables   ${RESOURCES}/resources/common/common_variables.py
+
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}

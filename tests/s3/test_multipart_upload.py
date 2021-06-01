@@ -304,6 +304,7 @@ class TestMultipartUpload:
             "Initiate Multipart upload for large file with meta data")
 
     @pytest.mark.s3_ops
+    @pytest.mark.release_regression
     @pytest.mark.tags('TEST-5599')
     @CTFailOn(error_handler)
     def test_verify_max_no_parts_listed_using_part_command_2067(self):
