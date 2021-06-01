@@ -22,7 +22,7 @@ class CsmGuiTest:
 		parser.add_argument("-l", "--csm_url", type=str, default="https://localhost:28100/#/",
 							help="CSM GUI URL")
 		parser.add_argument("-b", "--browser", type=str, default="chrome",
-							help="browser")
+							help="chrome|firefox")
 		parser.add_argument("-u", "--csm_user", type=str,
 							help="username")
 		parser.add_argument("-p", "--csm_pass", type=str,
@@ -95,6 +95,7 @@ class CsmGuiTest:
 
 		cmd_line = "robot --timestampoutputs"+reports+url+browser+\
 				   username+headless+password+RESOURCES+tag+directory+";cd .."
+		print(cmd_line)
 		log = open(logFile, "w+")
 		prc = Popen(cmd_line, shell=True, stdout=log, stderr=log)
 		prc.communicate()
