@@ -78,16 +78,18 @@ class TestDataPathValidation:
         self.log.info("ENDED: Setup operations")
         yield
         self.log.info("STARTED: Teardown operations")
-        resp = S3_OBJ.bucket_list()
-        if self.bucket_name in resp[1]:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
-            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleting files created during execution")
         self.log_file.append(self.file_path)
         for file in self.log_file:
             if os.path.exists(file):
                 system_utils.remove_file(file)
         self.log.info("Created files deleted")
+        self.log.info("Delete bucket and it's resources.")
+        resp = S3_OBJ.bucket_list()
+        if self.bucket_name in resp[1]:
+            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Deleted bucket and it's resources.")
         self.log.info("ENDED: Teardown operations")
 
     def create_bucket(self, bkt_name):
@@ -187,6 +189,7 @@ class TestDataPathValidation:
                                    f"S3 IO's failed: {all_data}")
         assert_utils.assert_not_in("panic", ",".join(all_data), f"S3 IO's failed: {all_data}")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8735')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
@@ -202,6 +205,7 @@ class TestDataPathValidation:
             "ENDED: Validate Data-Path on fresh system with object size %s byte",
             obj_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8736')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, 1)])
@@ -209,6 +213,7 @@ class TestDataPathValidation:
         """Validate Data-Path on fresh system with 1 KB object size."""
         self.test_1696(obj_size, block_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8737')
     @pytest.mark.parametrize("obj_size, block_size", [(1, "1M")])
@@ -224,6 +229,7 @@ class TestDataPathValidation:
             "ENDED: Validate Data-Path on fresh system with object size %s MB",
             obj_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8738')
     @pytest.mark.parametrize("obj_size, block_size", [(10, "1M")])
@@ -231,6 +237,7 @@ class TestDataPathValidation:
         """Validate Data-Path on fresh system with 10 MB object size."""
         self.test_1698(obj_size, block_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8739')
     @pytest.mark.parametrize("obj_size, block_size", [(100, "1M")])
@@ -238,6 +245,7 @@ class TestDataPathValidation:
         """Validate Data-Path on fresh system with 100 MB object size."""
         self.test_1698(obj_size, block_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8740')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, "1M")])
@@ -245,6 +253,7 @@ class TestDataPathValidation:
         """Validate Data-Path on fresh system with 1 GB object size."""
         self.test_1698(obj_size, block_size)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8741')
     @pytest.mark.parametrize("obj_size, block_size", [(10000, "1M")])
@@ -359,14 +368,13 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_utils.assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = system_utils.run_remote_cmd(cmd,
                                                       CM_CFG["nodes"][nid]["host"],
                                                       CM_CFG["nodes"][nid]["username"],
                                                       CM_CFG["nodes"][nid]["password"])
-                assert_utils.assert_not_in(cmd_msg, res_cmd, res_cmd)
+                assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -415,7 +423,6 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_utils.assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = self.cmd_msg
         self.log.info("Crash commands: %s", const.CRASH_COMMANDS[0])
         for cmd in const.CRASH_COMMANDS[0]:
             self.log.info(cmd)
@@ -424,7 +431,7 @@ class TestDataPathValidation:
                                                       CM_CFG["nodes"][nid]["host"],
                                                       CM_CFG["nodes"][nid]["username"],
                                                       CM_CFG["nodes"][nid]["password"])
-                assert_utils.assert_not_in(cmd_msg, res_cmd, res_cmd)
+                assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -478,14 +485,13 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_utils.assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = system_utils.run_remote_cmd(cmd,
                                                       CM_CFG["nodes"][nid]["host"],
                                                       CM_CFG["nodes"][nid]["username"],
                                                       CM_CFG["nodes"][nid]["password"])
-                assert_utils.assert_not_in(cmd_msg, res_cmd, res_cmd)
+                assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         if bkt_list:
             resp = S3_OBJ.delete_multiple_buckets(bkt_list)
@@ -540,14 +546,13 @@ class TestDataPathValidation:
         self.log.info("Step 3: checking system stability")
         res = self.health_obj.is_motr_online()
         assert_utils.assert_true(res, f"Failed to check is_motr_online: resp: {res}")
-        cmd_msg = self.cmd_msg
         for cmd in const.CRASH_COMMANDS[0]:
             for nid in range(len(self.nodes)):
                 res_cmd = system_utils.run_remote_cmd(cmd,
                                                       CM_CFG["nodes"][nid]["host"],
                                                       CM_CFG["nodes"][nid]["username"],
                                                       CM_CFG["nodes"][nid]["password"])
-                assert_utils.assert_not_in(cmd_msg, res_cmd, res_cmd)
+                assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         if bkt_list:
             resp = S3_OBJ.delete_multiple_buckets(bkt_list)

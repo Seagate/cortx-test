@@ -18,19 +18,16 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 """All User Bucket ACL test module."""
+
 import os
 import logging
 import pytest
 import time
 from commons.ct_fail_on import CTFailOn
+from commons.params import TEST_DATA_FOLDER
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.config_utils import read_yaml
-from commons.utils.assert_utils import assert_true
-from commons.utils.assert_utils import assert_in
-from commons.utils.assert_utils import assert_false
-from commons.utils.assert_utils import assert_equal
-from commons.utils.assert_utils import assert_not_in
+from commons.utils import assert_utils
 from commons.utils import system_utils
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import S3LibNoAuth
@@ -44,76 +41,41 @@ NO_AUTH_OBJ = S3LibNoAuth()
 class TestAllUsers:
     """All Users Testsuite"""
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
         Function will be invoked prior to each test case.
 
         It will perform all prerequisite test suite steps if any.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.test_file = "all_users.txt"
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "TestAllUsers")
-        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
-        if not os.path.exists(cls.test_dir_path):
-            os.makedirs(cls.test_dir_path)
-            cls.log.info("Created path: %s", cls.test_dir_path)
-        cls.log.info("Test file path: %s", cls.test_file_path)
-
-        cls.mb_count = 5
-        cls.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
-        cls.log.info("ENDED: setup test suite operations.")
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if system_utils.path_exists(cls.test_dir_path):
-            system_utils.remove_dirs(cls.test_dir_path)
-        cls.log.info("Cleanup test directory: %s", cls.test_dir_path)
-        cls.log.info("ENDED: teardown test suite operations.")
-
-    def setup_method(self):
-        """
-        This function will be invoked before running each test case.
-
-        It will perform all prerequisite steps required for test execution.
-        """
-        self.log.info("STARTED: Setup operations")
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: setup test suite operations.")
+        self.test_file = "all_users{}.txt".format(time.perf_counter_ns())
+        self.test_dir_path = os.path.join(
+            os.getcwd(), TEST_DATA_FOLDER, "TestAllUsers")
+        self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
+        if not os.path.exists(self.test_dir_path):
+            os.makedirs(self.test_dir_path)
+            self.log.info("Created path: %s", self.test_dir_path)
+        self.log.info("Test file path: %s", self.test_file_path)
+        self.mb_count = 5
+        self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
+        self.log.info("ENDED: setup test suite operations.")
+        self.bucket_name = "allusersbktacl-bkt{}".format(time.perf_counter_ns())
+        self.obj_name = "testobj{}".format(time.perf_counter_ns())
+        self.new_obj_name = "newtestobj{}".format(time.perf_counter_ns())
+        self.log.info("ENDED: Setup operations")
+        yield
+        self.log.info("STARTED: Teardown operations")
         if system_utils.path_exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
-
-        self.timestamp = time.time()
-        self.bucket_name = "allusersbktacl-bkt{}".format(str(time.time()))
-        self.obj_name = "testobj{}".format(str(time.time()))
-        self.new_obj_name = "newtestobj{}".format(str(time.time()))
-        self.log.info("ENDED: Setup operations")
-
-    def teardown_method(self):
-        """
-        This function will be invoked after running each test case.
-
-        It will clean all resources which are getting created during
-        test execution such as S3 buckets and the objects present into that bucket.
-        """
-        self.log.info("STARTED: Teardown operations")
-        bkt_name_prefix = "allusersbktacl-bkt"
         bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        all_users_buckets = [
-            bucket for bucket in bucket_list if bkt_name_prefix in bucket]
-        for bucket in all_users_buckets:
+        if self.bucket_name in bucket_list:
             ACL_OBJ.put_bucket_acl(
-                bucket,
+                self.bucket_name,
                 grant_full_control=self.group_uri)
-        if all_users_buckets:
-            resp = S3_TEST_OBJ.delete_multiple_buckets(all_users_buckets)
-            assert_true(resp[0], resp[1])
+            resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Teardown operations")
 
     def create_bucket_put_object(
@@ -131,16 +93,17 @@ class TestAllUsers:
         """
         self.log.info("Creating a bucket %s", bucket_name)
         resp = S3_TEST_OBJ.create_bucket(bucket_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Created a bucket %s", bucket_name)
         system_utils.create_file(file_path, mb_count)
         self.log.info(
             "Uploading an object %s to bucket %s", obj_name, bucket_name)
         resp = S3_TEST_OBJ.put_object(bucket_name, obj_name, file_path)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Uploaded an object %s to bucket %s", obj_name, bucket_name)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6094')
     @CTFailOn(error_handler)
@@ -158,12 +121,12 @@ class TestAllUsers:
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
                                       grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -172,7 +135,7 @@ class TestAllUsers:
             "Step 4: Trying to list objects of a bucket from "
             "other unsigned user")
         resp = NO_AUTH_OBJ.object_list(self.bucket_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Listed objects of a bucket from other "
             "unsigned user successfully")
@@ -180,6 +143,7 @@ class TestAllUsers:
             "ENDED: Check listing of objects in bucket without Authentication"
             " when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6092')
     @CTFailOn(error_handler)
@@ -196,12 +160,12 @@ class TestAllUsers:
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
                                       grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -212,9 +176,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.put_object(self.bucket_name, "testobj",
                                           self.test_file_path)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -225,6 +189,7 @@ class TestAllUsers:
             "ENDED: Put an object in bucket without Authentication when"
             " AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6090')
     @CTFailOn(error_handler)
@@ -242,12 +207,12 @@ class TestAllUsers:
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
                                       grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -256,9 +221,9 @@ class TestAllUsers:
             "Step 4: Trying to delete an object from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.delete_object(self.bucket_name, self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -268,6 +233,7 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication "
             "when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6088')
     @CTFailOn(error_handler)
@@ -285,12 +251,12 @@ class TestAllUsers:
         self.log.info("Step 2: Changing bucket permission to AllUsers READ")
         resp = ACL_OBJ.put_bucket_acl(self.bucket_name,
                                       grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -299,9 +265,9 @@ class TestAllUsers:
             "Step 4: Trying to read an object's ACL from other unsigned user")
         try:
             resp = NO_AUTH_OBJ.get_object_acl(self.bucket_name, self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -311,6 +277,7 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6086')
     @CTFailOn(error_handler)
@@ -331,13 +298,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -346,9 +313,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -358,6 +325,7 @@ class TestAllUsers:
             "ENDED: Read a bucket ACL of a bucket without Authentication "
             "when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6084')
     @CTFailOn(error_handler)
@@ -378,13 +346,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -394,9 +362,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.put_bucket_acl(
                 self.bucket_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -406,6 +374,7 @@ class TestAllUsers:
             "ENDED: Update a bucket ACL for a bucket without Authentication "
             "when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6082')
     @CTFailOn(error_handler)
@@ -426,13 +395,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ",
             resp[1])
@@ -444,9 +413,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.obj_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -456,6 +425,7 @@ class TestAllUsers:
             "ENDED: Update an object ACL from bucket without Authentication"
             " when AllUsers have READ permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6080')
     @CTFailOn(error_handler)
@@ -476,13 +446,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -492,9 +462,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.object_list(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -504,6 +474,7 @@ class TestAllUsers:
             "ENDED: Listing of objects in bucket without Authentication when"
             " AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6078')
     @CTFailOn(error_handler)
@@ -524,13 +495,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -541,7 +512,7 @@ class TestAllUsers:
             self.bucket_name,
             self.new_obj_name,
             self.test_file_path)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: An object %s is put to bucket %s successfully",
             self.new_obj_name,
@@ -550,14 +521,14 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             acl="private")
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Bucket ACL is set to 'private' successfully")
         self.log.info(
             "Step 6: Reading objects of bucket %s",
             self.bucket_name)
         resp = S3_TEST_OBJ.object_list(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 6: Read objects of bucket %s successfully",
             self.bucket_name)
@@ -565,6 +536,7 @@ class TestAllUsers:
             "ENDED: Create an object in bucket without Authentication when "
             "AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6076')
     @CTFailOn(error_handler)
@@ -585,13 +557,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -601,7 +573,7 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.delete_object(
             self.bucket_name,
             self.obj_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Deleted an object of a bucket from other"
             "unsigned user successfully")
@@ -609,6 +581,7 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication when "
             "AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6074')
     @CTFailOn(error_handler)
@@ -629,13 +602,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -645,9 +618,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.get_object_acl(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -657,6 +630,7 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication "
             "when AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6072')
     @CTFailOn(error_handler)
@@ -677,13 +651,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -692,9 +666,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -704,6 +678,7 @@ class TestAllUsers:
             "ENDED: Read a bucket ACL from bucket without Authentication"
             " when AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6070')
     @CTFailOn(error_handler)
@@ -725,13 +700,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -743,9 +718,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.put_bucket_acl(
                 self.bucket_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -756,6 +731,7 @@ class TestAllUsers:
             "ENDED: Update a bucket ACL from bucket without Authentication "
             "when AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6068')
     @CTFailOn(error_handler)
@@ -777,12 +753,12 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers WRITE")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE",
             resp[1])
@@ -794,9 +770,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.obj_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -807,6 +783,7 @@ class TestAllUsers:
             "ENDED: Update an object ACL from bucket without Authentication"
             " when AllUsers have WRITE permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6066')
     @CTFailOn(error_handler)
@@ -830,13 +807,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -845,9 +822,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.object_list(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -857,6 +834,7 @@ class TestAllUsers:
             "ENDED: Check listing of objects in bucket without Authentication"
             " when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6064')
     @CTFailOn(error_handler)
@@ -880,13 +858,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -898,9 +876,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.new_obj_name,
                 self.test_file_path)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -910,6 +888,7 @@ class TestAllUsers:
             "ENDED: Create an object in bucket without Authentication "
             "when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6062')
     @CTFailOn(error_handler)
@@ -933,13 +912,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -950,9 +929,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.delete_object(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -962,6 +941,7 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication "
             "when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6060')
     @CTFailOn(error_handler)
@@ -985,13 +965,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -1003,9 +983,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.get_object_acl(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1015,6 +995,7 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication"
             " when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6058')
     @CTFailOn(error_handler)
@@ -1038,13 +1019,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -1053,13 +1034,14 @@ class TestAllUsers:
             "Step 4: Trying to read bucket's ACL from other unsigned user")
         resp = NO_AUTH_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4: Read bucket's ACL from other unsigned user successfully")
         self.log.info(
             "ENDED: Read a bucket ACL from bucket without Authentication when"
             " AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6056')
     @CTFailOn(error_handler)
@@ -1083,13 +1065,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -1100,9 +1082,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.put_bucket_acl(
                 self.bucket_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1112,6 +1094,7 @@ class TestAllUsers:
             "ENDED: Update a bucket ACL from bucket without Authentication"
             " when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6054')
     @CTFailOn(error_handler)
@@ -1135,13 +1118,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_read_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "READ_ACP",
             resp[1])
@@ -1153,9 +1136,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.obj_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1165,6 +1148,7 @@ class TestAllUsers:
             "ENDED: Update an object ACL from bucket without Authentication "
             "when AllUsers have READ_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6052')
     @CTFailOn(error_handler)
@@ -1188,14 +1172,14 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1205,9 +1189,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.object_list(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1217,6 +1201,7 @@ class TestAllUsers:
             "ENDED: Check listing of objects in bucket without Authentication "
             "when AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6050')
     @CTFailOn(error_handler)
@@ -1240,14 +1225,14 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1259,9 +1244,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.new_obj_name,
                 self.test_file_path)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1271,6 +1256,7 @@ class TestAllUsers:
             "ENDED: Create an object in bucket without Authentication when "
             "AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6048')
     @CTFailOn(error_handler)
@@ -1294,14 +1280,14 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_equal(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1312,9 +1298,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.delete_object(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1324,6 +1310,7 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication when "
             "AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6044')
     @CTFailOn(error_handler)
@@ -1347,13 +1334,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1364,9 +1351,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.get_object_acl(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1376,6 +1363,7 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication when "
             "AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6042')
     @CTFailOn(error_handler)
@@ -1399,13 +1387,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1415,9 +1403,9 @@ class TestAllUsers:
         try:
             resp = NO_AUTH_OBJ.get_bucket_acl(
                 self.bucket_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1427,6 +1415,7 @@ class TestAllUsers:
             "ENDED: Read a bucket ACL from bucket without Authentication "
             "when AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6040')
     @CTFailOn(error_handler)
@@ -1450,13 +1439,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1466,10 +1455,10 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1480,6 +1469,7 @@ class TestAllUsers:
             "ENDED: Update a bucket ACL from bucket without Authentication"
             " when AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6038')
     @CTFailOn(error_handler)
@@ -1503,13 +1493,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_write_acp=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "WRITE_ACP",
             resp[1])
@@ -1521,9 +1511,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.obj_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1533,6 +1523,7 @@ class TestAllUsers:
             "ENDED: Update an object ACL from bucket without Authentication"
             " when AllUsers have WRITE_ACP permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6036')
     @CTFailOn(error_handler)
@@ -1556,13 +1547,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1571,8 +1562,8 @@ class TestAllUsers:
             "Step 4: Listing objects in bucket through other unsigned account")
         resp = NO_AUTH_OBJ.object_list(
             self.bucket_name)
-        assert_true(resp[0], resp[1])
-        assert_in(
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(
             self.obj_name, str(
                 resp[1]), resp[1])
         self.log.info(
@@ -1582,6 +1573,7 @@ class TestAllUsers:
             "ENDED: Listing of objects in bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6033')
     @CTFailOn(error_handler)
@@ -1605,13 +1597,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1622,10 +1614,10 @@ class TestAllUsers:
             self.bucket_name,
             self.new_obj_name,
             self.test_file_path)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.object_list(
             self.bucket_name)
-        assert_in(
+        assert_utils.assert_in(
             self.new_obj_name, str(
                 resp[1]), resp[1])
         self.log.info(
@@ -1635,6 +1627,7 @@ class TestAllUsers:
             "ENDED: Put an object in bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6031')
     @CTFailOn(error_handler)
@@ -1658,13 +1651,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1674,10 +1667,10 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.delete_object(
             self.bucket_name,
             self.obj_name)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = NO_AUTH_OBJ.object_list(
             self.bucket_name)
-        assert_not_in(
+        assert_utils.assert_not_in(
             self.obj_name,
             str(resp[1]), resp[1])
         self.log.info(
@@ -1686,6 +1679,7 @@ class TestAllUsers:
             "ENDED: Delete an object from bucket without Authentication when"
             " AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6029')
     @CTFailOn(error_handler)
@@ -1709,13 +1703,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1726,9 +1720,9 @@ class TestAllUsers:
             resp = NO_AUTH_OBJ.get_object_acl(
                 self.bucket_name,
                 self.obj_name)
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
@@ -1738,6 +1732,7 @@ class TestAllUsers:
             "ENDED: Read an object ACL from bucket without Authentication when"
             " AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6026')
     @CTFailOn(error_handler)
@@ -1761,13 +1756,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1776,7 +1771,7 @@ class TestAllUsers:
             "Step 4: Reading bucket ACL through other unsigned account")
         resp = NO_AUTH_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1787,6 +1782,7 @@ class TestAllUsers:
             "ENDED: Read a bucket ACL from bucket without Authentication "
             "when AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6024')
     @CTFailOn(error_handler)
@@ -1810,13 +1806,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1826,10 +1822,10 @@ class TestAllUsers:
         resp = NO_AUTH_OBJ.put_bucket_acl(
             self.bucket_name,
             acl="private")
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1840,6 +1836,7 @@ class TestAllUsers:
             "ENDED: Update a bucket ACL from bucket without Authentication"
             " when AllUsers have FULL_CONTROL permission")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-6021')
     @CTFailOn(error_handler)
@@ -1863,13 +1860,13 @@ class TestAllUsers:
         resp = ACL_OBJ.put_bucket_acl(
             self.bucket_name,
             grant_full_control=self.group_uri)
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = ACL_OBJ.get_bucket_acl(
             self.bucket_name)
-        assert_equal(
+        assert_utils.assert_equal(
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
@@ -1881,9 +1878,9 @@ class TestAllUsers:
                 self.bucket_name,
                 self.obj_name,
                 acl="private")
-            assert_false(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_in(
+            assert_utils.assert_in(
                 "AccessDenied",
                 error.message,
                 error.message)
