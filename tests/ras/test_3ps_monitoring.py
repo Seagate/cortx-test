@@ -61,6 +61,7 @@ class Test3PSvcMonitoring:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
+        cls.svc_path_dict = {}
         if CMN_CFG["setup_type"] == "VM":
             cls.external_svcs = const.SVCS_3P_ENABLED_VM
         else:
@@ -107,8 +108,7 @@ class Test3PSvcMonitoring:
 
         LOGGER.info("Store copy of config files for all the 3rd party services")
         for svc in self.external_svcs:
-            self.sw_alert_obj.store_restore_svc_config(
-                svc, self.host, self.uname, self.passwd, store = True)
+            self.svc_path_dict[svc] = self.sw_alert_obj.store_svc_config(svc)
 
         self.starttime = time.time()
         if self.start_msg_bus:
@@ -127,12 +127,13 @@ class Test3PSvcMonitoring:
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
 
-        if not self.restored_config:
-            LOGGER.info("Restoring the service configuration in Teardown")
-            self.sw_alert_obj.restore_svc_config()
-            op = self.sw_alert_obj.recover_svc(self.restored_svc)
+        LOGGER.info("Restore service config for all the 3rd party services")
+        self.sw_alert_obj.restore_svc_config(teardown_restore=True, svc_path_dict=self.svc_path_dict)
+        for svc in self.external_svcs:
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
             LOGGER.info("Service recovery details : %s", op)
-            assert op["state"] == "active", "Unable to recover the service"
+            assert op["state"] == "active", f"Unable to recover the {svc} service"
+        LOGGER.info("All 3rd party services recovered and in active state.")
 
         if self.changed_level:
             kv_store_path = LOG_STORE_PATH

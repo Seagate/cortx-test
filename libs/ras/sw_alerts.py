@@ -406,33 +406,18 @@ class SoftwareAlert(RASCoreLib):
                     op[section].update({key: txt[-1]})
         return op
 
-    def store_restore_svc_config(self, svc, store: bool = True):
+    def store_svc_config(self, svc):
         """
         Store OR Restore the service config file depending on store param value
         :param svc: service name whose file needs to be store or restored
         :param store: If true generate copy service config file with svc.servicecopy name
         """
+
         fpath = self.get_svc_status([svc])[svc]["path"]
-        self.svc_path = fpath
-        dpath, fname = os.path.split(self.svc_path)
-        tmp_svc_conf_copy = os.path.join(dpath, fname + "copy")
-
-        if store:
-            command = "cp -u " + self.svc_path + " " + tmp_svc_conf_copy
-            self.node_utils.execute_cmd(cmd=command)
-            LOGGER.info("Performed {} on {}".format(command, self.host))
-        else:
-            # Remove modified service configuration file
-            self.node_utils.remove_file(self.svc_path)
-
-            # Restore copy config to with original service configuration file name
-            command = "cp -u " + tmp_svc_conf_copy + " " + self.svc_path
-            self.node_utils.execute_cmd(cmd=command)
-            LOGGER.info("Performed {} on {}".format(command, self.host))
-            self.apply_svc_setting()
-
-            # Remove copy service configuration file
-            self.node_utils.remove_file(tmp_svc_conf_copy)
+        self.node_utils.make_dir(const.SVC_COPY_CONFG_PATH)
+        res = self.cp_file(path=fpath, backup_path=const.SVC_COPY_CONFG_PATH)
+        LOGGER.info("Copy file resp : %s", res)
+        return fpath
 
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
@@ -466,14 +451,22 @@ class SoftwareAlert(RASCoreLib):
         self.node_utils.execute_cmd(cmd=reload_systemctl)
         LOGGER.info("Successfully reloaded systemctl.")
 
-    def restore_svc_config(self):
+    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict={}):
         """Removes the changed configuration file and restores the original one.
         """
         LOGGER.info("Restoring the service configuration...")
-        try:
-            self.node_utils.remove_file(self.svc_path)
-        except FileNotFoundError:
-            LOGGER.info("Ignoring file %s not found", self.svc_path)
-        self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
-        self.apply_svc_setting()
+        if not teardown_restore:
+            try:
+                self.node_utils.remove_file(self.svc_path)
+            except FileNotFoundError:
+                LOGGER.info("Ignoring file %s not found", self.svc_path)
+            self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
+            self.apply_svc_setting()
+        else:
+            for svc_path_val in svc_path_dict.values():
+                dpath, fname = os.path.split(svc_path_val)
+                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname
+                self.cp_file(path=tmp_svc_path, backup_path=svc_path_val)
+            self.apply_svc_setting()
+            self.node_utils.delete_dir_sftp(const.SVC_COPY_CONFG_PATH)
         LOGGER.info("Service configuration is successfully restored.")
