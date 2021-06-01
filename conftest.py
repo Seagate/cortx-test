@@ -52,6 +52,8 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
+from commons.helpers.health_helper import Health
+from commons.utils import assert_utils
 from config import CMN_CFG
 
 FAILURES_FILE = "failures.txt"
@@ -465,6 +467,7 @@ def pytest_collection(session):
     Globals.LOCAL_RUN = _local
     Globals.TP_TKT = config.option.tp_ticket
     Globals.BUILD = config.option.build
+    Globals.TARGET = config.option.target
     if _distributed:
         required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
@@ -704,6 +707,76 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
             LOGGER.info("Supporting log files are uploaded at location : %s", resp[1])
         else:
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
+
+
+def check_cortx_cluster_health():
+    """Check the cluster health before each test is picked up for run."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                            username=node['username'],
+                            password=node['password'])
+        result = health.check_node_health()
+        assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
+        health.disconnect()
+    LOGGER.info("Cluster status is healthy.")
+
+
+def check_cluster_storage():
+    """Checks nodes storage and accepts till 98 % occupancy."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                        username=node['username'],
+                        password=node['password'])
+        ha_total, ha_avail, ha_used = health.get_sys_capacity()
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
+        health.disconnect()
+
+
+def pytest_runtest_logstart(nodeid, location):
+    """
+    Hook used to identify if it is good to start next test.
+    Should also work with parallel execution.
+    :param nodeid: Node identifier for a test case. An absolute class path till function.
+    :param location: file, line, test name.
+    :return:
+    """
+    current_suite = None
+    path = "file://" + os.path.realpath(location[0])
+    if location[1]:
+        path += ":" +str(location[1] + 1)
+    current_file = nodeid.split("::")[0]
+    file_suite = current_file.split("/")[-1]
+    if location[2].find(".") != -1:
+        suite = location[2].split(".")[0]
+        name = location[2].split(".")[-1]
+    else:
+        name = location[2]
+        splitted = nodeid.split("::")
+        try:
+            ind = splitted.index(name.split("[")[0])
+        except ValueError:
+            try:
+                ind = splitted.index(name)
+            except ValueError:
+                ind = 0
+        if splitted[ind-1] == current_file:
+            suite = None
+        else:
+            suite = current_suite
+    # Check health status of target
+    target = Globals.TARGET
+    try:
+        check_cortx_cluster_health()
+        check_cluster_storage()
+    except (AssertionError, Exception) as fault:
+        pytest.exit(f'Health check failed for cluster {target}')
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
