@@ -60,6 +60,8 @@ class AlertType(Enum, settings=NoAlias):
     RAID_REMOVE_DISK_ALERT = 6
     RAID_ADD_DISK_ALERT = 6
     IEM_TEST_ERROR_ALERT = 7
+    MGMT_NW_PORT_FAULT = 8
+    MGMT_NW_PRT_FAULT_RESOLVED = 9
 
 
 class GenerateAlertLib:
@@ -143,6 +145,16 @@ class GenerateAlertLib:
                         f'input_parameters={input_parameters})'},
             7: {
                 'cmd': 'iem_alerts',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            8: {
+                'cmd': 'create_mgmt_network_fault',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            9: {
+                'cmd': 'resolve_mgmt_network_fault',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'}

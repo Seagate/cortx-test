@@ -415,19 +415,19 @@ class RASTestLib(RASCoreLib):
         """
         common_cfg = RAS_VAL["ras_sspl_alert"]
         try:
-            LOGGER.info("Checking status of sspl and rabbitmq services")
+            LOGGER.info("Checking status of sspl and kafka services")
             resp = self.s3obj.get_s3server_service_status(
                 common_cfg["service"]["sspl_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             resp = self.s3obj.get_s3server_service_status(
-                common_cfg["service"]["rabitmq_service"], host=self.host,
+                common_cfg["service"]["kafka_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             LOGGER.info(
-                "Verified sspl and rabitmq services are in running state")
+                "Verified sspl and kafka services are in running state")
             time.sleep(common_cfg["sleep_val"])
 
             LOGGER.info("Fetching sspl alert response")
@@ -447,7 +447,7 @@ class RASTestLib(RASCoreLib):
                 "======================================================")
 
             LOGGER.info(
-                "Checking if alerts are generated on rabbitmq channel")
+                "Checking if alerts are generated on message bus")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
             self.node_utils.execute_cmd(cmd=cmd,
