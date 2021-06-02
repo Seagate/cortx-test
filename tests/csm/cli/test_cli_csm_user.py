@@ -122,7 +122,6 @@ class TestCliCSMUser:
                 self.logger.info("Deleted CSM users %s", user)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.close_connection()
-        del self.CSM_USER
         self.logger.info("Ended : Teardown operations for test function")
 
     @pytest.mark.cluster_user_ops

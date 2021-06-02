@@ -60,7 +60,6 @@ def teardown_function():
     LOGGER.info("STARTED : Teardown operations for test function")
     ALERT_OBJ.logout_cortx_cli()
     ALERT_OBJ.close_connection()
-    del ALERT_OBJ
     LOGGER.info("Ended : Teardown operations for test function")
 
 

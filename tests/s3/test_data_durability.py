@@ -109,7 +109,6 @@ class TestDataDurability:
                 self.log.info("Deleted %s account successfully", acc)
         self.log.info("Deleted the IAM accounts and users")
         self.cli_obj.close_connection()
-        del self.cli_obj
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
