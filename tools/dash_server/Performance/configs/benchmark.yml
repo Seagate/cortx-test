@@ -2,8 +2,10 @@ S3bench:
   object_size:
     - '4Kb'
     - '100Kb'
+    - '256Kb'
     - '1Mb'
     - '5Mb'
+    - '16Mb'
     - '36Mb'
     - '64Mb'
     - '128Mb'
@@ -15,8 +17,10 @@ Hsbench:
   object_size:
     - '4Kb'
     - '100Kb'
+    - '256Kb'
     - '1Mb'
     - '5Mb'
+    - '16Mb'
     - '36Mb'
     - '64Mb'
     - '128Mb'
@@ -46,8 +50,10 @@ Cosbench:
   object_size:
     - '4Kb'
     - '100Kb'
+    - '256Kb'
     - '1Mb'
     - '5Mb'
+    - '16Mb'
     - '36Mb'
     - '64Mb'
     - '128Mb'
