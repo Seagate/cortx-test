@@ -195,3 +195,31 @@ class TestProvSingleNode:
         LOGGER.info(
             "Verified all the services running on node %s",
             self.nd_obj.hostname)
+
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.singlenode
+    @pytest.mark.tags("TEST-xxxx")
+    @CTFailOn(error_handler)
+    def test_confstore_validate_single_node(self):
+        """
+        Test is for confstore keys validation on successful deployment from confstore template
+        as well as provisioner pillar commands.
+        """
+        LOGGER.info("Started: confstore keys validation.")
+        LOGGER.info("Check that the cluster is up and running.")
+        test_cfg = PROV_CFG["system"]
+        cmd = common_cmds.PCS_STATUS_CMD
+        resp = self.nd_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.info("PCS status: %s", resp)
+        for line in resp:
+            assert_utils.assert_not_in(
+                test_cfg["stopped"], line, "Some services are not up.")
+        LOGGER.info("PCS looks clean.")
+
+        for key in PROV_CFG["confstore_list"]:
+            LOGGER.info("Verification of {} from pillar as well as confstore template.".format(key))
+            output = self.prov_obj.confstore_verification(key, self.nd_obj)
+            assert_utils.assert_true(output, "Key from pillar and confstore doesn't match.")
+
+        LOGGER.info("Completed: confstore keys validation.")

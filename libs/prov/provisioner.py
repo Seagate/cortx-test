@@ -25,6 +25,7 @@ import shutil
 import logging
 import time
 import jenkins
+import re
 from commons import constants as common_cnst
 from commons import commands as common_cmd
 from commons import params as prm
@@ -403,3 +404,42 @@ class Provisioner:
                 LOGGER.error(error.args[0])
 
             return False, error
+
+    @staticmethod
+    def confstore_verification(key: str, node_obj):
+        """
+        Helper function to verify the confstore key
+        param: key: key to be verified
+        param: node_obj: node object for remote execution
+        return:
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        node = 1
+        num = 0
+        try:
+            cmd = common_cmd.CMD_PILLAR_DATA.format(key)
+            resp = node_obj.execute_cmd(cmd, read_lines=True)
+            LOGGER.debug("pillar command output for {}: {}".format(key, resp))
+            while num < len(resp):
+                chk = "srvnode-{}:".format(node)
+                data = ansi_escape.sub('', resp[num])
+                node_val = data.strip()
+                data1 = ansi_escape.sub('', resp[num + 1])
+                out = data1.strip()
+                if node_val == chk:
+                    LOGGER.info("{} for {} is {}".format(key, chk, resp[num + 1]))
+                    cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
+                    resp1 = node_obj.execute_cmd(cmd, read_lines=True)
+                    if resp1:
+                        node += 1
+                        num += 2
+                    else:
+                        return False
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.install_pre_requisites.__name__)
+            return False, error
+
+        return True, resp
+

@@ -345,6 +345,8 @@ CMD_SETUP_PRVSNR = "provisioner setup_provisioner --logfile " \
 CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
 CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
 CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
+CMD_PILLAR_DATA = "salt \"*\" grains.get {}"
+CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
