@@ -74,6 +74,7 @@ class TestStorageAlerts:
         # Enable this flag for starting RMQ channel
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
+        cls.alert_types = RAS_TEST_CFG["alert_types"]
 
         field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",
                       "CONF_SECONDARY_IP", "CONF_SECONDARY_PORT",
@@ -103,12 +104,6 @@ class TestStorageAlerts:
             assert response[0], response[1]
         LOGGER.info("Done Checking SSPL state file")
 
-        # Revisit when R2 HW is available.
-        # LOGGER.info("Restarting sspl service")
-        # resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        # assert resp, "Failed to restart sspl-ll"
-        # time.sleep(self.cm_cfg["sspl_timeout"])
-
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
@@ -125,13 +120,12 @@ class TestStorageAlerts:
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        # Revisit when R2 HW is available.
         # services = [service["sspl_service"], service["kafka_service"],
         #             service["csm_web"], service["csm_agent"]]
-        resp = self.s3obj.get_s3server_service_status(
-            service=service["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
+        time.sleep(self.cm_cfg["sleep_val"])
 
         # Revisit when R2 HW is available.
         # for svc in services:
@@ -201,16 +195,12 @@ class TestStorageAlerts:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
-        # Revisit when R2 HW is available.
-        # self.health_obj.restart_pcs_resource(
-        #     resource=self.cm_cfg["sspl_resource_id"])
-        # time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        resp = self.s3obj.get_s3server_service_status(
-            service=service["sspl_service"], host=self.host, user=self.uname,
-            pwd=self.passwd)
-        assert resp[0], resp[1]
+        self.node_obj.send_systemctl_cmd(command="restart",
+                                         services=service["sspl_service"],
+                                         decode=True)
+        time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
 
@@ -442,18 +432,18 @@ class TestStorageAlerts:
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
             LOGGER.info("Step 2: Verifying alert logs for fault alert ")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step2'] = 'Fail'
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
-        # Revisit when R2 HW is available.
+        # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault"],
+        #                                               self.alert_types["fault"],
         #                                               False,
         #                                               test_cfg["resource_type"])
         #
@@ -483,18 +473,18 @@ class TestStorageAlerts:
             LOGGER.info("Step 5: Verifying alert logs for fault_resolved "
                         "alert ")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_fault_resolved"]]
+                          self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step5'] = 'Fail'
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 5: Checked generated alert logs")
 
-        # Revisit when R2 HW is available.
+        # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 6: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault_resolved"],
+        #                                               self.alert_types["resolved"],
         #                                               True,
         #                                               test_cfg["resource_type"])
         #
@@ -546,7 +536,7 @@ class TestStorageAlerts:
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
             LOGGER.info("Step 2: Verifying alert logs for fault alert ")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step2'] = 'Fail'
@@ -557,7 +547,7 @@ class TestStorageAlerts:
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault"],
+        #                                               self.alert_types["fault"],
         #                                               False,
         #                                               test_cfg["resource_type"])
         #
@@ -622,7 +612,7 @@ class TestStorageAlerts:
             LOGGER.info("Step 7: Verifying alert logs for fault_resolved "
                         "alert ")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_fault_resolved"]]
+                          self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step7'] = 'Fail'
@@ -633,7 +623,7 @@ class TestStorageAlerts:
         # LOGGER.info("Step 8: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault_resolved"],
+        #                                               self.alert_types["resolved"],
         #                                               True,
         #                                               test_cfg["resource_type"])
         #
@@ -686,7 +676,7 @@ class TestStorageAlerts:
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
             LOGGER.info("Step 2: Verifying alert logs for fault alert ")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_fault"]]
+            alert_list = [test_cfg["resource_type"], self.alert_types["fault"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step2'] = 'Fail'
@@ -697,7 +687,7 @@ class TestStorageAlerts:
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault"],
+        #                                               self.alert_types["fault"],
         #                                               False,
         #                                               test_cfg["resource_type"])
         #
@@ -763,7 +753,7 @@ class TestStorageAlerts:
             LOGGER.info("Step 8: Verifying alert logs for fault_resolved "
                         "alert ")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_fault_resolved"]]
+                          self.alert_types["resolved"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step8'] = 'Fail'
@@ -774,7 +764,7 @@ class TestStorageAlerts:
         # LOGGER.info("Step 9: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
-        #                                               test_cfg["alert_fault_resolved"],
+        #                                               self.alert_types["resolved"],
         #                                               True,
         #                                               test_cfg["resource_type"])
         #

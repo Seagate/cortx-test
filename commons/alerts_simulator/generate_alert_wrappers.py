@@ -28,10 +28,10 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
+from commons.utils.system_utils import run_remote_cmd, toggle_nw_status
+from commons import commands
 
 LOGGER = logging.getLogger(__name__)
-
-RAS_TEST_OBJ = RASTestLib()
 
 
 class GenerateAlertWrapper:
@@ -343,9 +343,25 @@ class GenerateAlertWrapper:
     def create_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
                                    h_pwd, input_parameters):
         """
+        Wrapper for generating disk group failure.
 
-        Returns:
-
+        :param encl_ip: IP of the enclosure
+        :type: str
+        :param encl_user: Username of the enclosure
+        :type: str
+        :param encl_pwd: Password of the enclosure
+        :type: str
+        :param host: hostname or IP of the host
+        :type: str
+        :param h_user: Username of the host
+        :type: str
+        :param h_pwd: Password of the host
+        :type: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: Returns stdout response
+        :rtype: bool, str
         """
         enclid = input_parameters["enclid"]
         ctrl_name = input_parameters["ctrl_name"]
@@ -404,9 +420,25 @@ class GenerateAlertWrapper:
     def resolve_disk_group_failures(encl_ip, encl_user, encl_pwd, host, h_user,
                                     h_pwd, input_parameters):
         """
+        Wrapper for resolving disk group failure.
 
-        Returns:
-
+        :param encl_ip: IP of the enclosure
+        :type: str
+        :param encl_user: Username of the enclosure
+        :type: str
+        :param encl_pwd: Password of the enclosure
+        :type: str
+        :param host: hostname or IP of the host
+        :type: str
+        :param h_user: Username of the host
+        :type: str
+        :param h_pwd: Password of the host
+        :type: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: Returns stdout response
+        :rtype: bool, str
         """
         enclid = input_parameters["enclid"]
         ctrl_name = input_parameters["ctrl_name"]
@@ -519,5 +551,73 @@ class GenerateAlertWrapper:
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_disk_group_failures.__name__,
+                         error)
+            return False, error
+
+    @staticmethod
+    def create_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+        """
+        Function to generate the management network fault on node
+        :param host: host
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False
+        :rtype: Boolean
+        """
+        try:
+            device = input_parameters['device']
+            status = input_parameters['status']
+            LOGGER.info(f"Creating management fault on resource {device} on "
+                        f"{host}")
+            LOGGER.info(f"Making {device} {status} on {host}")
+            resp = toggle_nw_status(device=device, status=status, host=host,
+                                    username=h_user, pwd=h_pwd)
+            return resp, "Created Mgmt NW Port Fault"
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.create_mgmt_network_fault.__name__, error)
+            return False, error
+
+    @staticmethod
+    def resolve_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+        """
+        Function to resolve the management network fault on node
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        try:
+            device = input_parameters['device']
+            status = input_parameters['status']
+            host_data_ip = input_parameters['host_data_ip']
+            LOGGER.info(f"Resolving management fault on resource {device} on "
+                        f"{host}")
+            LOGGER.info(f"Making {device} {status} from {host} using Data IP "
+                        f"{host_data_ip}")
+            ip_link_cmd = commands.IP_LINK_CMD.format(device, status)
+            LOGGER.info(f"Running command {ip_link_cmd} on {host} through "
+                        f"data ip {host_data_ip}")
+            resp = run_remote_cmd(hostname=host_data_ip, username=h_user,
+                                  password=h_pwd, cmd=ip_link_cmd,
+                                  read_lines=True)
+            LOGGER.info(resp)
+            return resp
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.resolve_mgmt_network_fault.__name__,
                          error)
             return False, error
