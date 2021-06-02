@@ -437,6 +437,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 2: Checked generated alert logs")
 
+        # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -477,6 +478,7 @@ class TestStorageAlerts:
                 LOGGER.error("Error: %s", resp[1])
             LOGGER.info("Step 5: Checked generated alert logs")
 
+        # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 6: Checking CSM REST API for fault alert")
         # time.sleep(self.cm_cfg["csm_alert_gen_delay"])
         # resp = self.csm_alert_obj.verify_csm_response(self.starttime,
