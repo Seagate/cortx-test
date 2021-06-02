@@ -540,13 +540,18 @@ class GenerateAlertWrapper:
                                 poll_percent)
                     status, disk_group_dict = controller_obj.get_show_disk_group()
                     if disk_group_dict[disk_group]['health'] == "OK":
-                        return poll_status, poll_percent
+                        LOGGER.info("Disk group health state is: %s",
+                                     disk_group_dict[disk_group]['health'])
+                        return poll_status, f"Reconstruction " \
+                                            f"progress: {poll_percent}"
                     else:
                         LOGGER.error("Disk group health state is: %s", disk_group_dict[disk_group]['health'])
-                        return poll_status, poll_percent
+                        return poll_status, f"Reconstruction " \
+                                            f"progress: {poll_percent}"
                 else:
                     LOGGER.error("Failed to recover disk group %s", disk_group)
-                    return poll_status, poll_percent
+                    return poll_status, f"Reconstruction " \
+                                        f"progress: {poll_percent}"
             return True, "Reconstruction started"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,

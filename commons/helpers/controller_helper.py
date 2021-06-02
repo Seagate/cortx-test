@@ -987,4 +987,5 @@ class ControllerLib:
                         "group is in healthy state", disk_group)
             return True, recon_percent
 
+        LOGGER.error("Reconstruction of disk group failed")
         return False, recon_percent
