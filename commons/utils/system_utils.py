@@ -195,7 +195,7 @@ def calculate_checksum(
         options: str = "") -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
-    :param filename: Name of the file with path
+    :param file_path: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :return: string or MD5 object
