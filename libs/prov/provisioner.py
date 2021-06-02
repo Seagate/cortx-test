@@ -427,7 +427,7 @@ class Provisioner:
                 data1 = ansi_escape.sub('', resp[num + 1])
                 out = data1.strip()
                 if node_val == chk:
-                    LOGGER.info("{} for {} is {}".format(key, chk, resp[num + 1]))
+                    LOGGER.info("{} for {}  {}".format(key, chk, out))
                     cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
                     resp1 = node_obj.execute_cmd(cmd, read_lines=True)
                     if resp1:
@@ -441,5 +441,5 @@ class Provisioner:
                 Provisioner.install_pre_requisites.__name__)
             return False, error
 
-        return True, resp
+        return True, "Key from pillar and confstore match."
 

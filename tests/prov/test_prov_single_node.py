@@ -220,6 +220,6 @@ class TestProvSingleNode:
         for key in PROV_CFG["confstore_list"]:
             LOGGER.info("Verification of {} from pillar as well as confstore template.".format(key))
             output = self.prov_obj.confstore_verification(key, self.nd_obj)
-            assert_utils.assert_true(output, "Key from pillar and confstore doesn't match.")
+            assert_utils.assert_true(output[0], "Key from pillar and confstore doesn't match.")
 
         LOGGER.info("Completed: confstore keys validation.")
