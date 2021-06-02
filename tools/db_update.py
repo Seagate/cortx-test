@@ -56,7 +56,7 @@ fh = logging.FileHandler('db_update.log')
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
@@ -217,7 +217,7 @@ def main():
 
             # for each TE:
             for test_execution in test_executions:
-                logger.debug("-Test Execution {0}".format(test_execution["key"]))
+                logger.info("-Test Execution {0}".format(test_execution["key"]))
                 test_execution_issue = jira_api.get_issue_details(test_execution["key"],
                                                                   username, password)
                 test_execution_label = test_execution_issue.fields.labels[0] if \
@@ -229,7 +229,7 @@ def main():
                                                               username, password)
                 # for each Test in TE:
                 for test in tests:
-                    logger.debug("-Test Key {0}".format(test["key"]))
+                    logger.info("-Test Key {0}".format(test["key"]))
                     if test["status"] == "TODO":
                         continue
                     query_payload = {
@@ -298,6 +298,10 @@ def main():
                         if results[0]["testResult"].lower() != test["status"].lower():
                             logger.debug("Test Result from DB & JIRA are not matching for "
                                          "Test {0}".format(test["key"]))
+                            feature_id = test_issue.fields.customfield_22881 if \
+                                test_issue.fields.customfield_22881 else ["None"]
+                            dr_id = test_issue.fields.customfield_22882 if \
+                                test_issue.fields.customfield_22882 else ["None"]
                             # Add valid key in entry false
                             patch_payload = {
                                 "filter": query_payload["query"],
@@ -320,12 +324,14 @@ def main():
                                 "testStartTime": test["startedOn"],
                                 "logPath": log_path,
                                 "testResult": test["status"],
+                                "platformType": tp_details["platformType"],
+                                "serverType": tp_details["serverType"],
+                                "enclosureType": tp_details["enclosureType"],
+                                "drID": dr_id,
+                                "featureID": feature_id,
                                 # Data from previous database entry
                                 "testTags": results[0]["testTags"],
                                 "testType": results[0]["testType"],
-                                "platformType": results[0]["platformType"],
-                                "serverType": results[0]["serverType"],
-                                "enclosureType": results[0]["enclosureType"],
                                 "testName": results[0]["testName"],
                                 "testID": results[0]["testID"],
                                 "testIDLabels": results[0]["testIDLabels"],
@@ -339,8 +345,6 @@ def main():
                                 "executionType": results[0]["executionType"],
                                 "feature": results[0]["feature"],
                                 "latest": True,
-                                "drID": results[0]["drID"],
-                                "featureID": results[0]["featureID"]
                             }
                             create_db_request(payload)
                             logger.debug("Created new entry with results from JIRA.")

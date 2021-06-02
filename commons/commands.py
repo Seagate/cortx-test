@@ -30,6 +30,7 @@ SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
+IP_LINK_CMD = "ip link set {} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 
@@ -334,23 +335,45 @@ CMD_REMOVE_DIR = "rm -rf {}"
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
+CMD_PRVSNR_VER = "provisioner --version"
+CMD_LIST_DEVICES = "lsblk -nd -o NAME -e 11|grep -v sda|sed 's|sd|/dev/sd|g'|paste -s -d, -"
+CMD_SETUP_PRVSNR = "provisioner setup_provisioner --logfile " \
+    "--logfile-filename /var/log/seagate/provisioner/setup.log --source rpm " \
+    "--config-path {0} " \
+    "--dist-type bundle " \
+    "--target-build {1} "
+CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
+CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
+CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
-CMD_CONFIG_MGR = "yum-config-manager --add-repo \"{0}/3rd_party/\""
-CMD_INSTALL_SALT = "yum install --nogpgcheck -y python3 python36-m2crypto salt salt-master salt-minion"
-CMD_RM_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
-CMD_CONFIG_MGR1 = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
-CMD_PRVSNR = "yum install --nogpgcheck -y python36-cortx-prvsnr"
-CMD_RM_REPO1 = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
-CMD_YUM_CLEAN = "yum clean all"
-CMD_RM_YUM = "rm -rf /var/cache/yum/"
+CMD_ADD_REPO_3RDPARTY = "yum-config-manager --add-repo \"{0}/3rd_party/\""
+CMD_ADD_REPO_CORTXISO = "yum-config-manager --add-repo \"{0}/cortx_iso/\""
+CMD_INSTALL_JAVA = "yum install --nogpgcheck -y java-1.8.0-openjdk-headless"
+CMD_INSTALL_CORTX_PRE_REQ = "yum install --nogpgcheck -y python3 cortx-prereq sshpass"
+CMD_INSTALL_PRVSNR_PRE_REQ = "yum install --nogpgcheck -y python36-m2crypto salt salt-master salt-minion"
+CMD_INSTALL_PRVSNR_API = "yum install --nogpgcheck -y python36-cortx-prvsnr"
+CMD_RM_3RD_PARTY_REPO = "rm -rf /etc/yum.repos.d/*3rd_party*.repo"
+CMD_RM_CORTXISO_REPO = "rm -rf /etc/yum.repos.d/*cortx_iso*.repo"
+CMD_YUM_CLEAN_ALL = "yum clean all"
+CMD_RM_YUM_CACHE = "rm -rf /var/cache/yum/"
+CMD_RM_PIP_CONF = "rm -rf /etc/pip.conf"
 CMD_DEPLOY_SINGLE_NODE = "sshpass -p \"{0}\" provisioner auto_deploy_vm srvnode-1:{1} " \
                          "--logfile --logfile-filename /var/log/seagate/provisioner/setup.log " \
                          "--source rpm --config-path {2} --dist-type bundle " \
                          "--target-build {3}"
+CMD_SALT_PILLAR_ENCRYPT = "salt-call state.apply components.system.config.pillar_encrypt"
+CMD_SALT_PING = "salt '*' test.ping "
+CMD_SALT_STOP_PUPPET = "salt '*' service.stop puppet"
+CMD_SALT_DISABLE_PUPPET = "salt '*' service.disable puppet"
+CMD_SALT_GET_RELEASE = "salt '*' pillar.get release"
+CMD_SALT_GET_NODE_ID = "salt '*' grains.get node_id"
+CMD_SALT_GET_CLUSTER_ID = "salt '*' grains.get cluster_id"
+CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
+CMD_PCS_STATUS_FULL = "pcs status --full"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -369,9 +392,13 @@ CMD_AWSCLI_LIST_MULTIPART_UPLOADS = "aws s3api list-multipart-uploads --bucket {
 CMD_AWSCLI_UPLOAD_PARTS = "aws s3api upload-part --bucket {0} --key {1} --part-number {2} " \
                           "--body {3} --upload-id {4}"
 CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id {2}"
-CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload file://{0} " \
-                                "--bucket {1} --key {2} --upload-id {3}"
+CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload " \
+                                "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+# Upload directory recursively to s3.
+CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
+CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
+CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS = "aws s3api list-objects-v2 --bucket {0} {1}"
 
 # jCloud commands.
 CMD_KEYTOOL1 = "`keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null`"
@@ -384,4 +411,4 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
-    ' -X PUT http://127.0.0.1:28081​'
+                        ' -X PUT http://127.0.0.1:28081​'

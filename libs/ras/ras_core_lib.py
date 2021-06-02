@@ -178,7 +178,7 @@ class RASCoreLib:
         :rtype: bool
         """
         file_path = cmn_cons.MSG_BUS_READER_PATH
-        local_path_msg_bus = cmn_cons.MSG_BUS_READER_PATH
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_LOCAL_PATH
         LOGGER.debug("Copying file to %s", self.host)
         self.node_utils.copy_file_to_remote(
             local_path=local_path_msg_bus, remote_path=file_path)
@@ -834,7 +834,7 @@ class RASCoreLib:
             result = run_remote_cmd(hostname=self.host,
                                     username=self.username,
                                     password=self.pwd, cmd=cmd)
-            result = result[0].decode('utf-8').strip().split('\n')
+            result = result[0]
             LOGGER.info("Response: %s", result)
 
     def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:

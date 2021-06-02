@@ -1,12 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource   ${EXECDIR}/resources/page_objects/alertPage.robot
-Resource   ${EXECDIR}/resources/page_objects/dashboardPage.robot
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
-Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource   ${RESOURCES}/resources/page_objects/alertPage.robot
+Resource   ${RESOURCES}/resources/page_objects/dashboardPage.robot
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
+Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
