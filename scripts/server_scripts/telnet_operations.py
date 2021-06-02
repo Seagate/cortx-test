@@ -256,7 +256,7 @@ class TelnetOperations:
                                   enclosure_ip, cmd)
             LOGGER.info("Execution command: %s", command)
             status = subprocess.call(command, stdout=open(file_path, 'w'),
-                                     shell=False)
+                                     shell=True)
             if status != 0:
                 raise Exception("Execution failed.")
             if not os.path.exists(file_path):
