@@ -49,13 +49,6 @@ class TestCliCSMUser:
         """
         cls.logger = logging.getLogger(__name__)
         cls.logger.info("STARTED : Setup operations for test suit")
-        cls.CSM_USER = CortxCliCsmUser()
-        cls.CSM_USER.open_connection()
-        cls.CSM_ALERT = CortxCliAlerts(session_obj=cls.CSM_USER.session_obj)
-        cls.IAM_USER = CortxCliIamUser(session_obj=cls.CSM_USER.session_obj)
-        cls.bkt_ops = CortxCliS3BucketOperations(session_obj=cls.CSM_USER.session_obj)
-        cls.S3_ACC = CortxCliS3AccountOperations(
-            session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -78,6 +71,13 @@ class TestCliCSMUser:
             - Login to CORTX CLI as admin user.
         """
         self.logger.info("STARTED : Setup operations for test function")
+        self.CSM_USER = CortxCliCsmUser()
+        self.CSM_USER.open_connection()
+        self.CSM_ALERT = CortxCliAlerts(session_obj=self.CSM_USER.session_obj)
+        self.IAM_USER = CortxCliIamUser(session_obj=self.CSM_USER.session_obj)
+        self.bkt_ops = CortxCliS3BucketOperations(session_obj=self.CSM_USER.session_obj)
+        self.S3_ACC = CortxCliS3AccountOperations(
+            session_obj=self.CSM_USER.session_obj)
         self.logger.info("Login to CORTX CLI using s3 account")
         self.update_password = False
         self.new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -121,6 +121,7 @@ class TestCliCSMUser:
                 self.CSM_USER.delete_csm_user(user_name=user)
                 self.logger.info("Deleted CSM users %s", user)
         self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.close_connection()
         self.logger.info("Ended : Teardown operations for test function")
 
     @pytest.mark.cluster_user_ops

@@ -72,7 +72,7 @@ class CortxCli(CortxCliClient):
             self,
             cmd: str,
             patterns: list,
-            time_out: int = 120) -> tuple:
+            time_out: int = 300) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
