@@ -103,7 +103,6 @@ class TestCliS3ACC:
             finally:
                 self.s3acc_obj.logout_cortx_cli()
         self.s3acc_obj.close_connection()
-        del self.s3acc_obj
         self.logger.info("ENDED : Teardown operations at test function level")
 
     @pytest.mark.cluster_user_ops
