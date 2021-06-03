@@ -46,15 +46,6 @@ class TestCliS3ACC:
         """
         cls.logger = logging.getLogger(__name__)
         cls.logger.info("STARTED : Setup operations at test suit level")
-        cls.s3acc_obj = CortxCliS3AccountOperations()
-        cls.s3acc_obj.open_connection()
-        cls.s3bkt_obj = CortxCliS3BucketOperations(
-            session_obj=cls.s3acc_obj.session_obj)
-        cls.csm_user_obj = CortxCliCsmUser(
-            session_obj=cls.s3acc_obj.session_obj)
-        cls.iam_user_obj = CortxCliIamUser(
-            session_obj=cls.s3acc_obj.session_obj)
-        cls.alert_obj = CortxCliAlerts(session_obj=cls.s3acc_obj.session_obj)
         cls.s3acc_prefix = "cli_s3acc"
         cls.s3acc_name = cls.s3acc_prefix
         cls.s3acc_email = "{}@seagate.com"
@@ -71,6 +62,12 @@ class TestCliS3ACC:
             - Login to CORTX CLI as admin user
         """
         self.logger.info("STARTED : Setup operations at test function level")
+        self.s3acc_obj = CortxCliS3AccountOperations()
+        self.s3acc_obj.open_connection()
+        self.s3bkt_obj = CortxCliS3BucketOperations(session_obj=self.s3acc_obj.session_obj)
+        self.csm_user_obj = CortxCliCsmUser(session_obj=self.s3acc_obj.session_obj)
+        self.iam_user_obj = CortxCliIamUser(session_obj=self.s3acc_obj.session_obj)
+        self.alert_obj = CortxCliAlerts(session_obj=self.s3acc_obj.session_obj)
         self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
         login = self.s3acc_obj.login_cortx_cli()
@@ -105,16 +102,8 @@ class TestCliS3ACC:
                 self.logger.error(error)
             finally:
                 self.s3acc_obj.logout_cortx_cli()
+        self.s3acc_obj.close_connection()
         self.logger.info("ENDED : Teardown operations at test function level")
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Teardown any state that was previously setup with a setup_class
-        """
-        cls.logger.info("STARTED : Teardown operations at test suit level")
-        cls.s3acc_obj.close_connection()
-        cls.logger.info("ENDED : Teardown operations at test suit level")
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -620,7 +609,6 @@ class TestCliS3ACC:
         assert_utils.assert_equals(False, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
-        self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1636,7 +1624,7 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-18199")
+    @pytest.mark.tags("TEST-18200")
     @CTFailOn(error_handler)
     def test_18200_reset_iam_invalid_name(self):
         """

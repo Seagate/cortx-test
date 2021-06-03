@@ -1,7 +1,7 @@
 pipeline {
 	agent {
         node {
-			label 'ssc-vm-3053'
+			label 'ssc-vm-4830'
  			customWorkspace "/root/workspace/${JOB_BASE_NAME}"
 		}
     }
