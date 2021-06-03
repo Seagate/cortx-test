@@ -774,11 +774,15 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                     resp = task.update_execution_details(
                                     test_run_id=test_run_id, test_id=test_id,
                                     comment=comment)
-                if resp:
-                    LOGGER.info("Added execution details comment in: %s",
-                                test_id)
+                    if resp:
+                        LOGGER.info("Added execution details comment in: %s",
+                                    test_id)
+                    else:
+                        LOGGER.error("Failed to comment to %s", test_id)
                 else:
-                    LOGGER.error("Failed to comment to %s", test_id)
+                    LOGGER.error("Failed to get correct TE id. \nExpected: "
+                                 "%s\nActual: %s", Globals.TE_TKT,
+                                 Globals.tp_meta['te_meta']['te_id'])
             except KeyError:
                 LOGGER.error("KeyError: Failed to add log file path to %s",
                              test_id)
