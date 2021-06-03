@@ -68,6 +68,7 @@ class TestBucketLocation:
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
             self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
+        self.cortx_obj.close_connection()
         self.log.info("ENDED: Teardown test operations.")
 
     @pytest.mark.parallel

@@ -91,4 +91,5 @@ def test_create_acc_aws_conf():
     access_key = resp[1]["access_key"]
     secret_key = resp[1]["secret_key"]
     configure_awscli(access_key, secret_key)
+    cortx_obj.close_connection()
 

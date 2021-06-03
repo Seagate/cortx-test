@@ -108,6 +108,7 @@ class TestDataDurability:
                     account_name=acc, password=self.s3acc_passwd)
                 self.log.info("Deleted %s account successfully", acc)
         self.log.info("Deleted the IAM accounts and users")
+        self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 

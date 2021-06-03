@@ -756,7 +756,6 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
     def test_2897(self):
