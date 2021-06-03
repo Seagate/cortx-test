@@ -103,7 +103,7 @@ def create_json_reps(list_resp):
     return js_res
 
 
-def check_log_file_error(file_path, errors):
+def check_log_file_error(file_path, errors=None):
     """
     Function to find out error is reported in given file or not
     :param str file_path: the file in which error is to be searched
@@ -111,6 +111,9 @@ def check_log_file_error(file_path, errors):
     :return: errorFound: True (if error is seen) else False
     :rtype: Boolean
     """
+    if not errors:
+        errors = ["with error ", "panic", "status code",
+                  "flag provided but not defined"]
     error_found = False
     LOGGER.info("Debug: Log File Path {}".format(file_path))
     with open(file_path, "r") as s3LogFile:

@@ -60,14 +60,13 @@ class TestWorkloadS3Bench:
                 resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
                                        num_clients=clients, num_sample=samples,
                                        obj_name_pref="loadgen_test_", obj_size=size,
-                                       skip_cleanup=False, duration=None, verbose=True,
+                                       skip_cleanup=False, duration=None,
                                        log_file_prefix="TEST-19658")
                 self.log.info(
                     f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
                     f"clients.")
                 self.log.info(f"Log Path {resp[1]}")
-                assert not s3bench.check_log_file_error(resp[1],
-                                                        ["with error ", "panic", "status code"]), \
+                assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
 
     @pytest.mark.scalability
@@ -85,11 +84,8 @@ class TestWorkloadS3Bench:
         for workload in workloads:
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=1,
                                    num_sample=5, obj_name_pref="loadgen_test_", obj_size=workload,
-                                   skip_cleanup=False, duration=None, verbose=True,
-                                   log_file_prefix="TEST-19471")
+                                   skip_cleanup=False, duration=None, log_file_prefix="TEST-19471")
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
-            assert not s3bench.check_log_file_error(resp[1],
-                                                    ["with error ", "panic", "status code",
-                                                     "flag provided but not defined"]), \
+            assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
