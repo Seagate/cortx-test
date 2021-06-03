@@ -962,7 +962,7 @@ class ControllerLib:
             return status, drive_dict
 
     def poll_dg_recon_status(self, disk_group: str, percent: int = 100) \
-            -> Tuple[bool, int]:
+            -> Tuple[str, str, int]:
         """
         Function to poll disk group reconstruction progress
 
@@ -975,17 +975,33 @@ class ControllerLib:
         """
         LOGGER.info("Polling disk group reconstruction percent")
         recon_percent = 0
-        while recon_percent < percent:
+        while True:
             status, disk_group_dict = self.get_show_disk_group()
             LOGGER.info("Reconstruction percent: %s", recon_percent)
             recon_percent = disk_group_dict[disk_group].get('job_percent',
                                                             '100%')
             recon_percent = int(recon_percent.split("%")[0])
+            if recon_percent >= percent:
+                LOGGER.info("Checking if recon_percent >= percent")
+                LOGGER.info("Reconstruction percent went beyond expected "
+                            "percent. Reconstruction percent: %s%",
+                            recon_percent)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group]['health'] == "OK":
+                LOGGER.info("Reconstruction of disk group %s completed. Disk "
+                            "group is in healthy state", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group].get('job') is None:
+                LOGGER.info("No job is running", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
 
-        if recon_percent >= percent:
-            LOGGER.info("Reconstruction of disk group %s completed. Disk "
-                        "group is in healthy state", disk_group)
-            return True, recon_percent
-
-        LOGGER.error("Reconstruction of disk group failed")
-        return False, recon_percent
+        return health, job, final_percent

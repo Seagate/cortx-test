@@ -123,7 +123,7 @@ class TestStorageAlerts:
         # services = [service["sspl_service"], service["kafka_service"],
         #             service["csm_web"], service["csm_agent"]]
         self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=service["sspl_service"],
+                                         services=[service["sspl_service"]],
                                          decode=True)
         time.sleep(self.cm_cfg["sleep_val"])
 
@@ -198,7 +198,7 @@ class TestStorageAlerts:
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
         self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=service["sspl_service"],
+                                         services=[service["sspl_service"]],
                                          decode=True)
         time.sleep(self.cm_cfg["sleep_val"])
 
@@ -425,8 +425,8 @@ class TestStorageAlerts:
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
-            LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                        disk_group)
+            LOGGER.info("Step 1: Successfully created disk group failure on "
+                        "%s\n Response: %s", disk_group, resp)
         drives = resp[1]
 
         time.sleep(self.cm_cfg["sleep_val"])
@@ -439,7 +439,8 @@ class TestStorageAlerts:
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 2: Checked generated alert logs")
+                LOGGER.info("Step 2: Checked generated alert logs. Response: "
+                            "%s", resp)
 
         # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
@@ -455,7 +456,7 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
-        #                 "alert")
+        #                 "alert. Response: %s", resp)
 
         LOGGER.info("Step 4: Resolve disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
@@ -471,7 +472,7 @@ class TestStorageAlerts:
         else:
             self.dg_failure = False
             LOGGER.info("Step 4: Successfully resolved disk group failure on "
-                        "%s", disk_group)
+                        "%s\n Response: %s", disk_group, resp)
 
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
@@ -485,7 +486,7 @@ class TestStorageAlerts:
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 5: Checked generated alert logs")
+                LOGGER.info("Step 5: Checked generated alert logs\n Response: %s", resp)
 
         # Revisit when alerts are available in CSM.
         # LOGGER.info("Step 6: Checking CSM REST API for fault alert")
@@ -501,7 +502,7 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 6: Successfully checked CSM REST API for "
-        #                 "fault_resolved alert")
+        #                 "fault_resolved alert. Response: %s", resp)
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
@@ -538,8 +539,8 @@ class TestStorageAlerts:
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
-            LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                        disk_group)
+            LOGGER.info("Step 1: Successfully created disk group failure on "
+                        "%s \n Response: %s", disk_group, resp)
         drives = resp[1]
 
         time.sleep(self.cm_cfg["sleep_val"])
@@ -552,7 +553,8 @@ class TestStorageAlerts:
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 2: Checked generated alert logs")
+                LOGGER.info("Step 2: Checked generated alert logs, Response: "
+                            "%s", resp)
 
         # Revisit when R2 HW is available.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
@@ -568,13 +570,12 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
-        #                 "alert")
+        #                 "alert. \n Response: %s", resp)
 
         LOGGER.info("Step 4: Stopping SSPL service")
         service = self.cm_cfg["service"]
         resp = self.node_obj.send_systemctl_cmd(command="stop",
-                                                services=service["sspl_service"],
-                                                decode=True, exc=False)
+                                                services=[service["sspl_service"]])
 
         resp = self.s3obj.get_s3server_service_status(
                 service=service["sspl_service"], host=self.host,
@@ -585,7 +586,8 @@ class TestStorageAlerts:
             LOGGER.error("Step 4: Failed to stop SSPL service. Error: %s",
                          resp[1])
         else:
-            LOGGER.info("Step 4: Successfully stopped SSPL service")
+            LOGGER.info("Step 4: Successfully stopped SSPL service\n "
+                        "Response: %s", resp)
 
         LOGGER.info("Step 5: Resolve disk group failure on %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
@@ -601,14 +603,12 @@ class TestStorageAlerts:
         else:
             self.dg_failure = False
             LOGGER.info("Step 5: Successfully resolved disk group failure on "
-                        "%s", disk_group)
+                        "%s. Response: %s", disk_group, resp)
 
         LOGGER.info("Step 6: Starting SSPL service")
         service = self.cm_cfg["service"]
         resp = self.node_obj.send_systemctl_cmd(command="start",
-                                                services=service[
-                                                    "sspl_service"],
-                                                decode=True, exc=False)
+                                                services=[service["sspl_service"]])
 
         resp = self.s3obj.get_s3server_service_status(
             service=service["sspl_service"], host=self.host,
@@ -616,10 +616,11 @@ class TestStorageAlerts:
             pwd=self.passwd)
         if not resp[0]:
             df['Iteration0']['Step6'] = 'Fail'
-            LOGGER.error("Step 6: Failed to stop SSPL service. Error: %s",
+            LOGGER.error("Step 6: Failed to start SSPL service. Error: %s",
                          resp[1])
         else:
-            LOGGER.info("Step 6: Successfully stopped SSPL service")
+            LOGGER.info("Step 6: Successfully stopped SSPL service. \n "
+                        "Response: %s", resp)
 
         time.sleep(self.cm_cfg["sleep_val"])
         if self.start_msg_bus:
@@ -633,7 +634,8 @@ class TestStorageAlerts:
                 LOGGER.error("Step 7: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 7: Checked generated alert logs")
+                LOGGER.info("Step 7: Checked generated alert logs. \n "
+                            "Response: %s", resp)
 
         # Revisit when R2 HW is available.
         # LOGGER.info("Step 8: Checking CSM REST API for fault alert")
@@ -649,7 +651,7 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 8: Successfully checked CSM REST API for "
-        #                 "fault_resolved alert")
+        #                 "fault_resolved alert. \n Response: %s", resp)
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
@@ -687,8 +689,8 @@ class TestStorageAlerts:
             LOGGER.error("Step 1: Failed to create fault. Error: %s", resp[1])
         else:
             self.dg_failure = True
-            LOGGER.info("Step 1: Successfully created disk group failure on %s",
-                        disk_group)
+            LOGGER.info("Step 1: Successfully created disk group failure on "
+                        "%s. Response: %s", disk_group, resp)
         drives = resp[1]
 
         time.sleep(self.cm_cfg["sleep_val"])
@@ -701,7 +703,8 @@ class TestStorageAlerts:
                 LOGGER.error("Step 2: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 2: Checked generated alert logs")
+                LOGGER.info("Step 2: Checked generated alert logs. \n "
+                            "Response: %s", resp)
 
         # Revisit when R2 HW is available.
         # LOGGER.info("Step 3: Checking CSM REST API for fault alert")
@@ -717,7 +720,7 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 3: Successfully checked CSM REST API for fault "
-        #                 "alert")
+        #                 "alert. \n Response: %s", resp)
 
         LOGGER.info("Step 4: Start reconstruction of disk group %s", disk_group)
         resp = self.alert_api_obj.generate_alert(
@@ -733,13 +736,13 @@ class TestStorageAlerts:
         else:
             self.dg_failure = False
             LOGGER.info("Step 4: Successfully started reconstruction of disk "
-                        "group %s", disk_group)
+                        "group %s. Response: %s", disk_group, resp)
 
         LOGGER.info("Step 5: Polling progress of reconstruction job of disk "
                     "group")
-        poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
-            disk_group=disk_group, percent=95)
-        if poll_status:
+        dg_health, job, poll_percent = self.controller_obj.poll_dg_recon_status(
+            disk_group=disk_group, percent=93)
+        if poll_percent == 100:
             df['Iteration0']['Step5'] = 'Fail'
             LOGGER.error("Step 5: Expected reconstruction percent <100. "
                          "Actual: %s", resp[1])
@@ -759,9 +762,9 @@ class TestStorageAlerts:
         else:
             LOGGER.info("Step 7: Checking if disk group is reconstructed "
                         "successfully")
-            poll_status, poll_percent = self.controller_obj.poll_dg_recon_status(
+            dg_health, job, poll_percent = self.controller_obj.poll_dg_recon_status(
                                         disk_group=disk_group)
-            if poll_status:
+            if dg_health == "OK":
                 LOGGER.info("Step 7: Successfully recovered disk group %s \n "
                             "Reconstruction percent = %s", disk_group,
                             poll_percent)
@@ -769,8 +772,9 @@ class TestStorageAlerts:
                 LOGGER.error("Step 7: Failed to recover disk group %s",
                              disk_group)
                 df['Iteration0']['Step7'] = 'Fail'
-                LOGGER.error("Expected reconstruction percent: 100. Actual: %s",
-                             resp[1])
+                LOGGER.error("Expected reconstruction percent: 100. Actual: "
+                             "%s\n Expected dg health: OK, Actual: %s",
+                             poll_percent, dg_health)
 
         if self.start_msg_bus:
             LOGGER.info("Step 8: Verifying alert logs for fault_resolved "
@@ -783,7 +787,8 @@ class TestStorageAlerts:
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 8: Checked generated alert logs")
+                LOGGER.info("Step 8: Checked generated alert logs. \n "
+                            "Response: %s", resp)
 
         # Revisit when R2 HW is available.
         # LOGGER.info("Step 9: Checking CSM REST API for fault alert")
@@ -799,7 +804,7 @@ class TestStorageAlerts:
         #     test_cfg["csm_error_msg"])
         # else:
         #     LOGGER.info("Step 9: Successfully checked CSM REST API for "
-        #                 "fault_resolved alert")
+        #                 "fault_resolved alert. \n Response: %s", resp)
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
