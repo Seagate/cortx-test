@@ -33,6 +33,7 @@ import datetime
 import pytest
 import requests
 import tempfile
+import xml.etree.ElementTree as ET
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -274,6 +275,7 @@ def pytest_sessionfinish(session, exitstatus):
     resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
     if resp[0]:
         LOGGER.info("Successfully unmounted directory")
+    filter_report_session_finish(session)
 
 
 def get_test_metadata_from_tp_meta(item):
@@ -790,3 +792,16 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+
+def filter_report_session_finish(session):
+    if session.config.option.xmlpath:
+        path = session.config.option.xmlpath
+        tree = ET.parse(path)
+        root = tree.getroot()
+        with open(path, "w", encoding="utf-8") as logfile:
+            logfile.write('<?xml version="1.0" encoding="UTF-8"?>')
+            root[0].attrib["package"] = "root"
+            for element in root[0]:
+                element.attrib["classname"] = element.attrib["classname"].split(".")[-1]
+
+            logfile.write(ET.tostring(root[0], encoding="unicode"))

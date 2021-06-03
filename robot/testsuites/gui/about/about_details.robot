@@ -1,10 +1,10 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for ssl details
-Resource    ${EXECDIR}/resources/page_objects/aboutPage.robot
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Variables   ${EXECDIR}/resources/common/element_locators.py
-Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${RESOURCES}/resources/page_objects/aboutPage.robot
+Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Variables   ${RESOURCES}/resources/common/element_locators.py
+Variables   ${RESOURCES}/resources/common/common_variables.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}

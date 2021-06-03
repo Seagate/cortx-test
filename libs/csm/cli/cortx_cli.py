@@ -72,7 +72,7 @@ class CortxCli(CortxCliClient):
             self,
             cmd: str,
             patterns: list,
-            time_out: int = 120) -> tuple:
+            time_out: int = 300) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -81,7 +81,12 @@ class CortxCli(CortxCliClient):
         :return: output of executed command
         """
         try:
-            default_patterns = ["Error", "exception", "Session expired", "usage:"]
+            default_patterns = [
+                "Error",
+                "exception",
+                "Session expired",
+                "usage:",
+                "command not found"]
             default_patterns.extend(patterns)
             self.log.debug("Default patterns : %s", default_patterns)
             index, output = super().execute_cli_commands(

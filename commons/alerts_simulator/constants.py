@@ -43,3 +43,8 @@ RAID_REMOVE_DISK_ALERT = {"operation": "remove_disk", "md_device": None,
 RAID_ADD_DISK_ALERT = {"operation": "add_disk", "md_device": None, "disk": None}
 IEM_TEST_ERROR_ALERT = {"cmd": 'logger -i -p local3.err '
                                'IEC: EO0090090900:Test IEM'}
+DG_FAULT = {"enclid": 0, "ctrl_name": ['A', 'B'], "operation": "Disabled",
+            "disk_group": "dg00"}
+DG_FAULT_RESOLVED = {"enclid": 0, "ctrl_name": ["A", "B"],
+                     "operation": "Enabled", "disk_group": "dg00",
+                     "phy_num": ["0.0", "0.2"], "poll": True}

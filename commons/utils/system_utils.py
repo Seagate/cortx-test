@@ -23,6 +23,7 @@
 import logging
 import os
 import sys
+import time
 import platform
 import random
 import shutil
@@ -36,7 +37,6 @@ from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
-
 
 if sys.platform == 'win32':
     try:
@@ -195,7 +195,7 @@ def calculate_checksum(
         options: str = "") -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
-    :param filename: Name of the file with path
+    :param file_path: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :return: string or MD5 object
@@ -1030,3 +1030,73 @@ def create_file_fallocate(filepath=None, size="1MB", option="l"):
     resp = run_local_cmd(command)
 
     return os.path.exists(filepath), resp[1]
+
+
+def toggle_nw_status(device: str, status: str, host: str, username: str,
+                     pwd: str):
+    """
+    Toggle network device status using ip set command.
+    :param str device: Name of the ip network device
+    :param str status: Expect status like up/down
+    :param host: Host name on which command is to be run
+    :param username: Username of host
+    :param pwd: Password of host
+    :return: True/False
+    :rtype: Boolean
+    """
+    LOGGER.info(f"Changing {device} n/w device status to {status}")
+    cmd = commands.IP_LINK_CMD.format(device, status)
+    res = run_remote_cmd(
+            hostname=host, username=username, password=pwd, cmd=cmd,
+            read_lines=True)
+    LOGGER.debug(f"Command: {cmd}, response: {res}")
+
+    LOGGER.debug(res)
+    return res[0]
+
+
+def create_dir_hierarchy_and_objects(directory_path=None,
+                                     obj_prefix=None,
+                                     depth: int = 1,
+                                     obj_count: int = 1,
+                                     **kwargs) -> list:
+    """
+    Create directory hierarchy as per depth and create number of objects in each folder.
+
+    :param directory_path: Absolute path of root directory.
+    :param obj_prefix: Name of the object prefix.
+    :param depth: Directory hierarchy.
+    :param obj_count: object count per directory.
+    :param b_size: object block size.
+    :param count: count.
+    :return: file path list.
+    """
+    file_path_list = []
+    count = kwargs.get("count", 1)
+    b_size = kwargs.get("b_size", 1)
+    for objcnt in range(obj_count):
+        fpath = os.path.join(directory_path,
+                             f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
+        run_local_cmd(
+            commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+        if os.path.exists(fpath):
+            file_path_list.append(fpath)
+    for dcnt in range(depth):
+        directory_path = os.path.join(
+            directory_path, ''.join(
+                random.SystemRandom().choice(
+                    string.ascii_lowercase) for _ in range(
+                    5 + dcnt)))
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+        for objcnt in range(obj_count):
+            fpath = os.path.join(
+                directory_path,
+                f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
+            run_local_cmd(
+                commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+            if os.path.exists(fpath):
+                file_path_list.append(fpath)
+    LOGGER.info("File list: %s", file_path_list)
+
+    return file_path_list
