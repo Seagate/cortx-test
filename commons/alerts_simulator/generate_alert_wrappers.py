@@ -375,6 +375,7 @@ class GenerateAlertWrapper:
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
+            LOGGER.info("Disk group info: %s", disk_group_dict)
             if not status:
                 return status, "Failed to get information about disk groups"
             elif disk_group_dict[disk_group]['health'] != 'OK':
@@ -389,6 +390,8 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Picking two random drives from disk group %s", disk_group)
             drives = random.sample(drive_list, 2)
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                drives = [drives[-1]]
             LOGGER.info("Removing drive : %s", drives)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
@@ -452,14 +455,29 @@ class GenerateAlertWrapper:
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
+            LOGGER.info("Disk group info: %s", disk_group_dict)
             if not status:
                 return status, "Failed to get information about disk groups"
             elif disk_group_dict[disk_group]['health'] == 'OK':
-                LOGGER.info("Provided disk group is in healthy state.")
+                LOGGER.info("Provided disk group is already in healthy state.")
                 return status, disk_group_dict[disk_group]['health']
 
             LOGGER.info("RAID type of disk group %s is %s", disk_group,
                         disk_group_dict[disk_group]['raidtype'])
+
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT" and \
+                    disk_group_dict[disk_group].get('job') is None:
+                LOGGER.info("No intermediate job is running")
+            elif disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                LOGGER.info("Wait for %s job to complete.",
+                            disk_group_dict[disk_group]['job'])
+                dg_health, job, poll_percent = controller_obj.poll_dg_recon_status(
+                        disk_group=disk_group)
+                if poll_percent == 100:
+                    LOGGER.info("Completed job %s", job)
+                else:
+                    LOGGER.error("Job %s failed", job)
+                    return False, f"Job progress: {poll_percent}"
 
             LOGGER.info("Adding drives %s", phy_num)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
@@ -470,7 +488,7 @@ class GenerateAlertWrapper:
             if not resp[0]:
                 return resp[0], f"Failed to add drives {phy_num} to disk " \
                                 f"group {disk_group}"
-
+            time.sleep(15)
             LOGGER.info("Adding drives to the disk group %s", disk_group)
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
                 LOGGER.info("Check usage of drives %s", phy_num)
@@ -502,23 +520,30 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Check if reconstruction of disk group is started")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if disk_group_dict[disk_group]['job'] == 'RCON':
-                LOGGER.info("Successfully started reconstruction of disk "
+            if disk_group_dict[disk_group]['job'] == 'RCON' or \
+                    disk_group_dict[disk_group]['job'] == 'RBAL' or \
+                    disk_group_dict[disk_group]['job'] == 'EXPD':
+                LOGGER.info("Successfully started recovery of disk "
                             "group %s", disk_group)
             else:
                 return False, "Failed to start Disk Group reconstruction"
 
             if poll:
-                poll_status, poll_percent = controller_obj.poll_dg_recon_status(
+                dg_health, job, poll_percent = controller_obj.poll_dg_recon_status(
                     disk_group=disk_group)
-                if poll_status:
+                if poll_percent == 100 or dg_health == "OK":
                     LOGGER.info("Successfully recovered disk group %s \n "
-                                "Reconstruction percent = %s", disk_group,
+                                "Reconstruction percent: %s", disk_group,
                                 poll_percent)
-                    return poll_status, poll_percent
+                    LOGGER.info("Disk group health state is: %s", dg_health)
+                    return True, f"Reconstruction progress: {poll_percent}"
                 else:
-                    LOGGER.error("Failed to recover disk group %s", disk_group)
-                    return poll_status, poll_percent
+                    LOGGER.error("Failed to recover disk group %s \n "
+                                 "Reconstruction percent: %s", disk_group,
+                                 poll_percent)
+                    LOGGER.info("Disk group health state is: %s", dg_health)
+                    return False, f"Reconstruction progress: {poll_percent}"
+            return True, "Reconstruction started"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_disk_group_failures.__name__,
