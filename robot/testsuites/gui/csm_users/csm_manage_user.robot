@@ -2,6 +2,7 @@
 Documentation    This suite verifies the testcases for csm user creation
 Resource   ${RESOURCES}/resources/page_objects/alertPage.robot
 Resource   ${RESOURCES}/resources/page_objects/dashboardPage.robot
+Resource   ${RESOURCES}/resources/page_objects/lyvePilot.robot
 Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot

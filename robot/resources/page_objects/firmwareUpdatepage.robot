@@ -4,11 +4,21 @@ Library     SeleniumLibrary
 
 *** Keywords ***
 
+Check Firmware Update Section Not Exists
+    [Documentation]  This keyword is to check that user does not have access to Firmware Update Section
+    Navigate To Page  MAINTENANCE_MENU_ID
+    Page Should Not Contain Element  ${FW_UPDATE_TAB_ID}
+
+Check Firmware Update Section Exists
+    [Documentation]  This keyword is to check that user have access to Firmware Update Section
+    Navigate To Page  MAINTENANCE_MENU_ID
+    Page Should Contain Element  ${FW_UPDATE_TAB_ID}
+
 Click On Upload New Firmware File Button
     [Documentation]  Perform click operation on Upload New Firmware File Button
     Sleep  3s
-    Wait Until Element Is Enabled  ${UPLOAD_FW_FILE_BTN_ID}  timeout=60
-    Click button    ${UPLOAD_FW_FILE_BTN_ID}
+    Wait Until Element Is Enabled  ${UPLOAD_FW_FILE_BUTTON_ID}  timeout=60
+    Click button    ${UPLOAD_FW_FILE_BUTTON_ID}
 
 Click On Start Firmware Update Button
     [Documentation]  Perform click operation on tart Firmware Update Button

@@ -50,8 +50,8 @@ Click on edit s3 account option
 Click on update s3 account button
     [Documentation]  This keyword is to click on update s3 account button
     wait for page or element to load
-    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_BTN_ID}
-    Run Keyword If  '${status}' == 'True'  click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_BUTTON_ID}
+    Run Keyword If  '${status}' == 'True'  click element  ${UPDATE_S3_ACCOUNT_BUTTON_ID}
     ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
     Run Keyword If  '${status}' == 'True'  click element  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
     wait for page or element to load
@@ -70,8 +70,8 @@ Click on download and close button for new access key
     [Documentation]  This keyword is to click on download and close button for new access key
     #Reload Page
     wait for page or element to load
-    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=30
-    click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
+    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=30
+    click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BUTTON_ID}
 
 Add data to create new S3 account
     [Documentation]  This keyword is to add data in s3 account form.
@@ -145,7 +145,7 @@ Verify update s3 account button remains disabled
     [Documentation]  This keyword is to chceck the update S3 account button remains disabled when there is no data.
     Click on edit s3 account option
     sleep  2s
-    ${state_of_update_s3_account}=  Get Element Attribute  ${UPDATE_S3_ACCOUNT_BTN_ID}  disabled
+    ${state_of_update_s3_account}=  Get Element Attribute  ${UPDATE_S3_ACCOUNT_BUTTON_ID}  disabled
     Run Keyword If  ${${state_of_update_s3_account}} == True  log to console and report  create S3 account button is disabled.
 
 Edit S3 account
@@ -344,10 +344,6 @@ Check Maintenance Option Not Exists
 Check Dashboard Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to Dashboard page
     Page Should Not Contain Element  ${DASHBOARD_MENU_ID}    
-
-Check Health Option Not Exists
-    [Documentation]  This keyword is to check that s3 user does not have access to Health page
-    Page Should Not Contain Element  ${HEALTH_TAB_ID}  
 
 Check Create CSM User Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to create csm user page

@@ -9,6 +9,46 @@ ${default_file_name}  s3server.pem
 
 *** Keywords ***
 
+Check System Maintenance Section Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID
+    Page Should Not Contain Element  ${SYSTEM_MAINTENANCE_BUTTON_ID}
+
+Check System Maintenance Section Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID
+    Page Should Contain Element  ${SYSTEM_MAINTENANCE_BUTTON_ID}
+
+Check Start Service Option Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Not Contain Element  ${START_SERVICE_BUTTON_ID}
+
+Check Start Service Option Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Contain Element  ${START_SERVICE_BUTTON_ID}
+
+Check Stop Service Option Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Not Contain Element  ${STOP_SERVICE_BUTTON_ID}
+
+Check Stop Service Option Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Contain Element  ${STOP_SERVICE_BUTTON_ID}
+
+Check Shutdown Option Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Not Contain Element  ${SHUTDOWN_SERVICE_BUTTON_ID}
+
+Check Shutdown Option Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
+    Page Should Contain Element  ${SHUTDOWN_SERVICE_BUTTON_ID}
+
 Click On Upload New SSL File Button
     [Documentation]  Perform click operation on Upload New Software File Button
     Wait Until Element Is Enabled  ${UPLOAD_SSL_FILE_PEM_ID}  timeout=60
@@ -108,7 +148,7 @@ SSL Upload
     [Arguments]  ${Download_File_Path}  ${server_file_name}=${default_file_name}
     ${path}=  Download PEM File  ${Download_File_Path}  ${server_file_name}
     Log To Console And Report  ${path}
-    Upload File  CHOOSE_SSL_UPDATE_FILE_BTN_ID  ${path}
+    Upload File  CHOOSE_SSL_UPDATE_FILE_BUTTON_ID  ${path}
     Sleep  3s
     Click On Upload New SSL File Button
     Sleep  5s
@@ -118,7 +158,7 @@ SSL Gennerate and Upload
     [Arguments]  ${days}  ${Download_File_Path} 
     ${path}=  cert_gen  ${days}  ${Download_File_Path}
     Log To Console And Report  ${path}
-    Upload File  CHOOSE_SSL_UPDATE_FILE_BTN_ID  ${path}
+    Upload File  CHOOSE_SSL_UPDATE_FILE_BUTTON_ID  ${path}
     Sleep  3s
     Click On Upload New SSL File Button
     Sleep  5s
