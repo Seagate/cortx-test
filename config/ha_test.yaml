@@ -1,0 +1,3 @@
+common:
+  stopped: "Stopped"
+  offline: "offline"
