@@ -762,20 +762,30 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
-        comment = "Log file path: {}".format(resp[1])
+        comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
-            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-            if data:
-                resp = task.update_execution_details(data=data, test_id=test_id,
-                                                     comment=comment)
-                if resp:
-                    LOGGER.info("Added execution details comment in: %s", test_id)
+            try:
+                if Globals.tp_meta['te_meta']['te_id'] == Globals.TE_TKT:
+                    test_run_id = next(d['test_run_id'] for i, d in enumerate(
+                        Globals.tp_meta['test_meta']) if d['test_id'] ==
+                                       test_id)
+                    resp = task.update_execution_details(
+                                    test_run_id=test_run_id, test_id=test_id,
+                                    comment=comment)
+                    if resp:
+                        LOGGER.info("Added execution details comment in: %s",
+                                    test_id)
+                    else:
+                        LOGGER.error("Failed to comment to %s", test_id)
                 else:
-                    LOGGER.error("Failed to comment to %s", test_id)
-            else:
-                LOGGER.error("Failed to add log file path to %s", test_id)
+                    LOGGER.error("Failed to get correct TE id. \nExpected: "
+                                 "%s\nActual: %s", Globals.TE_TKT,
+                                 Globals.tp_meta['te_meta']['te_id'])
+            except KeyError:
+                LOGGER.error("KeyError: Failed to add log file path to %s",
+                             test_id)
 
 
 @pytest.fixture(scope='function')

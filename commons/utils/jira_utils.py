@@ -51,6 +51,8 @@ class JiraTask:
         incremental_timeout_sec = 60
         req_success = False
         retry_attempt = 0
+        id_list = []
+        test_tuple = ()
         while (not req_success) and retries_cnt:
             try:
                 auth_jira = JIRA(options, basic_auth=self.auth)
@@ -90,9 +92,12 @@ class JiraTask:
                         for test in data:
                             if 'ALL' in status:
                                 test_list.append(test['key'])
+                                id_list.append(test['id'])
                             elif str(test['status']) in status:
                                 test_list.append(test['key'])
-        return test_list, te_tag
+                                id_list.append(test['id'])
+                        test_tuple = tuple(zip(test_list, id_list))
+        return test_tuple, te_tag
 
     def get_test_list_from_te(self, test_exe_id, status=None):
         """
@@ -101,7 +106,8 @@ class JiraTask:
         if status is None:
             status = ['ALL']
         test_details = []
-        test_list, te_tag = self.get_test_ids_from_te(test_exe_id, status)
+        test_tuple, te_tag = self.get_test_ids_from_te(test_exe_id, status)
+        test_list = list(list(zip(*test_tuple))[0])
         for test in test_list:
             test_id = str(test)
             jira_link = 'https://jts.seagate.com/rest/raven/1.0/api/test?keys=' + test_id
@@ -265,31 +271,13 @@ class JiraTask:
             LOGGER.error('Exception in get_test_details: %s', e)
             return test_info
 
-    def update_execution_details(self, data: list, test_id: str, comment: str)\
-            -> bool:
+    def update_execution_details(self, test_run_id: str, test_id: str,
+                                 comment: str) -> bool:
         """
         Add comment to the mentioned jira id.
         """
-        run_id = None
         try:
-            if not data:
-                print("No test details found in test execution tkt")
-                return False
-
-            for i in range(0, len(data)):
-                for test in data[i]:
-                    if test['key'] != test_id:
-                        continue
-                    else:
-                        run_id = test['id']
-                        break
-
-            if run_id is None:
-                print("Test ID %s not found in test execution ticket details",
-                      test_id)
-                return False
-
-            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(run_id)
+            url = "https://jts.seagate.com/rest/raven/1.0/testrun/{}/comment".format(test_run_id)
 
             response = requests.request("PUT", url, data=comment,
                                         auth=(self.jira_id, self.jira_password),
