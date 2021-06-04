@@ -50,7 +50,7 @@ class TestNetworkFault:
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.public_data_ip = CMN_CFG["nodes"][0]["public_data_ip"]
-        cls.mgmt_ip = CMN_CFG["nodes"][0]['mgmt_ip']
+        cls.mgmt_ip = CMN_CFG["nodes"][0]["ip"]
         cls.setup_type = CMN_CFG['setup_type']
         cls.nw_interfaces = RAS_TEST_CFG["network_interfaces"][cls.setup_type]
         cls.mgmt_device = cls.nw_interfaces["MGMT"]
@@ -69,6 +69,8 @@ class TestNetworkFault:
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
 
         cls.mgmt_fault_flag = False
+        cls.public_data_fault_flag = False
+
 
         cls.csm_alerts_obj = SystemAlerts()
         cls.s3obj = S3H_OBJ
@@ -138,17 +140,36 @@ class TestNetworkFault:
         Teardown operations
         """
         LOGGER.info("STARTED: Performing the Teardown Operations")
-        network_fault_params = RAS_TEST_CFG["mgmt_nw_port_fault"]
+        network_fault_params = RAS_TEST_CFG["nw_port_fault"]
         if self.mgmt_fault_flag:
-            LOGGER.info("Resolving Mgmt Network Fault")
+            LOGGER.info("Resolving Mgmt Network port Fault")
             resp = self.alert_api_obj.generate_alert(
-                AlertType.MGMT_NW_PRT_FAULT_RESOLVED,
-                input_parameters={'device': self.mgmt_device,
-                                  'status': network_fault_params["generate_fault"],
-                                  'host_data_ip': self.public_data_ip})
+                AlertType.NW_PORT_FAULT_RESOLVED,
+                input_parameters={'device': self.mgmt_device})
 
+            LOGGER.info("Response: %s", resp)
             assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
                                              network_fault_params["resolve_fault"]))
+
+        if self.public_data_fault_flag:
+            LOGGER.info("Resolving Public data Network port Fault")
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.NW_PORT_FAULT_RESOLVED,
+                host_details={'host': self.mgmt_ip, 'h_user': self.uname,
+                              'h_pwd': self.passwd},
+                input_parameters={'device': self.public_data_device})
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp[0],
+                        "{} {}".format(network_fault_params["error_msg"],
+                                       network_fault_params[
+                                           "resolve_fault"]))
+
+        LOGGER.info("Change sspl log level to INFO")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
+        resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                     field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
 
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
@@ -177,14 +198,11 @@ class TestNetworkFault:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
-        # Revisit when actual HW is available
-        # self.health_obj.restart_pcs_resource(
-        #     resource=self.cm_cfg["sspl_resource_id"])
-        # time.sleep(self.cm_cfg["sleep_val"])
         service = self.cm_cfg["service"]
         self.node_obj.send_systemctl_cmd(command="restart",
                                          services=service["sspl_service"],
                                          decode=True)
+        time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
 
@@ -195,22 +213,22 @@ class TestNetworkFault:
         """
         EOS-21493: TA Destructive test : Automate mgt network port fault
         """
-        LOGGER.info("STARTED: Verifying management network fault and "
+        LOGGER.info("STARTED: Verifying management network port fault and "
                     "fault-resolved scenarios")
 
         common_params = RAS_VAL["nw_fault_params"]
-        network_fault_params = RAS_TEST_CFG["mgmt_nw_port_fault"]
-        LOGGER.info("Get values from cluster.sls")
+        network_fault_params = RAS_TEST_CFG["nw_port_fault"]
+        resource_id = self.mgmt_device
 
         LOGGER.info("Step 1: Generating management network faults")
         LOGGER.info("Step 1.1: Creating fault")
         resp = self.alert_api_obj.generate_alert(
-            AlertType.MGMT_NW_PORT_FAULT,
-            input_parameters={'device': self.mgmt_device,
-                              'status': network_fault_params["generate_fault"]})
+            AlertType.NW_PORT_FAULT,
+            input_parameters={'device': self.mgmt_device})
+        LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
                                          network_fault_params["generate_fault"]))
-        self.fault_flag = True
+        self.mgmt_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created management network "
                     f"port fault on {self.host}")
 
@@ -224,9 +242,11 @@ class TestNetworkFault:
             LOGGER.info("Step 1.2: Checking the generated alert logs")
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
-                          network_fault_params["resource_id_monitor"]]
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
             LOGGER.info(f"RAS checks: {alert_list}")
             resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
 
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
@@ -236,16 +256,17 @@ class TestNetworkFault:
         # resp = self.csm_alerts_obj.verify_csm_response(
         #                 self.starttime, self.alert_type["fault"],
         #                 False, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"])
+        #                 network_fault_params["resource_id_csm"].format(
+        #                               resource_id))
+        # LOGGER.info("Response: %s", resp)
         # assert_true(resp, "Failed to get alert in CSM REST")
         # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
-            AlertType.MGMT_NW_PRT_FAULT_RESOLVED,
-            input_parameters={'device': self.mgmt_device,
-                              'status': network_fault_params["resolve_fault"],
-                              'host_data_ip': self.public_data_ip})
+            AlertType.NW_PORT_FAULT_RESOLVED,
+            input_parameters={'device': self.mgmt_device})
+        LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
                                          network_fault_params["resolve_fault"]))
         self.mgmt_fault_flag = False
@@ -264,6 +285,7 @@ class TestNetworkFault:
                           network_fault_params["resource_id_monitor"]]
             LOGGER.info(f"RAS checks: {alert_list}")
             resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
@@ -275,11 +297,122 @@ class TestNetworkFault:
         #                 self.starttime,
         #                 self.alert_type["resolved"],
         #                 True, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"])
+        #                 network_fault_params["resource_id_csm"].format(
+        #                               resource_id))
+        # LOGGER.info("Response: %s", resp)
         # assert_true(resp, "Failed to get alert in CSM REST")
         # LOGGER.info(
         #     "Step 2.2: Successfully validated csm alert response after "
         #     "resolving fault")
 
-        LOGGER.info("ENDED: Verifying management network fault and "
+        LOGGER.info("ENDED: Verifying management network port fault and "
+                    "fault-resolved scenarios")
+
+    @pytest.mark.tags("TEST-21506")
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    def test_public_data_network_port_fault(self):
+        """
+        EOS-21506: TA Destructive test : Automate public_data network port fault
+        """
+        LOGGER.info("STARTED: Verifying public_data network port fault and "
+                    "fault-resolved scenarios")
+
+        common_params = RAS_VAL["nw_fault_params"]
+        network_fault_params = RAS_TEST_CFG["nw_port_fault"]
+        resource_id = self.public_data_device
+
+        LOGGER.info("Step 1: Generating public_data network port fault")
+        LOGGER.info("Step 1.1: Creating fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.NW_PORT_FAULT,
+            host_details={'host': self.mgmt_ip, 'h_user': self.uname,
+                          'h_pwd': self.passwd},
+            input_parameters={'device': self.public_data_device})
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
+                                            network_fault_params[
+                                                "generate_fault"]))
+        self.public_data_fault_flag = True
+        LOGGER.info("Step 1.1: Successfully created public_data network port "
+                    f"fault on {self.host}")
+
+        wait_time = random.randint(common_params["min_wait_time"],
+                                   common_params["max_wait_time"])
+
+        LOGGER.info(f"Waiting for {wait_time} seconds")
+        time.sleep(wait_time)
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 1.2: Checking the generated alert logs")
+            alert_list = [network_fault_params["resource_type"],
+                          self.alert_type["fault"],
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
+            LOGGER.info(f"RAS checks: {alert_list}")
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
+
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 1.2: Successfully checked generated alerts")
+
+        # Revisit when actual HW is available
+        # LOGGER.info("Step 1.3: Validating csm alert response")
+        # resp = self.csm_alerts_obj.verify_csm_response(
+        #                 self.starttime, self.alert_type["fault"],
+        #                 False, network_fault_params["resource_type"],
+        #                 network_fault_params["resource_id_csm"].format(
+        #                               resource_id))
+        # LOGGER.info("Response: %s", resp)
+        # assert_true(resp, "Failed to get alert in CSM REST")
+        # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+
+        LOGGER.info("Step 2: Resolving fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.NW_PORT_FAULT_RESOLVED,
+            host_details={'host': self.mgmt_ip, 'h_user': self.uname,
+                          'h_pwd': self.passwd},
+            input_parameters={'device': self.public_data_device})
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
+                                            network_fault_params[
+                                                "resolve_fault"]))
+        self.public_data_fault_flag = False
+        LOGGER.info("Step 2: Successfully resolved public_data network port "
+                    f"fault on {self.host}")
+
+        wait_time = common_params["min_wait_time"]
+
+        LOGGER.info(f"Waiting for {wait_time} seconds")
+        time.sleep(wait_time)
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 2.1: Checking the generated alert logs")
+            alert_list = [network_fault_params["resource_type"],
+                          self.alert_type["resolved"],
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
+            LOGGER.info(f"RAS checks: {alert_list}")
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 2.1: Successfully checked generated alerts")
+
+        # Revisit when actual HW is available
+        # LOGGER.info(
+        #     "Step 2.2: Validating csm alert response after resolving fault")
+        #
+        # resp = self.csm_alerts_obj.verify_csm_response(
+        #                 self.starttime,
+        #                 self.alert_type["resolved"],
+        #                 True, network_fault_params["resource_type"],
+        #                 network_fault_params["resource_id_csm"].format(
+        #                               resource_id))
+        # LOGGER.info("Response: %s", resp)
+        # assert_true(resp, "Failed to get alert in CSM REST")
+        # LOGGER.info(
+        #     "Step 2.2: Successfully validated csm alert response after "
+        #     "resolving fault")
+
+        LOGGER.info("ENDED: Verifying public data network port fault and "
                     "fault-resolved scenarios")
