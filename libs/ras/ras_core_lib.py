@@ -640,9 +640,9 @@ class RASCoreLib:
         if os.path.exists(local_path):
             os.remove(local_path)
         _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                        local_path=local_path,
-                                        host=self.host,
-                                        user=self.username, pwd=self.pwd)
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern

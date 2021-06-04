@@ -209,7 +209,7 @@ class TestNetworkFault:
     @pytest.mark.tags("TEST-21493")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    def test_mgmt_network_port_fault(self):
+    def test_mgmt_network_port_fault_test_21493(self):
         """
         EOS-21493: TA Destructive test : Automate mgt network port fault
         """
@@ -251,16 +251,16 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
-        # Revisit when actual HW is available
-        # LOGGER.info("Step 1.3: Validating csm alert response")
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime, self.alert_type["fault"],
-        #                 False, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+        # Revisit when alerts are available in CSM
+        LOGGER.info("Step 1.3: Validating csm alert response")
+        resp = self.csm_alerts_obj.verify_csm_response(
+                        self.starttime, self.alert_type["fault"],
+                        False, network_fault_params["resource_type"],
+                        network_fault_params["resource_id_csm"].format(
+                                      resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
@@ -282,7 +282,8 @@ class TestNetworkFault:
             LOGGER.info("Step 2.1: Checking the generated alert logs")
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["resolved"],
-                          network_fault_params["resource_id_monitor"]]
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
             LOGGER.info(f"RAS checks: {alert_list}")
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -290,20 +291,20 @@ class TestNetworkFault:
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         # Revisit when actual HW is available
-        # LOGGER.info(
-        #     "Step 2.2: Validating csm alert response after resolving fault")
-        #
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime,
-        #                 self.alert_type["resolved"],
-        #                 True, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info(
-        #     "Step 2.2: Successfully validated csm alert response after "
-        #     "resolving fault")
+        LOGGER.info(
+            "Step 2.2: Validating csm alert response after resolving fault")
+
+        resp = self.csm_alerts_obj.verify_csm_response(
+                        self.starttime,
+                        self.alert_type["resolved"],
+                        True, network_fault_params["resource_type"],
+                        network_fault_params["resource_id_csm"].format(
+                                      resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info(
+            "Step 2.2: Successfully validated csm alert response after "
+            "resolving fault")
 
         LOGGER.info("ENDED: Verifying management network port fault and "
                     "fault-resolved scenarios")
@@ -311,7 +312,7 @@ class TestNetworkFault:
     @pytest.mark.tags("TEST-21506")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    def test_public_data_network_port_fault(self):
+    def test_public_data_network_port_fault_21506(self):
         """
         EOS-21506: TA Destructive test : Automate public_data network port fault
         """
@@ -326,8 +327,8 @@ class TestNetworkFault:
         LOGGER.info("Step 1.1: Creating fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_PORT_FAULT,
-            host_details={'host': self.mgmt_ip, 'h_user': self.uname,
-                          'h_pwd': self.passwd},
+            host_details={'host': self.mgmt_ip, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
@@ -357,21 +358,21 @@ class TestNetworkFault:
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
         # Revisit when actual HW is available
-        # LOGGER.info("Step 1.3: Validating csm alert response")
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime, self.alert_type["fault"],
-        #                 False, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+        LOGGER.info("Step 1.3: Validating csm alert response")
+        resp = self.csm_alerts_obj.verify_csm_response(
+                        self.starttime, self.alert_type["fault"],
+                        False, network_fault_params["resource_type"],
+                        network_fault_params["resource_id_csm"].format(
+                                      resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_PORT_FAULT_RESOLVED,
-            host_details={'host': self.mgmt_ip, 'h_user': self.uname,
-                          'h_pwd': self.passwd},
+            host_details={'host': self.mgmt_ip, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
@@ -399,20 +400,20 @@ class TestNetworkFault:
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
         # Revisit when actual HW is available
-        # LOGGER.info(
-        #     "Step 2.2: Validating csm alert response after resolving fault")
-        #
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime,
-        #                 self.alert_type["resolved"],
-        #                 True, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info(
-        #     "Step 2.2: Successfully validated csm alert response after "
-        #     "resolving fault")
+        LOGGER.info(
+            "Step 2.2: Validating csm alert response after resolving fault")
+
+        resp = self.csm_alerts_obj.verify_csm_response(
+                        self.starttime,
+                        self.alert_type["resolved"],
+                        True, network_fault_params["resource_type"],
+                        network_fault_params["resource_id_csm"].format(
+                                      resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info(
+            "Step 2.2: Successfully validated csm alert response after "
+            "resolving fault")
 
         LOGGER.info("ENDED: Verifying public data network port fault and "
                     "fault-resolved scenarios")
