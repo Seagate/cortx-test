@@ -117,8 +117,7 @@ class TestNetworkFault:
         services = [service["sspl_service"], service["kafka_service"],
                     service["csm_web"], service["csm_agent"]]
         self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=service["sspl_service"],
-                                         decode=True)
+                                         services=[service["sspl_service"]])
 
         for svc in services:
             LOGGER.info("Checking status of %s service", svc)
@@ -200,8 +199,7 @@ class TestNetworkFault:
 
         service = self.cm_cfg["service"]
         self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=service["sspl_service"],
-                                         decode=True)
+                                         services=[service["sspl_service"]])
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
