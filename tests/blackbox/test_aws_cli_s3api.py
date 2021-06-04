@@ -82,7 +82,7 @@ class TestAwsCliS3Api:
             - Remove local files created during test execution
         """
         self.log.info("STARTED : Teardown operations at test function level")
-        # buckets = S3T_OBJ.bucket_list()[1]
+        self.log.info(self.buckets_list)
         for bucket_name in self.buckets_list:
             resp = S3T_OBJ.delete_bucket_awscli(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
@@ -110,12 +110,17 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_create_multiple_bucket_2329(self):
         """Create multiple buckets using aws cli."""
-        # buckets = []
         for i in range(2):
-            self.buckets_list.append("-".join([self.bucket_name, str(i)]))
-        resp = S3T_OBJ.create_bucket_awscli(
-            bucket_name=" ".join(self.buckets_list))
-        assert_utils.assert_false(resp[0], resp[1])
+            bucket_name = "-".join([self.bucket_name, str(i)])
+            self.buckets_list.append(bucket_name)
+        try:
+            resp = S3T_OBJ.create_bucket_awscli(
+                bucket_name=' '.join(self.buckets_list))
+            if not resp[0]:
+                self.buckets_list = list()
+            assert_utils.assert_false(resp[0], resp[1])
+        except Exception as ex:
+            self.log.info(ex)
         self.log.info(
             "Failed to create multiple buckets at a time using awscli")
 
@@ -134,14 +139,12 @@ class TestAwsCliS3Api:
         self.buckets_list.append(self.bucket_name)
         self.log.info("Successfully listed buckets using awscli")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7116")
     @CTFailOn(error_handler)
     def test_create_max_buckets_2331(self):
-        """max no of buckets supported using aws cli."""
-        max_buckets = 1000
-        for i in range(max_buckets):
+        """max no(1000) of buckets supported using aws cli."""
+        for i in range(1000):
             bucket_name = f"{self.bucket_name}{i}"
             resp = S3T_OBJ.create_bucket_awscli(
                 bucket_name=bucket_name)
@@ -161,7 +164,6 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
         self.log.info("Successfully deleted empty bucket using awscli")
 
     @pytest.mark.parallel
@@ -258,7 +260,6 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
         self.log.info("Successfully deleted bucket having objects in it")
 
     @pytest.mark.parallel
