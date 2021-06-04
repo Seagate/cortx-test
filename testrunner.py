@@ -223,7 +223,7 @@ def trigger_unexecuted_tests(args, test_list):
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
-    te_test_list = get_tests_from_te(jira_obj, args, ['TODO'])
+    te_test_list, tag = get_tests_from_te(jira_obj, args, ['TODO'])
     if len(te_test_list) != 0:
         # check if there are any selected tests with todo status
         unexecuted_test_list = [test for test in test_list if test in te_test_list]
