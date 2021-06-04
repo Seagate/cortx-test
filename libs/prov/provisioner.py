@@ -433,7 +433,7 @@ class Provisioner:
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
-                Provisioner.install_pre_requisites.__name__)
+                Provisioner.confstore_verification.__name__)
             return False, error
 
 

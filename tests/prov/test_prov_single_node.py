@@ -199,7 +199,7 @@ class TestProvSingleNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
-    @pytest.mark.tags("TEST-xxxx")
+    @pytest.mark.tags("TEST-22858")
     @CTFailOn(error_handler)
     def test_confstore_validate_single_node(self):
         """
