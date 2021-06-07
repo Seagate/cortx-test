@@ -387,7 +387,6 @@ class TestAwsCliS3Api:
         self.log.info(
             "Successfully deleted all objects from bucket using awscli")
 
-    @pytest.mark.skip
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7127")
