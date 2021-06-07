@@ -1,0 +1,104 @@
+pipeline {
+    agent {
+        label any
+    }
+
+    environment {
+        AWS_ACCESS_KEY_ID     = ''
+        AWS_SECRET_ACCESS_KEY = ''
+    }
+
+    options {
+        timeout(time: 120, unit: 'MINUTES')
+        timestamps()
+
+    }
+
+    triggers {
+
+        cron('H 23 * * *')
+    }
+
+    parameters {
+        string(name: 'Branch', defaultValue: 'dev', description: 'Branch name of cortx-test', trim: true)
+        string(name: 'TestPlanNumber', defaultValue: 'TEST-18383', description: 'Master Test plan number to clone', trim: true)
+        string(name: 'TEs_To_Exclude', description: 'Space separated TEs from template TP which you want to exclude from execution.', trim: true)
+        string(name: 'Target_Node', description: 'Name of target setup mentioned in database', trim: true)
+        string(name: 'Setup_Type', defaultValue: 'default', description: 'Either of default/isolated/nearfull', trim: true)
+        choice(name: 'Platform_Type', choices: ['VM', 'HW', 'OVA'], description: 'Is target a VM or a HW or an OVA?')
+        text(name: 'DESC', description: 'This job triggers CSM GUI, Cortx-test and Load tests in parallel')
+        string(name: 'Nodes_In_Target', defaultValue: '3', description: 'Number of nodes in target: 3 or 3N', trim: true)
+        string(name: 'Server_Type', description: 'HPC/DELL/SMC', trim: true)
+        string(name: 'Enclosure_Type', defaultValue: '5U84',description: '5U84/PODS/JBOD', trim: true)
+        string(name: 'Build', description: 'Build number of target', trim: true)
+        string(name: 'Build_Type', defaultValue: 'stable', description: 'Branch name from which build is cut stable/main', trim: true)
+        credentials(
+                credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
+                defaultValue: '',
+                description: 'JIRA Credentials.',
+                name: 'JIRA_CRED',
+                required: true)
+        string(name: 'Git_Branch_Name', defaultValue: 'dev', description: 'Branch name of Cortx-test', trim: true)
+        booleanParam(name: 'Need_pip_source', description: 'Tick this if you want to add source in requirements installation. e.g. pip3 install -r requirements.txt -i https://pypi.python.org/simple/')
+        booleanParam(name: 'DB_Update', description: 'Tick this if you want to push test execution data to database')
+        booleanParam(name: 'Sequential_Execution', description: 'Tick this if you want to have sequential execution')
+        string(name: 'Process_Cnt_Parallel_Exe', defaultValue: '2', description: 'If Sequential Execution is not selected, then provide number of parallel process to run.', trim: true)
+        string(name: 'Node_VM_details', defaultValue: 'comma separated FQDNs here', description: 'comma separated FQDN of the vms on which', trim: true)
+    }
+
+    stages {
+        stage('Checkout cortx-test on client vm') {
+            when { expression { true } }
+            steps {
+                script {
+                    step([$class: 'WsCleanup'])
+                    dir('cortx-test'){
+                        checkout([$class: 'GitSCM', branches: [[name: "${Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'AuthorInChangelog'], [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'cortx-admin-github', url: 'https://github.com/Seagate/cortx-test.git']]])
+                        sh './ci_tools/client_setup.sh'
+                    }
+                }
+
+            }
+        }
+        stage('Multi Node Deploy and Health Check') {
+            steps {
+                ansiColor('xterm') {
+                    echo "Executing 3 Node Deployment and Health Check on setup."
+                }
+                retry(3) { // Retries x number of times until its successful
+                    sh 'python3 scripts/jenkins_job/trigger_jenkins_job.py'
+                }
+                script {
+                    // verify health here
+                }
+            }
+        }
+        stage('Cortx-Text Automation Trigger') {
+            steps {
+                script {
+                    def name = "${params.TestPlanNumber}"
+                    echo "Executing $name"
+                }
+                catchError {
+                    sh './ci_tools/run_tests.sh'
+
+                }
+                echo currentBuild.result
+            }
+        }
+
+    }
+
+
+    post {
+        success {
+            echo "The pipeline ${currentBuild.fullDisplayName} completed successfully."
+        }
+        failure {
+            mail to: 'sarang.sawant@seagate.com',
+                    subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
+                    body: "Something is wrong with ${env.BUILD_URL}"
+        }
+
+    }
+}
