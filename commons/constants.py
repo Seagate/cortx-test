@@ -90,6 +90,7 @@ CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
+SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
