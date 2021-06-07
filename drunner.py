@@ -368,7 +368,8 @@ def get_te_tickets_data(ticket: str) -> Tuple[list, str]:
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = jira_obj.get_test_ids_from_te(ticket)
+    test_tuple, te_tag = jira_obj.get_test_ids_from_te(ticket)
+    test_list = list(list(zip(*test_tuple))[0])
     if len(test_list) == 0 or te_tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list, te_tag
