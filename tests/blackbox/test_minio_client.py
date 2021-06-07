@@ -43,15 +43,15 @@ MINIO_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 class TestMinioClient:
     """Black box minio client Testsuite."""
 
-    @classmethod
-    def setup_class(cls):
+    def setup_method(self):
         """
         Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        It will perform all prerequisite steps if any.
+        Initializing common variable which will be used in test
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: Setup operations")
         resp = system_utils.configre_minio_cloud(
             minio_repo=S3_CFG["minio_repo"],
             endpoint_url=S3_CFG["s3_url"],
@@ -67,44 +67,23 @@ class TestMinioClient:
                 S3_CFG["minio_path"]))
         minio_dict = config_utils.read_content_json(
             S3_CFG["minio_path"], mode='rb')
-        cls.log.info(minio_dict)
+        self.log.info(minio_dict)
         if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
                 or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
             resp = S3H_OBJ.configure_minio(ACCESS_KEY, SECRET_KEY)
             assert_utils.assert_true(
                 resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
-        cls.root_path = os.path.join(
+        self.root_path = os.path.join(
             os.getcwd(), TEST_DATA_FOLDER, "TestMinioClient")
-        if not system_utils.path_exists(cls.root_path):
-            system_utils.make_dirs(cls.root_path)
-            cls.log.info("Created path: %s", cls.root_path)
-        cls.log.info("ENDED: setup test suite operations.")
+        if not system_utils.path_exists(self.root_path):
+            system_utils.make_dirs(self.root_path)
+            self.log.info("Created path: %s", self.root_path)
 
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if system_utils.path_exists(cls.root_path):
-            system_utils.remove_dirs(cls.root_path)
-        cls.log.info("Cleanup test directory: %s", cls.root_path)
-        cls.log.info("ENDED: teardown test suite operations.")
-
-    def setup_method(self):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite steps if any.
-        Initializing common variable which will be used in test
-        """
-        self.log.info("STARTED: Setup operations")
         self.bucket_name = "min-bkt-{}".format(time.perf_counter_ns())
         self.test_file = "minio_client{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.root_path, self.test_file)
         self.minio_cnf = MINIO_CFG["minio_cfg"]
+        self.buckets_list = list()
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -118,9 +97,9 @@ class TestMinioClient:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bucket_list = S3T_OBJ.bucket_list()[1]
-        if self.bucket_name in bucket_list:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+        # bucket_list = S3T_OBJ.bucket_list()[1]
+        for bucket_name in self.buckets_list:
+            resp = S3T_OBJ.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("The bucket and objects deleted successfully")
         self.log.info("Deleting files created locally for object")
@@ -145,6 +124,7 @@ class TestMinioClient:
         self.log.info(
             "Step 1: Bucket is created with name %s", bucket_name)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7536")
     @CTFailOn(error_handler)
@@ -161,8 +141,10 @@ class TestMinioClient:
         self.log.info(
             "Step 2: Verified that %s bucket was created",
             self.bucket_name)
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: Create single bucket using Minio Client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7537")
     @CTFailOn(error_handler)
@@ -187,6 +169,7 @@ class TestMinioClient:
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Create multiple buckets using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7545")
     @CTFailOn(error_handler)
@@ -199,8 +182,10 @@ class TestMinioClient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.bucket_name, resp[1], resp)
         self.log.info("Step 2: Buckets are listed")
+        self.buckets_list.append(self.bucket_name)
         self.log.info("Ended: List buckets using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7544")
     @CTFailOn(error_handler)
@@ -211,24 +196,27 @@ class TestMinioClient:
         self.log.info(
             "Step 1: Creating %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
+        pref_list = list()
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
             cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name)
             resp = system_utils.run_local_cmd(cmd)
             assert_utils.assert_true(resp[0], resp[1])
+            pref_list.append(bkt_name)
         self.log.info(
             "Step 1: Created %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
         self.log.info("Step 2: Verifying buckets are created")
         bucket_list = S3T_OBJ.bucket_list()[1]
-        pref_list = [
-            each_bucket for each_bucket in bucket_list if each_bucket.startswith(
-                self.bucket_name)]
         for each_bucket in pref_list:
             assert_utils.assert_in(each_bucket, bucket_list)
+        self.log.info("Cleanup: Deleting created buckets")
+        S3T_OBJ.delete_multiple_buckets(
+            bucket_list=pref_list)
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7548")
     @CTFailOn(error_handler)
@@ -256,6 +244,7 @@ class TestMinioClient:
             self.bucket_name)
         self.log.info("ENDED: Delete empty bucket using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7547")
     @CTFailOn(error_handler)
@@ -293,6 +282,7 @@ class TestMinioClient:
         self.log.info(
             "ENDED: delete bucket which has objects using Minion Client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7546")
     @CTFailOn(error_handler)
@@ -309,9 +299,11 @@ class TestMinioClient:
         self.log.info(
             "Step 1: Creating a bucket with existing name is failed with error %s",
             "Unable to make bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Create bucket using existing bucket name using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7543")
     @CTFailOn(error_handler)
@@ -338,9 +330,11 @@ class TestMinioClient:
             self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info(
             "Step 3: Listed object from a bucket %s", self.bucket_name)
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: To list objects inside bucket using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7541")
     @CTFailOn(error_handler)
@@ -371,9 +365,11 @@ class TestMinioClient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(0, len(resp[1].strip("b''")), resp[1])
         self.log.info("Step 4: Verified that object is deleted from a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Delete an object from bucket using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7542")
     @CTFailOn(error_handler)
@@ -397,8 +393,10 @@ class TestMinioClient:
         assert_utils.assert_in(os.path.basename(
             self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info("Step 3: Verified that object is uploaded to a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info("ENDED: copy object from bucket using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7538")
     @CTFailOn(error_handler)
@@ -426,9 +424,11 @@ class TestMinioClient:
         assert_utils.assert_in(os.path.basename(
             self.file_path), resp[1].split(" ")[-1], resp[1])
         self.log.info("Step 4: Verified that object is uploaded to a bucket")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: upload object of large size of(5gb) using Minion Client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7540")
     @CTFailOn(error_handler)
@@ -460,9 +460,11 @@ class TestMinioClient:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
         self.log.info("Step 3: Displayed content of a text file")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Display the contents of a text file using Minion client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7539")
     @CTFailOn(error_handler)
@@ -500,5 +502,6 @@ class TestMinioClient:
             "Displaying first few lines of a text file : %s",
             resp[1])
         self.log.info("Step 4: Performed head object")
+        self.buckets_list.append(self.bucket_name)
         self.log.info(
             "ENDED: Display the first few lines of a text file using Minion Client")
