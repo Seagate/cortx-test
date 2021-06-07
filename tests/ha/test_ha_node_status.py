@@ -52,6 +52,8 @@ class TestNodeStatus:
         LOGGER.info("STARTED: Setup Module operations")
         cls.setup_type = CMN_CFG["setup_type"]
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
+        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
+        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
 
         cls.host1 = CMN_CFG["nodes"][0]["hostname"]
         cls.uname1 = CMN_CFG["nodes"][0]["username"]
@@ -79,15 +81,10 @@ class TestNodeStatus:
 
         LOGGER.info("Done: Setup module operations")
 
-    @pytest.mark.ha
-    @pytest.mark.tags("TEST-22544")
-    @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe(self):
+    def check_system(self,):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, safe shutdown)
+        Helper function for checking sanity of the system.
         """
-        test_cfg = HA_CFG["common"]
         node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
         LOGGER.info("Check that the host is pinging")
         for nd_obj in node_obj_list:
@@ -112,4 +109,15 @@ class TestNodeStatus:
             assert_utils.assert_not_in(
                 "Stopped", line, "Some services are not up.")
 
-        
+
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-22544")
+    @CTFailOn(error_handler)
+    def test_nodes_one_by_one_safe(self):
+        """
+        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
+        online(one by one, safe shutdown)
+        """
+        test_cfg = HA_CFG["common"]
+        self.check_system()
+
