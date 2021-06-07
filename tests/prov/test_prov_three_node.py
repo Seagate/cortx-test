@@ -257,14 +257,11 @@ class TestProvThreeNode:
         """
         LOGGER.info("Started: confstore keys validation.")
         LOGGER.info("Check that the cluster is up and running.")
-        test_cfg = PROV_CFG["system"]
-        cmd = common_cmds.PCS_STATUS_CMD
-        resp = self.nd1_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("PCS status: %s", resp)
-        for line in resp:
-            assert_utils.assert_not_in(
-                test_cfg["stopped"], line, "Some services are not up.")
-        LOGGER.info("PCS looks clean.")
+        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
+        for hlt_obj in hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are accessible and PCS looks clean.")
 
         for node_id in range(1, 4):
             for key in PROV_CFG["confstore_list"]:
