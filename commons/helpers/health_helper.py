@@ -436,3 +436,26 @@ class Health(Host):
         LOG.info(response)
 
         return response
+
+    def pcs_resource_cmd(self, resource: list, wait_time: int = 30) \
+            -> Tuple[bool, str]:
+        """
+        Perform given operation on pcs resource using pcs resource command
+
+        :param resource: list of resource names from pcs resource
+        :param wait_time: Wait time in sec after performing operation
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        LOG.info("Restarting resource : %s", resource)
+        cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        resp = re.sub(r'[^\w-]', ' ', resp[0]).strip()
+        time.sleep(wait_time)
+        success_msg = "{} successfully restarted".format(resource)
+        if success_msg == resp:
+            LOG.info("Successfully restarted service %s", format(resource))
+            return True, resp
+
+        return False, resp

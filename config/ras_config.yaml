@@ -51,7 +51,7 @@ ras_sspl_alert:
     kafka_service: "kafka"
     csm_web: "csm_web"
     csm_agent: "csm_agent"
-  sspl_resource_id: "sspl-ll-clone"
+  sspl_resource_id: "monitor_group-clone"
   mc_debug_port: 7900
   telnet_sleep_val: 120
   max_wait_time: 320
