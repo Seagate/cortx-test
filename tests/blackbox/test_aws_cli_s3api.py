@@ -392,9 +392,9 @@ class TestAwsCliS3Api:
     @pytest.mark.tags("TEST-7127")
     @CTFailOn(error_handler)
     def test_multipart_upload_2342(self):
-        """update object of large size of(10gb) using aws cli."""
+        """update object of large size of(10gb) using aws cli. No of parts is 20."""
         file_size = 10000
-        no_of_parts = 10
+        no_of_parts = 20
         split_parts = system_utils.split_file(
             self.file_path, file_size, no_of_parts)
         mpu_parts_list = [part["Output"] for part in split_parts]
