@@ -426,6 +426,7 @@ class TestNetworkFault:
         LOGGER.info("STARTED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
 
+        service = self.cm_cfg["service"]
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_port_fault"]
         nw_port_faults = {'mgmt_fault': {'host': self.host,
@@ -489,12 +490,21 @@ class TestNetworkFault:
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
-            LOGGER.info("Stopping pcs resource for SSPL: %s",
+            LOGGER.info("Step 2: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
+            resp = self.health_obj.pcs_resource_cmd(command="disable",
+                                                    resources=[self.sspl_resource_id])
+            assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
+            LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
+            LOGGER.info("Step 2.1: Checking if SSPL is in stopped state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                            "sspl_service"]],
+                                                    decode=True, exc=False)
+            compare(resp, "inactive")
+            LOGGER.info("Step 2.1: Successfully stopped SSPL service")
 
-
-
-            LOGGER.info("Step 2: Resolving fault")
+            LOGGER.info("Step 3: Resolving fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_PORT_FAULT_RESOLVED,
                 host_details={'host': host, 'host_user': host_user,
@@ -506,7 +516,7 @@ class TestNetworkFault:
                                                 network_fault_params[
                                                    "resolve_fault"]))
             flag = False
-            LOGGER.info("Step 2: Successfully resolved public_data network "
+            LOGGER.info("Step 3: Successfully resolved public_data network "
                         "port fault on {self.host}")
 
             wait_time = common_params["min_wait_time"]
@@ -514,8 +524,13 @@ class TestNetworkFault:
             LOGGER.info(f"Waiting for {wait_time} seconds")
             time.sleep(wait_time)
 
+            LOGGER.info("Step 4: Starting SSPL service")
+            self.node_obj.send_systemctl_cmd(command="start",
+                                             services=[service["sspl_service"]])
+            LOGGER.info("Step 4: Started SSPL service successfully")
+
             if self.start_msg_bus:
-                LOGGER.info("Step 2.1: Checking the generated alert logs")
+                LOGGER.info("Step 5: Checking the generated alert logs")
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
@@ -524,10 +539,10 @@ class TestNetworkFault:
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 assert_true(resp[0], resp[1])
-                LOGGER.info("Step 2.1: Successfully checked generated alerts")
+                LOGGER.info("Step 5: Successfully checked generated alerts")
 
             LOGGER.info(
-                "Step 2.2: Validating csm alert response after resolving fault")
+                "Step 5.1: Validating csm alert response after resolving fault")
 
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime,
@@ -537,7 +552,7 @@ class TestNetworkFault:
             LOGGER.info("Response: %s", resp)
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info(
-                "Step 2.2: Successfully validated csm alert response after "
+                "Step 5.1: Successfully validated csm alert response after "
                 "resolving fault")
 
         LOGGER.info("ENDED: Verifying public data network port fault and "

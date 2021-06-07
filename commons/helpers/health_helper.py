@@ -437,25 +437,28 @@ class Health(Host):
 
         return response
 
-    def pcs_resource_cmd(self, resource: list, wait_time: int = 30) \
-            -> Tuple[bool, str]:
+    def pcs_resource_cmd(self, command: str, resources: list,
+                         wait_time: int = 30) -> bool:
         """
         Perform given operation on pcs resource using pcs resource command
 
-        :param resource: list of resource names from pcs resource
+        :param command: pcs operation to be performed on resource
+        :param resources: list of resource names from pcs resource
         :param wait_time: Wait time in sec after performing operation
         :return: tuple with boolean and response/error
         :rtype: tuple
         """
-        LOG.info("Restarting resource : %s", resource)
-        cmd = commands.PCS_RESOURCE_RESTART_CMD.format(resource)
+        valid_commands = {"start", "stop", "enable", "disable", "restart"}
+        if command not in valid_commands:
+            raise ValueError("Invalid command")
+        for rsrc in resources:
+            LOG.info("Performing %s on resource %s", command, rsrc)
+            cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc)
 
-        resp = self.execute_cmd(cmd, read_lines=True)
-        resp = re.sub(r'[^\w-]', ' ', resp[0]).strip()
-        time.sleep(wait_time)
-        success_msg = "{} successfully restarted".format(resource)
-        if success_msg == resp:
-            LOG.info("Successfully restarted service %s", format(resource))
-            return True, resp
+            resp = self.execute_cmd(cmd, read_lines=True)
+            resp = re.sub(r'[^\w-]', ' ', resp[0]).strip()
+            LOG.debug("Response: %s", resp)
+            time.sleep(wait_time)
+            LOG.info("Successfully performed %s on %s".format(command, rsrc))
 
-        return False, resp
+        return True
