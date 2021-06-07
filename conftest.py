@@ -87,12 +87,6 @@ def read_project_config(request):
         return json.load(fp)
 
 
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
-
-
 @pytest.fixture(scope='session')
 def formatter():
     format_log_message = '%(asctime)s\t%(levelname)s\t%(filename)s\t%(funcName)s' \
@@ -458,7 +452,7 @@ def reset_imported_module_log_level():
 def pytest_collection(session):
     """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    LOGGER.info(dir(session.config))
+    #LOGGER.info(dir(session.config))
     config = session.config
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
@@ -592,7 +586,7 @@ def pytest_runtest_makereport(item, call):
     try:
         attr = getattr(item, 'call_duration')
     except AttributeError as attr_error:
-        LOGGER.debug('Exception %s occurred', str(attr_error))
+        LOGGER.warning('Exception %s occurred', str(attr_error))
         setattr(item, "call_duration", call.duration)
     else:
         setattr(item, "call_duration", call.duration + attr)
@@ -774,11 +768,12 @@ def pytest_runtest_logstart(nodeid, location):
             suite = current_suite
     # Check health status of target
     target = Globals.TARGET
-    try:
-        check_cortx_cluster_health()
-        check_cluster_storage()
-    except (AssertionError, Exception) as fault:
-        pytest.exit(f'Health check failed for cluster {target}')
+    if not Globals.LOCAL_RUN and False:
+        try:
+            check_cortx_cluster_health()
+            check_cluster_storage()
+        except (AssertionError, Exception) as fault:
+            pytest.exit(f'Health check failed for cluster {target}')
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
@@ -859,6 +854,7 @@ def generate_random_string():
     :rtype: str
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+
 
 def filter_report_session_finish(session):
     if session.config.option.xmlpath:
