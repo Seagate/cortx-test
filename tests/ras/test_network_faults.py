@@ -104,6 +104,15 @@ class TestNetworkFault:
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
+        LOGGER.info("Check status of all network interfaces")
+        status = self.health_obj.check_nw_interface_status()
+        for k, v in status.items():
+            if "DOWN" in v:
+                LOGGER.info("%s is down. Please check network connections and "
+                            "restart tests.", k)
+                assert False, f"{k} is down. Please check network connections " \
+                              f"and restart tests."
+        LOGGER.info("All network interfaces are up.")
         LOGGER.info("Change sspl log level to DEBUG")
         self.ras_test_obj.set_conf_store_vals(
             url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "DEBUG"})
