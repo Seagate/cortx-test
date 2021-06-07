@@ -241,8 +241,6 @@ test_22060:
   csm_error_msg: "Failed to get alerts using CSM REST API"
 
 nw_port_fault:
-  generate_fault: "down"
-  resolve_fault: "up"
   resource_id_monitor : '"resource_id": "{}"'
   resource_id_csm : '"resource_id":"{}"'
   resource_type: "node:interface:nw"
