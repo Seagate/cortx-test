@@ -89,6 +89,7 @@ CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
+SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
@@ -276,16 +277,25 @@ class SwAlerts:
         "elasticsearch.service",
         "statsd.service",
         "rsyslog.service",
-        "haproxy.service",
+#        "haproxy.service",  # commented due to defect EOS-20842
+        "hare-consul-agent.service",
+        "lnet.service",
         "slapd.service",
         "lnet.service",
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service"
-    ]
+        "scsi-network-relay.service"]
 
+    SVCS_3P_UNAVAIL_VM = [
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"]
+
+    SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
+
+    SVC_LOAD_TIMEOUT_SEC = 30
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
