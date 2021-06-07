@@ -28,18 +28,20 @@ import time
 import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
+from commons.helpers.bmc_helper import Bmc
 from commons import commands as common_cmds
 from commons.utils import assert_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, HA_CFG
-from libs.prov.provisioner import Provisioner
+from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
+from libs.csm.cli.cortx_cli import CortxCli
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
 
-class TestNodeStatus:
+class TestHAHealthStatus:
     """
     Test suite for node status tests of HA.
     """
@@ -54,6 +56,8 @@ class TestNodeStatus:
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
         cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
+        cls.bmc_user = CMN_CFG["bmc"]["username"]
+        cls.bmc_pwd = CMN_CFG["bmc"]["password"]
 
         cls.host1 = CMN_CFG["nodes"][0]["hostname"]
         cls.uname1 = CMN_CFG["nodes"][0]["username"]
@@ -62,6 +66,12 @@ class TestNodeStatus:
                            password=cls.passwd1)
         cls.hlt_obj1 = Health(hostname=cls.host1, username=cls.uname1,
                               password=cls.passwd1)
+        cls.bmc_obj1 = Bmc(hostname=cls.host1, username=cls.uname1,
+                              password=cls.passwd1)
+        cls.sys_obj1 = CortxCliSystemtOperations(
+            host=cls.host1, username=cls.uname1, password=cls.passwd1)
+        cls.cli_obj1 = CortxCli(host=cls.host1,
+                                username=cls.uname1, password=cls.passwd1)
 
         cls.host2 = CMN_CFG["nodes"][1]["hostname"]
         cls.uname2 = CMN_CFG["nodes"][1]["username"]
@@ -70,6 +80,12 @@ class TestNodeStatus:
                            password=cls.passwd2)
         cls.hlt_obj2 = Health(hostname=cls.host2, username=cls.uname2,
                               password=cls.passwd2)
+        cls.bmc_obj2 = Bmc(hostname=cls.host2, username=cls.uname2,
+                              password=cls.passwd2)
+        cls.sys_obj2 = CortxCliSystemtOperations(
+            host=cls.host2, username=cls.uname2, password=cls.passwd2)
+        cls.cli_obj2 = CortxCli(host=cls.host2,
+                                username=cls.uname2, password=cls.passwd2)
 
         cls.host3 = CMN_CFG["nodes"][2]["hostname"]
         cls.uname3 = CMN_CFG["nodes"][2]["username"]
@@ -78,37 +94,38 @@ class TestNodeStatus:
                            password=cls.passwd3)
         cls.hlt_obj3 = Health(hostname=cls.host3, username=cls.uname3,
                               password=cls.passwd3)
+        cls.bmc_obj3 = Bmc(hostname=cls.host3, username=cls.uname3,
+                              password=cls.passwd3)
+        cls.sys_obj3 = CortxCliSystemtOperations(
+            host=cls.host3, username=cls.uname3, password=cls.passwd3)
+        cls.cli_obj3 = CortxCli(host=cls.host3,
+                                username=cls.uname3, password=cls.passwd3)
 
         LOGGER.info("Done: Setup module operations")
 
-    def check_system(self,):
+    def setup_method(self):
         """
-        Helper function for checking sanity of the system.
+        This function will be invoked prior to each test case.
+        It is performing below operations as pre-requisites.
+            - Login to CSMCLI as admin
         """
-        node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
-        LOGGER.info("Check that the host is pinging")
-        for nd_obj in node_obj_list:
-            nd_obj.execute_cmd(
-                common_cmds.CMD_PING.format(
-                    nd_obj.hostname),
-                read_lines=True)
+        LOGGER.info("STARTED: Setup Operations")
+        LOGGER.info("Logging into CORTXCLI as admin...")
+        login = self.cli_obj1.login_cortx_cli()
+        assert_utils.assert_true(login[0], login[1])
+        LOGGER.info("Logged into CORTXCLI as admin successfully")
+        LOGGER.info("ENDED: Setup Operations")
 
-        LOGGER.info("Check that all the services are up in hctl.")
-        cmd = common_cmds.MOTR_STATUS_CMD
-        resp = self.nd1_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("hctl status: %s", resp)
-        for line in resp:
-            assert_utils.assert_not_in(
-                "offline", line, "Some services look offline.")
-
-        LOGGER.info("Check that all services are up in pcs.")
-        cmd = common_cmds.PCS_STATUS_CMD
-        resp = self.nd1_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.info("PCS status: %s", resp)
-        for line in resp:
-            assert_utils.assert_not_in(
-                "Stopped", line, "Some services are not up.")
-
+    def teardown_method(self):
+        """
+        This function will be invoked after each test function in the module.
+        It is performing below operations.
+            - Log out from CORTX CLI console.
+        """
+        if self.pri_node_logout:
+            LOGGER.info("Logging out from CSMCLI console...")
+            self.cli_obj1.logout_cortx_cli()
+            LOGGER.info("Logged out from CSMCLI console successfully")
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
@@ -118,6 +135,14 @@ class TestNodeStatus:
         Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
         online(one by one, safe shutdown)
         """
-        test_cfg = HA_CFG["common"]
-        self.check_system()
+        LOGGER.info("Started: Test to check node status one by one for all nodes with safe shutdown.")
 
+        LOGGER.info("Checking if all nodes online and PCS clean.")
+        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
+        for hlt_obj in hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online adn PCS looks clean.")
+
+        LOGGER.info("Check in cortxcli that all nodes are shown online.")
+        
