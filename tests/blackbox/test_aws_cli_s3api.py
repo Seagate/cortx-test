@@ -176,7 +176,7 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        file_status = system_utils.create_file(fpath=self.file_path, count=1)
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
             resp = system_utils.run_local_cmd(
                 cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
@@ -184,6 +184,8 @@ class TestAwsCliS3Api:
                     self.bucket_name,
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
+        else:
+            self.log.info("File is not created because: ", output)
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
@@ -251,13 +253,16 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
-        assert_utils.assert_true(resp[0], resp[1])
+        status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        if status:
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                    self.file_path,
+                    self.bucket_name,
+                    self.object_name))
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            self.log.info("file is not created because:", output)
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -272,13 +277,16 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
-        assert_utils.assert_true(resp[0], resp[1])
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        if file_status:
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                    self.file_path,
+                    self.bucket_name,
+                    self.object_name))
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            self.log.info("File is not created because: ", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
@@ -295,13 +303,16 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
-        assert_utils.assert_true(resp[0], resp[1])
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        if file_status:
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                    self.file_path,
+                    self.bucket_name,
+                    self.object_name))
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            self.log.info("File is not created because: ", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_exact_string(resp[1], self.object_name)
@@ -322,7 +333,8 @@ class TestAwsCliS3Api:
         """delete multiple object using aws cli."""
         object_list = list()
         object_count = 3
-        system_utils.create_file(fpath=self.file_path, count=1)
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        assert_utils.assert_true(file_status, output)
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -362,7 +374,8 @@ class TestAwsCliS3Api:
         """delete max no of objects using aws cli."""
         object_list = list()
         object_count = 3
-        system_utils.create_file(fpath=self.file_path, count=1)
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        assert_utils.assert_true(file_status, output)
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -472,13 +485,16 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
-        assert_utils.assert_true(resp[0], resp[1])
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        if file_status:
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                    self.file_path,
+                    self.bucket_name,
+                    self.object_name))
+            assert_utils.assert_true(resp[0], resp[1])
+        else:
+            self.log.info("File is not created because: ", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
@@ -495,13 +511,13 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.create_file(fpath=self.file_path, count=1)
-        if resp[0]:
-            before_checksum = system_utils.calculate_checksum(self.file_path)
-            self.log.info(
-                "File path: %s, before_checksum: %s",
-                self.file_path,
-                before_checksum)
+        file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
+        assert_utils.assert_true(file_status, output)
+        before_checksum = system_utils.calculate_checksum(self.file_path)
+        self.log.info(
+            "File path: %s, before_checksum: %s",
+            self.file_path,
+            before_checksum)
         self.log.info("Uploading objects to bucket using awscli")
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
