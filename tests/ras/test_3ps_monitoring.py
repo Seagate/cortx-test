@@ -116,6 +116,7 @@ class Test3PSvcMonitoring:
         LOGGER.info("Capture threshold_inactive_time form {}".format(self.sspl_cfg_url))
         self.thrs_inact_time_org = self.ras_test_obj.get_conf_store_vals(
                 url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
+        LOGGER.info("Captured threshold_inactive_time is {}".format(self.thrs_inact_time_org))
 
         self.starttime = time.time()
         if self.start_msg_bus:
@@ -505,50 +506,43 @@ class Test3PSvcMonitoring:
         for svc in self.external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
-            thrs_inact_time_org = self.ras_test_obj.get_conf_store_vals(
-                url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
-            LOGGER.info("Captured original threshold_inactive_time is {}".format(thrs_inact_time_org))
-            thrs_inact_time_tmp = 50
-            LOGGER.info("Step 1: Configured threshold_inactive_time to {}".format(thrs_inact_time_tmp))
+            thrs_inact_time_tmp = 20
+            LOGGER.info("Step 1: Configure threshold_inactive_time to {}".format(thrs_inact_time_tmp))
             self.ras_test_obj.set_conf_store_vals(
                 url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": thrs_inact_time_tmp})
             resp = self.ras_test_obj.get_conf_store_vals(
                 url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
-            assert resp == thrs_inact_time_tmp, "Unable to configure threshold_inactive_time"
+            assert resp == str(thrs_inact_time_tmp), "Unable to configure threshold_inactive_time"
             LOGGER.info("Step 1: Configured threshold_inactive_time is : %s", resp)
 
             LOGGER.info("Step 2: Reloading %s service...", svc)
             starttime = time.time()
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
-                svc, "reloading", self.external_svcs)
+                svc, "reloading", self.external_svcs, timeout=10)
             assert result, f"Failed in reloading {svc} service"
             LOGGER.info("Step 2: Reloaded %s service...", svc)
 
-            timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
-            LOGGER.info("Step 3: Wait for : %s seconds", timeout)
-            time.sleep(timeout)
-
             if self.start_msg_bus:
-                LOGGER.info("Step 4: Checking the fault alert on message bus")
+                LOGGER.info("Step 3: Checking the fault alert on message bus")
                 alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
                               const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                           restart=False)
                 assert resp[0], resp[1]
-                LOGGER.info("Step 4: Verified the fault alert on message bus")
+                LOGGER.info("Step 3: Verified the fault alert on message bus")
 
             # TODO: Check alert on CSM
-            LOGGER.info("Step 5: Checking the fault alert on CSM")
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
-            LOGGER.info("Step 5: Verified the fault alert on CSM")
+            LOGGER.info("Step 4: Checking the fault alert on CSM")
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 4: Verified the fault alert on CSM")
 
-            LOGGER.info("Step 6: Restore threshold_inactive_time to {}".format(thrs_inact_time_org))
+            LOGGER.info("Step 5: Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
             self.ras_test_obj.set_conf_store_vals(
-                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": thrs_inact_time_org})
+                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
             resp = self.ras_test_obj.get_conf_store_vals(url=self.sspl_cfg_url,
                                                          field=self.sspl_thrs_inact_time)
-            assert resp == thrs_inact_time_org, "Unable to restore threshold_inactive_time"
-            LOGGER.info("Step 6: Restored threshold_inactive_time is : %s", resp)
+            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time"
+            LOGGER.info("Step 5: Restored threshold_inactive_time is : %s", resp)
 
             LOGGER.info("Step 6: Restore %s service config and wait to start", svc)
             self.sw_alert_obj.restore_svc_config()
@@ -568,6 +562,6 @@ class Test3PSvcMonitoring:
 
             # TODO: Check alert on CSM
             LOGGER.info("Step 8: Checking the fault resolved alert on CSM")
-            #assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 8: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)

@@ -42,7 +42,7 @@ class SoftwareAlert(RASCoreLib):
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
-        :param svc: service name on whoch action is to be performed
+        :param svc: service name on which action is to be performed
         :param action: start/stop/restart/..
         :param monitor_svcs: other services which should be monitored along with action.
         :param timeout: time to wait for service to change state before declaring timeout
@@ -72,7 +72,7 @@ class SoftwareAlert(RASCoreLib):
         starttime = time.time()
         svc_result = False
         time_lapsed = 0
-        while(not svc_result and time_lapsed < timeout):
+        while not svc_result and time_lapsed < timeout:
             services_status = self.get_svc_status([svc])
             a_sysctl_resp = services_status[svc]
             e_sysctl_resp = self.get_expected_systemctl_resp(action)
@@ -103,7 +103,7 @@ class SoftwareAlert(RASCoreLib):
         return result, e_csm_resp
 
     def verify_systemctl_response(self, expected: dict, actual: dict):
-        """Verify systemctl status actual response against expected dictornary
+        """Verify systemctl status actual response against expected dictionary
 
         :param expected: Expected systemctl response dictionary
         :param actual: Actual systemctl response in form of dictionary
@@ -334,7 +334,7 @@ class SoftwareAlert(RASCoreLib):
         self.write_svc_file(
             svc, {
                 "Service": {
-                    "ExecReload": "/bin/sleep 200"}})
+                    "ExecReload": "/bin/sleep 50"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RELOAD_CMD.format(svc))
 
@@ -409,9 +409,8 @@ class SoftwareAlert(RASCoreLib):
 
     def store_svc_config(self, svc):
         """
-        Store OR Restore the service config file depending on store param value
+        Store the service configuration file
         :param svc: service name whose file needs to be store or restored
-        :param store: If true generate copy service config file with svc.servicecopy name
         """
 
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -452,7 +451,7 @@ class SoftwareAlert(RASCoreLib):
         self.node_utils.execute_cmd(cmd=reload_systemctl)
         LOGGER.info("Successfully reloaded systemctl.")
 
-    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict={}):
+    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict = None):
         """Removes the changed configuration file and restores the original one.
         """
         LOGGER.info("Restoring the service configuration...")
@@ -465,8 +464,8 @@ class SoftwareAlert(RASCoreLib):
             self.apply_svc_setting()
         else:
             for svc_path_val in svc_path_dict.values():
-                dpath, fname = os.path.split(svc_path_val)
-                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname
+                fname = os.path.split(svc_path_val)
+                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname[1]
                 self.cp_file(path=tmp_svc_path, backup_path=svc_path_val)
             self.apply_svc_setting()
             self.node_utils.delete_dir_sftp(const.SVC_COPY_CONFG_PATH)
