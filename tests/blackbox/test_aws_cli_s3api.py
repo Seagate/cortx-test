@@ -176,13 +176,14 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
-        assert_utils.assert_true(resp[0], resp[1])
+        file_status = system_utils.create_file(fpath=self.file_path, count=1)
+        if file_status:
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
+                    self.file_path,
+                    self.bucket_name,
+                    self.object_name))
+            assert_utils.assert_true(resp[0], resp[1])
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
@@ -494,12 +495,13 @@ class TestAwsCliS3Api:
         resp = S3T_OBJ.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        system_utils.create_file(fpath=self.file_path, count=1)
-        before_checksum = system_utils.calculate_checksum(self.file_path)
-        self.log.info(
-            "File path: %s, before_checksum: %s",
-            self.file_path,
-            before_checksum)
+        resp = system_utils.create_file(fpath=self.file_path, count=1)
+        if resp[0]:
+            before_checksum = system_utils.calculate_checksum(self.file_path)
+            self.log.info(
+                "File path: %s, before_checksum: %s",
+                self.file_path,
+                before_checksum)
         self.log.info("Uploading objects to bucket using awscli")
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
