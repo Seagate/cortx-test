@@ -28,7 +28,9 @@ import pytest
 from config import CMN_CFG, RAS_VAL
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
-from commons.constants import LOG_STORE_PATH, CONF_SSPL_SRV_THRS_INACT_TIME, SSPL_CFG_URL
+from commons.constants import LOG_STORE_PATH
+from commons.constants import CONF_SSPL_SRV_THRS_INACT_TIME
+from commons.constants import SSPL_CFG_URL
 from commons.constants import SwAlerts as const
 from commons import commands as common_cmd
 from commons import cortxlogging
