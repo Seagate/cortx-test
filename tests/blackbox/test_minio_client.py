@@ -97,7 +97,6 @@ class TestMinioClient:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        # bucket_list = S3T_OBJ.bucket_list()[1]
         for bucket_name in self.buckets_list:
             resp = S3T_OBJ.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
@@ -164,8 +163,11 @@ class TestMinioClient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(bucket_name_1, resp[1])
         assert_utils.assert_in(bucket_name_2, resp[1])
-        S3T_OBJ.delete_multiple_buckets(
+        status, resp = S3T_OBJ.delete_multiple_buckets(
             bucket_list=[bucket_name_1, bucket_name_2])
+        if not status:
+            self.log.info("Buckets are not deleted because: %s", resp)
+            self.buckets_list = [bucket_name_1, bucket_name_2]
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Create multiple buckets using Minion client")
 
@@ -196,23 +198,26 @@ class TestMinioClient:
         self.log.info(
             "Step 1: Creating %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
-        pref_list = list()
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
             cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name)
             resp = system_utils.run_local_cmd(cmd)
             assert_utils.assert_true(resp[0], resp[1])
-            pref_list.append(bkt_name)
+            self.buckets_list.append(bkt_name)
         self.log.info(
             "Step 1: Created %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
         self.log.info("Step 2: Verifying buckets are created")
         bucket_list = S3T_OBJ.bucket_list()[1]
-        for each_bucket in pref_list:
+        for each_bucket in self.buckets_list:
             assert_utils.assert_in(each_bucket, bucket_list)
         self.log.info("Cleanup: Deleting created buckets")
-        S3T_OBJ.delete_multiple_buckets(
-            bucket_list=pref_list)
+        resp, output = S3T_OBJ.delete_multiple_buckets(
+            bucket_list=self.buckets_list)
+        if resp:
+            self.buckets_list = list()
+        else:
+            self.log.info("Buckets are not deleted: %s", output)
         self.log.info("Step 2: Verified that buckets are created")
         self.log.info("ENDED: Max no of buckets supported using Minion Client")
 
