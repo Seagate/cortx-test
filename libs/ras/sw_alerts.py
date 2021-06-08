@@ -67,6 +67,8 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_restarting(svc)
         elif action == "failed":
             self.put_svc_failed(svc)
+        elif action == "reloading":
+            self.put_svc_reloading(svc)
         else:
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
@@ -181,6 +183,9 @@ class SoftwareAlert(RASCoreLib):
 
         elif action == "failed":
             csm_response = None
+
+        elif action == "reloading":
+            csm_response = None
         return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
@@ -205,6 +210,8 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
+        elif action == "reloading":
+            systemctl_status = {'state': 'reloading'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -329,6 +336,18 @@ class SoftwareAlert(RASCoreLib):
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
 
+    def put_svc_reloading(self, svc):
+        """Function to generate reloading alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecReload": "/bin/sleep 50"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RELOAD_CMD.format(svc))
+
     def put_svc_activating(self, svc):
         """Function to generate activating alert
 
@@ -412,9 +431,8 @@ class SoftwareAlert(RASCoreLib):
 
     def store_svc_config(self, svc):
         """
-        Store OR Restore the service config file depending on store param value
-        :param svc: service name whose file needs to be store or restored
-        :param store: If true generate copy service config file with svc.servicecopy name
+        Store the service configuration file
+        :param svc: service name whose file needs to be store
         """
 
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -455,11 +473,10 @@ class SoftwareAlert(RASCoreLib):
         self.node_utils.execute_cmd(cmd=reload_systemctl)
         LOGGER.info("Successfully reloaded systemctl.")
 
-    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict={}):
+    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict = None):
         """Removes the changed configuration file and restores the original one.
-
         :param teardown_restore: Service configuration file restored from backup folder in teardown.
-        :param svc_path_dict: dictionary for service and its configaration file path
+        :param svc_path_dict: dictionary for service and its configuration file path
         """
 
         LOGGER.info("Restoring the service configuration...")
@@ -472,8 +489,8 @@ class SoftwareAlert(RASCoreLib):
             self.apply_svc_setting()
         else:
             for svc_path_val in svc_path_dict.values():
-                dpath, fname = os.path.split(svc_path_val)
-                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname
+                fname = os.path.split(svc_path_val)
+                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname[1]
                 self.cp_file(path=tmp_svc_path, backup_path=svc_path_val)
             self.apply_svc_setting()
             self.node_utils.delete_dir_sftp(const.SVC_COPY_CONFG_PATH)
