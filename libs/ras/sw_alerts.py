@@ -67,6 +67,8 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_restarting(svc)
         elif action == "failed":
             self.put_svc_failed(svc)
+        elif action == "reloading":
+            self.put_svc_reloading(svc)
         else:
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
@@ -90,7 +92,6 @@ class SoftwareAlert(RASCoreLib):
 
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
         new_svcs_status = self.get_svc_status(monitor_svcs_rem)
-
         for svcs in new_svcs_status.keys():
             [new_svcs_status[svcs].pop(key, None) for key in ignore_param]
 
@@ -181,6 +182,9 @@ class SoftwareAlert(RASCoreLib):
 
         elif action == "failed":
             csm_response = None
+
+        elif action == "reloading":
+            csm_response = None
         return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
@@ -205,6 +209,8 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
+        elif action == "reloading":
+            systemctl_status = {'state': 'reloading'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -329,6 +335,18 @@ class SoftwareAlert(RASCoreLib):
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
 
+    def put_svc_reloading(self, svc):
+        """Function to generate reloading alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecReload": "/bin/sleep 50"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RELOAD_CMD.format(svc))
+
     def put_svc_activating(self, svc):
         """Function to generate activating alert
 
@@ -411,10 +429,9 @@ class SoftwareAlert(RASCoreLib):
         return op
 
     def store_svc_config(self, svc):
-        """
-        Store OR Restore the service config file depending on store param value
+        """Store the service configuration file
+        
         :param svc: service name whose file needs to be store or restored
-        :param store: If true generate copy service config file with svc.servicecopy name
         """
 
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -425,7 +442,7 @@ class SoftwareAlert(RASCoreLib):
 
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
-
+        
         :param svc: Service name whose configuration file is to be modified.
         :param content: Content to added or updated. It should be in format {section:{key:value}}
         """
@@ -449,15 +466,16 @@ class SoftwareAlert(RASCoreLib):
 
     def apply_svc_setting(self):
         """Apply the changed setting using reload daemon command.
+        
         """
         reload_systemctl = "systemctl daemon-reload"
         LOGGER.info("Sending %s command...", reload_systemctl)
         self.node_utils.execute_cmd(cmd=reload_systemctl)
         LOGGER.info("Successfully reloaded systemctl.")
 
-    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict={}):
+    def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict = None):
         """Removes the changed configuration file and restores the original one.
-
+        
         :param teardown_restore: Service configuration file restored from backup folder in teardown.
         :param svc_path_dict: dictionary for service and its configaration file path
         """
@@ -472,8 +490,8 @@ class SoftwareAlert(RASCoreLib):
             self.apply_svc_setting()
         else:
             for svc_path_val in svc_path_dict.values():
-                dpath, fname = os.path.split(svc_path_val)
-                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname
+                fname = os.path.split(svc_path_val)
+                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname[1]
                 self.cp_file(path=tmp_svc_path, backup_path=svc_path_val)
             self.apply_svc_setting()
             self.node_utils.delete_dir_sftp(const.SVC_COPY_CONFG_PATH)

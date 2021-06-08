@@ -390,3 +390,14 @@ TEST-18332
     Click Sigin Button
     wait for page or element to load
     Delete S3 Account  ${S3_account_name}  ${S3_password}  True
+
+TEST-21589
+    [Documentation]  Test that CSM Admin user can delete empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-21589
+    [Tags]  Priority_High  TEST-21589  S3_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Delete s3 account using csm admin user  ${S3_account_name}
