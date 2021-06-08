@@ -436,3 +436,24 @@ class Health(Host):
         LOG.info(response)
 
         return response
+
+    def check_nw_interface_status(self):
+        """
+        Function to get status of all available network interfaces on node.
+        """
+        LOG.info("Getting all network interfaces on host")
+        LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
+        res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
+        nw_ifcs = list(filter(None, res.decode("utf-8").split('\n')))
+        LOG.debug(nw_ifcs)
+        LOG.info("Check status of all available network interfaces")
+        status = {}
+        for nw in nw_ifcs:
+            stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
+            nw_st = self.execute_cmd(stat_cmd, exc=False)
+            nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))
+            status[nw] = nw_st
+
+        return status
+
+
