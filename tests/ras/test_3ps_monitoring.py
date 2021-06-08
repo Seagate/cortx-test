@@ -134,16 +134,16 @@ class Test3PSvcMonitoring:
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
-        LOGGER.info("Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
         resp = self.ras_test_obj.get_conf_store_vals(
                 url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
         if resp != self.thrs_inact_time_org:
+            LOGGER.info("Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
             self.ras_test_obj.set_conf_store_vals(
                 url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
             resp = self.ras_test_obj.get_conf_store_vals(
                 url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
             assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time in teardown"
-        LOGGER.info("Successfully restored threshold_inactive_time to : %s", resp)
+            LOGGER.info("Successfully restored threshold_inactive_time to : %s", resp)
 
         LOGGER.info("Restore service config for all the 3rd party services")
         self.sw_alert_obj.restore_svc_config(teardown_restore=True, svc_path_dict=self.svc_path_dict)
