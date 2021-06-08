@@ -65,6 +65,7 @@ class Test3PSvcMonitoring:
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
         cls.svc_path_dict = {}
         cls.sspl_cfg_url = SSPL_CFG_URL
+        cls.intrmdt_state_timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
         cls.sspl_thrs_inact_time = CONF_SSPL_SRV_THRS_INACT_TIME
         cls.thrs_inact_time_org = None
         if CMN_CFG["setup_type"] == "VM":
@@ -321,9 +322,8 @@ class Test3PSvcMonitoring:
             assert result, "Failed in deactivating service"
             LOGGER.info("Step 1: Deactivated %s service...", svc)
 
-            timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
-            LOGGER.info("Step 2: Wait for : %s seconds", timeout)
-            time.sleep(timeout)
+            LOGGER.info("Step 2: Wait for : %s seconds", self.intrmdt_state_timeout)
+            time.sleep(self.intrmdt_state_timeout)
 
             self.sw_alert_obj.restore_svc_config()
 
@@ -389,9 +389,8 @@ class Test3PSvcMonitoring:
             assert result, "Failed in activating service"
             LOGGER.info("Step 2: Activated %s service...", svc)
 
-            timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
-            LOGGER.info("Step 3: Wait for : %s seconds", timeout)
-            time.sleep(timeout)
+            LOGGER.info("Step 3: Wait for : %s seconds", self.intrmdt_state_timeout)
+            time.sleep(self.intrmdt_state_timeout)
 
             # TODO: Currently alerts are not getting generated. This will be verified
             # once alerts come EOS-20536
@@ -449,18 +448,17 @@ class Test3PSvcMonitoring:
         for svc in self.external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
-            LOGGER.info("Step 1: Restarting %s service...", svc)
+            LOGGER.info("Step 1: Simulating long restart for %s service...", svc)
             starttime = time.time()
-            ignore_svc_param = ['timestamp', 'comment']
+            ignore_svc_param = RAS_VAL["test21196"]
             state_change_timeout = 50
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
                 svc, "restarting", self.external_svcs, timeout=state_change_timeout, ignore_param=ignore_svc_param)
             assert result, f"Failed in restarting {svc} service"
             LOGGER.info("Step 1: Restarted %s service...", svc)
 
-            timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
-            LOGGER.info("Step 2: Wait for : %s seconds", timeout)
-            time.sleep(timeout)
+            LOGGER.info("Step 2: Wait for : %s seconds", self.intrmdt_state_timeout)
+            time.sleep(self.intrmdt_state_timeout)
 
             if self.start_msg_bus:
                 LOGGER.info("Step 3: Checking the fault alert on message bus")

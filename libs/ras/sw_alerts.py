@@ -205,7 +205,9 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'enabled': 'disabled'}
         elif action == "deactivating":
             systemctl_status = {'state': 'deactivating'}
-        elif action == "activating" or action == "restarting":
+        elif action == "activating":
+            systemctl_status = {'state': 'activating'}
+        elif action == "restarting":
             systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
