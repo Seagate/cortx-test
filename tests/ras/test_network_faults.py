@@ -72,7 +72,10 @@ class TestNetworkFault:
         cls.mgmt_fault_flag = False
         cls.public_data_fault_flag = False
 
-
+        resp = cls.health_obj.get_current_srvnode()
+        cls.current_srvnode = resp[1] if resp[0] else assert_true(resp[0],
+                                                                  "Check pcs "
+                                                                  "status")
         cls.csm_alerts_obj = SystemAlerts()
         cls.s3obj = S3H_OBJ
         cls.alert_type = RAS_TEST_CFG["alert_types"]
@@ -126,9 +129,11 @@ class TestNetworkFault:
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"],
                     service["csm_web"], service["csm_agent"]]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]])
+        resp = self.health_obj.pcs_resource_cmd(command="restart",
+                                                resources=[self.sspl_resource_id],
+                                                srvnode=self.current_srvnode)
 
+        time.sleep(15)
         for svc in services:
             LOGGER.info("Checking status of %s service", svc)
             resp = self.s3obj.get_s3server_service_status(service=svc,
@@ -223,9 +228,10 @@ class TestNetworkFault:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
-        service = self.cm_cfg["service"]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]])
+        resp = self.health_obj.pcs_resource_cmd(command="restart",
+                                                resources=[self.sspl_resource_id],
+                                                srvnode=self.current_srvnode)
+
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("ENDED: Successfully performed the Teardown Operations")
@@ -253,12 +259,12 @@ class TestNetworkFault:
         assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
         self.mgmt_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created management network "
-                    f"port fault on {self.host}")
+                    "port fault on %s", self.host)
 
         wait_time = random.randint(common_params["min_wait_time"],
                                    common_params["max_wait_time"])
 
-        LOGGER.info(f"Waiting for {wait_time} seconds")
+        LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
 
         if self.start_msg_bus:
@@ -267,7 +273,7 @@ class TestNetworkFault:
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
                               resource_id)]
-            LOGGER.info(f"RAS checks: {alert_list}")
+            LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
@@ -293,11 +299,11 @@ class TestNetworkFault:
         assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
         self.mgmt_fault_flag = False
         LOGGER.info("Step 2: Successfully resolved management network "
-                    f"port fault on {self.host}")
+                    "port fault on %s", self.host)
 
         wait_time = common_params["min_wait_time"]
 
-        LOGGER.info(f"Waiting for {wait_time} seconds")
+        LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
 
         if self.start_msg_bus:
@@ -306,7 +312,7 @@ class TestNetworkFault:
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
                               resource_id)]
-            LOGGER.info(f"RAS checks: {alert_list}")
+            LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0], resp[1])
@@ -356,12 +362,12 @@ class TestNetworkFault:
         assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
         self.public_data_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created public_data network port "
-                    f"fault on {self.host}")
+                    f"fault on %s", self.host)
 
         wait_time = random.randint(common_params["min_wait_time"],
                                    common_params["max_wait_time"])
 
-        LOGGER.info(f"Waiting for {wait_time} seconds")
+        LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
 
         if self.start_msg_bus:
@@ -370,7 +376,7 @@ class TestNetworkFault:
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
                               resource_id)]
-            LOGGER.info(f"RAS checks: {alert_list}")
+            LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
@@ -397,11 +403,11 @@ class TestNetworkFault:
         assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
         self.public_data_fault_flag = False
         LOGGER.info("Step 2: Successfully resolved public_data network port "
-                    f"fault on {self.host}")
+                    f"fault on %s", self.host)
 
         wait_time = common_params["min_wait_time"]
 
-        LOGGER.info(f"Waiting for {wait_time} seconds")
+        LOGGER.info("Waiting for %s seconds", wait_time)
         time.sleep(wait_time)
 
         if self.start_msg_bus:
@@ -410,7 +416,7 @@ class TestNetworkFault:
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
                               resource_id)]
-            LOGGER.info(f"RAS checks: {alert_list}")
+            LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0], resp[1])
@@ -476,12 +482,12 @@ class TestNetworkFault:
                                                    "error_msg"]))
             value['flag'] = True
             LOGGER.info("Step 1.1: Successfully created public_data network "
-                        "port fault on {self.host}")
+                        "port fault on %s", host)
 
             wait_time = random.randint(common_params["min_wait_time"],
                                        common_params["max_wait_time"])
 
-            LOGGER.info(f"Waiting for {wait_time} seconds")
+            LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
 
             if self.start_msg_bus:
@@ -490,7 +496,7 @@ class TestNetworkFault:
                               self.alert_type["fault"],
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
-                LOGGER.info(f"RAS checks: {alert_list}")
+                LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
 
@@ -509,7 +515,8 @@ class TestNetworkFault:
             LOGGER.info("Step 2: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
             resp = self.health_obj.pcs_resource_cmd(command="disable",
-                                                    resources=[self.sspl_resource_id])
+                                                    resources=[self.sspl_resource_id],
+                                                    srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 2.1: Checking if SSPL is in stopped state.")
@@ -517,7 +524,7 @@ class TestNetworkFault:
                                                     services=[service[
                                                             "sspl_service"]],
                                                     decode=True, exc=False)
-            compare(resp, "inactive")
+            compare(resp[0], "inactive")
             LOGGER.info("Step 2.1: Successfully stopped SSPL service")
 
             LOGGER.info("Step 3: Resolving fault")
@@ -531,16 +538,18 @@ class TestNetworkFault:
                                                    "error_msg"]))
             value['flag'] = False
             LOGGER.info("Step 3: Successfully resolved public_data network "
-                        "port fault on {self.host}")
+                        "port fault on %s", host)
 
             wait_time = common_params["min_wait_time"]
 
-            LOGGER.info(f"Waiting for {wait_time} seconds")
+            LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
 
             LOGGER.info("Step 4: Starting SSPL service")
-            self.node_obj.send_systemctl_cmd(command="start",
-                                             services=[service["sspl_service"]])
+            resp = self.health_obj.pcs_resource_cmd(command="start",
+                                                    resources=[self.sspl_resource_id],
+                                                    srvnode=self.current_srvnode)
+
             LOGGER.info("Step 4: Started SSPL service successfully")
 
             if self.start_msg_bus:
@@ -549,7 +558,7 @@ class TestNetworkFault:
                               self.alert_type["resolved"],
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
-                LOGGER.info(f"RAS checks: {alert_list}")
+                LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 assert_true(resp[0], resp[1])

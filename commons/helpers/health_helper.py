@@ -437,13 +437,14 @@ class Health(Host):
 
         return response
 
-    def pcs_resource_cmd(self, command: str, resources: list,
+    def pcs_resource_cmd(self, command: str, resources: list, srvnode: str = "",
                          wait_time: int = 30) -> bool:
         """
         Perform given operation on pcs resource using pcs resource command
 
         :param command: pcs operation to be performed on resource
         :param resources: list of resource names from pcs resource
+        :param srvnode: Name of the server on which command to be performed
         :param wait_time: Wait time in sec after performing operation
         :return: tuple with boolean and response/error
         :rtype: tuple
@@ -453,7 +454,7 @@ class Health(Host):
             raise ValueError("Invalid command")
         for rsrc in resources:
             LOG.info("Performing %s on resource %s", command, rsrc)
-            cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc)
+            cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc, srvnode)
 
             resp = self.execute_cmd(cmd, read_lines=True)
             LOG.debug("Response: %s", resp)
@@ -480,3 +481,18 @@ class Health(Host):
             status[nw] = nw_st
 
         return status
+
+    def get_current_srvnode(self) -> Tuple[bool, str]:
+        """
+        Returns: Bool, Name of current server
+        rtype: bool, str
+        """
+        cmd = commands.CMD_PCS_STATUS_FULL + "grep | Current DC:"
+        LOG.info("Running command: %s", cmd)
+        resp = self.execute_cmd(cmd)
+        resp = (resp.decode("utf-8").split('\n')).split()
+        for ele in resp:
+            if "srvnode" in ele:
+                return True, ele
+
+        return False, "Current srvnode not found"
