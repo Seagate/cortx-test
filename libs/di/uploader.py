@@ -136,17 +136,34 @@ class Uploader:
         users_home = params.LOG_DIR
         users_path = os.path.join(users_home, USER_JSON)
         config_utils.create_content_json(users_path, users, ensure_ascii=False)  # need test name prefix
-        jobs = []
+        self.jobs = []
+        self.set_eventual_stop(False)
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]
             buckets = udict["buckets"]
             p = mp.Process(target=self.upload, args=(user, keys, buckets, files_count, prefs))
-            jobs.append(p)
-        for p in jobs:
-            p.start()
-        for p in jobs:
-            p.join()
-        LOGGER.info(f'Upload Done for all users {users}')
+            self.jobs.append(p)
+        for p in self.jobs:
+            if not self.eventual_stop:
+                p.start()
+            else:
+                LOGGER.info("Terminating as per test session")
+                p.terminate()
+        for p in self.jobs:
+            if p.is_alive():
+                LOGGER.info("started joining")
+                p.join()
+        LOGGER.info(f'Upload started for all users {users}')
 
-    def stop(self):
-        pass
+    # @property
+    def get_eventual_stop(self):
+        return self.eventual_stop
+
+    # @set_eventual_stop.setter
+    def set_eventual_stop(self, stop):
+        LOGGER.info("Eventual stop called %s", stop)
+        self.eventual_stop = stop
+
+    def stop(self, stop_spawining=False):
+        if stop_spawining:
+            self.set_eventual_stop(stop_spawining)

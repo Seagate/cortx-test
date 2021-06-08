@@ -33,6 +33,7 @@ import datetime
 import pytest
 import requests
 import tempfile
+import uuid
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -530,6 +531,7 @@ def pytest_runtest_makereport(item, call):
     """
     outcome = yield
     report = outcome.get_result()
+    Globals.ALL_RESULT = report
     setattr(item, "rep_" + report.when, report)
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
@@ -722,16 +724,36 @@ def generate_random_string():
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
 
+def get_test_status(request, obj):
+    poll = time.time() + 5000  # max timeout
+    print(dir(request.session))
+    while poll > time.time():
+        time.sleep(5)
+        if request.session.testsfailed:
+            print("iam in fail")
+            obj.uploader.set_eventual_stop(request.session.testsfailed)
+            break
+        if 'passed' in Globals.ALL_RESULT.outcome:
+            print("iam in pass")
+            obj.uploader.set_eventual_stop(True)
+            break
+        if 'error' in Globals.ALL_RESULT.outcome:
+            print("iam in error")
+            obj.uploader.set_eventual_stop(True)
+            break
+
+
 @pytest.fixture(scope='function', autouse=True)
 def run_io_async(request):
     if request.config.option.data_integrity_chk:
         mgm_ops = ManagementOPs()
         secret_range = random.SystemRandom()
-        if not request.param:
-            nuser = secret_range.randint(1, 4)
-            nbuckets = secret_range.randint(1, 3)
-            file_counts = secret_range.randint(1, 3)
-            prefs_dict = {'prefix_dir': "async_io_dir"}
+
+        if 'param' not in dir(request):
+            nuser = secret_range.randint(2, 4)
+            nbuckets = secret_range.randint(3, 3)
+            file_counts = secret_range.randint(8, 25)
+            prefs_dict = {'prefix_dir': f"async_io_{uuid.uuid4().hex}"}
         else:
             nuser = request.param["user"]
             nbuckets = request.param["buckets"]
@@ -742,13 +764,10 @@ def run_io_async(request):
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
         yield run_data_check_obj.start_io_async(
             users=users_buckets, buckets=None, files_count=file_counts, prefs=prefs_dict)
-        session = request.session
-        gracefully_stop = False
-        if session.testsfailed:
-            print("Gracefully stopping IO due to test failure")
-            gracefully_stop = True
+        # to stop upload running in BG based on test status
+        get_test_status(request, run_data_check_obj)
         run_data_check_obj.stop_io_async(
-            users=users_buckets, di_check=request.config.option.data_integrity_chk, stop_gracefully=gracefully_stop)
+            users=users_buckets, di_check=request.config.option.data_integrity_chk)
     else:
         yield
 

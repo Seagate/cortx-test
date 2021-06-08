@@ -18,11 +18,12 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-import sys
-import ctypes
+import logging
 import threading
 from libs.di import uploader
 from libs.di.downloader import DataIntegrityValidator
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ASyncIO:
@@ -34,7 +35,6 @@ class ASyncIO:
     def start_io_async(self, users, buckets, files_count, prefs):
         self.bg_thread = threading.Thread(
             target=self.uploader.start, args=(users, buckets, files_count, prefs))
-        # self.bg_thread.daemon = True
         self.bg_thread.start()
 
     @staticmethod
@@ -45,9 +45,9 @@ class ASyncIO:
         if stop_gracefully:
             # in case of failure test failure stop further IO and proceed with verification
             # will implement stop later
-            self.bg_thread.join()
-        else:
-            self.bg_thread.join()
+            self.uploader.set_eventual_stop(stop_gracefully)
+        LOGGER.debug("Joining Run Man API")
+        self.bg_thread.join()
         if di_check:
             self.verify_data_integrity(users)
 
@@ -62,7 +62,7 @@ class RunDataCheckManager(ASyncIO):
     def start_io(self, users, buckets, files_count, prefs):
         self.uploader.start(users, buckets, files_count, prefs)
 
-    def stop_io(self, users, di_check=True):
-        # self.uploader.stop()
+    def stop_io(self, users, di_check=True, eventual_stop=False):
+        self.uploader.stop(eventual_stop)
         if di_check:
             self.verify_data_integrity(users)
