@@ -25,6 +25,7 @@ import shutil
 import logging
 import time
 import jenkins
+import re
 from commons import constants as common_cnst
 from commons import commands as common_cmd
 from commons import params as prm
@@ -403,3 +404,36 @@ class Provisioner:
                 LOGGER.error(error.args[0])
 
             return False, error
+
+    @staticmethod
+    def confstore_verification(key: str, node_obj, node_id: int):
+        """
+        Helper function to verify the confstore key
+        param: key: key to be verified
+        param: node_obj: node object for remote execution
+        param: node_id: srvnode number
+        return: boolean
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        try:
+            chk = "srvnode-{}".format(node_id)
+            cmd = common_cmd.CMD_PILLAR_DATA.format(chk, key)
+            resp = node_obj.execute_cmd(cmd, read_lines=True)
+            LOGGER.debug("pillar command output for {}'s {}: {}".format(chk, key, resp))
+            data1 = ansi_escape.sub('', resp[1])
+            out = data1.strip()
+            LOGGER.info("{} for {} is {}".format(key, chk, out))
+            cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
+            resp1 = node_obj.execute_cmd(cmd, read_lines=True)
+            LOGGER.debug("confstore template command output for {}'s {}: {}".format(chk, key, resp1))
+            if resp1:
+                return True, "Key from pillar and confstore match."
+            else:
+                return False, "Key doesn't match."
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.confstore_verification.__name__)
+            return False, error
+
+
