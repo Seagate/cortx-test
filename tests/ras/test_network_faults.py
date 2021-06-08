@@ -105,6 +105,15 @@ class TestNetworkFault:
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
+        LOGGER.info("Check status of all network interfaces")
+        status = self.health_obj.check_nw_interface_status()
+        for k, v in status.items():
+            if "DOWN" in v:
+                LOGGER.info("%s is down. Please check network connections and "
+                            "restart tests.", k)
+                assert False, f"{k} is down. Please check network connections " \
+                              f"and restart tests."
+        LOGGER.info("All network interfaces are up.")
         LOGGER.info("Change sspl log level to DEBUG")
         self.ras_test_obj.set_conf_store_vals(
             url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "DEBUG"})
@@ -148,8 +157,26 @@ class TestNetworkFault:
                 input_parameters={'device': self.mgmt_device})
 
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
-                                             network_fault_params["resolve_fault"]))
+            assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
+
+        if self.public_data_fault_flag:
+            LOGGER.info("Resolving Public data Network port Fault")
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.NW_PORT_FAULT_RESOLVED,
+                host_details={'host': self.mgmt_ip, 'h_user': self.uname,
+                              'h_pwd': self.passwd},
+                input_parameters={'device': self.public_data_device})
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp[0],
+                        "{} up".format(network_fault_params["error_msg"]))
+
+        LOGGER.info("Change sspl log level to INFO")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
+        resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                     field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
+
 
         if self.public_data_fault_flag:
             LOGGER.info("Resolving Public data Network port Fault")
@@ -225,8 +252,7 @@ class TestNetworkFault:
             AlertType.NW_PORT_FAULT,
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
-                                         network_fault_params["generate_fault"]))
+        assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
         self.mgmt_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created management network "
                     f"port fault on {self.host}")
@@ -266,8 +292,7 @@ class TestNetworkFault:
             AlertType.NW_PORT_FAULT_RESOLVED,
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
-                                         network_fault_params["resolve_fault"]))
+        assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
         self.mgmt_fault_flag = False
         LOGGER.info("Step 2: Successfully resolved management network "
                     f"port fault on {self.host}")
@@ -330,9 +355,7 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
-                                            network_fault_params[
-                                                "generate_fault"]))
+        assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
         self.public_data_fault_flag = True
         LOGGER.info("Step 1.1: Successfully created public_data network port "
                     f"fault on {self.host}")
@@ -373,9 +396,7 @@ class TestNetworkFault:
                           'host_password': self.passwd},
             input_parameters={'device': self.public_data_device})
         LOGGER.info("Response: %s", resp)
-        assert_true(resp[0], "{} {}".format(network_fault_params["error_msg"],
-                                            network_fault_params[
-                                                "resolve_fault"]))
+        assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
         self.public_data_fault_flag = False
         LOGGER.info("Step 2: Successfully resolved public_data network port "
                     f"fault on {self.host}")
@@ -420,7 +441,7 @@ class TestNetworkFault:
     @pytest.mark.sw_alert
     def test_nw_prt_flt_persistent_cache_sspl_21510(self):
         """
-        EOS-21510: TA Destructive test :  Test alerts in persistent cache for
+        EOS-21510: TA Destructive test : Test alerts in persistent cache for
         network faults - Restart SSPL
         """
         LOGGER.info("STARTED: Verifying alerts in persistent cache for network "
@@ -445,7 +466,6 @@ class TestNetworkFault:
             host_user = value['host_user']
             host_password = value['host_password']
             resource_id = value['resource_id']
-            flag = value['flag']
             LOGGER.info("Step 1: Generating %s port fault", key)
             LOGGER.info("Step 1.1: Creating fault")
             resp = self.alert_api_obj.generate_alert(
@@ -458,7 +478,7 @@ class TestNetworkFault:
                                                    "error_msg"],
                                                 network_fault_params[
                                                    "generate_fault"]))
-            flag = True
+            value['flag'] = True
             LOGGER.info("Step 1.1: Successfully created public_data network "
                         "port fault on {self.host}")
 
@@ -481,14 +501,14 @@ class TestNetworkFault:
                 assert_true(resp[0], resp[1])
                 LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
-            LOGGER.info("Step 1.3: Validating csm alert response")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["fault"],
-                False, network_fault_params["resource_type"],
-                network_fault_params["resource_id_csm"].format(resource_id))
-            LOGGER.info("Response: %s", resp)
-            assert_true(resp, "Failed to get alert in CSM REST")
-            LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+            # LOGGER.info("Step 1.3: Validating csm alert response")
+            # resp = self.csm_alerts_obj.verify_csm_response(
+            #     self.starttime, self.alert_type["fault"],
+            #     False, network_fault_params["resource_type"],
+            #     network_fault_params["resource_id_csm"].format(resource_id))
+            # LOGGER.info("Response: %s", resp)
+            # assert_true(resp, "Failed to get alert in CSM REST")
+            # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
             LOGGER.info("Step 2: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -515,7 +535,7 @@ class TestNetworkFault:
                                                    "error_msg"],
                                                 network_fault_params[
                                                    "resolve_fault"]))
-            flag = False
+            value['flag'] = False
             LOGGER.info("Step 3: Successfully resolved public_data network "
                         "port fault on {self.host}")
 
@@ -544,16 +564,16 @@ class TestNetworkFault:
             LOGGER.info(
                 "Step 5.1: Validating csm alert response after resolving fault")
 
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime,
-                self.alert_type["resolved"],
-                True, network_fault_params["resource_type"],
-                network_fault_params["resource_id_csm"].format(resource_id))
-            LOGGER.info("Response: %s", resp)
-            assert_true(resp, "Failed to get alert in CSM REST")
-            LOGGER.info(
-                "Step 5.1: Successfully validated csm alert response after "
-                "resolving fault")
+            # resp = self.csm_alerts_obj.verify_csm_response(
+            #     self.starttime,
+            #     self.alert_type["resolved"],
+            #     True, network_fault_params["resource_type"],
+            #     network_fault_params["resource_id_csm"].format(resource_id))
+            # LOGGER.info("Response: %s", resp)
+            # assert_true(resp, "Failed to get alert in CSM REST")
+            # LOGGER.info(
+            #     "Step 5.1: Successfully validated csm alert response after "
+            #     "resolving fault")
 
-        LOGGER.info("ENDED: Verifying public data network port fault and "
-                    "fault-resolved scenarios")
+        LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
+                    "faults when SSPL is stopped and started in between")
