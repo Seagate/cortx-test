@@ -185,7 +185,7 @@ class TestAwsCliS3Api:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
         else:
-            self.log.info("File is not created because: ", output)
+            self.log.info("File is not created because: %s ", output)
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
@@ -262,7 +262,7 @@ class TestAwsCliS3Api:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
         else:
-            self.log.info("file is not created because:", output)
+            self.log.info("file is not created because: %s", output)
         resp = S3T_OBJ.delete_bucket_awscli(
             bucket_name=self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -286,7 +286,7 @@ class TestAwsCliS3Api:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
         else:
-            self.log.info("File is not created because: ", output)
+            self.log.info("File is not created because: %s", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
@@ -312,7 +312,7 @@ class TestAwsCliS3Api:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
         else:
-            self.log.info("File is not created because: ", output)
+            self.log.info("File is not created because: %s", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_exact_string(resp[1], self.object_name)
@@ -494,7 +494,7 @@ class TestAwsCliS3Api:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
         else:
-            self.log.info("File is not created because: ", output)
+            self.log.info("File is not created because: %s", output)
         resp = system_utils.run_local_cmd(
             cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
         assert_utils.assert_true(resp[0], resp[1])
