@@ -187,9 +187,7 @@ class TestNetworkFault:
                 input_parameters={'device': self.public_data_device})
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0],
-                        "{} {}".format(network_fault_params["error_msg"],
-                                       network_fault_params[
-                                           "resolve_fault"]))
+                        "{} up".format(network_fault_params["error_msg"]))
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -474,10 +472,8 @@ class TestNetworkFault:
                               'host_password': host_password},
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} {}".format(network_fault_params[
-                                                   "error_msg"],
-                                                network_fault_params[
-                                                   "generate_fault"]))
+            assert_true(resp[0], "{} down".format(network_fault_params[
+                                                   "error_msg"]))
             value['flag'] = True
             LOGGER.info("Step 1.1: Successfully created public_data network "
                         "port fault on {self.host}")
@@ -531,10 +527,8 @@ class TestNetworkFault:
                               'host_password': host_password},
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} {}".format(network_fault_params[
-                                                   "error_msg"],
-                                                network_fault_params[
-                                                   "resolve_fault"]))
+            assert_true(resp[0], "{} up".format(network_fault_params[
+                                                   "error_msg"]))
             value['flag'] = False
             LOGGER.info("Step 3: Successfully resolved public_data network "
                         "port fault on {self.host}")
