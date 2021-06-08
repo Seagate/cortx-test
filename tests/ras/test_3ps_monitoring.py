@@ -39,7 +39,6 @@ from libs.s3 import S3H_OBJ
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
-from commons import constants as cons
 LOGGER = logging.getLogger(__name__)
 
 
