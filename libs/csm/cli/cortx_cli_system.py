@@ -118,7 +118,7 @@ class CortxCliSystemtOperations(CortxCli):
         :return: (Boolean, response)
         """
         LOGGER.info("Checking health status using cli command")
-        output = self.execute_cli_commands(cmd, patterns=[])[1]
+        output = self.execute_cli_commands(cmd, patterns=["Resource", "Status"])[1]
         if "error" in output.lower() or "exception" in output.lower():
             LOGGER.error("Unable to check health status")
             return False, output
