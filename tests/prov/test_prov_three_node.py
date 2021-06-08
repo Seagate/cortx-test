@@ -85,6 +85,7 @@ class TestProvThreeNode:
         LOGGER.info("Done: Setup module operations")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.multinode
     @pytest.mark.tags("TEST-21584")
     @CTFailOn(error_handler)
     def test_deployment_three_node_vm(self):
@@ -191,6 +192,7 @@ class TestProvThreeNode:
                 test_cfg["stopped"], line, "Some services are not up")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.multinode
     @pytest.mark.tags("TEST-21919")
     @CTFailOn(error_handler)
     def test_verify_services_three_node_vm(self):
@@ -213,7 +215,7 @@ class TestProvThreeNode:
             LOGGER.info(
                 "Verifying third party services running on node %s",
                 node.hostname)
-            resp = self.nd_obj.send_systemctl_cmd(
+            resp = node.send_systemctl_cmd(
                 command="is-active",
                 services=PROV_CFG["services"]["all"],
                 decode=True,
@@ -243,3 +245,28 @@ class TestProvThreeNode:
             LOGGER.info(
                 "Verified all the services running on node %s",
                 node.hostname)
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.multinode
+    @pytest.mark.tags("TEST-21717")
+    @CTFailOn(error_handler)
+    def test_confstore_validate_multi_node(self):
+        """
+        Test is for confstore keys validation on successful deployment from confstore template
+        as well as provisioner pillar commands.
+        """
+        LOGGER.info("Started: confstore keys validation.")
+        LOGGER.info("Check that the cluster is up and running.")
+        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
+        for hlt_obj in hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are accessible and PCS looks clean.")
+
+        for node_id in range(1, 4):
+            for key in PROV_CFG["confstore_list"]:
+                LOGGER.info("Verification of {} from pillar as well as confstore template.".format(key))
+                output = self.prov_obj.confstore_verification(key, self.nd1_obj, node_id)
+                assert_utils.assert_true(output[0], output[1])
+
+        LOGGER.info("Completed: confstore keys validation.")
