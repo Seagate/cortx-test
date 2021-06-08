@@ -201,6 +201,7 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
 
