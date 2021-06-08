@@ -324,6 +324,8 @@ CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
 CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
+CMD_HEALTH_SHOW = "health status -resource \"{}\""
+CMD_HEALTH_ID = "health status -resource \"{}\" -id \"{}\""
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"

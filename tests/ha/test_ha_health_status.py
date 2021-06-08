@@ -31,6 +31,7 @@ from commons.helpers.node_helper import Node
 from commons.helpers.bmc_helper import Bmc
 from commons import commands as common_cmds
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, HA_CFG
@@ -110,6 +111,22 @@ class TestHAHealthStatus:
             - Login to CSMCLI as admin
         """
         LOGGER.info("STARTED: Setup Operations")
+        self.node_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
+        self.host_list = [self.host1, self.host2, self.host3]
+        self.sys_list = [self.sys_obj1, self.sys_obj2, self.sys_obj3]
+        self.bmc_list = [self.bmc_obj1, self.bmc_obj2, self.bmc_obj3]
+        if self.setup_type == "HW":
+            self.bmc_ip1 = self.bmc_obj1.get_bmc_ip()
+            self.bmc_ip2 = self.bmc_obj2.get_bmc_ip()
+            self.bmc_ip3 = self.bmc_obj3.get_bmc_ip()
+            self.bmc_ip_list = [self.bmc_ip1, self.bmc_ip2, self.bmc_ip3]
+        LOGGER.info("Checking if all nodes online and PCS clean.")
+        self.hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
+
         LOGGER.info("Logging into CORTXCLI as admin...")
         login = self.cli_obj1.login_cortx_cli()
         assert_utils.assert_true(login[0], login[1])
@@ -137,12 +154,56 @@ class TestHAHealthStatus:
         """
         LOGGER.info("Started: Test to check node status one by one for all nodes with safe shutdown.")
 
-        LOGGER.info("Checking if all nodes online and PCS clean.")
-        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
-        for hlt_obj in hlt_list:
-            res = hlt_obj.check_node_health()
-            assert_utils.assert_true(res[0], res[1])
-        LOGGER.info("All nodes are online adn PCS looks clean.")
-
         LOGGER.info("Check in cortxcli that all nodes are shown online.")
-        
+        resp = self.sys_obj1.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp_table =  self.cli_obj1.split_table_response(resp[1])
+        LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
+        #TODO: assert if any node is offline
+        LOGGER.info("All nodes are online.")
+
+        LOGGER.info("Shutdown nodes one by one and check status.")
+        for node in range(3):
+            node_name = "srvnode-{}".format(node+1)
+            LOGGER.info("Shutting down {}".format(node_name))
+            resp = self.node_list[node].execute_cmd(cmd="shutdown now")
+            LOGGER.debug("Response for shutdown: {}".format(resp))
+            LOGGER.info("Check if the node has shutdown.")
+            time.sleep(10)
+            resp = system_utils.check_ping(self.host_list[node])
+            assert_utils.assert_not_equal(resp, 0, "Host has not shutdown yet.")
+            LOGGER.info("Check in cortxcli that the status is chnaged for node to offline")
+            if node == 2:
+                resp = self.sys_list[0].check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
+            else:
+                resp = self.sys_list[node+1].check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
+            assert_utils.assert_true(resp[0], resp[1])
+            resp_table = self.cli_obj1.split_table_response(resp[1])
+            LOGGER.debug("Response for {} in cortxcli is: {}".format(node_name, resp_table))
+            #TODO: Check if node is shown offline and other nodes as online
+            LOGGER.info("Power on {}".format(node_name))
+            if self.setup_type == "VM":
+                #TODO: use start_vm from scripts/ssc_cloud/ssc_vm_ops.py once #376 merged
+                LOGGER.debug("Response for start_VM.")
+            else:
+                self.bmc_list[node].bmc_node_power_on_off(self.bmc_ip_list[node], self.bmc_user,
+                                                     self.bmc_pwd, "on")
+            time.sleep(40)
+            resp = system_utils.check_ping(self.host_list[node])
+            assert_utils.assert_equal(resp, 0, "Host has not powered on yet.")
+            LOGGER.info("Node {} has powered on".format(node_name))
+            LOGGER.info("Check health of the cluster.")
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
+        LOGGER.info("Once all nodes online check the same again in cortxcli")
+        resp = self.sys_obj1.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp_table = self.cli_obj1.split_table_response(resp[1])
+        LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
+        # TODO: assert if any node is offline
+        LOGGER.info("All nodes shown online in cortxcli.")
+
+        LOGGER.info("Completed: Test to check node status one by one for all nodes with safe shutdown.")
