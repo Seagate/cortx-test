@@ -551,9 +551,9 @@ class GenerateAlertWrapper:
             return False, error
 
     @staticmethod
-    def create_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+    def create_network_port_fault(host, h_user, h_pwd, input_parameters):
         """
-        Function to generate the management network fault on node
+        Function to generate the network port fault on node
         :param host: host
         :type host: str
         :param h_user: username
@@ -568,22 +568,23 @@ class GenerateAlertWrapper:
         """
         try:
             device = input_parameters['device']
-            status = input_parameters['status']
-            LOGGER.info(f"Creating management fault on resource {device} on "
+            status = "down"
+            LOGGER.info(f"Creating nw fault for resource {device} on "
                         f"{host}")
             LOGGER.info(f"Making {device} {status} on {host}")
             resp = toggle_nw_status(device=device, status=status, host=host,
                                     username=h_user, pwd=h_pwd)
-            return resp, "Created Mgmt NW Port Fault"
+            return resp, f"Created NW Port Fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
-                         GenerateAlertWrapper.create_mgmt_network_fault.__name__, error)
+                         GenerateAlertWrapper.create_network_port_fault
+                         .__name__, error)
             return False, error
 
     @staticmethod
-    def resolve_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+    def resolve_network_port_fault(host, h_user, h_pwd, input_parameters):
         """
-        Function to resolve the management network fault on node
+        Function to resolve the network port fault on node
         :param host: host from which command is to be run
         :type host: str
         :param h_user: username
@@ -598,22 +599,15 @@ class GenerateAlertWrapper:
         """
         try:
             device = input_parameters['device']
-            status = input_parameters['status']
-            host_data_ip = input_parameters['host_data_ip']
-            LOGGER.info(f"Resolving management fault on resource {device} on "
+            status = "up"
+            LOGGER.info(f"Resolving network fault for resource {device} on "
                         f"{host}")
-            LOGGER.info(f"Making {device} {status} from {host} using Data IP "
-                        f"{host_data_ip}")
-            ip_link_cmd = commands.IP_LINK_CMD.format(device, status)
-            LOGGER.info(f"Running command {ip_link_cmd} on {host} through "
-                        f"data ip {host_data_ip}")
-            resp = run_remote_cmd(hostname=host_data_ip, username=h_user,
-                                  password=h_pwd, cmd=ip_link_cmd,
-                                  read_lines=True)
+            resp = toggle_nw_status(device=device, status=status, host=host,
+                                    username=h_user, pwd=h_pwd)
             LOGGER.info(resp)
-            return resp
+            return resp, f"Resolved NW fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
-                         GenerateAlertWrapper.resolve_mgmt_network_fault.__name__,
-                         error)
+                         GenerateAlertWrapper.resolve_network_port_fault
+                         .__name__, error)
             return False, error

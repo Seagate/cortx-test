@@ -240,11 +240,9 @@ test_22060:
   operation_fault_resolved: "Enabled"
   csm_error_msg: "Failed to get alerts using CSM REST API"
 
-mgmt_nw_port_fault:
-  generate_fault: "down"
-  resolve_fault: "up"
-  resource_id: "eno1"
-  resource_id_monitor : '"resource_id": "eno1"'
-  resource_id_csm : '"resource_id":"eno1"'
+nw_port_fault:
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
   resource_type: "node:interface:nw"
-  error_msg: "Failed to put management network port"
+  error_msg: "Failed to put management network port in"
+

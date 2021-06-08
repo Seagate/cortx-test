@@ -34,6 +34,8 @@ ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
+GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
+IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"

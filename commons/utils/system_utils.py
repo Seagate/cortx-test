@@ -1046,10 +1046,11 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
     """
     LOGGER.info(f"Changing {device} n/w device status to {status}")
     cmd = commands.IP_LINK_CMD.format(device, status)
+    LOGGER.info("Running command: %s", cmd)
     res = run_remote_cmd(
             hostname=host, username=username, password=pwd, cmd=cmd,
             read_lines=True)
-    LOGGER.debug(f"Command: {cmd}, response: {res}")
+    LOGGER.debug("Response: %s", res)
 
     LOGGER.debug(res)
     return res[0]
