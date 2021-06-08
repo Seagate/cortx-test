@@ -41,7 +41,7 @@ from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertT
 LOGGER = logging.getLogger(__name__)
 
 
-class Test3PSvcMonitoring:
+class TestServerOS:
     """3rd party service monitoring test suite."""
 
     @classmethod
