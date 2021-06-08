@@ -92,7 +92,6 @@ class SoftwareAlert(RASCoreLib):
 
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
         new_svcs_status = self.get_svc_status(monitor_svcs_rem)
-
         for svcs in new_svcs_status.keys():
             [new_svcs_status[svcs].pop(key, None) for key in ignore_param]
 
@@ -430,8 +429,8 @@ class SoftwareAlert(RASCoreLib):
         return op
 
     def store_svc_config(self, svc):
-        """
-        Store the service configuration file
+        """Store the service configuration file
+
         :param svc: service name whose file needs to be store
         """
 
@@ -467,6 +466,7 @@ class SoftwareAlert(RASCoreLib):
 
     def apply_svc_setting(self):
         """Apply the changed setting using reload daemon command.
+
         """
         reload_systemctl = "systemctl daemon-reload"
         LOGGER.info("Sending %s command...", reload_systemctl)
@@ -475,8 +475,9 @@ class SoftwareAlert(RASCoreLib):
 
     def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict = None):
         """Removes the changed configuration file and restores the original one.
+
         :param teardown_restore: Service configuration file restored from backup folder in teardown.
-        :param svc_path_dict: dictionary for service and its configuration file path
+        :param svc_path_dict: dictionary for service and its configaration file path
         """
 
         LOGGER.info("Restoring the service configuration...")
