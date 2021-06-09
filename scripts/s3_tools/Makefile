@@ -25,6 +25,8 @@
 
 ACCESS=mPu032bIQ96kHSG1PTw1uA
 SECRET=ZGlCVzmZe8wPGulNhkGDqLIDxvH+/hSUUBGxYAWz
+ENDPOINT=https://s3.seagate.com
+CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 
 
 aws:
@@ -34,9 +36,9 @@ aws:
 	pip3 install awscli
 	pip3 install awscli-plugin-endpoint
 	aws configure set plugins.endpoint awscli_plugin_endpoint
-	aws configure set s3.endpoint_url https://s3.seagate.com
-	aws configure set s3api.endpoint_url https://s3.seagate.com
-	aws configure set default.ca_bundle /etc/ssl/stx-s3-clients/s3/ca.crt
+	aws configure set s3.endpoint_url $(ENDPOINT)
+	aws configure set s3api.endpoint_url $(ENDPOINT)
+	aws configure set default.ca_bundle $(CA_CRT)
 	aws configure set aws_access_key_id $(ACCESS)
 	aws configure set aws_secret_access_key $(SECRET)
 	aws configure set region "US"
@@ -48,13 +50,11 @@ s3cmd:
 
 	@echo "###Installing s3cmd in current machine###"
 	yum install -y s3cmd
+	rm -rf /root/.s3cfg
 	touch /root/.s3cfg
 	chmod -v 600 /root/.s3cfg
-	@echo [default] >>/root/.s3cfg
-	@echo access_key = $(ACCESS) >>/root/.s3cfg
-	@echo secret_key = $(SECRET) >>/root/.s3cfg
-	@echo ca_certs_file = "/etc/ssl/stx-s3-clients/s3/ca.crt" >>/root/.s3cfg
-	@echo check_ssl_certificate = True >>/root/.s3cfg
+	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --dump-config >/root/.s3cfg
+	sed -i 's/ca_certs_file = /ca_certs_file = $(CA_CRT) #/g' /root/.s3cfg
 	@echo "###Installed s3cmd in current machine###"
 
 
@@ -63,7 +63,8 @@ s3fs:
 	@echo "###Installing s3fs in current machine###"
 	yum install -y s3fs-fuse
 	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
-	trust anchor /etc/ssl/stx-s3-clients/s3/ca.crt
+	trust anchor $(CA_CRT)
+	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
 	@echo $(ACCESS):$(SECRET) >>/etc/passwd-s3fs
@@ -73,10 +74,11 @@ s3fs:
 minio:
 
 	@echo "###Installing minio client in current machine###"
+	rm -rf mc
 	wget https://dl.min.io/client/mc/release/linux-amd64/mc
 	chmod +x mc
 	./mc config host add s3 https://s3.seagate.com $(ACCESS) $(SECRET) --api S3v4
-	cp -r /etc/ssl/stx-s3-clients/s3/ca.crt /root/.mc/certs/s3.seagate.com.crt
+	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
 	@echo "###Installed minio client in current machine###"
 
 
