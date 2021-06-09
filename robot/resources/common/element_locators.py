@@ -60,6 +60,11 @@ ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
 ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_TABLE_ID = 'tblAlertLarge'
+# due to bug, using full xpath below
+NEW_ALERT_XPATH = '/html/body/div/div/div[1]/div[2]/div[2]/div/div[1]/div[1]'
+ACTIVE_ALERT_XPATH = '//*[@id="app"]//div[@class ="cortx-tab-active"]'
+ALERT_HISTORY_XPATH = '/html/body/div/div/div[1]/div[2]/div[2]/div/div[1]/div[3]'
+# after bug fix, should use IDs insted of full xpath ^^
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
