@@ -44,8 +44,115 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
+from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 
 LOGGER = logging.getLogger(__name__)
+
+
+class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
+    """Overriding class for csm user operations."""
+
+    def __init__(self, session_obj: object = None):
+        """Constructor for s3 account operations."""
+        super().__init__(session_obj=session_obj)
+        self.open_connection()
+
+    def __del__(self):
+        """closing established connection."""
+        self.close_connection()
+
+    def create_user(self, username, email, password, role="manage"):
+        """
+        Creating new csm user using  cortxcli.
+
+        :param role: csm user role(manage, admin, monitor)
+        :param password:  Password of the csm user.
+        :param email: Email of the csm user.
+        :param username: Name of the csm user.
+        :return: create account cortxcli response.
+        """
+        acc_details = dict()
+        try:
+            start = time.perf_counter()
+            self.login_cortx_cli()
+            status, response = super().create_csm_user_cli(csm_user_name=username,
+                                                           email_id=email,
+                                                           password=password,
+                                                           confirm_password=password,
+                                                           role=role)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.create_user.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+            end = time.perf_counter()
+        self.log.info("Total Time in seconds for Creating csm account is: %s", str(end - start))
+
+        return status, response
+
+    def delete_user(self, user_name: str) -> tuple:
+        """
+        Deleting csm user using cortxcli.
+
+        :param user_name: csm user name.
+        :return:
+        """
+        try:
+            self.login_cortx_cli()
+            response = super().delete_csm_user(user_name)
+
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.delete_user.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return response
+
+    def list_users(self, output_format='json') -> dict:
+        """
+        Listing accounts using  cortxcli.
+
+        :return: list csm user cortxcli response.
+        """
+        try:
+            self.login_cortx_cli()
+            status, response = super().list_csm_users(op_format=output_format)
+            if status:
+                accounts = response["users"]
+            else:
+                accounts = dict()
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.list_users.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return accounts
+
+    def reset_s3acc_password(self, csm_user, passwd, s3acc_name, new_password):
+        """
+        Reset s3 account password using csm user.
+        """
+        try:
+            self.login_cortx_cli(username=csm_user, password=passwd)
+            response = super().reset_s3account_password(account_name=s3acc_name, new_password=new_password)
+
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.reset_s3acc_password.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return response
 
 
 class _S3AccountOperations(CortxCliS3AccountOperations):
@@ -98,7 +205,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         finally:
             self.logout_cortx_cli()
             end = time.perf_counter()
-        self.log.info("Total Time in seconds for Creating Account is: %s", str(end-start))
+        self.log.info("Total Time in seconds for Creating Account is: %s", str(end - start))
         return status, response
 
     def list_accounts_cortxcli(self, output_format='json') -> tuple:
