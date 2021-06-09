@@ -144,7 +144,7 @@ Name of setup specified in json file should be unique in case you are creating a
 For example in sample json setupname value should be unique `"setupname":"T2"`.
 ```
 
-## Steps to setup s3 client.
+## Steps to setup s3 client
 Script in project's path `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
 ```commandline
 optional arguments:
@@ -165,7 +165,7 @@ make help
     jcloud-client: Setup jcloud-jclient.
     minio        : Install & configure minio tools. credentials: Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
 
-To install & configure all tools use:
+To install & configure all tools:
 make clean # Perform cleanup.
 make install-tools ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
 
