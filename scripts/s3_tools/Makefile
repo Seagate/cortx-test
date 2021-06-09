@@ -27,6 +27,7 @@ ACCESS=mPu032bIQ96kHSG1PTw1uA
 SECRET=ZGlCVzmZe8wPGulNhkGDqLIDxvH+/hSUUBGxYAWz
 ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
+NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 
 
 aws:
@@ -88,7 +89,7 @@ jcloud-client:
 	yum install -y java-1.8.0-openjdk
 	@echo "please copy jclient .jar file in /root/jclientCloud."
 	mkdir /mnt/nfs
-	mount -t nfs cftic2.pun.seagate.com:/cftshare/jclientCloud/ /mnt/nfs
+	mount -t nfs $(NFS_SHARE) /mnt/nfs
 	mkdir /root/jclientCloud
 	cp -r /mnt/nfs/* /root/jclientCloud/
 	umount -l /mnt/nfs
@@ -98,6 +99,18 @@ jcloud-client:
 
 install-tools: aws s3fs minio s3cmd jcloud-client
 	@echo "### All tools are installed###"
+
+
+clean:
+
+	@echo "clean-tools: Remove tools like s3fs, s3cmd, minio in case its a new machine."
+	yum remove -y s3cmd
+	rm -rf /root/.s3cfg
+	yum remove -y s3fs-fuse
+	rm -rf /etc/passwd-s3fs
+	rm -rf mc
+	rm -rf /root/jclientCloud/
+	@echo "clean-tools completed."
 
 
 help :
