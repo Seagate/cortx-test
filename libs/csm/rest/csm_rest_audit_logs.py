@@ -57,9 +57,8 @@ class RestAuditLogs(RestTestLib):
             else:
                 endpoint = self.config["audit_logs_show_endpoint"].format(
                     self.invalid_component)
-            self.log.info(
-                "Endpoint for csm show audit logs is %s", endpoint)
-
+            self.log.info("Endpoint for csm show audit logs is %s", endpoint)
+            self.log.info("Params for csm show audit logs is %s", params)
             self.headers.update(self.config["Login_headers"])
             return self.restapi.rest_call("get",
                 endpoint=endpoint,
