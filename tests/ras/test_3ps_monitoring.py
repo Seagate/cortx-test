@@ -29,6 +29,8 @@ from config import CMN_CFG, RAS_VAL
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.constants import LOG_STORE_PATH
+from commons.constants import CONF_SSPL_SRV_THRS_INACT_TIME
+from commons.constants import SSPL_CFG_URL
 from commons.constants import SwAlerts as const
 from commons import commands as common_cmd
 from commons import cortxlogging
@@ -37,7 +39,6 @@ from libs.s3 import S3H_OBJ
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -61,6 +62,10 @@ class Test3PSvcMonitoring:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
+        cls.svc_path_dict = {}
+        cls.sspl_cfg_url = SSPL_CFG_URL
+        cls.sspl_thrs_inact_time = CONF_SSPL_SRV_THRS_INACT_TIME
+        cls.thrs_inact_time_org = None
         if CMN_CFG["setup_type"] == "VM":
             cls.external_svcs = const.SVCS_3P_ENABLED_VM
         else:
@@ -105,6 +110,15 @@ class Test3PSvcMonitoring:
         assert resp == [], f"{resp} are in inactive state"
         LOGGER.info("All 3rd party services are in active state.")
 
+        LOGGER.info("Store copy of config files for all the 3rd party services")
+        for svc in self.external_svcs:
+            self.svc_path_dict[svc] = self.sw_alert_obj.store_svc_config(svc)
+
+        LOGGER.info("Capture threshold_inactive_time form {}".format(self.sspl_cfg_url))
+        self.thrs_inact_time_org = self.ras_test_obj.get_conf_store_vals(
+                url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
+        LOGGER.info("Captured threshold_inactive_time is {}".format(self.thrs_inact_time_org))
+
         self.starttime = time.time()
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
@@ -121,6 +135,24 @@ class Test3PSvcMonitoring:
     def teardown_method(self):
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
+        resp = self.ras_test_obj.get_conf_store_vals(
+                url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
+        if resp != self.thrs_inact_time_org:
+            LOGGER.info("Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
+            self.ras_test_obj.set_conf_store_vals(
+                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
+            resp = self.ras_test_obj.get_conf_store_vals(
+                url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
+            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time in teardown"
+            LOGGER.info("Successfully restored threshold_inactive_time to : %s", resp)
+
+        LOGGER.info("Restore service config for all the 3rd party services")
+        self.sw_alert_obj.restore_svc_config(teardown_restore=True, svc_path_dict=self.svc_path_dict)
+        for svc in self.external_svcs:
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
+            LOGGER.info("Service recovery details : %s", op)
+            assert op["state"] == "active", f"Unable to recover the {svc} service"
+        LOGGER.info("All 3rd party services recovered and in active state.")
 
         if self.changed_level:
             kv_store_path = LOG_STORE_PATH
@@ -461,4 +493,76 @@ class Test3PSvcMonitoring:
             assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 6: Verified the fault resolved alert on CSM")
 
+            LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-21197")
+    def test_21197_reloading_alerts(self):
+        """
+        Test when service takes longer than expected to reload
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        for svc in self.external_svcs:
+            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+
+            thrs_inact_time_tmp = 20
+            LOGGER.info("Step 1: Configure threshold_inactive_time to {}".format(thrs_inact_time_tmp))
+            self.ras_test_obj.set_conf_store_vals(
+                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": thrs_inact_time_tmp})
+            resp = self.ras_test_obj.get_conf_store_vals(
+                url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
+            assert resp == str(thrs_inact_time_tmp), "Unable to configure threshold_inactive_time"
+            LOGGER.info("Step 1: Configured threshold_inactive_time is : %s", resp)
+
+            LOGGER.info("Step 2: Reloading %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
+                svc, "reloading", self.external_svcs, timeout=10)
+            assert result, f"Failed in reloading {svc} service"
+            LOGGER.info("Step 2: Reloaded %s service...", svc)
+
+            if self.start_msg_bus:
+                LOGGER.info("Step 3: Checking the fault alert on message bus")
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
+                              const.AlertType.FAULT, svc]
+                resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                          restart=False)
+                assert resp[0], resp[1]
+                LOGGER.info("Step 3: Verified the fault alert on message bus")
+
+            # TODO: Check alert on CSM
+            LOGGER.info("Step 4: Checking the fault alert on CSM")
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 4: Verified the fault alert on CSM")
+
+            LOGGER.info("Step 5: Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
+            self.ras_test_obj.set_conf_store_vals(
+                url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
+            resp = self.ras_test_obj.get_conf_store_vals(url=self.sspl_cfg_url,
+                                                         field=self.sspl_thrs_inact_time)
+            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time"
+            LOGGER.info("Step 5: Restored threshold_inactive_time is : %s", resp)
+
+            LOGGER.info("Step 6: Restore %s service config and wait to start", svc)
+            self.sw_alert_obj.restore_svc_config()
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
+            LOGGER.info("Service recovery details : %s", op)
+            assert op["state"] == "active", f"Unable to recover {svc} service"
+            LOGGER.info("Step 6: %s service is active and running", svc)
+
+            if self.start_msg_bus:
+                LOGGER.info("Step 7: Checking the fault resolved alert on message bus")
+                alert_list = [const.ResourceType.SW_SVC, const.Severity.INFO,
+                              const.AlertType.RESOLVED, svc]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert resp[0], resp[1]
+                LOGGER.info("Step 7: Verified the fault resolved alert on message bus")
+
+            # TODO: Check alert on CSM
+            LOGGER.info("Step 8: Checking the fault resolved alert on CSM")
+            assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 8: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
