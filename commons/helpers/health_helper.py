@@ -487,7 +487,7 @@ class Health(Host):
         Returns: Bool, Name of current server
         rtype: bool, str
         """
-        cmd = commands.CMD_PCS_STATUS_FULL + "grep | Current DC:"
+        cmd = commands.CMD_PCS_STATUS_FULL + " | grep 'Current DC:'"
         LOG.info("Running command: %s", cmd)
         resp = self.execute_cmd(cmd)
         resp = (resp.decode("utf-8").split('\n')).split()
