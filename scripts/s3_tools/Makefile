@@ -52,10 +52,12 @@ s3cmd:
 	@echo "###Installing s3cmd in current machine###"
 	yum install -y s3cmd
 	rm -rf /root/.s3cfg
-	touch /root/.s3cfg
-	chmod -v 600 /root/.s3cfg
 	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --dump-config >/root/.s3cfg
-	sed -i 's/ca_certs_file = /ca_certs_file = $(CA_CRT) #/g' /root/.s3cfg
+	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
+	sed -i 's|^progress_meter =.*|	progress_meter = True|g' /root/.s3cfg
+	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg
+	sed -i 's|^host_base =.*|host_base = s3.seagate.com|g' /root/.s3cfg
+	sed -i 's|^host_bucket =.*|host_bucket = s3.seagate.com|g' /root/.s3cfg
 	@echo "###Installed s3cmd in current machine###"
 
 
