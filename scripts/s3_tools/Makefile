@@ -18,9 +18,9 @@
 
 # This file will install & configure s3 tools.
 # Commands:
-# 	1. make help # To check supported tools by this script.
-#   2. make ACCESS="xyz" SECRET="abc" # Install all tools.
-#   3. make aws ACCESS="xyz" SECRET="abc"  # Install specific tools from help.
+#	1. make help # To check supported tools by this script.
+#	2. make install-tools ACCESS="xyz" SECRET="abc" # Install all tools.
+#	3. make aws ACCESS="xyz" SECRET="abc"  # Install specific tools from help.
 # Note: Please provide existing s3account user access, secret key through command line.
 
 ACCESS=mPu032bIQ96kHSG1PTw1uA
@@ -89,13 +89,12 @@ jcloud-client:
 
 	@echo "###Installing jCloud and Client in current machine###"
 	yum install -y java-1.8.0-openjdk
-	@echo "please copy jclient .jar file in /root/jclientCloud."
-	mkdir /mnt/nfs
+	@echo "copy jclient .jar file from $(NFS_SHARE) in /root/jclientCloud."
+	mkdir -p /mnt/nfs
 	mount -t nfs $(NFS_SHARE) /mnt/nfs
 	mkdir /root/jclientCloud
 	cp -r /mnt/nfs/* /root/jclientCloud/
 	umount -l /mnt/nfs
-	rm -rf /mnt/nfs
 	@echo "###Installed jcloud-client client in current machine###"
 
 
@@ -112,14 +111,14 @@ clean:
 	rm -rf /etc/passwd-s3fs
 	rm -rf mc
 	rm -rf /root/jclientCloud/
-	@echo "clean-tools completed."
+	@echo "cleanup-tools completed."
 
 
 help :
 
 	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine."
-	@echo "aws          : Install aws tool."
-	@echo "s3fs         : Install s3fs tool."
-	@echo "s3cmd        : Install s3cmd tools."
-	@echo "jcloud-client: Create jcloud-client dir."
-	@echo "minio        : Install minio tools and configure credentials. Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "aws          : Install & configure aws tool."
+	@echo "s3fs         : Install & configure s3fs tool."
+	@echo "s3cmd        : Install & configure s3cmd tool."
+	@echo "jcloud-client: Setup jcloud-client."
+	@echo "minio        : Install & configure minio tool. credentials: Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"

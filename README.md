@@ -155,19 +155,19 @@ optional arguments:
     NFS_SHARE=<NFS_share_jclient_path>
 
 cd scripts/s3_tools/Makefile
-
 make help
     install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine.
-    aws          : Install aws tool.
-    s3fs         : Install s3fs tool.
-    s3cmd        : Install s3cmd tools.
-    jcloud-client: Create jcloud-client dir.
-    minio        : Install minio tools and configure credentials. Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    aws          : Install & configure aws tool.
+    s3fs         : Install & configure s3fs tool.
+    s3cmd        : Install & configure s3cmd tool.
+    jcloud-client: Setup jcloud-jclient.
+    minio        : Install & configure minio tools. credentials: Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
 
-To install all tools use:
-make ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
+To install & configure all tools use:
+make clean # Perform cleanup.
+make install-tools ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
 
-To install specific tool(i.e aws):
+To install & configure specific tool(i.e aws):
 make aws ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
 
 To cleanup all tools:
