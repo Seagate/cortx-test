@@ -39,13 +39,15 @@ class SoftwareAlert(RASCoreLib):
         super().__init__(host, username, password)
         self.svc_path = None
 
-    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout: int = 5):
+    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, ignore_param: list, timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on which action is to be performed
         :param action: start/stop/restart/..
         :param monitor_svcs: other services which should be monitored along with action.
         :param timeout: time to wait for service to change state before declaring timeout
+        :param ignore_param: List of parameters that can be avoided while checking remaining service
+         change state
         :return [type]: bool, expected csm response
         """
         monitor_svcs_rem = [svc_rem for svc_rem in monitor_svcs if svc_rem != svc]
@@ -61,6 +63,8 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_deactivating(svc)
         elif action == "activating":
             self.put_svc_activating(svc)
+        elif action == "restarting":
+            self.put_svc_restarting(svc)
         elif action == "failed":
             self.put_svc_failed(svc)
         elif action == "reloading":
@@ -88,10 +92,12 @@ class SoftwareAlert(RASCoreLib):
 
         LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
         new_svcs_status = self.get_svc_status(monitor_svcs_rem)
-        if "timestamp" in new_svcs_status:
-            new_svcs_status.pop("timestamp")
-        if "timestamp" in prev_svcs_status:
-            prev_svcs_status.pop("timestamp")
+        for svcs in new_svcs_status.keys():
+            [new_svcs_status[svcs].pop(key, None) for key in ignore_param]
+
+        for svcs in prev_svcs_status.keys():
+            [prev_svcs_status[svcs].pop(key, None) for key in ignore_param]
+
         monitor_svcs_result = new_svcs_status == prev_svcs_status
         if monitor_svcs_result:
             LOGGER.info("There is no change in the state of other services")
@@ -171,6 +177,9 @@ class SoftwareAlert(RASCoreLib):
         elif action == "activating":
             csm_response = None
 
+        elif action == "restarting":
+            csm_response = None
+
         elif action == "failed":
             csm_response = None
 
@@ -197,6 +206,8 @@ class SoftwareAlert(RASCoreLib):
         elif action == "deactivating":
             systemctl_status = {'state': 'deactivating'}
         elif action == "activating":
+            systemctl_status = {'state': 'activating'}
+        elif action == "restarting":
             systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
@@ -351,6 +362,18 @@ class SoftwareAlert(RASCoreLib):
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
 
+    def put_svc_restarting(self, svc):
+        """Function to generate restarting alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RESTART_CMD.format(svc))
+
     def recover_svc(self, svc: str, attempt_start: bool = True, timeout=200):
         """
         response recovery time is with +5sec precision
@@ -408,9 +431,9 @@ class SoftwareAlert(RASCoreLib):
         return op
 
     def store_svc_config(self, svc):
-        """
-        Store the service configuration file
-        :param svc: service name whose file needs to be store or restored
+        """Store the service configuration file
+
+        :param svc: service name whose file needs to be store
         """
 
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -422,7 +445,7 @@ class SoftwareAlert(RASCoreLib):
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
 
-        :param svc: Service name whose configaration file is to be modified.
+        :param svc: Service name whose configuration file is to be modified.
         :param content: Content to added or updated. It should be in format {section:{key:value}}
         """
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -445,6 +468,7 @@ class SoftwareAlert(RASCoreLib):
 
     def apply_svc_setting(self):
         """Apply the changed setting using reload daemon command.
+
         """
         reload_systemctl = "systemctl daemon-reload"
         LOGGER.info("Sending %s command...", reload_systemctl)
@@ -453,7 +477,11 @@ class SoftwareAlert(RASCoreLib):
 
     def restore_svc_config(self, teardown_restore=False, svc_path_dict:dict = None):
         """Removes the changed configuration file and restores the original one.
+
+        :param teardown_restore: Service configuration file restored from backup folder in teardown.
+        :param svc_path_dict: dictionary for service and its configaration file path
         """
+
         LOGGER.info("Restoring the service configuration...")
         if not teardown_restore:
             try:

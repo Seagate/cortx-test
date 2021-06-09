@@ -286,7 +286,8 @@ class SwAlerts:
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service"]
+        "scsi-network-relay.service"
+    ]
 
     SVCS_3P_UNAVAIL_VM = [
         "glusterd.service",
