@@ -142,7 +142,7 @@ class TestHAHealthStatus:
         :param nd_obj: node object for running pcs command
         :return: sys_obj
         """
-        res = nd_obj.execute_cmd(common_cmds.CMD_PCS_SERV)
+        res = nd_obj.execute_cmd(common_cmds.CMD_PCS_SERV.format("csm_agent"))
         for line in res:
             if "srvnode-1" in line:
                 sys_obj = self.sys_obj1
