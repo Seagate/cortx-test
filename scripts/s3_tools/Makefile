@@ -1,3 +1,30 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+
+# This file will install & configure s3 tools.
+# Commands:
+# 	1. make help # To check supported tools by this script.
+#   2. make ACCESS="xyz" SECRET="abc" # Install all tools.
+#   3. make aws ACCESS="xyz" SECRET="abc"  # Install specific tools from help.
+# Note: Please provide existing s3account user access, secret key through command line.
+
 ACCESS=mPu032bIQ96kHSG1PTw1uA
 SECRET=ZGlCVzmZe8wPGulNhkGDqLIDxvH+/hSUUBGxYAWz
 
@@ -81,4 +108,3 @@ help :
 	@echo "s3cmd        : Install s3cmd tools."
 	@echo "jcloud-client: Create jcloud-client dir."
 	@echo "minio        : Install minio tools and configure credentials. Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-
