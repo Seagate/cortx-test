@@ -768,12 +768,12 @@ def pytest_runtest_logstart(nodeid, location):
             suite = current_suite
     # Check health status of target
     target = Globals.TARGET
-    if not Globals.LOCAL_RUN and False:
+    if not Globals.LOCAL_RUN:
         try:
             check_cortx_cluster_health()
             check_cluster_storage()
         except (AssertionError, Exception) as fault:
-            pytest.exit(f'Health check failed for cluster {target}')
+            pytest.exit(f'Health check failed for cluster {target}', 1)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
