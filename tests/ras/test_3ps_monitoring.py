@@ -450,7 +450,7 @@ class Test3PSvcMonitoring:
 
             LOGGER.info("Step 1: Simulating long restart for %s service...", svc)
             starttime = time.time()
-            ignore_svc_param = RAS_VAL["test21196"]
+            ignore_svc_param = RAS_VAL["test21196"]["ignore_params"]
             state_change_timeout = 50
             result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(
                 svc, "restarting", self.external_svcs, timeout=state_change_timeout, ignore_param=ignore_svc_param)

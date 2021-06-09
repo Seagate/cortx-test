@@ -90,4 +90,5 @@ nw_fault_params:
   max_wait_time: 300
   min_wait_after_io: 160
 
-test21196: ['timestamp', 'comment']
+test21196:
+  ignore_params: ['timestamp','comment']
