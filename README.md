@@ -147,11 +147,12 @@ For example in sample json setupname value should be unique `"setupname":"T2"`.
 ## Steps to setup s3 client
 Script in project's path `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
 ```commandline
+Required arguments:
+    ACCESS=<aws_access_key_id>
+    SECRET=<aws_secret_access_key>
 optional arguments:
     -i, --ignore-errors  Ignore all errors in commands executed to remake files.
     -k, --keep-going     Continue as much as possible after an error.
-    ACCESS=<aws_access_key_id>
-    SECRET=<aws_secret_access_key>
     ENDPOINT=<s3_endpoint>
     CA_CRT=<certificate_file_path>
     NFS_SHARE=<NFS_share_jclient_path>
@@ -167,10 +168,10 @@ make help
 
 To install & configure all tools:
 make clean # Perform cleanup.
-make install-tools ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
+make install-tools ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
 
 To install & configure specific tool(i.e aws):
-make aws ACCESS=AKIAte4L0nLzRxqX0nGRVAJ6YQ SECRET=MiYCq1BsXXgwwrkCv4PQLk/uRv2zrXzMyl7rEjym
+make aws ACCESS=<aws_secret_access_key> SECRET=<aws_secret_access_key>
 
 To cleanup all tools:
 make clean

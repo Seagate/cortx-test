@@ -23,8 +23,8 @@
 #	3. make aws ACCESS="xyz" SECRET="abc"  # Install specific tools from help.
 # Note: Please provide existing s3account user access, secret key through command line.
 
-ACCESS=mPu032bIQ96kHSG1PTw1uA
-SECRET=ZGlCVzmZe8wPGulNhkGDqLIDxvH+/hSUUBGxYAWz
+ACCESS=None
+SECRET=None
 ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
