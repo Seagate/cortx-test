@@ -156,7 +156,7 @@ class VmStateManagement:
         """
         lock_released = False
         payload = {
-            "query": {"is_setup_free": {"$eq": False},
+            "query": {"is_setup_free": {"$eq": 'no'},
                       "setupname": setupname,
                       },
             "projection": {"setupname": True},
