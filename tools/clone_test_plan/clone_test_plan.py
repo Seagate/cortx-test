@@ -39,7 +39,7 @@ ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19
 vm_hw_skip_tes = ['TEST-19713']
 
 
-def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes):
     """
     Process existing te and create new te
     """
@@ -52,6 +52,7 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
+            old_tes.append(te)
             if is_te_skipped:
                 new_skipped_te.append(new_te_id)
             response_add = jira_task.add_te_to_tp([new_te_id], new_tp_key)
@@ -97,6 +98,7 @@ def main(args):
     print("test executions of existing test plan {}".format(te_keys))
 
     skip_tes = []
+
     if args.skip_te:
         try:
             skip_te_arg = args.skip_te
@@ -108,9 +110,10 @@ def main(args):
     with Manager() as manager:
         new_skipped_te = manager.list()
         new_te_keys = manager.list()
+        old_tes = manager.list()
         for te in te_keys:
             p = Process(target=process_te, args=(te, tp_info, skip_tes, new_tp_key,
-                                                 new_skipped_te, new_te_keys))
+                                                 new_skipped_te, new_te_keys, old_tes))
             p.start()
             prcs.append(p)
 
@@ -119,12 +122,15 @@ def main(args):
 
         new_skipped_te = list(new_skipped_te)
         new_te_keys = list(new_te_keys)
+        old_tes = list(old_tes)
         print("New Test Plan: {}".format(new_tp_key))
         with open(os.path.join(os.getcwd(), CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
             writer = csv.writer(tp_info_csv)
-            for te in new_te_keys:
+            for i in range(len(new_te_keys)):
+                te = new_te_keys[i]
+                old_te = old_tes[i]
                 if te not in new_skipped_te:
-                    writer.writerow([new_tp_key.strip(), te.strip()])
+                    writer.writerow([new_tp_key.strip(), te.strip(), old_te.strip()])
 
         if args.comment_jira:
             current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
