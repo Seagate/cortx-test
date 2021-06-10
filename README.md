@@ -171,7 +171,7 @@ make clean # Perform cleanup.
 make install-tools ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
 
 To install & configure specific tool(i.e aws):
-make aws ACCESS=<aws_secret_access_key> SECRET=<aws_secret_access_key>
+make aws ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
 
 To cleanup all tools:
 make clean
