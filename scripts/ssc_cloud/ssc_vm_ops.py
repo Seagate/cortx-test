@@ -122,7 +122,9 @@ class VMOperations:
     list_vm_snaps(): List all the snapshots for the given VM
     get_catalog_id(): Get the service catalog for the given VM
     revert_vm_snap(): Revert the snapshot for the given VM
-    stop_vm(): Stop the operation for given VM
+    power_off_vm(): Stop the operation for given VM
+    power_on_vm(): Start the operation for given VM
+    get_vms() : Download all available VMs to csv
     """
 
     def __init__(self, parameters):
