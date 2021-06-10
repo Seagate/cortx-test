@@ -123,7 +123,8 @@ class TestProvThreeNode:
                     exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_not_equal(resp[0], False, resp[1])
-                LOGGER.info("TEARDOWN: Restored NTP configuration data on srvnode-{}".format(node))
+                LOGGER.info("TEARDOWN: Restored NTP Configuration on srvnode-{}:{}".format(
+                node, resp[1]))
             LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.cluster_management_ops
@@ -342,7 +343,8 @@ class TestProvThreeNode:
                 exp_t_srv=self.ntp_data["srvnode-1"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data["srvnode-1"][self.ntp_keys[1]])
             assert_utils.assert_not_equal(resp[0], False, resp[1])
-            LOGGER.info("Step 3: Validated NTP Configuration data on srvnode-{}".format(node))
+            LOGGER.info("Step 3: Validated NTP Configuration on srvnode-{}:{}".format(
+                node, resp[1]))
 
         ntp_time_server_val = self.ntp_data["srvnode-1"][self.ntp_keys[0]]
         LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(ntp_time_server_val))
@@ -363,7 +365,8 @@ class TestProvThreeNode:
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=self.time_srv_ip, exp_t_zone=set_timezone)
             assert_utils.assert_not_equal(resp[0], False, resp[1])
-            LOGGER.info("Step 6: Validated NTP Configuration data on srvnode-{}".format(node))
+            LOGGER.info("Step 6: Validated NTP Configuration on srvnode-{}:{}".format(
+                node, resp[1]))
 
         resp = self.prov_obj.get_chrony(time_server=self.time_srv_ip)
         assert_utils.assert_not_equal(resp[0], False, resp[1])
@@ -380,7 +383,9 @@ class TestProvThreeNode:
                 exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
             assert_utils.assert_not_equal(resp[0], False, resp[1])
-            LOGGER.info("Step 7: Validated Restored NTP Configuration data on srvnode-{}".format(node))
+            LOGGER.info("Step 7: Validated Restored NTP Configuration on srvnode-{}:{}".format(
+                node, resp[1]))
+
         LOGGER.info("Step 7: Restored NTP configuration data")
         self.restored = True
         LOGGER.info("-----     Completed NTP configuration Validation     -----")
