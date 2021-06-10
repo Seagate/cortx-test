@@ -27,11 +27,9 @@ from multiprocessing import Process
 
 import logging
 import pytest
-from commons import commands
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
@@ -41,6 +39,7 @@ from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.cortxcli_test_lib import CSMAccountOperations
 
 S3_OBJ = s3_test_lib.S3TestLib()
 
@@ -66,6 +65,7 @@ class TestResetAccountUserManagement:
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
         self.cortx_test_obj = CortxCliTestLib()
+        self.csm_obj = CSMAccountOperations()
         self.account_prefix = "acc-resetaccount-{}"
         self.email_id = "{}@seagate.com"
         self.io_bucket_name = "iobkt1-reset-{}".format(perf_counter_ns())
@@ -99,6 +99,7 @@ class TestResetAccountUserManagement:
                     account_name=acc, password=self.s3acc_passwd)
                 self.log.info("Deleted %s account successfully", acc)
         del self.cortx_test_obj
+        del self.csm_obj
         self.log.info("ENDED: test teardown.")
 
     def check_cluster_health(self):
@@ -160,9 +161,9 @@ class TestResetAccountUserManagement:
     def validate_parallel_execution(self, log_prefix=None):
         """Check parallel execution failure."""
         self.log.info("S3 parallel ios log validation started.")
-        logflist = system_utils.list_dir(s3bench.LOG_DIR)
+        logf_list = system_utils.list_dir(s3bench.LOG_DIR)
         log_path = None
-        for filename in logflist:
+        for filename in logf_list:
             if filename.startswith(log_prefix):
                 log_path = os.path.join(s3bench.LOG_DIR, filename)
         self.log.info("IO log path: %s", log_path)
@@ -230,7 +231,7 @@ class TestResetAccountUserManagement:
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         self.account_list.append(account_name)
-        self.log.info("Step Successfully created the s3iamcli account")
+        self.log.info("Step Successfully created the s3 account")
         s3_obj = s3_test_lib.S3TestLib(
             access_key,
             secret_key,
@@ -243,6 +244,198 @@ class TestResetAccountUserManagement:
             secret_key)
 
         return True, response
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22793")
+    @CTFailOn(error_handler)
+    def test_22793(self):
+        """
+        Reset s3 account password.
+
+        Test s3 account user is not able to reset password of other s3 account user and create resources for both
+        account while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test s3 account user is not able to reset password of other s3 account user and "
+                      "create resources for both account while S3 IO's are in progress.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2: Start S3 IO.")
+        self.log.info("Step 3: Create two s3account s3acc1, s3acc2.")
+        self.log.info("Step 4: Reset s3 account password using other s3 account user.")
+        self.log.info("Step 5: Create bucket s3bkt1, s3bkt2 in s3acc1, s3acc2 account.")
+        self.log.info("Step 6: Create and upload objects to above s3bkt1, s3bkt2.")
+        self.log.info("Step 7: Stop S3 IO & Validate logs.")
+        self.log.info("Step 8: Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test s3 account user is not able to reset password of other s3 account user and "
+                      "create resources for both account while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22794")
+    @CTFailOn(error_handler)
+    def test_22794(self):
+        """
+        Reset s3 account password.
+
+        Test reset s3 account password using csm user having monitor role and create resources while
+        S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test reset s3 account password using csm user having monitor role and create resources"
+                      " while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create csm user having monitor role.")
+        self.log.info("Step 4. Create s3account s3acc.")
+        self.log.info("Step 5. Reset s3 account password using csm user having monitor role.")
+        self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 7. Create and upload objects to above s3bkt.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test reset s3 account password using csm user having monitor role and create resources"
+                      " while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22795")
+    @CTFailOn(error_handler)
+    def test_22795(self):
+        """
+        Reset s3 account password.
+
+        Test reset s3 account password using csm user having manage role and create resources
+        while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test reset s3 account password using csm user having manage role and create resources"
+                      " while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create csm user having manage role.")
+        self.log.info("Step 4. Create s3account s3acc.")
+        self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
+        self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 7. Create and upload objects to above s3bkt.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test reset s3 account password using csm user having manage role and create resources"
+                      " while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22796")
+    @CTFailOn(error_handler)
+    def test_22796(self):
+        """
+        Reset s3 account password.
+
+        Test s3 account user to reset it's own password and create s3 resources while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test s3 account user to reset it's own password and create s3 resources while"
+                      " S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create s3account s3acc.")
+        self.log.info("Step 4. Reset s3 account user with it's own password.")
+        self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 6. Create and upload objects to above s3bkt.")
+        self.log.info("Step 7. Stop S3 IO & Validate logs.")
+        self.log.info("Step 8. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test s3 account user to reset it's own password and create s3 resources while"
+                      " S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22797")
+    @CTFailOn(error_handler)
+    def test_22797(self):
+        """
+        Reset s3 account password.
+
+        Test reset s3 account password using csm admin user and create s3 resources while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test reset s3 account password using csm admin user and create s3 resources while"
+                      " S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create s3account s3acc.")
+        self.log.info("Step 4. Reset s3 account password using csm admin user.")
+        self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 6. Create and upload objects to above s3bkt.")
+        self.log.info("Step 7. list and check all resources are intact.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test reset s3 account password using csm admin user and create s3 resources while"
+                      " S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22798")
+    @CTFailOn(error_handler)
+    def test_22798(self):
+        """
+        Reset s3 account password.
+
+        Test s3 account user is not able to reset password of other s3 account user and check resource intact
+         for both account while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test s3 account user is not able to reset password of other s3 account user and"
+                      " check resource intact for both account while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create two s3account s3acc1, s3acc2.")
+        self.log.info("Step 4. Create and upload objects to above s3bkt1, s3bkt2.")
+        self.log.info("Step 5. Create and upload objects to above s3bkt1, s3bkt2.")
+        self.log.info("Step 6. Reset s3 account password using other s3 account user.")
+        self.log.info("Step 7. list and check all resources are intact.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test s3 account user is not able to reset password of other s3 account user and"
+                      " check resource intact for both account while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22799")
+    @CTFailOn(error_handler)
+    def test_22799(self):
+        """
+        Reset s3 account password.
+
+        Test reset s3 account password using csm user having monitor role and check resource intact
+        while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test reset s3 account password using csm user having monitor role and check"
+                      " resource intact while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create csm user having monitor role.")
+        self.log.info("Step 4. Create s3account s3acc.")
+        self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 6. Create and upload objects to above s3bkt.")
+        self.log.info("Step 7. Reset s3 account password using csm user having monitor role.")
+        self.log.info("Step 7. list and check all resources are intact.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test reset s3 account password using csm user having monitor role and check"
+                      " resource intact while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22800")
+    @CTFailOn(error_handler)
+    def test_22800(self):
+        """
+        Reset s3 account password.
+
+        Test reset s3 account password using csm user having manage role and check resource intact
+         while S3 IO's are in progress.
+        """
+        self.log.info(
+            "STARTED: Test reset s3 account password using csm user having manage role and check resource"
+            " intact while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create csm user having manage role.")
+        self.log.info("Step 4. Create s3account s3acc.")
+        self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
+        self.log.info("Step 6. Create and upload objects to above s3bkt.")
+        self.log.info("Step 7. Reset s3 account password using csm user having manage role.")
+        self.log.info("Step 7. list and check all resources are intact.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info(
+            "ENDED: Test reset s3 account password using csm user having manage role and check resource"
+            " intact while S3 IO's are in progress.	")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22801")
@@ -264,14 +457,17 @@ class TestResetAccountUserManagement:
         acc_name = self.account_prefix.format(time.perf_counter_ns())
         email = self.email_id.format(acc_name)
         s3_test_obj = self.create_s3cortxcli_acc(acc_name, email, self.s3acc_passwd)[0]
+        self.log.info("Step 4: Create and upload objects to above s3bkt.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Reset s3 account user with it's own password.")
         resp = self.cortx_test_obj.reset_s3account_password(acc_name, self.s3acc_passwd)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[0], f"Failed to list bucket.")
@@ -285,3 +481,27 @@ class TestResetAccountUserManagement:
         self.check_cluster_health()
         self.log.info("ENDED: Test s3 account user to reset it's own password and check resources intact while"
                       " S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22882")
+    @CTFailOn(error_handler)
+    def test_22882(self):
+        """
+        Reset s3 account password.
+
+        Test reset n number of s3 account password using csm user having different role (admin, manage, monitor)
+         while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test reset n number of s3 account password using csm user having different role"
+                      " (admin, manage, monitor) while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.log.info("Step 2. Start S3 IO.")
+        self.log.info("Step 3. Create N number s3account.")
+        self.log.info("Step 4. Reset N number s3 account password using csm admin user.")
+        self.log.info("Step 5. Changes csm user role to manage.")
+        self.log.info("Step 6. Reset N number s3 account password using csm user having manage role.")
+        self.log.info("Step 7. Changes csm user role to monitor.")
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("ENDED: Test reset n number of s3 account password using csm user having different role"
+                      " (admin, manage, monitor) while S3 IO's are in progress.")
