@@ -61,7 +61,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         """closing established connection."""
         self.close_connection()
 
-    def create_user(self, username, email, password, role="manage"):
+    def csm_user_create(self, username, email, password, role="manage"):
         """
         Creating new csm user using  cortxcli.
 
@@ -82,9 +82,9 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
                                                            role=role)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.create_user.__name__,
+                         CSMAccountOperations.csm_user_create.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args)
         finally:
             self.logout_cortx_cli()
             end = time.perf_counter()
@@ -92,12 +92,12 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, response
 
-    def delete_user(self, user_name: str) -> tuple:
+    def csm_user_delete(self, user_name: str) -> tuple:
         """
         Deleting csm user using cortxcli.
 
         :param user_name: csm user name.
-        :return:
+        :return: delete user response.
         """
         try:
             self.login_cortx_cli()
@@ -105,50 +105,79 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.delete_user.__name__,
+                         CSMAccountOperations.csm_user_delete.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args)
         finally:
             self.logout_cortx_cli()
 
         return response
 
-    def list_users(self, output_format='json') -> dict:
+    def csm_users_list(self) -> tuple:
         """
         Listing accounts using  cortxcli.
 
-        :return: list csm user cortxcli response.
+        :return: True/False and Response dict.
         """
         try:
             self.login_cortx_cli()
-            status, response = super().list_csm_users(op_format=output_format)
+            status, response = super().list_csm_users(op_format='json')
             if status:
                 accounts = response["users"]
             else:
                 accounts = dict()
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.list_users.__name__,
+                         CSMAccountOperations.csm_users_list.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args)
         finally:
             self.logout_cortx_cli()
 
-        return accounts
+        return status, accounts
 
-    def reset_s3acc_password(self, csm_user, passwd, s3acc_name, new_password):
+    def reset_user_password(self, csm_user, passwd, acc_name, new_password)->tuple:
         """
-        Reset s3 account password using csm user.
+        Reset account password using csm user.
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        :param acc_name: Name of the account.
+        :param new_password: New password of the account.
+        :return: True/False and Response.
         """
         try:
             self.login_cortx_cli(username=csm_user, password=passwd)
-            response = super().reset_s3account_password(account_name=s3acc_name, new_password=new_password)
+            response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
 
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.reset_s3acc_password.__name__,
+                         CSMAccountOperations.reset_user_password.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return response
+
+    def reset_own_password(self, acc_name, old_password, new_password)->tuple:
+        """
+        Reset account password with it's own password.
+
+        :param acc_name: Name of the accounts.
+        :param old_password: Old password of the account.
+        :param new_password: New password of the account.
+        :return: True/False and Response.
+        """
+        try:
+            self.login_cortx_cli(username=acc_name, password=old_password)
+            response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
+
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.reset_own_password.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
         finally:
             self.logout_cortx_cli()
 
@@ -201,7 +230,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.create_account_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
         finally:
             self.logout_cortx_cli()
             end = time.perf_counter()
@@ -225,7 +254,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.list_accounts_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
         finally:
             self.logout_cortx_cli()
         return accounts
@@ -248,7 +277,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
             LOGGER.error("Error in %s: %s",
                          _S3AccountOperations.delete_account_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
         finally:
             self.logout_cortx_cli()
         return response
@@ -279,7 +308,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
                 "Error in %s:%s",
                 _S3AccountOperations.reset_s3account_password.__name__,
                 error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
         finally:
             self.logout_cortx_cli()
         return response
@@ -335,7 +364,7 @@ class _IamUser(CortxCliIamUser):
             LOGGER.error("Error in %s: %s",
                          _IamUser.create_user_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -351,7 +380,7 @@ class _IamUser(CortxCliIamUser):
             LOGGER.error("Error in %s: %s",
                          _IamUser.list_users_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -371,7 +400,7 @@ class _IamUser(CortxCliIamUser):
             LOGGER.error("Error in %s: %s",
                          _IamUser.reset_iamuser_password_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -387,7 +416,7 @@ class _IamUser(CortxCliIamUser):
             LOGGER.error("Error in %s: %s",
                          _IamUser.delete_user_cortxcli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -418,7 +447,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
             LOGGER.error("Error in %s: %s",
                          _S3AccessKeys.create_s3user_access_key_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -437,7 +466,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
             LOGGER.error("Error in %s: %s",
                          _S3AccessKeys.show_s3user_access_key_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -461,7 +490,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
             LOGGER.error("Error in %s: %s",
                          _S3AccessKeys.update_s3user_access_key_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -480,7 +509,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
             LOGGER.error("Error in %s: %s",
                          _S3AccessKeys.update_s3user_access_key_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return status, response
 
@@ -514,7 +543,7 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
             LOGGER.error("Error in %s: %s",
                          _S3BucketOperations.create_bucket_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return response
 
@@ -533,7 +562,7 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
             LOGGER.error("Error in %s: %s",
                          _S3BucketOperations.list_bucket_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return response
 
@@ -552,7 +581,7 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
             LOGGER.error("Error in %s: %s",
                          _S3BucketOperations.delete_bucket_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return response
 
@@ -600,7 +629,7 @@ class CortxCliTestLib(_S3AccountOperations,
             LOGGER.error("Error in %s: %s",
                          CortxCliTestLib.login_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return response
 
@@ -616,6 +645,6 @@ class CortxCliTestLib(_S3AccountOperations,
             LOGGER.error("Error in %s: %s",
                          CortxCliTestLib.logout_cortx_cli.__name__,
                          error)
-            raise CTException(err.S3_ERROR, error.args[0])
+            raise CTException(err.CLI_ERROR, error.args[0])
 
         return response
