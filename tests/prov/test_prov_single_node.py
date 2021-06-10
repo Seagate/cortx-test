@@ -104,7 +104,7 @@ class TestProvSingleNode:
             resp = self.prov_obj.sysconfg_verification(self.ntp_keys, self.nd_obj, node_id=1,
             exp_t_srv=self.set_ntp[self.ntp_keys[0]], exp_t_zone=self.set_ntp[self.ntp_keys[1]])
             assert_utils.assert_not_equal(resp[0], False, resp[1])
-            LOGGER.info("TEARDOWN: Restored NTP configuration data.")
+            LOGGER.info("TEARDOWN: Restored NTP configuration data: {}.".format(resp[1]))
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.cluster_management_ops
@@ -286,16 +286,20 @@ class TestProvSingleNode:
         resp = self.prov_obj.sysconfg_verification(
             self.ntp_keys, self.nd_obj, node_id=1, exp_t_srv=self.time_srv_ip, exp_t_zone=set_timezone)
         assert_utils.assert_not_equal(resp[0], False, resp[1])
-        LOGGER.info("Step 5: Validated NTP configuration data.")
+        LOGGER.info("Step 5: Validated NTP configuration data {}.".format(resp[1]))
 
         resp = self.prov_obj.get_chrony(time_server=self.time_srv_ip)
         assert_utils.assert_not_equal(resp[0], False, resp[1])
         LOGGER.info("Step 5: Validated time_server in /etc/chrony.conf response = {}".format(resp[1]))
 
-        LOGGER.info("Step 6: Restore NTP configuration data to {}".format(self.set_ntp))
+        LOGGER.info("Step 6: Restore and Validate NTP configuration data to {}".format(self.set_ntp))
         resp = self.prov_obj.set_ntpsysconfg(
             self.nd_obj, time_server=self.set_ntp[self.ntp_keys[0]], timezone=self.set_ntp[self.ntp_keys[1]])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 6: Restored NTP configuration data")
+
+        resp = self.prov_obj.sysconfg_verification(
+            self.ntp_keys, self.nd_obj, node_id=1, exp_t_srv=self.set_ntp[self.ntp_keys[0]],
+            exp_t_zone=self.set_ntp[self.ntp_keys[1]])
+        LOGGER.info("Step 6: Validated Restored NTP configuration on srvnode-1: {}".format(resp[1]))
         self.restored = True
         LOGGER.info("-----     Completed NTP configuration Validation     -----")

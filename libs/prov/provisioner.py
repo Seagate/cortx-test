@@ -494,7 +494,7 @@ class Provisioner:
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
-                Provisioner.confstore_verification.__name__)
+                Provisioner.get_ntpsysconfg.__name__)
             return False, error
         return True, ntp
 
@@ -511,7 +511,7 @@ class Provisioner:
         resp = self.get_ntpsysconfg(key, node_obj, node_id)
         if resp[0]:
             if resp[1][key[0]] == exp_t_srv and resp[1][key[1]] == exp_t_zone:
-                return True, f"NTP Configuration Verification Successful for srvnode-{node_id}"
+                return True, resp[1]
             else:
                 return False, f"NTP Configuration Verification Failed for srvnode-{node_id}"
         else:
