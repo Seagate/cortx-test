@@ -64,6 +64,7 @@ s3cmd:
 s3fs:
 
 	@echo "###Installing s3fs in current machine###"
+	yum install -y epel-release
 	yum install -y s3fs-fuse
 	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
 	trust anchor $(CA_CRT)
@@ -90,11 +91,12 @@ jcloud-client:
 	@echo "###Installing jCloud and Client in current machine###"
 	yum install -y java-1.8.0-openjdk
 	@echo "copy jclient .jar file from $(NFS_SHARE) in /root/jclientCloud."
+	-umount -lf /mnt/nfs
 	mkdir -p /mnt/nfs
 	mount -t nfs $(NFS_SHARE) /mnt/nfs
-	mkdir /root/jclientCloud
+	mkdir -p /root/jclientCloud
 	cp -r /mnt/nfs/* /root/jclientCloud/
-	umount -l /mnt/nfs
+	-umount -lf /mnt/nfs
 	@echo "###Installed jcloud-client client in current machine###"
 
 
