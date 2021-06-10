@@ -126,8 +126,7 @@ def main(args):
         print("New Test Plan: {}".format(new_tp_key))
         with open(os.path.join(os.getcwd(), CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
             writer = csv.writer(tp_info_csv)
-            for i in range(len(new_te_keys)):
-                te = new_te_keys[i]
+            for i, te in enumerate(new_te_keys):
                 old_te = old_tes[i]
                 if te not in new_skipped_te:
                     writer.writerow([new_tp_key.strip(), te.strip(), old_te.strip()])

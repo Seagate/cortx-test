@@ -20,7 +20,6 @@ Utility Class for VM management using DB
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 # -*- coding: utf-8 -*-
-import os
 import json
 from http import HTTPStatus
 import requests

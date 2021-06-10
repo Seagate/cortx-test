@@ -233,7 +233,7 @@ class VMOperations:
         else:
             print("Failed to process the VM request..%s" % _response)
         return _response
-        
+
     def get_vms(self):
         self.payload = ""
         self.method = "GET"
