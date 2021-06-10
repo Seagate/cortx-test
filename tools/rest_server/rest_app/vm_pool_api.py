@@ -39,8 +39,8 @@ api = Namespace('VM_Pool', path="/r2_vm_pool", description='VM Pool operations')
 class SearchPoolSystems(Resource):
     """
        Rest API: search
-       Endpoint: /vm_pool/search
-       For performing search operation on r2_systems collection.
+       Endpoint: /r2_vm_pool/search
+       For performing search operation on r2_vm_pool collection.
     """
 
     @staticmethod
@@ -104,8 +104,8 @@ class SearchPoolSystems(Resource):
 class CreatePoolSystems(Resource):
     """
          Rest API: create
-         Endpoint: /vm_pool/create
-         For performing create operation on vm_pool collection.
+         Endpoint: /r2_vm_pool/create
+         For performing create operation on r2_vm_pool collection.
       """
 
     @staticmethod
@@ -149,8 +149,8 @@ class CreatePoolSystems(Resource):
 class UpdatePoolSystems(Resource):
     """
          Rest API: update
-         Endpoint: /vm_pool/update
-         For performing update operation on r2_systems collection.
+         Endpoint: /r2_vm_pool/update
+         For performing update operation on r2_vm_pool collection.
       """
 
     @staticmethod
