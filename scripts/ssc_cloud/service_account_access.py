@@ -20,11 +20,8 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import argparse
 import csv
-from datetime import datetime
-from multiprocessing import Process, Manager
 from vm_management import VmStateManagement
 
 
