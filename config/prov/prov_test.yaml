@@ -57,3 +57,7 @@ single-node:
   config_path_remote: "/root/config.ini"
   setup-type: "3_node"
   cluster_start_delay: 180
+
+system_ntp:
+    ntp_data: ['time_server:', 'time_zone:']
+    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
