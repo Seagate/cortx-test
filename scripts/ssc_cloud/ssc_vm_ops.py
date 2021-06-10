@@ -82,7 +82,8 @@ def get_args():
     # Add the arguments
     parser.add_argument('--action', '-a',
                         choices=['create_vm_snap', 'create_vm', 'list_vm_snaps', 'revert_vm_snap',
-                                 'retire_vm', 'get_vm_info', 'get_vms'], required=True,
+                                 'retire_vm', 'get_vm_info', 'get_vms',
+                                 'power_on', 'power_off'], required=True,
                         help="Perform the Operation")
     parser.add_argument('--token', '-t', help="Token for API Authentication")
     parser.add_argument('--fqdn', '-f', choices=['ssc-cloud.colo.seagate.com'],
@@ -308,6 +309,40 @@ class VMOperations:
         # Process the request
         return self.execute_request()
 
+    def power_on_vm(self):
+        _vm_info = self.get_vm_info()
+        _vm_state = _vm_info['resources'][0]['power_state']
+        _vm_id = _vm_info['resources'][0]['id']
+        _start_res = ""
+        # Power off the VM
+        if _vm_state == "on":
+            print("VM is already ON")
+        else:
+            _start_res = self.start_vm(_vm_id)
+            if _start_res:
+                print("Started the VM")
+                print(json.dumps(_start_res, indent=4, sort_keys=True))
+            else:
+                print("Failed to start the VM")
+        return _start_res
+
+    def power_off_vm(self):
+        _vm_info = self.get_vm_info()
+        _vm_state = _vm_info['resources'][0]['power_state']
+        _vm_id = _vm_info['resources'][0]['id']
+        _stop_res = ""
+        # Power off the VM
+        if _vm_state == "on":
+            _stop_res = self.stop_vm(_vm_id)
+            if _stop_res:
+                time.sleep(30)
+                _vm_info = self.get_vm_info()
+                _vm_state = _vm_info['resources'][0]['power_state']
+                print("VM has been stopped successfully. VM status is %s.." % _vm_state)
+        else:
+            print("VM is already stopped...")
+        return _stop_res
+
     def stop_vm(self, vm_id):
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
@@ -439,6 +474,12 @@ def main():
     elif args.action == "create_vm_snap":
         if args.host:
             result = vm_object.create_vm_snap()
+    elif args.action == "power_on":
+        if args.host:
+            result = vm_object.power_on_vm()
+    elif args.action == "power_off":
+        if args.host:
+            result = vm_object.power_off_vm()
 
     if result:
         print("VM operation %s request has been polled successfully....." % args.action)
