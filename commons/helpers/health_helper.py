@@ -411,10 +411,6 @@ class Health(Host):
         if "Stopped" in ",".join(response[1]) or not response[0]:
             return False, response[1]
 
-        response = self.execute_cmd(cmd=commands.GREP_PCS_SERVICE_CMD.format("-iE 'fail|stop|err|ing'"))
-        if response[1]:
-            return False, response[1]
-
         return True, "cluster {} up and running.".format(self.hostname)
 
     def pcs_restart_cluster(self):
