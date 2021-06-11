@@ -35,6 +35,7 @@ from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, HA_CFG
+from commons import pswdmanager
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 
@@ -59,6 +60,10 @@ class TestHAHealthStatus:
         cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.bmc_user = CMN_CFG["bmc"]["username"]
         cls.bmc_pwd = CMN_CFG["bmc"]["password"]
+        cls.vm_username = os.getenv("QA_VM_POOL_ID",
+                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
+        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
+                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
 
         cls.host1 = CMN_CFG["nodes"][0]["hostname"]
         cls.uname1 = CMN_CFG["nodes"][0]["username"]
@@ -218,8 +223,10 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on {}".format(node_name))
             if self.setup_type == "VM":
-                #TODO: use start_vm from scripts/ssc_cloud/ssc_vm_ops.py once #376 merged
-                LOGGER.debug("Response for start_VM.")
+                vm_name = self.host_list[node].split(".")[0]
+                res = system_utils.execute_cmd(common_cmds.CMD_VM_POWER_ON
+                                         .format(self.vm_username, self.vm_password, vm_name))
+                assert_utils.assert_true(res[0], "VM power on command not executed")
             else:
                 self.bmc_list[node].bmc_node_power_on_off(self.bmc_ip_list[node], self.bmc_user,
                                                      self.bmc_pwd, "on")

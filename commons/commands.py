@@ -422,3 +422,9 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
+
+# VM power operations:
+CMD_VM_POWER_ON = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_POWER_OFF = "python3.7 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
