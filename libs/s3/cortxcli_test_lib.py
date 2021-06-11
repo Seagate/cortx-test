@@ -63,7 +63,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def csm_user_create(self, username, email, password, role="manage"):
         """
-        Creating new csm user using  cortxcli.
+        Creating new csm user using cortxcli.
 
         :param role: csm user role(manage, admin, monitor)
         :param password:  Password of the csm user.
@@ -71,7 +71,6 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         :param username: Name of the csm user.
         :return: create account cortxcli response.
         """
-        acc_details = dict()
         try:
             start = time.perf_counter()
             self.login_cortx_cli()
@@ -80,6 +79,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
                                                            password=password,
                                                            confirm_password=password,
                                                            role=role)
+            self.log.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_user_create.__name__,
@@ -103,7 +103,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         try:
             self.login_cortx_cli()
             response = super().update_role(user_name, role, password)
-
+            LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_user_delete.__name__,
@@ -124,7 +124,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         try:
             self.login_cortx_cli()
             response = super().delete_csm_user(user_name)
-
+            LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_user_delete.__name__,
@@ -148,6 +148,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
                 accounts = response["users"]
             else:
                 accounts = dict()
+            LOGGER.info(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_users_list.__name__,
@@ -158,7 +159,34 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, accounts
 
-    def reset_user_password(self, csm_user=None, passwd=None, acc_name=None, new_password=None) -> tuple:
+    def reset_user_password(self, csm_user=None, passwd=None, new_password=None) -> tuple:
+        """
+        Reset csm user password.
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        :param acc_name: Name of the account.
+        :param new_password: New password of the account.
+        :return: True/False and Response.
+        """
+        try:
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
+            response = super().reset_root_user_password(csm_user, passwd, new_password)
+            LOGGER.info(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.reset_s3acc_password.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return response
+
+    def reset_s3acc_password(self, csm_user=None, passwd=None, acc_name=None, new_password=None) -> tuple:
         """
         Reset account password using csm user.
 
@@ -174,10 +202,10 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             else:
                 self.login_cortx_cli()
             response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
-
+            LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.reset_user_password.__name__,
+                         CSMAccountOperations.reset_s3acc_password.__name__,
                          error)
             raise CTException(err.CLI_ERROR, error.args)
         finally:
@@ -185,7 +213,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return response
 
-    def reset_own_password(self, acc_name, old_password, new_password) -> tuple:
+    def reset_s3acc_own_password(self, acc_name, old_password, new_password) -> tuple:
         """
         Reset account password with it's own password.
 
@@ -197,10 +225,10 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         try:
             self.login_cortx_cli(username=acc_name, password=old_password)
             response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
-
+            LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.reset_own_password.__name__,
+                         CSMAccountOperations.reset_s3acc_own_password.__name__,
                          error)
             raise CTException(err.CLI_ERROR, error.args)
         finally:
