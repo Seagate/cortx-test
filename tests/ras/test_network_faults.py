@@ -514,7 +514,7 @@ class TestNetworkFault:
 
             LOGGER.info("Step 2: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
-            resp = self.health_obj.pcs_resource_cmd(command="disable",
+            resp = self.health_obj.pcs_resource_cmd(command="ban",
                                                     resources=[self.sspl_resource_id],
                                                     srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
@@ -546,7 +546,7 @@ class TestNetworkFault:
             time.sleep(wait_time)
 
             LOGGER.info("Step 4: Starting SSPL service")
-            resp = self.health_obj.pcs_resource_cmd(command="start",
+            resp = self.health_obj.pcs_resource_cmd(command="clear",
                                                     resources=[self.sspl_resource_id],
                                                     srvnode=self.current_srvnode)
 

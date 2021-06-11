@@ -449,13 +449,13 @@ class Health(Host):
         :return: tuple with boolean and response/error
         :rtype: tuple
         """
-        valid_commands = {"start", "stop", "enable", "disable", "restart"}
+        valid_commands = {"ban", "clear", "enable", "disable", "restart"}
         if command not in valid_commands:
             raise ValueError("Invalid command")
         for rsrc in resources:
             LOG.info("Performing %s on resource %s", command, rsrc)
             cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc, srvnode)
-
+            LOG.info("Running command: %s", cmd)
             resp = self.execute_cmd(cmd, read_lines=True)
             LOG.debug("Response: %s", resp)
             time.sleep(wait_time)
