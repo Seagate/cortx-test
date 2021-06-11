@@ -776,7 +776,6 @@ class TestS3cmdClient:
         self.log.info(
             "ENDED: delete bucket forcefully which has objects using s3cmd client")
 
-    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7550")
     @CTFailOn(error_handler)
