@@ -225,6 +225,10 @@ def pytest_addoption(parser):
         help="Decide whether to perform DI Check or not for a I/O test case."
     )
     parser.addoption(
+        "--test_runner_data_integrity_chk", action="store", default=False,
+        help="Decide whether to perform DI Check or not for a I/O test case."
+    )
+    parser.addoption(
         "--jira_update", action="store", default=True,
         help="Decide whether to update Jira."
     )
@@ -726,19 +730,15 @@ def generate_random_string():
 
 def get_test_status(request, obj):
     poll = time.time() + 5000  # max timeout
-    print(dir(request.session))
     while poll > time.time():
         time.sleep(5)
         if request.session.testsfailed:
-            print("iam in fail")
             obj.uploader.set_eventual_stop(request.session.testsfailed)
             break
         if 'passed' in Globals.ALL_RESULT.outcome:
-            print("iam in pass")
             obj.uploader.set_eventual_stop(True)
             break
         if 'error' in Globals.ALL_RESULT.outcome:
-            print("iam in error")
             obj.uploader.set_eventual_stop(True)
             break
 

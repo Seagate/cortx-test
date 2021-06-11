@@ -53,6 +53,7 @@ class Uploader:
 
     def __init__(self):
         self.change_manager = data_man.DataManager()
+        self.eventual_stop = mp.Event()
 
     def upload(self, user, keys, buckets, files_count, prefs):
         user_name = user.replace('_', '-')
@@ -101,68 +102,67 @@ class Uploader:
 
         # todo get random compression ratio and process prefs
         # get random size
-        seed = data_generator.DataGenerator.get_random_seed()
-        size = random.sample(data_generator.SMALL_BLOCK_SIZES, 1)[0]
-        gen = data_generator.DataGenerator(c_ratio=2)
-        buf, csum = gen.generate(size, seed=seed)
-        file_path = gen.save_buf_to_file(buf, csum, 1024 * 1024, prefix)
-        s3 = s3connections[random.randint(0, pool_len - 1)]
-        try:
-            s3.meta.client.upload_file(str(file_path),
-                                       bucket,
-                                       os.path.basename(file_path),
-                                       Config=Uploader.tsfrConfig)
-            print(f'uploaded file {file_path} for user {user_name}')
-        except Exception as e:
-            LOGGER.info(f'{file_path} in bucket {bucket} Upload caught exception: {e}')
-        else:
-            LOGGER.info(f'{file_path} in bucket {bucket} Upload Done')
-            with open(file_path, 'rb') as fp:
-                md5sum = hashlib.md5(fp.read()).hexdigest()
-            obj_name = os.path.basename(file_path)
-            stat_info = os.stat(file_path)
-            row_data = [user_name, bucket, obj_name, md5sum]
-            uploadObjects.append(row_data)
-            file_object = {
-                'name': obj_name, 'checksum': md5sum, 'seed': seed, 'size': size,
-                'mtime': stat_info.st_mtime
-            }
-            self.change_manager.add_file_to_bucket(
-                user_name, bucket, file_object)
+        if not self.eventual_stop.is_set():
+            seed = data_generator.DataGenerator.get_random_seed()
+            size = random.sample(data_generator.SMALL_BLOCK_SIZES, 1)[0]
+            gen = data_generator.DataGenerator(c_ratio=2)
+            buf, csum = gen.generate(size, seed=seed)
+            file_path = gen.save_buf_to_file(buf, csum, 1024 * 1024, prefix)
+            s3 = s3connections[random.randint(0, pool_len - 1)]
+            try:
+                s3.meta.client.upload_file(str(file_path),
+                                           bucket,
+                                           os.path.basename(file_path),
+                                           Config=Uploader.tsfrConfig)
+                print(f'uploaded file {file_path} for user {user_name}')
+            except Exception as e:
+                LOGGER.info(f'{file_path} in bucket {bucket} Upload caught exception: {e}')
+            else:
+                LOGGER.info(f'{file_path} in bucket {bucket} Upload Done')
+                with open(file_path, 'rb') as fp:
+                    md5sum = hashlib.md5(fp.read()).hexdigest()
+                obj_name = os.path.basename(file_path)
+                stat_info = os.stat(file_path)
+                row_data = [user_name, bucket, obj_name, md5sum]
+                uploadObjects.append(row_data)
+                file_object = {
+                    'name': obj_name, 'checksum': md5sum, 'seed': seed,
+                    'size': size,
+                    'mtime': stat_info.st_mtime
+                }
+                self.change_manager.add_file_to_bucket(
+                    user_name, bucket, file_object)
 
     def start(self, users, buckets, files_count, prefs):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
         users_home = params.LOG_DIR
         users_path = os.path.join(users_home, USER_JSON)
-        config_utils.create_content_json(users_path, users, ensure_ascii=False)  # need test name prefix
+        config_utils.create_content_json(
+            users_path, users, ensure_ascii=False)  # need test name prefix
         self.jobs = []
-        self.set_eventual_stop(False)
+
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]
             buckets = udict["buckets"]
-            p = mp.Process(target=self.upload, args=(user, keys, buckets, files_count, prefs))
+            p = mp.Process(target=self.upload, args=(
+                user, keys, buckets, files_count, prefs))
             self.jobs.append(p)
         for p in self.jobs:
-            if not self.eventual_stop:
+            if not self.eventual_stop.is_set():
                 p.start()
-            else:
-                LOGGER.info("Terminating as per test session")
-                p.terminate()
+
         for p in self.jobs:
             if p.is_alive():
                 LOGGER.info("started joining")
                 p.join()
         LOGGER.info(f'Upload started for all users {users}')
 
-    # @property
     def get_eventual_stop(self):
         return self.eventual_stop
 
-    # @set_eventual_stop.setter
     def set_eventual_stop(self, stop):
-        LOGGER.info("Eventual stop called %s", stop)
-        self.eventual_stop = stop
+        self.eventual_stop.set()
 
     def stop(self, stop_spawining=False):
         if stop_spawining:

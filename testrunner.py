@@ -5,6 +5,8 @@ import csv
 import json
 import logging
 import requests
+import random
+import uuid
 from datetime import datetime
 from multiprocessing import Process
 from jira import JIRA
@@ -18,8 +20,11 @@ from commons.utils import system_utils
 from commons import params
 from commons import cortxlogging
 from commons import constants as common_cnst
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 LOGGER = logging.getLogger(__name__)
+CONDITIONAL_IO_STOP = False
 
 
 def parse_args():
@@ -56,6 +61,9 @@ def parse_args():
     parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
                         default=False, help="Helps set DI check enabled so that tests "
                                             "perform additional checksum check")
+    parser.add_argument("-iod", "--io_data", type=dict, default={}, help="Data for test runner Io")
+    parser.add_argument("-io", "--test_runner_data_integrity_chk", type=str_to_bool, default=False,
+                        help="Data for test runner Io")
     return parser.parse_args()
 
 
@@ -147,6 +155,9 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
         cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
+
+    if args.test_runner_data_integrity_chk:
+        cmd_line = cmd_line + ["--test_runner_data_integrity_chk=" + str(True)]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
@@ -507,19 +518,63 @@ def get_setup_details(args):
                 raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
+def run_global_io_async(args):
+    mgm_ops = ManagementOPs()
+    secret_range = random.SystemRandom()
+    if not args.io_data:
+        nuser = secret_range.randint(2, 4)
+        nbuckets = secret_range.randint(3, 3)
+        file_counts = secret_range.randint(8, 25)
+        prefs_dict = {'prefix_dir': f"global_io_{uuid.uuid4().hex}"}
+    else:
+        nuser = args.io_data["user"]
+        nbuckets = args.io_data["buckets"]
+        file_counts = args.io_data["files_count"]
+        prefs_dict = args.io_data["prefs"]
+    all_user_dict = {}
+    run_data_check_obj = None
+    while not CONDITIONAL_IO_STOP:
+        users = mgm_ops.create_account_users(nusers=nuser)
+        users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
+        run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        run_data_check_obj.start_io_async(
+            users=users_buckets, buckets=None, files_count=file_counts, prefs=prefs_dict)
+        all_user_dict.update(users_buckets.items())
+        # add load for next run
+        nuser += 1
+        nbuckets += 2
+        file_counts += 3
+    # return all_user_dict, run_data_check_obj
+    if run_data_check_obj:
+        run_data_check_obj.stop_io_async(
+            users=all_user_dict, di_check=args.test_runner_data_integrity_chk, stop_gracefully=True)
+
+
+def parallel_io(args):
+    import threading
+    p = threading.Thread(
+        target=run_global_io_async, args=(args,))
+    p.start()
+    p.join()
+
+
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
+    global CONDITIONAL_IO_STOP
     get_setup_details(args)
-
+    if args.test_runner_data_integrity_chk:
+        parallel_io(args)
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
+        CONDITIONAL_IO_STOP = True
     elif args.te_ticket:
         trigger_tests_from_te(args)
+        CONDITIONAL_IO_STOP = True
     else:
         check_kafka_msg_trigger_test(args)
 

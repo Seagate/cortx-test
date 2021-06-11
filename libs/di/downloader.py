@@ -129,7 +129,8 @@ class DataIntegrityValidator:
         summary = dict()
         with open(params.UPLOADED_FILES, newline='') as f:
             reader = csv.reader(f)
-            uploadedFiles = list(reader)
+            # uploadedFiles = list(reader)
+            uploadedFiles = [el for el in list(reader) if el[0] in users.keys()]
 
         if len(uploadedFiles) == 0:
             print("uploaded data not found, exiting script")

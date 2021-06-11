@@ -108,7 +108,7 @@ class ManagementOPs:
         return users
 
     @classmethod
-    def create_buckets(cls, nbuckets, users=None):
+    def create_buckets(cls, nbuckets, users=None, use_cortxcli=True):
         """
         Creates random buckets for each user. This api
         caches buckets for continuous crud operations on
@@ -120,17 +120,24 @@ class ManagementOPs:
         users = dict() if not users else users
 
         # Create S3 account
-        cli = cctl.CortxCliTestLib()
+        if use_cortxcli:
+            cli = cctl.CortxCliTestLib()
+
         buckets = {"user{}".format(i): list() for i in range(1, nbuckets + 1)}
 
         # create 10 buckets per user
         for k in users:
-            cli.login_cortx_cli(k, users[k]["password"])
-            bkts = [
-                cli.create_bucket_cortx_cli('{}bucket{}'.format(
-                    k.replace('_', '-'), i))[1] for i in range(1, nbuckets + 1)]
-            bkts_lst = [i.split(" ")[2].split('\r\nBucket')[0] for i in bkts if 'created' in i]
-            buckets[k] = bkts_lst
+            if use_cortxcli:
+                cli.login_cortx_cli(k, users[k]["password"])
+                bkts = [
+                    cli.create_bucket_cortx_cli('{}bucket{}'.format(
+                        k.replace('_', '-'), i))[1] for i in range(1, nbuckets + 1)]
+                bkts_lst = [i.split(" ")[2].split('\r\nBucket')[0] for i in bkts if 'created' in i]
+                buckets[k] = bkts_lst
+                cli.logout_cortx_cli()
+            else:
+                bkts_lst = ['{}bucket{}'.format(
+                    k.replace('_', '-'), i) for i in range(1, nbuckets + 1)]
             users[k]["buckets"] = bkts_lst
         return users
 

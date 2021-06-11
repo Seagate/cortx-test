@@ -48,7 +48,8 @@ def split_args(sys_cmd: List):
         else:
             eq_splitted.extend([item])
     return eq_splitted
-
+import pdb
+# pdb.set_trace()
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
@@ -69,6 +70,8 @@ elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner p
     target = os.environ["TARGET"]
 elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
+elif proc_name in ["testrunner.py", "testrunner"]:
+    target = split_args([i for i in sys.argv if '-tg' in i or '--target' in i])[1]
 else:
     target = None
 
