@@ -446,7 +446,7 @@ class Provisioner:
         return: bool, Execution response
         """
         try:
-            cmd = common_cmd.CMD_SALT_SET_SYSTEM.format(time_server, timezone)
+            cmd = common_cmd.CMD_SET_SYSTEM_NTP.format(time_server, timezone)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
             if resp:
                 return True, f"Executed {cmd}"
@@ -484,7 +484,7 @@ class Provisioner:
         ntp = {}
         try:
             chk = "srvnode-{}".format(node_id)
-            cmd = common_cmd.CMD_SALT_GET_SYSTEM.format(chk)
+            cmd = common_cmd.CMD_GET_SYSTEM_NTP.format(chk)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
             LOGGER.debug("pillar command output for {}'s system: {}\n".format(chk, resp))
             for ii in range(len(resp)):
@@ -498,7 +498,7 @@ class Provisioner:
             return False, error
         return True, ntp
 
-    def sysconfg_verification(self, key: list, node_obj, node_id: int, exp_t_srv=str, exp_t_zone=str):
+    def sysconfg_verification(self, key: list, node_obj, node_id: int, exp_t_srv: str, exp_t_zone: str):
         """
         Helper function to verify the system NTP configuration
         param: key: NTP keys to be verified
