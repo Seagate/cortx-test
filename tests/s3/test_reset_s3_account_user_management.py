@@ -380,7 +380,7 @@ class TestResetAccountUserManagement:
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
         self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
         resp = self.csm_obj.reset_s3acc_password(csm_user, self.s3acc_passwd, s3acc_name, self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[s3acc_name] = self.new_passwd
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -419,7 +419,7 @@ class TestResetAccountUserManagement:
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
         self.log.info("Step 4. Reset s3 account user with it's own password.")
         resp = self.csm_obj.reset_s3acc_own_password(s3acc_name, self.s3acc_passwd, self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[s3acc_name] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -456,8 +456,8 @@ class TestResetAccountUserManagement:
         s3acc_name = self.account_prefix.format(time.perf_counter_ns())
         s3acc_mail = self.email_id.format(s3acc_name)
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
-        resp = self.csm_obj.reset_s3acc_password(acc_name=s3acc_name, passwd=self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
+        resp = self.csm_obj.reset_s3acc_password(acc_name=s3acc_name, new_password=self.new_passwd)
+        assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[s3acc_name] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -469,7 +469,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
-        bktlist = S3_OBJ.object_list(self.bucket_name1)[0]
+        bktlist = s3_test_obj.object_list(self.bucket_name1)[1]
         assert_utils.assert_in(self.object_name, bktlist, f"{self.object_name} not exists in {bktlist}")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_22797_ios")
