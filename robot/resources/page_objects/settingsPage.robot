@@ -9,45 +9,15 @@ ${default_file_name}  s3server.pem
 
 *** Keywords ***
 
-Check System Maintenance Section Not Exists
-    [Documentation]  This keyword verifys that user can not access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID
-    Page Should Not Contain Element  ${SYSTEM_MAINTENANCE_BUTTON_ID}
-
-Check System Maintenance Section Exists
+Check SSL Option Exists
     [Documentation]  This keyword verifys that user can access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID
-    Page Should Contain Element  ${SYSTEM_MAINTENANCE_BUTTON_ID}
+    Navigate To Page  SETTINGS_ID
+    Page Should Contain Element  ${SETTINGS_SSL_BUTTON_ID}
 
-Check Start Service Option Not Exists
+Check SSL Option Not Exists
     [Documentation]  This keyword verifys that user can not access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Not Contain Element  ${START_SERVICE_BUTTON_ID}
-
-Check Start Service Option Exists
-    [Documentation]  This keyword verifys that user can access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Contain Element  ${START_SERVICE_BUTTON_ID}
-
-Check Stop Service Option Not Exists
-    [Documentation]  This keyword verifys that user can not access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Not Contain Element  ${STOP_SERVICE_BUTTON_ID}
-
-Check Stop Service Option Exists
-    [Documentation]  This keyword verifys that user can access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Contain Element  ${STOP_SERVICE_BUTTON_ID}
-
-Check Shutdown Option Not Exists
-    [Documentation]  This keyword verifys that user can not access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Not Contain Element  ${SHUTDOWN_SERVICE_BUTTON_ID}
-
-Check Shutdown Option Exists
-    [Documentation]  This keyword verifys that user can access System Maintenance Section
-    Navigate To Page  MAINTENANCE_MENU_ID  SYSTEM_MAINTENANCE_BUTTON_ID
-    Page Should Contain Element  ${SHUTDOWN_SERVICE_BUTTON_ID}
+    Navigate To Page  SETTINGS_ID
+    Page Should Not Contain Element  ${SETTINGS_SSL_BUTTON_ID}
 
 Click On Upload New SSL File Button
     [Documentation]  Perform click operation on Upload New Software File Button

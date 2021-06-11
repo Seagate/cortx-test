@@ -244,6 +244,7 @@ SUBJECT_COMMON_NAME_VALUE_ID = 'subject_common_name_value'
 SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
 SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
 SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
+SERIAL_NO_XPATH	= "//*[contains(text(),'Serial No')]"
 
 # Audit Log Section
 AUDIT_LOG_VIEW_BUTTON_ID = "auditlog-viewbtn"

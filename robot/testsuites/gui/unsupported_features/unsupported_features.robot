@@ -1,15 +1,17 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/firmwareUpdatepage.robot
-Resource    ${EXECDIR}/resources/page_objects/healthPage.robot
-Resource    ${EXECDIR}/resources/page_objects/lyvePilot.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource    ${EXECDIR}/resources/page_objects/settingsPage.robot
-Resource    ${EXECDIR}/resources/page_objects/softwareUpdatepage.robot
-Resource    ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
-Resource    ${EXECDIR}/resources/common/common.robot
-Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${RESOURCES}/resources/page_objects/aboutPage.robot
+Resource    ${RESOURCES}/resources/page_objects/maintenancePage.robot
+Resource    ${RESOURCES}/resources/page_objects/firmwareUpdatepage.robot
+Resource    ${RESOURCES}/resources/page_objects/healthPage.robot
+Resource    ${RESOURCES}/resources/page_objects/lyvePilot.robot
+Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource    ${RESOURCES}/resources/page_objects/settingsPage.robot
+Resource    ${RESOURCES}/resources/page_objects/softwareUpdatepage.robot
+Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
+Resource    ${RESOURCES}/resources/common/common.robot
+Variables   ${RESOURCES}/resources/common/common_variables.py
 
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
@@ -85,8 +87,22 @@ TEST-22656
     [Documentation]  CSM GUI: Verify Unsupported Features : Shutdown option under system maintenance​ should not be accessible
     ...  Reference : https://jts.seagate.com/browse/TEST-22656
     [Tags]  Priority_High  user_role  TEST-22656
-    Check Shutdown Option Not Existss
+    Check Shutdown Option Not Exists
     Capture Page Screenshot  TEST-22656.png
+
+TEST-23054
+    [Documentation]  CSM GUI: Verify Unsupported Features : Serial Number section under About Page should not be accessible
+    ...  Reference : https://jts.seagate.com/browse/TEST-23054
+    [Tags]  Priority_High  user_role  TEST-23054
+    Check Serial Number Not Exists
+    Capture Page Screenshot  TEST-23054.png
+
+TEST-23056
+    [Documentation]  CSM GUI: Verify Unsupported Features : SSL Certificate section under Settings​ Tab should not be accessible
+    ...  Reference : https://jts.seagate.com/browse/TEST-23056
+    [Tags]  Priority_High  user_role  TEST-23056
+    Check SSL Option Not Exists
+    Capture Page Screenshot  TEST-23056.png
 
 TEST-22595
     [Documentation]  CSM GUI: Verify Unsupported Features : Health Tab should be accessible
@@ -143,3 +159,17 @@ TEST-22658
     [Tags]  Priority_High  user_role  TEST-22658
     Check Shutdown Option Exists
     Capture Page Screenshot  TEST-22658.png
+
+TEST-23055
+    [Documentation]  CSM GUI: Verify Unsupported Features : Serial Number section under About Page should be accessible
+    ...  Reference : https://jts.seagate.com/browse/TEST-23055
+    [Tags]  Priority_High  user_role  TEST-23055
+    Check Serial Number Exists
+    Capture Page Screenshot  TEST-23055.png
+
+TEST-23057
+    [Documentation]  CSM GUI: Verify Unsupported Features : SSL Certificate section under Settings​ Tab should be accessible
+    ...  Reference : https://jts.seagate.com/browse/TEST-23057
+    [Tags]  Priority_High  user_role  TEST-23057
+    Check SSL Option Exists
+    Capture Page Screenshot  TEST-23057.png

@@ -348,7 +348,7 @@ Check Dashboard Option Not Exists
 Check Create CSM User Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to create csm user page
     Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
-    
+
 Check Alert Icon Not Exists
     [Documentation]   This keyword is to check that s3 user does not have access to Alert page
     Page Should Not Contain Element  ${ALERT_IMAGE_2_ID}

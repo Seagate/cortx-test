@@ -8,10 +8,12 @@ Variables  ${EXECDIR}/resources/common/element_locators.py
 
 Check Health Option Not Exists
     [Documentation]  This keyword is to check that user does not have access to Health page
+    wait for page or element to load
     Page Should Not Contain Element  ${HEALTH_TAB_ID}
 
 Check Health Option Exists
     [Documentation]  This keyword is to check that user does have access to Health page
+    wait for page or element to load
     Page Should Contain Element  ${HEALTH_TAB_ID}
 
 Check Health Option URL access

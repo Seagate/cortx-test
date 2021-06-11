@@ -7,11 +7,13 @@ Library     SeleniumLibrary
 Check Firmware Update Section Not Exists
     [Documentation]  This keyword is to check that user does not have access to Firmware Update Section
     Navigate To Page  MAINTENANCE_MENU_ID
+    wait for page or element to load
     Page Should Not Contain Element  ${FW_UPDATE_TAB_ID}
 
 Check Firmware Update Section Exists
     [Documentation]  This keyword is to check that user have access to Firmware Update Section
     Navigate To Page  MAINTENANCE_MENU_ID
+    wait for page or element to load
     Page Should Contain Element  ${FW_UPDATE_TAB_ID}
 
 Click On Upload New Firmware File Button
