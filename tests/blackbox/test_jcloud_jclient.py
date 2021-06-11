@@ -109,7 +109,6 @@ class TestJcloudAndJclient:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        # bucket_list = S3_TEST_OBJ.bucket_list()[1]
         if self.bucket_name in self.bucket_list:
             resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
@@ -807,12 +806,12 @@ class TestJcloudAndJclient:
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
+        self.bucket_list = bkt_lst
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
-        self.bucket_list = bkt_lst
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
 
@@ -834,6 +833,7 @@ class TestJcloudAndJclient:
             10)
         self.log.info(
             "STEP 1: Creating a bucket and uploading object was successful")
+        self.bucket_list.append(self.bucket_name)
         self.log.info(
             "STEP 2: Listing all the objects from buckets %s",
             self.bucket_name)
@@ -846,7 +846,6 @@ class TestJcloudAndJclient:
         assert_utils.assert_in(self.obj_name, resp[1], resp)
         self.log.info("STEP 2: All objects were listed of bucket")
         self.file_path_lst.append(file_path)
-        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: list objects using jcloudclient")
 
     @pytest.mark.parallel
@@ -900,12 +899,12 @@ class TestJcloudAndJclient:
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
+        self.bucket_list = bkt_lst
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         s3_bkt_lst = [bkt for bkt in resp[1] if self.bucket_name in bkt]
         assert_utils.assert_equal(bkt_lst.sort(), s3_bkt_lst.sort(), resp)
-        self.bucket_list = bkt_lst
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using Jclient")
 
