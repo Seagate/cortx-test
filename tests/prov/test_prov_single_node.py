@@ -81,13 +81,6 @@ class TestProvSingleNode:
         """
         Setup operations for each test.
         """
-        self.restored = False
-        LOGGER.info("SETUP: Store NTP configuration data.")
-        resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd_obj, 1)
-        assert_utils.assert_not_equal(resp[0], False, resp[1])
-        self.set_ntp = resp[1]
-        LOGGER.info("SETUP: Stored NTP configuration data = {}.".format(self.set_ntp))
-        LOGGER.info("Successfully performed Setup operation")
 
     def teardown_method(self):
         """
@@ -254,6 +247,13 @@ class TestProvSingleNode:
         and NTP configuration can be changed from provisioner cli.
         """
         LOGGER.info("-----     Started NTP configuration Validation     -----")
+        self.restored = False
+        LOGGER.info("Store NTP configuration data.")
+        resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd_obj, 1)
+        assert_utils.assert_not_equal(resp[0], False, resp[1])
+        self.set_ntp = resp[1]
+        LOGGER.info("Stored NTP configuration data = {}.".format(self.set_ntp))
+
         timeserver_data = PROV_CFG['system_ntp']['timeserver']
         timezone_data = PROV_CFG['system_ntp']['timezone']
         LOGGER.info("Step 1: Check that the cluster is up and running.")
