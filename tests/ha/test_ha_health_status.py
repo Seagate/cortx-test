@@ -153,6 +153,21 @@ class TestHAHealthStatus:
 
         return sys_obj
 
+    def check_service_other_nodes(self, node_id):
+        """
+        Helper function to get services status on nodes which are online.
+        :param node_id: node which is down to be skipped
+        :return: boolean
+        """
+        for node in range(3):
+            if node != node_id:
+                node_name = "srvnode-{}".format(node+1)
+                res = self.node_list[node].execute_cmd(common_cmds.CMD_PCS_GREP.format(node_name))
+                for line in res:
+                    if "FAILED" in line or "Stopped" in line:
+                        return False
+        return True
+
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
@@ -178,13 +193,16 @@ class TestHAHealthStatus:
         for node in range(3):
             node_name = "srvnode-{}".format(node+1)
             LOGGER.info("Shutting down {}".format(node_name))
+            if self.setup_type == "HW":
+                LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
+                #TODO: Need to get the command once F-11A available.
             resp = self.node_list[node].execute_cmd(cmd="shutdown now")
             LOGGER.debug("Response for shutdown: {}".format(resp))
             LOGGER.info("Check if the node has shutdown.")
             time.sleep(10)
             resp = system_utils.check_ping(self.host_list[node])
             assert_utils.assert_not_equal(resp, 0, "Host has not shutdown yet.")
-            LOGGER.info("Check in cortxcli that the status is chnaged for node to offline")
+            LOGGER.info("Check in cortxcli that the status is changed for node to offline")
             if node == 2:
                 nd_obj = self.nd1_obj
             else:
@@ -195,6 +213,9 @@ class TestHAHealthStatus:
             resp_table = self.cli_obj1.split_table_response(resp[1])
             LOGGER.debug("Response for {} in cortxcli is: {}".format(node_name, resp_table))
             #TODO: Check if node is shown offline and other nodes as online
+            LOGGER.info("Check that cortx services on other nodes are not affected.")
+            resp = self.check_service_other_nodes(node)
+            assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on {}".format(node_name))
             if self.setup_type == "VM":
                 #TODO: use start_vm from scripts/ssc_cloud/ssc_vm_ops.py once #376 merged

@@ -378,6 +378,7 @@ CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GREP = "pcs status --full | grep {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
