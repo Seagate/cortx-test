@@ -66,14 +66,16 @@ class TestResetAccountUserManagement:
             self.log.info("Created path: %s", self.test_dir_path)
         self.cortx_test_obj = CortxCliTestLib()
         self.csm_obj = CSMAccountOperations()
-        self.account_prefix = "acc-resetaccount-{}"
-        self.csm_user = "csm-acc-{}"
+        self.account_prefix = "acc-resetpasswd-{}"
+        self.csm_user = "csm-user-{}".format(time.perf_counter_ns())
+        self.s3acc_name = "acc-resetpasswd-{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com"
         self.io_bucket_name = "iobkt1-reset-{}".format(perf_counter_ns())
         self.bucket_name1 = "bkt1-reset-{}".format(perf_counter_ns())
         self.bucket_name2 = "bkt2-reset-{}".format(perf_counter_ns())
         self.object_name = "obj-resetobject-{}".format(time.perf_counter_ns())
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.new_passwd = S3_CFG["CliConfig"]["iam_user"]["password"]
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.parallel_ios = None
         self.account_list = list()
@@ -270,7 +272,7 @@ class TestResetAccountUserManagement:
         email2 = self.email_id.format(acc_name2)
         s3_test_obj2 = self.create_s3cortxcli_acc(acc_name2, email2, self.s3acc_passwd)[0]
         self.log.info("Step 4: Reset s3 account password using other s3 account user.")
-        resp = self.csm_obj.reset_user_password(acc_name1, self.s3acc_passwd, acc_name2, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(acc_name1, self.s3acc_passwd, acc_name2, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_in("Access denied. Cannot modify another S3 account.", resp[1], resp[1])
         self.log.info("Step 5: Create bucket s3bkt1, s3bkt2 in s3acc1, s3acc2 account.")
@@ -325,7 +327,7 @@ class TestResetAccountUserManagement:
         s3acc_mail = self.email_id.format(s3acc_name)
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
         self.log.info("Step 5. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -368,7 +370,7 @@ class TestResetAccountUserManagement:
         s3acc_mail = self.email_id.format(s3acc_name)
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
         self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -405,7 +407,7 @@ class TestResetAccountUserManagement:
         s3acc_mail = self.email_id.format(s3acc_name)
         s3_test_obj = self.create_s3cortxcli_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
         self.log.info("Step 4. Reset s3 account user with it's own password.")
-        resp = self.csm_obj.reset_own_password(s3acc_name, self.s3acc_passwd, self.s3acc_passwd)
+        resp = self.csm_obj.reset_own_password(s3acc_name, self.s3acc_passwd, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -446,7 +448,7 @@ class TestResetAccountUserManagement:
         csm_use_mail = self.email_id.format(csm_use)
         resp = self.csm_obj.csm_user_create(csm_use, csm_use_mail, self.s3acc_passwd, role="admin")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -504,7 +506,9 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj2.put_object(self.bucket_name2, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6. Reset s3 account password using other s3 account user.")
-
+        resp = self.csm_obj.reset_user_password(s3acc_name1, self.s3acc_passwd, s3acc_name2, self.new_passwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_in("Access denied. Cannot modify another S3 account.", resp[1], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj1.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -557,7 +561,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
@@ -607,7 +611,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
@@ -650,7 +654,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Reset s3 account user with it's own password.")
-        resp = self.cortx_test_obj.reset_s3account_password(acc_name, self.s3acc_passwd)
+        resp = self.cortx_test_obj.reset_s3account_password(acc_name, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6: list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
@@ -698,7 +702,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Reset s3 account password using csm admin user.")
-        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.s3acc_passwd)
+        resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, s3acc_name, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 8. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
@@ -732,7 +736,7 @@ class TestResetAccountUserManagement:
         self.log.info("Step 3. Create csm admin user.")
         csm_use = self.csm_user.format(time.perf_counter_ns())
         csm_use_mail = self.email_id.format(csm_use)
-        resp = self.csm_obj.csm_user_create(csm_use, csm_use_mail, self.s3acc_passwd, role="admin")
+        resp = self.csm_obj.csm_user_create(csm_use, csm_use_mail, self.s3acc_passwd, role="manage")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4. Create N number s3account.")
         account_list = []
@@ -743,17 +747,17 @@ class TestResetAccountUserManagement:
             account_list.append(acc_name)
         self.log.info("Step 5. Reset N number s3 account password using csm admin user.")
         for name in account_list:
-            resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, name, self.s3acc_passwd)
+            resp = self.csm_obj.reset_s3account_password(name, self.new_passwd)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 6. Changes csm user role to manage.")
         self.log.info("Step 7. Reset N number s3 account password using csm user having manage role.")
         for name in account_list:
-            resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, name, self.s3acc_passwd)
+            resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, name, self.new_passwd)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 8. Changes csm user role to monitor.")
         self.log.info("Step 9. Reset N number s3 account password using csm user having manage role.")
         for name in account_list:
-            resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, name, self.s3acc_passwd)
+            resp = self.csm_obj.reset_user_password(csm_use, self.s3acc_passwd, name, self.new_passwd)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 10. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
