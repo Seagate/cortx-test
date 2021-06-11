@@ -60,4 +60,5 @@ single-node:
 
 system_ntp:
     ntp_data: ['time_server:', 'time_zone:']
+    timeserver: ['10.30.127.102', 'time.seagate.com']
     timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
