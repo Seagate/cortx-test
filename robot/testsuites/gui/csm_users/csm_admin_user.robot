@@ -40,17 +40,17 @@ SSL certificate expiration alert Verification
     ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
     ${file_name}=  Set Variable  stx_${days}.pem
     Verify SSL status  ${installation_status_init}  ${file_name}
-    # # These following lines should be executed in case you have the proper machine
-    # Install uploaded SSL
-    # wait for page or element to load  5 minutes  #will re-start all service
-    # Close Browser
-    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # wait for page or element to load  20s  # Took time to load dashboard after install
-    # Reload Page
-    # wait for page or element to load  10s  # Took time to load dashboard after install
-    # Verify SSL status  ${installation_status_success}  ${file_name}
-    # # Find the alert and verifiy
-    # Verify Presence SSL certificate expires alert  ${days}
+    # These following lines should be executed in case you have the proper machine
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${file_name}
+    # Find the alert and verifiy
+    Verify Presence SSL certificate expires alert  ${days}
 
 *** Test Cases ***
 
@@ -339,16 +339,16 @@ TEST-9045
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
     Capture Page Screenshot  ${test_id}_ssl_uploaded.png
-    # # These following lines should be executed in case you have the proper machine
-    # Install uploaded SSL
-    # wait for page or element to load  5 minutes  #will re-start all service
-    # Close Browser
-    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # wait for page or element to load  20s  # Took time to load dashboard after install
-    # Reload Page
-    # wait for page or element to load  10s  # Took time to load dashboard after install
-    # Verify SSL status  ${installation_status_success}  ${server_file_name}
-    # Capture Page Screenshot  ${test_id}_ssl_installed.png
+    # These following lines should be executed in case you have the proper machine
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_installed.png
 
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
