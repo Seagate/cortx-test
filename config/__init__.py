@@ -74,7 +74,7 @@ else:
     target = None
 
 
-CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
+CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target="ssc-vm-4984-am")
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
