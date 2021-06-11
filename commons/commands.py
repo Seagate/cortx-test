@@ -169,6 +169,7 @@ IPMI_SDR_LIST_CMD = "ipmitool sdr list"
 # All the constants are alphabetically arranged.
 """All the constants are alphabetically arranged."""
 PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
+SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
 
