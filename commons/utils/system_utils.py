@@ -901,7 +901,7 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
 
         LOGGER.info("Copying file to mounted directory")
         shutil.copy(local_path, new_path)
-        log_path = os.path.join(host_dir.split(":")[0], remote_path)
+        log_path = os.path.join(host_dir, remote_path)
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")
@@ -1046,10 +1046,11 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
     """
     LOGGER.info(f"Changing {device} n/w device status to {status}")
     cmd = commands.IP_LINK_CMD.format(device, status)
+    LOGGER.info("Running command: %s", cmd)
     res = run_remote_cmd(
             hostname=host, username=username, password=pwd, cmd=cmd,
             read_lines=True)
-    LOGGER.debug(f"Command: {cmd}, response: {res}")
+    LOGGER.debug("Response: %s", res)
 
     LOGGER.debug(res)
     return res[0]
