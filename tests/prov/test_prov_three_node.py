@@ -363,19 +363,19 @@ class TestProvThreeNode:
                 node_obj=self.nd1_obj, time_server=set_timesrv_ip, timezone=set_timezone)
             assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 6: Validate NTP configuration data")
+        LOGGER.info("Step 6: Validate set NTP configuration in pillar data")
         for node in range(1, 4):
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
             assert_utils.assert_not_equal(resp[0], False, resp[1])
-            LOGGER.info("Step 6: Validated NTP Configuration on srvnode-{}:{}".format(
+            LOGGER.info("Step 6: Validated set NTP Configuration on srvnode-{}:{}".format(
                 node, resp[1]))
 
-        LOGGER.info("Step 7: Validate time_server in /etc/chrony.conf")
+        LOGGER.info("Step 7: Validate set time_server in /etc/chrony.conf")
         resp = self.prov_obj.get_chrony(time_server=set_timesrv_ip)
         assert_utils.assert_not_equal(resp[0], False, resp[1])
-        LOGGER.info("Step 7: Validated time_server in /etc/chrony.conf response = {}".format(resp[1]))
+        LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(resp[1]))
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
         for node in range(1, 4):
