@@ -22,14 +22,10 @@ pipeline {
     parameters {
         string(name: 'Branch', defaultValue: 'dev', description: 'Branch name of cortx-test', trim: true)
         string(name: 'TestPlanNumber', defaultValue: 'TEST-18383', description: 'Master Test plan number to clone', trim: true)
-        string(name: 'TEs_To_Exclude', description: 'Space separated TEs from template TP which you want to exclude from execution.', trim: true)
+        vm_list,vm_list,setupname, client, m_vip, tes, tp_new,JIRA_ID , JIRA_PWD
         string(name: 'Target_Node', description: 'Name of target setup mentioned in database', trim: true)
-        string(name: 'Setup_Type', defaultValue: 'default', description: 'Either of default/isolated/nearfull', trim: true)
-        choice(name: 'Platform_Type', choices: ['VM', 'HW', 'OVA'], description: 'Is target a VM or a HW or an OVA?')
         text(name: 'DESC', description: 'This job triggers CSM GUI, Cortx-test and Load tests in parallel')
         string(name: 'Nodes_In_Target', defaultValue: '3', description: 'Number of nodes in target: 3 or 3N', trim: true)
-        string(name: 'Server_Type', description: 'HPC/DELL/SMC', trim: true)
-        string(name: 'Enclosure_Type', defaultValue: '5U84',description: '5U84/PODS/JBOD', trim: true)
         string(name: 'Build', description: 'Build number of target', trim: true)
         string(name: 'Build_Type', defaultValue: 'stable', description: 'Branch name from which build is cut stable/main', trim: true)
         credentials(
@@ -38,12 +34,10 @@ pipeline {
                 description: 'JIRA Credentials.',
                 name: 'JIRA_CRED',
                 required: true)
-        string(name: 'Git_Branch_Name', defaultValue: 'dev', description: 'Branch name of Cortx-test', trim: true)
-        booleanParam(name: 'Need_pip_source', description: 'Tick this if you want to add source in requirements installation. e.g. pip3 install -r requirements.txt -i https://pypi.python.org/simple/')
         booleanParam(name: 'DB_Update', description: 'Tick this if you want to push test execution data to database')
         booleanParam(name: 'Sequential_Execution', description: 'Tick this if you want to have sequential execution')
         string(name: 'Process_Cnt_Parallel_Exe', defaultValue: '2', description: 'If Sequential Execution is not selected, then provide number of parallel process to run.', trim: true)
-        string(name: 'Node_VM_details', defaultValue: 'comma separated FQDNs here', description: 'comma separated FQDN of the vms on which', trim: true)
+
     }
 
     stages {

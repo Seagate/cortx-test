@@ -14,4 +14,5 @@ else
 pip3 install -r requirements.txt
 fi
 
+mkdir -p /etc/ssl/stx-s3-clients/s3
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
