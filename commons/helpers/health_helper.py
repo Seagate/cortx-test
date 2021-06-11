@@ -446,8 +446,8 @@ class Health(Host):
         :param resources: list of resource names from pcs resource
         :param srvnode: Name of the server on which command to be performed
         :param wait_time: Wait time in sec after performing operation
-        :return: tuple with boolean and response/error
-        :rtype: tuple
+        :return: boolean
+        :rtype: bool
         """
         valid_commands = {"ban", "clear", "enable", "disable", "restart"}
         if command not in valid_commands:

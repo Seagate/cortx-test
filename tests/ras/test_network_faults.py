@@ -24,6 +24,7 @@ import time
 import random
 import logging
 import pytest
+import pandas as pd
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
@@ -128,7 +129,8 @@ class TestNetworkFault:
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"],
-                    service["csm_web"], service["csm_agent"]]
+                    service["kafka_zookeeper"], service["csm_web"],
+                    service["csm_agent"]]
         resp = self.health_obj.pcs_resource_cmd(command="restart",
                                                 resources=[self.sspl_resource_id],
                                                 srvnode=self.current_srvnode)
@@ -181,7 +183,6 @@ class TestNetworkFault:
         resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
                                                      field=cons.CONF_SSPL_LOG_LEVEL)
         LOGGER.info("Now SSPL log level is: %s", resp)
-
 
         if self.public_data_fault_flag:
             LOGGER.info("Resolving Public data Network port Fault")
@@ -280,16 +281,16 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
-        # Revisit when alerts are available in CSM
-        # LOGGER.info("Step 1.3: Validating csm alert response")
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime, self.alert_type["fault"],
-        #                 False, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+        if self.setup_type != "VM":
+            LOGGER.info("Step 1.3: Validating csm alert response")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                            self.starttime, self.alert_type["fault"],
+                            False, network_fault_params["resource_type"],
+                            network_fault_params["resource_id_csm"].format(
+                                          resource_id))
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp, "Failed to get alert in CSM REST")
+            LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
@@ -318,21 +319,21 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
 
-        # Revisit when actual HW is available
-        # LOGGER.info(
-        #     "Step 2.2: Validating csm alert response after resolving fault")
-        #
-        # resp = self.csm_alerts_obj.verify_csm_response(
-        #                 self.starttime,
-        #                 self.alert_type["resolved"],
-        #                 True, network_fault_params["resource_type"],
-        #                 network_fault_params["resource_id_csm"].format(
-        #                               resource_id))
-        # LOGGER.info("Response: %s", resp)
-        # assert_true(resp, "Failed to get alert in CSM REST")
-        # LOGGER.info(
-        #     "Step 2.2: Successfully validated csm alert response after "
-        #     "resolving fault")
+        if self.setup_type != "VM":
+            LOGGER.info(
+                "Step 2.2: Validating csm alert response after resolving fault")
+
+            resp = self.csm_alerts_obj.verify_csm_response(
+                            self.starttime,
+                            self.alert_type["resolved"],
+                            True, network_fault_params["resource_type"],
+                            network_fault_params["resource_id_csm"].format(
+                                          resource_id))
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp, "Failed to get alert in CSM REST")
+            LOGGER.info(
+                "Step 2.2: Successfully validated csm alert response after "
+                "resolving fault")
 
         LOGGER.info("ENDED: Verifying management network port fault and "
                     "fault-resolved scenarios")
@@ -383,15 +384,15 @@ class TestNetworkFault:
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 1.2: Successfully checked generated alerts")
 
-        LOGGER.info("Step 1.3: Validating csm alert response")
-        resp = self.csm_alerts_obj.verify_csm_response(
-                        self.starttime, self.alert_type["fault"],
-                        False, network_fault_params["resource_type"],
-                        network_fault_params["resource_id_csm"].format(
-                                      resource_id))
-        LOGGER.info("Response: %s", resp)
-        assert_true(resp, "Failed to get alert in CSM REST")
-        LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+            LOGGER.info("Step 1.3: Validating csm alert response")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                            self.starttime, self.alert_type["fault"],
+                            False, network_fault_params["resource_type"],
+                            network_fault_params["resource_id_csm"].format(
+                                          resource_id))
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp, "Failed to get alert in CSM REST")
+            LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
@@ -465,24 +466,32 @@ class TestNetworkFault:
                                                 'resource_id': self.public_data_device,
                                                 'flag': self.public_data_fault_flag}
                           }
+        df = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
+                                  f"{list(nw_port_faults.keys())[1]}".split(),
+                          index='Step1 Step2 Step3 Step4 Step5 Step6 Step7 '
+                                'Step8'.split())
         for key, value in nw_port_faults.items():
+            df[key] = 'Pass'
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
             resource_id = value['resource_id']
-            LOGGER.info("Step 1: Generating %s port fault", key)
-            LOGGER.info("Step 1.1: Creating fault")
+            LOGGER.info("Generating %s port fault", key)
+            LOGGER.info("Step 1: Creating fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_PORT_FAULT,
                 host_details={'host': host, 'host_user': host_user,
                               'host_password': host_password},
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} down".format(network_fault_params[
-                                                   "error_msg"]))
-            value['flag'] = True
-            LOGGER.info("Step 1.1: Successfully created public_data network "
-                        "port fault on %s", host)
+            if not resp[0]:
+                df[key]['Step 1'] = 'Fail'
+                assert_true(resp[0], "Step 1: {} down".format(network_fault_params[
+                                                      "error_msg"]))
+            else:
+                value['flag'] = True
+                LOGGER.info("Step 1: Successfully created public_data network "
+                            "port fault on %s", host)
 
             wait_time = random.randint(common_params["min_wait_time"],
                                        common_params["max_wait_time"])
@@ -491,7 +500,7 @@ class TestNetworkFault:
             time.sleep(wait_time)
 
             if self.start_msg_bus:
-                LOGGER.info("Step 1.2: Checking the generated alert logs")
+                LOGGER.info("Step 2: Checking the generated alert logs")
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["fault"],
                               network_fault_params[
@@ -499,61 +508,80 @@ class TestNetworkFault:
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
+                if not resp[0]:
+                    df[key]['Step2'] = 'Fail'
+                    assert_true(resp[0], "Step 2:" + resp[1])
+                else:
+                    LOGGER.info("Step 2: Successfully checked generated alerts")
 
-                assert_true(resp[0], resp[1])
-                LOGGER.info("Step 1.2: Successfully checked generated alerts")
-
-            # LOGGER.info("Step 1.3: Validating csm alert response")
+            # LOGGER.info("Step 3: Validating csm alert response")
             # resp = self.csm_alerts_obj.verify_csm_response(
             #     self.starttime, self.alert_type["fault"],
             #     False, network_fault_params["resource_type"],
             #     network_fault_params["resource_id_csm"].format(resource_id))
             # LOGGER.info("Response: %s", resp)
-            # assert_true(resp, "Failed to get alert in CSM REST")
-            # LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+            # if not resp:
+            #    df[key]['Step3'] = 'Fail'
+            #   assert_true(resp, "Step 3: Failed to get alert in CSM REST")
+            # else:
+            #   LOGGER.info("Step 3: Successfully Validated csm alert response")
 
-            LOGGER.info("Step 2: Stopping pcs resource for SSPL: %s",
+            LOGGER.info("Step 4: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
             resp = self.health_obj.pcs_resource_cmd(command="ban",
                                                     resources=[self.sspl_resource_id],
                                                     srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
-            LOGGER.info("Step 2.1: Checking if SSPL is in stopped state.")
+            LOGGER.info("Step 4: Checking if SSPL is in stopped state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                     services=[service[
                                                             "sspl_service"]],
                                                     decode=True, exc=False)
-            compare(resp[0], "inactive")
-            LOGGER.info("Step 2.1: Successfully stopped SSPL service")
+            if resp[0] != "inactive":
+                df[key]['Step4'] = 'Fail'
+                compare(resp[0], "inactive")
+            else:
+                LOGGER.info("Step 4: Successfully stopped SSPL service")
 
-            LOGGER.info("Step 3: Resolving fault")
+            LOGGER.info("Step 5: Resolving fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_PORT_FAULT_RESOLVED,
                 host_details={'host': host, 'host_user': host_user,
                               'host_password': host_password},
                 input_parameters={'device': resource_id})
             LOGGER.info("Response: %s", resp)
-            assert_true(resp[0], "{} up".format(network_fault_params[
-                                                   "error_msg"]))
-            value['flag'] = False
-            LOGGER.info("Step 3: Successfully resolved public_data network "
-                        "port fault on %s", host)
+            if not resp[0]:
+                df[key]['Step5'] = 'Fail'
+                assert_true(resp[0], "Step 5: {} up".format(network_fault_params[
+                                                    "error_msg"]))
+            else:
+                value['flag'] = False
+                LOGGER.info("Step 5: Successfully resolved public_data network "
+                            "port fault on %s", host)
 
             wait_time = common_params["min_wait_time"]
 
             LOGGER.info("Waiting for %s seconds", wait_time)
             time.sleep(wait_time)
 
-            LOGGER.info("Step 4: Starting SSPL service")
+            LOGGER.info("Step 6: Starting SSPL service")
             resp = self.health_obj.pcs_resource_cmd(command="clear",
                                                     resources=[self.sspl_resource_id],
                                                     srvnode=self.current_srvnode)
-
-            LOGGER.info("Step 4: Started SSPL service successfully")
+            LOGGER.info("Step 6: Checking if SSPL is in running state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                                  "sspl_service"]],
+                                                    decode=True, exc=False)
+            if resp[0] != "active":
+                df[key]['Step6'] = 'Fail'
+                compare(resp[0], "active")
+            else:
+                LOGGER.info("Step 6: Successfully started SSPL service")
 
             if self.start_msg_bus:
-                LOGGER.info("Step 5: Checking the generated alert logs")
+                LOGGER.info("Step 7: Checking the generated alert logs")
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
@@ -561,11 +589,14 @@ class TestNetworkFault:
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
-                assert_true(resp[0], resp[1])
-                LOGGER.info("Step 5: Successfully checked generated alerts")
+                if not resp[0]:
+                    df[key]['Step7'] = 'Fail'
+                    assert_true(resp[0], "Step 7:" + resp[1])
+                else:
+                    LOGGER.info("Step 7: Successfully checked generated alerts")
 
             LOGGER.info(
-                "Step 5.1: Validating csm alert response after resolving fault")
+                "Step 8: Validating csm alert response after resolving fault")
 
             # resp = self.csm_alerts_obj.verify_csm_response(
             #     self.starttime,
@@ -573,10 +604,16 @@ class TestNetworkFault:
             #     True, network_fault_params["resource_type"],
             #     network_fault_params["resource_id_csm"].format(resource_id))
             # LOGGER.info("Response: %s", resp)
-            # assert_true(resp, "Failed to get alert in CSM REST")
-            # LOGGER.info(
-            #     "Step 5.1: Successfully validated csm alert response after "
-            #     "resolving fault")
+            # if not resp:
+            #     df[key]['Step8'] = 'Fail'
+            #     assert_true(resp, "Step 8: Failed to get alert in CSM REST")
+            # else:
+            #     LOGGER.info("Step 8: Successfully validated csm alert response "
+            #                 "after resolving fault")
 
+        LOGGER.info("Summary of test: %s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
         LOGGER.info("ENDED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")

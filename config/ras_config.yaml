@@ -49,6 +49,7 @@ ras_sspl_alert:
   service:
     sspl_service: "sspl-ll"
     kafka_service: "kafka"
+    kafka_zookeeper: "kafka-zookeeper"
     csm_web: "csm_web"
     csm_agent: "csm_agent"
   sspl_resource_id: "monitor_group-clone"
