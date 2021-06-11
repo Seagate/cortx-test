@@ -490,7 +490,7 @@ class Health(Host):
         cmd = commands.CMD_PCS_STATUS_FULL + " | grep 'Current DC:'"
         LOG.info("Running command: %s", cmd)
         resp = self.execute_cmd(cmd)
-        resp = (resp.decode("utf-8").split('\n')).split()
+        resp = (resp.decode("utf-8").split('\n'))[0].split()
         for ele in resp:
             if "srvnode" in ele:
                 return True, ele
