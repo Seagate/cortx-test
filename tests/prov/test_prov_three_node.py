@@ -88,21 +88,13 @@ class TestProvThreeNode:
         cls.ntp_data = {}
         cls.CSM_USER = CortxCliCsmUser()
         cls.CSM_USER.open_connection()
+        cls.restored = None
         LOGGER.info("Done: Setup module operations")
 
     def setup_method(self):
         """
         Setup operations per test.
         """
-        self.restored = False
-        for node in range(1, 4):
-            LOGGER.info(f"SETUP: Store NTP configuration data for srvnode-{node}.")
-            resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd1_obj, node)
-            assert_utils.assert_not_equal(resp[0], False, resp[1])
-            self.ntp_data[f"srvnode-{node}"] = resp[1]
-            LOGGER.info("SETUP: Stored NTP configuration data for srvnode-{} = {}.".format(
-                node, self.ntp_data[f"srvnode-{node}"]))
-        LOGGER.info("Successfully performed Setup operation")
 
     def teardown_method(self):
         """
@@ -112,7 +104,7 @@ class TestProvThreeNode:
             LOGGER.info("TEARDOWN: Restore NTP configuration data.")
             for node in range(1, 4):
                 resp = self.prov_obj.set_ntpsysconfg(
-                    self.ntp_keys, time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
+                    node_obj=self.nd1_obj, time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_true(resp[0], resp[1])
 
@@ -322,6 +314,15 @@ class TestProvThreeNode:
         NTP configuration can be changed from provisioner cli.
         """
         LOGGER.info("-----     Started NTP configuration Validation     -----")
+        self.restored = False
+        for node in range(1, 4):
+            LOGGER.info(f"Store NTP configuration data for srvnode-{node}.")
+            resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd1_obj, node)
+            assert_utils.assert_not_equal(resp[0], False, resp[1])
+            self.ntp_data[f"srvnode-{node}"] = resp[1]
+            LOGGER.info("Stored NTP configuration data for srvnode-{} = {}.".format(
+                node, self.ntp_data[f"srvnode-{node}"]))
+
         LOGGER.info("Step 1: Check that the cluster is up and running.")
         hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
         timeserver_data = PROV_CFG['system_ntp']['timeserver']
