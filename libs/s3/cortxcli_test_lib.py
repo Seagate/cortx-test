@@ -92,6 +92,28 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, response
 
+    def csm_user_update_role(self, user_name, password, role):
+        """
+        This function will update role of user.
+
+        :param user_name: Name of a csm user whose role to be updated.
+        :param role: Role to be updated.
+        :param password: Current password.
+        """
+        try:
+            self.login_cortx_cli()
+            response = super().update_role(user_name, role, password)
+
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.csm_user_delete.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return response
+
     def csm_user_delete(self, user_name: str) -> tuple:
         """
         Deleting csm user using cortxcli.
@@ -136,7 +158,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return status, accounts
 
-    def reset_user_password(self, csm_user, passwd, acc_name, new_password)->tuple:
+    def reset_user_password(self, csm_user=None, passwd=None, acc_name=None, new_password=None) -> tuple:
         """
         Reset account password using csm user.
 
@@ -147,7 +169,10 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         :return: True/False and Response.
         """
         try:
-            self.login_cortx_cli(username=csm_user, password=passwd)
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
             response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
 
         except Exception as error:
@@ -160,7 +185,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return response
 
-    def reset_own_password(self, acc_name, old_password, new_password)->tuple:
+    def reset_own_password(self, acc_name, old_password, new_password) -> tuple:
         """
         Reset account password with it's own password.
 
