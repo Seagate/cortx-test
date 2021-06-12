@@ -91,11 +91,6 @@ class TestProvThreeNode:
         cls.restored = None
         LOGGER.info("Done: Setup module operations")
 
-    def setup_method(self):
-        """
-        Setup operations per test.
-        """
-
     def teardown_method(self):
         """
         Teardown operations after each test.
@@ -334,9 +329,9 @@ class TestProvThreeNode:
 
         LOGGER.info("Step 2: Validate that admin user is created")
         resp = self.CSM_USER.login_cortx_cli()
-        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.logout_cortx_cli()
-        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Validated that admin user is created")
 
         LOGGER.info("Step 3: Validate that NTP Configuration is same on all applicable nodes")
