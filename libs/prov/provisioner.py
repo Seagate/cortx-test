@@ -419,13 +419,13 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_PILLAR_DATA.format(chk, key)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug("pillar command output for {}'s {}: {}".format(chk, key, resp))
+            LOGGER.debug(f"pillar command output for {chk}'s {key}: {resp}")
             data1 = ansi_escape.sub('', resp[1])
             out = data1.strip()
             LOGGER.info("{} for {} is {}".format(key, chk, out))
             cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
             resp1 = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug("confstore template command output for {}'s {}: {}".format(chk, key, resp1))
+            LOGGER.debug(f"confstore template command output for {chk}'s {key}: {resp1}")
             if resp1:
                 return True, "Key from pillar and confstore match."
             else:
@@ -461,7 +461,7 @@ class Provisioner:
     @staticmethod
     def get_chrony(time_server: str):
         """
-        Helper function to grap the server value from /etc/chrony.conf
+        Helper function to grep the server value from /etc/chrony.conf
         return: bool, Execution response
         """
         grap_chrony = common_cmd.GET_CHRONY.format(time_server)
@@ -486,7 +486,7 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_GET_SYSTEM_NTP.format(chk)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug("pillar command output for {}'s system: {}\n".format(chk, resp))
+            LOGGER.debug(f"pillar command output for {chk}'s system: {resp}\n")
             for ii in range(len(resp)):
                 data1.append(ansi_escape.sub('', resp[ii]).strip())
             for key_val in key:

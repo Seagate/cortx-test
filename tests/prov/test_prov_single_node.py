@@ -77,11 +77,6 @@ class TestProvSingleNode:
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         LOGGER.info("Done: Setup module operations")
 
-    def setup_method(self):
-        """
-        Setup operations for each test.
-        """
-
     def teardown_method(self):
         """
         Teardown operations after each test.
@@ -263,9 +258,9 @@ class TestProvSingleNode:
 
         LOGGER.info("Step 2: Validate that admin user is created")
         resp = self.CSM_USER.login_cortx_cli()
-        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.logout_cortx_cli()
-        assert_utils.assert_equals(resp[0], True, resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Validated that admin user is created")
 
         LOGGER.info("Get NTP configuration data.")
