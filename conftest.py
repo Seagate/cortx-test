@@ -42,6 +42,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
+from threading import Event
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
@@ -728,18 +729,17 @@ def generate_random_string():
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
 
-def get_test_status(request, obj):
-    poll = time.time() + 5000  # max timeout
+def get_test_status(request, obj, max_timeout=5000):
+    poll = time.time() + max_timeout  # max timeout
     while poll > time.time():
-        time.sleep(5)
         if request.session.testsfailed:
-            obj.uploader.set_eventual_stop(request.session.testsfailed)
+            obj.event.set()
             break
         if 'passed' in Globals.ALL_RESULT.outcome:
-            obj.uploader.set_eventual_stop(True)
+            obj.event.set()
             break
         if 'error' in Globals.ALL_RESULT.outcome:
-            obj.uploader.set_eventual_stop(True)
+            obj.event.set()
             break
 
 
@@ -759,34 +759,40 @@ def run_io_async(request):
             nbuckets = request.param["buckets"]
             file_counts = request.param["files_count"]
             prefs_dict = request.param["prefs"]
-        users = mgm_ops.create_account_users(nusers=nuser)
+        users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
         users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
         yield run_data_check_obj.start_io_async(
-            users=users_buckets, buckets=None, files_count=file_counts, prefs=prefs_dict)
-        # to stop upload running in BG based on test status
+            users=users_buckets, buckets=None, files_count=file_counts,
+            prefs=prefs_dict)
+        # To stop upload running on the basis of test status
         get_test_status(request, run_data_check_obj)
         run_data_check_obj.stop_io_async(
-            users=users_buckets, di_check=request.config.option.data_integrity_chk)
+            users=users_buckets,
+            di_check=request.config.option.data_integrity_chk,
+        )
     else:
         yield
 
 
-def run_io_sequentially(users, buckets=None, files_count=10, prefs=None, di_check=True):
+def run_io_sequentially(
+        users, buckets=None, files_count=10, prefs=None, di_check=True):
     """
     Function to start IO within test sequentially(write, read, verify)
     prefs = {
         'prefix_dir': test_name
     }
-    :param users: user data which includes username, accesskey, secretkey, account id etc
+    :param users: user data includes username, accessKey, secretKey,
+     account id etc
     :param buckets: user buckets in
-    :param files_count: objects to be uploaded per buckts
+    :param files_count: objects to be uploaded per buckets
     :param prefs: dir prefix where objects will be created for uploading
-    :param di_check: checks for data integrity after download
+    :param di_check: checks for data integrity
     :return: None
     """
     run_data_check_obj = RunDataCheckManager(users=users)
     prefs_dict = prefs if isinstance(prefs, dict) else {"prefix_dir": prefs}
     run_data_check_obj.start_io(
-        users=users, buckets=buckets, files_count=files_count, prefs=prefs_dict)
+        users=users, buckets=buckets, files_count=files_count,
+        prefs=prefs_dict)
     run_data_check_obj.stop_io(users, di_check=di_check)

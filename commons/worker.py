@@ -53,6 +53,7 @@ class Workers(object):
     def __init__(self):
         self.w_workers = []
         self.w_workq = None
+        self.stop = threading.Event()
 
     def start_workers(self,
                       nworkers: int = NWORKERS,
@@ -64,7 +65,7 @@ class Workers(object):
             self.w_workers.append(w)
 
     def worker(self):
-        while True:
+        while not self.stop.is_set():
             wq = self.w_workq.get()
             if wq is None:
                 self.w_workq.task_done()
@@ -85,3 +86,6 @@ class Workers(object):
         logger.info('Joining all threads to main thread')
         for i in range(len(self.w_workers)):
             self.w_workers[i].join()
+
+    def stop_workers(self):
+        self.stop.set()

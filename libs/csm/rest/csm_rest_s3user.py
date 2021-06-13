@@ -519,3 +519,36 @@ class RestS3user(RestTestLib):
                            f"Request body : {response.request.body}")
             raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
                               msg="CSM user password change request failed.")
+
+    @RestTestLib.authenticate_and_login
+    def create_an_account(self, user_name, password):
+        """
+        This function will create new s3 account user
+        :param user_name: Account name
+        :param password: account password
+        :return: response of create user
+        """
+        try:
+            # Building request url
+            self.log.debug("Create s3 accounts ...")
+            endpoint = self.config["s3accounts_endpoint"]
+            self.log.debug("Endpoint for s3 accounts is %s", endpoint)
+            # Collecting required payload to be added for request
+            user_data = {
+                "account_name": user_name,
+                "account_email": f"{user_name}@seagate.com",
+                "password": password
+            }
+            self.log.debug("Payload for s3 accounts is %s", user_data)
+            # Fetching api response
+            return self.restapi.rest_call(
+                "post", endpoint=endpoint, data=user_data,
+                headers=self.headers)
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestS3user.create_an_account.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error

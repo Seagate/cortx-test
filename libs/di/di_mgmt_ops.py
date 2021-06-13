@@ -23,6 +23,7 @@
 import time
 import random
 import logging
+import json
 import boto3
 from config import CMN_CFG
 from config import CSM_CFG
@@ -31,6 +32,7 @@ from commons.utils import assert_utils
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
 from libs.s3 import cortxcli_test_lib as cctl
+from libs.csm.rest.csm_rest_s3user import RestS3user
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +86,11 @@ class ManagementOPs:
         :return:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
-        s3acc_obj = cctl.CortxCliTestLib()
-        s3acc_obj.open_connection()
+        if use_cortx_cli:
+            s3acc_obj = cctl.CortxCliTestLib()
+            s3acc_obj.open_connection()
+        else:
+            s3acc_obj = RestS3user()
         ts = time.strftime("%Y%m%d_%H%M%S")
         users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -96,10 +101,18 @@ class ManagementOPs:
             udict.update({'user_name': user})
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
+            if use_cortx_cli:
+                result, acc_details = s3acc_obj.create_account_cortxcli(
+                    user, email, s3_user_passwd)
+                assert_utils.assert_true(result, 'S3 account user not created.')
+            else:
+                resp = s3acc_obj.create_an_account(
+                    user, s3_user_passwd)
+                assert_utils.assert_equal(
+                    resp.status_code, 200,
+                    'S3 account user not created.')
+                acc_details = json.loads(resp.text)
 
-            result, acc_details = s3acc_obj.create_account_cortxcli(user, email,
-                                                                    s3_user_passwd)
-            assert_utils.assert_true(result, 'S3 account user not created.')
             LOGGER.info("Created s3 account %s", user)
             udict.update({'accesskey': acc_details["access_key"]})
             udict.update({'secretkey': acc_details["secret_key"]})

@@ -6,6 +6,7 @@ import json
 import logging
 import requests
 import random
+import threading
 import uuid
 from datetime import datetime
 from multiprocessing import Process
@@ -376,8 +377,12 @@ def trigger_tests_from_te(args):
             try:
                 _build_type, _build = test_env.split('_')
             except ValueError:
-                raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
+                raise EnvironmentError(
+                    'Test plan env needs to be in format <build_type>_<build#>')
             args.build, args.build_type = _build, _build_type
+
+    if args.test_runner_data_integrity_chk:
+        parallel_io(args)
 
     _env = os.environ.copy()
     if not args.force_serial_run:
@@ -534,24 +539,25 @@ def run_global_io_async(args):
     all_user_dict = {}
     run_data_check_obj = None
     while not CONDITIONAL_IO_STOP:
-        users = mgm_ops.create_account_users(nusers=nuser)
+        users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
         users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
         run_data_check_obj.start_io_async(
-            users=users_buckets, buckets=None, files_count=file_counts, prefs=prefs_dict)
+            users=users_buckets, buckets=None, files_count=file_counts,
+            prefs=prefs_dict)
         all_user_dict.update(users_buckets.items())
         # add load for next run
         nuser += 1
         nbuckets += 2
         file_counts += 3
-    # return all_user_dict, run_data_check_obj
+
     if run_data_check_obj:
         run_data_check_obj.stop_io_async(
-            users=all_user_dict, di_check=args.test_runner_data_integrity_chk, stop_gracefully=True)
+            users=all_user_dict, di_check=args.test_runner_data_integrity_chk,
+            eventual_stop=True)
 
 
 def parallel_io(args):
-    import threading
     p = threading.Thread(
         target=run_global_io_async, args=(args,))
     p.start()
@@ -564,8 +570,6 @@ def main(args):
     """
     global CONDITIONAL_IO_STOP
     get_setup_details(args)
-    if args.test_runner_data_integrity_chk:
-        parallel_io(args)
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)

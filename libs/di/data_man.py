@@ -199,6 +199,10 @@ class DataManager(object):
 
                 if not flag:
                     data['buckets'].append(bkt_container)
+                else:
+                    for bkt in data["buckets"]:
+                        if bkt["name"] == bucket:
+                            bkt["files"].append(fdict)
 
                 self.store_file_data(data, user)
 

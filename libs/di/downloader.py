@@ -135,6 +135,7 @@ class DataIntegrityValidator:
         if len(uploadedFiles) == 0:
             print("uploaded data not found, exiting script")
             LOGGER.info("uploaded data not found, exiting script")
+            workers.end_workers()
             exit(1)
 
         if os.path.exists(params.DELETE_OP_FILE_NAME):

@@ -48,8 +48,7 @@ def split_args(sys_cmd: List):
         else:
             eq_splitted.extend([item])
     return eq_splitted
-import pdb
-# pdb.set_trace()
+
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
