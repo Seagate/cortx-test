@@ -83,15 +83,18 @@ class TestProvSingleNode:
         """
         if not self.restored:
             LOGGER.info("TEARDOWN: Restore NTP configuration data.")
-            resp = self.prov_obj.set_ntpsysconfg(
-                self.nd_obj, time_server=self.set_ntp[self.ntp_keys[0]], timezone=self.set_ntp[self.ntp_keys[1]])
+            resp = self.prov_obj.set_ntpsysconfg(self.nd_obj,
+                                                 time_server=self.set_ntp[self.ntp_keys[0]],
+                                                 timezone=self.set_ntp[self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
 
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, self.nd_obj, node_id=1,
                 exp_t_srv=self.set_ntp[self.ntp_keys[0]], exp_t_zone=self.set_ntp[self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("TEARDOWN: Restored NTP configuration data: {}.".format(resp[1]))
+            LOGGER.info(
+                "TEARDOWN: Restored NTP configuration data: {}.".format(
+                    resp[1]))
         LOGGER.info("Successfully performed Teardown operation")
 
     @pytest.mark.cluster_management_ops
@@ -227,8 +230,10 @@ class TestProvSingleNode:
 
         node_id = 1
         for key in PROV_CFG["confstore_list"]:
-            LOGGER.info("Verification of {} from pillar as well as confstore template.".format(key))
-            output = self.prov_obj.confstore_verification(key, self.nd_obj, node_id)
+            LOGGER.info(
+                "Verification of {} from pillar as well as confstore template.".format(key))
+            output = self.prov_obj.confstore_verification(
+                key, self.nd_obj, node_id)
             assert_utils.assert_true(output[0], output[1])
 
         LOGGER.info("Completed: confstore keys validation.")
@@ -265,7 +270,8 @@ class TestProvSingleNode:
         LOGGER.info("Step 2: Validated that admin user is created")
 
         LOGGER.info("Get NTP configuration data.")
-        get_ntp_resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd_obj, 1)
+        get_ntp_resp = self.prov_obj.get_ntpsysconfg(
+            self.ntp_keys, self.nd_obj, 1)
         assert_utils.assert_true(get_ntp_resp[0], get_ntp_resp[1])
         LOGGER.info("NTP configuration data = {}.".format(get_ntp_resp[1]))
 
@@ -273,13 +279,17 @@ class TestProvSingleNode:
         ntp_time_zone_val = get_ntp_resp[1][self.ntp_keys[1]]
         LOGGER.info("Step 3: Validate time_server is set to {} in /etc/chrony.conf".format(
             ntp_time_server_val))
-        resp = self.prov_obj.get_chrony(node_obj=self.nd_obj, time_server=ntp_time_server_val)
+        resp = self.prov_obj.get_chrony(
+            node_obj=self.nd_obj,
+            time_server=ntp_time_server_val)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Validated time_server in /etc/chrony.conf response = {}".format(
             resp[1]))
 
-        set_timezone = (random.choice([ii for ii in timezone_data if ii != ntp_time_zone_val]))
-        set_timesrv_ip = (random.choice([ii for ii in timeserver_data if ii != ntp_time_server_val]))
+        set_timezone = (random.choice(
+            [ii for ii in timezone_data if ii != ntp_time_zone_val]))
+        set_timesrv_ip = (random.choice(
+            [ii for ii in timeserver_data if ii != ntp_time_server_val]))
         LOGGER.info("Step 4: Set time_server {} and timezone {}".format(
             set_timesrv_ip, set_timezone))
         resp = self.prov_obj.set_ntpsysconfg(
@@ -291,17 +301,20 @@ class TestProvSingleNode:
             self.ntp_keys, self.nd_obj, node_id=1,
             exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Validated set NTP configuration in pillar data {}.".format(
-            resp[1]))
+        LOGGER.info(
+            "Step 5: Validated set NTP configuration in pillar data {}.".format(
+                resp[1]))
 
         LOGGER.info("Step 6: Validate set time_server in /etc/chrony.conf")
-        resp = self.prov_obj.get_chrony(node_obj=self.nd_obj, time_server=set_timesrv_ip)
+        resp = self.prov_obj.get_chrony(
+            node_obj=self.nd_obj, time_server=set_timesrv_ip)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: Validated set time_server in /etc/chrony.conf response = {}".format(
             resp[1]))
 
-        LOGGER.info("Step 7: Restore and Validate NTP configuration data to {}".format(
-            self.set_ntp))
+        LOGGER.info(
+            "Step 7: Restore and Validate NTP configuration data to {}".format(
+                self.set_ntp))
         resp = self.prov_obj.set_ntpsysconfg(
             self.nd_obj, time_server=self.set_ntp[self.ntp_keys[0]],
             timezone=self.set_ntp[self.ntp_keys[1]])
@@ -310,6 +323,8 @@ class TestProvSingleNode:
         resp = self.prov_obj.sysconfg_verification(
             self.ntp_keys, self.nd_obj, node_id=1, exp_t_srv=self.set_ntp[self.ntp_keys[0]],
             exp_t_zone=self.set_ntp[self.ntp_keys[1]])
-        LOGGER.info("Step 7: Validated Restored NTP configuration on srvnode-1: {}".format(resp[1]))
+        LOGGER.info(
+            "Step 7: Validated Restored NTP configuration on srvnode-1: {}".format(resp[1]))
         self.restored = True
-        LOGGER.info("-----     Completed NTP configuration Validation     -----")
+        LOGGER.info(
+            "-----     Completed NTP configuration Validation     -----")
