@@ -25,8 +25,8 @@ Prov test file for all the Prov tests scenarios for single node VM.
 import os
 import logging
 import time
-import pytest
 import random
+import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
@@ -99,7 +99,8 @@ class TestProvThreeNode:
             LOGGER.info("TEARDOWN: Restore NTP configuration data.")
             for node in range(1, 4):
                 resp = self.prov_obj.set_ntpsysconfg(
-                    node_obj=self.nd1_obj, time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
+                    node_obj=self.nd1_obj,
+                    time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_true(resp[0], resp[1])
 
@@ -107,7 +108,7 @@ class TestProvThreeNode:
                     self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                     exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
-                assert_utils.assert_not_equal(resp[0], False, resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info("TEARDOWN: Restored NTP Configuration on srvnode-{}:{}".format(
                 node, resp[1]))
             LOGGER.info("Successfully performed Teardown operation")
@@ -313,7 +314,7 @@ class TestProvThreeNode:
         for node in range(1, 4):
             LOGGER.info(f"Store NTP configuration data for srvnode-{node}.")
             resp = self.prov_obj.get_ntpsysconfg(self.ntp_keys, self.nd1_obj, node)
-            assert_utils.assert_not_equal(resp[0], False, resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             self.ntp_data[f"srvnode-{node}"] = resp[1]
             LOGGER.info("Stored NTP configuration data for srvnode-{} = {}.".format(
                 node, self.ntp_data[f"srvnode-{node}"]))
@@ -340,20 +341,23 @@ class TestProvThreeNode:
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=self.ntp_data["srvnode-1"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data["srvnode-1"][self.ntp_keys[1]])
-            assert_utils.assert_not_equal(resp[0], False, resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Validated NTP Configuration on srvnode-{}:{}".format(
                 node, resp[1]))
 
         ntp_time_server_val = self.ntp_data["srvnode-1"][self.ntp_keys[0]]
         ntp_time_zone_val = self.ntp_data["srvnode-1"][self.ntp_keys[1]]
-        LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(ntp_time_server_val))
+        LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(
+            ntp_time_server_val))
         resp = self.prov_obj.get_chrony(node_obj=self.nd1_obj, time_server=ntp_time_server_val)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = {}".format(resp[1]))
+        LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = {}".format(
+            resp[1]))
 
         set_timezone = (random.choice([ii for ii in timezone_data if ii != ntp_time_zone_val]))
         set_timesrv_ip = (random.choice([ii for ii in timeserver_data if ii != ntp_time_server_val]))
-        LOGGER.info("Step 5: Set time_server {} and timezone {}".format(set_timesrv_ip, set_timezone))
+        LOGGER.info("Step 5: Set time_server {} and timezone {}".format(
+            set_timesrv_ip, set_timezone))
         for node in range(1, 4):
             resp = self.prov_obj.set_ntpsysconfg(
                 node_obj=self.nd1_obj, time_server=set_timesrv_ip, timezone=set_timezone)
@@ -364,14 +368,15 @@ class TestProvThreeNode:
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
-            assert_utils.assert_not_equal(resp[0], False, resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 6: Validated set NTP Configuration on srvnode-{}:{}".format(
                 node, resp[1]))
 
         LOGGER.info("Step 7: Validate set time_server in /etc/chrony.conf")
         resp = self.prov_obj.get_chrony(node_obj=self.nd1_obj, time_server=set_timesrv_ip)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(resp[1]))
+        LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(
+            resp[1]))
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
         for node in range(1, 4):
@@ -383,7 +388,7 @@ class TestProvThreeNode:
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
-            assert_utils.assert_not_equal(resp[0], False, resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 8: Validated Restored NTP Configuration on srvnode-{}:{}".format(
                 node, resp[1]))
         LOGGER.info("Step 8: Restored NTP configuration data")
