@@ -42,7 +42,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
-from threading import Thread, Event
+from threading import Thread
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils

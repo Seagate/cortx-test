@@ -25,7 +25,6 @@ from libs.di.di_run_man import RunDataCheckManager
 from libs.di.di_mgmt_ops import ManagementOPs
 
 LOGGER = logging.getLogger(__name__)
-CONDITIONAL_IO_STOP = False
 
 
 def parse_args():
@@ -382,7 +381,7 @@ def trigger_tests_from_te(args):
             args.build, args.build_type = _build, _build_type
 
     if args.test_runner_data_integrity_chk:
-        parallel_io(args)
+        thread_io, event = start_parallel_io(args)
 
     _env = os.environ.copy()
     if not args.force_serial_run:
@@ -400,6 +399,9 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, True, env=_env)
         # Execute all other tests not having parallel tag with given component tag.
         run_pytest_cmd(args, te_tag, False, env=_env)
+
+    if args.test_runner_data_integrity_chk:
+        stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
@@ -523,7 +525,7 @@ def get_setup_details(args):
                 raise Exception(f'target {args.target} Data does not exists in setups.json')
 
 
-def run_global_io_async(args):
+def run_global_io_async(args, event):
     mgm_ops = ManagementOPs()
     secret_range = random.SystemRandom()
     if not args.io_data:
@@ -538,47 +540,55 @@ def run_global_io_async(args):
         prefs_dict = args.io_data["prefs"]
     all_user_dict = {}
     run_data_check_obj = None
-    while not CONDITIONAL_IO_STOP:
-        users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
-        users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
+    while not event.is_set():
+        try:
+            users = mgm_ops.create_account_users(
+                nusers=nuser, use_cortx_cli=False)
+            users_buckets = mgm_ops.create_buckets(
+                nbuckets=nbuckets, users=users)
+        except BaseException as error:
+            print("Error while creating s3 account so skipping an iteration",
+                  error)
+            continue
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
         run_data_check_obj.start_io_async(
             users=users_buckets, buckets=None, files_count=file_counts,
             prefs=prefs_dict)
         all_user_dict.update(users_buckets.items())
         # add load for next run
+        run_data_check_obj.stop_io_async(
+            users=users_buckets, di_check=args.test_runner_data_integrity_chk,
+            eventual_stop=True)
         nuser += 1
         nbuckets += 2
         file_counts += 3
 
-    if run_data_check_obj:
-        run_data_check_obj.stop_io_async(
-            users=all_user_dict, di_check=args.test_runner_data_integrity_chk,
-            eventual_stop=True)
+
+def start_parallel_io(args):
+    event = threading.Event()
+    thread = threading.Thread(
+        target=run_global_io_async, args=(args, event))
+    thread.start()
+    return thread, event
 
 
-def parallel_io(args):
-    p = threading.Thread(
-        target=run_global_io_async, args=(args,))
-    p.start()
-    p.join()
+def stop_parallel_io(io_thread, stop):
+    stop.set()
+    io_thread.join()
 
 
 def main(args):
     """Main Entry function using argument parser to parse options and forming pyttest command.
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
-    global CONDITIONAL_IO_STOP
     get_setup_details(args)
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
-        CONDITIONAL_IO_STOP = True
     elif args.te_ticket:
         trigger_tests_from_te(args)
-        CONDITIONAL_IO_STOP = True
     else:
         check_kafka_msg_trigger_test(args)
 
