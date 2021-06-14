@@ -42,7 +42,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
-from threading import Event
+from threading import Thread, Event
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
@@ -74,6 +74,7 @@ SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
 
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
 
+Globals.ALL_RESULT = None
 
 def _get_items_from_cache():
     """Intended for internal use after modifying collected items."""
@@ -734,13 +735,19 @@ def get_test_status(request, obj, max_timeout=5000):
     while poll > time.time():
         if request.session.testsfailed:
             obj.event.set()
+            print("fail")
             break
-        if 'passed' in Globals.ALL_RESULT.outcome:
-            obj.event.set()
-            break
-        if 'error' in Globals.ALL_RESULT.outcome:
-            obj.event.set()
-            break
+        if Globals.ALL_RESULT:
+            outcome = Globals.ALL_RESULT.outcome
+            when = Globals.ALL_RESULT.when
+            if 'passed' in outcome and 'call' in when:
+                obj.event.set()
+                print("pass")
+                break
+            if 'error' in outcome and 'call' in when:
+                obj.event.set()
+                print("error")
+                break
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -762,11 +769,14 @@ def run_io_async(request):
         users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
         users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
         run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        p = Thread(
+            target=get_test_status, args=(request, run_data_check_obj))
+        p.start()
         yield run_data_check_obj.start_io_async(
             users=users_buckets, buckets=None, files_count=file_counts,
             prefs=prefs_dict)
         # To stop upload running on the basis of test status
-        get_test_status(request, run_data_check_obj)
+        p.join()
         run_data_check_obj.stop_io_async(
             users=users_buckets,
             di_check=request.config.option.data_integrity_chk,

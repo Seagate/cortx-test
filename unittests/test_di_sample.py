@@ -35,7 +35,7 @@ class TestSample:
         assert True, "msg"
 
     def test_02(self):
-        time.sleep(3)
+        time.sleep(8)
         assert False, "msg"
 
     def test_03(self):
