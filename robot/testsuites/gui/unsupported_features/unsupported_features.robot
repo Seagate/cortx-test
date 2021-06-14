@@ -5,7 +5,7 @@ Resource    ${RESOURCES}/resources/page_objects/aboutPage.robot
 Resource    ${RESOURCES}/resources/page_objects/maintenancePage.robot
 Resource    ${RESOURCES}/resources/page_objects/firmwareUpdatepage.robot
 Resource    ${RESOURCES}/resources/page_objects/healthPage.robot
-Resource    ${RESOURCES}/resources/page_objects/lyvePilot.robot
+Resource    ${RESOURCES}/resources/page_objects/lyvePilotPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource    ${RESOURCES}/resources/page_objects/softwareUpdatepage.robot
