@@ -459,7 +459,7 @@ class Health(Host):
             resp = self.execute_cmd(cmd, read_lines=True)
             LOG.debug("Response: %s", resp)
             time.sleep(wait_time)
-            LOG.info("Successfully performed %s on %s".format(command, rsrc))
+            LOG.info("Successfully performed %s on %s", command, rsrc)
 
         return True
 
