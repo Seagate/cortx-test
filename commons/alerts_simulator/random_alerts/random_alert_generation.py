@@ -1,14 +1,11 @@
 import time
 import random
-import logging
 from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib
+     GenerateAlertLib, AlertType
 from commons.alerts_simulator.random_alerts.constants_random_alert_generation import FaultAlerts
 from commons.alerts_simulator.random_alerts.alert_setup_lib import AlertSetup
 from commons.alerts_simulator.random_alerts.teardown_lib import AlertTearDown
 from config import CMN_CFG
-
-LOGGER = logging.getLogger(__name__)
 
 
 class RandomAlerts:
@@ -43,7 +40,7 @@ class RandomAlerts:
         :param monitor: Flag to indicate if monitor tests are running in main
         thread
         """
-        LOGGER.info("Starting Random Alert Generation")
+        print("Starting Random Alert Generation")
         ignore_alert_type = []       # collect type of alerts to be ignored
         if ignore_alert is not None:
             for a in ignore_alert:
@@ -53,7 +50,7 @@ class RandomAlerts:
         while not event.is_set():
             alert = random.choice(list(FaultAlerts))
             alert_dict = alert.value
-            LOGGER.info("Selected alert: %s", alert)
+            print("Selected alert: %s", alert)
             # If selected alert is not supported on VM and if selected alert
             # is in ignore_alert list, it will continue
             if (self.setup_type == 'VM' and alert_dict.get('support') !=
@@ -63,10 +60,10 @@ class RandomAlerts:
             # Each alert requires different kind of setup depending on alert
             # type.
             if not monitor or alert_dict["alert_type"] not in ignore_alert_type:
-                LOGGER.info("Running setup for %s alert type",
+                print("Running setup for %s alert type",
                             alert_dict["alert_type"])
                 command = f"self.alert_setup.{alert_dict['function']}(alert_in_test='{alert.name}')"
-                LOGGER.info("Running command %s", command)
+                print("Running command %s", command)
                 resp = eval(command)
                 if not resp[0]:
                     continue
@@ -83,7 +80,7 @@ class RandomAlerts:
                 ip_params["md_device"] = resp[1]
                 ip_params["disk"] = resp[3]
 
-            LOGGER.info("Generating alert %s", alert.name)
+            print("Generating alert %s", alert.name)
             a_t = eval(f"AlertType.{alert.name}")
             resp = self.alert_api_obj.generate_alert(alert_type=a_t,
                                                      host_details=host_details,
@@ -91,16 +88,16 @@ class RandomAlerts:
                                                      input_parameters=ip_params)
 
             if not resp[0]:
-                LOGGER.error("Failed to generate alert %s", alert.name)
+                print("Failed to generate alert %s", alert.name)
                 continue
             else:
-                LOGGER.info("Successfully generated alert %s", alert.name)
+                print("Successfully generated alert %s", alert.name)
 
-            time.sleep(10)
+            time.sleep(30)
 
             # Get enum name of the alert to be resolved
             if alert_dict.get('resolve') is not None:
-                LOGGER.info("Resolving alert %s", alert.name)
+                print("Resolving alert %s", alert.name)
                 alert_name = alert_name if alert.name == 'NW_PORT_FAULT' else alert_dict.get('resolve')
                 h_details, ip_params = self.alert_setup.get_runtime_input_params(
                     alert_name=alert_name)
@@ -121,19 +118,19 @@ class RandomAlerts:
                                                          input_parameters=ip_params)
 
                 if not resp[0]:
-                    LOGGER.error("Failed to resolve alert %s", alert.name)
+                    print("Failed to resolve alert %s", alert.name)
                 else:
-                    LOGGER.info("Successfully resolved alert %s", alert.name)
+                    print("Successfully resolved alert %s", alert.name)
 
             # Each alert type has different teardown sequence
             if not monitor or alert_dict["alert_type"] not in ignore_alert_type:
-                LOGGER.info("Running teardown for %s alert type",
+                print("Running teardown for %s alert type",
                             alert_dict["alert_type"])
                 command = f"self.alert_teardown.{alert_dict['function']}(alert_in_test='{alert.name}')"
-                LOGGER.info("Running command %s", command)
+                print("Running command %s", command)
                 resp = eval(command)
                 if not resp[0]:
                     continue
             else:
-                LOGGER.info("Generating next alert")
+                print("Generating next alert")
                 continue

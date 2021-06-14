@@ -1,10 +1,7 @@
 import os
-import logging
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-
-LOGGER = logging.getLogger(__name__)
 
 
 class AlertSetup(RASTestLib):
@@ -34,8 +31,8 @@ class AlertSetup(RASTestLib):
         Function for setup of alerts of enclosure type
         :param alert_in_test: Name of the alert to be generated
         """
-        LOGGER.info("Setup for : %s", alert_in_test)
-        LOGGER.info("Putting enclosure values in CONF store")
+        print("Setup for : %s", alert_in_test)
+        print("Putting enclosure values in CONF store")
         field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",
                       "CONF_SECONDARY_IP", "CONF_SECONDARY_PORT",
                       "CONF_ENCL_USER", "CONF_ENCL_SECRET"]
@@ -44,7 +41,7 @@ class AlertSetup(RASTestLib):
                 zip(field_list, [None] * len(field_list))))
             return resp
         except BaseException as error:
-            LOGGER.error("Error: %s", error)
+            print("Error: %s", error)
             return False, error
 
     def raid_fun(self, alert_in_test: str):
@@ -52,10 +49,10 @@ class AlertSetup(RASTestLib):
         Function for setup of alerts of raid type
         :param alert_in_test: Name of the alert to be generated
         """
-        LOGGER.info("Setup for : %s", alert_in_test)
+        print("Setup for : %s", alert_in_test)
         md_device = RAS_VAL["raid_param"]["md0_path"]
 
-        LOGGER.info(
+        print(
             "Fetching the disks details from mdstat for RAID array %s", md_device)
         try:
             md_stat = self.nd_obj.get_mdstat()
@@ -64,7 +61,7 @@ class AlertSetup(RASTestLib):
             disk2 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[1])
             return True, md_device, disk1, disk2
         except BaseException as error:
-            LOGGER.error("Error: %s", error)
+            print("Error: %s", error)
             return False, error
 
     def server_fun(self, alert_in_test: str):
@@ -72,14 +69,14 @@ class AlertSetup(RASTestLib):
         Function for setup of alerts of server type
         :param alert_in_test: Name of the alert to be generated
         """
-        LOGGER.info("Setup for : %s", alert_in_test)
-        LOGGER.info("Retaining the original/default config")
+        print("Setup for : %s", alert_in_test)
+        print("Retaining the original/default config")
         try:
             cm_cfg = RAS_VAL["ras_sspl_alert"]
             self.retain_config(cm_cfg["file"]["original_sspl_conf"], False)
             return True, "Retained sspl.conf"
         except BaseException as error:
-            LOGGER.error("Error: %s", error)
+            print("Error: %s", error)
             return False, error
 
     def server_fru_fun(self, alert_in_test: str):
@@ -87,21 +84,21 @@ class AlertSetup(RASTestLib):
         Function for setup of alerts of server_fru type
         :param alert_in_test: Name of the alert to be generated
         """
-        LOGGER.info("Setup for : %s", alert_in_test)
+        print("Setup for : %s", alert_in_test)
         try:
             if alert_in_test == 'NW_PORT_FAULT':
-                LOGGER.info("Check status of all network interfaces")
+                print("Check status of all network interfaces")
                 status = self.health_obj.check_nw_interface_status()
                 for k, v in status.items():
                     if "DOWN" in v:
-                        LOGGER.info("%s is down. Please check network "
+                        print("%s is down. Please check network "
                                     "connections and restart tests.", k)
                         return False, f"{k} is down. Please check network " \
                                       f"connections and restart tests."
 
                 return True, "All network interfaces are up."
         except BaseException as error:
-            LOGGER.error("Error: %s", error)
+            print("Error: %s", error)
             return False, error
 
     def get_runtime_input_params(self, alert_name: str = None):
