@@ -61,9 +61,9 @@ ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_TABLE_ID = 'tblAlertLarge'
 # due to bug, using full xpath below
-NEW_ALERT_XPATH = '/html/body/div/div/div[1]/div[2]/div[2]/div/div[1]/div[1]'
-ACTIVE_ALERT_XPATH = '//*[@id="app"]//div[@class ="cortx-tab-active"]'
-ALERT_HISTORY_XPATH = '/html/body/div/div/div[1]/div[2]/div[2]/div/div[1]/div[3]'
+NEW_ALERT_XPATH = "//*[contains(text(),'New alerts')]"
+ACTIVE_ALERT_XPATH = "//*[contains(text(),'Active alerts')]"
+ALERT_HISTORY_XPATH = "//*[contains(text(),'Alert history')]"
 # after bug fix, should use IDs insted of full xpath ^^
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
@@ -74,6 +74,7 @@ ALERT_MORE_DETAILS_CLOSE_ICON_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
 ALERTS_COMMENT_TEXT_XPATH = '//*[@class="cortx-comment"]//span[@class="cortx-text-md"]'
+PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//div[@class='cortx-icon-btn cortx-acknowledge-icon']"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'

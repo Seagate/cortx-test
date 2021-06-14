@@ -129,6 +129,10 @@ Verify Presence SSL certificate expires alert
     ...  AND  Capture Page Screenshot
     ...  AND  Fail  # correct Description not found in the alert, failing test
 
+Acknowledge alert
+    [Arguments]  ${servicename}
+    Action On The Table Element  ${PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH}  ${servicename}
+
 Fail if New alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts exist
     [Arguments]  ${servicename}
@@ -164,8 +168,6 @@ Acknowledge if Active alerts exist SW Service
     ${found2}=  Set Variable  False
     ${Description1} =  Set Variable  ${servicename}.service in failed state.
     ${Description2} =  Set Variable  ${servicename}.service in inactive state.
-#    ${Description} =  Set Variable  ${servicename}. in active state. 
-# after EOS-21002 EOS-21001 bug fix, should have this ^^
     Log To Console And Report  ${Description1}
     Log To Console And Report  ${Description2}
     Click AlertPage Image
@@ -181,9 +183,15 @@ Acknowledge if Active alerts exist SW Service
         ...  Run Keywords
         ...  Log To Console And Report  ${found1}
         ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
         ${found2}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description2}
         Run Keyword If  ${found2} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found2}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert
+        ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
     END

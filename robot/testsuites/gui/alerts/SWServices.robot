@@ -24,11 +24,10 @@ TEST-21262
     [Tags]  Priority_High  R2 TEST-21262
     Fail if New alerts exist SW Service  haproxy
     Acknowledge if Active alerts exist SW Service  haproxy
-    test_21194_deactivating_alerts(self)
-    Fail if New alerts exist SW Service  haproxy
-    test_21194_activating_alertsself
-    Fail if New alerts exist SW Service  haproxy
-
+    #test_21194_deactivating_alerts(self)
+    #Fail if New alerts exist SW Service  haproxy
+    #test_21194_activating_alertsself
+    #Fail if New alerts exist SW Service  haproxy
 
 TEST-21267
     [Documentation]  CSM GUI: Verify Alerts for SW Service : Multipathd
@@ -147,5 +146,3 @@ TEST-19878
     Acknowledge if Active alerts exist SW Service  hare-consul-agent-c1
     Acknowledge if Active alerts exist SW Service  hare-consul-agent-c2
     Acknowledge if Active alerts exist SW Service  elasticsearch
-
-
