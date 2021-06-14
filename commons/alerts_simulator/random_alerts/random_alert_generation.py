@@ -137,3 +137,4 @@ class RandomAlerts:
             else:
                 LOGGER.info("Generating next alert")
                 continue
+            time.sleep(10)
