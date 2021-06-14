@@ -2,6 +2,7 @@
 Documentation    This suite verifies the testcases for csm login
 Library    SeleniumLibrary
 Resource   ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource   ${RESOURCES}/resources/page_objects/healthPage.robot
 Resource   ${RESOURCES}/resources/page_objects/IAM_UsersPage.robot
 Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot

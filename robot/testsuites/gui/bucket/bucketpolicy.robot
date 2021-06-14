@@ -51,6 +51,7 @@ Delete S3 Account And Close Browser
     Click On Cancel Bucket Policy
     wait for page or element to load
     Delete Bucket  ${bucketname}
+    Reload Page
     wait for page or element to load
     CSM GUI Logout
     wait for page or element to load

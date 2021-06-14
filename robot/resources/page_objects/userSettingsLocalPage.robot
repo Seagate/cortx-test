@@ -68,8 +68,8 @@ Delete CSM User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
-    wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
-    Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
+    Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
     click on confirm button
 
 Verify Only Valid User Allowed For Username
@@ -151,7 +151,7 @@ Verify Absence of Delete Button on CSM users
     [Documentation]  Verify Absence of delete icon
     Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
     wait for page or element to load  3s  # Took time to load CSM accounts
-    Page Should Not Contain Button  ${DELETE_USER_BTN_ID}
+    Page Should Not Contain Button  ${DELETE_USER_BUTTON_ID}
 
 Verify Only Valid Password Get Added
     [Documentation]  Functionality to validate correct pawwsord
@@ -175,13 +175,13 @@ Edit CSM User Password
     [Arguments]  ${user_name}  ${password}  ${old_password}=${False}
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Sleep  1s
-    Click Button  ${CHANGE_PASSWORD_BTN_ID}
+    Click Button  ${CHANGE_PASSWORD_BUTTON_ID}
     Sleep  1s
     Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${password}
     Input Text  ${CONFIRM_NEW_PASSWORD_INPUT_ID}  ${password}
     Run Keyword If  '${old_password}' != 'False'
     ...  Input Text  ${OLD_PASSWORD_INPUT_ID}  ${old_password}
-    Click Button  ${UPDATE_USER_BTN_ID}
+    Click Button  ${UPDATE_USER_BUTTON_ID}
     Sleep  3s
     click on confirm button
 
@@ -194,7 +194,7 @@ Edit CSM User Type
     ${var}=  Catenate  SEPARATOR=  ${${var}}  Interface
     Sleep  2s
     Click Element  ${var}
-    Click Button  ${UPDATE_USER_BTN_ID}
+    Click Button  ${UPDATE_USER_BUTTON_ID}
     Sleep  3s
     click on confirm button
 
@@ -256,14 +256,14 @@ Edit CSM User Details
     [Arguments]  ${user_name}  ${new_password}  ${new_email}  ${old_password}
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Sleep  1s
-    Click Button  ${CHANGE_PASSWORD_BTN_ID}
+    Click Button  ${CHANGE_PASSWORD_BUTTON_ID}
     Sleep  1s
     Press Keys  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  CTRL+a+BACKSPACE
     Input Text  ${UPDATE_USER_EMAIL_ID_INPUT_ID}  ${new_email}
     Input Text  ${ADD_USER_PASSWORD_INPUT_ID}  ${new_password}
     Input Text  ${UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID}  ${new_password}
     Input Text  ${OLD_PASSWORD_INPUT_ID}  ${old_password}
-    Click Button  ${UPDATE_USER_BTN_ID}
+    Click Button  ${UPDATE_USER_BUTTON_ID}
     Sleep  3s
     click on confirm button
     sleep  1s
@@ -291,11 +291,7 @@ Edit S3 User Password
 Verify that monitor user is not able to create delete csm user
        [Documentation]  this keyword verifys that monitor user not able to edit or delete csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
-       Page Should Not Contain Element  ${DELETE_USER_BTN_ID}
-
-Verify that user can not access Lyve Pilot menu
-       [Documentation]  this keyword verifys that monitor user can not access Lyve Pilot menu
-       Page Should Not Contain Element  ${LYVE_PILOT_ID}
+       Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
 
 Verify bucket Section Not Present
     [Documentation]  Functionality to verify bucket User Section Not Present.
@@ -312,7 +308,7 @@ Verify Invalid Password Not Accepted By Edit S3 Account
       wait for page or element to load  1s
       Input Text  ${S3_ACCOUNT_RESET_NEW_PASSWORD_ID}  ${value}
       Verify message  S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID  ${INVALID_PASSWORD_MSG}
-      Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}
+      Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BUTTON_ID}
     END
 
 Verify Mismatch Password Error For Edit S3account
@@ -329,4 +325,4 @@ Verify Mismatch Password Error For Edit S3account
     ${status}=  Get Element Attribute  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}  disabled
     Log To Console And Report  Status of S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID is ${status}
     Should be equal  ${status}  true
-    Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BTN_ID}
+    Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BUTTON_ID}

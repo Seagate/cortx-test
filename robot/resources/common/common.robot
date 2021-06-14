@@ -11,7 +11,6 @@ Library    ${RESOURCES}/utils/general_utility.py
 Variables  ${RESOURCES}/resources/common/common_variables.py
 Variables  ${RESOURCES}/resources/common/element_locators.py
 
-
 *** Keywords ***
 
 Log To Console And Report
