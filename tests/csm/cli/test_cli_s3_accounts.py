@@ -64,9 +64,14 @@ class TestCliS3ACC:
         self.logger.info("STARTED : Setup operations at test function level")
         self.s3acc_obj = CortxCliS3AccountOperations()
         self.s3acc_obj.open_connection()
-        self.s3bkt_obj = CortxCliS3BucketOperations(session_obj=self.s3acc_obj.session_obj)
-        self.csm_user_obj = CortxCliCsmUser(session_obj=self.s3acc_obj.session_obj)
-        self.iam_user_obj = CortxCliIamUser(session_obj=self.s3acc_obj.session_obj)
+        self.s3acc_obj1 = CortxCliS3AccountOperations()
+        self.s3acc_obj1.open_connection()
+        self.s3bkt_obj = CortxCliS3BucketOperations(
+            session_obj=self.s3acc_obj.session_obj)
+        self.csm_user_obj = CortxCliCsmUser(
+            session_obj=self.s3acc_obj.session_obj)
+        self.iam_user_obj = CortxCliIamUser(
+            session_obj=self.s3acc_obj.session_obj)
         self.alert_obj = CortxCliAlerts(session_obj=self.s3acc_obj.session_obj)
         self.s3acc_name = "{}_{}".format(self.s3acc_name, int(time.time()))
         self.s3acc_email = self.s3acc_email.format(self.s3acc_name)
@@ -1813,7 +1818,8 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
         self.logger.info("Deleting S3 account using admin credential")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using admin credential")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
@@ -1860,7 +1866,8 @@ class TestCliS3ACC:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
         self.logger.info("Deleting S3 account using CSM manage user")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using CSM manage user")
 
@@ -1870,7 +1877,8 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_22448_delete_s3_acc(self):
         """
-        Test that csm Admin user should not able to delete s3account user when bucket is present for s3account user
+        Test that csm Admin user should not able to
+        delete s3account user when bucket is present for s3account user
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
@@ -1901,11 +1909,15 @@ class TestCliS3ACC:
         assert_utils.assert_true(logout[0], logout[1])
         login = self.s3bkt_obj.login_cortx_cli()
         assert_utils.assert_true(login[0], login[1])
-        self.logger.info("Deleting S3 account when bucket is present for s3account user")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        self.logger.info(
+            "Deleting S3 account when bucket is present for s3account user")
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Deleting S3 account is failed with error %s", resp[1])
+        self.logger.info(
+            "Deleting S3 account is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1914,7 +1926,8 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_22449_delete_acc_manage_user(self):
         """
-        Test that csm manage user should not able to delete s3account user when bucket is present for s3account user
+        Test that csm manage user should not able to
+        delete s3account user when bucket is present for s3account user
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
@@ -1978,11 +1991,15 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
-        self.logger.info("Deleting S3 account when bucket is present for s3account user")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        self.logger.info(
+            "Deleting S3 account when bucket is present for s3account user")
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Deleting S3 account is failed with error %s", resp[1])
+        self.logger.info(
+            "Deleting S3 account is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -1994,11 +2011,15 @@ class TestCliS3ACC:
         Test that csm Admin user should not able to delete s3account user with user name not present in the list
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        self.logger.info("Deleting non existing S3 account using admin credential")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name="non_exist_acc")
+        self.logger.info(
+            "Deleting non existing S3 account using admin credential")
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name="non_exist_acc")
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Deleted non existing S3 account is failed with error %s", resp[1])
+        self.logger.info(
+            "Deleted non existing S3 account is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2007,7 +2028,8 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_22452_delete_acc(self):
         """
-        Test that csm manage user should not able to delete s3account user with user name not present in the list
+        Test that csm manage user should not able to
+        delete s3account user with user name not present in the list
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
@@ -2035,11 +2057,15 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
-        self.logger.info("Deleting non existing S3 account using CSM user with manage role")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name="non_exist_acc")
+        self.logger.info(
+            "Deleting non existing S3 account using CSM user with manage role")
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name="non_exist_acc")
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Deleted non existing S3 account is failed with error %s", resp[1])
+        self.logger.info(
+            "Deleted non existing S3 account is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2051,11 +2077,13 @@ class TestCliS3ACC:
         Test that csm Admin user help option should show delete s3account operation
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        self.logger.info("Verify delete option should be present in help option")
+        self.logger.info(
+            "Verify delete option should be present in help option")
         resp = self.s3acc_obj.help_option("s3accounts -h")
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Verified delete option should be present in help option")
+        self.logger.info(
+            "Verified delete option should be present in help option")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2092,11 +2120,13 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
-        self.logger.info("Verify delete option should be present in help option for CSM user")
+        self.logger.info(
+            "Verify delete option should be present in help option for CSM user")
         resp = self.s3acc_obj.help_option("s3accounts -h")
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Verified delete option should be present in help option")
+        self.logger.info(
+            "Verified delete option should be present in help option")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2105,23 +2135,29 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_22455_without_param_admin(self):
         """
-        Test that csm Admin user should get proper error msg for delete s3account operation without username parameter
+        Test that csm Admin user should get proper error msg
+        for delete s3account operation without username parameter
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        self.logger.info("Performing delete S3 account without account name parameter")
+        self.logger.info(
+            "Performing delete S3 account without account name parameter")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name="")
         assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(
+            resp[1], "The following arguments are required: account_name")
         self.logger.info(resp[1])
-        self.logger.info("Performed delete S3 account without account name parameter")
+        self.logger.info(
+            "Performed delete S3 account without account name parameter")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22456")
     @CTFailOn(error_handler)
-    def test_22456_help_opt_csm_user(self):
+    def test_22456_without_param_csm_user(self):
         """
-        Test that csm manage user should get proper error msg for delete s3account operation without username parameter
+        Test that csm manage user should get proper error msg
+        for delete s3account operation without username parameter
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         csm_user_name = "{0}{1}".format("auto_csm_user", str(int(time.time())))
@@ -2149,20 +2185,26 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully logged in to CORTX CLI as csm user %s",
             csm_user_name)
-        self.logger.info("Performing delete S3 account without account name parameter")
+        self.logger.info(
+            "Performing delete S3 account without account name parameter using CSM user")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name="")
         assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(
+            resp[1], "The following arguments are required: account_name")
         self.logger.info(resp[1])
-        self.logger.info("Performed delete S3 account without account name parameter")
+        self.logger.info(
+            "Performed delete S3 account without account name parameter is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-22456")
+    @pytest.mark.tags("TEST-22457")
     @CTFailOn(error_handler)
     def test_22457_session_timeout(self):
         """
-        Test that session should get logged out with proper error msg in case user try to access deleted s3account
+        Test that session should get logged out with proper
+        error msg in case user try to access deleted s3account
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         self.logger.info("Creating s3 account %s", self.s3acc_name)
@@ -2173,24 +2215,26 @@ class TestCliS3ACC:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
         self.logger.info("Login as S3 account user in new ssh connection")
-        s3acc_obj1 = CortxCliS3AccountOperations()
-        s3acc_obj1.open_connection()
-        login = s3acc_obj1.login_cortx_cli(username=self.s3acc_name, password=self.s3acc_password)
+        login = self.s3acc_obj1.login_cortx_cli(
+            username=self.s3acc_name, password=self.s3acc_password)
         assert_utils.assert_true(login[0], login[1])
-        self.logger.info("Successfully logged in to CORTX CLI as S3 account user")
+        self.logger.info(
+            "Successfully logged in to CORTX CLI as S3 account user")
         self.logger.info("Delete S3 account using admin credential")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using admin credential")
-        self.logger.info("Try to access deleted S3 account using new ssh connection")
-        resp = s3acc_obj1.show_s3account_cortx_cli()
+        self.logger.info(
+            "Try to access deleted S3 account using new ssh connection")
+        resp = self.s3acc_obj1.show_s3account_cortx_cli()
         assert_utils.assert_false(login[0], login[1])
         self.logger.info(resp)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-22446")
+    @pytest.mark.tags("TEST-22744")
     @CTFailOn(error_handler)
     def test_22744_delete_s3_acc(self):
         """
@@ -2205,18 +2249,19 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
         self.logger.info("Deleting S3 account using admin credential")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using admin credential")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-22448")
+    @pytest.mark.tags("TEST-22757")
     @CTFailOn(error_handler)
     def test_22757_delete_s3_acc_with_bkt(self):
         """
-        Verify admin should not be deleted if S3 account have IAM user or buckets
+        Verify admin should not be able to delete S3 account if it has S3 buckets
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
         bucket_name = "{0}{1}".format("clis3bkt", int(time.time()))
@@ -2247,9 +2292,13 @@ class TestCliS3ACC:
         assert_utils.assert_true(logout[0], logout[1])
         login = self.s3bkt_obj.login_cortx_cli()
         assert_utils.assert_true(login[0], login[1])
-        self.logger.info("Deleting S3 account when bucket is present for s3account user")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name=self.s3acc_name)
+        self.logger.info(
+            "Deleting S3 account when bucket is present for s3account user")
+        resp = self.s3acc_obj.delete_s3account_cortx_cli(
+            account_name=self.s3acc_name)
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(resp[1])
-        self.logger.info("Deleting S3 account is failed with error %s", resp[1])
+        self.logger.info(
+            "Deleting S3 account is failed with error %s",
+            resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
