@@ -39,9 +39,13 @@ class AlertSetup(RASTestLib):
         field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",
                       "CONF_SECONDARY_IP", "CONF_SECONDARY_PORT",
                       "CONF_ENCL_USER", "CONF_ENCL_SECRET"]
-        resp = self.update_enclosure_values(enclosure_vals=dict(
-            zip(field_list, [None] * len(field_list))))
-        return resp
+        try:
+            resp = self.update_enclosure_values(enclosure_vals=dict(
+                zip(field_list, [None] * len(field_list))))
+            return resp
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
 
     def raid_fun(self, alert_in_test: str):
         """
@@ -53,11 +57,15 @@ class AlertSetup(RASTestLib):
 
         LOGGER.info(
             "Fetching the disks details from mdstat for RAID array %s", md_device)
-        md_stat = self.nd_obj.get_mdstat()
-        disks = md_stat["devices"][os.path.basename(md_device)]["disks"].keys()
-        disk1 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[0])
-        disk2 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[1])
-        return md_device, md_stat, disk1, disk2
+        try:
+            md_stat = self.nd_obj.get_mdstat()
+            disks = md_stat["devices"][os.path.basename(md_device)]["disks"].keys()
+            disk1 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[0])
+            disk2 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[1])
+            return True, md_device, disk1, disk2
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
 
     def server_fun(self, alert_in_test: str):
         """
@@ -66,8 +74,13 @@ class AlertSetup(RASTestLib):
         """
         LOGGER.info("Setup for : %s", alert_in_test)
         LOGGER.info("Retaining the original/default config")
-        cm_cfg = RAS_VAL["ras_sspl_alert"]
-        self.retain_config(cm_cfg["file"]["original_sspl_conf"], False)
+        try:
+            cm_cfg = RAS_VAL["ras_sspl_alert"]
+            self.retain_config(cm_cfg["file"]["original_sspl_conf"], False)
+            return True, "Retained sspl.conf"
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
 
     def server_fru_fun(self, alert_in_test: str):
         """
@@ -75,17 +88,21 @@ class AlertSetup(RASTestLib):
         :param alert_in_test: Name of the alert to be generated
         """
         LOGGER.info("Setup for : %s", alert_in_test)
-        if alert_in_test == 'NW_PORT_FAULT':
-            LOGGER.info("Check status of all network interfaces")
-            status = self.health_obj.check_nw_interface_status()
-            for k, v in status.items():
-                if "DOWN" in v:
-                    LOGGER.info("%s is down. Please check network connections and "
-                                "restart tests.", k)
-                    return False, f"{k} is down. Please check network connections " \
-                                  f"and restart tests."
+        try:
+            if alert_in_test == 'NW_PORT_FAULT':
+                LOGGER.info("Check status of all network interfaces")
+                status = self.health_obj.check_nw_interface_status()
+                for k, v in status.items():
+                    if "DOWN" in v:
+                        LOGGER.info("%s is down. Please check network "
+                                    "connections and restart tests.", k)
+                        return False, f"{k} is down. Please check network " \
+                                      f"connections and restart tests."
 
-            return True, "All network interfaces are up."
+                return True, "All network interfaces are up."
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
 
     def get_runtime_input_params(self, alert_name: str = None):
         """
@@ -117,6 +134,26 @@ class AlertSetup(RASTestLib):
                 'input_parameters': {"enclid": 0, "ctrl_name": ["A", "B"],
                                      "operation": "Enabled", "disk_group": "dg00",
                                      "phy_num": [], "poll": True}
+            },
+            'RAID_STOP_DEVICE_ALERT': {
+                'host_details': None,
+                'input_parameters': {"operation": "stop", "md_device": None,
+                                     "disk": None}
+            },
+            'RAID_ASSEMBLE_DEVICE_ALERT': {
+                'host_details': None,
+                'input_parameters': {"operation": "assemble", "md_device": None,
+                                     "disk": None},
+            },
+            'RAID_ADD_DISK_ALERT': {
+                'host_details': None,
+                'input_parameters': {"operation": "add_disk", "md_device": None,
+                                     "disk": None}
+            },
+            'RAID_REMOVE_DISK_ALERT': {
+                'host_details': None,
+                'input_parameters': {"operation": "remove_disk", "md_device": None,
+                                     "disk": None}
             }
         }
 

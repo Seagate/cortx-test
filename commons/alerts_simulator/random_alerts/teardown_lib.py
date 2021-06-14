@@ -46,22 +46,31 @@ class AlertTearDown(RASTestLib):
         """
         LOGGER.info("Teardown for: %s", alert_in_test)
         LOGGER.info("Retaining the original/default config")
-        cm_cfg = RAS_VAL["ras_sspl_alert"]
-        self.retain_config(cm_cfg["file"]["original_sspl_conf"], True)
-        # TODO: Restore changed values in config files
+        try:
+            cm_cfg = RAS_VAL["ras_sspl_alert"]
+            self.retain_config(cm_cfg["file"]["original_sspl_conf"], True)
+            # TODO: Restore changed values in config files
+            return True, "Retained sspl.conf"
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
 
     def server_fru_fun(self, alert_in_test: str):
         """
         Function for teardown of alerts of server_fru type
         """
         LOGGER.info("Teardown for: %s", alert_in_test)
-        if alert_in_test == 'NW_PORT_FAULT':
-            LOGGER.info("Check status of all network interfaces")
-            status = self.health_obj.check_nw_interface_status()
-            for k, v in status.items():
-                if "DOWN" in v:
-                    LOGGER.info("%s is down. Please check network connections and "
-                                "restart tests.", k)
-                    assert False, f"{k} is down. Please check network connections " \
-                                  f"and restart tests."
-            LOGGER.info("All network interfaces are up.")
+        try:
+            if alert_in_test == 'NW_PORT_FAULT':
+                LOGGER.info("Check status of all network interfaces")
+                status = self.health_obj.check_nw_interface_status()
+                for k, v in status.items():
+                    if "DOWN" in v:
+                        LOGGER.info("%s is down. Please check network connections and "
+                                    "restart tests.", k)
+                        assert False, f"{k} is down. Please check network connections " \
+                                      f"and restart tests."
+                return True, "All network interfaces are up."
+        except BaseException as error:
+            LOGGER.error("Error: %s", error)
+            return False, error
