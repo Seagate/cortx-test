@@ -425,7 +425,8 @@ class Provisioner:
             LOGGER.info("{} for {} is {}".format(key, chk, out))
             cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
             resp1 = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug(f"confstore template command output for {chk}'s {key}: {resp1}")
+            LOGGER.debug(
+                f"confstore template command output for {chk}'s {key}: {resp1}")
             if resp1:
                 return True, "Key from pillar and confstore match."
             else:
@@ -501,7 +502,13 @@ class Provisioner:
             return False, error
         return True, ntp
 
-    def sysconfg_verification(self, key: list, node_obj, node_id: int, exp_t_srv: str, exp_t_zone: str):
+    def sysconfg_verification(
+            self,
+            key: list,
+            node_obj,
+            node_id: int,
+            exp_t_srv: str,
+            exp_t_zone: str):
         """
         Helper function to verify the system NTP configuration
         param: key: NTP keys to be verified
