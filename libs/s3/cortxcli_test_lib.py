@@ -106,7 +106,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         CSMAccountOperations.csm_user_delete.__name__,
+                         CSMAccountOperations.csm_user_update_role.__name__,
                          error)
             raise CTException(err.CLI_ERROR, error.args)
         finally:
