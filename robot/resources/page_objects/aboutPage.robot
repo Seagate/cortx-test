@@ -6,6 +6,18 @@ Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Keywords ***
 
+Check Serial Number Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To About
+    wait for page or element to load
+    Page Should Contain Element  ${SERIAL_NO_XPATH}
+
+Check Serial Number Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To About
+    wait for page or element to load
+    Page Should Not Contain Element  ${SERIAL_NO_XPATH}
+
 Navigate To About
     [Documentation]  Test keyword is for navigating to about Section
     Wait Until Element Is Visible  ${MAINTENANCE_MENU_ID}  timeout=30
