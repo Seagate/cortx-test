@@ -8,10 +8,13 @@ from config import CMN_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-def test_random_alerts(self):
+def test_random_alerts():
     t_end = time.time() + 20 * 15
     e = threading.Event()
-    ra_obj = RandomAlerts(host=self.host, h_user=self.uname, h_pwd=self.passwd,
+    host = CMN_CFG["nodes"][0]["host"]
+    uname = CMN_CFG["nodes"][0]["username"]
+    passwd = CMN_CFG["nodes"][0]["password"]
+    ra_obj = RandomAlerts(host=host, h_user=uname, h_pwd=passwd,
                           enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
                           enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
                           enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
