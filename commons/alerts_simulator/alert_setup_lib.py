@@ -1,22 +1,7 @@
 import os
-import time
-import random
 import logging
-import pytest
-import pandas as pd
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
-from commons.helpers.controller_helper import ControllerLib
-from libs.s3 import S3H_OBJ
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
-from commons import constants as cons
-from commons import commands as common_cmd
-from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -24,7 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 class AlertSetup(RASTestLib):
     """
-
+    Setup lib for alert to be generated
     """
     def __init__(
             self,
@@ -41,9 +26,103 @@ class AlertSetup(RASTestLib):
         self.host = host
         self.username = username
         self.pwd = password
+        self.nd_obj = Node(hostname=host, username=username, password=password)
         super().__init__(host, username, password)
 
-    def enclosure_setup
-    def raid_setup
-    def server_setup
-    def server_fru_setup
+    def enclosure_fun(self, alert_in_test: str):
+        """
+        Function for setup of alerts of enclosure type
+        :param alert_in_test: Name of the alert to be generated
+        """
+        LOGGER.info("Setup for : %s", alert_in_test)
+        LOGGER.info("Putting enclosure values in CONF store")
+        field_list = ["CONF_PRIMARY_IP", "CONF_PRIMARY_PORT",
+                      "CONF_SECONDARY_IP", "CONF_SECONDARY_PORT",
+                      "CONF_ENCL_USER", "CONF_ENCL_SECRET"]
+        resp = self.update_enclosure_values(enclosure_vals=dict(
+            zip(field_list, [None] * len(field_list))))
+        return resp
+
+    def raid_fun(self, alert_in_test: str):
+        """
+        Function for setup of alerts of raid type
+        :param alert_in_test: Name of the alert to be generated
+        """
+        LOGGER.info("Setup for : %s", alert_in_test)
+        md_device = RAS_VAL["raid_param"]["md0_path"]
+
+        LOGGER.info(
+            "Fetching the disks details from mdstat for RAID array %s", md_device)
+        md_stat = self.nd_obj.get_mdstat()
+        disks = md_stat["devices"][os.path.basename(md_device)]["disks"].keys()
+        disk1 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[0])
+        disk2 = RAS_VAL["raid_param"]["disk_path"].format(list(disks)[1])
+        return md_device, md_stat, disk1, disk2
+
+    def server_fun(self, alert_in_test: str):
+        """
+        Function for setup of alerts of server type
+        :param alert_in_test: Name of the alert to be generated
+        """
+        LOGGER.info("Setup for : %s", alert_in_test)
+        LOGGER.info("Retaining the original/default config")
+        cm_cfg = RAS_VAL["ras_sspl_alert"]
+        self.retain_config(cm_cfg["file"]["original_sspl_conf"], False)
+
+    def server_fru_fun(self, alert_in_test: str):
+        """
+        Function for setup of alerts of server_fru type
+        :param alert_in_test: Name of the alert to be generated
+        """
+        LOGGER.info("Setup for : %s", alert_in_test)
+        if alert_in_test == 'NW_PORT_FAULT':
+            LOGGER.info("Check status of all network interfaces")
+            status = self.health_obj.check_nw_interface_status()
+            for k, v in status.items():
+                if "DOWN" in v:
+                    LOGGER.info("%s is down. Please check network connections and "
+                                "restart tests.", k)
+                    return False, f"{k} is down. Please check network connections " \
+                                  f"and restart tests."
+
+            return True, "All network interfaces are up."
+
+    def get_runtime_input_params(self, alert_name: str = None):
+        """
+        Function to get input parameters at runtime
+        :param alert_name: Name of the alert for which input parameters are
+        required
+        """
+        mgmt_ip = CMN_CFG["nodes"][0]["ip"]
+        setup_type = CMN_CFG['setup_type']
+        nw_interfaces = RAS_TEST_CFG["network_interfaces"][setup_type]
+        mgmt_device = nw_interfaces["MGMT"]
+        public_data_device = nw_interfaces["PUBLIC_DATA"]
+
+        switcher = {
+            'MGMT_FAULT': {
+                    'host_details': {'host': self.host,
+                                     'host_user': self.username,
+                                     'host_password': self.pwd},
+                    'input_parameters': {'device': mgmt_device}
+                },
+            'PUBLIC_DATA_FAULT': {
+                    'host_details': {'host': mgmt_ip,
+                                     'host_user': self.username,
+                                     'host_password': self.pwd},
+                    'input_parameters': {'device': public_data_device}
+                },
+            'DG_FAULT_RESOLVED': {
+                'host_details': None,
+                'input_parameters': {"enclid": 0, "ctrl_name": ["A", "B"],
+                                     "operation": "Enabled", "disk_group": "dg00",
+                                     "phy_num": [], "poll": True}
+            }
+        }
+
+        alert = switcher.get(alert_name, None)
+        if alert is None:
+            return None, None
+        else:
+            return switcher[alert_name]['host_details'], \
+                   switcher[alert_name]['input_parameters']
