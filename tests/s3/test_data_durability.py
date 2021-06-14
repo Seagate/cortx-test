@@ -23,6 +23,7 @@
 import os
 import time
 import logging
+import secrets
 from time import perf_counter_ns
 
 import pytest
@@ -56,6 +57,7 @@ class TestDataDurability:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
+        self.secure_range = secrets.SystemRandom()
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.log.info("STARTED: setup test operations.")
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
@@ -156,6 +158,7 @@ class TestDataDurability:
         return chksm_before_put_obj
 
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-8005')
     @pytest.mark.parametrize("service", [const.S3AUTHSERVER])
     def test_no_data_loss_in_case_service_restart_4232(self, service):
@@ -208,6 +211,7 @@ class TestDataDurability:
             "ENDED: Test NO data loss in case of service restart- %s", service)
 
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-8006')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_haproxy_restart_4233(self):
@@ -216,6 +220,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Will be taken after F-45H.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-8009')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_account_cred_change_4238(self):
@@ -300,6 +305,7 @@ class TestDataDurability:
             "ENDED: Test NO data loss in case of account credentials change")
 
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-8004')
     @CTFailOn(error_handler)
     def test_no_data_loss_corruption_in_case_s3server_restart_4231(self):
@@ -342,6 +348,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Restarting cluster make avalanche effect.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-8007')
     @CTFailOn(error_handler)
     def test_no_data_loss_in_case_motr_restart_4234(self):
@@ -383,6 +390,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22483')
     @CTFailOn(error_handler)
     def test_toggle_checksum_feature_with_no_data_loss_22483(self):
@@ -428,6 +436,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22492')
     @CTFailOn(error_handler)
     def test_verify_read_corrupt_metadata_at_motr_lvl_22492(self):
@@ -440,7 +449,7 @@ class TestDataDurability:
         self.log.info("Step 1: Create a bucket and put N object into the "
                       "bucket")
         self.file_lst = []
-        for i in range(4):
+        for i in range(self.secure_range.randint(2,8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, self.file_size)
             self.file_lst.append(file_path)
@@ -461,7 +470,7 @@ class TestDataDurability:
         for obj in self.file_lst:
             resp = S3T_OBJ.get_object(
                 self.bucket_name, obj)
-            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 3: Read(get) of an object failed with an error")
         self.log.info("Step 4: Check for expected errors in logs.")
         # resp = get_motr_logs()
@@ -473,6 +482,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22493')
     @CTFailOn(error_handler)
     def test_verify_range_read_corrupt_metadata_at_motr_lvl_22493(self):
@@ -496,7 +506,7 @@ class TestDataDurability:
             "is corrupted")
         resp = S3T_OBJ.get_object(
             self.bucket_name, self.object_name)
-        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "Step 3: Range Read (get) of an object failed with an error")
         self.log.info("Step 4: Check for expected errors in logs.")
@@ -509,6 +519,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
     @CTFailOn(error_handler)
     def test_object_data_integrity_while_upload_using_correct_checksum_22497(
@@ -520,13 +531,14 @@ class TestDataDurability:
         self.log.info(
             "STARTED: Test to verify object integrity during the the upload "
             "with correct checksum.")
-        self.log.info("Step 1: Create 4 objects of size 10 MB")
+        self.log.info("Step 1: Create N objects of size 10 MB")
         self.file_lst = []
-        for i in range(4):
+        for i in range(self.secure_range.randint(2,8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info("Step 1: Created 4 objects of size 10 MB")
+        self.log.info(
+            "Step 1: Created %s objects of size 10 MB", len(self.file_lst))
         self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
                       "checksum ) for all obj")
         checksum_dict = {}
@@ -553,6 +565,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     @CTFailOn(error_handler)
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
@@ -563,13 +576,14 @@ class TestDataDurability:
         self.log.info(
             "STARTED: Test to verify object integrity during the upload with "
             "different checksum.")
-        self.log.info("Step 1: Create 4 objects of size 10MB")
+        self.log.info("Step 1: Create N objects of size 10MB")
         self.file_lst = []
-        for i in range(4):
+        for i in range(self.secure_range.randint(2,8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info("Step 1: Create 4 object of size 10MB")
+        self.log.info(
+            "Step 1: Created %s object of size 10MB", len(self.file_lst))
         self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
                       "checksum ) for all obj")
         checksum_dict = {}
@@ -587,7 +601,7 @@ class TestDataDurability:
             resp = S3T_OBJ.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
                 content_md5=binary_checksum)
-            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "Step 3: Failed to put objects into bucket with different "
             "calculated checksum")
@@ -597,6 +611,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22501')
     @CTFailOn(error_handler)
     def test_checksum_validation_file_spread_across_storage_22501(self):
@@ -619,6 +634,7 @@ class TestDataDurability:
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22909')
     @CTFailOn(error_handler)
     def test_corrupt_data_blocks_obj_motr_verify_read_22909(self):
@@ -643,22 +659,23 @@ class TestDataDurability:
             "Step 3: Verify read (Get) of an object whose metadata is "
             "corrupted.")
         res = S3T_OBJ.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verify read (Get) of an object whose metadata is "
+            "Step 3: Verified read (Get) of an object whose metadata is "
             "corrupted.")
         self.log.info(
             "Step 4: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 4: Checked expected errors in logs or notification.")
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and verify "
             "read (Get).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.s3_ops
+    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22910')
     @CTFailOn(error_handler)
     def test_corrupt_data_blocks_obj_motr_verify_range_read_22910(self):
@@ -672,27 +689,27 @@ class TestDataDurability:
             "Step 1: Create a bucket and upload object into a bucket.")
         self.create_bkt_put_obj()
         self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
+            "Step 1: Created a bucket and upload object into a bucket.")
         self.log.info(
             "Step 2: Corrupt data blocks of an object at motr level.")
         # resp = corrupt_data_block_of_an_obj(object)
         # assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
+            "Step 2: Corrupted data blocks of an object at motr level.")
         self.log.info(
             "Step 3: Verify range read (Get) of an object whose metadata"
             " is corrupted.")
         res = S3T_OBJ.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verify range read (Get) of an object whose metadata"
+            "Step 3: Verified range read (Get) of an object whose metadata"
             " is corrupted.")
         self.log.info(
             "Step 4: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 4: Checked for expected errors in logs or notification.")
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
