@@ -437,8 +437,8 @@ class Health(Host):
 
         return response
 
-    def pcs_resource_cmd(self, command: str, resources: list, srvnode: str = "",
-                         wait_time: int = 30) -> bool:
+    def pcs_resource_ops_cmd(self, command: str, resources: list, srvnode: str = "",
+                             wait_time: int = 30) -> bool:
         """
         Perform given operation on pcs resource using pcs resource command
 

@@ -131,9 +131,10 @@ class TestNetworkFault:
         services = [service["sspl_service"], service["kafka_service"],
                     service["kafka_zookeeper"], service["csm_web"],
                     service["csm_agent"]]
-        resp = self.health_obj.pcs_resource_cmd(command="restart",
-                                                resources=[self.sspl_resource_id],
-                                                srvnode=self.current_srvnode)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                     self.sspl_resource_id],
+                                                    srvnode=self.current_srvnode)
 
         time.sleep(15)
         for svc in services:
@@ -229,9 +230,10 @@ class TestNetworkFault:
                 LOGGER.info("Removing log file %s from the Node", file)
                 self.node_obj.remove_file(filename=file)
 
-        resp = self.health_obj.pcs_resource_cmd(command="restart",
-                                                resources=[self.sspl_resource_id],
-                                                srvnode=self.current_srvnode)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                     self.sspl_resource_id],
+                                                    srvnode=self.current_srvnode)
 
         time.sleep(self.cm_cfg["sleep_val"])
 
@@ -528,9 +530,10 @@ class TestNetworkFault:
 
             LOGGER.info("Step 4: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
-            resp = self.health_obj.pcs_resource_cmd(command="ban",
-                                                    resources=[self.sspl_resource_id],
-                                                    srvnode=self.current_srvnode)
+            resp = self.health_obj.pcs_resource_ops_cmd(command="ban",
+                                                        resources=[
+                                                         self.sspl_resource_id],
+                                                        srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 4: Checking if SSPL is in stopped state.")
@@ -566,9 +569,10 @@ class TestNetworkFault:
             time.sleep(wait_time)
 
             LOGGER.info("Step 6: Starting SSPL service")
-            resp = self.health_obj.pcs_resource_cmd(command="clear",
-                                                    resources=[self.sspl_resource_id],
-                                                    srvnode=self.current_srvnode)
+            resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
+                                                        resources=[
+                                                         self.sspl_resource_id],
+                                                        srvnode=self.current_srvnode)
             LOGGER.info("Step 6: Checking if SSPL is in running state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                     services=[service[
