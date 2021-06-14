@@ -459,14 +459,17 @@ class Provisioner:
             return False, error
 
     @staticmethod
-    def get_chrony(time_server: str):
+    def get_chrony(node_obj, time_server: str):
         """
         Helper function to grep the server value from /etc/chrony.conf
+        param: node_obj: node object for remote execution
+        param: time_server: Time server value to be grep
         return: bool, Execution response
         """
-        grap_chrony = common_cmd.GET_CHRONY.format(time_server)
-        if time_server in grap_chrony:
-            return True, grap_chrony
+        cmd = common_cmd.GET_CHRONY.format(time_server)
+        grep_chrony = node_obj.execute_cmd(cmd, read_lines=True)
+        if time_server in grep_chrony[0]:
+            return True, grep_chrony
         else:
             return False, f"{time_server} is not in /etc/chrony.conf"
 

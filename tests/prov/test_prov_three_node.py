@@ -347,8 +347,8 @@ class TestProvThreeNode:
         ntp_time_server_val = self.ntp_data["srvnode-1"][self.ntp_keys[0]]
         ntp_time_zone_val = self.ntp_data["srvnode-1"][self.ntp_keys[1]]
         LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(ntp_time_server_val))
-        resp = self.prov_obj.get_chrony(time_server=ntp_time_server_val)
-        assert_utils.assert_not_equal(resp[0], False, resp[1])
+        resp = self.prov_obj.get_chrony(node_obj=self.nd1_obj, time_server=ntp_time_server_val)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = {}".format(resp[1]))
 
         set_timezone = (random.choice([ii for ii in timezone_data if ii != ntp_time_zone_val]))
@@ -369,8 +369,8 @@ class TestProvThreeNode:
                 node, resp[1]))
 
         LOGGER.info("Step 7: Validate set time_server in /etc/chrony.conf")
-        resp = self.prov_obj.get_chrony(time_server=set_timesrv_ip)
-        assert_utils.assert_not_equal(resp[0], False, resp[1])
+        resp = self.prov_obj.get_chrony(node_obj=self.nd1_obj, time_server=set_timesrv_ip)
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(resp[1]))
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
