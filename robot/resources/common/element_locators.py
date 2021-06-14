@@ -174,7 +174,7 @@ CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
 UPDATE_USER_EMAIL_ID_INPUT_ID = "email"
 UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
-DELETE_S3_ACCOUNT_BY_ADMIN_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
+DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
