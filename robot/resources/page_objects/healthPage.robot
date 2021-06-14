@@ -1,8 +1,8 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Keywords ***
 
@@ -15,10 +15,4 @@ Check Health Option Exists
     [Documentation]  This keyword is to check that user does have access to Health page
     wait for page or element to load
     Page Should Contain Element  ${HEALTH_TAB_ID}
-
-Check Health Option URL access
-    [Documentation]  This keyword is to check if URL is accessed, 
-    Run Keyword If  ${headless} == True  Open URL In Headless  ${url}health  ${browser}
-    ...  ELSE  Open URL  ${url}health  ${browser}
-    #Page Should Contain 
 
