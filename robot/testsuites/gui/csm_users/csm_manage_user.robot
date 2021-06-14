@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
 Resource   ${RESOURCES}/resources/page_objects/alertPage.robot
+Resource   ${RESOURCES}/resources/page_objects/bucket_page.robot
 Resource   ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
@@ -20,7 +21,7 @@ ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
 ${Sub_tab}  None
-${page name}  MANAGE_MENU_ID
+${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
@@ -31,13 +32,13 @@ Create and login with CSM manage user
     [Documentation]  This keyword is to create and login with csm manage user
     ${new_user_name}=  Generate New User Name
     ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
+    wait for page or element to load
     Create New CSM User  ${new_user_name}  ${new_password}  manage
     Click On Confirm Button
     Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page name}
+    Re-login  ${new_user_name}  ${new_password}  ${page_name}
     [Return]  ${new_user_name}  ${new_password}
-
 
 *** Test Cases ***
 
@@ -124,4 +125,56 @@ TEST-18327
     Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
     Re-login  ${S3_account_name}  ${S3_new_password}  S3_ACCOUNTS_TAB_ID
     Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
+    Re-login  ${username}  ${password}  ${page_name}  False
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
 
+TEST-21591
+    [Documentation]  Test that CSM user with role manager can delete empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-21591
+    [Tags]  Priority_High  TEST-21591  S3_test
+    ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Delete s3 account using csm user  ${S3_account_name}
+    wait for page or element to load
+    Re-login  ${username}  ${password}  ${page_name}
+    wait for page or element to load
+    Delete CSM User  ${new_csm_user_name}
+
+TEST-21592
+    [Documentation]  Test that CSM user with role manager cannot delete non-empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-21592
+    [Tags]  Priority_High  TEST-21592  S3_test
+    ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  Bucket_TAB_ID
+    Click On Create Bucket Form
+    ${bucketname}=  Generate New User Name
+    Create Bucket  ${bucketname}
+    wait for page or element to load
+    Re-login  ${new_csm_user_name}  ${new_password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  Bucket_TAB_ID
+    Delete Bucket  ${bucketname}
+    Delete S3 Account  ${S3_account_name}  ${password}  True
+    wait for page or element to load
+    Re-login  ${username}  ${password}  ${page_name}  False
+    wait for page or element to load
+    Delete CSM User  ${new_csm_user_name}

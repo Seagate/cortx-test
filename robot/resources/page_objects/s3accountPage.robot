@@ -405,11 +405,28 @@ Verify that s3 url on s3 account creation
     wait for page or element to load
     Delete S3 Account  ${S3_account}  ${s3_account_password}  True
 
-Delete s3 account using csm admin user
-    [Documentation]  Delete s3 account using admin user and very it.
+Delete s3 account using csm user
+    [Documentation]  Delete s3 account using csm user and very it.
     [Arguments]  ${S3_account_name}
-    Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_ADMIN_USER_XPATH}  ${S3_account_name}
+    Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH}  ${S3_account_name}
     click button  ${CONFIRM_S3_ACCOUNT_DELETE_ID}
     wait for page or element to load
     ${s3_accouts} =  Read Table Data   ${S3_ACCOUNTS_TABLE_XPATH}
-    List Should Not Contain Value  ${s3_accouts}  ${S3_account_name}        
+    List Should Not Contain Value  ${s3_accouts}  ${S3_account_name}
+
+Verify Absence of Delete Button on S3account
+    [Documentation]  Verify Absence of Delete Button on S3account
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
+
+Verify Error Msg is Shown For Non Empty S3account delete
+    [Documentation]  This keyword will Verify Error Msg is Shown if delete performed on Non Empty account
+    [Arguments]  ${S3_account_name}
+    Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH}  ${S3_account_name}
+    click button  ${CONFIRM_S3_ACCOUNT_DELETE_ID}
+    wait until element is visible  ${ERROR_MSG_POP_UP_ID}  timeout=30
+    ${err_msg}=  get text  ${ERROR_MSG_POP_UP_ID}
+    Log To Console And Report  ${err_msg}
+    Should be Equal  ${NON_EMPTY_S3_ACCOUNT_MESSAGE}  ${err_msg}
+    Wait Until Element Is Not Visible  ${ERROR_MSG_POP_UP_ID}  timeout=30
