@@ -770,7 +770,6 @@ def pytest_runtest_logstart(nodeid, location):
     target = Globals.TARGET
     if not Globals.LOCAL_RUN:
         try:
-            assert False
             check_cortx_cluster_health()
             check_cluster_storage()
         except (AssertionError, Exception) as fault:
