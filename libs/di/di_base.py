@@ -57,8 +57,8 @@ def init_s3_connections(users):
 
     for user, keys in users.items():
         user_name = user
-        access_key = keys[0]
-        secret_key = keys[1]
+        access_key = keys["accesskey"]
+        secret_key = keys["secretkey"]
         s3_objects[user_name] = _init_s3_conn(access_key, secret_key, user_name)
     return s3_objects
 
