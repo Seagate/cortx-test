@@ -1,19 +1,20 @@
-third_party_services:
-    - "hare-consul-agent.service"
-#    - "hare-consul-agent-c1.service"
-#    - "hare-consul-agent-c2.service"
-    - "elasticsearch.service"
-    - "statsd.service"
-    - "rsyslog.service"
-    - "haproxy.service"
-    - "slapd.service"
-    - "lnet.service"
-    - "salt-master.service"
-    - "salt-minion.service"
-#    - "glusterd.service"
-#    - "multipathd.service"
-#    - "scsi-network-relay.service"
-#    - "Kafka"
+alert_types:
+  fault: "fault"
+  resolved: "fault_resolved"
+  missing: "missing"
+  insertion: "insertion"
+  get: "get"
+
+network_interfaces:
+  VM:
+    MGMT: "eth0"
+    PUBLIC_DATA: "eth1"
+    PRIVATE_DATA: "eth3"
+  HW:
+    #Check network interface names when R2 HW is available
+    MGMT: "eno1"
+    PUBLIC_DATA: "enp175s0f0"
+    PRIVATE_DATA: "enp175s0f1"
 
 test_3005:
   alert: True
@@ -230,4 +231,18 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
+test_22060:
+  disk_group: "dg00"
+  resource_type: "node:enclosure:disk-group"
+  enclid: 0
+  ctrl_name: ['A', 'B']
+  operation_fault: "Disabled"
+  operation_fault_resolved: "Enabled"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+nw_port_fault:
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw"
+  error_msg: "Failed to put management network port in"
 

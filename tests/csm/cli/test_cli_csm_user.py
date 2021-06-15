@@ -49,13 +49,6 @@ class TestCliCSMUser:
         """
         cls.logger = logging.getLogger(__name__)
         cls.logger.info("STARTED : Setup operations for test suit")
-        cls.CSM_USER = CortxCliCsmUser()
-        cls.CSM_USER.open_connection()
-        cls.CSM_ALERT = CortxCliAlerts(session_obj=cls.CSM_USER.session_obj)
-        cls.IAM_USER = CortxCliIamUser(session_obj=cls.CSM_USER.session_obj)
-        cls.bkt_ops = CortxCliS3BucketOperations(session_obj=cls.CSM_USER.session_obj)
-        cls.S3_ACC = CortxCliS3AccountOperations(
-            session_obj=cls.CSM_USER.session_obj)
         cls.GENERATE_ALERT_OBJ = GenerateAlertLib()
         cls.csm_user_pwd = CSM_CFG["CliConfig"]["csm_user"]["password"]
         cls.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -78,6 +71,13 @@ class TestCliCSMUser:
             - Login to CORTX CLI as admin user.
         """
         self.logger.info("STARTED : Setup operations for test function")
+        self.CSM_USER = CortxCliCsmUser()
+        self.CSM_USER.open_connection()
+        self.CSM_ALERT = CortxCliAlerts(session_obj=self.CSM_USER.session_obj)
+        self.IAM_USER = CortxCliIamUser(session_obj=self.CSM_USER.session_obj)
+        self.bkt_ops = CortxCliS3BucketOperations(session_obj=self.CSM_USER.session_obj)
+        self.S3_ACC = CortxCliS3AccountOperations(
+            session_obj=self.CSM_USER.session_obj)
         self.logger.info("Login to CORTX CLI using s3 account")
         self.update_password = False
         self.new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -121,6 +121,7 @@ class TestCliCSMUser:
                 self.CSM_USER.delete_csm_user(user_name=user)
                 self.logger.info("Deleted CSM users %s", user)
         self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.close_connection()
         self.logger.info("Ended : Teardown operations for test function")
 
     @pytest.mark.cluster_user_ops
@@ -193,6 +194,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10816")
     def test_1266(self):
         """
@@ -214,6 +216,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10817")
     def test_1267(self):
         """
@@ -370,6 +373,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10824")
     def test_1244(self):
         """
@@ -378,15 +382,17 @@ class TestCliCSMUser:
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
         offset = 2
         self.logger.info("Creating csm user with name %s", self.user_name)
-        resp = self.CSM_USER.create_csm_user_cli(
-            csm_user_name=self.user_name,
-            email_id=self.email_id,
-            role="manage",
-            password=self.csm_user_pwd,
-            confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            resp[0], True, resp)
-        assert_utils.assert_exact_string(resp[1], "User created")
+        for i in range(2):
+            user_name = "{0}{1}".format(self.user_name, i)
+            resp = self.CSM_USER.create_csm_user_cli(
+                csm_user_name=user_name,
+                email_id=self.email_id,
+                role="manage",
+                password=self.csm_user_pwd,
+                confirm_password=self.csm_user_pwd)
+            assert_utils.assert_equals(
+                resp[0], True, resp)
+            assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", self.user_name)
         self.logger.info("Verifying list csm user with offset")
         list_user = self.CSM_USER.list_csm_users(op_format="json")
@@ -514,6 +520,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10831")
     def test_1261(self):
         """
@@ -773,6 +780,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-10850")
     def test_1249(self):
         """
@@ -905,6 +913,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-12789")
     def test_1257(self):
         """
@@ -977,6 +986,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11740")
     def test_1843(self):
         """
@@ -1181,6 +1191,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-11745")
     def test_1844(self):
         """
@@ -1828,6 +1839,7 @@ class TestCliCSMUser:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
+    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-19871")
     def test_reset_self_pwd_by_csm_user(self):
         """

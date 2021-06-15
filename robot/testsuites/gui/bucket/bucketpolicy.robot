@@ -1,10 +1,10 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for create bucket
 Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/bucket_page.robot
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource    ${EXECDIR}/resources/page_objects/s3accountPage.robot
+Resource    ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -51,6 +51,7 @@ Delete S3 Account And Close Browser
     Click On Cancel Bucket Policy
     wait for page or element to load
     Delete Bucket  ${bucketname}
+    Reload Page
     wait for page or element to load
     CSM GUI Logout
     wait for page or element to load
@@ -132,6 +133,7 @@ TEST-4227
     Click On Update Bucket Policy
     ${new_policy}=  update_json_policy  ${policy}
     Log To Console And Report  ${new_policy}
+    wait for page or element to load
     Click On Edit Bucket Icon
     Add Json Policy To Bucket  ${new_policy}
     Click On Update Bucket Policy

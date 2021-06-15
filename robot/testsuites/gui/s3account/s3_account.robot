@@ -1,15 +1,16 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/page_objects/bucket_page.robot
-Resource   ${EXECDIR}/resources/page_objects/IAM_UsersPage.robot
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/common_variables.py
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource   ${RESOURCES}/resources/page_objects/healthPage.robot
+Resource   ${RESOURCES}/resources/page_objects/IAM_UsersPage.robot
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/common_variables.py
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
@@ -299,14 +300,14 @@ TEST-1530
     [Documentation]  This test case is to verify that user is able to update s3 account password.
     [Tags]  Priority_High  TEST-1530  S3_test  Smoke_test
     Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    sleep  2s
+    wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
-    sleep  5s
+    wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     CSM GUI Logout
     Enter Username And Password  ${S3_account_name}  ${password}
     Click Sigin Button
-    sleep  2s
+    wait for page or element to load  2s
     ${new_password}=  Generate New Password
     Edit S3 account  ${S3_account_name}  ${new_password}  ${new_password}
     Delete S3 Account  ${S3_account_name}  ${new_password}  True
@@ -466,21 +467,6 @@ TEST-1529
     [Tags]  Priority_High  TEST-1529  S3_test
     verify update s3 account has only password options
 
-TEST-17018  # TODO: correct test ID, correct Tag
-    [Documentation]  Test a reset password functionality on clicking "edit" button on S3 account page
-    [Tags]  Priority_High  S3_test  TEST-17018  R2
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
-    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
-    wait for page or element to load
-    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    wait for page or element to load
-    Re-login   ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
-    Reset Password S3 Account  ${S3_account_name}
-    wait for page or element to load
-    Delete S3 Account  ${S3_account_name}  ${password}  True
-    Close Browser
 
 TEST-4026
     [Documentation]  Test User should not able to login using invalid s3 credentials on CSM UI

@@ -82,12 +82,12 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
                 account_name, account_email, password, **kwargs)
             if account_name in response:
                 response = self.split_table_response(response)[0]
-                acc_details["account_name"] = response[1]
-                acc_details["account_email"] = response[2]
-                acc_details["account_id"] = response[3]
-                acc_details["canonical_id"] = response[4]
-                acc_details["access_key"] = response[5]
-                acc_details["secret_key"] = response[6]
+                acc_details["account_name"] = response[0]
+                acc_details["account_email"] = response[1]
+                acc_details["account_id"] = response[2]
+                acc_details["canonical_id"] = response[3]
+                acc_details["access_key"] = response[4]
+                acc_details["secret_key"] = response[5]
                 LOGGER.info("Account Details: %s", acc_details)
                 response = acc_details
         except Exception as error:
@@ -101,7 +101,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         self.log.info("Total Time in seconds for Creating Account is: %s", str(end-start))
         return status, response
 
-    def list_accounts_cortxcli(self, output_format='json', sleep_time=10) -> tuple:
+    def list_accounts_cortxcli(self, output_format='json') -> tuple:
         """
         Listing accounts using  cortxcli.
 
@@ -109,7 +109,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         """
         try:
             self.login_cortx_cli()
-            status, response = super().show_s3account_cortx_cli(output_format=output_format, sleep_time=sleep_time)
+            status, response = super().show_s3account_cortx_cli(output_format=output_format)
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
             else:
@@ -210,6 +210,7 @@ class _IamUser(CortxCliIamUser):
         :return: create user using cortxcli response.
         """
         user_details = dict()
+        confirm_password = confirm_password if confirm_password else password
         try:
             kwargs.setdefault("sleep_time", 10)
             status, response = super().create_iam_user(
@@ -219,9 +220,9 @@ class _IamUser(CortxCliIamUser):
                 **kwargs)
             if status and user_name in response:
                 response = self.split_table_response(response)[0]
-                user_details["user_name"] = response[1]
-                user_details["user_id"] = response[2]
-                user_details["arn"] = response[3]
+                user_details["user_name"] = response[0]
+                user_details["user_id"] = response[1]
+                user_details["arn"] = response[2]
                 response = user_details
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -242,6 +243,26 @@ class _IamUser(CortxCliIamUser):
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          _IamUser.list_users_cortxcli.__name__,
+                         error)
+            raise CTException(err.S3_ERROR, error.args[0])
+
+        return status, response
+
+    def reset_iamuser_password_cortxcli(self,
+                                        iamuser_name: str,
+                                        new_password: str) -> tuple:
+        """
+        This function will update password for specified s3
+        iam user to new_password using CORTX CLI.
+        :param iamuser_name: IAM user name for which password should be updated
+        :param new_password: New password for IAM user
+        :return: True/False and Response returned by CORTX CLI
+        """
+        try:
+            status, response = super().reset_iamuser_password(iamuser_name, new_password)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _IamUser.reset_iamuser_password_cortxcli.__name__,
                          error)
             raise CTException(err.S3_ERROR, error.args[0])
 

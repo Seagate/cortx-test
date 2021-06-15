@@ -1,7 +1,7 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Keywords ***
 
@@ -37,8 +37,8 @@ Click On Cancel Bucket Policy
 Click On Update Bucket Policy
     [Documentation]  This keyword is to perform Click action on update button
     ...  of the bucket policy form
-    wait until element is visible  ${UPDATE_BUCKET_POLICY_BTN_ID}  timeout=60
-    Click Element  ${UPDATE_BUCKET_POLICY_BTN_ID}
+    wait until element is visible  ${UPDATE_BUCKET_POLICY_BUTTON_ID}  timeout=60
+    Click Element  ${UPDATE_BUCKET_POLICY_BUTTON_ID}
 
 Click On Delete Bucket Policy
     [Documentation]  This keyword is to perform Click action on delete button
@@ -57,8 +57,8 @@ Delete Bucket
     Log To Console And Report  Deleting Bucket ${bucketname}
     Action On The Table Element  ${DELETE_BUCKET_XPATH}  ${bucketname}
     Sleep  5s
-    wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
-    Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
+    Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
 
 Is Bucket Present
     [Documentation]  Check the Bucket present or not
@@ -118,8 +118,8 @@ Verify cancel opration of delete bucket
 
 Verify Update Button Must Remain Disabled
     [Documentation]  This keyword checks update Button status should remain disabled
-    wait until element is visible  ${UPDATE_BUCKET_POLICY_BTN_ID}  timeout=30
-    ${status}=  Get Element Attribute  ${UPDATE_BUCKET_POLICY_BTN_ID}  disabled
+    wait until element is visible  ${UPDATE_BUCKET_POLICY_BUTTON_ID}  timeout=30
+    ${status}=  Get Element Attribute  ${UPDATE_BUCKET_POLICY_BUTTON_ID}  disabled
     Log To Console And Report  Status of update policy is ${status}
     Should be equal  ${status}  true
 

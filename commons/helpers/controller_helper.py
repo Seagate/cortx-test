@@ -789,3 +789,219 @@ class ControllerLib:
             return status
 
         return "False"
+
+    def remove_add_drive(self, enclosure_id: str, controller_name: list,
+                         drive_number: list, operation: str) -> Tuple[str, str]:
+        """
+        Enable or Disable drive status from disk group.
+
+        :param enclosure_id: Enclosure ID of the machine
+        :type: str
+        :param controller_name: Server controller name
+        :type: list
+        :param drive_number: Drive number
+        :type: list
+        :param operation: Status of the drive. Value will be enabled or disabled
+        :type: str
+        :return: None
+        """
+        if self.copy:
+            try:
+                for drv in drive_number:
+                    drv = drv.split(".")[-1]
+                    for cnt in controller_name:
+                        cmd = common_cmd.SET_DRIVE_STATUS_CMD.format(
+                            enclosure_id, cnt, drv, operation)
+
+                        command = f"python3 /root/telnet_operations.py " \
+                                  f"--telnet_op='set_drive_status_telnet(" \
+                                  f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                                  f"username=\"{self.enclosure_user}\", " \
+                                  f"pwd=\"{self.enclosure_pwd}\", " \
+                                  f"status=\"{operation}\", cmd=\"{cmd}\")'"
+
+                        LOGGER.info("Running command %s", command)
+                        response = self.node_obj.execute_cmd(cmd=command,
+                                                             read_lines=True)
+
+                        response = response[0].split()
+
+                        status = os.popen(
+                            (common_cmd.STRING_MANIPULATION.format(response[0]))
+                            .replace('\n', ' ').replace('\\n', ' ')).read()
+                        drive_status = os.popen(
+                            (common_cmd.STRING_MANIPULATION.format(response[1]))
+                            .replace('\n', ' ').replace('\\n', ' ')).read()
+            except BaseException as error:
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.remove_add_drive.__name__,
+                             error)
+                raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return status, drive_status
+
+        return "False", "File not found : telnet_operations.py"
+
+    def add_spares_dg(self, drives: list, disk_group: str) -> Tuple[bool, str]:
+        """
+        Function to add spare drives in disk group
+
+        :param drives: List of drives to be added
+        :type: list
+        :param disk_group: Disk group in which drives to be added
+        :type: str
+        :return: status, message
+        :rtype: bool, str
+        """
+        if self.copy:
+            try:
+                LOGGER.info("Adding available drives to disk group %s", disk_group)
+                LOGGER.info("Check usage of drives %s", drives)
+                status, drive_usage_dict = self.get_drive_usage(phy_num=drives)
+                if not status:
+                    return status, f"Failed to get drive usages for drives {drives}"
+
+                LOGGER.info("Drive usages: %s", drive_usage_dict)
+
+                for key, value in drive_usage_dict.items():
+                    if value == "LINEAR POOL":
+                        return True, "Drive is already part of disk group"
+                    elif value == "AVAIL":
+                        LOGGER.info("Drive is already available")
+                    elif value != "AVAIL" and value != "LINEAR POOL":
+                        LOGGER.info("Running clear metadata")
+                        resp = self.clear_drive_metadata(drive_num=key)
+                        if not resp[0]:
+                            return resp[0], resp[1]
+
+                        LOGGER.info("Successfully cleared drive metadata of %s", key)
+
+                    LOGGER.info("Adding spare drive %s to disk group %s", key,
+                                disk_group)
+                    cmd = common_cmd.ADD_SPARES_CMD.format(key, disk_group)
+                    command = f"python3 /root/telnet_operations.py " \
+                              f"--telnet_op='set_drive_status_telnet(" \
+                              f"enclosure_ip=\"{self.enclosure_ip}\", " \
+                              f"username=\"{self.enclosure_user}\", " \
+                              f"pwd=\"{self.enclosure_pwd}\", " \
+                              f"status=\"{status}\", cmd=\"{cmd}\")'"
+
+                    LOGGER.info("Running command %s", command)
+                    response = self.node_obj.execute_cmd(cmd=command,
+                                                         read_lines=True)
+
+                    LOGGER.info("Response: %s", response)
+                    response = response[0].split()
+
+                    status = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[0]))
+                        .replace('\n', ' ').replace('\\n', ' ')).read()
+                    resp = os.popen(
+                        (common_cmd.STRING_MANIPULATION.format(response[1]))
+                        .replace('\n', ' ').replace('\\n', ' ')).read()
+            except BaseException as error:
+                LOGGER.error("Error in %s: %s",
+                             ControllerLib.add_spares_dg.__name__,
+                             error)
+                raise CTException(cterr.CONTROLLER_ERROR, error.args[0])
+
+            return True, f"Successfully added drives {drives} to disk group " \
+                         f"{disk_group}"
+
+    def get_dg_drive_list(self, disk_group: str) -> Tuple[bool, any]:
+        """
+        Function to get drives in disk group
+
+        :param disk_group: Disk group name
+        :type: str
+        :return: status, drive_list
+        :rtype: bool, list
+        """
+        drive_list = []
+        status, drive_dict = self.get_show_disks()
+        if status:
+            LOGGER.info("Collecting drives under same disk group")
+            for key, value in drive_dict.items():
+                try:
+                    if value['disk_group'] == disk_group:
+                        drive_list.append(value['location'])
+                except KeyError:
+                    LOGGER.error("No disk group found for %s", key)
+                    continue
+
+            return True, drive_list
+        else:
+            LOGGER.error("Failed to get drive details")
+            return status, drive_dict
+
+    def get_drive_usage(self, phy_num: list) -> Tuple[bool, dict]:
+        """
+        Function to get usage of drives
+
+        :param phy_num: List of drives
+        :type: list
+        :return: status, dict of usages
+        :rtype: bool, dict
+        """
+        drive_usage_dict = {}
+        status, drive_dict = self.get_show_disks()
+        if status:
+            LOGGER.info("Getting drive usage")
+            for d in phy_num:
+                for key, value in drive_dict.items():
+                    try:
+                        if value['location'] == d:
+                            drive_usage_dict[d] = value['usage']
+                    except KeyError:
+                        LOGGER.error("No disk found of phy number %s", d)
+                        continue
+
+            return True, drive_usage_dict
+        else:
+            LOGGER.error("Failed to get drive details")
+            return status, drive_dict
+
+    def poll_dg_recon_status(self, disk_group: str, percent: int = 100) \
+            -> Tuple[str, str, int]:
+        """
+        Function to poll disk group reconstruction progress
+
+        :param disk_group: Disk group in which drives to be added
+        :type: str
+        :param percent: Upto which percent status shpuld be polled
+        :type: int
+        :return: status, progress percent
+        :rtype: bool, int
+        """
+        LOGGER.info("Polling disk group reconstruction percent")
+        recon_percent = 0
+        while True:
+            status, disk_group_dict = self.get_show_disk_group()
+            LOGGER.info("Reconstruction percent: %s", recon_percent)
+            recon_percent = disk_group_dict[disk_group].get('job_percent',
+                                                            '100%')
+            recon_percent = int(recon_percent.split("%")[0])
+            if recon_percent >= percent:
+                LOGGER.info("Checking if recon_percent >= percent")
+                LOGGER.info("Reconstruction percent went beyond expected "
+                            "percent. Reconstruction percent: %s%",
+                            recon_percent)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group]['health'] == "OK":
+                LOGGER.info("Reconstruction of disk group %s completed. Disk "
+                            "group is in healthy state", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group].get('job') is None:
+                LOGGER.info("No job is running", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+
+        return health, job, final_percent

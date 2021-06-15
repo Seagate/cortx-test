@@ -34,6 +34,7 @@ import pytest
 import requests
 import tempfile
 import uuid
+import xml.etree.ElementTree as ET
 from datetime import date
 from _pytest.nodes import Item
 from _pytest.runner import CallInfo
@@ -54,6 +55,8 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
+from commons.helpers.health_helper import Health
+from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.di.di_run_man import RunDataCheckManager
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -71,8 +74,8 @@ LOGGER = logging.getLogger(__name__)
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
               "tags")
-
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
+SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 Globals.ALL_RESULT = None
 
@@ -87,12 +90,6 @@ def read_project_config(request):
     config = f.joinpath('config.json')
     with config.open() as fp:
         return json.load(fp)
-
-
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
 
 
 @pytest.fixture(scope='session')
@@ -196,7 +193,7 @@ def pytest_addoption(parser):
         "--build", action="store", default=None, help="Build number"
     )
     parser.addoption(
-        "--build_type", action="store", default='Release', help="Build Type(Release)"
+        "--build_type", action="store", default='stable', help="Build Type(Release)"
     )
     parser.addoption(
         "--tp_ticket", action="store", default='', help="Test Plan ticket"
@@ -283,22 +280,32 @@ def pytest_sessionfinish(session, exitstatus):
     resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
     if resp[0]:
         LOGGER.info("Successfully unmounted directory")
+    filter_report_session_finish(session)
 
 
 def get_test_metadata_from_tp_meta(item):
-    tests_meta = Globals.tp_meta['test_meta']
-    flg = Globals.tp_meta['test_plan_label']
-    tp_label = Globals.tp_meta['test_plan_label'][0] if flg else 'regular'  # first is significant
-    te_meta = Globals.tp_meta['te_meta']
-    te_label = te_meta['te_label'][0]
-    te_component = Globals.tp_meta['te_meta']['te_components']
+    tp_meta = Globals.tp_meta
+    tests_meta = tp_meta['test_meta']
+    flg = tp_meta['test_plan_label']
+    tp_label = tp_meta['test_plan_label'][0] if flg else 'default'  # first is significant
+    te_meta = tp_meta['te_meta']
+    te_label = te_meta['te_label'][0] if te_meta['te_label'] else ''
+    te_component = tp_meta['te_meta']['te_components']
     test_id = CACHE.lookup(item.nodeid)
+    # tp_meta with defaults
+
     for it in tests_meta:
         if it['test_id'] == test_id:
             it['tp_label'] = tp_label
             it['te_label'] = te_label
             it['te_component'] = te_component
+            it['build'] = tp_meta['build']
+            it['branch'] = tp_meta['branch']
+            it['platform_type'] = tp_meta['platform_type']
+            it['server_type'] = tp_meta['server_type']
+            it['enclosure_type'] = tp_meta['enclosure_type']
             return it
+    return dict()
 
 
 def get_marks_for_test_item(item):
@@ -310,45 +317,79 @@ def get_marks_for_test_item(item):
     return marks
 
 
+def _capture_exec_info(report, call):
+    """Inner function to capture exec info. Needs improvement."""
+    exec_info = None
+    if call.excinfo is None:
+        return exec_info
+    if hasattr(report, "wasxfail"):
+        # Exception was expected.
+        return exec_info
+    return call.excinfo.value
+
+
+def capture_exec_info(report, call, item):
+    """Purpose is to accurately find exception info."""
+    exec_info = None
+    if item.rep_setup.failed or item.rep_teardown.failed:
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
+        exec_info = _capture_exec_info(report, call)
+    elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
+        return None
+    return exec_info
+
+
 def create_report_payload(item, call, final_result, d_u, d_pass):
     """Create Report Payload for POST request to put data in Report DB."""
     os_ver = system_utils.get_os_version()
-    _item_dict = get_test_metadata_from_tp_meta(item)
+    _item_dict = get_test_metadata_from_tp_meta(item) # item dict has all item, tp and te metadata
     marks = get_marks_for_test_item(item)
     are_logs_collected = True
     if final_result == 'FAIL':
         health_chk_res = "TODO"
     elif final_result in ['PASS', 'BLOCKED']:
         health_chk_res = "NA"
-    log_path = "NA"
+    log_path = getattr(item, 'logpath')
     nodes = len(CMN_CFG['nodes'])  # number of target hosts
     nodes_hostnames = [n['hostname'] for n in CMN_CFG['nodes']]
+    exec_info = ''
+    try:
+        call_duration = getattr(item, 'call_duration')
+    except AttributeError:
+        call_duration = 0
     data_kwargs = dict(os=os_ver,
                        build=item.config.option.build,
                        build_type=item.config.option.build_type,
                        client_hostname=system_utils.get_host_name(),
-                       execution_type="Automated",
+                       execution_type=_item_dict['execution_type'],
                        health_chk_res=health_chk_res,
                        are_logs_collected=are_logs_collected,
                        log_path=log_path,
-                       testPlanLabel=_item_dict['tp_label'],  # get from TP    tp.fields.labels
-                       testExecutionLabel=_item_dict['te_label'],  # get from TE  te.fields.labels
+                       testPlanLabel=_item_dict['tp_label'],  # get from TP
+                       testExecutionLabel=_item_dict['te_label'],  # get from TE
                        nodes=nodes,
                        nodes_hostnames=nodes_hostnames,
                        test_exec_id=item.config.option.te_tkt,
-                       test_exec_time=call.duration,
+                       test_exec_time=call_duration,
                        test_name=_item_dict['test_name'],
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
-                       test_result=final_result,
+                       test_result=final_result, # call start needs correction
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=marks,  # in mem te_meta
                        test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
-                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest
+                       test_type='Pytest',  # TE Avocado/CFT/Locust/S3bench/Pytest check marks
                        latest=True,
-                       # feature Should be read from master test plan board.
+                       # feature is read from individual test case Jira.
                        feature=_item_dict.get('test_domain', 'None'),
+                       dr_id=_item_dict['dr_id'],
+                       feature_id=_item_dict['feature_id'],
+                       platform_type=_item_dict['platform_type'],
+                       server_type=_item_dict['server_type'],
+                       enclosure_type=_item_dict['enclosure_type'],
+                       failure_string=exec_info,
                        db_username=d_u,
                        db_password=d_pass
                        )
@@ -409,6 +450,9 @@ def reset_imported_module_log_level():
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
+        if _logger.name in SKIP_DBG_LOGGING:
+            _logger.setLevel(logging.WARNING)
+    # Handle Place holders logging
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
         logging.getLogger(pkg).setLevel(logging.WARNING)
 
@@ -417,7 +461,7 @@ def reset_imported_module_log_level():
 def pytest_collection(session):
     """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    LOGGER.info(dir(session.config))
+    #LOGGER.info(dir(session.config))
     config = session.config
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
@@ -428,6 +472,7 @@ def pytest_collection(session):
     Globals.LOCAL_RUN = _local
     Globals.TP_TKT = config.option.tp_ticket
     Globals.BUILD = config.option.build
+    Globals.TARGET = config.option.target
     if _distributed:
         required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
@@ -474,6 +519,15 @@ def pytest_collection(session):
                     selected_tests.append(test_found)
             CACHE.store(item.nodeid, test_found)
         with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_SELECTED_TESTS), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in selected_tests:
+                write.writerow([test])
+        if is_parallel:
+            te_selected_csv = str(config.option.te_tkt) + "_parallel.csv"
+        else:
+            te_selected_csv = str(config.option.te_tkt) + "_non_parallel.csv"
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, te_selected_csv), 'w') \
                 as test_file:
             write = csv.writer(test_file)
             for test in selected_tests:
@@ -539,6 +593,13 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
     Globals.ALL_RESULT = report
     setattr(item, "rep_" + report.when, report)
+    try:
+        attr = getattr(item, 'call_duration')
+    except AttributeError as attr_error:
+        LOGGER.warning('Exception %s occurred', str(attr_error))
+        setattr(item, "call_duration", call.duration)
+    else:
+        setattr(item, "call_duration", call.duration + attr)
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
@@ -550,6 +611,14 @@ def pytest_runtest_makereport(item, call):
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'teardown':
             try:
+                remote_path = os.path.join(params.NFS_BASE_DIR,
+                                           Globals.BUILD, Globals.TP_TKT,
+                                           Globals.TE_TKT, test_id,
+                                           datetime.datetime.fromtimestamp(
+                                               time.time()).strftime(DT_PATTERN)
+                                           )
+                setattr(report, "logpath", remote_path)
+                setattr(item, "logpath", remote_path)
                 if jira_update:
                     db_user, db_pass = get_db_credential()
                     jira_id, jira_pwd = get_jira_credential()
@@ -560,6 +629,7 @@ def pytest_runtest_makereport(item, call):
                         if jira_update:
                             task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
                         if db_update:
+                            # capture exec info
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
                     except (requests.exceptions.RequestException, Exception) as fault:
@@ -645,6 +715,77 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
 
+def check_cortx_cluster_health():
+    """Check the cluster health before each test is picked up for run."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                            username=node['username'],
+                            password=node['password'])
+        result = health.check_node_health()
+        assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
+        health.disconnect()
+    LOGGER.info("Cluster status is healthy.")
+
+
+def check_cluster_storage():
+    """Checks nodes storage and accepts till 98 % occupancy."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                        username=node['username'],
+                        password=node['password'])
+        ha_total, ha_avail, ha_used = health.get_sys_capacity()
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
+        health.disconnect()
+
+
+def pytest_runtest_logstart(nodeid, location):
+    """
+    Hook used to identify if it is good to start next test.
+    Should also work with parallel execution.
+    :param nodeid: Node identifier for a test case. An absolute class path till function.
+    :param location: file, line, test name.
+    :return:
+    """
+    current_suite = None
+    path = "file://" + os.path.realpath(location[0])
+    if location[1]:
+        path += ":" +str(location[1] + 1)
+    current_file = nodeid.split("::")[0]
+    file_suite = current_file.split("/")[-1]
+    if location[2].find(".") != -1:
+        suite = location[2].split(".")[0]
+        name = location[2].split(".")[-1]
+    else:
+        name = location[2]
+        splitted = nodeid.split("::")
+        try:
+            ind = splitted.index(name.split("[")[0])
+        except ValueError:
+            try:
+                ind = splitted.index(name)
+            except ValueError:
+                ind = 0
+        if splitted[ind-1] == current_file:
+            suite = None
+        else:
+            suite = current_suite
+    # Check health status of target
+    target = Globals.TARGET
+    if not Globals.LOCAL_RUN:
+        try:
+            check_cortx_cluster_health()
+            check_cluster_storage()
+        except (AssertionError, Exception) as fault:
+            pytest.exit(f'Health check failed for cluster {target}', 1)
+
+
 def pytest_runtest_logreport(report: "TestReport") -> None:
     """
     Provides an intercept to create a) generate log per test case
@@ -688,12 +829,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = os.path.join(params.NFS_BASE_DIR,
-                                   Globals.BUILD, Globals.TP_TKT,
-                                   Globals.TE_TKT, test_id,
-                                   datetime.datetime.fromtimestamp(
-                                       time.time()).strftime(DT_PATTERN)
-                                   )
+        remote_path = getattr(report, 'logpath')
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -704,20 +840,30 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
-        comment = "Log file path: {}".format(resp[1])
+        comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
-            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-            if data:
-                resp = task.update_execution_details(data=data, test_id=test_id,
-                                                     comment=comment)
-                if resp:
-                    LOGGER.info("Added execution details comment in: %s", test_id)
+            try:
+                if Globals.tp_meta['te_meta']['te_id'] == Globals.TE_TKT:
+                    test_run_id = next(d['test_run_id'] for i, d in enumerate(
+                        Globals.tp_meta['test_meta']) if d['test_id'] ==
+                                       test_id)
+                    resp = task.update_execution_details(
+                                    test_run_id=test_run_id, test_id=test_id,
+                                    comment=comment)
+                    if resp:
+                        LOGGER.info("Added execution details comment in: %s",
+                                    test_id)
+                    else:
+                        LOGGER.error("Failed to comment to %s", test_id)
                 else:
-                    LOGGER.error("Failed to comment to %s", test_id)
-            else:
-                LOGGER.error("Failed to add log file path to %s", test_id)
+                    LOGGER.error("Failed to get correct TE id. \nExpected: "
+                                 "%s\nActual: %s", Globals.TE_TKT,
+                                 Globals.tp_meta['te_meta']['te_id'])
+            except KeyError:
+                LOGGER.error("KeyError: Failed to add log file path to %s",
+                             test_id)
 
 
 @pytest.fixture(scope='function')
@@ -806,3 +952,18 @@ def run_io_sequentially(
         users=users, buckets=buckets, files_count=files_count,
         prefs=prefs_dict)
     run_data_check_obj.stop_io(users, di_check=di_check)
+
+
+def filter_report_session_finish(session):
+    if session.config.option.xmlpath:
+        path = session.config.option.xmlpath
+        tree = ET.parse(path)
+        root = tree.getroot()
+        with open(path, "w", encoding="utf-8") as logfile:
+            logfile.write('<?xml version="1.0" encoding="UTF-8"?>')
+            root[0].attrib["package"] = "root"
+            for element in root[0]:
+                element.attrib["classname"] = element.attrib[
+                    "classname"].split(".")[-1]
+
+            logfile.write(ET.tostring(root[0], encoding="unicode"))

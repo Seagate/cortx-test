@@ -20,6 +20,7 @@
 
 import getpass
 import os
+import re
 import sys
 from collections import Counter
 from datetime import date
@@ -30,8 +31,36 @@ from jira import JIRA
 
 BUGS_PRIORITY = ["Blocker", "Critical", "Major", "Minor", "Trivial"]
 TEST_STATUS = ["PASS", "FAIL", "ABORTED", "BLOCKED", "TODO"]
-FEATURES = ["User Operations", "Scalability", "Availability", "Longevity", "Usecases",
-            "Data Recovery", "CrossConnect"]
+FEATURES = [
+    " Longevity",
+    " Performance",
+    " Security",
+    "Application Testing (UDX, BearOS etc..)",
+    "Capacity tests",
+    "Cluster Health Operations",
+    "Cluster Manager Operation (Provision)",
+    "Cluster Monitor Operation (Alerts)",
+    "Cluster Support (Logging, support bundle, health schema)",
+    "Cluster User Operation (CSM)",
+    "CSM GUI Cluster User Operation Tests",
+    "Data Integrity",
+    "Data recovery",
+    "Failure Tests",
+    "FRU Replacement Validation",
+    "Functionality",
+    "High Availability",
+    "Interface",
+    "IO Workload",
+    "Lyve Pilot Tests",
+    "Open-Source Tests",
+    "Platform Operations",
+    "Robustness and Reliability",
+    "S3 IO load tests",
+    "S3 Operations",
+    "Scalability",
+    "Stress Tests",
+    "System Integration",
+]
 
 
 def get_test_executions_from_test_plan(test_plan: str, username: str, password: str) -> [dict]:
@@ -60,7 +89,8 @@ def get_test_executions_from_test_plan(test_plan: str, username: str, password: 
     if response.status_code == HTTPStatus.OK:
         return response.json()
     print(f'get_test_executions GET on {jira_url} failed')
-    print(f'HEADERS={response.request.headers}\n'
+    print(f'RESPONSE={response.text}\n'
+          f'HEADERS={response.request.headers}\n'
           f'BODY={response.request.body}')
     sys.exit(1)
 
@@ -80,16 +110,15 @@ def get_test_list_from_test_plan(test_plan: str, username: str, password: str) -
     """
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testplan/{test_plan}/test'
     responses = []
-    all_tests = False
     i = 0
-    while not all_tests:
+    while True:
         i = i + 1
         query = {'limit': 100, 'page': i}
         response = requests.get(jira_url, auth=(username, password), params=query)
         if response.status_code == HTTPStatus.OK and response.json():
             responses.extend(response.json())
         elif response.status_code == HTTPStatus.OK and not response.json():
-            all_tests = True
+            break
         else:
             print(f'get_test_list GET on {jira_url} failed')
             print(f'RESPONSE={response.text}\n'
@@ -111,19 +140,24 @@ def get_test_from_test_execution(test_execution: str, username: str, password: s
         [{"key":"TEST-10963", "status":"FAIL", "defects": []}, {...}]
         "defects" = [{key:"EOS-123", "summary": "Bug Title", "status": "New/Started/Closed"},{}]
     """
+    responses = []
     jira_url = f'https://jts.seagate.com/rest/raven/1.0/api/testexec/{test_execution}/test'
-    query = {'detailed': "true"}
-    response = requests.get(jira_url, auth=(username, password), params=query)
-    if response.status_code == HTTPStatus.OK and response.json():
-        return response.json()
-    if response.status_code == HTTPStatus.OK and not response.json():
-        print("No tests associated with this test execution")
-        sys.exit(1)
-    print(f'get_test_from_test_execution GET on {jira_url} failed')
-    print(f'RESPONSE={response.text}\n'
-          f'HEADERS={response.request.headers}\n'
-          f'BODY={response.request.body}')
-    sys.exit(1)
+    i = 0
+    while True:
+        i = i + 1
+        query = {'detailed': "true", 'limit': 100, 'page': i}
+        response = requests.get(jira_url, auth=(username, password), params=query)
+        if response.status_code == HTTPStatus.OK and response.json():
+            responses.extend(response.json())
+        elif response.status_code == HTTPStatus.OK and not response.json():
+            break
+        else:
+            print(f'get_test_from_test_execution GET on {jira_url} failed')
+            print(f'RESPONSE={response.text}\n'
+                  f'HEADERS={response.request.headers}\n'
+                  f'BODY={response.request.body}')
+            sys.exit(1)
+    return responses
 
 
 def get_issue_details(issue_id: str, username: str, password: str):
@@ -181,23 +215,43 @@ def get_defects_from_test_plan(test_plan: str, username: str, password: str) -> 
     return defects
 
 
-def get_build_from_test_plan(test_plan: str, username: str, password: str):
-    """Get build number from given test plan."""
+def get_details_from_test_plan(test_plan: str, username: str, password: str) -> dict:
+    """Get details for given test plan."""
     test_plan_details = get_issue_details(test_plan, username, password)
-    build_no = "None"
-    if test_plan_details.fields.environment:
-        build_no = test_plan_details.fields.environment
+    fields = {"platformType": test_plan_details.fields.customfield_22982,
+              "serverType": test_plan_details.fields.customfield_22983,
+              "enclosureType": test_plan_details.fields.customfield_22984,
+              "branch": test_plan_details.fields.customfield_22981,
+              "buildNo": test_plan_details.fields.customfield_22980}
+    out_dict = {}
+    for key, value in fields.items():
+        if value:
+            out_dict.update({key: value[0]})
+        else:
+            print(f"Test Plan {test_plan} has {key} field empty.")
+            sys.exit(1)
+    env = test_plan_details.fields.environment
+    if env:
+        match = re.match(r"([0-9]+)([a-z]+)", env, re.I)
+        if not match:
+            print(f"Environment field for Test Plan {test_plan} does not have correct format "
+                  f"e.g. 3Node or 1node.")
+            sys.exit(1)
+        out_dict["nodes"] = f"{match.groups()[0]} {match.groups()[1]}"
     else:
-        print(f"Test Plan {test_plan} has environment field empty. Setup it to build number.")
+        print(f"Environment field for Test Plan {test_plan} is empty."
+              f"Example values, 3Node or 1node.")
         sys.exit(1)
-    return build_no
+
+    return out_dict
 
 
-def get_main_table_data(build_no: str):
+def get_main_table_data(tp_info: dict, report_type: str):
     """Get header table data."""
-    data = [["CFT Exec Report"], ["Product", "Lyve Rack"],
-            ["Build", build_no],
-            ["Date", date.today().strftime("%B %d, %Y")], ["System", ""]]
+    data = [[f"CFT {report_type} Report"], ["Product", "Lyve Rack - 2"],
+            ["Build", f"{tp_info['branch']} {tp_info['buildNo']}"],
+            ["Date", date.today().strftime("%B %d, %Y")],
+            ["System", f"{tp_info['nodes']} {tp_info['platformType']}"]]
     return data
 
 
@@ -214,7 +268,7 @@ def get_reported_bug_table_data(test_plan: str, username: str, password: str):
         else:
             cortx_bugs[defect.fields.priority.name] += 1
     data = [
-        ["Reported Bugs"], ["Priority", "Test Setup", "Cortx Stack"],
+        ["Reported Bugs"], ["Priority", "Test Issues", "Cortx Issues"],
         ["Total", sum(test_bugs.values()), sum(cortx_bugs.values())],
     ]
     for priority in BUGS_PRIORITY:
@@ -231,7 +285,7 @@ def get_overall_qa_report_table_data(test_plan: str, test_plan1: str,
     build1 = "NA"
     count_1 = Counter()
     if test_plan1:
-        build1 = get_build_from_test_plan(test_plan1, username, password)
+        build1 = get_details_from_test_plan(test_plan1, username, password)["buildNo"]
         tests = get_test_list_from_test_plan(test_plan1, username, password)
         count_1 = Counter(test['latestStatus'] for test in tests)
 

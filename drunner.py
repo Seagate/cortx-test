@@ -164,13 +164,13 @@ def run(opts: dict) -> None:
     tp_resp = jira_obj.get_issue_details(test_plan)  # test plan id
     tp_meta['test_plan_label'] = tp_resp.fields.labels
     tp_meta['environment'] = tp_resp.fields.environment
+    build = tp_resp.fields.customfield_22980
+    branch = tp_resp.fields.customfield_22981
+    tp_meta['build'] = build if build else 0
+    tp_meta['branch'] = branch if branch else 'stable'
+
     if not opts.build and not opts.build_type:
-        test_env = tp_meta.get('environment')
-        try:
-            _build_type, _build = test_env.split('_')
-        except ValueError:
-            raise EnvironmentError('Test plan env needs to be in format <build_type>_<build#>')
-        opts.build, opts.build_type = _build, _build_type
+        opts.build, opts.build_type = tp_meta['build'], tp_meta['branch']
 
     log_home = create_log_dir_if_not_exists()
     # Create a reverse map of test id as key and values as node_id, tags
@@ -368,7 +368,8 @@ def get_te_tickets_data(ticket: str) -> Tuple[list, str]:
     """
     jira_id, jira_pwd = runner.get_jira_credential()
     jira_obj = jira_utils.JiraTask(jira_id, jira_pwd)
-    test_list, te_tag = jira_obj.get_test_ids_from_te(ticket)
+    test_tuple, te_tag = jira_obj.get_test_ids_from_te(ticket)
+    test_list = list(list(zip(*test_tuple))[0])
     if len(test_list) == 0 or te_tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list, te_tag

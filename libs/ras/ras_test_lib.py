@@ -87,24 +87,16 @@ class RASTestLib(RASCoreLib):
                          RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
             raise CTException(err.RAS_ERROR, error.args[0])
 
-    def start_message_bus_reader_cmd(self, sspl_exchange: str, sspl_key: str,
-                                     **kwargs) -> bool:
+    def start_message_bus_reader_cmd(self) -> bool:
         """
-        Function will check for the disk space alert for sspl.
+        Function will check for the alerts in message bus.
 
-        :param str sspl_exchange: sspl exchange string
-        :param str sspl_key: sspl key string
-        :keyword sspl_pass: sspl_pass
         :return: Command response along with status(True/False)
         :rtype: bool
         """
-        sspl_pass = kwargs.get("sspl_pass") if kwargs.get("sspl_pass") else \
-            self.sspl_pass
         try:
             LOGGER.info("Start to read message bus on node %s ", self.host)
-            cmd_output = super().start_message_bus_reader_cmd(sspl_exchange,
-                                                              sspl_key,
-                                                              sspl_pass=sspl_pass)
+            cmd_output = super().start_message_bus_reader_cmd()
             LOGGER.debug(cmd_output)
             return cmd_output
         except BaseException as error:
@@ -423,19 +415,19 @@ class RASTestLib(RASCoreLib):
         """
         common_cfg = RAS_VAL["ras_sspl_alert"]
         try:
-            LOGGER.info("Checking status of sspl and rabbitmq services")
+            LOGGER.info("Checking status of sspl and kafka services")
             resp = self.s3obj.get_s3server_service_status(
                 common_cfg["service"]["sspl_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             resp = self.s3obj.get_s3server_service_status(
-                common_cfg["service"]["rabitmq_service"], host=self.host,
+                common_cfg["service"]["kafka_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             LOGGER.info(
-                "Verified sspl and rabitmq services are in running state")
+                "Verified sspl and kafka services are in running state")
             time.sleep(common_cfg["sleep_val"])
 
             LOGGER.info("Fetching sspl alert response")
@@ -455,7 +447,7 @@ class RASTestLib(RASCoreLib):
                 "======================================================")
 
             LOGGER.info(
-                "Checking if alerts are generated on rabbitmq channel")
+                "Checking if alerts are generated on message bus")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
             self.node_utils.execute_cmd(cmd=cmd,
@@ -1073,3 +1065,31 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
 
         return True, response
+
+    def update_enclosure_values(self, enclosure_vals: dict) -> Tuple[bool, dict]:
+        """
+        This will update values for enclosure in yaml/json file using conf store
+        :param enclosure_vals: dict of {field: value}
+        :return: True/False, values
+        :rtype: bool, dict
+        """
+        try:
+            url = cmn_cons.SSPL_GLOBAL_CONF_URL
+            LOGGER.info("Update correct values of enclosure using conf")
+            enclosure_vals['CONF_PRIMARY_IP'] = CMN_CFG["enclosure"]["primary_enclosure_ip"]
+            enclosure_vals['CONF_PRIMARY_PORT'] = 80
+            enclosure_vals['CONF_SECONDARY_IP'] = CMN_CFG["enclosure"]["secondary_enclosure_ip"]
+            enclosure_vals['CONF_SECONDARY_PORT'] = 80
+            enclosure_vals['CONF_ENCL_USER'] = CMN_CFG["enclosure"]["enclosure_user"]
+            secret_key = self.encrypt_password_secret(CMN_CFG["enclosure"]["enclosure_pwd"])[1]
+            enclosure_vals['CONF_ENCL_SECRET'] = secret_key
+
+            self.set_conf_store_vals(url=url, encl_vals=enclosure_vals)
+            controller_vals = self.get_conf_store_enclosure_vals(field='controller')
+            LOGGER.info("Updated values are : %s", controller_vals)
+        except Exception as error:
+            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                         RASTestLib.update_enclosure_values.__name__, error)
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return True, controller_vals

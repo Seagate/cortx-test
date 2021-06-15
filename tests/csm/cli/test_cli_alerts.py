@@ -44,6 +44,7 @@ def setup_function():
     """
     LOGGER.info("STARTED : Setup operations for test function")
     LOGGER.info("Login to CORTX CLI using admin")
+    ALERT_OBJ.open_connection()
     login = ALERT_OBJ.login_cortx_cli()
     assert_utils.assert_equals(
         login[0], True, "Server authentication check failed")
@@ -58,6 +59,7 @@ def teardown_function():
     """
     LOGGER.info("STARTED : Teardown operations for test function")
     ALERT_OBJ.logout_cortx_cli()
+    ALERT_OBJ.close_connection()
     LOGGER.info("Ended : Teardown operations for test function")
 
 

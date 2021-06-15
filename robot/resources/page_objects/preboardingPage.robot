@@ -1,8 +1,8 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Keywords ***
 
@@ -52,7 +52,8 @@ Validate ELUA Success
     Click LicenseCancle Button
     Click Accept Button
     Verify Presence of Elements on EULA Page
-    Click LicenseCancle Image
+    #Click LicenseCancle Image
+    Click LicenseCancle Button
     Click Accept Button
     sleep  1s
     Click License Button

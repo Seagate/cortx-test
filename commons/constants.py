@@ -80,9 +80,22 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
+CONF_STORE_ENCL_KEY = "storage_enclosure>enc_614f595926904dd0ab0f68395bfa7f11>controller"
+CONF_PRIMARY_IP = CONF_STORE_ENCL_KEY + ">primary>ip"
+CONF_PRIMARY_PORT = CONF_STORE_ENCL_KEY + ">primary>port"
+CONF_SECONDARY_IP = CONF_STORE_ENCL_KEY + ">secondary>ip"
+CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
+CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
+CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
+CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
+SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
+SSPL_CFG_URL = "yaml:///etc/sspl.conf"
+SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 
 """ S3 constants """
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -96,6 +109,9 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.SLAPD = "slapd"
+const.HAPROXY = "haproxy"
+const.S3AUTHSERVER = "s3authserver"
 const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
 const.S3_LOG_PATH = "/var/log/seagate/s3"
 const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
@@ -212,9 +228,10 @@ S3ACCOUNT_HELP_CMDS = [
         "s3accounts",
         "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create}",
-                  "show         Displays S3 Accounts On the cli",
-                  "create       Create a new S3 Account."]
+                  "{show,create,reset_password}",
+                  "show                Displays S3 Accounts On the cli",
+                  "create              Create a new S3 Account",
+                  "reset_password      Reset password for S3 Account"]
 S3ACC_CREATE_HELP = ["positional arguments:",
                      "account_name   Name to be given to S3 account",
                      "account_email  Email to be given to S3 account"]
@@ -250,7 +267,43 @@ JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
 JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
+PIP_CONFIG = "/etc/pip.conf"
 
 #Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
+
+class SwAlerts:
+    SVCS_3P = [
+        "hare-consul-agent.service",
+        "elasticsearch.service",
+        "statsd.service",
+        "rsyslog.service",
+#        "haproxy.service",  # commented due to defect EOS-20842
+        "slapd.service",
+        "lnet.service",
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"
+    ]
+
+    SVCS_3P_UNAVAIL_VM = [
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"]
+
+    SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
+
+    SVC_LOAD_TIMEOUT_SEC = 30
+    class AlertType:
+        FAULT = "fault"
+        RESOLVED = "fault_resolved"
+
+    class Severity:
+        CRITICAL = "critical"
+        INFO = "informational"
+
+    class ResourceType:
+        SW_SVC = "node:sw:os:service"

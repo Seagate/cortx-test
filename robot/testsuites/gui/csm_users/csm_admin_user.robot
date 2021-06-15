@@ -1,11 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource   ${EXECDIR}/resources/page_objects/alertPage.robot
-Resource   ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource   ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource   ${EXECDIR}/resources/page_objects/s3accountPage.robot
-Resource   ${EXECDIR}/resources/page_objects/settingsPage.robot
-Resource   ${EXECDIR}/resources/page_objects/userSettingsLocalPage.robot
+Resource   ${RESOURCES}/resources/page_objects/alertPage.robot
+Resource   ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource   ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource   ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
+Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -20,11 +21,11 @@ ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
 ${Sub_tab}  None
-${page name}  MANAGE_MENU_ID
+${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${server_file_name}  s3server.pem
 
 *** Keywords ***
@@ -39,17 +40,17 @@ SSL certificate expiration alert Verification
     ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
     ${file_name}=  Set Variable  stx_${days}.pem
     Verify SSL status  ${installation_status_init}  ${file_name}
-    # # These following lines should be executed in case you have the proper machine
-    # Install uploaded SSL
-    # wait for page or element to load  5 minutes  #will re-start all service
-    # Close Browser
-    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # wait for page or element to load  20s  # Took time to load dashboard after install
-    # Reload Page
-    # wait for page or element to load  10s  # Took time to load dashboard after install
-    # Verify SSL status  ${installation_status_success}  ${file_name}
-    # # Find the alert and verifiy
-    # Verify Presence SSL certificate expires alert  ${days}
+    # These following lines should be executed in case you have the proper machine
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${file_name}
+    # Find the alert and verifiy
+    Verify Presence SSL certificate expires alert  ${days}
 
 *** Test Cases ***
 
@@ -57,7 +58,7 @@ TEST-5326
     [Documentation]  Test that "Add new user" should open a form to create new user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-5326
     [Tags]  Priority_High  TEST-5326
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click on add user button
     Log To Console And Report  Verifying the Form To Create CSM Users
     Verify A Form Got Open To Create CSM Users
@@ -66,7 +67,7 @@ TEST-1852
     [Documentation]  Test that by clicking on the "cancel" it should close the form without creating new user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1852
     [Tags]  Priority_High  TEST-1852
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click on add user button
     Click On Cancel Button
     Log To Console And Report  Verify The Form Should Get Closed
@@ -76,7 +77,7 @@ TEST-5322
     [Documentation]  Test that Clicking "Create" Button after filling required fields should create a new user
     ...  Reference : https://jts.seagate.com/browse/TEST-5322
     [Tags]  Priority_High  Smoke_test  TEST-5322
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     ${new_user_name}=  Generate New User Name
     Create New CSM User  ${new_user_name}
     Click On Confirm Button
@@ -87,7 +88,7 @@ TEST-1851
     [Documentation]  Test that only valid user name must get added while adding username on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1851
     [Tags]  Priority_High  TEST-1851
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click On Add User Button
     Verify Only Valid User Allowed For Username
 
@@ -95,7 +96,7 @@ TEST-1853
     [Documentation]  Test that "Create" Button must remain disabled until required fields not filled on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1853
     [Tags]  Priority_High  TEST-1853
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click On Add User Button
     Verify Create Button Must Remain disabled
 
@@ -103,7 +104,7 @@ TEST-1854
     [Documentation]  Test that "Password" and "confirm password" field must remain hidden while adding password to user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1854
     [Tags]  Priority_High  TEST-1854
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click On Add User Button
     Verify Passwords Remain Hidden
 
@@ -111,7 +112,7 @@ TEST-1863
     [Documentation]  Test that error message should show in case of mismatch of "Password" and "confirm password" while adding user on the User Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1863
     [Tags]  Priority_High  TEST-1863
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click On Add User Button
     Verify Mismatch Password Error
 
@@ -119,14 +120,14 @@ TEST-1842
     [Documentation]  Test that root user must present when user navigate to manage page
     ...  Reference : https://jts.seagate.com/browse/TEST-1842
     [Tags]  Priority_High  TEST-1842
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Verify New User  ${username}
 
 TEST-1864
     [Documentation]  Test that an error message should show in case password does not follow proper guideline
     ...  Reference : https://jts.seagate.com/browse/TEST-1864
     [Tags]  Priority_High  TEST-1864
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Click On Add User Button
     Verify Only Valid Password Get Added
 
@@ -136,7 +137,7 @@ TEST-7396
     [Tags]  Priority_High  TEST-7396
     ${new_password}=  Generate New Password
     ${users_type}=  Create List  manage  monitor
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     FOR    ${value}    IN    @{users_type}
         ${new_user_name}=  Generate New User Name
         Create New CSM User  ${new_user_name}  ${new_password}  ${value}
@@ -156,7 +157,7 @@ TEST-7393
     ...  Reference : https://jts.seagate.com/browse/TEST-7393
     [Tags]  Priority_High  TEST-7393
     ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Edit CSM User Password  ${username}  ${new_password}  ${password}
     Re-login  ${username}  ${new_password}  ${page_name}
     Edit CSM User Password  ${username}  ${password}  ${new_password}
@@ -166,7 +167,7 @@ TEST-5325
     ...  Reference : https://jts.seagate.com/browse/TEST-5325
     [Tags]  Priority_High  Smoke_test  TEST-5325
     ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     ${new_user_name}=  Generate New User Name
     Create New CSM User  ${new_user_name}  ${new_password}  manage
     Click On Confirm Button
@@ -184,7 +185,7 @@ TEST-5323
     ...  Reference : https://jts.seagate.com/browse/TEST-5323
     [Tags]  Priority_High  Smoke_test  TEST-5323
     ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     ${new_user_name}=  Generate New User Name
     Create New CSM User  ${new_user_name}  ${new_password}
     Click On Confirm Button
@@ -198,7 +199,7 @@ TEST-1865
     [Tags]  Priority_High  TEST-1865
     ${new_password}=  Generate New Password
     ${users_type}=  Create List  manage  monitor
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     FOR    ${value}    IN    @{users_type}
         ${new_user_name}=  Generate New User Name
         Create New CSM User  ${new_user_name}  ${new_password}  ${value}
@@ -212,14 +213,14 @@ TEST-5327
     [Documentation]  Test that pagination bar must present on the manage user page
     ...  Reference : https://jts.seagate.com/browse/TEST-1865
     [Tags]  Priority_High  TEST-5327
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Verify Presence of Pagination
 
 TEST-5328
     [Documentation]  Test that pagination bar must have 5/10/15/All rows per page option
     ...  Reference : https://jts.seagate.com/browse/TEST-5328
     [Tags]  Priority_High  TEST-5328
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     ${fetched_values}=  Read Pagination Options
     ${actual_values}=  Create List  5  10  15  All
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
@@ -230,7 +231,7 @@ TEST-3583
     [Tags]  Priority_High  TEST-3583
     ${new_password}=  Generate New Password
     ${users_type}=  Create List  manage  monitor
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     FOR    ${value}    IN    @{users_type}
         ${new_user_name}=  Generate New User Name
         Create New CSM User  ${new_user_name}  ${new_password}  ${value}
@@ -239,7 +240,7 @@ TEST-3583
         Verify New User  ${new_user_name}
         Re-login  ${new_user_name}  ${new_password}  ${page_name}
         Validate CSM Login Success  ${new_user_name}
-        Re-login  ${new_user_name}  ${password}  ${page_name}
+        Re-login  ${username}  ${password}  ${page_name}
         Delete CSM User  ${new_user_name}
     END
 
@@ -250,7 +251,7 @@ TEST-7406
     ${new_password}=  Generate New Password
     ${new_user_name}=  Generate New User Name
     ${users_type}=  Create List  manage  monitor
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     FOR    ${value}    IN    @{users_type}
         Create New CSM User  ${new_user_name}  ${new_password}  ${value}
         Log To Console And Report  operation for ${value}
@@ -267,7 +268,7 @@ TEST-5186
     [Documentation]  Test that root user is not getting deleted from the system
     ...  Reference : https://jts.seagate.com/browse/TEST-5186
     [Tags]  Priority_High  TEST-5186
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     Verify Admin User Should Not Contain Delete Icon  ${username}
 
 TEST-5229
@@ -280,7 +281,7 @@ TEST-6338
     [Documentation]  Test that on 'Create Local User' form, role section should never be empty
     ...  Reference : https://jts.seagate.com/browse/TEST-6338
     [Tags]  Priority_High  TEST-6338
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}
     ${value}=  Fetch Radio Button Value
     Should Not Be Empty  ${value}
     Should be equal  ${value}  manage
@@ -309,50 +310,45 @@ TEST-18326
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
-    CSM GUI Logout
-    Enter Username And Password  ${S3_account_name}  ${S3_password}
-    Click Sigin Button
-    wait for page or element to load
-    Validate CSM Login Success  ${s3_account_name}
-    CSM GUI Logout
-    wait for page or element to load
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     ${S3_new_password}=  Generate New Password
     Edit S3 User Password  ${S3_account_name}  ${S3_new_password}  ${S3_new_password}
+    Re-login  ${S3_account_name}  ${S3_new_password}  S3_ACCOUNTS_TAB_ID
     Delete S3 Account  ${S3_account_name}  ${S3_new_password}  True
 
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
     [Tags]  Priority_High  CFT_Test  TEST-4871
+    ${test_id}    Set Variable    TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
     wait for page or element to load
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
 
 TEST-9045
     [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
     [Tags]  Priority_High  CFT_Test  TEST-9045
+    ${test_id}    Set Variable    TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    wait for page or element to load
+    wait for page or element to load  3s
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
-    # # These following lines should be executed in case you have the proper machine
-    # Install uploaded SSL
-    # wait for page or element to load  5 minutes  #will re-start all service
-    # Close Browser
-    # CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    # wait for page or element to load  20s  # Took time to load dashboard after install
-    # Reload Page
-    # wait for page or element to load  10s  # Took time to load dashboard after install
-    # Verify SSL status  ${installation_status_success}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_uploaded.png
+    # These following lines should be executed in case you have the proper machine
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${server_file_name}
+    Capture Page Screenshot  ${test_id}_ssl_installed.png
 
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
@@ -362,3 +358,74 @@ TEST-11152
     SSL certificate expiration alert Verification  1
     SSL certificate expiration alert Verification  5
     SSL certificate expiration alert Verification  30
+
+TEST-18330
+    [Documentation]  Test that reset password for s3 account does not accept invalid password
+    ...  Reference : https://jts.seagate.com/browse/TEST-18330
+    [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Invalid Password Not Accepted By Edit S3 Account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True
+
+TEST-18332
+    [Documentation]  Test that confirm rest password button remains
+    ...  disabled for password and confirm password does not match.
+    ...  Reference : https://jts.seagate.com/browse/TEST-18332
+    [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Mismatch Password Error For Edit S3account
+    CSM GUI Logout
+    Enter Username And Password  ${S3_account_name}  ${S3_password}
+    Click Sigin Button
+    wait for page or element to load
+    Delete S3 Account  ${S3_account_name}  ${S3_password}  True
+
+TEST-21589
+    [Documentation]  Test that CSM Admin user can delete empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-21589
+    [Tags]  Priority_High  TEST-21589  S3_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Delete s3 account using csm user  ${S3_account_name}
+
+TEST-21590
+    [Documentation]  Test that CSM Admin user cannot delete non-empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-21590
+    [Tags]  Priority_High  TEST-21590  S3_test
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  Bucket_TAB_ID
+    Click On Create Bucket Form
+    ${bucketname}=  Generate New User Name
+    Create Bucket  ${bucketname}
+    wait for page or element to load
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
+    wait for page or element to load
+    Re-login  ${S3_account_name}  ${S3_password}  MANAGE_MENU_ID
+    Navigate To Page  Bucket_TAB_ID
+    Delete Bucket  ${bucketname}
+    Delete S3 Account  ${S3_account_name}  ${password}  True

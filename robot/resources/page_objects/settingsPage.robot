@@ -1,13 +1,23 @@
 *** Settings ***
 Library    SeleniumLibrary
-Resource   ${EXECDIR}/resources/common/common.robot
-Variables  ${EXECDIR}/resources/common/element_locators.py
+Resource   ${RESOURCES}/resources/common/common.robot
+Variables  ${RESOURCES}/resources/common/element_locators.py
 
 *** Variables ***
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 ${default_file_name}  s3server.pem
 
 *** Keywords ***
+
+Check SSL Option Exists
+    [Documentation]  This keyword verifys that user can access System Maintenance Section
+    Navigate To Page  SETTINGS_ID
+    Page Should Contain Element  ${SETTINGS_SSL_BUTTON_ID}
+
+Check SSL Option Not Exists
+    [Documentation]  This keyword verifys that user can not access System Maintenance Section
+    Navigate To Page  SETTINGS_ID
+    Page Should Not Contain Element  ${SETTINGS_SSL_BUTTON_ID}
 
 Click On Upload New SSL File Button
     [Documentation]  Perform click operation on Upload New Software File Button
@@ -108,7 +118,7 @@ SSL Upload
     [Arguments]  ${Download_File_Path}  ${server_file_name}=${default_file_name}
     ${path}=  Download PEM File  ${Download_File_Path}  ${server_file_name}
     Log To Console And Report  ${path}
-    Upload File  CHOOSE_SSL_UPDATE_FILE_BTN_ID  ${path}
+    Upload File  CHOOSE_SSL_UPDATE_FILE_BUTTON_ID  ${path}
     Sleep  3s
     Click On Upload New SSL File Button
     Sleep  5s
@@ -118,7 +128,7 @@ SSL Gennerate and Upload
     [Arguments]  ${days}  ${Download_File_Path} 
     ${path}=  cert_gen  ${days}  ${Download_File_Path}
     Log To Console And Report  ${path}
-    Upload File  CHOOSE_SSL_UPDATE_FILE_BTN_ID  ${path}
+    Upload File  CHOOSE_SSL_UPDATE_FILE_BUTTON_ID  ${path}
     Sleep  3s
     Click On Upload New SSL File Button
     Sleep  5s

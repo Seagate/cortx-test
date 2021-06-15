@@ -1,12 +1,12 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm login
 Library     SeleniumLibrary
-Resource    ${EXECDIR}/resources/page_objects/loginPage.robot
-Resource    ${EXECDIR}/resources/page_objects/auditlogPage.robot
-Resource    ${EXECDIR}/resources/page_objects/preboardingPage.robot
-Resource    ${EXECDIR}/resources/common/common.robot
-Variables   ${EXECDIR}/resources/common/common_variables.py
-Variables   ${EXECDIR}/resources/common/common_variables.py
+Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource    ${RESOURCES}/resources/page_objects/auditlogPage.robot
+Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
+Resource    ${RESOURCES}/resources/common/common.robot
+Variables   ${RESOURCES}/resources/common/common_variables.py
+Variables   ${RESOURCES}/resources/common/common_variables.py
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -25,14 +25,14 @@ ${navigate_to_subpage}  False
 ${Sub_tab}  None
 ${username}
 ${password}
-${Download_File_Path}  \root\Downloads\
+${Download_File_Path}  /root/Downloads
 
 
 
 *** Test Cases ***
 
 TEST-21212
-    [Documentation]  Verify the audit log data for the logs seen/downloaded from audit log UI
+    [Documentation]  Test that CSM Audit logs are getting displayed in the Tabular format
     ...  Reference : https://jts.seagate.com/browse/TEST-21212
     [Tags]  Priority_High  Audit_log  TEST-21212  CSM_Audit_Log
     ${test_id}    Set Variable    TEST-21212
