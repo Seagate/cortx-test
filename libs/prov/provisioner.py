@@ -419,13 +419,14 @@ class Provisioner:
             chk = "srvnode-{}".format(node_id)
             cmd = common_cmd.CMD_PILLAR_DATA.format(chk, key)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug("pillar command output for {}'s {}: {}".format(chk, key, resp))
+            LOGGER.debug(f"pillar command output for {chk}'s {key}: {resp}")
             data1 = ansi_escape.sub('', resp[1])
             out = data1.strip()
             LOGGER.info("{} for {} is {}".format(key, chk, out))
             cmd = common_cmd.CMD_CONFSTORE_TMPLT.format(out)
             resp1 = node_obj.execute_cmd(cmd, read_lines=True)
-            LOGGER.debug("confstore template command output for {}'s {}: {}".format(chk, key, resp1))
+            LOGGER.debug(
+                f"confstore template command output for {chk}'s {key}: {resp1}")
             if resp1:
                 return True, "Key from pillar and confstore match."
             else:
@@ -436,4 +437,92 @@ class Provisioner:
                 Provisioner.confstore_verification.__name__)
             return False, error
 
+    @staticmethod
+    def set_ntpsysconfg(node_obj, time_server: str, timezone: str):
+        """
+        Helper function to set the system NTP configuration
+        param: node_obj: node object for remote execution
+        param: time_server: Value to be set for time_server
+        param: timezone:  Value to be set for time_zone
+        return: bool, Execution response
+        """
+        try:
+            cmd = common_cmd.CMD_SET_SYSTEM_NTP.format(time_server, timezone)
+            resp = node_obj.execute_cmd(cmd, read_lines=True)
+            if resp:
+                return True, f"Executed {cmd}"
+            else:
+                return False, f"Failed {cmd}"
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.set_ntpsysconfg.__name__)
+            return False, error
 
+    @staticmethod
+    def get_chrony(node_obj, time_server: str):
+        """
+        Helper function to grep the server value from /etc/chrony.conf
+        param: node_obj: node object for remote execution
+        param: time_server: Time server value to be grep
+        return: bool, Execution response
+        """
+        cmd = common_cmd.GET_CHRONY.format(time_server)
+        grep_chrony = node_obj.execute_cmd(cmd, read_lines=True)
+        if time_server in grep_chrony[0]:
+            return True, grep_chrony
+        else:
+            return False, f"{time_server} is not in /etc/chrony.conf"
+
+    @staticmethod
+    def get_ntpsysconfg(key: list, node_obj, node_id: int):
+        """
+        Helper function to get the system NTP configuration
+        param: key: NTP keys to be verified
+        param: node_obj: node object for remote execution
+        param: node_id: srvnode number
+        return: bool, Execution response
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        data1 = []
+        ntp = {}
+        try:
+            chk = "srvnode-{}".format(node_id)
+            cmd = common_cmd.CMD_GET_SYSTEM_NTP.format(chk)
+            resp = node_obj.execute_cmd(cmd, read_lines=True)
+            LOGGER.debug(f"pillar command output for {chk}'s system: {resp}\n")
+            for value in resp:
+                data1.append(ansi_escape.sub('', value).strip())
+            for key_val in key:
+                ntp[key_val] = data1[data1.index(key_val) + 1]
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.get_ntpsysconfg.__name__)
+            return False, error
+        return True, ntp
+
+    def sysconfg_verification(
+            self,
+            key: list,
+            node_obj,
+            node_id: int,
+            exp_t_srv: str,
+            exp_t_zone: str):
+        """
+        Helper function to verify the system NTP configuration
+        param: key: NTP keys to be verified
+        param: node_obj: node object for remote execution
+        param: node_id: srvnode number
+        param: exp_t_srv: Expected time_server value
+        param: exp_t_zone: Expected time_zone value
+        return: bool, Execution response
+        """
+        resp = self.get_ntpsysconfg(key, node_obj, node_id)
+        if resp[0]:
+            if resp[1][key[0]] == exp_t_srv and resp[1][key[1]] == exp_t_zone:
+                return True, resp[1]
+            else:
+                return False, f"NTP Configuration Verification Failed for srvnode-{node_id}"
+        else:
+            return resp
