@@ -22,7 +22,6 @@ pipeline {
     parameters {
         string(name: 'Branch', defaultValue: 'dev', description: 'Branch name of cortx-test', trim: true)
         string(name: 'TestPlanNumber', defaultValue: 'TEST-18383', description: 'Master Test plan number to clone', trim: true)
-        vm_list,vm_list,setupname, client, m_vip, tes, tp_new,JIRA_ID , JIRA_PWD
         string(name: 'Target_Node', description: 'Name of target setup mentioned in database', trim: true)
         text(name: 'DESC', description: 'This job triggers CSM GUI, Cortx-test and Load tests in parallel')
         string(name: 'Nodes_In_Target', defaultValue: '3', description: 'Number of nodes in target: 3 or 3N', trim: true)
