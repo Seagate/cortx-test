@@ -35,6 +35,7 @@ from commons.exceptions import CTException
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli_client import CortxCliClient
 
+
 class CortxNodeCli(CortxCliClient):
     """This class contains common methods for CORTX CLI derived from cli client lib"""
 
@@ -98,8 +99,8 @@ class CortxNodeCli(CortxCliClient):
 
     def login_node_cli(
             self,
-            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
-            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            username: str,
+            password: str,
             **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
