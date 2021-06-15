@@ -100,6 +100,8 @@ CSM GUI Logout
     [Documentation]  This keyword is used to logout of CSM GUI.
     wait until element is visible  ${LOG_OUT_ID}  timeout=20
     click element  ${LOG_OUT_ID}
+    wait until element is visible  ${LOG_OUT_DROPDOWN_ID}  timeout=20
+    click element  ${LOG_OUT_DROPDOWN_ID}
     wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
 Re-login

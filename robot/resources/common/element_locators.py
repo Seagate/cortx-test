@@ -10,6 +10,7 @@ CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 # CSM Dashboard Locators
 LOGGED_IN_USER_NAME_ID = 'header-username'
 LOG_OUT_ID = 'logout-icon'
+LOG_OUT_DROPDOWN_ID = 'logout-link'
 CAPACITY_TOTAL_LABEL_ID = 'capacity-total-text'
 CAPACITY_AVAILABLE_LABEL_ID = 'capacity-available-text'
 CAPACITY_USED_LABEL_ID = 'capacity-used-text'
