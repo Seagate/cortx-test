@@ -35,9 +35,6 @@ from commons.exceptions import CTException
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli_client import CortxCliClient
 
-LOGGER = logging.getLogger(__name__)
-
-
 class CortxNodeCli(CortxCliClient):
     """This class contains common methods for CORTX CLI derived from cli client lib"""
 

@@ -3,11 +3,9 @@ import logging
 
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
+from commons.constants import Sizes
 from libs.csm.cli.cortx_node_cli_resource import CortxNodeCLIResourceOps
 from libs.s3 import CM_CFG
-
-KB = 1024
-MB = KB * KB
 
 
 class NodeHealth:
@@ -48,7 +46,7 @@ class NodeHealth:
         # Verify json file created in predefined location
         file_path = ""  # ToDo
         resp = self.node_obj.get_file_size(file_path)
-        assert_utils.assert_true(resp[1] < 4 * MB, "The file size more than 4MB")
+        assert_utils.assert_true(resp[1] < 4 * Sizes.MB, "The file size more than 4MB")
         #   expect File has less than 4 MB size
         # Verify json format and contents of the file
         read_resp = self.node_obj.read_file(file_path)
@@ -70,7 +68,7 @@ class NodeHealth:
         # Verify json file created in predefined location
         file_path = ""  # ToDo
         resp = self.node_obj.get_file_size(file_path)
-        assert_utils.assert_true(resp[1] < 4 * MB, "The file size more than 4MB")
+        assert_utils.assert_true(resp[1] < 4 * Sizes.MB, "The file size more than 4MB")
         #   expect File has less than 4 MB size
         # Verify json format and contents of the file
         read_resp = self.node_obj.read_file(file_path)
@@ -93,7 +91,7 @@ class NodeHealth:
         # Verify json file created in predefined location
         file_path = ""  # ToDo
         resp = self.node_obj.get_file_size(file_path)
-        assert_utils.assert_true(resp[1] < 4 * MB, "The file size more than 4MB")
+        assert_utils.assert_true(resp[1] < 4 * Sizes.MB, "The file size more than 4MB")
         #   expect File has less than 4 MB size
         # Verify json format and contents of the file
         read_resp = self.node_obj.read_file(file_path)
