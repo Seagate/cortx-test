@@ -47,4 +47,4 @@ DG_FAULT = {"enclid": 0, "ctrl_name": ['A', 'B'], "operation": "Disabled",
             "disk_group": "dg00"}
 DG_FAULT_RESOLVED = {"enclid": 0, "ctrl_name": ["A", "B"],
                      "operation": "Enabled", "disk_group": "dg00",
-                     "phy_num": ["0.0", "0.2"], "poll": True}
+                     "phy_num": [], "poll": True}
