@@ -158,8 +158,8 @@ Delete IAMuser
     Log To Console And Report  Deleting IAMuser ${user_name}
     Action On The Table Element  ${IAM_USER_DELETE_ICON_XPATH}  ${user_name}
     Sleep  5s
-    wait until element is visible  ${CONFIRM_DELETE_BOX_BTN_ID}  timeout=60
-    Click Button  ${CONFIRM_DELETE_BOX_BTN_ID}
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
+    Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
 
 Reset Password IAMuser with invalid password
     [Documentation]  Functionality to try invalid password to Reset IAMuser Password
