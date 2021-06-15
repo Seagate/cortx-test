@@ -102,7 +102,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         """
         try:
             self.login_cortx_cli()
-            response = super().update_role(user_name, role, password)
+            response = super().update_role(user_name=user_name, role=role, current_password=password, confirm="Y")
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
