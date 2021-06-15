@@ -534,7 +534,8 @@ class TestNetworkFault:
                                                         resources=[
                                                          self.sspl_resource_id],
                                                         srvnode=self.current_srvnode)
-            assert_true(resp, f"Failed to disable {self.sspl_resource_id}")
+            assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
+                              f"on node {self.current_srvnode}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 4: Checking if SSPL is in stopped state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
