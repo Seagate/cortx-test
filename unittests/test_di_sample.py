@@ -71,15 +71,6 @@ class TestSample:
         run_data_chk_obj.stop_io_async(users=data, di_check=True)
         assert True, "msg"
 
-    # In test_06: function uses no fixture 'run_io_async'
-    # @pytest.mark.parametrize(
-    #     "run_io_async", [{'user': 2, 'buckets': 5, 'files_count': 10,
-    #                       'prefs': {'prefix_dir': 'test_06'}}],
-    #     indirect=['run_io_async'])
-    # def test_06(self):
-    #     time.sleep(6)
-    #     assert True, "msg"
-
     def test_07(self):
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)

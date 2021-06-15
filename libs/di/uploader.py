@@ -139,15 +139,15 @@ class Uploader:
                                size=size, mtime=stat_info.st_mtime)
             self.change_manager.add_file_to_bucket(
                 user_name, bucket, file_object)
-            os.remove(file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
     def start(self, users, buckets, files_count, prefs, stop_event):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
         users_home = params.LOG_DIR
         users_path = os.path.join(users_home, USER_JSON)
-        config_utils.create_content_json(
-            users_path, users, ensure_ascii=False)  # need test name prefix
+        config_utils.create_content_json(users_path, users, ensure_ascii=False)  # need test name prefix
         jobs = []
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]

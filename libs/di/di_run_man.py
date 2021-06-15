@@ -53,8 +53,6 @@ class ASyncIO:
         self.bg_thread.join()
         if di_check:
             self.verify_data_integrity(users)
-        if eventual_stop:
-            self.event.clear()
 
 
 class RunDataCheckManager(ASyncIO):
@@ -67,7 +65,6 @@ class RunDataCheckManager(ASyncIO):
 
     def start_io(self, users, buckets, files_count, prefs, event=None):
         event = event if event else self.event
-        print(event.is_set())
         self.uploader.start(users, buckets, files_count, prefs, event)
 
     def stop_io(self, users, di_check=True, eventual_stop=False):
@@ -76,8 +73,6 @@ class RunDataCheckManager(ASyncIO):
             self.event.set()
         if di_check:
             self.verify_data_integrity(users)
-        if eventual_stop:
-            self.event.clear()
 
     def run_io_sequentially(self, users, buckets=None, files_count=10,
                             prefs=None, di_check=True):

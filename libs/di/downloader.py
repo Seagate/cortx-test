@@ -108,7 +108,8 @@ class DataIntegrityValidator:
                                                                                                                objcsum,
                                                                                                                objectpath))
                     DataIntegrityValidator.failed_files.append(kwargs)
-                    os.remove(filepath)
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
         except Exception as fault:
             LOGGER.exception(fault)
             LOGGER.error(f'Exception occurred for item {kwargs} with exception {fault}')

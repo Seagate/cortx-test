@@ -875,6 +875,7 @@ def generate_random_string():
 def get_test_status(request, obj, max_timeout=5000):
     poll = time.time() + max_timeout  # max timeout
     while poll > time.time():
+        time.sleep(2)
         if request.session.testsfailed:
             obj.event.set()
             break

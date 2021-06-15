@@ -181,8 +181,7 @@ class DataManager(object):
                 if not data or user != data['name']:
                     data = self.get_container(level=C_LEVEL_USER)
                     data['name'] = user
-                bkt_container, flag = \
-                    self._get_bucket_container_from_buckets(data, bucket, user)
+                bkt_container, flag = self._get_bucket_container_from_buckets(data, bucket, user)
 
                 # usage files = self.get_files_within_bucket(bkt_container, user, bucket)
                 fdict = self.get_file_within_bucket(file_obj, bkt_container, bucket)
