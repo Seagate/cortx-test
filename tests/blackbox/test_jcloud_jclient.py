@@ -50,25 +50,26 @@ BLACKBOX_CONF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 class TestJcloudAndJclient:
     """Blaclbox jcloud and jclient Testsuite."""
 
-    @classmethod
-    def setup_class(cls):
+    def setup_method(self):
         """
         Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        It will perform all prerequisite test steps if any.
+        Initializing common variable which will be used in test and
+        teardown for cleanup
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.random_id = str(time.time())
-        cls.access_key = ACCESS_KEY
-        cls.secret_key = SECRET_KEY
-        cls.file_path_lst = []
-        cls.root_path = os.path.join(
+        self.log = logging.getLogger(__name__)
+        self.log.info("STARTED: Setup operations.")
+        self.random_id = str(time.time())
+        self.access_key = ACCESS_KEY
+        self.secret_key = SECRET_KEY
+        self.file_path_lst = []
+        self.root_path = os.path.join(
             os.getcwd(), TEST_DATA_FOLDER, "TestJcloudAndJclient")
-        if not system_utils.path_exists(cls.root_path):
-            system_utils.make_dirs(cls.root_path)
-            cls.log.info("Created path: %s", cls.root_path)
-        cls.log.info("setup jClientCloud on runner.")
+        if not system_utils.path_exists(self.root_path):
+            system_utils.make_dirs(self.root_path)
+            self.log.info("Created path: %s", self.root_path)
+        self.log.info("setup jClientCloud on runner.")
         res_ls = system_utils.execute_cmd(
             "ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
@@ -79,43 +80,21 @@ class TestJcloudAndJclient:
                 nfs_path=S3_CFG["nfs_path"],
                 ca_crt_path=S3_CFG["s3_cert_path"]
             )
-            cls.log.info(res)
+            self.log.info(res)
             if not res:
                 raise CTException(
                     S3_CLIENT_ERROR,
                     "Error: jcloudclient.jar or jclient.jar file does not exists")
-        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
-        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
-        resp = cls.update_jclient_jcloud_properties()
+        self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+        resp = self.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
-        cls.log.info("ENDED: setup test suite operations.")
 
-    @classmethod
-    def teardown_class(cls):
-        """
-        Function will be invoked after completion of all test case.
-
-        It will clean up resources which are getting created during test suite setup.
-        """
-        cls.log.info("STARTED: teardown test suite operations.")
-        if system_utils.path_exists(cls.root_path):
-            system_utils.remove_dirs(cls.root_path)
-        cls.log.info("Cleanup test directory: %s", cls.root_path)
-        cls.log.info("ENDED: teardown test suite operations.")
-
-    def setup_method(self):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test steps if any.
-        Initializing common variable which will be used in test and
-        teardown for cleanup
-        """
-        self.log.info("STARTED: Setup operations.")
         self.bucket_name = "jcloudjclientbucket-{}".format(time.perf_counter_ns())
         self.obj_name = "objkey{}".format(time.perf_counter_ns())
         self.test_file = "testfile{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.root_path, self.test_file)
+        self.bucket_list = list()
         self.log.info("Test file path: %s", self.file_path)
         self.log.info("ENDED: Setup operations.")
 
@@ -130,8 +109,7 @@ class TestJcloudAndJclient:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bucket_list = S3_TEST_OBJ.bucket_list()[1]
-        if self.bucket_name in bucket_list:
+        if self.bucket_name in self.bucket_list:
             resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("The bucket and all objects deleted successfully")
@@ -166,8 +144,7 @@ class TestJcloudAndJclient:
 
         return cmd
 
-    @classmethod
-    def update_jclient_jcloud_properties(cls):
+    def update_jclient_jcloud_properties(self):
         """
         Update jclient, jcloud properties with correct s3, iam endpoint.
 
@@ -176,17 +153,18 @@ class TestJcloudAndJclient:
         resp = False
         for prop_path in [BLACKBOX_CONF["jcloud_cfg"]["jclient_properties_path"],
                           BLACKBOX_CONF["jcloud_cfg"]["jcloud_properties_path"]]:
-            cls.log.info("Updating: %s", prop_path)
+            self.log.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
-                if prop_dict['iam_endpoint'] != cls.s3_iam:
-                    prop_dict['iam_endpoint'] = cls.s3_iam
-                if prop_dict['s3_endpoint'] != cls.s3_url:
-                    prop_dict['s3_endpoint'] = cls.s3_url
+                if prop_dict['iam_endpoint'] != self.s3_iam:
+                    prop_dict['iam_endpoint'] = self.s3_iam
+                if prop_dict['s3_endpoint'] != self.s3_url:
+                    prop_dict['s3_endpoint'] = self.s3_url
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7094")
     @CTFailOn(error_handler)
@@ -202,9 +180,11 @@ class TestJcloudAndJclient:
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp[1])
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info("ENDED: create bucket using Jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7095")
     @CTFailOn(error_handler)
@@ -234,6 +214,7 @@ class TestJcloudAndJclient:
             "STEP: 2 Bucket %s was deleted successfully", self.bucket_name)
         self.log.info("ENDED: delete bucket using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7096")
     @CTFailOn(error_handler)
@@ -266,8 +247,10 @@ class TestJcloudAndJclient:
         self.log.info(
             "STEP: 2 Put object to a bucket %s was successful", self.bucket_name)
         self.file_path_lst.append(self.file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: get object using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7097")
     @CTFailOn(error_handler)
@@ -283,6 +266,7 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             "Bucket created successfully", resp[1][:-1], resp[1])
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
             "STEP: 2 Uploading an object to a bucket %s", self.bucket_name)
@@ -315,6 +299,7 @@ class TestJcloudAndJclient:
             self.file_path))
         self.log.info("ENDED: put object using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7098")
     @CTFailOn(error_handler)
@@ -328,6 +313,7 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             "Bucket created successfully", resp[1][:-1], resp[1])
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info(
             "STEP: 2 Uploading an object to a bucket %s", self.bucket_name)
@@ -359,6 +345,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(self.file_path)
         self.log.info("ENDED: delete object using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7099")
     @CTFailOn(error_handler)
@@ -389,9 +376,11 @@ class TestJcloudAndJclient:
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Objects deleted successfully", resp[1][:-1], resp)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Successfully deleted all objects")
         self.log.info("ENDED: delete multiple objects using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7100")
     @CTFailOn(error_handler)
@@ -422,8 +411,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_equal(output_objname, self.obj_name, resp)
         self.log.info("STEP: 2 Get head object was successful")
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: head object using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7101")
     @CTFailOn(error_handler)
@@ -453,8 +444,10 @@ class TestJcloudAndJclient:
         self.log.info(
             "STEP: 2 Object exists in the bucket %s", self.bucket_name)
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: object exists using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7102")
     @CTFailOn(error_handler)
@@ -474,9 +467,12 @@ class TestJcloudAndJclient:
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Bucket deleted successfully", resp[1][:-1], resp)
+        if not resp[0]:
+            self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Bucket was successfully removed")
         self.log.info("ENDED: Remove bucket if empty")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7103")
     @CTFailOn(error_handler)
@@ -492,8 +488,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: create bucket using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7104")
     @CTFailOn(error_handler)
@@ -515,9 +513,11 @@ class TestJcloudAndJclient:
         bkt_lst = resp[1][9:].strip().split("\\n")
         self.log.info("Bucket List %s", bkt_lst)
         assert_utils.assert_in(self.bucket_name, bkt_lst, resp)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 All buckets were listed")
         self.log.info("ENDED: list bucket using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7105")
     @CTFailOn(error_handler)
@@ -538,9 +538,12 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             "Bucket deleted successfully", resp[1][:-1], resp[1])
+        if not resp[0]:
+            self.bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Bucket was successfully deleted")
         self.log.info("ENDED: delete bucket using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7106")
     @CTFailOn(error_handler)
@@ -568,8 +571,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_in(self.obj_name, resp[1], resp)
         self.log.info("STEP: 2 All objects were listed of bucket")
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: list object using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7107")
     @CTFailOn(error_handler)
@@ -598,8 +603,10 @@ class TestJcloudAndJclient:
             "Object deleted successfully", resp[1][:-1], resp[1])
         self.log.info("STEP: 2 Object was deleted successfully")
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: delete object using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7108")
     @CTFailOn(error_handler)
@@ -627,8 +634,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_equal(output_objname, self.obj_name, resp)
         self.log.info("STEP: 2 Get head object was successful")
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: head object using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7109")
     @CTFailOn(error_handler)
@@ -654,8 +663,10 @@ class TestJcloudAndJclient:
         self.log.info(
             "STEP: 2Put object to a bucket %s was successful", self.bucket_name)
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: put object using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7110")
     @CTFailOn(error_handler)
@@ -683,8 +694,10 @@ class TestJcloudAndJclient:
         self.log.info("STEP: 2 Object was downloaded successfully")
         self.file_path_lst.append(file_path)
         self.file_path_lst.append(os.path.join(os.getcwd(), self.obj_name))
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: put object using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7111")
     @CTFailOn(error_handler)
@@ -707,8 +720,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_in(success_msg, resp[1][:-1], resp[1])
         self.log.info(
             "STEP: 2 Bucket %s exists on s3 server", self.bucket_name)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Bucket exists using Jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7112")
     @CTFailOn(error_handler)
@@ -737,8 +752,10 @@ class TestJcloudAndJclient:
         self.log.info(
             "STEP: 2 Object exists in the bucket %s", self.bucket_name)
         self.file_path_lst.append(file_path)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: object exists using jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7529")
     @CTFailOn(error_handler)
@@ -759,9 +776,11 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         bucket_lst = [bkt.strip() for bkt in resp[1].split("\\n")]
         assert_utils.assert_in(self.bucket_name, bucket_lst, resp)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP 2: All the s3 bucket listed")
         self.log.info("ENDED: list buckets using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7531")
     @CTFailOn(error_handler)
@@ -787,6 +806,7 @@ class TestJcloudAndJclient:
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
+        self.bucket_list = bkt_lst
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
@@ -795,6 +815,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7532")
     @CTFailOn(error_handler)
@@ -812,6 +833,7 @@ class TestJcloudAndJclient:
             10)
         self.log.info(
             "STEP 1: Creating a bucket and uploading object was successful")
+        self.bucket_list.append(self.bucket_name)
         self.log.info(
             "STEP 2: Listing all the objects from buckets %s",
             self.bucket_name)
@@ -826,6 +848,7 @@ class TestJcloudAndJclient:
         self.file_path_lst.append(file_path)
         self.log.info("ENDED: list objects using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7533")
     @CTFailOn(error_handler)
@@ -848,8 +871,10 @@ class TestJcloudAndJclient:
         assert_utils.assert_in(success_msg, resp[1][:-1], resp[1])
         self.log.info(
             "STEP 2: Bucket %s exists on s3 server", self.bucket_name)
+        self.bucket_list.append(self.bucket_name)
         self.log.info("ENDED: Bucket exists using jcloudclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7534")
     @CTFailOn(error_handler)
@@ -874,6 +899,7 @@ class TestJcloudAndJclient:
             self.log.info(
                 "Bucket %s was created successfully", bkt_name_str)
         self.log.info("STEP 1: n buckets were created successfully")
+        self.bucket_list = bkt_lst
         self.log.info("STEP 2: Verifying all the buckets")
         resp = S3_TEST_OBJ.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
@@ -882,6 +908,7 @@ class TestJcloudAndJclient:
         self.log.info("STEP 2: All the s3 buckets created were verified")
         self.log.info("ENDED: max no of buckets supported using Jclient")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7535")
     @CTFailOn(error_handler)
@@ -913,5 +940,6 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             "Objects deleted successfully", resp[1][:-1], resp[1])
+        self.bucket_list.append(self.bucket_name)
         self.log.info("STEP 2: Successfully deleted multiple objects")
         self.log.info("ENDED: delete multiple objects using jclient")
