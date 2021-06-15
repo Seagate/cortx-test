@@ -2234,29 +2234,6 @@ class TestCliS3ACC:
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
-    @pytest.mark.tags("TEST-22744")
-    @CTFailOn(error_handler)
-    def test_22744_delete_s3_acc(self):
-        """
-        Delete S3 account using admin login
-        """
-        self.logger.info("%s %s", self.start_log_format, log.get_frame())
-        self.logger.info("Creating s3 account %s", self.s3acc_name)
-        resp = self.s3acc_obj.create_s3account_cortx_cli(
-            account_name=self.s3acc_name,
-            account_email=self.s3acc_email,
-            password=self.s3acc_password)
-        assert_utils.assert_equals(True, resp[0], resp[1])
-        self.logger.info("Created s3 account %s", self.s3acc_name)
-        self.logger.info("Deleting S3 account using admin credential")
-        resp = self.s3acc_obj.delete_s3account_cortx_cli(
-            account_name=self.s3acc_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.logger.info("Deleted S3 account using admin credential")
-        self.logger.info("%s %s", self.end_log_format, log.get_frame())
-
-    @pytest.mark.cluster_user_ops
-    @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22757")
     @CTFailOn(error_handler)
     def test_22757_delete_s3_acc_with_bkt(self):
