@@ -71,7 +71,7 @@ class TestProvSingleNode:
                              password=cls.passwd)
         cls.prov_obj = Provisioner()
         cls.set_ntp = None
-        cls.restored = None
+        cls.restored = True
         cls.CSM_USER = CortxCliCsmUser()
         cls.CSM_USER.open_connection()
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']

@@ -88,7 +88,9 @@ class TestProvThreeNode:
         cls.ntp_data = {}
         cls.CSM_USER = CortxCliCsmUser()
         cls.CSM_USER.open_connection()
-        cls.restored = None
+        cls.restored = True
+        cls.hlt_obj_list = [cls.hlt_obj1, cls.hlt_obj2, cls.hlt_obj3]
+        cls.no_nodes = len(cls.hlt_obj_list)
         LOGGER.info("Done: Setup module operations")
 
     def teardown_method(self):
@@ -97,7 +99,7 @@ class TestProvThreeNode:
         """
         if not self.restored:
             LOGGER.info("TEARDOWN: Restore NTP configuration data.")
-            for node in range(1, 4):
+            for node in range(1, self.no_nodes+1):
                 resp = self.prov_obj.set_ntpsysconfg(
                     node_obj=self.nd1_obj,
                     time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
@@ -313,7 +315,7 @@ class TestProvThreeNode:
         """
         LOGGER.info("-----     Started NTP configuration Validation     -----")
         self.restored = False
-        for node in range(1, 4):
+        for node in range(1, self.no_nodes+1):
             LOGGER.info(f"Store NTP configuration data for srvnode-{node}.")
             resp = self.prov_obj.get_ntpsysconfg(
                 self.ntp_keys, self.nd1_obj, node)
@@ -324,10 +326,9 @@ class TestProvThreeNode:
                     node, self.ntp_data[f"srvnode-{node}"]))
 
         LOGGER.info("Step 1: Check that the cluster is up and running.")
-        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
         timeserver_data = PROV_CFG['system_ntp']['timeserver']
         timezone_data = PROV_CFG['system_ntp']['timezone']
-        for hlt_obj in hlt_list:
+        for hlt_obj in self.hlt_obj_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are accessible and PCS looks clean.")
@@ -341,7 +342,7 @@ class TestProvThreeNode:
 
         LOGGER.info(
             "Step 3: Validate that NTP Configuration is same on all applicable nodes")
-        for node in range(1, 4):
+        for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=self.ntp_data["srvnode-1"][self.ntp_keys[0]],
@@ -367,7 +368,7 @@ class TestProvThreeNode:
             [ii for ii in timeserver_data if ii != ntp_time_server_val]))
         LOGGER.info("Step 5: Set time_server {} and timezone {}".format(
             set_timesrv_ip, set_timezone))
-        for node in range(1, 4):
+        for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.set_ntpsysconfg(
                 node_obj=self.nd1_obj,
                 time_server=set_timesrv_ip,
@@ -375,7 +376,7 @@ class TestProvThreeNode:
             assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Step 6: Validate set NTP configuration in pillar data")
-        for node in range(1, 4):
+        for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.sysconfg_verification(
                 self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
                 exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
@@ -392,7 +393,7 @@ class TestProvThreeNode:
             resp[1]))
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
-        for node in range(1, 4):
+        for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.set_ntpsysconfg(node_obj=self.nd1_obj,
                                                  time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                                                  timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
