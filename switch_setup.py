@@ -101,7 +101,6 @@ def set_s3_endpoints(cluster_ip):
     :param str cluster_ip: IP of the cluster
     :return: None
     """
-    # Removing contents of /etc/hosts file and writing new contents
     print("Setting s3 endpoints on client.")
     system_utils.run_local_cmd(cmd="rm -f /etc/hosts", flg=True)
     with open("/etc/hosts", 'w') as file:
@@ -113,7 +112,7 @@ def set_s3_endpoints(cluster_ip):
 
 def get_vm_creds():
     """Placeholder function to get generic vm credentials."""
-    return 'root', 'Seagate@1'
+    return tuple()
 
 
 def setup_client(host, clstr_ip):
@@ -127,11 +126,13 @@ def setup_client(host, clstr_ip):
     set_s3_endpoints(clstr_ip)
 
 
-def update_vm_db():
+def update_vm_db(args):
     """
     Free VM from setup.
+    This fucntion would be refactored to use service_acount_access when it is added as
+    a module.
     """
-    # cloned test plan csv name
+
     AVAILABLE_VM_CSV = 'available_vms.csv'
     vm_state = VmStateManagement(params.VM_COLLECTION)
     if args.action == "get_setup":
@@ -146,6 +147,7 @@ def update_vm_db():
     elif args.action == "mark_setup_free":
         lock_released = vm_state.unlock_system(args.setupname)
         return lock_released
+    lock_released = vm_state.unlock_system(args.setupname)
 
 
 def destroy_vm():
