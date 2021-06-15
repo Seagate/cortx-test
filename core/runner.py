@@ -25,12 +25,16 @@ import json
 import os
 import pathlib
 import threading
+import random
+import uuid
 import logging
 from collections import deque
 from typing import Tuple
 from typing import Optional
 from typing import Any
 from config import CMN_CFG
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -131,6 +135,51 @@ def cleanup():
         os.makedirs(latest)
     else:
         os.makedirs(os.path.join(log_dir, 'latest'))
+
+
+def run_global_io_async(args, event):
+    mgm_ops = ManagementOPs()
+    secret_range = random.SystemRandom()
+    prefs_dict = {'prefix_dir': f"global_io_{uuid.uuid4().hex}"}
+    while not event.is_set():
+        try:
+            users = mgm_ops.create_account_users(
+                nusers=5, use_cortx_cli=False)
+            users_buckets = mgm_ops.create_buckets(
+                nbuckets=2, users=users)
+        except BaseException as error:
+            continue
+        file_counts = secret_range.randint(10, 15)
+        run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        run_data_check_obj.start_io_async(
+            users=users_buckets, buckets=None, files_count=file_counts,
+            prefs=prefs_dict)
+        run_data_check_obj.stop_io_async(
+            users=users_buckets, di_check=args.data_integrity_chk,
+            eventual_stop=True)
+
+
+def start_parallel_io(args):
+    """
+    Function to start DI using RunDataManager in parallel
+    :param args: contains testrunner args
+    :return: threading event object to stop loop of run_gloabal_io_async
+    """
+    event = threading.Event()
+    thread = threading.Thread(
+        target=run_global_io_async, args=(args, event))
+    thread.start()
+    return thread, event
+
+
+def stop_parallel_io(io_thread, stop):
+    """
+    Function to set stop event and join testrunner parallel IO thread
+    :param io_thread: thread object
+    :param stop: threading event object
+    """
+    stop.set()
+    io_thread.join()
 
 
 class LRUCache:

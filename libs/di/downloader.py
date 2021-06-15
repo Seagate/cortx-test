@@ -108,6 +108,8 @@ class DataIntegrityValidator:
                                                                                                                objcsum,
                                                                                                                objectpath))
                     DataIntegrityValidator.failed_files.append(kwargs)
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
         except Exception as fault:
             LOGGER.exception(fault)
             LOGGER.error(f'Exception occurred for item {kwargs} with exception {fault}')
@@ -129,12 +131,14 @@ class DataIntegrityValidator:
         summary = dict()
         with open(params.UPLOADED_FILES, newline='') as f:
             reader = csv.reader(f)
-            uploadedFiles = list(reader)
+            # uploadedFiles = list(reader)
+            uploadedFiles = [el for el in list(reader) if el[0] in users.keys()]
 
         if len(uploadedFiles) == 0:
             print("uploaded data not found, exiting script")
             LOGGER.info("uploaded data not found, exiting script")
-            exit(1)
+            workers.end_workers()
+            return
 
         if os.path.exists(params.DELETE_OP_FILE_NAME):
             with open(params.DELETE_OP_FILE_NAME, newline='') as f:
@@ -167,8 +171,8 @@ class DataIntegrityValidator:
             kwargs['objectpath'] = ent[2]
             kwargs['bucket'] = ent[1]
             kwargs['objcsum'] = ent[3]
-            kwargs['accesskey'] = users.get(ent[0])[0]
-            kwargs['secret'] = users.get(ent[0])[1]
+            kwargs['accesskey'] = users.get(ent[0])['accesskey']
+            kwargs['secret'] = users.get(ent[0])['secretkey']
             workQ.put(kwargs)
             workers.wenque(workQ)
             LOGGER.info(f"Enqueued item {ix} for download and checksum compare")

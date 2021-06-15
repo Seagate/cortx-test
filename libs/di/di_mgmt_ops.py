@@ -23,6 +23,7 @@
 import time
 import random
 import logging
+import json
 import boto3
 from config import CMN_CFG
 from config import CSM_CFG
@@ -31,6 +32,7 @@ from commons.utils import assert_utils
 from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
 from libs.s3 import cortxcli_test_lib as cctl
+from libs.csm.rest.csm_rest_s3user import RestS3user
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +86,11 @@ class ManagementOPs:
         :return:
         """
         LOGGER.info(f"Creating Cortx s3 account users with {use_cortx_cli}")
-        s3acc_obj = cctl.CortxCliTestLib()
-        s3acc_obj.open_connection()
+        if use_cortx_cli:
+            s3acc_obj = cctl.CortxCliTestLib()
+            s3acc_obj.open_connection()
+        else:
+            s3acc_obj = RestS3user()
         ts = time.strftime("%Y%m%d_%H%M%S")
         users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
         s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -96,10 +101,18 @@ class ManagementOPs:
             udict.update({'user_name': user})
             udict.update({'emailid': email})
             udict.update({'password': s3_user_passwd})
+            if use_cortx_cli:
+                result, acc_details = s3acc_obj.create_account_cortxcli(
+                    user, email, s3_user_passwd)
+                assert_utils.assert_true(result, 'S3 account user not created.')
+            else:
+                resp = s3acc_obj.create_an_account(
+                    user, s3_user_passwd)
+                assert_utils.assert_equal(
+                    resp.status_code, 200,
+                    'S3 account user not created.')
+                acc_details = json.loads(resp.text)
 
-            result, acc_details = s3acc_obj.create_account_cortxcli(user, email,
-                                                                    s3_user_passwd)
-            assert_utils.assert_true(result, 'S3 account use not created.')
             LOGGER.info("Created s3 account %s", user)
             udict.update({'accesskey': acc_details["access_key"]})
             udict.update({'secretkey': acc_details["secret_key"]})
@@ -108,30 +121,40 @@ class ManagementOPs:
         return users
 
     @classmethod
-    def create_buckets(cls, nbuckets):
+    def create_buckets(cls, nbuckets, users=None, use_cortxcli=True):
         """
         Creates random buckets for each user. This api
         caches buckets for continuous crud operations on
         them.
-        :param nbuckets:
+        :param nbuckets: No of buckets to be created per user
+        :param users: user dict
         :return:
         """
-        users = dict()
+        users = dict() if not users else users
 
         # Create S3 account
-        cli = iam_core_lib.S3IamCli()
-        resp = cli.create_account_s3iamcli(CMN_CFG['emailid'],
-                                           CMN_CFG['ldap_username'],
-                                           CMN_CFG['ldap_passwd'])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
+        if use_cortxcli:
+            cli = cctl.CortxCliTestLib()
 
         buckets = {"user{}".format(i): list() for i in range(1, nbuckets + 1)}
 
         # create 10 buckets per user
         for k in users:
-            bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in range(1, nbuckets + 1)]
-            buckets[k] = bkts
+            if use_cortxcli:
+                cli.login_cortx_cli(k, users[k]["password"])
+                bkts = [
+                    cli.create_bucket_cortx_cli('{}bucket{}'.format(
+                        k.replace('_', '-'), i))[1] for i in range(
+                        1, nbuckets + 1)]
+                bkts_lst = [i.split(" ")[2].split(
+                    '\nBucket')[0] for i in bkts if 'created' in i]
+                buckets[k] = bkts_lst
+                cli.logout_cortx_cli()
+            else:
+                bkts_lst = ['{}bucket{}'.format(
+                    k.replace('_', '-'), i) for i in range(1, nbuckets + 1)]
+            users[k]["buckets"] = bkts_lst
+        return users
 
     @classmethod
     def crud_csm_users(cls):
@@ -228,15 +251,18 @@ class ManagementOPs:
                            endpoint_url=S3_CFG['iam_url'])
 
         users = {"user{}".format(i): tuple() for i in range(1, maxusers + 1)}
-        buckets = {"user{}".format(i): list() for i in range(1, maxbuckets + 1)}
+        buckets = {"user{}".format(i): list() for i in
+                   range(1, maxbuckets + 1)}
         # Create IAM users
         for i in range(1, maxusers + 1):
-            cli.create_user_using_s3iamcli("user{}".format(i), access_key, secret_key)
+            cli.create_user_using_s3iamcli("user{}".format(i), access_key,
+                                           secret_key)
             resp = cli.create_access_key("user{}".format(i))
             user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
             user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
             users["user{}".format(i)] = user_access_key, user_secret_key
         # create 10 buckets per user
         for k in users:
-            bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in range(1, maxbuckets + 1)]
+            bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in
+                    range(1, maxbuckets + 1)]
             buckets[k] = bkts
