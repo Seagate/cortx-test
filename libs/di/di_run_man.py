@@ -53,6 +53,8 @@ class ASyncIO:
         self.bg_thread.join()
         if di_check:
             self.verify_data_integrity(users)
+        if eventual_stop:
+            self.event.clear()
 
 
 class RunDataCheckManager(ASyncIO):
@@ -65,6 +67,7 @@ class RunDataCheckManager(ASyncIO):
 
     def start_io(self, users, buckets, files_count, prefs, event=None):
         event = event if event else self.event
+        print(event.is_set())
         self.uploader.start(users, buckets, files_count, prefs, event)
 
     def stop_io(self, users, di_check=True, eventual_stop=False):
@@ -73,3 +76,27 @@ class RunDataCheckManager(ASyncIO):
             self.event.set()
         if di_check:
             self.verify_data_integrity(users)
+        if eventual_stop:
+            self.event.clear()
+
+    def run_io_sequentially(self, users, buckets=None, files_count=10,
+                            prefs=None, di_check=True):
+        """
+        Function to start IO within test sequentially(write, read, verify)
+        prefs = {
+            'prefix_dir': test_name
+        }
+        :param users: user data includes username, accessKey, secretKey,
+         account id etc
+        :param buckets: user buckets in
+        :param files_count: objects to be uploaded per buckets
+        :param prefs: dir prefix where objects will be created for uploading
+        :param di_check: checks for data integrity
+        :return: None
+        """
+        prefs_dict = prefs if isinstance(prefs, dict) else {
+            "prefix_dir": prefs}
+        self.start_io(
+            users=users, buckets=buckets, files_count=files_count,
+            prefs=prefs_dict)
+        self.stop_io(users, di_check=di_check)

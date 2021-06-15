@@ -224,10 +224,6 @@ def pytest_addoption(parser):
         help="Decide whether to perform DI Check or not for a I/O test case."
     )
     parser.addoption(
-        "--test_runner_data_integrity_chk", action="store", default=False,
-        help="Decide whether to perform DI Check or not for a I/O test case."
-    )
-    parser.addoption(
         "--jira_update", action="store", default=True,
         help="Decide whether to update Jira."
     )
@@ -881,22 +877,19 @@ def get_test_status(request, obj, max_timeout=5000):
     while poll > time.time():
         if request.session.testsfailed:
             obj.event.set()
-            print("fail")
             break
         if Globals.ALL_RESULT:
             outcome = Globals.ALL_RESULT.outcome
             when = Globals.ALL_RESULT.when
             if 'passed' in outcome and 'call' in when:
                 obj.event.set()
-                print("pass")
                 break
             if 'error' in outcome and 'call' in when:
                 obj.event.set()
-                print("error")
                 break
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='function', autouse=False)
 def run_io_async(request):
     if request.config.option.data_integrity_chk:
         mgm_ops = ManagementOPs()
@@ -929,29 +922,6 @@ def run_io_async(request):
         )
     else:
         yield
-
-
-def run_io_sequentially(
-        users, buckets=None, files_count=10, prefs=None, di_check=True):
-    """
-    Function to start IO within test sequentially(write, read, verify)
-    prefs = {
-        'prefix_dir': test_name
-    }
-    :param users: user data includes username, accessKey, secretKey,
-     account id etc
-    :param buckets: user buckets in
-    :param files_count: objects to be uploaded per buckets
-    :param prefs: dir prefix where objects will be created for uploading
-    :param di_check: checks for data integrity
-    :return: None
-    """
-    run_data_check_obj = RunDataCheckManager(users=users)
-    prefs_dict = prefs if isinstance(prefs, dict) else {"prefix_dir": prefs}
-    run_data_check_obj.start_io(
-        users=users, buckets=buckets, files_count=files_count,
-        prefs=prefs_dict)
-    run_data_check_obj.stop_io(users, di_check=di_check)
 
 
 def filter_report_session_finish(session):

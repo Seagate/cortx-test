@@ -53,12 +53,6 @@ class Uploader:
 
     def __init__(self):
         self.change_manager = data_man.DataManager()
-        self.eventual_stop = mp.Event()
-        self.file_object = {
-            'name': "", 'checksum': "", 'seed': 0,
-            'size': "",
-            'mtime': ""
-        }
 
     def upload(self, user, keys, buckets, files_count, prefs, stop_event):
         user_name = user.replace('_', '-')
@@ -88,9 +82,8 @@ class Uploader:
                     LOGGER.debug(
                         "Stop event has been set, remaining objects will be "
                         "skipped.")
-                    print("Stop event has been set, remaining objects will be "
-                        "skipped.")
-                    workers.stop.set()
+                    print("Stop event has been set, remaining objects will be"
+                          " skipped.")
                     break
                 LOGGER.info(
                     f"Enqueued item {ix} for download and checksum compare")
@@ -142,16 +135,13 @@ class Uploader:
             stat_info = os.stat(file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
-
-            self.file_object['name']= obj_name
-            self.file_object['checksum'] = md5sum
-            self.file_object['seed'] = seed
-            self.file_object['size'] = size
-            self.file_object['mtime'] = stat_info.st_mtime
+            file_object = dict(name=obj_name, checksum=md5sum, seed=seed,
+                               size=size, mtime=stat_info.st_mtime)
             self.change_manager.add_file_to_bucket(
-                user_name, bucket, self.file_object)
+                user_name, bucket, file_object)
+            os.remove(file_path)
 
-    def start(self, users, buckets, files_count, prefs, stop_event=None):
+    def start(self, users, buckets, files_count, prefs, stop_event):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
         users_home = params.LOG_DIR
@@ -159,7 +149,6 @@ class Uploader:
         config_utils.create_content_json(
             users_path, users, ensure_ascii=False)  # need test name prefix
         jobs = []
-        stop_event = stop_event if stop_event else self.eventual_stop
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]
             buckets = udict["buckets"]
@@ -175,11 +164,3 @@ class Uploader:
                 LOGGER.info("started joining")
                 p.join()
         LOGGER.info(f'Upload started for all users {users}')
-
-    def set_eventual_stop(self, stop):
-        LOGGER.debug("Setting stop event to %s", stop)
-        self.eventual_stop.set()
-
-    def stop(self, stop_spawning=False):
-        if stop_spawning:
-            self.set_eventual_stop(stop_spawning)

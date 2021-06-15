@@ -156,8 +156,8 @@ class DIChecker(object):
     def init_s3_conn(cls, users):
         for user, keys in users.items():
             user_name = user
-            access_key = keys["accesskey"]
-            secret_key = keys["secretkey"]
+            access_key = keys[0]
+            secret_key = keys[1]
             try:
                 s3 = boto3.resource('s3', aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_key,
@@ -257,7 +257,7 @@ class DIChecker(object):
         """
         users = dict()
         for user, udict in users_data.items():
-            users.update({user.replace('_', '-'): {"accesskey": udict['accesskey'], "secretkey": udict['secretkey']}})
+            users.update({user.replace('_', '-'):[udict['accesskey'], udict['secretkey']]})
         ulen = len(users)
         workers = worker.Workers()
         workers.start_workers()

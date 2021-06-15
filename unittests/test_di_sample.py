@@ -1,7 +1,7 @@
 import time
 import pytest
 import logging
-from conftest import run_io_sequentially
+from conftest import run_io_async
 from libs.di.di_run_man import RunDataCheckManager
 from libs.di.di_mgmt_ops import ManagementOPs
 import threading
@@ -30,14 +30,16 @@ class TestSample:
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
         users = mgm_ops.create_buckets(nbuckets=2, users=users)
         pref_dir = {"prefix_dir": 'test_01'}
-        run_io_sequentially(users=users, prefs=pref_dir)
+        run_man_obj = RunDataCheckManager(users=users)
+        run_man_obj.run_io_sequentially(users=users, prefs=pref_dir)
         time.sleep(320)
         assert True, "msg"
 
-    def test_02(self):
+    def test_02(self, run_io_async):
         time.sleep(8)
         assert False, "msg"
 
+    @pytest.mark.usefixtures("run_io_async")
     def test_03(self):
         assert True, "msg"
 
@@ -69,13 +71,14 @@ class TestSample:
         run_data_chk_obj.stop_io_async(users=data, di_check=True)
         assert True, "msg"
 
-    @pytest.mark.parametrize(
-        "run_io_async", [{'user': 2, 'buckets': 5, 'files_count': 10,
-                          'prefs': {'prefix_dir': 'test_06'}}],
-        indirect=['run_io_async'])
-    def test_06(self):
-        time.sleep(6)
-        assert True, "msg"
+    # In test_06: function uses no fixture 'run_io_async'
+    # @pytest.mark.parametrize(
+    #     "run_io_async", [{'user': 2, 'buckets': 5, 'files_count': 10,
+    #                       'prefs': {'prefix_dir': 'test_06'}}],
+    #     indirect=['run_io_async'])
+    # def test_06(self):
+    #     time.sleep(6)
+    #     assert True, "msg"
 
     def test_07(self):
         mgm_ops = ManagementOPs()
@@ -107,11 +110,15 @@ class TestSample:
     def test_09(self):
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
-        data = mgm_ops.create_buckets(nbuckets=2, users=users)
+        data = mgm_ops.create_buckets(nbuckets=2, users=users,
+                                      use_cortxcli=True)
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_09'}
         run_data_chk_obj.start_io(
             users=data, buckets=None, files_count=8, prefs=pref_dir)
         time.sleep(8)
         run_data_chk_obj.stop_io(users=data, di_check=True, eventual_stop=True)
+        assert True, "msg"
+
+    def test_10(self):
         assert True, "msg"

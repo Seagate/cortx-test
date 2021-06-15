@@ -5,9 +5,6 @@ import csv
 import json
 import logging
 import requests
-import random
-import threading
-import uuid
 from datetime import datetime
 from multiprocessing import Process
 from jira import JIRA
@@ -21,8 +18,6 @@ from commons.utils import system_utils
 from commons import params
 from commons import cortxlogging
 from commons import constants as common_cnst
-from libs.di.di_run_man import RunDataCheckManager
-from libs.di.di_mgmt_ops import ManagementOPs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,9 +56,6 @@ def parse_args():
     parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
                         default=False, help="Helps set DI check enabled so that tests "
                                             "perform additional checksum check")
-    parser.add_argument("-iod", "--io_data", type=dict, default={}, help="Data for test runner Io")
-    parser.add_argument("-io", "--test_runner_data_integrity_chk", type=str_to_bool, default=False,
-                        help="Helps to setDI for test runner session.")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['ALL'], help="Space separated test types")
     return parser.parse_args()
@@ -158,9 +150,6 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
         cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
-
-    if args.test_runner_data_integrity_chk:
-        cmd_line = cmd_line + ["--test_runner_data_integrity_chk=" + str(True)]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
@@ -405,8 +394,8 @@ def trigger_tests_from_te(args):
     if not args.build and not args.build_type:
         args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
-    if args.test_runner_data_integrity_chk:
-        thread_io, event = start_parallel_io(args)
+    if args.data_integrity_chk:
+        thread_io, event = runner.start_parallel_io(args)
 
     _env = os.environ.copy()
     if not args.force_serial_run:
@@ -425,8 +414,8 @@ def trigger_tests_from_te(args):
         # Execute all other tests not having parallel tag with given component tag.
         run_pytest_cmd(args, te_tag, False, env=_env)
 
-    if args.test_runner_data_integrity_chk:
-        stop_parallel_io(thread_io, event)
+    if args.data_integrity_chk:
+        runner.stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
@@ -548,57 +537,6 @@ def get_setup_details(args):
                     break
             if not exists:
                 raise Exception(f'target {args.target} Data does not exists in setups.json')
-
-
-def run_global_io_async(args, event):
-    mgm_ops = ManagementOPs()
-    secret_range = random.SystemRandom()
-    if not args.io_data:
-        nuser = secret_range.randint(2, 4)
-        nbuckets = secret_range.randint(3, 3)
-        file_counts = secret_range.randint(8, 25)
-        prefs_dict = {'prefix_dir': f"global_io_{uuid.uuid4().hex}"}
-    else:
-        nuser = args.io_data["user"]
-        nbuckets = args.io_data["buckets"]
-        file_counts = args.io_data["files_count"]
-        prefs_dict = args.io_data["prefs"]
-    all_user_dict = {}
-    while not event.is_set():
-        try:
-            users = mgm_ops.create_account_users(
-                nusers=nuser, use_cortx_cli=False)
-            users_buckets = mgm_ops.create_buckets(
-                nbuckets=nbuckets, users=users)
-        except BaseException as error:
-            print("Error while creating s3 account so skipping an iteration",
-                  error)
-            continue
-        run_data_check_obj = RunDataCheckManager(users=users_buckets)
-        run_data_check_obj.start_io_async(
-            users=users_buckets, buckets=None, files_count=file_counts,
-            prefs=prefs_dict)
-        all_user_dict.update(users_buckets.items())
-        # add load for next run
-        run_data_check_obj.stop_io_async(
-            users=users_buckets, di_check=args.test_runner_data_integrity_chk,
-            eventual_stop=True)
-        nuser += 1
-        nbuckets += 2
-        file_counts += 3
-
-
-def start_parallel_io(args):
-    event = threading.Event()
-    thread = threading.Thread(
-        target=run_global_io_async, args=(args, event))
-    thread.start()
-    return thread, event
-
-
-def stop_parallel_io(io_thread, stop):
-    stop.set()
-    io_thread.join()
 
 
 def main(args):

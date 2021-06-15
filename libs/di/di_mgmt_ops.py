@@ -144,8 +144,10 @@ class ManagementOPs:
                 cli.login_cortx_cli(k, users[k]["password"])
                 bkts = [
                     cli.create_bucket_cortx_cli('{}bucket{}'.format(
-                        k.replace('_', '-'), i))[1] for i in range(1, nbuckets + 1)]
-                bkts_lst = [i.split(" ")[2].split('\r\nBucket')[0] for i in bkts if 'created' in i]
+                        k.replace('_', '-'), i))[1] for i in range(
+                        1, nbuckets + 1)]
+                bkts_lst = [i.split(" ")[2].split(
+                    '\nBucket')[0] for i in bkts if 'created' in i]
                 buckets[k] = bkts_lst
                 cli.logout_cortx_cli()
             else:
@@ -223,7 +225,7 @@ class ManagementOPs:
         pass
 
     @classmethod
-    def create_iam_users_and_buckets(cls, maxusers=100, maxbuckets=100):
+    def create_users_and_buckets(cls, maxusers=100, maxbuckets=100):
         """
         Creates random users and random buckets for each user. This api
         caches users and their buckets for continuous crud operations on
@@ -235,55 +237,32 @@ class ManagementOPs:
         users = dict()
 
         # Create S3 account
-        s3acc_obj = cctl.CortxCliTestLib()
-        s3_bkt_obj = cctl.CortxCliTestLib()
-        s3acc_obj.open_connection()
-        s3_acc = cls.create_account_users(nusers=1)
-        for _, acc_details in s3_acc.items():
-            username = acc_details["user_name"]
-            password = acc_details["password"]
-            s3acc_obj.login_cortx_cli(username=username, password=password)
-            users = {"user{}".format(i): tuple() for i in range(1, maxusers + 1)}
-            buckets = {"user{}".format(i): list() for i in range(1, maxbuckets + 1)}
-            # Create IAM users
-            for i in range(1, maxusers + 1):
-                userdict = dict()
-                user = "user{}".format(i)
-                s3acc_obj.create_iam_user(user, password, password)
-                userdict.update({'user_name': user})
-                userdict.update({'password': password})
-                resp = s3acc_obj.create_s3_iam_access_key(user)
-                userdict.update({'accesskey': resp[1]["access_key"]})
-                userdict.update({'secretkey': resp[1]["secret_key"]})
-                users.update({user: userdict})
-                # users["user{}".format(i)] = user_access_key, user_secret_key
-            s3_acc["users"] = users
-            # create 10 buckets per user
-            for k in users:
-                s3_bkt_obj.login_cortx_cli(username, password)
-                bkts = [s3_bkt_obj.create_bucket_cortx_cli(
-                    '{}bucket{}'.format(k, i))[1] for i in range(1, maxbuckets + 1)]
-                buckets[k] = bkts
-            s3_acc["buckets"] = buckets
+        cli = iam_core_lib.S3IamCli()
+        resp = cli.create_account_s3iamcli(CMN_CFG['emailid'],
+                                           CMN_CFG['ldap_username'],
+                                           CMN_CFG['ldap_passwd'])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
 
-        return s3_acc
+        """Creating Connection"""
+        iam = boto3.client('iam', verify=S3_CFG['iam_cert_path'],
+                           aws_access_key_id=access_key,
+                           aws_secret_access_key=secret_key,
+                           endpoint_url=S3_CFG['iam_url'])
 
-    @classmethod
-    def delete_accounts_and_buckets(cls, users):
-        """
-        Function to delete all s3 accounts and buckets withing accounts.
-        :param users:
-        :return:
-        """
-        s3_bkt_obj = cctl.CortxCliTestLib()
-        s3_bkt_obj.open_connection()
-        for user, value in users.items():
-            s3_bkt_obj.login_cortx_cli(user, value["password"])
-            bkts = [
-                s3_bkt_obj.delete_bucket_cortx_cli(
-                    i) for i in s3_bkt_obj.list_buckets_cortx_cli(
-                    op_format="json")[1]]
-            LOGGER.debug("Deleted buckets %s", bkts)
-            LOGGER.debug("Deleting account %s", user)
-            s3_bkt_obj.delete_account_cortxcli(user)
-            s3_bkt_obj.logout_cortx_cli()
+        users = {"user{}".format(i): tuple() for i in range(1, maxusers + 1)}
+        buckets = {"user{}".format(i): list() for i in
+                   range(1, maxbuckets + 1)}
+        # Create IAM users
+        for i in range(1, maxusers + 1):
+            cli.create_user_using_s3iamcli("user{}".format(i), access_key,
+                                           secret_key)
+            resp = cli.create_access_key("user{}".format(i))
+            user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
+            user_secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
+            users["user{}".format(i)] = user_access_key, user_secret_key
+        # create 10 buckets per user
+        for k in users:
+            bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in
+                    range(1, maxbuckets + 1)]
+            buckets[k] = bkts

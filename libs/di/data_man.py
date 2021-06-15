@@ -152,12 +152,10 @@ class DataManager(object):
         """Protected API."""
         return True if bucket in self.buckets else False
 
-    def _get_bucket_container_from_buckets(self, bucket, user):
+    def _get_bucket_container_from_buckets(self, data, bucket, user):
         """Protected get bucket container API."""
         if user is None:
             raise ValueError('user is mandatory')
-        fpath = self.prepare_file_data(user)
-        data = config_utils.read_content_json(fpath=fpath)
         if data:
             if user != data['name'] or not data['buckets']:
                 container = self.get_container(level=C_LEVEL_BUCKET)
@@ -183,7 +181,9 @@ class DataManager(object):
                 if not data or user != data['name']:
                     data = self.get_container(level=C_LEVEL_USER)
                     data['name'] = user
-                bkt_container, flag = self._get_bucket_container_from_buckets(bucket, user)
+                bkt_container, flag = \
+                    self._get_bucket_container_from_buckets(data, bucket, user)
+
                 # usage files = self.get_files_within_bucket(bkt_container, user, bucket)
                 fdict = self.get_file_within_bucket(file_obj, bkt_container, bucket)
                 if not fdict:
@@ -199,10 +199,6 @@ class DataManager(object):
 
                 if not flag:
                     data['buckets'].append(bkt_container)
-                else:
-                    for bkt in data["buckets"]:
-                        if bkt["name"] == bucket:
-                            bkt["files"].append(fdict)
 
                 self.store_file_data(data, user)
 
