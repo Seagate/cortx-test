@@ -3,7 +3,6 @@ Library    SeleniumLibrary
 Resource   ${RESOURCES}/resources/common/common.robot
 Variables  ${RESOURCES}/resources/common/element_locators.py
 
-
 *** Keywords ***
 
 Open URL
