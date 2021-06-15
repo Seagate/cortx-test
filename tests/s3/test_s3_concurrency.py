@@ -313,6 +313,7 @@ class TestS3Concurrency:
         assert_utils.assert_in(obj_name, resp[1])
         self.log.info("Step 1: All the objects listed")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7954")
     @CTFailOn(error_handler)
@@ -346,6 +347,7 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Existing Object is being overwritten by multiple client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7962")
     @CTFailOn(error_handler)
@@ -381,6 +383,7 @@ class TestS3Concurrency:
         self.log.info("ENDED: Object download is in progress on one s3 client "
                       "and delete object triggered from other s3 client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7956")
     @CTFailOn(error_handler)
@@ -418,6 +421,7 @@ class TestS3Concurrency:
             "ENDED: Object download in progress on one client and delete bucket "
             "(in which the object exits) is triggered from the other s3 client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7957")
     @CTFailOn(error_handler)
@@ -444,6 +448,7 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel bucket creation of same name from 2 different clients")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7958")
     @CTFailOn(error_handler)
@@ -473,6 +478,7 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel deletion of same object from 2 different clients")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7959")
     @CTFailOn(error_handler)
@@ -541,6 +547,7 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Parallel deletion of bucket from 2 different clients")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7961")
     @CTFailOn(error_handler)
@@ -573,6 +580,7 @@ class TestS3Concurrency:
         self.log.info(
             "ENDED: Put object through one s3 client and try deleting it from other s3 client")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7963")
     @CTFailOn(error_handler)
