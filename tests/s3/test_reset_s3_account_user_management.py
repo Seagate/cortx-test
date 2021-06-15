@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Reset s3 Account User Management test module."""
+"""Reset password s3 Account User Management test module."""
 
 import os
 import time
@@ -45,7 +45,7 @@ S3_OBJ = s3_test_lib.S3TestLib()
 
 
 class TestResetAccountUserManagement:
-    """Reset s3 Account User Management TestSuite."""
+    """Reset password s3 Account User Management TestSuite."""
 
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -68,7 +68,8 @@ class TestResetAccountUserManagement:
         self.csm_obj = CSMAccountOperations()
         self.account_prefix = "acc-reset-passwd-{}"
         self.csm_user = "csm-user-{}".format(time.perf_counter_ns())
-        self.s3acc_name = "acc-reset-passwd-{}".format(time.perf_counter_ns())
+        self.s3acc_name1 = "acc1-reset-passwd-{}".format(time.perf_counter_ns())
+        self.s3acc_name2 = "acc2-reset-passwd-{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com"
         self.io_bucket_name = "io-bkt1-reset-{}".format(perf_counter_ns())
         self.bucket_name1 = "bkt1-reset-{}".format(perf_counter_ns())
@@ -259,6 +260,7 @@ class TestResetAccountUserManagement:
 
         return response
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22793")
     @CTFailOn(error_handler)
@@ -276,14 +278,10 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22793_ios", duration="0h1m")
         self.log.info("Step 3: Create two s3account s3acc1, s3acc2.")
-        acc_name1 = self.account_prefix.format(time.perf_counter_ns())
-        email1 = self.email_id.format(acc_name1)
-        s3_test_obj1 = self.create_s3_acc(acc_name1, email1, self.s3acc_passwd)[0]
-        acc_name2 = self.account_prefix.format(time.perf_counter_ns())
-        email2 = self.email_id.format(acc_name2)
-        s3_test_obj2 = self.create_s3_acc(acc_name2, email2, self.s3acc_passwd)[0]
+        s3_test_obj1 = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
+        s3_test_obj2 = self.create_s3_acc(self.s3acc_name2, self.email_id.format(self.s3acc_name2), self.s3acc_passwd)[0]
         self.log.info("Step 4: Reset s3 account password using other s3 account user.")
-        resp = self.csm_obj.reset_s3acc_password(acc_name1, self.s3acc_passwd, acc_name2, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(self.s3acc_name1, self.s3acc_passwd, self.s3acc_name2, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_in("Access denied. Cannot modify another S3 account.", resp[1], resp[1])
         self.log.info("Step 5: Create bucket s3bkt1, s3bkt2 in s3acc1, s3acc2 account.")
@@ -309,6 +307,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test s3 account user is not able to reset password of other s3 account user and "
                       "create resources for both account while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22794")
     @CTFailOn(error_handler)
@@ -332,11 +331,9 @@ class TestResetAccountUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 5. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, s3acc_name, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -354,6 +351,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test reset s3 account password using csm user having monitor role and create resources"
                       " while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22795")
     @CTFailOn(error_handler)
@@ -377,13 +375,11 @@ class TestResetAccountUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, s3acc_name, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[s3acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -400,6 +396,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test reset s3 account password using csm user having manage role and create resources"
                       " while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22796")
     @CTFailOn(error_handler)
@@ -416,13 +413,11 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22796_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 4. Reset s3 account user with it's own password.")
-        resp = self.csm_obj.reset_s3acc_own_password(s3acc_name, self.s3acc_passwd, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_own_password(self.s3acc_name1, self.s3acc_passwd, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[s3acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -439,6 +434,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test s3 account user to reset it's own password and create s3 resources while"
                       " S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22797")
     @CTFailOn(error_handler)
@@ -455,12 +451,10 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22797_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
-        resp = self.csm_obj.reset_s3acc_password(acc_name=s3acc_name, new_password=self.new_passwd)
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
+        resp = self.csm_obj.reset_s3acc_password(acc_name=self.s3acc_name1, new_password=self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[s3acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -480,6 +474,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test reset s3 account password using csm admin user and create s3 resources while"
                       " S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22798")
     @CTFailOn(error_handler)
@@ -497,12 +492,8 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22798_ios", duration="0h1m")
         self.log.info("Step 3. Create two s3account s3acc1, s3acc2.")
-        s3acc_name1 = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail1 = self.email_id.format(s3acc_name1)
-        s3_test_obj1 = self.create_s3_acc(s3acc_name1, s3acc_mail1, self.s3acc_passwd)[0]
-        s3acc_name2 = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail2 = self.email_id.format(s3acc_name2)
-        s3_test_obj2 = self.create_s3_acc(s3acc_name2, s3acc_mail2, self.s3acc_passwd)[0]
+        s3_test_obj1 = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
+        s3_test_obj2 = self.create_s3_acc(self.s3acc_name2, self.email_id.format(self.s3acc_name2), self.s3acc_passwd)[0]
         self.log.info("Step 4. Create and upload objects to above s3bkt1, s3bkt2.")
         resp = s3_test_obj1.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -520,7 +511,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj2.put_object(self.bucket_name2, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6. Reset s3 account password using other s3 account user.")
-        resp = self.csm_obj.reset_s3acc_password(s3acc_name1, self.s3acc_passwd, s3acc_name2, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(self.s3acc_name1, self.s3acc_passwd, self.s3acc_name2, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_in("Access denied. Cannot modify another S3 account.", resp[1], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
@@ -537,6 +528,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test s3 account user is not able to reset password of other s3 account user and"
                       " check resource intact for both account while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22799")
     @CTFailOn(error_handler)
@@ -560,9 +552,7 @@ class TestResetAccountUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -572,7 +562,7 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, s3acc_name, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
@@ -585,6 +575,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test reset s3 account password using csm user having monitor role and check"
                       " resource intact while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22800")
     @CTFailOn(error_handler)
@@ -609,9 +600,7 @@ class TestResetAccountUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -622,9 +611,9 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, s3acc_name, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[s3acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -637,6 +626,7 @@ class TestResetAccountUserManagement:
             "ENDED: Test reset s3 account password using csm user having manage role and check resource"
             " intact while S3 IO's are in progress.	")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22801")
     @CTFailOn(error_handler)
@@ -653,9 +643,7 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22801_ios", duration="0h1m")
         self.log.info("Step 3: create s3 accounts.")
-        acc_name = self.account_prefix.format(time.perf_counter_ns())
-        email = self.email_id.format(acc_name)
-        s3_test_obj = self.create_s3_acc(acc_name, email, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 4: Create and upload objects to above s3bkt.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -665,9 +653,9 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Reset s3 account user with it's own password.")
-        resp = self.csm_obj.reset_s3acc_own_password(acc_name, self.s3acc_passwd, self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_own_password(self.s3acc_name1, self.s3acc_passwd, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 6: list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -679,6 +667,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test s3 account user to reset it's own password and check resources intact while"
                       " S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22802")
     @CTFailOn(error_handler)
@@ -695,9 +684,7 @@ class TestResetAccountUserManagement:
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_22802_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
-        s3acc_name = self.account_prefix.format(time.perf_counter_ns())
-        s3acc_mail = self.email_id.format(s3acc_name)
-        s3_test_obj = self.create_s3_acc(s3acc_name, s3acc_mail, self.s3acc_passwd)[0]
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.log.info("Step 4. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -708,9 +695,9 @@ class TestResetAccountUserManagement:
         resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6. Reset s3 account password using csm admin user.")
-        resp = self.csm_obj.reset_s3acc_password(acc_name=s3acc_name, new_password=self.new_passwd)
+        resp = self.csm_obj.reset_s3acc_password(acc_name=self.s3acc_name1, new_password=self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.account_dict[s3acc_name] = self.new_passwd
+        self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -722,6 +709,7 @@ class TestResetAccountUserManagement:
         self.log.info("ENDED: Test reset s3 account password using csm admin user and check s3 resource intact"
                       " while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22882")
     @CTFailOn(error_handler)
@@ -741,7 +729,7 @@ class TestResetAccountUserManagement:
         self.log.info("Step 3. Create N number s3account.")
         account_list = []
         for i in range(10):
-            acc_name = self.account_prefix.format(time.perf_counter_ns())
+            acc_name = "{}{}".format(self.account_prefix.format(time.perf_counter_ns()), i)
             email_id = self.email_id.format(acc_name)
             self.create_s3_acc(acc_name, email_id, self.s3acc_passwd)
             account_list.append(acc_name)
