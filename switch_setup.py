@@ -2,12 +2,8 @@ import os
 import subprocess
 import argparse
 import csv
-import json
 import logging
-import requests
 from core import runner
-from commons import configmanager
-from commons.utils import config_utils
 from commons import params
 from commons import cortxlogging
 from commons.utils import deploy_utils
@@ -59,7 +55,6 @@ def run_tesrunner_cmd(args, todo=False):
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
     force_serial_run = force_serial_run + serial_run
-    prc_cnt = '-p=' + str(args.prc_cnt)
     if args.te_ticket:
         cmd_line = cmd_line + ["-te=" + str(args.te_ticket)]
 
