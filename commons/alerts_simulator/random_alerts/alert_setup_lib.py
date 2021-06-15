@@ -77,7 +77,7 @@ class AlertSetup(RASTestLib):
         try:
             cm_cfg = RAS_VAL["ras_sspl_alert"]
             self.retain_config(cm_cfg["file"]["original_sspl_conf"], False)
-            return True, "Retained sspl.conf"
+            return True, f'Retained {cm_cfg["file"]["sspl_conf_filename"]}'
         except BaseException as error:
             LOGGER.error("Error: %s", error)
             return False, error
@@ -94,8 +94,8 @@ class AlertSetup(RASTestLib):
                 status = self.health_obj.check_nw_interface_status()
                 for k, v in status.items():
                     if "DOWN" in v:
-                        LOGGER.info("%s is down. Please check network "
-                                    "connections and restart tests.", k)
+                        LOGGER.debug("%s is down. Please check network "
+                                     "connections and restart tests.", k)
                         return False, f"{k} is down. Please check network " \
                                       f"connections and restart tests."
 
