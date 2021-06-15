@@ -491,8 +491,8 @@ class Provisioner:
             cmd = common_cmd.CMD_GET_SYSTEM_NTP.format(chk)
             resp = node_obj.execute_cmd(cmd, read_lines=True)
             LOGGER.debug(f"pillar command output for {chk}'s system: {resp}\n")
-            for ii in range(len(resp)):
-                data1.append(ansi_escape.sub('', resp[ii]).strip())
+            for value in resp:
+                data1.append(ansi_escape.sub('', value).strip())
             for key_val in key:
                 ntp[key_val] = data1[data1.index(key_val) + 1]
         except IOError as error:
