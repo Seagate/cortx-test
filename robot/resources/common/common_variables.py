@@ -35,6 +35,7 @@ INVALID_IAM_PASSWORD_MESSAGE = 'Invalid password.'
 INVALID_S3_CONFIRM_PASSWORD_MESSAGE = 'Passwords do not match'
 DUPLICATE_S3_ACCOUNT_ALERT_MESSAGE = 'The request was rejected because it attempted to create an account that already exists.'
 PASSWORD_REQUIRED_MESSAGE = 'Password is required.'
+NON_EMPTY_S3_ACCOUNT_MESSAGE = 'Account cannot be deleted as it owns some resources.'
 
 # About Section
 COMMON_NAME_SSL_MESSAGE = 'seagate.com'
