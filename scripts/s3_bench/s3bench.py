@@ -144,6 +144,7 @@ def check_log_file_error(file_path, errors=None):
         error_found = int(response.split(":")[1].strip()) != 0
     if not resp_filtered:
         error_found = True
+
     return error_found
 
 
