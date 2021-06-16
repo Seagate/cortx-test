@@ -339,7 +339,7 @@ class Health(Host):
 
         return True, resp
 
-    def check_node_health(self) -> tuple:
+    def check_node_health(self, resource_cleanup: bool = False) -> tuple:
         """
         Check the node health and return True if all services up and running.
 
@@ -348,6 +348,7 @@ class Health(Host):
         3. Check corosync, pacemaker, pcsd Daemons up and running.
         4. Check kibana, csm-agent, csm-web  resource groups up and running.
         5. Check s3auth, io_group, sspl-ll, s3backprod resources up and running.
+        :param resource_cleanup: If True will do pcs resources cleanup.
         :return: True or False, response.
         """
         LOG.info("Checking online status of %s node", self.hostname)
@@ -369,12 +370,13 @@ class Health(Host):
         if "Cluster is not running" in ",".join(response[1]) or not response[0]:
             return False, response[1]
         LOG.info("Services: %s up and running", services)
-
+        if resource_cleanup:
+            LOG.info("cleanup pcs resources for %s node", self.hostname)
+            response = self.pcs_resource_cleanup(options="--all")
+            if "Cleaned up all resources on all nodes" not in str(response):
+                return False, "Failed to clean up all resources on all nodes"
+            time.sleep(10)
         LOG.info("Checking pcs status for %s node", self.hostname)
-        response = self.pcs_resource_cleanup(options="--all")
-        if "Cleaned up all resources on all nodes" not in str(response):
-            return False, "Failed to clean up all resources on all nodes"
-        time.sleep(10)
         response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True)
         LOG.info(response)
         if "cluster is not currently running on this node" in ",".join(response[1]):
