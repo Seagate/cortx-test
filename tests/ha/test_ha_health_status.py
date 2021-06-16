@@ -137,8 +137,6 @@ class TestHAHealthStatus:
     def teardown_method(self):
         """
         This function will be invoked after each test function in the module.
-        It is performing below operations.
-            - Log out from CORTX CLI console.
         """
 
     def check_csm_service(self, nd_obj):
@@ -217,7 +215,8 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             resp_table = self.cli_obj1.split_table_response(resp[1])
             LOGGER.debug("Response for {} in cortxcli is: {}".format(node_name, resp_table))
-            #TODO: Check if node is shown offline and other nodes as online
+            #TODO: Check if node is shown offline and other nodes as online in cortxcli
+            #TODO: Check the alert is seen on CSM REST or msg bus for node shutdown
             LOGGER.info("Check that cortx services on other nodes are not affected.")
             resp = self.check_service_other_nodes(node)
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
