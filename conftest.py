@@ -33,6 +33,7 @@ import datetime
 import pytest
 import requests
 import tempfile
+import uuid
 import xml.etree.ElementTree as ET
 from datetime import date
 from _pytest.nodes import Item
@@ -42,6 +43,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
+from threading import Thread
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
@@ -56,6 +58,8 @@ from commons import params
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from config import CMN_CFG
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -73,6 +77,7 @@ SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
+Globals.ALL_RESULT = None
 
 def _get_items_from_cache():
     """Intended for internal use after modifying collected items."""
@@ -582,6 +587,7 @@ def pytest_runtest_makereport(item, call):
     """
     outcome = yield
     report = outcome.get_result()
+    Globals.ALL_RESULT = report
     setattr(item, "rep_" + report.when, report)
     try:
         attr = getattr(item, 'call_duration')
@@ -866,6 +872,59 @@ def generate_random_string():
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
 
+def get_test_status(request, obj, max_timeout=5000):
+    poll = time.time() + max_timeout  # max timeout
+    while poll > time.time():
+        time.sleep(2)
+        if request.session.testsfailed:
+            obj.event.set()
+            break
+        if Globals.ALL_RESULT:
+            outcome = Globals.ALL_RESULT.outcome
+            when = Globals.ALL_RESULT.when
+            if 'passed' in outcome and 'call' in when:
+                obj.event.set()
+                break
+            if 'error' in outcome and 'call' in when:
+                obj.event.set()
+                break
+
+
+@pytest.fixture(scope='function', autouse=False)
+def run_io_async(request):
+    if request.config.option.data_integrity_chk:
+        mgm_ops = ManagementOPs()
+        secret_range = random.SystemRandom()
+
+        if 'param' not in dir(request):
+            nuser = secret_range.randint(2, 4)
+            nbuckets = secret_range.randint(3, 3)
+            file_counts = secret_range.randint(8, 25)
+            prefs_dict = {'prefix_dir': f"async_io_{uuid.uuid4().hex}"}
+        else:
+            nuser = request.param["user"]
+            nbuckets = request.param["buckets"]
+            file_counts = request.param["files_count"]
+            prefs_dict = request.param["prefs"]
+        users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
+        users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
+        run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        p = Thread(
+            target=get_test_status, args=(request, run_data_check_obj))
+        p.start()
+        yield run_data_check_obj.start_io_async(
+            users=users_buckets, buckets=None, files_count=file_counts,
+            prefs=prefs_dict)
+        # To stop upload running on the basis of test status
+        p.join()
+        run_data_check_obj.stop_io_async(
+            users=users_buckets,
+            di_check=request.config.option.data_integrity_chk,
+        )
+    else:
+        yield
+
+
 def filter_report_session_finish(session):
     if session.config.option.xmlpath:
         path = session.config.option.xmlpath
@@ -875,6 +934,7 @@ def filter_report_session_finish(session):
             logfile.write('<?xml version="1.0" encoding="UTF-8"?>')
             root[0].attrib["package"] = "root"
             for element in root[0]:
-                element.attrib["classname"] = element.attrib["classname"].split(".")[-1]
+                element.attrib["classname"] = element.attrib[
+                    "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))
