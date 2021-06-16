@@ -37,7 +37,7 @@ class NodeHealth:
     def teardown_class(self):
         pass
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22520")
     def test_22520(self):
         """Verify resource discover command"""
@@ -58,7 +58,7 @@ class NodeHealth:
         _ = json.load(read_resp)
         #   expect Resource map should be present in the file # ToDo
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22526")
     def test_22526(self):
         """Verify resource show --health command"""
@@ -79,7 +79,7 @@ class NodeHealth:
         _ = json.load(read_resp)
         #   expect Resource map should be present in the file # ToDo
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22527")
     def test_22527(self):
         """Verify resource show --health command with resource path"""
@@ -101,19 +101,19 @@ class NodeHealth:
         _ = json.load(read_resp)
         #   expect Resource map should be present in the file # ToDo
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22528")
     def test_22528(self):
         """Verify resource show --health with removing a drive from 5U84"""
         # ToDo: Physically remove drive (Manual test) (HW only)
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22529")
     def test_22529(self):
         """Verify resource show --health with removing a PSU from server node"""
         # ToDo: Physically remove PSU for a given node (Manual test) (HW only)
 
-    @pytest.mark.ha
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22530")
     def test_22530(self):
         """Verify resource show --health with wrong rpath"""
