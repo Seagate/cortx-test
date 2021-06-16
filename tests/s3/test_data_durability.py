@@ -23,7 +23,6 @@
 import os
 import time
 import logging
-import secrets
 from time import perf_counter_ns
 
 import pytest
@@ -57,7 +56,6 @@ class TestDataDurability:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
-        self.secure_range = secrets.SystemRandom()
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.log.info("STARTED: setup test operations.")
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
