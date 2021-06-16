@@ -50,8 +50,8 @@ Click on edit s3 account option
 Click on update s3 account button
     [Documentation]  This keyword is to click on update s3 account button
     wait for page or element to load
-    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_BTN_ID}
-    Run Keyword If  '${status}' == 'True'  click element  ${UPDATE_S3_ACCOUNT_BTN_ID}
+    ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${UPDATE_S3_ACCOUNT_BUTTON_ID}
+    Run Keyword If  '${status}' == 'True'  click element  ${UPDATE_S3_ACCOUNT_BUTTON_ID}
     ${status}=  Run Keyword And Return Status  Element Should Be Visible  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
     Run Keyword If  '${status}' == 'True'  click element  ${S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID}
     wait for page or element to load
@@ -70,8 +70,8 @@ Click on download and close button for new access key
     [Documentation]  This keyword is to click on download and close button for new access key
     #Reload Page
     wait for page or element to load
-    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}  timeout=30
-    click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID}
+    wait until element is visible  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BUTTON_ID}  timeout=30
+    click element  ${ACCESS_KEY_DOWNLOAD_AND_CLOSE_BUTTON_ID}
 
 Add data to create new S3 account
     [Documentation]  This keyword is to add data in s3 account form.
@@ -145,7 +145,7 @@ Verify update s3 account button remains disabled
     [Documentation]  This keyword is to chceck the update S3 account button remains disabled when there is no data.
     Click on edit s3 account option
     sleep  2s
-    ${state_of_update_s3_account}=  Get Element Attribute  ${UPDATE_S3_ACCOUNT_BTN_ID}  disabled
+    ${state_of_update_s3_account}=  Get Element Attribute  ${UPDATE_S3_ACCOUNT_BUTTON_ID}  disabled
     Run Keyword If  ${${state_of_update_s3_account}} == True  log to console and report  create S3 account button is disabled.
 
 Edit S3 account
@@ -345,14 +345,10 @@ Check Dashboard Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to Dashboard page
     Page Should Not Contain Element  ${DASHBOARD_MENU_ID}    
 
-Check Health Option Not Exists
-    [Documentation]  This keyword is to check that s3 user does not have access to Health page
-    Page Should Not Contain Element  ${HEALTH_TAB_ID}  
-
 Check Create CSM User Option Not Exists
     [Documentation]  This keyword is to check that s3 user does not have access to create csm user page
     Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
-    
+
 Check Alert Icon Not Exists
     [Documentation]   This keyword is to check that s3 user does not have access to Alert page
     Page Should Not Contain Element  ${ALERT_IMAGE_2_ID}
@@ -404,3 +400,29 @@ Verify that s3 url on s3 account creation
     Re-login  ${S3_account}  ${s3_account_password}  S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete S3 Account  ${S3_account}  ${s3_account_password}  True
+
+Delete s3 account using csm user
+    [Documentation]  Delete s3 account using csm user and very it.
+    [Arguments]  ${S3_account_name}
+    Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH}  ${S3_account_name}
+    click button  ${CONFIRM_S3_ACCOUNT_DELETE_ID}
+    wait for page or element to load
+    ${s3_accouts} =  Read Table Data   ${S3_ACCOUNTS_TABLE_XPATH}
+    List Should Not Contain Value  ${s3_accouts}  ${S3_account_name}
+
+Verify Absence of Delete Button on S3account
+    [Documentation]  Verify Absence of Delete Button on S3account
+    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
+
+Verify Error Msg is Shown For Non Empty S3account delete
+    [Documentation]  This keyword will Verify Error Msg is Shown if delete performed on Non Empty account
+    [Arguments]  ${S3_account_name}
+    Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH}  ${S3_account_name}
+    click button  ${CONFIRM_S3_ACCOUNT_DELETE_ID}
+    wait until element is visible  ${ERROR_MSG_POP_UP_ID}  timeout=30
+    ${err_msg}=  get text  ${ERROR_MSG_POP_UP_ID}
+    Log To Console And Report  ${err_msg}
+    Should be Equal  ${NON_EMPTY_S3_ACCOUNT_MESSAGE}  ${err_msg}
+    Wait Until Element Is Not Visible  ${ERROR_MSG_POP_UP_ID}  timeout=30

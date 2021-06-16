@@ -32,6 +32,8 @@ from commons.helpers.health_helper import Health
 from libs.s3 import S3H_OBJ
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
+from commons.helpers.controller_helper import ControllerLib
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,6 +56,12 @@ class RASCoreLib:
             hostname=self.host, username=self.username, password=self.pwd)
         self.health_obj = Health(hostname=self.host, username=self.username,
                                  password=self.pwd)
+        self.controller_obj = ControllerLib(
+            host=self.host, h_user=self.username, h_pwd=self.pwd,
+            enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+            enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+            enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
+
         self.s3obj = S3H_OBJ
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
@@ -632,9 +640,9 @@ class RASCoreLib:
         if os.path.exists(local_path):
             os.remove(local_path)
         _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                        local_path=local_path,
-                                        host=self.host,
-                                        user=self.username, pwd=self.pwd)
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern

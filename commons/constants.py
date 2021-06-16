@@ -88,10 +88,13 @@ CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
 CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
+SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 
 """ S3 constants """
+LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
@@ -278,15 +281,14 @@ class SwAlerts:
         "statsd.service",
         "rsyslog.service",
 #        "haproxy.service",  # commented due to defect EOS-20842
-        "hare-consul-agent.service",
-        "lnet.service",
         "slapd.service",
         "lnet.service",
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service"]
+        "scsi-network-relay.service"
+    ]
 
     SVCS_3P_UNAVAIL_VM = [
         "glusterd.service",

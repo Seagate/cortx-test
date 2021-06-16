@@ -34,6 +34,7 @@ service_ports:
   uds: ["5000"]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
 cluster_start_msg: "Cluster start operation performed"
+confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
 
 single-node:
   prereq:
@@ -56,3 +57,8 @@ single-node:
   config_path_remote: "/root/config.ini"
   setup-type: "3_node"
   cluster_start_delay: 180
+
+system_ntp:
+    ntp_data: ['time_server:', 'time_zone:']
+    timeserver: ['10.30.127.102', 'time.seagate.com']
+    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']

@@ -209,7 +209,8 @@ def get_tests_from_te(jira_obj, args, test_type=None):
     """
     if test_type is None:
         test_type = ['ALL']
-    test_list, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
+    test_tuple, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
+    test_list = list(list(zip(*test_tuple))[0])
     if len(test_list) == 0 or tag == "":
         raise EnvironmentError("Please check TE provided, tests or tag is missing")
     return test_list, tag
@@ -281,6 +282,9 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
                                   te_label=te_resp.fields.labels,
                                   te_components=te_components)
+        test_tuple, te_tag = jira_obj.get_test_ids_from_te(
+            test_exe_id=args.te_ticket)
+        test_dict = dict(test_tuple)
         # test_name, test_id, test_id_labels, test_team, test_type
         for test in test_list:
             item = dict()
@@ -302,6 +306,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             item['feature_id'] = c_fields['feature_id'] if c_fields['feature_id'] else ['F-0']
             lbls = item['labels']
             item['execution_type'] = lbls[0] if lbls and isinstance(lbls, list) else 'R2Automated'
+            item['test_run_id'] = test_dict[test]
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
         json.dump(tp_meta, t_meta, ensure_ascii=False)
@@ -389,6 +394,9 @@ def trigger_tests_from_te(args):
     if not args.build and not args.build_type:
         args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
+    if args.data_integrity_chk:
+        thread_io, event = runner.start_parallel_io(args)
+
     _env = os.environ.copy()
     if not args.force_serial_run:
         # First execute all tests with parallel tag which are mentioned in given tag.
@@ -405,6 +413,9 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, True, env=_env)
         # Execute all other tests not having parallel tag with given component tag.
         run_pytest_cmd(args, te_tag, False, env=_env)
+
+    if args.data_integrity_chk:
+        runner.stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
@@ -533,7 +544,6 @@ def main(args):
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
     get_setup_details(args)
-
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)

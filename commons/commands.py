@@ -30,9 +30,12 @@ SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
+ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
+GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
+IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -198,6 +201,7 @@ SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
 SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
 SYSTEM_CTL_START_CMD = "systemctl start {}"
 SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
 
@@ -345,6 +349,11 @@ CMD_SETUP_PRVSNR = "provisioner setup_provisioner --logfile " \
 CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
 CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
 CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
+CMD_PILLAR_DATA = "salt \"{}\" grains.get {}"
+CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
+CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
+GET_CHRONY = "grep '{}' /etc/chrony.conf"
+CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"

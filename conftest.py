@@ -33,6 +33,7 @@ import datetime
 import pytest
 import requests
 import tempfile
+import uuid
 import xml.etree.ElementTree as ET
 from datetime import date
 from _pytest.nodes import Item
@@ -42,6 +43,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
+from threading import Thread
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
@@ -53,7 +55,11 @@ from core.runner import LRUCache
 from core.runner import get_jira_credential
 from core.runner import get_db_credential
 from commons import params
+from commons.helpers.health_helper import Health
+from commons.utils import assert_utils
 from config import CMN_CFG
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -71,6 +77,7 @@ SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
 BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinational')
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
+Globals.ALL_RESULT = None
 
 def _get_items_from_cache():
     """Intended for internal use after modifying collected items."""
@@ -83,12 +90,6 @@ def read_project_config(request):
     config = f.joinpath('config.json')
     with config.open() as fp:
         return json.load(fp)
-
-
-@pytest.fixture(autouse=True)
-def capture():
-    with LogCapture() as logs:
-        yield logs
 
 
 @pytest.fixture(scope='session')
@@ -456,7 +457,7 @@ def reset_imported_module_log_level():
 def pytest_collection(session):
     """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    LOGGER.info(dir(session.config))
+    #LOGGER.info(dir(session.config))
     config = session.config
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
@@ -467,6 +468,7 @@ def pytest_collection(session):
     Globals.LOCAL_RUN = _local
     Globals.TP_TKT = config.option.tp_ticket
     Globals.BUILD = config.option.build
+    Globals.TARGET = config.option.target
     if _distributed:
         required_tests = read_dist_test_list_csv()
         Globals.TE_TKT = config.option.te_tkt
@@ -585,11 +587,12 @@ def pytest_runtest_makereport(item, call):
     """
     outcome = yield
     report = outcome.get_result()
+    Globals.ALL_RESULT = report
     setattr(item, "rep_" + report.when, report)
     try:
         attr = getattr(item, 'call_duration')
     except AttributeError as attr_error:
-        LOGGER.debug('Exception %s occurred', str(attr_error))
+        LOGGER.warning('Exception %s occurred', str(attr_error))
         setattr(item, "call_duration", call.duration)
     else:
         setattr(item, "call_duration", call.duration + attr)
@@ -708,6 +711,77 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
             LOGGER.error("Failed to supporting log file at location %s", resp[1])
 
 
+def check_cortx_cluster_health():
+    """Check the cluster health before each test is picked up for run."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                            username=node['username'],
+                            password=node['password'])
+        result = health.check_node_health()
+        assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
+        health.disconnect()
+    LOGGER.info("Cluster status is healthy.")
+
+
+def check_cluster_storage():
+    """Checks nodes storage and accepts till 98 % occupancy."""
+    LOGGER.info("Check cluster status for all nodes.")
+    nodes = CMN_CFG["nodes"]
+    for node in nodes:
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+                        username=node['username'],
+                        password=node['password'])
+        ha_total, ha_avail, ha_used = health.get_sys_capacity()
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        assert ha_used_percent < 98.0, f'Cluster Node {hostname} failed space check.'
+        health.disconnect()
+
+
+def pytest_runtest_logstart(nodeid, location):
+    """
+    Hook used to identify if it is good to start next test.
+    Should also work with parallel execution.
+    :param nodeid: Node identifier for a test case. An absolute class path till function.
+    :param location: file, line, test name.
+    :return:
+    """
+    current_suite = None
+    path = "file://" + os.path.realpath(location[0])
+    if location[1]:
+        path += ":" +str(location[1] + 1)
+    current_file = nodeid.split("::")[0]
+    file_suite = current_file.split("/")[-1]
+    if location[2].find(".") != -1:
+        suite = location[2].split(".")[0]
+        name = location[2].split(".")[-1]
+    else:
+        name = location[2]
+        splitted = nodeid.split("::")
+        try:
+            ind = splitted.index(name.split("[")[0])
+        except ValueError:
+            try:
+                ind = splitted.index(name)
+            except ValueError:
+                ind = 0
+        if splitted[ind-1] == current_file:
+            suite = None
+        else:
+            suite = current_suite
+    # Check health status of target
+    target = Globals.TARGET
+    if not Globals.LOCAL_RUN:
+        try:
+            check_cortx_cluster_health()
+            check_cluster_storage()
+        except (AssertionError, Exception) as fault:
+            pytest.exit(f'Health check failed for cluster {target}', 1)
+
+
 def pytest_runtest_logreport(report: "TestReport") -> None:
     """
     Provides an intercept to create a) generate log per test case
@@ -762,20 +836,30 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
         LOGGER.info("Adding log file path to %s", test_id)
-        comment = "Log file path: {}".format(resp[1])
+        comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
-            data = task.get_test_details(test_exe_id=Globals.TE_TKT)
-            if data:
-                resp = task.update_execution_details(data=data, test_id=test_id,
-                                                     comment=comment)
-                if resp:
-                    LOGGER.info("Added execution details comment in: %s", test_id)
+            try:
+                if Globals.tp_meta['te_meta']['te_id'] == Globals.TE_TKT:
+                    test_run_id = next(d['test_run_id'] for i, d in enumerate(
+                        Globals.tp_meta['test_meta']) if d['test_id'] ==
+                                       test_id)
+                    resp = task.update_execution_details(
+                                    test_run_id=test_run_id, test_id=test_id,
+                                    comment=comment)
+                    if resp:
+                        LOGGER.info("Added execution details comment in: %s",
+                                    test_id)
+                    else:
+                        LOGGER.error("Failed to comment to %s", test_id)
                 else:
-                    LOGGER.error("Failed to comment to %s", test_id)
-            else:
-                LOGGER.error("Failed to add log file path to %s", test_id)
+                    LOGGER.error("Failed to get correct TE id. \nExpected: "
+                                 "%s\nActual: %s", Globals.TE_TKT,
+                                 Globals.tp_meta['te_meta']['te_id'])
+            except KeyError:
+                LOGGER.error("KeyError: Failed to add log file path to %s",
+                             test_id)
 
 
 @pytest.fixture(scope='function')
@@ -787,6 +871,60 @@ def generate_random_string():
     """
     return ''.join(random.choice(string.ascii_lowercase) for i in range(5))
 
+
+def get_test_status(request, obj, max_timeout=5000):
+    poll = time.time() + max_timeout  # max timeout
+    while poll > time.time():
+        time.sleep(2)
+        if request.session.testsfailed:
+            obj.event.set()
+            break
+        if Globals.ALL_RESULT:
+            outcome = Globals.ALL_RESULT.outcome
+            when = Globals.ALL_RESULT.when
+            if 'passed' in outcome and 'call' in when:
+                obj.event.set()
+                break
+            if 'error' in outcome and 'call' in when:
+                obj.event.set()
+                break
+
+
+@pytest.fixture(scope='function', autouse=False)
+def run_io_async(request):
+    if request.config.option.data_integrity_chk:
+        mgm_ops = ManagementOPs()
+        secret_range = random.SystemRandom()
+
+        if 'param' not in dir(request):
+            nuser = secret_range.randint(2, 4)
+            nbuckets = secret_range.randint(3, 3)
+            file_counts = secret_range.randint(8, 25)
+            prefs_dict = {'prefix_dir': f"async_io_{uuid.uuid4().hex}"}
+        else:
+            nuser = request.param["user"]
+            nbuckets = request.param["buckets"]
+            file_counts = request.param["files_count"]
+            prefs_dict = request.param["prefs"]
+        users = mgm_ops.create_account_users(nusers=nuser, use_cortx_cli=False)
+        users_buckets = mgm_ops.create_buckets(nbuckets=nbuckets, users=users)
+        run_data_check_obj = RunDataCheckManager(users=users_buckets)
+        p = Thread(
+            target=get_test_status, args=(request, run_data_check_obj))
+        p.start()
+        yield run_data_check_obj.start_io_async(
+            users=users_buckets, buckets=None, files_count=file_counts,
+            prefs=prefs_dict)
+        # To stop upload running on the basis of test status
+        p.join()
+        run_data_check_obj.stop_io_async(
+            users=users_buckets,
+            di_check=request.config.option.data_integrity_chk,
+        )
+    else:
+        yield
+
+
 def filter_report_session_finish(session):
     if session.config.option.xmlpath:
         path = session.config.option.xmlpath
@@ -796,6 +934,7 @@ def filter_report_session_finish(session):
             logfile.write('<?xml version="1.0" encoding="UTF-8"?>')
             root[0].attrib["package"] = "root"
             for element in root[0]:
-                element.attrib["classname"] = element.attrib["classname"].split(".")[-1]
+                element.attrib["classname"] = element.attrib[
+                    "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))

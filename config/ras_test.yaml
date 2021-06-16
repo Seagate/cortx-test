@@ -231,12 +231,18 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
-mgmt_nw_port_fault:
-  generate_fault: "down"
-  resolve_fault: "up"
-  resource_id: "eno1"
-  resource_id_monitor : '"resource_id": "eno1"'
-  resource_id_csm : '"resource_id":"eno1"'
+test_22060:
+  disk_group: "dg00"
+  resource_type: "node:enclosure:disk-group"
+  enclid: 0
+  ctrl_name: ['A', 'B']
+  operation_fault: "Disabled"
+  operation_fault_resolved: "Enabled"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+nw_port_fault:
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
   resource_type: "node:interface:nw"
-  error_msg: "Failed to put management network port"
+  error_msg: "Failed to put management network port in"
 
