@@ -67,6 +67,7 @@ def setup_s3bench(
     if not ret[0]:
         LOGGER.error("%s", ret[1])
         return False
+
     return True
 
 
