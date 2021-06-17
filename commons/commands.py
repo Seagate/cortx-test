@@ -232,6 +232,9 @@ CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
 CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
 CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
 CMD_PILLAR_DATA = "salt \"{}\" grains.get {}"
+CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
+CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
+GET_CHRONY = "grep '{}' /etc/chrony.conf"
 CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
 
 # Deployment commands

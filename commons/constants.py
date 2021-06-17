@@ -94,6 +94,7 @@ SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 
 """ S3 constants """
+LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
@@ -307,3 +308,8 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+
+
+class Sizes:
+    KB = 1024
+    MB = KB * KB
