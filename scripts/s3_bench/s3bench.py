@@ -42,29 +42,30 @@ def setup_s3bench(
     :param string get_cmd: S3Bench go get command
     :return bool: True/False
     """
-    LOGGER.debug(f"Installing go/s3bench.")
+    LOGGER.debug("Installing go/s3bench.")
     # Install go
     ret = run_local_cmd(cfg_obj["cmd_go"])
     if not ret[0]:
-        LOGGER.error(f"{ret[1]}")
+        LOGGER.error("%s", ret[1])
         return False
     # Install go get for s3bench
     ret = run_local_cmd(get_cmd)
     if not ret[0]:
-        LOGGER.error(f"{ret[1]}")
+        LOGGER.error("%s", ret[1])
         return False
     ret = run_local_cmd(cfg_obj["s3bench_trust"])
     if not ret[0]:
-        LOGGER.error(f"{ret[1]}")
+        LOGGER.error("%s", ret[1])
         return False
-    # Remove old directory
-    resp = remove_dirs(S3_BENCH_PATH)
-    if not resp:
-        LOGGER.error(f"Unable to remove {S3_BENCH_PATH}")
-        return False
+    # Remove old directory if present
+    if path_exists(S3_BENCH_PATH):
+        resp = remove_dirs(S3_BENCH_PATH)
+        if not resp:
+            LOGGER.error("Unable to remove %s", S3_BENCH_PATH)
+            return False
     ret = run_local_cmd(cfg_obj["s3bench_git"].format(S3_BENCH_PATH))
     if not ret[0]:
-        LOGGER.error(f"{ret[1]}")
+        LOGGER.error("%s", ret[1])
         return False
     return True
 
