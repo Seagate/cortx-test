@@ -88,6 +88,9 @@ CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
 CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_CPU_USAGE = "NODEDATAMSGHANDLER>cpu_usage_threshold"
+CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
+CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 

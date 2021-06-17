@@ -611,6 +611,7 @@ class RASCoreLib:
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
+        LOGGER.debug(cmd)
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=cmn_cons.BYTES_TO_READ)
 

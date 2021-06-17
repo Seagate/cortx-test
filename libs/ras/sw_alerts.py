@@ -27,6 +27,9 @@ import time
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from commons.helpers.health_helper import Health
+from commons import constants as cons
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +40,8 @@ class SoftwareAlert(RASCoreLib):
     def __init__(self, host: str, username: str, password: str) -> None:
         super().__init__(host, username, password)
         self.svc_path = None
-
+        self.health_obj = Health(hostname=host, username=username, password=password)
+    ############### Third party service functions####################
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
@@ -433,3 +437,76 @@ class SoftwareAlert(RASCoreLib):
         self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
         self.apply_svc_setting()
         LOGGER.info("Service configuration is successfully restored.")
+
+    ############### Server OS functions####################
+    def gen_cpu_usage_fault_thres(self, delta_cpu_usage):
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL, encl_vals={"CONF_CPU_USAGE":cpu_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_thresh(self,cpu_usage_thresh):
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL,encl_vals={"CONF_CPU_USAGE":cpu_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def gen_mem_usage_fault(self,delta_mem_usage):
+        LOGGER.info("Fetching memory usage from server node")
+        mem_usage = self.health_obj.get_memory_usage()
+        LOGGER.info("Current memory usage of server is %s", mem_usage)
+        mem_usage_thresh = float("{:.1f}".format(sum([mem_usage, delta_mem_usage])))
+        LOGGER.info("Setting new value of host_memory_usage_threshold to %s", mem_usage_thresh)
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL,encl_vals={"CONF_MEM_USAGE":mem_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def resolv_mem_usage_fault(self,mem_usage_thresh):
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL,encl_vals={"CONF_MEM_USAGE":mem_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def gen_disk_usage_fault(self, delta_disk_usage):
+        LOGGER.info("Fetching memory usage from server node")
+        status, disk_usage = self.node_utils.disk_usage_python_interpreter_cmd(
+                        dir_path="/", field_val=3)
+        if not status:
+            return False, "Unable to read disk usage"
+        LOGGER.info("Current memory usage of server is %s", disk_usage)
+        disk_usage_thresh = float("{:.1f}".format(sum([float(disk_usage), delta_disk_usage])))
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL,encl_vals={"CONF_DISK_USAGE":disk_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def resolv_disk_usage_fault(self,disk_usage_thresh):
+        self.set_conf_store_vals(url=cons.SSPL_CFG_URL,encl_vals={"CONF_DISK_USAGE":disk_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def restart_sspl(self):
+        LOGGER.info("Restarting sspl service")
+        resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        assert resp, "Failed to restart sspl-ll"
+        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+        LOGGER.info("Verifying the status of sspl service is online")

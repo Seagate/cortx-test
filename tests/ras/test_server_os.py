@@ -30,6 +30,7 @@ from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.constants import LOG_STORE_PATH
 from commons.constants import SwAlerts as const
+from commons import constants as cons
 from commons import commands as common_cmd
 from commons import cortxlogging
 from commons.utils.assert_utils import *
@@ -47,30 +48,24 @@ class TestServerOS:
     @classmethod
     def setup_class(cls):
         """Setup for module."""
-        LOGGER.info("Running setup_class")
+        LOGGER.info("Running setup_class...")
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
+        cls.cfg = RAS_VAL["ras_sspl_alert"]
+        cls.changed_level = False
+        cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.sspl_stop = cls.changed_level = cls.selinux_enabled = False
-
-        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
-                                      password=cls.passwd)
-        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
-                            password=cls.passwd)
-        cls.csm_alert_obj = SystemAlerts(cls.node_obj)
-        cls.alert_api_obj = GenerateAlertLib()
-        cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
-        cls.cfg = RAS_VAL["ras_sspl_alert"]
-        LOGGER.info("Completed setup_class")
+        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname, password=cls.passwd)
+        cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
+        LOGGER.info("Completed setup_class.")
 
     def setup_method(self):
         """Setup operations per test."""
-        LOGGER.info("Running setup_method")
+        LOGGER.info("Running setup_method...")
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
-
         LOGGER.info("Check SSPL status")
         res = self.sw_alert_obj.get_svc_status([sspl_svc])[sspl_svc]
         LOGGER.info("SSPL status response %s : ", res)
@@ -91,20 +86,16 @@ class TestServerOS:
         LOGGER.info("Kafka status response %s : ", res)
         assert res["state"] == "active", "Kafka is not in active state"
 
-        LOGGER.info("Check that all the 3rd party services are enabled.")
-        resp = self.sw_alert_obj.get_disabled_svcs(self.external_svcs)
-        assert resp == [], f"{resp} are in disabled state"
-        LOGGER.info("All 3rd party services are enabled.")
-
-        LOGGER.info("Check that all the 3rd party services are active")
-        resp = self.sw_alert_obj.get_inactive_svcs(self.external_svcs)
-        assert resp == [], f"{resp} are in inactive state"
-        LOGGER.info("All 3rd party services are in active state.")
+        LOGGER.info("Restarting sspl service")
+        resp = self.sw_alert_obj.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
+        assert resp, "Failed to restart sspl-ll"
+        time.sleep(self.cm_cfg["sspl_timeout"])
+        LOGGER.info("Verifying the status of sspl service is online")
 
         self.starttime = time.time()
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
-            resp = self.ras_test_obj.start_message_bus_reader_cmd()
+            resp = self.sw_alert_obj.start_message_bus_reader_cmd()
             assert_true(resp, "Failed to start message bus reader")
             LOGGER.info("Successfully started read_message_bus.py script on node")
 
@@ -112,7 +103,10 @@ class TestServerOS:
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
-        LOGGER.info("Successfully performed Setup operations")
+        self.default_cpu_usage = False
+        self.default_mem_usage = False
+        self.default_disk_usage = False
+        LOGGER.info("Completed setup_method.")
 
     def teardown_method(self):
         """Teardown operations."""
@@ -154,6 +148,21 @@ class TestServerOS:
             LOGGER.warning(error)
         LOGGER.info("Successfully performed Teardown operation")
 
+        if self.default_cpu_usage:
+            LOGGER.info("Updating default CPU usage threshold value")
+            resp = self.sw_alert_obj.resolv_cpu_usage_fault_thresh(self.default_cpu_usage)
+            assert resp[0], resp[1]
+
+        if self.default_mem_usage:
+            LOGGER.info("Updating default Memory usage threshold value")
+            resp = self.sw_alert_obj.resolv_mem_usage_fault(self.default_mem_usage)
+            assert resp[0], resp[1]
+            
+        if self.default_disk_usage:
+            LOGGER.info("Updating default Memory usage threshold value")
+            resp = self.sw_alert_obj.resolv_disk_usage_fault(self.default_disk_usage)
+            assert resp[0], resp[1]
+
     @pytest.mark.tags("TEST-21587")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -162,15 +171,15 @@ class TestServerOS:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = RAS_TEST_CFG["test_4354"]
+        test_cfg = RAS_TEST_CFG["test_21587"]
 
+        self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
+                                    url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         LOGGER.info("Step 1: Generate CPU usage fault.")
-        resp = self.alert_api_obj.generate_alert(AlertType.CPU_USAGE_ALERT, 
-            input_parameters={"delta_cpu_usage": test_cfg["delta_cpu_usage"]})
+        resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         LOGGER.info("Step 1: CPU usage fault is created successfully.")
-        self.default_cpu_usage = False
-        
+    
         LOGGER.info("Step 2: Keep the CPU usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -179,21 +188,53 @@ class TestServerOS:
 
         if self.start_msg_bus:
             LOGGER.info("Checking the generated alert on SSPL")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
-            resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is False, resp[1]
+            alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
 
-        LOGGER.info("Step 3: Checking CPU usage alerts on CSM REST API")
+        LOGGER.info("Step 3: Checking CPU usage fault alerts on CSM REST API")
         time_lapsed = 0
         resp = False
-        while(time_lapsed < self.cfg["csm_alert_gen_delay"] or resp):
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
             resp = self.csm_alert_obj.verify_csm_response(
-                self.starttime, test_cfg["alert_type"], False, test_cfg["resource_type"])
+                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
             time.sleep(1)
             time_lapsed = time_lapsed + 1
         assert resp, self.cfg["csm_error_msg"]
-        LOGGER.info("Step 3: Successfully verified CPU usage alert on CSM REST API")
+        LOGGER.info("Step 3: Successfully verified CPU usage fault alert on CSM REST API")
+
+        self.starttime = time.time()
+        LOGGER.info("Step 4: Resolving CPU usage fault.")
+        LOGGER.info("Updating default CPU usage threshold value")
+        resp = self.sw_alert_obj.resolv_cpu_usage_fault_thresh(self.default_cpu_usage)
+        assert resp[0], resp[1]
+        LOGGER.info("Step 4: CPU usage fault is resolved.")
+        self.default_cpu_usage = False
+
+        LOGGER.info("Step 5: Keep the CPU usage below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 5: CPU usage was below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 6: Checking CPU usage resolved alerts on CSM REST API")
+        time_lapsed = 0
+        resp = False
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+            time.sleep(1)
+            time_lapsed = time_lapsed + 1
+        assert resp, self.cfg["csm_error_msg"]
+        LOGGER.info("Step 6: Successfully verified CPU usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21588")
@@ -204,39 +245,71 @@ class TestServerOS:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        
-        test_cfg = RAS_TEST_CFG["test_4355"]
+        test_cfg = RAS_TEST_CFG["test_21588"]
 
-        LOGGER.info("Step 1: Simulate memory usage fault.")
-        resp = self.alert_api_obj.generate_alert(AlertType.MEM_USAGE_ALERT,
-            input_parameters={"delta_mem_usage": test_cfg["delta_mem_usage"]})
+        self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
+                                    url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+        LOGGER.info("Step 1: Generate memory usage fault.")
+        resp = self.sw_alert_obj.gen_mem_usage_fault(test_cfg["delta_mem_usage"])
         assert resp[0], resp[1]
-        LOGGER.info("Step 1: Memory usage fault is simulated.")
-        self.default_mem_usage = False
-
-        LOGGER.info("Step 2: Keep the CPU usage above threshold for %s seconds",
+        LOGGER.info("Step 1: Memory usage fault is created successfully.")
+    
+        LOGGER.info("Step 2: Keep the Memory usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 2: CPU usage was above threshold for %s seconds",
+        LOGGER.info("Step 2: Memory usage was above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
 
         if self.start_msg_bus:
             LOGGER.info("Checking the generated alert on SSPL")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
-            resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is False, resp[1]
+            alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
 
-        LOGGER.info("Step 3: Check memory usage fault alert on CSM REST")
+        LOGGER.info("Step 3: Checking Memory usage fault alerts on CSM REST API")
         time_lapsed = 0
         resp = False
-        while(time_lapsed < self.cfg["csm_alert_gen_delay"] or resp):
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
             resp = self.csm_alert_obj.verify_csm_response(
-                self.starttime, test_cfg["alert_type"], False, test_cfg["resource_type"])
+                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
             time.sleep(1)
             time_lapsed = time_lapsed + 1
         assert resp, self.cfg["csm_error_msg"]
-        LOGGER.info("Step 3: Successfully verified memory usage alert on CSM REST ")
+        LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
+
+        self.starttime = time.time()
+        LOGGER.info("Step 4: Resolving Memory usage fault.")
+        LOGGER.info("Updating default Memory usage threshold value")
+        resp = self.sw_alert_obj.resolv_mem_usage_fault(self.default_mem_usage)
+        assert resp[0], resp[1]
+        LOGGER.info("Step 4: Memory usage fault is resolved.")
+        self.default_mem_usage = False
+
+        LOGGER.info("Step 5: Keep the memory usage below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 5: Memory usage was below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 6: Checking Memory usage resolved alerts on CSM REST API")
+        time_lapsed = 0
+        resp = False
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+            time.sleep(1)
+            time_lapsed = time_lapsed + 1
+        assert resp, self.cfg["csm_error_msg"]
+        LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21586")
     @pytest.mark.cluster_monitor_ops
@@ -246,37 +319,70 @@ class TestServerOS:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = RAS_TEST_CFG["test_3005"]
+        test_cfg = RAS_TEST_CFG["test_21586"]
 
-        LOGGER.info("Step 1: Simulate Disk usage fault")
-        resp = self.alert_api_obj.generate_alert(AlertType.DISK_FAULT_NO_ALERT, input_parameters={
-            "du_val": test_cfg["du_val"], "fault": False, "fault_resolved": False})
-        assert resp[0] is False
-        LOGGER.info("Step 1: Successfully simulated Disk usage fault")
-        self.default_disk_usage = False
+        self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
+                                    url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+        LOGGER.info("Step 1: Generate memory usage fault.")
+        resp = self.sw_alert_obj.gen_disk_usage_fault(test_cfg["delta_disk_usage"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 1: Memory usage fault is created successfully.")
+    
+        LOGGER.info("Step 2: Keep the Memory usage above threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 2: Memory usage was above threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
 
         if self.start_msg_bus:
             LOGGER.info("Checking the generated alert on SSPL")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_type"]]
-            resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert resp[0] is False, resp[1]
+            alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
 
-        LOGGER.info("Step 2: Keep the disk usage above threshold for %s seconds",
-                    self.cfg["alert_wait_threshold"])
-        time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 2: disk usage was above threshold for %s seconds",
-                    self.cfg["alert_wait_threshold"])
-
-        LOGGER.info("Step 3: Check disk usage fault alert on CSM REST")
+        LOGGER.info("Step 3: Checking Memory usage fault alerts on CSM REST API")
         time_lapsed = 0
         resp = False
-        while(time_lapsed < self.cfg["csm_alert_gen_delay"] or resp):
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
             resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime, test_cfg["alert_type"], False, test_cfg["resource_type"])
+                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
             time.sleep(1)
             time_lapsed = time_lapsed + 1
         assert resp, self.cfg["csm_error_msg"]
-        LOGGER.info("Step 3: Successfully verified disk usage alert on CSM REST ")
+        LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
+
+        self.starttime = time.time()
+        LOGGER.info("Step 4: Resolving Memory usage fault.")
+        LOGGER.info("Updating default Memory usage threshold value")
+        resp = self.sw_alert_obj.resolv_disk_usage_fault(self.default_disk_usage)
+        assert resp[0], resp[1]
+        LOGGER.info("Step 4: Memory usage fault is resolved.")
+        self.default_mem_usage = False
+
+        LOGGER.info("Step 5: Keep the memory usage below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 5: Memory usage was below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 6: Checking Memory usage resolved alerts on CSM REST API")
+        time_lapsed = 0
+        resp = False
+        while(time_lapsed < self.cfg["csm_alert_gen_delay"] and not resp):
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+            time.sleep(1)
+            time_lapsed = time_lapsed + 1
+        assert resp, self.cfg["csm_error_msg"]
+        LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
+
 
