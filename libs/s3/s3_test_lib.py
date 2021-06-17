@@ -603,7 +603,6 @@ class S3TestLib(S3Lib):
 
         :param key: Key of the object to get.
         :param bucket: The bucket name containing the object.
-        :param ranges:
         :return: (Boolean, Response)
         """
         try:
