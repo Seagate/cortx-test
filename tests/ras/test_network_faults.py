@@ -50,6 +50,7 @@ class TestNetworkFault:
         cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.hostname = CMN_CFG["nodes"][0]["hostname"]
         cls.public_data_ip = CMN_CFG["nodes"][0]["public_data_ip"]
         cls.mgmt_ip = CMN_CFG["nodes"][0]["ip"]
         cls.setup_type = CMN_CFG['setup_type']
@@ -69,14 +70,14 @@ class TestNetworkFault:
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         # Enable this flag for starting message_bus
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
-
         cls.mgmt_fault_flag = False
         cls.public_data_fault_flag = False
 
-        resp = cls.health_obj.get_current_srvnode()
-        cls.current_srvnode = resp[1] if resp[0] else assert_true(resp[0],
-                                                                  "Check pcs "
-                                                                  "status")
+        node_d = cls.health_obj.get_current_srvnode()
+        cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
+            cls.hostname.split('.')[0] in node_d.keys() else assert_true(
+            False, "Node name not found")
+
         cls.csm_alerts_obj = SystemAlerts()
         cls.s3obj = S3H_OBJ
         cls.alert_type = RAS_TEST_CFG["alert_types"]
@@ -518,17 +519,19 @@ class TestNetworkFault:
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
 
-            # LOGGER.info("Step 3: Validating csm alert response")
-            # resp = self.csm_alerts_obj.verify_csm_response(
-            #     self.starttime, self.alert_type["fault"],
-            #     False, network_fault_params["resource_type"],
-            #     network_fault_params["resource_id_csm"].format(resource_id))
-            # LOGGER.info("Response: %s", resp)
-            # if not resp:
-            #    df[key]['Step3'] = 'Fail'
-            #   assert_true(resp, "Step 3: Failed to get alert in CSM REST")
-            # else:
-            #   LOGGER.info("Step 3: Successfully Validated csm alert response")
+            if key != 'mgmt_fault' and self.setup_type != 'VM':
+                LOGGER.info("Step 3: Validating csm alert response")
+                resp = self.csm_alerts_obj.verify_csm_response(
+                    self.starttime, self.alert_type["fault"],
+                    False, network_fault_params["resource_type"],
+                    network_fault_params["resource_id_csm"].format(resource_id))
+                LOGGER.info("Response: %s", resp)
+                if not resp:
+                    df[key]['Step3'] = 'Fail'
+                    assert_true(resp, "Step 3: Failed to get alert in CSM REST")
+                else:
+                    LOGGER.info("Step 3: Successfully Validated csm alert "
+                                "response")
 
             LOGGER.info("Step 4: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -605,18 +608,19 @@ class TestNetworkFault:
             LOGGER.info(
                 "Step 8: Validating csm alert response after resolving fault")
 
-            # resp = self.csm_alerts_obj.verify_csm_response(
-            #     self.starttime,
-            #     self.alert_type["resolved"],
-            #     True, network_fault_params["resource_type"],
-            #     network_fault_params["resource_id_csm"].format(resource_id))
-            # LOGGER.info("Response: %s", resp)
-            # if not resp:
-            #     df[key]['Step8'] = 'Fail'
-            #     assert_true(resp, "Step 8: Failed to get alert in CSM REST")
-            # else:
-            #     LOGGER.info("Step 8: Successfully validated csm alert response "
-            #                 "after resolving fault")
+            if key != 'mgmt_fault' and self.setup_type != 'VM':
+                resp = self.csm_alerts_obj.verify_csm_response(
+                    self.starttime,
+                    self.alert_type["resolved"],
+                    True, network_fault_params["resource_type"],
+                    network_fault_params["resource_id_csm"].format(resource_id))
+                LOGGER.info("Response: %s", resp)
+                if not resp:
+                    df[key]['Step8'] = 'Fail'
+                    assert_true(resp, "Step 8: Failed to get alert in CSM REST")
+                else:
+                    LOGGER.info("Step 8: Successfully validated csm alert response "
+                                "after resolving fault")
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True

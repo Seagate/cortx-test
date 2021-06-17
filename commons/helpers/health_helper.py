@@ -482,17 +482,24 @@ class Health(Host):
 
         return status
 
-    def get_current_srvnode(self) -> Tuple[bool, str]:
+    def get_current_srvnode(self) -> dict:
         """
         Returns: Bool, Name of current server
         rtype: bool, str
         """
-        cmd = commands.CMD_PCS_STATUS_FULL + " | grep 'Current DC:'"
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])|:')
+        node = []
+        h_list = []
+        cmd = commands.CMD_SALT_GET_HOST
         LOG.info("Running command: %s", cmd)
         resp = self.execute_cmd(cmd)
         resp = (resp.decode("utf-8").split('\n'))[0].split()
         for ele in resp:
-            if "srvnode" in ele:
-                return True, ele
+            if 'srvnode' not in ansi_escape.sub('', ele).strip():
+                node.append(ansi_escape.sub('', ele).strip())
+            else:
+                h_string = ansi_escape.sub('', ele).strip() + ".data.private"
+                h_list.append(h_string)
 
-        return False, "Current srvnode not found"
+        d_node = dict(zip(node, h_list))
+        return d_node
