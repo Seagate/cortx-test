@@ -10,7 +10,6 @@ Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${h
 ...  ${username}  ${password}
 ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-#Test Teardown   CSM GUI Logout
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  SWServicesAlerts
@@ -24,10 +23,15 @@ TEST-21262
     [Tags]  Priority_High  R2 TEST-21262
     Fail if New alerts exist SW Service  haproxy
     Acknowledge if Active alerts exist SW Service  haproxy
-    #test_21194_deactivating_alerts(self)
-    #Fail if New alerts exist SW Service  haproxy
-    #test_21194_activating_alertsself
-    #Fail if New alerts exist SW Service  haproxy
+    # fail service
+    Verify failed alerts exist SW Service  haproxy
+    # start service
+    Verify failed resolved alerts exist SW Service  haproxy
+    # inactive service
+    Verify inactive alerts exist SW Service  haproxy
+    # start service
+    Verify inactive resolved alerts exist SW Service  haproxy
+    Verify failed alerts exist SW Service  haproxy
 
 TEST-21267
     [Documentation]  CSM GUI: Verify Alerts for SW Service : Multipathd

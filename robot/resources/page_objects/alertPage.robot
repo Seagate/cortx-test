@@ -161,6 +161,82 @@ Fail if New alerts exist SW Service
         ...  AND  Fail  # correct Description not found in the alert, failing test
     END
 
+Verify failed alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Pass  # correct Description not found in the alert, failing test
+    END
+
+Verify inactive alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Verify failed resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Verify inactive resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
 Acknowledge if Active alerts exist SW Service
     [Documentation]  Acknowledge if SW Service alerts exist
     [Arguments]  ${servicename}
