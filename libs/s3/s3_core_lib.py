@@ -327,7 +327,7 @@ class S3Lib:
 
         return response
 
-    def get_object(self, bucket: str = None, key: str = None, **kwargs) -> dict:
+    def get_object(self, bucket: str = None, key: str = None) -> dict:
         """
         Getting byte range of the object.
 
@@ -336,7 +336,7 @@ class S3Lib:
         :return: response.
         """
         response = self.s3_client.get_object(
-            Bucket=bucket, Key=key, **kwargs)
+            Bucket=bucket, Key=key)
         LOGGER.debug(response)
 
         return response
