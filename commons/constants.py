@@ -308,3 +308,8 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+
+
+class Sizes:
+    KB = 1024
+    MB = KB * KB
