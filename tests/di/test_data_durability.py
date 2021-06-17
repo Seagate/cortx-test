@@ -32,12 +32,11 @@ from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
-from commons.params import TEST_DATA_FOLDER
+from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from libs.s3 import CMN_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
-
-S3T_OBJ = S3TestLib()
 
 
 class TestDataDurability:
@@ -67,7 +66,7 @@ class TestDataDurability:
         self.passwd = CMN_CFG["nodes"][0]["password"]
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestDataDurability")
+            VAR_LOG_SYS, TEST_DATA_FOLDER, "TestDataDurability")
         self.file_path = os.path.join(self.test_dir_path, self.test_file)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -86,9 +85,11 @@ class TestDataDurability:
             system_utils.remove_file(self.file_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
-        resp = S3T_OBJ.bucket_list()
+        self.s3_test_obj = S3TestLib()
+        self.s3_mp_test_obj = S3MultipartTestLib()
+        resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting the IAM accounts and users")
@@ -108,49 +109,6 @@ class TestDataDurability:
         self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
-
-    def create_bkt_put_obj(self):
-        """
-        Function will create a bucket and uploads an object to it.
-
-        also it will calculate checksum of file content
-        :return str: Checksum of file content
-        """
-        self.log.info(
-            "Step 1: Creating a file with name %s", (
-                self.test_file))
-        system_utils.create_file(self.file_path, self.file_size)
-        self.log.info(
-            "Step 1: Created a file with name %s", (
-                self.test_file))
-        self.log.info(
-            "Step 2: Retrieving checksum of file %s", (
-                self.test_file))
-        resp1 = system_utils.get_file_checksum(self.file_path)
-        assert_utils.assert_true(resp1[0], resp1[1])
-        chksm_before_put_obj = resp1[1]
-        self.log.info(
-            "Step 2: Retrieved checksum of file %s", (
-                self.test_file))
-        self.log.info(
-            "Step 3: Uploading a object to a bucket %s", (
-                self.bucket_name))
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.put_object(
-            self.bucket_name,
-            self.object_name,
-            self.file_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.object_list(self.bucket_name)
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            f"Failed to upload create {self.object_name}")
-        self.log.info(
-            "Step 3: Uploaded an object to a bucket %s", (
-                self.bucket_name))
-        return chksm_before_put_obj
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -211,14 +169,14 @@ class TestDataDurability:
         self.log.info("Step 1: Create a bucket and put N object into the "
                       "bucket")
         self.file_lst = []
-        for i in range(self.secure_range.randint(2,8)):
+        for i in range(self.secure_range.randint(2, 8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, self.file_size)
             self.file_lst.append(file_path)
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for obj in self.file_lst:
-            resp = S3T_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 self.bucket_name, obj, obj)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Successfully put N obj into created bucket.")
@@ -230,7 +188,7 @@ class TestDataDurability:
         self.log.info("Step 3: Verify Get/read of an object whose metadata is "
                       "corrupted")
         for obj in self.file_lst:
-            resp = S3T_OBJ.get_object(
+            resp = self.s3_test_obj.get_object(
                 self.bucket_name, obj)
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 3: Read(get) of an object failed with an error")
@@ -255,7 +213,8 @@ class TestDataDurability:
             "range read (Get).")
         self.log.info("Step 1: Create a bucket and upload object into a "
                       "bucket.")
-        self.create_bkt_put_obj()
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, self.file_size)
         self.log.info("Step 1: Successfully put an obj into created bucket.")
         self.log.info("Step 2: Corrupt metadata of an object at Motr level")
         # resp = corrupt_metadat_of_an_obj(object)
@@ -265,8 +224,8 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Verify range read (get) of an object whose metadata "
             "is corrupted")
-        resp = S3T_OBJ.get_object(
-            self.bucket_name, self.object_name)
+        resp = self.s3_mp_test_obj.get_byte_range_of_object(
+            self.bucket_name, self.object_name, "1025", "8192")
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "Step 3: Range Read (get) of an object failed with an error")
@@ -293,7 +252,7 @@ class TestDataDurability:
             "with correct checksum.")
         self.log.info("Step 1: Create N objects of size 10 MB")
         self.file_lst = []
-        for i in range(self.secure_range.randint(2,8)):
+        for i in range(self.secure_range.randint(2, 8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
@@ -309,10 +268,10 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Put objects into a bucket with a calculated checksum"
             " pass in content-md5 field")
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for file, binary_checksum in checksum_dict.items():
-            resp = S3T_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
                 content_md5=binary_checksum)
             assert_utils.assert_true(resp[0], resp[1])
@@ -337,7 +296,7 @@ class TestDataDurability:
             "different checksum.")
         self.log.info("Step 1: Create N objects of size 10MB")
         self.file_lst = []
-        for i in range(self.secure_range.randint(2,8)):
+        for i in range(self.secure_range.randint(2, 8)):
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
@@ -354,10 +313,10 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Put objects into bucket with different calculated "
             "checksum pass in content-md5 field")
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for file, binary_checksum in checksum_dict.items():
-            resp = S3T_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
                 content_md5=binary_checksum)
             assert_utils.assert_false(resp[0], resp[1])
@@ -381,8 +340,8 @@ class TestDataDurability:
             "storage set .")
         self.log.info(
             "Step 1: Create a bucket and put and mid-large size object.")
-        self.file_size = 40
-        self.create_bkt_put_obj()
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, 40)
         self.log.info("Step 2: Verify checksum of a file across storage set.")
         # resp = verify_checsum_file_across_storage_set(self.file_path)
         # assert_utils.assert_true(resp[0], resp[1])
@@ -403,7 +362,8 @@ class TestDataDurability:
             "verify read (Get).")
         self.log.info(
             "Step 1: Create a bucket and upload object into a bucket.")
-        self.create_bkt_put_obj()
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, self.file_size)
         self.log.info(
             "Step 1: Created a bucket and upload object into a bucket.")
         self.log.info(
@@ -415,7 +375,7 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Verify read (Get) of an object whose metadata is "
             "corrupted.")
-        res = S3T_OBJ.get_object(self.bucket_name, self.object_name)
+        res = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
         assert_utils.assert_false(res[0], res)
         self.log.info(
             "Step 3: Verified read (Get) of an object whose metadata is "
@@ -443,7 +403,8 @@ class TestDataDurability:
             "verify range read (Get.")
         self.log.info(
             "Step 1: Create a bucket and upload object into a bucket.")
-        self.create_bkt_put_obj()
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, self.file_size)
         self.log.info(
             "Step 1: Created a bucket and upload object into a bucket.")
         self.log.info(
@@ -455,7 +416,8 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Verify range read (Get) of an object whose metadata"
             " is corrupted.")
-        res = S3T_OBJ.get_object(self.bucket_name, self.object_name)
+        res = self.s3_mp_test_obj.get_byte_range_of_object(
+            self.bucket_name, self.object_name, "2025", "9216")
         assert_utils.assert_false(res[0], res)
         self.log.info(
             "Step 3: Verified range read (Get) of an object whose metadata"
