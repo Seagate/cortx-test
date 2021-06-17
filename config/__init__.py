@@ -70,6 +70,10 @@ elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner p
     target = os.environ["TARGET"]
 elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
+# Will revisit this once we fix the singleton/s3helper issue
+elif proc_name in ["testrunner.py", "testrunner"]:
+    target = split_args([
+        i for i in sys.argv if '-tg' in i or '--target' in i])[1]
 else:
     target = None
 
