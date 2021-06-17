@@ -439,6 +439,32 @@ class Health(Host):
 
         return response
 
+    def pcs_resource_ops_cmd(self, command: str, resources: list, srvnode: str = "",
+                             wait_time: int = 30) -> bool:
+        """
+        Perform given operation on pcs resource using pcs resource command
+
+        :param command: pcs operation to be performed on resource
+        :param resources: list of resource names from pcs resource
+        :param srvnode: Name of the server on which command to be performed
+        :param wait_time: Wait time in sec after performing operation
+        :return: boolean
+        :rtype: bool
+        """
+        valid_commands = {"ban", "clear", "enable", "disable", "restart"}
+        if command not in valid_commands:
+            raise ValueError("Invalid command")
+        for rsrc in resources:
+            LOG.info("Performing %s on resource %s", command, rsrc)
+            cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc, srvnode)
+            LOG.info("Running command: %s", cmd)
+            resp = self.execute_cmd(cmd, read_lines=True)
+            LOG.debug("Response: %s", resp)
+            time.sleep(wait_time)
+            LOG.info("Successfully performed %s on %s", command, rsrc)
+
+        return True
+
     def check_nw_interface_status(self):
         """
         Function to get status of all available network interfaces on node.
@@ -458,4 +484,24 @@ class Health(Host):
 
         return status
 
+    def get_current_srvnode(self) -> dict:
+        """
+        Returns: Bool, Name of current server
+        rtype: bool, str
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])|:')
+        node = []
+        h_list = []
+        cmd = commands.CMD_SALT_GET_HOST
+        LOG.info("Running command: %s", cmd)
+        resp = self.execute_cmd(cmd)
+        resp = (resp.decode("utf-8").split('\n'))[0].split()
+        for ele in resp:
+            if 'srvnode' not in ansi_escape.sub('', ele).strip():
+                node.append(ansi_escape.sub('', ele).strip())
+            else:
+                h_string = ansi_escape.sub('', ele).strip() + ".data.private"
+                h_list.append(h_string)
 
+        d_node = dict(zip(node, h_list))
+        return d_node
