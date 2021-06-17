@@ -394,6 +394,9 @@ def trigger_tests_from_te(args):
     if not args.build and not args.build_type:
         args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
+    if args.data_integrity_chk:
+        thread_io, event = runner.start_parallel_io(args)
+
     _env = os.environ.copy()
     if not args.force_serial_run:
         # First execute all tests with parallel tag which are mentioned in given tag.
@@ -410,6 +413,9 @@ def trigger_tests_from_te(args):
         run_pytest_cmd(args, te_tag, True, env=_env)
         # Execute all other tests not having parallel tag with given component tag.
         run_pytest_cmd(args, te_tag, False, env=_env)
+
+    if args.data_integrity_chk:
+        runner.stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
@@ -538,7 +544,6 @@ def main(args):
     It renames up the latest folder and parses TE ticket to create detailed test details csv.
     """
     get_setup_details(args)
-
     if args.json_file:
         json_dict, cmd, run_using = runner.parse_json(args.json_file)
         cmd_line = runner.get_cmd_line(cmd, run_using, args.html_report, args.log_level)

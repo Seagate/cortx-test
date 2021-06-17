@@ -33,6 +33,7 @@ from commons.constants import Rest as const
 from commons.utils import assert_utils
 from commons import cortxlogging
 
+
 class TestAuditLogs():
     """Audit logs Testsuite"""
 
@@ -44,8 +45,7 @@ class TestAuditLogs():
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setup...")
-        cls.audit_logs = RestAuditLogs(component_csm="csm",
-                                        component_s3="s3")
+        cls.audit_logs = RestAuditLogs(component_csm="csm", component_s3="s3")
         cls.end_time = int(time.time())
         cls.start_time = cls.end_time - ((7 * 24) * 60 * 60)
         cls.csm_user = RestCsmUser()
@@ -75,15 +75,15 @@ class TestAuditLogs():
         """Test that s3 account and iam user don't have access to audit logs
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(
             params=params,
             expected_status_code=403,
             login_as="s3account_user",
             validate_expected_response=False,
-            )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        )
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -92,13 +92,13 @@ class TestAuditLogs():
         """Verify that API to download audit logs returns 404 error code on invalid component name
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_download(params=params,
                                                               expected_status_code=404,
                                                               validate_expected_response=False,
                                                               invalid_component=True)
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -107,13 +107,13 @@ class TestAuditLogs():
         """Verify that API to show audit logs returns 404 error code on invalid component name
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           expected_status_code=404,
                                                           validate_expected_response=False,
                                                           invalid_component=True)
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -122,7 +122,7 @@ class TestAuditLogs():
         """Test that GET API returns audit logs in binary format for both csm and s3 components
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_s3_download(params=params,
                                                              validate_expected_response=True,
@@ -132,7 +132,7 @@ class TestAuditLogs():
                                                               validate_expected_response=True,
                                                               response_type=str
                                                               )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -142,12 +142,12 @@ class TestAuditLogs():
         contain info reagrding specified parameters and in specified format.
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           validate_expected_response=True
                                                           )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -156,7 +156,7 @@ class TestAuditLogs():
         """Test that admin can download and see audit logs
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           validate_expected_response=True
@@ -165,7 +165,7 @@ class TestAuditLogs():
                                                               validate_expected_response=True,
                                                               response_type=str
                                                               )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -174,13 +174,13 @@ class TestAuditLogs():
         """Test that audit log is returned for different time intervals
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         start_time = self.end_time - ((4 * 24) * 60 * 60)
         params = {"start_date": start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           validate_expected_response=True
                                                           )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -189,7 +189,7 @@ class TestAuditLogs():
         """Test that csm user(having manage or monitor rights) can download and see audit logs
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
         params = {"start_date": self.start_time, "end_date": self.end_time}
         assert self.audit_logs.verify_audit_logs_csm_show(params=params,
                                                           login_as="csm_user_manage",
@@ -200,7 +200,7 @@ class TestAuditLogs():
                                                               validate_expected_response=True,
                                                               response_type=str
                                                               )
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -209,7 +209,7 @@ class TestAuditLogs():
         """Test that Verify that content of both 'show' and 'dowload' api is exactly same
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info(
             "Creating the payload for the audit log show api and audit log download api")
@@ -219,25 +219,25 @@ class TestAuditLogs():
         params = {"start_date": start_time, "end_date": end_time}
 
         self.log.info("Step 1: Sending audit log show request for start time: %s and end time: %s",
-            start_time, end_time)
+                      start_time, end_time)
         audit_log_show_response = self.audit_logs.audit_logs_csm_show(
             params=params, invalid_component=False)
         self.log.info("Verifying if success response was returned")
         assert_utils.assert_equals(audit_log_show_response.status_code,
                                    const.SUCCESS_STATUS)
         self.log.info("Step 1: Verified that audit log show request returned status: %s",
-            audit_log_show_response.status_code)
+                      audit_log_show_response.status_code)
 
         self.log.info("Step 2: Sending audit log download request for start "
-        "time: %s and end time: %s",
-            start_time, end_time)
+                      "time: %s and end time: %s",
+                      start_time, end_time)
         audit_log_download_response = self.audit_logs.audit_logs_csm_download(
             params=params, invalid_component=False)
         self.log.info("Verifying if success response was returned")
         assert_utils.assert_equals(audit_log_download_response.status_code,
                                    const.SUCCESS_STATUS)
         self.log.info("Step 2: Verified that audit log show request returned status: %s",
-            audit_log_download_response.status_code)
+                      audit_log_download_response.status_code)
 
         self.log.info(
             "Step 3:Comparing and verifying if the audit log show api content "
@@ -248,23 +248,22 @@ class TestAuditLogs():
             "Step 3:Verified the audit log show api content and the downloaded "
             "file content with audit log download api match ")
 
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15865')
-    @pytest.mark.skip(reason="Test is taking exceptionally long time")
     def test_4922(self):
         """
         Test that GET api returns audit logs for date range specified and total
         count should not exceed more than 10000
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
 
         data = self.csm_conf["test_4922"]
-        start_time = self.end_time - \
-            ((data["end_date"] * data["hrs"]) * data["min"] * data["sec"])
+        self.end_time = int(time.time())
+        start_time = self.end_time - ((data["end_date"] * data["hrs"]) * data["min"] * data["sec"])
 
         self.log.info("Parameters for the audit logs GET api")
         params = {"start_date": start_time, "end_date": self.end_time}
@@ -273,7 +272,7 @@ class TestAuditLogs():
             "Step 1: Verifying that GET api returns audit logs for date range specified")
         for i in range(0, len(data["user_list"])):
             self.log.info("Fetchin audit log GET API by logging in as %s user",
-                data["user_list"][i])
+                          data["user_list"][i])
             response = self.audit_logs.audit_logs_csm_show(
                 params, login_as=data["user_list"][i])
             assert_utils.assert_equals(response.status_code,
@@ -284,28 +283,29 @@ class TestAuditLogs():
         self.log.info(
             "Step 2: Verifying that GET api returns records not more than 10000")
         response = self.audit_logs.audit_logs_csm_show(params)
-        self.log.info("Count of records in audit logs is:%s",
-            len(response.json()))
+        self.log.info("Count of records in audit logs is:%s", response.json()['total_records'])
 
         self.log.info("Generating autdit logs for test purpose")
-        if len(response.json()) < data["record_count"]:
-            for i in range(len(response.json()), data["max_record_count"]):
+        if response.json()['total_records'] < data["record_count"]:
+            for i in range(response.json()['total_records'], data["max_record_count"]):
                 resp = self.csm_user.list_csm_single_user(
                     request_type="get",
                     expect_status_code=const.SUCCESS_STATUS,
                     user=self.audit_logs.config["csm_admin_user"]["username"],
                     return_actual_response=True)
                 assert resp
-
+        self.end_time = int(time.time())
+        start_time = self.end_time - ((data["end_date"] * data["hrs"]) * data["min"] * data["sec"])
+        self.log.info("Parameters for the audit logs GET api")
+        params = {"start_date": start_time, "end_date": self.end_time}
         response = self.audit_logs.audit_logs_csm_show(params)
-        self.log.info("Count of records in audit logs is:%s",
-            len(response.json()))
-        assert_utils.assert_equals(len(response.json()), data["record_count"])
+        self.log.info("Count of records in audit logs is:%s", response.json()['total_records'])
+        assert_utils.assert_equals(response.json()['total_records'], data["record_count"])
 
         self.log.info(
             "Step 2: Verified that GET api returns records not more than 10000")
 
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -316,7 +316,7 @@ class TestAuditLogs():
         contain info regarding specified parameters and in specified format
         """
         test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####",test_case_name)
+        self.log.info("##### Test started -  %s #####", test_case_name)
 
         epoc_time_diff = self.csm_conf["test_4915"]["epoc_time_diff"]
 
@@ -328,7 +328,7 @@ class TestAuditLogs():
         assert_utils.assert_equals(response.status_code,
                                    const.SUCCESS_STATUS)
         self.log.info("Verified s3 bucket: %s was created",
-            response.json()["bucket_name"])
+                      response.json()["bucket_name"])
         bucket = response.json()["bucket_name"]
 
         self.log.info(
@@ -351,4 +351,4 @@ class TestAuditLogs():
             "Verified audit logs for s3 component contain info regarding "
             "specified parameters and in specified format ")
 
-        self.log.info("##### Test ended -  %s #####",test_case_name)
+        self.log.info("##### Test ended -  %s #####", test_case_name)
