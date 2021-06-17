@@ -114,7 +114,7 @@ class TestServerOS:
 
         if self.changed_level:
             kv_store_path = LOG_STORE_PATH
-            common_cfg =self.cfg["sspl_config"]
+            common_cfg = self.cfg["sspl_config"]
             res = self.ras_test_obj.update_threshold_values(
                 kv_store_path, common_cfg["sspl_log_level_key"],
                 common_cfg["sspl_log_dval"],
@@ -157,7 +157,7 @@ class TestServerOS:
             LOGGER.info("Updating default Memory usage threshold value")
             resp = self.sw_alert_obj.resolv_mem_usage_fault(self.default_mem_usage)
             assert resp[0], resp[1]
-            
+
         if self.default_disk_usage:
             LOGGER.info("Updating default Memory usage threshold value")
             resp = self.sw_alert_obj.resolv_disk_usage_fault(self.default_disk_usage)
@@ -174,12 +174,12 @@ class TestServerOS:
         test_cfg = RAS_TEST_CFG["test_21587"]
 
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-                                    url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         LOGGER.info("Step 1: Generate CPU usage fault.")
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         LOGGER.info("Step 1: CPU usage fault is created successfully.")
-    
+
         LOGGER.info("Step 2: Keep the CPU usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -248,12 +248,12 @@ class TestServerOS:
         test_cfg = RAS_TEST_CFG["test_21588"]
 
         self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
-                                    url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
         LOGGER.info("Step 1: Generate memory usage fault.")
         resp = self.sw_alert_obj.gen_mem_usage_fault(test_cfg["delta_mem_usage"])
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Memory usage fault is created successfully.")
-    
+
         LOGGER.info("Step 2: Keep the Memory usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -322,12 +322,12 @@ class TestServerOS:
         test_cfg = RAS_TEST_CFG["test_21586"]
 
         self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
-                                    url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
         LOGGER.info("Step 1: Generate memory usage fault.")
         resp = self.sw_alert_obj.gen_disk_usage_fault(test_cfg["delta_disk_usage"])
         assert resp[0], resp[1]
         LOGGER.info("Step 1: Memory usage fault is created successfully.")
-    
+
         LOGGER.info("Step 2: Keep the Memory usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -384,5 +384,3 @@ class TestServerOS:
         assert resp, self.cfg["csm_error_msg"]
         LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
-
-
