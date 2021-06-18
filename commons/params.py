@@ -30,6 +30,7 @@ LOG_DIR_NAME = 'log'
 LATEST_LOG_FOLDER = 'latest'
 LOG_DIR = os.path.join(SCRIPT_HOME, LOG_DIR_NAME)
 TEST_DATA_FOLDER = 'TestData'
+VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
@@ -77,6 +78,7 @@ apollojenkins.pun.seagate.com:27017/
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
 LOCAL_LOG_PATH = "/root/pytest_logs"
+VM_COLLECTION = "r2_vm_pool"
 
 # Jenkins url for deployment
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"

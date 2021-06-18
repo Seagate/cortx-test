@@ -49,9 +49,10 @@ ras_sspl_alert:
   service:
     sspl_service: "sspl-ll"
     kafka_service: "kafka"
+    kafka_zookeeper: "kafka-zookeeper"
     csm_web: "csm_web"
     csm_agent: "csm_agent"
-  sspl_resource_id: "sspl-ll-clone"
+  sspl_resource_id: "monitor_group-clone"
   mc_debug_port: 7900
   telnet_sleep_val: 120
   max_wait_time: 320
@@ -89,3 +90,6 @@ nw_fault_params:
   min_wait_time: 180
   max_wait_time: 300
   min_wait_after_io: 160
+
+test21196:
+  ignore_params: ['timestamp','comment']
