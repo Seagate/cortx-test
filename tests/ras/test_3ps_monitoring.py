@@ -462,3 +462,84 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 6: Verified the fault resolved alert on CSM")
 
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    @pytest.mark.tags("TEST-21233")
+    def test_21233_inactive_alerts_reboot(self):
+        """Test alerts when 3P services transition from inactive to active.
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        LOGGER.info("External services : %s", self.external_svcs)
+        for svc in self.external_svcs:
+            LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+            LOGGER.info("Step 1: Disable %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "disable", [],
+                                                                        timeout=60)
+            assert result, f"Failed in disabling {svc} service"
+            LOGGER.info("Step 1: Disabled %s service...", svc)
+
+            LOGGER.info("Step 1: Fail %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
+                                                                        timeout=60)
+            assert result, f"Failed in failing {svc} service"
+            LOGGER.info("Step 1: Failed %s service...", svc)
+
+            LOGGER.info("Step 3: Checking the NO fault alert on CSM")
+            # TODO: Check alert on CSM
+            assert not self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 3: Verified NO fault alert on CSM")
+
+            self.sw_alert_obj.restore_svc_config()
+            LOGGER.info("Step 4: Wait for the %s service to start", svc)
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+            LOGGER.info("Service recovery details : %s", op)
+            assert op["state"] == "active", f"Unable to recover {svc} service"
+            LOGGER.info("Step 4: %s service is active and running", svc)
+
+            LOGGER.info("Step 3: Checking the NO fault resolved alert on CSM")
+            # TODO: Check alert on CSM
+            assert not self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 3: Verified NO fault resolved alert on CSM")
+
+            LOGGER.info("Step 2: Reboot system started..")
+            
+            #Todo
+            LOGGER.info("Step 2: Reboot system completed.")
+
+
+            LOGGER.info("Step 1: Enable %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "disable", [],
+                                                                        timeout=60)
+            assert result, f"Failed in enabling {svc} service"
+            LOGGER.info("Step 1: Enable %s service...", svc)
+
+            LOGGER.info("Step 1: Fail %s service...", svc)
+            starttime = time.time()
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
+                                                                        timeout=60)
+            assert result, f"Failed in failing {svc} service"
+            LOGGER.info("Step 1: Failed %s service...", svc)
+
+            LOGGER.info("Step 3: Checking the fault alert on CSM")
+            # TODO: Check alert on CSM
+            assert not self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 3: Verified fault alert on CSM")
+
+            self.sw_alert_obj.restore_svc_config()
+            LOGGER.info("Step 4: Wait for the %s service to start", svc)
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+            LOGGER.info("Service recovery details : %s", op)
+            assert op["state"] == "active", f"Unable to recover {svc} service"
+            LOGGER.info("Step 4: %s service is active and running", svc)
+
+            LOGGER.info("Step 3: Checking the fault resolved alert on CSM")
+            # TODO: Check alert on CSM
+            assert not self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
+            LOGGER.info("Step 3: Verified fault resolved alert on CSM")
