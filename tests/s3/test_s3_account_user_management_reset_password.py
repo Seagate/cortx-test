@@ -111,11 +111,13 @@ class TestAccountUserManagementResetPassword:
         self.log.info("setup %s", all_accounts)
         for acc in self.account_dict:
             if acc in all_accounts:
-                self.cli_test_obj.delete_account_cortxcli(
+                resp = self.cli_test_obj.delete_account_cortxcli(
                     account_name=acc, password=self.account_dict[acc])
+                assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Deleted %s account successfully", acc)
         for user in self.csm_user_list:
-            self.csm_obj.csm_user_delete(user)
+            resp = self.csm_obj.csm_user_delete(user)
+            assert_utils.assert_true(resp[0], resp[1])
         del self.cli_test_obj
         del self.csm_obj
         self.log.info("ENDED: test teardown.")
@@ -671,6 +673,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
+        self.resources_dict[s3_test_obj] = self.bucket_name1
         self.log.info("Step 6. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
