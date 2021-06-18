@@ -598,14 +598,13 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 3: Verified NO fault resolved alert on CSM")
 
             LOGGER.info("Step 2: Reboot system started..")
-            
-            #Todo
+            resp = self.sw_alert_obj.node_utils.shutdown_node(options="-r")
+            assert resp[0], resp[1]
             LOGGER.info("Step 2: Reboot system completed.")
-
 
             LOGGER.info("Step 1: Enable %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "disable", [],
+            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "enable", [],
                                                                         timeout=60)
             assert result, f"Failed in enabling {svc} service"
             LOGGER.info("Step 1: Enable %s service...", svc)
