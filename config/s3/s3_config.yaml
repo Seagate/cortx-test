@@ -51,3 +51,5 @@ CliConfig:
     password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
   s3_account:
     password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="
+  csm_user:
+    password: "O36j7i6uMDNpWUs086czDzdEYNmgJiuvxpFbtXrt4+U="
