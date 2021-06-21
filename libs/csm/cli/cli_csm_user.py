@@ -146,7 +146,7 @@ class CortxCliCsmUser(CortxCli):
         if "Current Password" in output:
             output = self.execute_cli_commands(cmd=current_password, patterns=["[Y/n]"])[1]
             if "[Y/n]" in output:
-                output = self.execute_cli_commands(cmd=confirm, patterns=["Updated"])[1]
+                output = self.execute_cli_commands(cmd=confirm, patterns=["Updated", "updated"])[1]
 
             if "error" in output.lower() or "exception" in output.lower():
                 return False, output
