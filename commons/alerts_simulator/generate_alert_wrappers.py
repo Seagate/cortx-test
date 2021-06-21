@@ -31,6 +31,7 @@ from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
 from commons.utils.system_utils import toggle_nw_status, make_dirs, open_empty_file
 from commons import commands
+from commons.helpers.node_helper import Node
 
 LOGGER = logging.getLogger(__name__)
 
@@ -633,7 +634,7 @@ class GenerateAlertWrapper:
         device = input_parameters['device']
         action = input_parameters['action']
         ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
-        host_connect = Host(hostname=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
 
         LOGGER.info("Simulating network cable fault using sysfs")
         try:
@@ -641,8 +642,8 @@ class GenerateAlertWrapper:
             LOGGER.info(f"Make network cable of {device} on {host} {action}")
             LOGGER.info("Creating dummy network path")
             if not os.path.exists(carrier_file_path):
-                make_dirs(dpath=os.path.dirname(carrier_file_path))
-                open_empty_file(fpath=carrier_file_path)
+                node_connect.make_dir(dpath=os.path.dirname(carrier_file_path))
+                node_connect.open_empty_file(fpath=carrier_file_path)
 
             LOGGER.info("Update sysfs_base_path in sspl.conf file")
             ras_test_obj.set_conf_store_vals(
@@ -655,7 +656,7 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Update network cable status in carrier file")
             cmd = commands.CMD_UPDATE_FILE.format(action, carrier_file_path)
-            resp = host_connect.execute_cmd(cmd=cmd, read_lines=True)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
             LOGGER.info("Response: %s", resp)
 
             return True, action
@@ -664,13 +665,3 @@ class GenerateAlertWrapper:
                          GenerateAlertWrapper.create_resolve_network_cable_faults
                          .__name__, error)
             return False, error
-
-
-
-
-
-
-
-
-
-
