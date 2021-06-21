@@ -64,69 +64,51 @@ class TestHAHealthStatus:
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
+        cls.num_nodes = len(CMN_CFG["nodes"])
 
-        cls.host1 = CMN_CFG["nodes"][0]["hostname"]
-        cls.uname1 = CMN_CFG["nodes"][0]["username"]
-        cls.passwd1 = CMN_CFG["nodes"][0]["password"]
-        cls.nd1_obj = Node(hostname=cls.host1, username=cls.uname1,
-                           password=cls.passwd1)
-        cls.hlt_obj1 = Health(hostname=cls.host1, username=cls.uname1,
-                              password=cls.passwd1)
-        cls.bmc_obj1 = Bmc(hostname=cls.host1, username=cls.uname1,
-                              password=cls.passwd1)
-        cls.sys_obj1 = CortxCliSystemtOperations(
-            host=cls.host1, username=cls.uname1, password=cls.passwd1)
-        cls.cli_obj1 = CortxCli(host=cls.host1,
-                                username=cls.uname1, password=cls.passwd1)
+        cls.node_list = []
+        cls.host_list = []
+        cls.bmc_list = []
+        cls.sys_list = []
+        cls.cli_list = []
+        cls.hlt_list = []
+        cls.srvnode_list = []
+        cls.bmc_ip_list = []
 
-        cls.host2 = CMN_CFG["nodes"][1]["hostname"]
-        cls.uname2 = CMN_CFG["nodes"][1]["username"]
-        cls.passwd2 = CMN_CFG["nodes"][1]["password"]
-        cls.nd2_obj = Node(hostname=cls.host2, username=cls.uname2,
-                           password=cls.passwd2)
-        cls.hlt_obj2 = Health(hostname=cls.host2, username=cls.uname2,
-                              password=cls.passwd2)
-        cls.bmc_obj2 = Bmc(hostname=cls.host2, username=cls.uname2,
-                              password=cls.passwd2)
-        cls.sys_obj2 = CortxCliSystemtOperations(
-            host=cls.host2, username=cls.uname2, password=cls.passwd2)
-        cls.cli_obj2 = CortxCli(host=cls.host2,
-                                username=cls.uname2, password=cls.passwd2)
-
-        cls.host3 = CMN_CFG["nodes"][2]["hostname"]
-        cls.uname3 = CMN_CFG["nodes"][2]["username"]
-        cls.passwd3 = CMN_CFG["nodes"][2]["password"]
-        cls.nd3_obj = Node(hostname=cls.host3, username=cls.uname3,
-                           password=cls.passwd3)
-        cls.hlt_obj3 = Health(hostname=cls.host3, username=cls.uname3,
-                              password=cls.passwd3)
-        cls.bmc_obj3 = Bmc(hostname=cls.host3, username=cls.uname3,
-                              password=cls.passwd3)
-        cls.sys_obj3 = CortxCliSystemtOperations(
-            host=cls.host3, username=cls.uname3, password=cls.passwd3)
-        cls.cli_obj3 = CortxCli(host=cls.host3,
-                                username=cls.uname3, password=cls.passwd3)
+        for node in range(cls.num_nodes):
+            cls.host = CMN_CFG["nodes"][node]["hostname"]
+            cls.uname = CMN_CFG["nodes"][node]["username"]
+            cls.passwd = CMN_CFG["nodes"][node]["password"]
+            cls.host_list.append(cls.host)
+            cls.srvnode_list.append(f"srvnode-{node + 1}")
+            cls.node_list.append(
+                Node(
+                    hostname=cls.host,
+                    username=cls.uname,
+                    password=cls.passwd))
+            cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
+                                       password=cls.passwd))
+            cls.bmc_list.append(Bmc(hostname=cls.host, username=cls.uname,
+                                    password=cls.passwd))
+            cls.sys_list.append(CortxCliSystemtOperations(
+                host=cls.host, username=cls.uname, password=cls.passwd))
+            cls.cli_list.append(
+                CortxCli(
+                    host=cls.host,
+                    username=cls.uname,
+                    password=cls.passwd))
 
         LOGGER.info("Done: Setup module operations")
 
     def setup_method(self):
         """
         This function will be invoked prior to each test case.
-        It is performing below operations as pre-requisites.
-            - Login to CSMCLI as admin
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.node_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
-        self.host_list = [self.host1, self.host2, self.host3]
-        self.sys_list = [self.sys_obj1, self.sys_obj2, self.sys_obj3]
-        self.bmc_list = [self.bmc_obj1, self.bmc_obj2, self.bmc_obj3]
         if self.setup_type == "HW":
-            self.bmc_ip1 = self.bmc_obj1.get_bmc_ip()
-            self.bmc_ip2 = self.bmc_obj2.get_bmc_ip()
-            self.bmc_ip3 = self.bmc_obj3.get_bmc_ip()
-            self.bmc_ip_list = [self.bmc_ip1, self.bmc_ip2, self.bmc_ip3]
+            for bmc_obj in self.bmc_list:
+                self.bmc_ip_list.append(bmc_obj.get_bmc_ip())
         LOGGER.info("Checking if all nodes online and PCS clean.")
-        self.hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -146,14 +128,11 @@ class TestHAHealthStatus:
         :return: sys_obj
         """
         res = nd_obj.execute_cmd(common_cmds.CMD_PCS_SERV.format("csm_agent"))
-        for line in res:
-            if "srvnode-1" in line:
-                sys_obj = self.sys_obj1
-            if "srvnode-2" in line:
-                sys_obj = self.sys_obj2
-            if "srvnode-3" in line:
-                sys_obj = self.sys_obj3
-
+        data = str(res, 'UTF-8')
+        for index, srvnode in enumerate(self.srvnode_list):
+            if srvnode in data:
+                sys_obj = self.sys_list[index]
+                break
         return sys_obj
 
     def check_service_other_nodes(self, node_id):
@@ -162,7 +141,7 @@ class TestHAHealthStatus:
         :param node_id: node which is down to be skipped
         :return: boolean
         """
-        for node in range(3):
+        for node in range(self.num_nodes):
             if node != node_id:
                 node_name = "srvnode-{}".format(node+1)
                 res = self.node_list[node].execute_cmd(common_cmds.CMD_PCS_GREP.format(node_name))
@@ -183,17 +162,19 @@ class TestHAHealthStatus:
         LOGGER.info("Started: Test to check node status one by one for all nodes with safe shutdown.")
 
         LOGGER.info("Check in cortxcli that all nodes are shown online.")
-        sys_obj = self.check_csm_service(self.nd1_obj)
+        sys_obj = self.check_csm_service(self.node_list[0])
+        res = sys_obj.login_cortx_cli()
+        assert_utils.assert_true(res[0], res[1])
         resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
         assert_utils.assert_true(resp[0], resp[1])
-        resp_table =  self.cli_obj1.split_table_response(resp[1])
+        resp_table =  self.cli_list[0].split_table_response(resp[1])
         LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
         #TODO: assert if any node is offline
         sys_obj.logout_cortx_cli()
         LOGGER.info("All nodes are online.")
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        for node in range(3):
+        for node in range(self.num_nodes):
             node_name = "srvnode-{}".format(node+1)
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
@@ -206,14 +187,16 @@ class TestHAHealthStatus:
             resp = system_utils.check_ping(self.host_list[node])
             assert_utils.assert_not_equal(resp, 0, "Host has not shutdown yet.")
             LOGGER.info("Check in cortxcli that the status is changed for node to offline")
-            if node == 2:
-                nd_obj = self.nd1_obj
+            if node == self.node_list[self.num_nodes-1]:
+                nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node+1]
             sys_obj = self.check_csm_service(nd_obj)
+            res = sys_obj.login_cortx_cli()
+            assert_utils.assert_true(res[0], res[1])
             resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
             assert_utils.assert_true(resp[0], resp[1])
-            resp_table = self.cli_obj1.split_table_response(resp[1])
+            resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.debug("Response for {} in cortxcli is: {}".format(node_name, resp_table))
             #TODO: Check if node is shown offline and other nodes as online in cortxcli
             #TODO: Check the alert is seen on CSM REST or msg bus for node shutdown
@@ -237,15 +220,19 @@ class TestHAHealthStatus:
             for hlt_obj in self.hlt_list:
                 res = hlt_obj.check_node_health()
                 assert_utils.assert_true(res[0], res[1])
+            sys_obj.logout_cortx_cli()
             LOGGER.info("All nodes are online and PCS looks clean.")
 
         LOGGER.info("Once all nodes online check the same again in cortxcli")
-        sys_obj = self.check_csm_service(self.nd1_obj)
+        sys_obj = self.check_csm_service(self.node_list[0])
+        res = sys_obj.login_cortx_cli()
+        assert_utils.assert_true(res[0], res[1])
         resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
         assert_utils.assert_true(resp[0], resp[1])
-        resp_table = self.cli_obj1.split_table_response(resp[1])
+        resp_table = self.cli_list[0].split_table_response(resp[1])
         LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
         # TODO: assert if any node is offline
+        sys_obj.logout_cortx_cli()
         LOGGER.info("All nodes shown online in cortxcli.")
 
         LOGGER.info("Completed: Test to check node status one by one for all nodes with safe shutdown.")
