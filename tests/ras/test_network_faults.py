@@ -187,16 +187,18 @@ class TestNetworkFault:
                                                      field=cons.CONF_SSPL_LOG_LEVEL)
         LOGGER.info("Now SSPL log level is: %s", resp)
 
-        if self.public_data_fault_flag:
+        if self.mgmt_cable_fault:
+            network_cable_fault = RAS_TEST_CFG["nw_cable_fault"]
             LOGGER.info("Resolving Public data Network port Fault")
             resp = self.alert_api_obj.generate_alert(
-                AlertType.NW_PORT_FAULT_RESOLVED,
-                host_details={'host': self.mgmt_ip, 'h_user': self.uname,
-                              'h_pwd': self.passwd},
-                input_parameters={'device': self.public_data_device})
+                AlertType.NW_CABLE_FAULT_RESOLVED,
+                input_parameters={'device': self.mgmt_device,
+                                  'action': network_cable_fault["connect"]})
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0],
-                        "{} up".format(network_fault_params["error_msg"]))
+                        network_fault_params["error_msg"].format("connect"))
+            LOGGER.info("Successfully resolved management network "
+                        "port fault on %s", self.host)
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -732,4 +734,109 @@ class TestNetworkFault:
             "resolving fault")
 
         LOGGER.info("ENDED: Verifying alerts when management network cable is"
+                    " disconnected/connected")
+
+    @pytest.mark.tags("TEST-21248")
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    def test_public_data_nw_cable_faults_21248(self):
+        """
+        TEST-21507: Test alerts when public data network cable is
+        disconnected/connected
+        """
+        LOGGER.info("STARTED: Verifying alerts when public data network cable "
+                    "is disconnected/connected")
+        common_params = RAS_VAL["nw_fault_params"]
+        network_fault_params = RAS_TEST_CFG["nw_cable_fault"]
+        resource_id = self.public_data_device
+
+        LOGGER.info("Step 1: Generating management cable faults")
+        LOGGER.info("Step 1.1: Creating fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.NW_CABLE_FAULT,
+            host_details={'host': self.host, 'host_user': self.uname,
+                          'host_password': self.passwd},
+            input_parameters={'device': self.public_data_device,
+                              'action': network_fault_params["disconnect"]})
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp[0],
+                    network_fault_params["error_msg"].format("disconnect"))
+        self.mgmt_cable_fault = True
+        LOGGER.info("Step 1.1: Successfully created management network "
+                    "port fault on %s", self.host)
+
+        wait_time = random.randint(common_params["min_wait_time"],
+                                   common_params["max_wait_time"])
+
+        LOGGER.info("Waiting for %s seconds", wait_time)
+        time.sleep(wait_time)
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 1.2: Checking the generated alert logs")
+            alert_list = [network_fault_params["resource_type"],
+                          self.alert_type["fault"],
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
+            LOGGER.info("RAS checks: %s", alert_list)
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
+
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 1.2: Successfully checked generated alerts")
+
+        LOGGER.info("Step 1.3: Validating csm alert response")
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime, self.alert_type["fault"],
+            False, network_fault_params["resource_type"],
+            network_fault_params["resource_id_csm"].format(
+                resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info("Step 1.3: Successfully Validated csm alert response")
+
+        LOGGER.info("Step 2: Resolving fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.NW_CABLE_FAULT_RESOLVED,
+            input_parameters={'device': self.public_data_device,
+                              'action': network_fault_params["connect"]})
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp[0],
+                    network_fault_params["error_msg"].format("connect"))
+        self.mgmt_cable_fault = False
+        LOGGER.info("Step 2: Successfully resolved management network "
+                    "port fault on %s", self.host)
+
+        wait_time = common_params["min_wait_time"]
+
+        LOGGER.info("Waiting for %s seconds", wait_time)
+        time.sleep(wait_time)
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 2.1: Checking the generated alert logs")
+            alert_list = [network_fault_params["resource_type"],
+                          self.alert_type["resolved"],
+                          network_fault_params["resource_id_monitor"].format(
+                              resource_id)]
+            LOGGER.info("RAS checks: %s", alert_list)
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp[0], resp[1])
+            LOGGER.info("Step 2.1: Successfully checked generated alerts")
+
+        LOGGER.info(
+            "Step 2.2: Validating csm alert response after resolving fault")
+
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime,
+            self.alert_type["resolved"],
+            True, network_fault_params["resource_type"],
+            network_fault_params["resource_id_csm"].format(
+                resource_id))
+        LOGGER.info("Response: %s", resp)
+        assert_true(resp, "Failed to get alert in CSM REST")
+        LOGGER.info(
+            "Step 2.2: Successfully validated csm alert response after "
+            "resolving fault")
+
+        LOGGER.info("ENDED: Verifying alerts when public data network cable is"
                     " disconnected/connected")

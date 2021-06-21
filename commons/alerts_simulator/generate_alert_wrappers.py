@@ -641,7 +641,7 @@ class GenerateAlertWrapper:
             carrier_file_path = f"/tmp/sys/class/net/{device}/carrier"
             LOGGER.info(f"Make network cable of {device} on {host} {action}")
             LOGGER.info("Creating dummy network path")
-            if not os.path.exists(carrier_file_path):
+            if not node_connect.path_exists(carrier_file_path):
                 node_connect.make_dir(dpath=os.path.dirname(carrier_file_path))
                 node_connect.open_empty_file(fpath=carrier_file_path)
 
