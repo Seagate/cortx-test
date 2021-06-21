@@ -84,22 +84,16 @@ class TestHAHealthStatus:
             cls.passwd = CMN_CFG["nodes"][node]["password"]
             cls.host_list.append(cls.host)
             cls.srvnode_list.append(f"srvnode-{node + 1}")
-            cls.node_list.append(
-                Node(
-                    hostname=cls.host,
-                    username=cls.uname,
-                    password=cls.passwd))
+            cls.node_list.append(Node(hostname=cls.host,
+                                      username=cls.uname, password=cls.passwd))
             cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
                                        password=cls.passwd))
             cls.bmc_list.append(Bmc(hostname=cls.host, username=cls.uname,
                                     password=cls.passwd))
             cls.sys_list.append(CortxCliSystemtOperations(
                 host=cls.host, username=cls.uname, password=cls.passwd))
-            cls.cli_list.append(
-                CortxCli(
-                    host=cls.host,
-                    username=cls.uname,
-                    password=cls.passwd))
+            cls.cli_list.append(CortxCli(host=cls.host,
+                                         username=cls.uname, password=cls.passwd))
 
         LOGGER.info("Done: Setup module operations")
 
@@ -117,7 +111,6 @@ class TestHAHealthStatus:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are online and PCS looks clean.")
-
         LOGGER.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -186,7 +179,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
-            node_name = "srvnode-{}".format(node+1)
+            node_name = self.srvnode_list[node]
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
                 LOGGER.debug("HW: Need to disable stonith on the node before shutdown")
