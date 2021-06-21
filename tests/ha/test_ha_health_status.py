@@ -149,7 +149,8 @@ class TestHAHealthStatus:
             if node != node_id:
                 node_name = "srvnode-{}".format(node+1)
                 res = self.node_list[node].execute_cmd(common_cmds.CMD_PCS_GREP.format(node_name))
-                for line in res:
+                data = str(res, 'UTF-8')
+                for line in data:
                     if "FAILED" in line or "Stopped" in line:
                         return False
         return True
@@ -167,6 +168,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Check in cortxcli that all nodes are shown online.")
         sys_obj = self.check_csm_service(self.node_list[0])
+        sys_obj.open_connection()
         res = sys_obj.login_cortx_cli()
         assert_utils.assert_true(res[0], res[1])
         resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
@@ -189,13 +191,14 @@ class TestHAHealthStatus:
             LOGGER.info("Check if the node has shutdown.")
             time.sleep(10)
             resp = system_utils.check_ping(self.host_list[node])
-            assert_utils.assert_not_equal(resp, 0, "Host has not shutdown yet.")
+            assert_utils.assert_false(resp,  "Host has not shutdown yet.")
             LOGGER.info("Check in cortxcli that the status is changed for node to offline")
-            if node == self.node_list[self.num_nodes-1]:
+            if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node+1]
             sys_obj = self.check_csm_service(nd_obj)
+            sys_obj.open_connection()
             res = sys_obj.login_cortx_cli()
             assert_utils.assert_true(res[0], res[1])
             resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
@@ -222,7 +225,7 @@ class TestHAHealthStatus:
                                                      self.bmc_pwd, "on")
             time.sleep(40)
             resp = system_utils.check_ping(self.host_list[node])
-            assert_utils.assert_equal(resp, 0, "Host has not powered on yet.")
+            assert_utils.assert_true(resp, "Host has not powered on yet.")
             LOGGER.info("Node {} has powered on".format(node_name))
             LOGGER.info("Check all nodes are back online in CLI.")
             resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
