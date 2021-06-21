@@ -73,6 +73,7 @@ class TestNetworkFault:
         cls.mgmt_fault_flag = False
         cls.public_data_fault_flag = False
         cls.mgmt_cable_fault = False
+        cls.public_data_cable_fault = False
 
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
@@ -198,6 +199,19 @@ class TestNetworkFault:
             assert_true(resp[0],
                         network_fault_params["error_msg"].format("connect"))
             LOGGER.info("Successfully resolved management network "
+                        "port fault on %s", self.host)
+
+        if self.public_data_cable_fault:
+            network_cable_fault = RAS_TEST_CFG["nw_cable_fault"]
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.NW_CABLE_FAULT_RESOLVED,
+                input_parameters={'device': self.public_data_device,
+                                  'action': network_cable_fault["connect"]})
+            LOGGER.info("Response: %s", resp)
+            assert_true(resp[0],
+                        network_fault_params["error_msg"].format("connect"))
+            self.public_data_cable_fault = False
+            LOGGER.info("Step 2: Successfully resolved management network "
                         "port fault on %s", self.host)
 
         LOGGER.info("Change sspl log level to INFO")
@@ -736,12 +750,12 @@ class TestNetworkFault:
         LOGGER.info("ENDED: Verifying alerts when management network cable is"
                     " disconnected/connected")
 
-    @pytest.mark.tags("TEST-21248")
+    @pytest.mark.tags("TEST-21508")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    def test_public_data_nw_cable_faults_21248(self):
+    def test_public_data_nw_cable_faults_21508(self):
         """
-        TEST-21507: Test alerts when public data network cable is
+        TEST-21508: Test alerts when public data network cable is
         disconnected/connected
         """
         LOGGER.info("STARTED: Verifying alerts when public data network cable "
@@ -761,7 +775,7 @@ class TestNetworkFault:
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0],
                     network_fault_params["error_msg"].format("disconnect"))
-        self.mgmt_cable_fault = True
+        self.public_data_cable_fault = True
         LOGGER.info("Step 1.1: Successfully created management network "
                     "port fault on %s", self.host)
 
@@ -802,7 +816,7 @@ class TestNetworkFault:
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0],
                     network_fault_params["error_msg"].format("connect"))
-        self.mgmt_cable_fault = False
+        self.public_data_cable_fault = False
         LOGGER.info("Step 2: Successfully resolved management network "
                     "port fault on %s", self.host)
 
