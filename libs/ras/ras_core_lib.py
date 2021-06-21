@@ -872,3 +872,4 @@ class RASCoreLib:
         val = (val[1].split()[-1]).decode("utf-8")
         val = (repr(val)[2:-1]).replace('\'', '')
         return True, val
+

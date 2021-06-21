@@ -37,6 +37,7 @@ CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
+CMD_UPDATE_FILE = "echo {} > {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
