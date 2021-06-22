@@ -89,7 +89,6 @@ class TestJcloudAndJclient:
         self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         resp = self.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
-
         self.bucket_name = "jcloudjclientbucket-{}".format(time.perf_counter_ns())
         self.obj_name = "objkey{}".format(time.perf_counter_ns())
         self.test_file = "testfile{}.txt".format(time.perf_counter_ns())
@@ -109,8 +108,8 @@ class TestJcloudAndJclient:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        if self.bucket_name in self.bucket_list:
-            resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
+        for bucket_name in self.bucket_list:
+            resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("The bucket and all objects deleted successfully")
         self.log.info("Deleting the file created locally for object")

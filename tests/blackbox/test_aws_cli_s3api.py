@@ -145,7 +145,7 @@ class TestAwsCliS3Api:
     def test_create_max_buckets_2331(self):
         """max no(1000) of buckets supported using aws cli."""
         for i in range(1000):
-            bucket_name = f"{self.bucket_name}{i}"
+            bucket_name = "blackboxs3bkt-{}-{}".format(i, time.perf_counter_ns())
             resp = S3T_OBJ.create_bucket_awscli(
                 bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
