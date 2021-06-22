@@ -27,7 +27,7 @@ while read tp_id te_id old_te
 do
     echo "tp_id : $tp_id"
     echo "te_id : $te_id"
-	  echo "old_te : $old_te"
+    echo "old_te : $old_te"
     test_exe=$(echo $te_id | sed -e 's/\r//g')
     python3.7 -u testrunner.py -te=$test_exe -tp=$tp_id -tg=$TARGET_NODE -b=$BUILD -t=$BUILD_TYPE -d=$DB_UPDATE --force_serial_run=$SEQUENTIAL_EXECUTION
 done < $INPUT
