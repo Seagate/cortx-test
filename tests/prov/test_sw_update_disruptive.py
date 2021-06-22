@@ -52,22 +52,63 @@ class TestSWUpdateDisruptive:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.host = CMN_CFG["nodes"][0]["hostname"]
-        cls.build = os.getenv("Build", None)
-        cls.build = "{}/{}".format(cls.build,
-                                   "prod") if cls.build else "last_successful_prod"
-        cls.build_branch = os.getenv("Build_Branch", "stable")
-        cls.build_path = PROV_CFG["build_url"].format(
-            cls.build_branch, cls.build)
-        LOGGER.info(
-            "User provided Hostname: {} and build path: {}".format(
-                cls.host, cls.build_path))
-        cls.uname = CMN_CFG["nodes"][0]["username"]
-        cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
-                          password=cls.passwd)
-        cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
-                             password=cls.passwd)
         cls.prov_obj = Provisioner()
+        cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.build_update1 = os.getenv("Build_update1", PROV_CFG["build_def"])
+        cls.build_update2 = os.getenv("Build_update2", PROV_CFG["build_def"])
+        cls.build_update1 = "{}/{}".format(cls.build_update1,
+                                   "prod") if cls.build_update1 else "last_successful_prod"
+        cls.build_update2 = "{}/{}".format(cls.build_update2,
+                                           "prod") if cls.build_update2 else "last_successful_prod"
+        cls.build_branch = os.getenv("Build_Branch", "stable")
+        cls.build_iso1 = PROV_CFG["build_iso"].format(
+            cls.build_branch, cls.build_update1, cls.build_update1)
+        cls.build_sig1 = PROV_CFG["build_sig"].format(
+            cls.build_branch, cls.build_update1, cls.build_update1)
+        cls.build_key1 = PROV_CFG["build_key"].format(
+            cls.build_branch, cls.build_update1)
+        cls.build_iso2 = PROV_CFG["build_iso"].format(
+            cls.build_branch, cls.build_update2, cls.build_update2)
+        cls.build_sig2 = PROV_CFG["build_sig"].format(
+            cls.build_branch, cls.build_update2, cls.build_update2)
+        cls.build_key2 = PROV_CFG["build_key"].format(
+            cls.build_branch, cls.build_update2)
+        cls.node_list = []
+        cls.host_list = []
+        cls.hlt_list = []
+        cls.srvnode_list = []
+
+        for node in range(cls.num_nodes):
+            cls.host = CMN_CFG["nodes"][node]["hostname"]
+            cls.uname = CMN_CFG["nodes"][node]["username"]
+            cls.passwd = CMN_CFG["nodes"][node]["password"]
+            cls.host_list.append(cls.host)
+            cls.srvnode_list.append(f"srvnode-{node + 1}")
+            cls.node_list.append(Node(hostname=cls.host,
+                                      username=cls.uname, password=cls.passwd))
+            cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
+                                       password=cls.passwd))
+
         LOGGER.info("Done: Setup module operations")
+
+    def setup_method(self):
+        """
+        This function will be invoked prior to each test case.
+        """
+        LOGGER.info("STARTED: Setup Operations")
+        LOGGER.info("Checking if all nodes online and PCS clean.")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
+        LOGGER.info("ENDED: Setup Operations")
+
+
+    def sw_upgrade(self):
+        """
+        This test will trigger SW upgrade with correct ISO and on healthy system to check
+        if SW upgrade command works fine. Also once process is complete, it will check if new
+        version is shown on provisioner as well as CSM and check system health and Run IOs.
+        """
+        LOGGER.info("Started: SW upgrade disruptive for CORTX sw components.")
+

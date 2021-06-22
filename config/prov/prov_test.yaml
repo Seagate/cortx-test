@@ -33,6 +33,13 @@ service_ports:
   s3: ["9443"]
   uds: ["5000"]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
+build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/ "
+           "iso/cortx-2.0.0-{2}-upgrade.iso"
+build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/ "
+           "iso/cortx-2.0.0-{2}-upgrade.iso.sig"
+build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/ "
+           "cortx_iso/RPM-GPG-KEY-Seagate"
+build_def: "last_successful_prod"
 cluster_start_msg: "Cluster start operation performed"
 confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
 
