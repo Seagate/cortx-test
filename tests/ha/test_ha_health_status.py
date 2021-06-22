@@ -173,7 +173,7 @@ class TestHAHealthStatus:
         assert_utils.assert_true(res[0], res[1])
         resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
         assert_utils.assert_true(resp[0], resp[1])
-        resp_table =  self.cli_list[0].split_table_response(resp[1])
+        resp_table =  sys_obj.split_table_response(resp[1])
         LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
         #TODO: assert if any node is offline
         sys_obj.logout_cortx_cli()
@@ -230,7 +230,7 @@ class TestHAHealthStatus:
             LOGGER.info("Check all nodes are back online in CLI.")
             resp = sys_obj.check_health_status(common_cmds.CMD_HEALTH_SHOW.format("node"))
             assert_utils.assert_true(resp[0], resp[1])
-            resp_table = self.cli_list[0].split_table_response(resp[1])
+            resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
             # TODO: assert if any node is offline
             LOGGER.info("Check for the node back up alert.")
@@ -239,6 +239,6 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             sys_obj.logout_cortx_cli()
-            LOGGER.info("All nodes are online and PCS looks clean.")
+            LOGGER.info("Node down/up worked fine for node: {}".format(node_name))
 
         LOGGER.info("Completed: Test to check node status one by one for all nodes with safe shutdown.")
