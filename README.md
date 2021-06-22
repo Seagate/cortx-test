@@ -138,7 +138,7 @@ optional arguments:
   --new_entry NEW_ENTRY
                         True for new entry , False for update
 
-e.g. python3 tools/setup_entry/setup_entry.py --dbuser <> --dbpassword <>
+e.g. python3 tools/setup_update/setup_entry.py --dbuser <> --dbpassword <>
 
 Name of setup specified in json file should be unique in case you are creating a new setup.
 For example in sample json setupname value should be unique `"setupname":"T2"`.
@@ -157,7 +157,7 @@ optional arguments:
     CA_CRT=<certificate_file_path>
     NFS_SHARE=<NFS_share_jclient_path>
 
-cd scripts/s3_tools/Makefile
+cd scripts/s3_tools/
 make help
     install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine.
     aws          : Install & configure aws tool.
