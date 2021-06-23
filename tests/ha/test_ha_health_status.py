@@ -177,6 +177,7 @@ class TestHAHealthStatus:
         LOGGER.info("Response for health check for all nodes: {}".format(resp_table))
         #TODO: assert if any node is offline
         sys_obj.logout_cortx_cli()
+        sys_obj.close_connection()
         LOGGER.info("All nodes are online.")
 
         LOGGER.info("Shutdown nodes one by one and check status.")
@@ -239,6 +240,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             sys_obj.logout_cortx_cli()
+            sys_obj.close_connection()
             LOGGER.info("Node down/up worked fine for node: {}".format(node_name))
 
         LOGGER.info("Completed: Test to check node status one by one for all nodes with safe shutdown.")
