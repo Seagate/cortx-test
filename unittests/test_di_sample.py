@@ -26,6 +26,9 @@ class TestSample:
         cls.log.info("I am in Teardown class")
 
     def test_01(self):
+        """
+        Test to start IO in sequence withing tests using RunDataCheckManager
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
         users = mgm_ops.create_buckets(nbuckets=2, users=users)
@@ -36,14 +39,25 @@ class TestSample:
         assert True, "msg"
 
     def test_02(self, run_io_async):
+        """
+        Test to start DI using data_integrity_chk flag in pytest cmd, parallel IO and verification
+        negative scenario
+        """
         time.sleep(8)
         assert False, "msg"
 
     @pytest.mark.usefixtures("run_io_async")
     def test_03(self):
+        """
+        Test to start DI using data_integrity_chk flag in pytest cmd, parallel IO and verification
+        positive scenario
+        """
         assert True, "msg"
 
     def test_04(self):
+        """
+        Test start IO sleep for sometime and verify IO within test sequentially
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=2, users=users)
@@ -56,6 +70,10 @@ class TestSample:
         assert True, "msg"
 
     def test_05(self):
+        """
+        Test start IO in parallel, set stop event, sleep for sometime and verify IO parallel
+        within test. Explicitly an event obj is pass from test
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=4, users=users)
@@ -72,6 +90,10 @@ class TestSample:
         assert True, "msg"
 
     def test_07(self):
+        """
+        Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
+        within test
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=4, users=users)
@@ -85,6 +107,10 @@ class TestSample:
         assert True, "msg"
 
     def test_08(self):
+        """
+        Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
+        within test. Use RunDataCheckManager event for an immediate stop
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=4, users=users)
@@ -99,6 +125,9 @@ class TestSample:
         assert True, "msg"
 
     def test_09(self):
+        """
+        Test start IO sleep for sometime and stop upload and verify IO within Test
+        """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
         data = mgm_ops.create_buckets(nbuckets=2, users=users,
@@ -112,4 +141,55 @@ class TestSample:
         assert True, "msg"
 
     def test_10(self):
-        assert True, "msg"
+        """
+        Test start IO sleep for sometime and stop upload and verify IO within Test
+        negative scenario
+        """
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=2, users=users,
+                                      use_cortxcli=True)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_09'}
+        run_data_chk_obj.start_io(
+            users=data, buckets=None, files_count=8, prefs=pref_dir)
+        time.sleep(8)
+        run_data_chk_obj.stop_io(users=data, di_check=True, eventual_stop=True)
+        assert False, "msg"
+
+    def test_11(self):
+        """
+        Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
+        within test. Use RunDataCheckManager event for an immediate stop.
+        Negative scenario
+        """
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=4, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_08'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=35, prefs=pref_dir)
+        run_data_chk_obj.event.set()
+        time.sleep(4)
+        print("test", run_data_chk_obj.event.is_set())
+        run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        assert False, "msg"
+
+    def test_12(self):
+        """
+        Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
+        within test.
+        Negative Scenario
+        """
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=4, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_07'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=65, prefs=pref_dir)
+        time.sleep(4)
+        run_data_chk_obj.stop_io_async(users=data, di_check=True,
+                                       eventual_stop=True)
+        assert False, "msg"
