@@ -1767,7 +1767,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Performing help command for reset password of S3 account")
         resp = self.s3acc_obj.help_option(
-            command="s3accounts password -h")
+            command=commands.CMD_RESET_S3ACC_PWD.format("-h"))
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.debug(resp)
         self.logger.info(
@@ -1800,7 +1800,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Performing help command for reset password of IAM user")
         resp = self.s3acc_obj.help_option(
-            command="s3iamusers password -h")
+            command=commands.CMD_RESET_IAM_PWD.format("-h"))
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.debug(resp)
         self.logger.info(
