@@ -87,26 +87,40 @@ class JiraTask:
         self.http.mount("https://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
         self.http.mount("http://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
 
-    def check_test_environment(self, tests, tp_env):
+    def check_test_environment_platform(self, tests, tp_env, tp_platform):
         """
-        Check test environment: VM/HW
+        Check environment and platform of test case and test plan.
+        If it matches then add test to test plan.
         """
-        tp_env = tp_env.lower()
-        if ('vm' in tp_env) and ('hw' in tp_env):
-            return tests
         valid_tests = []
         for test_id in tests:
+            is_valid_platform = False
+            is_valid_env = False
             details = self.get_issue_details(test_id)
             if details:
+                tp_platform = tp_platform.lower()
+                if ('vm' in tp_platform) and ('hw' in tp_platform):
+                    is_valid_platform = True
+                else:
+                    platform_field = details.fields.customfield_22982
+                    if platform_field:
+                        platform_field = platform_field[0].lower()
+                        if tp_platform.strip() in platform_field.strip():
+                            is_valid_platform = True
+                    else:
+                        is_valid_platform = True
                 env_field = details.fields.environment
                 if env_field:
                     env_field = env_field.lower()
-                    if tp_env.strip() in env_field.strip():
-                        valid_tests.append(test_id)
+                    tp_env = tp_env.lower()
+                    if tp_env.strip() == env_field.strip():
+                        is_valid_env = True
                 else:
-                    valid_tests.append(test_id)
+                    is_valid_env = True
+            if is_valid_platform and is_valid_env:
+                valid_tests.append(test_id)
             else:
-                print("Error in getting test details of {}".format(test_id))
+                print("{} is not valid for this test plan".format(test_id))
         return valid_tests
 
     def create_new_test_exe(self, te, tp_info, skip_te):
@@ -167,7 +181,12 @@ class JiraTask:
 
         # labels = test_plan_details.fields.labels
         labels = [tp_info['setup_type']]
-        env_field = str(tp_info['nodes']) + 'Node'
+
+        env_field = ''
+        if int(tp_info['nodes']) > 1:
+            env_field = 'MultiNode'
+        else:
+            env_field = str(tp_info['nodes']) + 'Node'
 
         # TP LR2 {Environment}_{Platform Type}_{Branch}_{Build}
         summary = "TP LR2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" + tp_info[
@@ -206,7 +225,7 @@ class JiraTask:
                    'customfield_22983': [tp_info['server_type']],
                    'customfield_22984': [tp_info['enclosure_type']]}
         issue_key = self.create_issue(tp_dict)
-        return issue_key
+        return issue_key, env_field
 
     def create_issue(self, issue_dict):
         """
@@ -253,7 +272,7 @@ class JiraTask:
         except Exception as e:
             print(f"Exception {e} in adding te to tp")
 
-    def add_tests_to_te_tp(self, new_te, new_tp, tp_env, test_list):
+    def add_tests_to_te_tp(self, new_te, new_tp, tp_env, tp_platform, test_list):
         """
         Add tests to test execution and test plan
         """
@@ -271,8 +290,8 @@ class JiraTask:
                           range(0, len(test_list), sub_list_len)]
 
             with concurrent.futures.ProcessPoolExecutor() as executor:
-                valid_list = {executor.submit(self.check_test_environment, tests, tp_env):
-                                  tests for tests in test_lists}
+                valid_list = {executor.submit(self.check_test_environment_platform, tests, tp_env,
+                                              tp_platform): tests for tests in test_lists}
                 for future in concurrent.futures.as_completed(valid_list):
                     try:
                         data = future.result()
@@ -299,7 +318,7 @@ class JiraTask:
                 except Exception as e:
                     print(f"Exception {e} in adding tests to te")
 
-                print("adding {} tests to test plan {}".format(len(test_list), new_tp))
+                print("adding {} tests to test plan {}".format(len(valid_tests), new_tp))
                 try:
                     response = self.http.post(
                         "https://jts.seagate.com/rest/raven/1.0/api/testplan/" + new_tp + "/test",
