@@ -86,6 +86,13 @@ class TestServerOS:
         LOGGER.info("Kafka status response %s : ", res)
         assert res["state"] == "active", "Kafka is not in active state"
 
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "DEBUG"})
+        resp = self.ras_test_obj.get_conf_store_vals(
+            url=cons.SSPL_CFG_URL,
+            field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
+
         LOGGER.info("Restarting sspl service")
         resp = self.sw_alert_obj.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
@@ -112,20 +119,11 @@ class TestServerOS:
         """Teardown operations."""
         LOGGER.info("Performing Teardown operation")
 
-        if self.changed_level:
-            kv_store_path = LOG_STORE_PATH
-            common_cfg = self.cfg["sspl_config"]
-            res = self.ras_test_obj.update_threshold_values(
-                kv_store_path, common_cfg["sspl_log_level_key"],
-                common_cfg["sspl_log_dval"],
-                update=True)
-            assert res, "Failed to change sspl logging level"
-
         LOGGER.info("Terminating the process of reading sspl.log")
         self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
 
         LOGGER.debug("Copying contents of sspl.log")
-        read_resp = self.node_obj.read_file(
+        read_resp = self.sw_alert_obj.node_utils.read_file(
             filename=self.cm_cfg["file"]["sspl_log_file"],
             local_path=self.cm_cfg["file"]["sspl_log_file"])
         LOGGER.debug("======================================================")
@@ -134,7 +132,7 @@ class TestServerOS:
 
         LOGGER.info("Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
         try:
-            self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
+            self.sw_alert_obj.node_utils.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
             if self.start_msg_bus:
                 LOGGER.info("Terminating the process read_message_bus.py")
                 self.ras_test_obj.kill_remote_process("read_message_bus.py")
@@ -143,10 +141,23 @@ class TestServerOS:
                          self.cm_cfg["file"]["screen_log"]]
                 for file in files:
                     LOGGER.info("Removing log file %s from the Node", file)
-                    self.node_obj.remove_file(filename=file)
+                    self.sw_alert_obj.node_utils.remove_file(filename=file)
         except FileNotFoundError as error:
             LOGGER.warning(error)
         LOGGER.info("Successfully performed Teardown operation")
+
+        LOGGER.info("Change sspl log level to INFO")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
+        resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                     field=cons.CONF_SSPL_LOG_LEVEL)
+        LOGGER.info("Now SSPL log level is: %s", resp)
+
+        LOGGER.info("Restarting sspl service")
+        resp = self.sw_alert_obj.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
+        assert resp, "Failed to restart sspl-ll"
+        time.sleep(self.cm_cfg["sspl_timeout"])
+        LOGGER.info("Verifying the status of sspl service is online")
 
         if self.default_cpu_usage:
             LOGGER.info("Updating default CPU usage threshold value")

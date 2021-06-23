@@ -27,9 +27,7 @@ import time
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons.helpers.health_helper import Health
-from commons import constants as cons
+from config import RAS_VAL
 from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
@@ -505,6 +503,11 @@ class SoftwareAlert(RASCoreLib):
 
     ############### Server OS functions####################
     def gen_cpu_usage_fault_thres(self, delta_cpu_usage):
+        """Creates CPU faults
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
         LOGGER.info("Fetching CPU usage from server node")
         cpu_usage = self.health_obj.get_cpu_usage()
         LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
@@ -520,6 +523,11 @@ class SoftwareAlert(RASCoreLib):
         return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
 
     def resolv_cpu_usage_fault_thresh(self, cpu_usage_thresh):
+        """Resolves CPU faults
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
         self.set_conf_store_vals(
             url=const.SSPL_CFG_URL, encl_vals={
                 "CONF_CPU_USAGE": cpu_usage_thresh})
@@ -530,6 +538,11 @@ class SoftwareAlert(RASCoreLib):
         return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
 
     def gen_mem_usage_fault(self, delta_mem_usage):
+        """Creates memory faults
+
+        :param delta_mem_usage: Delta to be added to memory usage.
+        :return [type]: True, error message
+        """
         LOGGER.info("Fetching memory usage from server node")
         mem_usage = self.health_obj.get_memory_usage()
         LOGGER.info("Current memory usage of server is %s", mem_usage)
@@ -546,6 +559,11 @@ class SoftwareAlert(RASCoreLib):
             mem_usage_thresh), "Memory usage threshold is not set as expected."
 
     def resolv_mem_usage_fault(self, mem_usage_thresh):
+        """Resolves memory faults
+
+        :param mem_usage_thresh: Value to the memory usage threshold to be set.
+        :return [type]: True, error message
+        """
         self.set_conf_store_vals(
             url=const.SSPL_CFG_URL, encl_vals={
                 "CONF_MEM_USAGE": mem_usage_thresh})
@@ -557,12 +575,17 @@ class SoftwareAlert(RASCoreLib):
             mem_usage_thresh), "Memory usage threshold is not set as expected."
 
     def gen_disk_usage_fault(self, delta_disk_usage):
-        LOGGER.info("Fetching memory usage from server node")
+        """Creates disk faults
+
+        :param delta_disk_usage: Delta to be added to disk usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching disk usage from server node")
         status, disk_usage = self.node_utils.disk_usage_python_interpreter_cmd(
             dir_path="/", field_val=3)
         if not status:
             return False, "Unable to read disk usage"
-        LOGGER.info("Current memory usage of server is %s", disk_usage)
+        LOGGER.info("Current disk usage of server is %s", disk_usage)
         disk_usage_thresh = float("{:.1f}".format(sum([float(disk_usage), delta_disk_usage])))
         self.set_conf_store_vals(
             url=const.SSPL_CFG_URL, encl_vals={
@@ -575,6 +598,11 @@ class SoftwareAlert(RASCoreLib):
             disk_usage_thresh), "Disk usage threshold is not set as expected."
 
     def resolv_disk_usage_fault(self, disk_usage_thresh):
+        """Resolves disk faults
+
+        :param disk_usage_thresh: Value of the disk threshold to be set.
+        :return [type]: True, error message
+        """
         self.set_conf_store_vals(
             url=const.SSPL_CFG_URL, encl_vals={
                 "CONF_DISK_USAGE": disk_usage_thresh})
