@@ -47,8 +47,8 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
     new_te_id, is_te_skipped, test_list = jira_task.create_new_test_exe(te, tp_info, skip_tes)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
-        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['platform'],
-                                                test_list)
+        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
+                                                tp_info['platform'], test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
@@ -81,11 +81,12 @@ def main(args):
     tp_info['affect_version'] = args.affect_version
     tp_info['fix_version'] = args.fix_version
 
-    new_tp_key = jira_task.create_new_test_plan(test_plan, tp_info)
+    new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
         sys.exit('New test plan creation failed')
     else:
         print("New test plan {} created".format(new_tp_key))
+        tp_info['env'] = env_field
 
     test_executions = jira_task.get_test_executions_from_test_plan(test_plan)
     te_keys_all = [te["key"] for te in test_executions]
