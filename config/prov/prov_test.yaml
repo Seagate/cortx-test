@@ -54,6 +54,7 @@ single-node:
     memory: 8
     prvsnr_version: 0.36.0
   config_template: "config/prov/three_node_config.ini"
+  config_path_local: "prov_config.ini"
   config_path_remote: "/root/config.ini"
   setup-type: "3_node"
   cluster_start_delay: 180
