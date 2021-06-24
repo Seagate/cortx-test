@@ -93,3 +93,20 @@ def test_create_acc_aws_conf():
     configure_awscli(access_key, secret_key)
     cortx_obj.close_connection()
 
+
+def create_s3_account():
+    LOGGER.info("Getting access and secret key for configuring AWS")
+    acc_name = "switch_setup_s3acc{}".format(perf_counter_ns())
+    acc_email = "switch_setup_s3acc{}@seagate.com".format(perf_counter_ns())
+    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
+    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    print("Response for account creation: {}".format(resp))
+    access_key = resp[1]["access_key"]
+    secret_key = resp[1]["secret_key"]
+    cortx_obj.close_connection()
+    with open('s3acc_secrets', 'w') as ptr:
+        ptr.write(access_key + ' ' + secret_key)
+
+
+if __name__ == '__main':
+    create_s3_account()
