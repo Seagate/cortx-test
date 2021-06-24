@@ -208,6 +208,8 @@ CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
 CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
+CMD_HEALTH_SHOW = "health show \"{}\""
+CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
 CMD_RESET_IAM_PWD = "s3iamusers password {}"
 
 # Linux System Commands
@@ -265,6 +267,8 @@ CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
+CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 
 # S3 awscli  Commands
@@ -304,3 +308,9 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
+
+# VM power operations:
+CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
