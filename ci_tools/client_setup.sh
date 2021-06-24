@@ -1,12 +1,12 @@
 #!/bin/sh
 secrets_json_path=/root/secrets.json
-cp /$secrets_json_path $WORKSPACE/cortx-test/secrets.json
+cp $secrets_json_path "$WORKSPACE/cortx-test/secrets.json"
 cd cortx-test
 
 FILE=$WORKSPACE/prov_config.ini
 if [ -f "$FILE" ]; then
     echo "$FILE exists."
-    cp $WORKSPACE/prov_config.ini $WORKSPACE/cortx-test/prov_config.ini
+    cp "$WORKSPACE/prov_config.ini" "$WORKSPACE/cortx-test/prov_config.ini"
 else
     echo "$FILE does not exist."
 fi
@@ -40,9 +40,9 @@ fi
 export PYTHONPATH=$WORKSPACE:$WORKSPACE/cortx-test:$PYTHONPATH
 
 
-cd $WORKSPACE/cortx-test/scripts/s3_tools/
+cd "$WORKSPACE/cortx-test/scripts/s3_tools/"
 make clean
 make install-tools
 
-cd $WORKSPACE/cortx-test/
+cd "$WORKSPACE/cortx-test/"
 
