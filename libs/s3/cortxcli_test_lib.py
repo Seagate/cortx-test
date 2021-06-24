@@ -596,6 +596,50 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
         """
         super().__init__(session_obj=session_obj)
 
+    def create_s3_user_access_key(self, user_name: str, passwd: str, s3user: str) -> tuple:
+        """
+        Function will create a s3 account access key.
+
+        :param user_name: Name of the user own s3 user.
+        :param passwd: Password of the user own s3 user.
+        :param s3user: For whom access key needs to be created.
+        :return: True/False and response.
+        """
+        try:
+            self.login_cortx_cli(username=user_name, password=passwd)
+            status, response = self.create_s3user_access_key(s3user)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _S3AccessKeys.create_s3_user_access_key.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
+
+    def show_s3_user_access_key(self, user_name: str, passwd: str, s3user: str) -> tuple:
+        """
+        Function will show a s3 account access key.
+
+        :param user_name: Name of the user own s3 user.
+        :param passwd: Password of the user own s3 user.
+        :param s3user: For whom access key needs to be created.
+        :return: True/False and response.
+        """
+        try:
+            self.login_cortx_cli(username=user_name, password=passwd)
+            status, response = self.show_s3user_access_key(s3user)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _S3AccessKeys.show_s3_user_access_key.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
+
     def create_s3user_access_key_cortx_cli(
             self,
             user_name: str) -> tuple:
