@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label any
+        label auto-awitch-ssc-vm-rhev4
     }
 
     environment {
@@ -22,10 +22,13 @@ pipeline {
     parameters {
         string(name: 'Branch', defaultValue: 'dev', description: 'Branch name of cortx-test', trim: true)
         string(name: 'TestPlanNumber', defaultValue: 'TEST-18383', description: 'Master Test plan number to clone', trim: true)
-        string(name: 'Target_Node', description: 'Name of target setup mentioned in database', trim: true)
-        text(name: 'DESC', description: 'This job triggers CSM GUI, Cortx-test and Load tests in parallel')
+        string(name: 'SetupName', description: 'Name of target setup mentioned in database', trim: true)
+        text(name: 'DESC', description: 'This job triggers deploy setup and runs Cortx-test TE')
         string(name: 'Nodes_In_Target', defaultValue: '3', description: 'Number of nodes in target: 3 or 3N', trim: true)
+        string(name: 'vm_list', defaultValue: '', description: 'List of VMs for 3 Node Setup', trim: true)
+        string(name: 'm_vip', defaultValue: '', description: 'Mgmt VIP', trim: true)
         string(name: 'Build', description: 'Build number of target', trim: true)
+        string(name: 'Build_Path', description: '3 Node Build Path', trim: true)
         string(name: 'Build_Type', defaultValue: 'stable', description: 'Branch name from which build is cut stable/main', trim: true)
         credentials(
                 credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
@@ -47,7 +50,7 @@ pipeline {
                     step([$class: 'WsCleanup'])
                     dir('cortx-test'){
                         checkout([$class: 'GitSCM', branches: [[name: "${Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'AuthorInChangelog'], [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'cortx-admin-github', url: 'https://github.com/Seagate/cortx-test.git']]])
-                        sh './ci_tools/client_setup.sh'
+
                     }
                 }
 
@@ -59,10 +62,10 @@ pipeline {
                     echo "Executing 3 Node Deployment and Health Check on setup."
                 }
                 retry(3) { // Retries x number of times until its successful
-                    sh 'python3 scripts/jenkins_job/trigger_jenkins_job.py'
+                    sh 'python3 scripts/jenkins_job/trigger_jenkins_job.py -l ${vm_list} -p seagate -b ${Build} -i ${m_vip}'
                 }
                 script {
-                    // verify health here
+                    sh './ci_tools/client_setup.sh'
                 }
             }
         }
