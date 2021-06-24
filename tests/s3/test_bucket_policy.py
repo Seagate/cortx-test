@@ -109,6 +109,7 @@ class TestBucketPolicy:
                 self.s3test_obj_1.delete_bucket(bkt, force=True)
         bucket_list = S3_OBJ.bucket_list()[1]
         if self.bucket_name in bucket_list:
+            ACL_OBJ.put_bucket_acl(self.bucket_name, acl="private")
             resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
