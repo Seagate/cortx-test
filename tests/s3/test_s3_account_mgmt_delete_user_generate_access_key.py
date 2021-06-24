@@ -686,3 +686,89 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("STARTED: Test an S3 account owner shall be able to view the details of the S3 account"
                       " while S3 IO's are in progress.")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-23395")
+    @CTFailOn(error_handler)
+    def test_23395(self):
+        """
+        Delete s3 account user.
+
+        Test s3 account owner shall be able to create or regenerate an access key for the s3 account
+         while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test s3 account owner shall be able to create or regenerate an access key for the s3"
+                      " account while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+        self.log.info("Step 2. Start S3 IO.")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23381_ios", duration="0h5m")
+        self.log.info("Step 3. Create N number s3account with csm user having different role(admin, manage, monitor).")
+        account_list = self.create_n_number_s3accounts(10)
+        assert_utils.assert_equal(len(account_list), 10, "Failed to create s3 accounts.")
+        self.log.info("Create csm user having role manage.")
+        csm_user = self.csm_user.format(time.perf_counter_ns())
+        csm_user_mail = self.email_id.format(csm_user)
+        resp = self.csm_obj.csm_user_create(csm_user, csm_user_mail, self.csm_passwd, role="manage")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.csm_user_list.append(csm_user)
+        self.log.info("Create N number s3account.")
+        account_list = self.create_n_number_s3accounts(csm_user, self.csm_passwd, 10)
+        assert_utils.assert_equal(len(account_list), 10, "failed to create 10 accounts")
+        self.log.info("Step 4. S3 account owner shall be able to create or regenerate an access key for the s3 account.")
+        for user in self.account_dict:
+            resp = self.cli_test_obj.create_s3_user_access_key(user, self.account_dict[user], user)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5. Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23395_ios")
+        self.log.info("Step 6. Check cluster status, all services are running after completing test.")
+        self.check_cluster_health()
+        self.log.info("STARTED: Test s3 account owner shall be able to create or regenerate an access key for the s3"
+                      " account while S3 IO's are in progress.")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-23396")
+    @CTFailOn(error_handler)
+    def test_23396(self):
+        """
+        Delete s3 account user.
+
+        Test s3 account owner shall be able to regenerate an access key for the s3 account and check resources
+         are intact with other access key while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test s3 account owner shall be able to regenerate an access key for the s3 account"
+                      " and check resources are intact with other access key while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+        self.log.info("Step 2. Start S3 IO.")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23396_ios", duration="0h5m")
+        self.log.info("Step 3. Create s3account s3acc.")
+        s3_test_obj = self.create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
+        self.log.info("Step 4. Create bucket s3bkt in s3acc account.")
+        resp = s3_test_obj.create_bucket(self.bucket_name1)
+        assert_utils.assert_true(resp[1], resp[1])
+        self.resources_dict[s3_test_obj] = self.bucket_name1
+        self.log.info("Step 5. Create and upload objects to above s3bkt.")
+        resp = system_utils.create_file(self.file_path, count=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6. S3 account owner shall be able to create or regenerate an access key for the s3 account")
+        resp = self.cli_test_obj.create_s3_user_access_key(self.s3acc_name1, self.s3acc_passwd, self.s3acc_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 7. Check resources are intact with regenerated key.")
+        s3_obj = s3_test_lib.S3TestLib(resp[1]["access_key"], resp[1]["secret_key"])
+        resp = s3_obj.bucket_list()
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(self.bucket_name1, resp[1], resp)
+        resp = s3_obj.object_list(self.bucket_name1)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_in(self.object_name, resp[1], resp)
+        self.log.info("Step 8. Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23396_ios")
+        self.log.info("Step 9. Check cluster status, all services are running after completing test.")
+        self.check_cluster_health()
+        self.log.info("STARTED: Test s3 account owner shall be able to regenerate an access key for the s3 account"
+                      " and check resources are intact with other access key while S3 IO's are in progress.")
