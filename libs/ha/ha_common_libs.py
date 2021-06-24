@@ -41,7 +41,8 @@ class HALibs:
         :param sys_list: Llst of system objects
         :return: system_object
         """
-        res = node_object.execute_cmd(common_cmd.CMD_PCS_SERV.format("csm_agent"))
+        res = node_object.execute_cmd(
+            common_cmd.CMD_PCS_SERV.format("csm_agent"))
         data = str(res, 'UTF-8')
         for index, srvnode in enumerate(srvnode_list):
             if srvnode in data:
@@ -61,11 +62,32 @@ class HALibs:
         """
         for node in range(num_nodes):
             if node != node_id:
-                node_name = "srvnode-{}".format(node+1)
+                node_name = "srvnode-{}".format(node + 1)
                 LOGGER.info("Checking services on: {}".format(node_name))
-                res = node_list[node].execute_cmd(common_cmd.CMD_PCS_GREP.format(node_name))
+                res = node_list[node].execute_cmd(
+                    common_cmd.CMD_PCS_GREP.format(node_name))
                 data = str(res, 'UTF-8')
                 for line in data:
                     if "FAILED" in line or "Stopped" in line:
                         return False
         return True
+
+    @staticmethod
+    def verify_node_health_status(
+            response: list,
+            status: str,
+            node_id: int = None):
+        """
+        This method will get number of node
+        :param response: List Response for health status command
+        :param status: Expected status value for node
+        :param node_id: Expected status value for specific node_id
+        :return: bool, Response Message
+        """
+        if node_id:
+            return response[node_id][2] == status.lower(), f"Node {node_id} is {response[node_id][2]}"
+
+        for item in response:
+            if item[2] != status.lower():
+                return False, f"Node {item[1 + 1]} status is {item[2]}"
+        return True, f"All node status are {status}"
