@@ -22,12 +22,16 @@
 Setup file for multinode server and client configuration for executing the R2 regression.
 """
 import os
+import configparser
 import json
 import logging
 import argparse
 from scripts.jenkins_job import client_conf
 from commons.helpers.node_helper import Node
 
+config_file = 'scripts/jenkins_job/config.ini'
+config = configparser.ConfigParser()
+config.read(config_file)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -48,7 +52,7 @@ def create_db_entry(
     :param str admin_passwd: admin password for cortxcli
     :return: Target name
     """
-    json_file = "setup_entry.json"
+    json_file = config['default']['setup_entry_json']
     new_setupname = hostname[0].split(".")[0]
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
     with open(json_file, 'r') as file:
@@ -80,7 +84,7 @@ def create_db_entry(
     json_data["csm"]["csm_admin_user"].update(
         username=admin_user, password=admin_passwd)
 
-    print("new file data: {}".format(json_data))
+    LOGGER.info("new file data: {}".format(json_data))
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
@@ -96,8 +100,8 @@ def configure_haproxy_lb(*hostname, username: str, password: str):
     :return: None
     """
     instance_per_node = 1
-    server_haproxy_cfg = "/etc/haproxy/haproxy.cfg"
-    local_haproxy_cfg = "/tmp/haproxy.cfg"
+    server_haproxy_cfg = config['default']['haproxy_config']
+    local_haproxy_cfg = config['default']['tmp_haproxy_config']
     s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:2808{2} check maxconn 110\n"
     authinstance = "    server s3authserver-instance1 srvnode-{0}.data.private:28050\n"
     total_s3_instances = list()
@@ -135,10 +139,12 @@ def main():
     print(args.nodes)
     nodes = args.nodes
     username = "root"
+    admin_user = os.getenv("ADMIN_USR")
+    admin_passwd = os.getenv("ADMIN_PWD")
 
     nd_obj_host = Node(
         hostname=nodes[0],
-        username="root",
+        username=username,
         password=args.password)
     # Get the cluster IP
     output = nd_obj_host.execute_cmd("cat /etc/hosts", read_lines=True)
@@ -147,9 +153,9 @@ def main():
             clstr_ip = line.split()[0]
     client_conf.set_s3_endpoints(clstr_ip)
 
-    client_conf.run_cmd("mkdir -p /etc/ssl/stx-s3-clients/s3/")
-    remote_crt_path = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
-    local_crt_path = "/etc/ssl/stx-s3-clients/s3/ca.crt"
+    remote_crt_path = config['default']['s3_crt_path']
+    local_crt_path = config['default']['s3_crt_local']
+    client_conf.run_cmd("mkdir -p {}".format(os.path.dirname(local_crt_path)))
     if os.path.exists(local_crt_path):
         client_conf.run_cmd("rm -f {}".format(local_crt_path))
     nd_obj_host.copy_file_to_local(
@@ -161,8 +167,8 @@ def main():
         username=username,
         password=args.password,
         mgmt_vip=args.mgmt_vip,
-        admin_user="admin",
-        admin_passwd="seagate@1")
+        admin_user=admin_user,
+        admin_passwd=admin_passwd)
     client_conf.run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
