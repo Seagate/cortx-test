@@ -26,6 +26,7 @@ import os
 import logging
 import random
 import pytest
+import json
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
@@ -35,7 +36,7 @@ from commons import pswdmanager
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, PROV_CFG
-from libs.prov.provisioner import Provisioner
+from libs.prov.prov_upgrade import ProvSWUpgrade
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ class TestSWUpdateDisruptive:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.prov_obj = Provisioner()
+        cls.prov_obj = ProvSWUpgrade()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.build_update1 = os.getenv("Build_update1", PROV_CFG["build_def"])
         cls.build_update2 = os.getenv("Build_update2", PROV_CFG["build_def"])
@@ -73,6 +74,8 @@ class TestSWUpdateDisruptive:
             cls.build_branch, cls.build_update2, cls.build_update2)
         cls.build_key2 = PROV_CFG["build_key"].format(
             cls.build_branch, cls.build_update2)
+        cls.iso1_list = [cls.build_iso1, cls.build_sig1, cls.build_key1]
+        cls.iso2_list = [cls.build_iso2, cls.build_sig2, cls.build_key2]
         cls.node_list = []
         cls.host_list = []
         cls.hlt_list = []
@@ -103,7 +106,9 @@ class TestSWUpdateDisruptive:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Setup Operations")
 
-
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.tags("TEST-23175")
+    @CTFailOn(error_handler)
     def sw_upgrade(self):
         """
         This test will trigger SW upgrade with correct ISO and on healthy system to check
@@ -112,3 +117,16 @@ class TestSWUpdateDisruptive:
         """
         LOGGER.info("Started: SW upgrade disruptive for CORTX sw components.")
 
+        nd_obj1 = self.node_list[0]
+        LOGGER.info("Check the current version of the build.")
+        resp = nd_obj1.execute_cmd(common_cmds.CMD_SW_VER, read_lines=True)
+        data = json.loads(resp[0])
+        build_org = data["BUILD"]
+        LOGGER.info("Current version of build on system: {}".format(build_org))
+
+        LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
+        tmp_dir = "/root/iso/"
+        nd_obj1.make_dir(tmp_dir)
+        for dnld in self.iso1_list:
+            nd_obj1.execute_cmd(common_cmds.CMD_WGET.format(tmp_dir, dnld), read_lines=True)
+        LOGGER.info("Set the update repo.")
