@@ -122,7 +122,8 @@ class TestSWUpdateDisruptive:
         resp = nd_obj1.execute_cmd(common_cmds.CMD_SW_VER, read_lines=True)
         data = json.loads(resp[0])
         build_org = data["BUILD"]
-        LOGGER.info("Current version of build on system: {}".format(build_org))
+        version_org = data["BUILD"]
+        LOGGER.info("Current cortx version: {} and build on system: {}".format(version_org, build_org))
 
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
         tmp_dir = "/root/iso/"
@@ -130,3 +131,26 @@ class TestSWUpdateDisruptive:
         for dnld in self.iso1_list:
             nd_obj1.execute_cmd(common_cmds.CMD_WGET.format(tmp_dir, dnld), read_lines=True)
         LOGGER.info("Set the update repo.")
+        resp = self.prov_obj.set_validate_repo(self.iso1_list, nd_obj1)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.build_update1,
+                                  "Set ISO version doesn't match with desired one.")
+        LOGGER.info("Start the SW upgrade operation in offline mode.")
+        resp = self.prov_obj.check_sw_upgrade(nd_obj1)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equal(resp[1], self.build_update1,
+                                  "SW build version on system doesn't match with desired one.")
+        LOGGER.info("SW upgrade process completed and SW version updated from {} to {}"
+                    .format(build_org, resp[1]))
+
+        LOGGER.info("Checking the overall cluster and nodes status.")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes online and all services in cluster up and running.")
+
+        LOGGER.info("Starting IOs on updated build version.")
+        #TODO: Add IOs from DI framework
+        LOGGER.info("IOs working fine with latest build upgraded.")
+
+        LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components.")

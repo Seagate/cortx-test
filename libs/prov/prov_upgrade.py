@@ -19,11 +19,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Provisioner utiltiy methods
+Provisioner utiltiy methods for sw upgrade functionality
 """
 import shutil
 import logging
-import time
+import json
 import re
 from commons import constants as common_cnst
 from commons import commands as common_cmd
@@ -42,7 +42,56 @@ class ProvSWUpgrade:
     """
 
     @staticmethod
-    def set_validate_repo(iso_list: str):
+    def set_validate_repo(iso_list, node_object):
         """
         Setting the SW upgrade repo and validating it if set to desired build
+        :param iso_list: list of iso files which need to be used for setting repo
+        :param node_object: node object for execution of command
+        :return: boolean, response
         """
+        try:
+            LOGGER.info("ISO to be set in repo: {}".format(iso_list[0]))
+            resp = node_object.execute_cmd(common_cmd.CMD_SW_SET_REPO
+                                           .format(iso_list[0], iso_list[1], iso_list[3]), read_lines=True)
+            LOGGER.debug("Set repo response: {}".format(resp))
+            for line in resp:
+                if "ERROR" in line or "failed" in line:
+                    return False, resp
+            res = node_object.execute_cmd(common_cmd.CMD_ISO_VER, read_lines=True)
+            LOGGER.debug("Response for ISO version: {}".format(res))
+            data = res[0].split('-')
+            return True, data[1]
+
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvSWUpgrade.set_validate_repo.__name__)
+            return False, error
+
+    @staticmethod
+    def check_sw_upgrade(node_object):
+        """
+        Run the SW upgrade command and check the status.
+        :param node_object: node object to execute command on node.
+        :return: boolean, response
+        """
+        try:
+            LOGGER.info("SW upgrade process starting...")
+            resp = node_object.execute_cmd(common_cmd.CMD_SW_UP, read_lines=True)
+            for line in resp:
+                if "ERROR" in line or "failed" in line:
+                    return False, resp
+            LOGGER.debug("Response for SW upgrade process: {}".format(resp))
+            LOGGER.info("SW upgrade process completed successfully.")
+
+            LOGGER.info("Checking the build version on system.")
+            res = node_object.execute_cmd(common_cmd.CMD_SW_VER, read_lines=True)
+            data = json.loads(res[0])
+            build_new = data["BUILD"]
+            return True, build_new
+
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvSWUpgrade.check_sw_upgrade.__name__)
+            return False, error
