@@ -1,9 +1,6 @@
 #!/bin/sh
 
-cd scripts/s3_tools
-make clean
-make install-tools ACCESS=$AWS_ACCESS_KEY_ID SECRET=$AWS_SECRET_ACCESS_KEY
-cd /cortx-test
+make all --makefile=scripts/s3_tools/Makefile ACCESS=$AWS_ACCESS_KEY_ID SECRET=$AWS_SECRET_ACCESS_KEY
 
 export CORTX_TEST_ROOT=/cortx-test
 export LIB=/usr/lib/python3.7
