@@ -50,8 +50,9 @@ pipeline {
                     step([$class: 'WsCleanup'])
                     dir('cortx-test'){
                         checkout([$class: 'GitSCM', branches: [[name: "${Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'AuthorInChangelog'], [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'cortx-admin-github', url: 'https://github.com/Seagate/cortx-test.git']]])
-
+                        sh './ci_tools/client_setup.sh'
                     }
+                    sh "pwd"
                 }
 
             }
@@ -61,11 +62,31 @@ pipeline {
                 ansiColor('xterm') {
                     echo "Executing 3 Node Deployment and Health Check on setup."
                 }
-                retry(3) { // Retries x number of times until its successful
-                    sh 'python3 scripts/jenkins_job/trigger_jenkins_job.py -l ${vm_list} -p seagate -b ${Build} -i ${m_vip}'
-                }
-                script {
-                    sh './ci_tools/client_setup.sh'
+                dir('cortx-test') {
+                    retry(3) { // Retries x number of times until its successful
+
+                        sh 'cd "${WORKSPACE}/cortx-test/"'
+                        sh 'python3.7 scripts/jenkins_job/trigger_jenkins_job.py -l ${vm_list} -p seagate -b ${Build} -i ${m_vip}'
+                        sh 'wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm'
+                        sh 'yum install -y google-chrome-stable_current_x86_64.rpm'
+                        sh 'wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip'
+                        sh 'yum -y install unzip'
+                        sh 'unzip chromedriver_linux64.zip'
+                        sh 'chmod 777 chromedriver'
+                        sh 'mv chromedriver $WORKSPACE/cortx-test/venv/bin'
+
+                    }
+                    script {
+                        sh label: '', script: '''source venv/bin/activate
+python3.7 -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
+python3.7 -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
+deactivate
+'''
+                        sh 'cd "${WORKSPACE}/cortx-test/scripts/s3_tools/"'
+                        sh 'make clean'
+                        sh 'make configure-tools'
+
+                    }
                 }
             }
         }
@@ -76,7 +97,7 @@ pipeline {
                     echo "Executing $name"
                 }
                 catchError {
-                    sh './ci_tools/run_tests.sh'
+                    sh 'python3.7 setup_switch.py'
 
                 }
                 echo currentBuild.result
