@@ -33,6 +33,7 @@ from libs.s3 import iam_core_lib
 from libs.s3.iam_core_lib import S3IamCli
 from libs.s3 import cortxcli_test_lib as cctl
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.di.di_base import _init_s3_conn
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class ManagementOPs:
     @classmethod
     def create_account_users(cls,
                              nusers: int = 10,
-                             use_cortx_cli: bool = True) -> dict:
+                             use_cortx_cli: bool = False) -> dict:
         """
         Creates s3 account users to upload DI test data. This function uses S3IamCli
         to create users.
@@ -121,7 +122,7 @@ class ManagementOPs:
         return users
 
     @classmethod
-    def create_buckets(cls, nbuckets, users=None, use_cortxcli=True):
+    def create_buckets(cls, nbuckets, users=None, use_cortxcli=False):
         """
         Creates random buckets for each user. This api
         caches buckets for continuous crud operations on
@@ -151,8 +152,13 @@ class ManagementOPs:
                 buckets[k] = bkts_lst
                 cli.logout_cortx_cli()
             else:
-                bkts_lst = ['{}bucket{}'.format(
-                    k.replace('_', '-'), i) for i in range(1, nbuckets + 1)]
+                access_key = users[k].get("accesskey")
+                secret_key = users[k].get("secretkey")
+                s3_obj = _init_s3_conn(access_key, secret_key, k)
+                bkts_lst = [
+                    s3_obj.create_bucket(Bucket='{}bucket{}'.format(
+                        k.replace('_', '-'), i)).name for i in range(
+                        1, nbuckets + 1)]
             users[k]["buckets"] = bkts_lst
         return users
 

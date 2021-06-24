@@ -22,13 +22,12 @@
 """Multithreaded and greenlet based Upload tasks. Upload files and data blobs."""
 
 import os
+import sys
 import queue
 import random
 import logging
 import csv
-import fcntl
 import hashlib
-import re
 import time
 import multiprocessing as mp
 from boto3.s3.transfer import TransferConfig
@@ -39,6 +38,12 @@ from libs.di import di_base
 from libs.di import data_man
 from libs.di import data_generator
 from commons.params import USER_JSON
+
+try:
+    if sys.platform in ['linux', 'linux2']:
+        import fcntl
+except ModuleNotFoundError as error:
+    logging.error(error)
 
 uploadObjects = []
 LOGGER = logging.getLogger(__name__)
