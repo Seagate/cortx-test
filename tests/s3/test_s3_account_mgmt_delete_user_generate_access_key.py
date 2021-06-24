@@ -260,10 +260,12 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
         return response
 
-    def create_n_number_s3accounts(self, cnt=1) -> list:
+    def create_n_number_s3accounts(self, csm_user=None, csm_passwd=None, cnt=1) -> list:
         """
         Create n numbers of s3 accounts.
 
+        :param csm_user: Account name of csm user.
+        :param csm_passwd: Password of the csm user.
         :param cnt: s3 accounts count.
         :return: accounts list.
         """
@@ -273,7 +275,12 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
                 self.account_prefix.format(
                     time.perf_counter_ns()), i)
             email_id = self.email_id.format(acc_name)
-            self.create_s3_acc(acc_name, email_id, self.s3acc_passwd)
+            if csm_user:
+                resp = self.csm_obj.csm_user_create_s3account(acc_name, email_id, self.s3acc_passwd, csm_user, csm_passwd)
+                assert_utils.assert_true(resp[0], resp[1])
+                self.account_dict[acc_name] = self.s3acc_passwd
+            else:
+                self.create_s3_acc(acc_name, email_id, self.s3acc_passwd)
             account_list.append(acc_name)
 
         return account_list
@@ -509,7 +516,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23379_ios", duration="0h5m")
         self.log.info("Step 3. Create N number s3account.")
-        account_list = self.create_n_number_s3accounts(10)
+        account_list = self.create_n_number_s3accounts(cnt=10)
         self.log.info("Step 4. Delete N number s3 account using csm admin user.")
         for name in account_list:
             resp = self.csm_obj.csm_user_delete_s3account(s3_user=name)
@@ -522,7 +529,8 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info("Step 6. Create N number s3account.")
-        account_list = self.create_n_number_s3accounts(10)
+        account_list = self.create_n_number_s3accounts(cnt=10)
+        assert_utils.assert_equal(len(account_list), 10, "failed to create 10 accounts")
         self.log.info("Step 7. Delete N number s3 account using csm user having manage role.")
         for name in account_list:
             resp = self.csm_obj.csm_user_delete_s3account(name, csm_user, self.csm_passwd)
@@ -532,7 +540,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         resp = self.csm_obj.csm_user_update_role(csm_user, self.csm_passwd, role="monitor")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 9. Create N number s3account.")
-        account_list = self.create_n_number_s3accounts(10)
+        account_list = self.create_n_number_s3accounts(cnt=10)
         self.log.info("Step 10. Delete N number s3 account using csm user having monitor role.")
         for name in account_list:
             resp = self.csm_obj.csm_user_delete_s3account(name, csm_user, self.csm_passwd)
@@ -591,4 +599,90 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.log.info("Step 10: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("ENDED: Test delete s3 account user with it's own password and check resources intact"
+                      " while S3 IO's are in progress.")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-23381")
+    @CTFailOn(error_handler)
+    def test_23381(self):
+        """
+        Delete s3 account user.
+
+        Test an admin shall be able to view all s3 accounts created using csm user having different role
+        (admin, manage, monitor) while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test an admin shall be able to view all s3 accounts created using csm user having "
+                      "different role (admin, manage, monitor) while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+        self.log.info("Step 2. Start S3 IO.")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23381_ios", duration="0h5m")
+        self.log.info("Step 3. Create N number s3account.")
+        account_list = self.create_n_number_s3accounts(10)
+        assert_utils.assert_equal(len(account_list), 10, "Failed to create s3 accounts.")
+        self.log.info("Step 4. Create csm user having role manage.")
+        csm_user = self.csm_user.format(time.perf_counter_ns())
+        csm_user_mail = self.email_id.format(csm_user)
+        resp = self.csm_obj.csm_user_create(csm_user, csm_user_mail, self.csm_passwd, role="manage")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.csm_user_list.append(csm_user)
+        self.log.info("Step 5. Create N number s3account.")
+        account_list = self.create_n_number_s3accounts(csm_user, self.csm_passwd, 10)
+        assert_utils.assert_equal(len(account_list), 10, "failed to create 10 accounts")
+        self.log.info("Step 6. view s3 account using csm user having admin role.")
+        resp = self.csm_obj.csm_user_show_s3accounts()
+        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 7. Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23381_ios")
+        self.log.info("Step 8. Check cluster status, all services are running after completing test.")
+        self.check_cluster_health()
+        self.log.info("STARTED: Test an admin shall be able to view all s3 accounts created using csm user having "
+                      "different role (admin, manage, monitor) while S3 IO's are in progress.")
+
+    @pytest.mark.parallel
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-23382")
+    @CTFailOn(error_handler)
+    def test_23382(self):
+        """
+        Delete s3 account user.
+
+        Test an S3 account owner shall be able to view the details of the S3 account while S3 IO's are in progress.
+        """
+        self.log.info("STARTED: Test an S3 account owner shall be able to view the details of the S3 account"
+                      " while S3 IO's are in progress.")
+        self.log.info("Step 1. Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+        self.log.info("Step 2. Start S3 IO.")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23381_ios", duration="0h5m")
+        self.log.info("Step 3. Create N number s3account.")
+        account_list = self.create_n_number_s3accounts(10)
+        assert_utils.assert_equal(len(account_list), 10, "Failed to create s3 accounts.")
+        self.log.info("Step 4. view s3 account using csm admin user.")
+        resp = self.csm_obj.csm_user_show_s3accounts()
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5. Create csm user having role manage.")
+        csm_user = self.csm_user.format(time.perf_counter_ns())
+        csm_user_mail = self.email_id.format(csm_user)
+        resp = self.csm_obj.csm_user_create(csm_user, csm_user_mail, self.csm_passwd, role="manage")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.csm_user_list.append(csm_user)
+        self.log.info("Step 6. Create N number s3account.")
+        account_list = self.create_n_number_s3accounts(csm_user, self.csm_passwd, 10)
+        assert_utils.assert_equal(len(account_list), 10, "failed to create 10 accounts")
+        self.log.info("Step 7. View s3 account using csm user having manage role.")
+        resp = self.csm_obj.csm_user_show_s3accounts(csm_user, self.csm_passwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 8. Changes csm user role to monitor.")
+        resp = self.csm_obj.csm_user_update_role(csm_user, self.csm_passwd, role="monitor")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 10. view s3 account using csm user having monitor role.")
+        resp = self.csm_obj.csm_user_show_s3accounts(csm_user, self.csm_passwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 11. Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23381_ios")
+        self.log.info("Step 12. Check cluster status, all services are running after completing test.")
+        self.check_cluster_health()
+        self.log.info("STARTED: Test an S3 account owner shall be able to view the details of the S3 account"
                       " while S3 IO's are in progress.")
