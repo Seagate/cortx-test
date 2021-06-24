@@ -1,0 +1,10 @@
+"""
+
+   Uploader
+   ^        \
+   |         \
+   |          \
+               \
+DataGenerator  DataMan
+
+"""

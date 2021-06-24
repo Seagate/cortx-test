@@ -8,12 +8,18 @@ from commons import params
 from commons import cortxlogging
 from commons.utils import deploy_utils
 from commons.utils import system_utils
+from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
 from commons.constants import LOCAL_S3_CERT_PATH
 from testrunner import get_setup_details
+from libs.prov.provisioner import Provisioner
 from scripts.ssc_cloud.vm_management import VmStateManagement
 
-
+JOB_DEPLOY_3N = 'VM-Deployment-R2-3Node'
+JOB_DEPLOY_1N = 'VM-Deployment-R2-1Node'
+JOB_DESTROY_3N = '3-Node-VM-Destroy'
+JEN_DEPLOY_URL = "http://eos-jenkins.colo.seagate.com/job/Cortx-Deployment"
+JEN_DESTROY_URL = "http://eos-jenkins.colo.seagate.com/job/Provisioner"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -86,8 +92,19 @@ def run_tesrunner_cmd(args, todo=False):
     return rc
 
 
-def trigger_destory_and_deployment(vm_machines, reties=3):
-    return 1
+def trigger_deployment(vm_machines, parameters, token, reties=3):
+    """
+    Trigger Jenkins N Node job.
+    """
+    output = Provisioner.build_job(job_name=JOB_DEPLOY_3N,
+                                   parameters=parameters,
+                                   token=token,
+                                   jen_url=JEN_DEPLOY_URL)
+    LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+    assert_utils.assert_equal(
+        output['result'],
+        "SUCCESS",
+        "Job is not successful, please check the url.")
 
 
 def set_s3_endpoints(cluster_ip):
@@ -124,7 +141,7 @@ def setup_client(host, clstr_ip):
 def update_vm_db(args):
     """
     Free VM from setup.
-    This fucntion would be refactored to use service_acount_access when it is added as
+    This function would be refactored to use service_acount_access when it is added as
     a module.
     """
 
@@ -145,15 +162,40 @@ def update_vm_db(args):
     lock_released = vm_state.unlock_system(args.setupname)
 
 
-def destroy_vm():
+def destroy_vm(hosts, token, build='', mgmt_vip='', node_passwd=None):
     """
     Destroy VM from setup.
     """
+    if not hosts:
+        raise EnvironmentError('list of hosts is mandatory')
+    job_name = JOB_DESTROY_3N
+    parameters = dict()
+    jenkins_url = JEN_DESTROY_URL
+    valid_parameters = False
+    if hosts % 3 == 0:
+        valid_parameters = True
+        LOGGER.info("Multi nodes destroy job will be triggered")
+        parameters['NODE1'] = hosts[0]
+        parameters['NODE2'] = hosts[1]
+        parameters['NODE3'] = hosts[2]
+        parameters['NODE_PASS'] = node_passwd
+    if not valid_parameters:
+        LOGGER.error('Please check provided parameters')
+        raise EnvironmentError('Please check provided parameters')
+    output = Provisioner.build_job(
+        job_name, parameters, token, jenkins_url)
+    LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+    assert_utils.assert_equal(output['result'], "SUCCESS",
+                              "Job is not successful, please check the url.")
 
 
-def post_test_execution_action():
-    destroy_vm()
-    update_vm_db()
+def post_test_execution_action(*args, **kwargs):
+    hosts = kwargs.get('hosts')
+    token = kwargs.get('build')
+    mgmt_vip = kwargs.get('mgmt_vip')
+    node_passwd = kwargs.get('node_pass')
+    destroy_vm(hosts, token, build='', mgmt_vip='', node_passwd=None)
+    update_vm_db(args=args)
 
 
 def main(args):
@@ -177,14 +219,18 @@ def main(args):
                 status = run_tesrunner_cmd(args=args, todo=True)
             attempts += 1
             if status:
-                ret = trigger_destory_and_deployment(args.hosts, reties=3)
-
+                ret = destroy_vm(args.hosts, args.token, node_passwd=None)
+                if not ret:
+                    raise EnvironmentError('Distroy VM ran into errors')
+                ret = trigger_deployment()
+                if not ret:
+                    raise EnvironmentError('Deployment Job ran into errors')
             if ret:
                 status = run_tesrunner_cmd(args=args, todo=True)
             if not status:
                 te_completed = True
     else:
-        post_test_execution_action()
+        post_test_execution_action(args, kwargs=dict())
 
 
 if __name__ == '__main__':
