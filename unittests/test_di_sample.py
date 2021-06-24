@@ -13,21 +13,21 @@ class TestSample:
 
     @classmethod
     def setup_class(cls):
-        cls.log.info("I am in setup class")
+        cls.log.info("Setup class")
 
     def setup_method(self):
-        self.log.info("I am in setup method")
+        self.log.info("Setup method")
 
     def teardown_method(self):
-        self.log.info("I am in teardown method")
+        self.log.info("Teardown method")
 
     @classmethod
     def teardown_class(cls):
-        cls.log.info("I am in Teardown class")
+        cls.log.info("Teardown class")
 
     def test_01(self):
         """
-        Test to start IO in sequence withing tests using RunDataCheckManager
+        Test to run IO and verify the download sequentially within test
         """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
@@ -41,7 +41,8 @@ class TestSample:
     def test_02(self, run_io_async):
         """
         Test to start DI using data_integrity_chk flag in pytest cmd, parallel IO and verification
-        negative scenario
+        Negative scenario: test failure will immediately stop upload and run_io_sync will
+        proceed with verification.
         """
         time.sleep(8)
         assert False, "msg"
@@ -72,7 +73,7 @@ class TestSample:
     def test_05(self):
         """
         Test start IO in parallel, set stop event, sleep for sometime and verify IO parallel
-        within test. Explicitly an event obj is pass from test
+        within test. Explicitly an event obj need to be passed from test
         """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
@@ -143,7 +144,7 @@ class TestSample:
     def test_10(self):
         """
         Test start IO sleep for sometime and stop upload and verify IO within Test
-        negative scenario
+        negative scenario: test will be marked as failed
         """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
@@ -161,7 +162,8 @@ class TestSample:
         """
         Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
         within test. Use RunDataCheckManager event for an immediate stop.
-        Negative scenario
+        Negative scenario: Test will be marked as failed but parallel IO will be stopped completing
+        IO
         """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
@@ -180,7 +182,8 @@ class TestSample:
         """
         Test start IO in parallel, sleep for sometime and stop upload and verify IO parallel
         within test.
-        Negative Scenario
+        Negative Scenario: test will be marked as failed upload will be stopped before failure
+        download will continue for sometime.
         """
         mgm_ops = ManagementOPs()
         users = mgm_ops.create_account_users(nusers=5, use_cortx_cli=False)
