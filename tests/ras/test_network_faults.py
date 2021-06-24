@@ -262,7 +262,9 @@ class TestNetworkFault:
     @pytest.mark.sw_alert
     def test_mgmt_network_port_fault_test_21493(self):
         """
-        TEST-21493: TA Destructive test : Automate mgt network port fault
+        TEST-21493: TA Destructive test : Automate management network port
+        fault and fault-resolved scenarios by making respective network
+        interface down and up.
         """
         LOGGER.info("STARTED: Verifying management network port fault and "
                     "fault-resolved scenarios")
@@ -364,7 +366,8 @@ class TestNetworkFault:
     def test_public_data_network_port_fault_21506(self):
         """
         TEST-21506: TA Destructive test : Automate public_data network port
-        fault
+        fault and fault-resolved scenarios by making respective network
+        interface down and up.
         """
         LOGGER.info("STARTED: Verifying public_data network port fault and "
                     "fault-resolved scenarios")
@@ -469,8 +472,8 @@ class TestNetworkFault:
     @pytest.mark.sw_alert
     def test_nw_prt_flt_persistent_cache_sspl_21510(self):
         """
-        TEST-21510: TA Destructive test : Test alerts in persistent cache for
-        network faults - Restart SSPL
+        TEST-21510: TA Destructive test : Test network alert persistency across
+        stop and start sspl-ll.
         """
         LOGGER.info("STARTED: Verifying alerts in persistent cache for network "
                     "faults when SSPL is stopped and started in between")
@@ -653,7 +656,7 @@ class TestNetworkFault:
     def test_mgmt_nw_cable_faults_21507(self):
         """
         TEST-21507: Test alerts when management network cable is
-        disconnected/connected
+        disconnected and connected.
         """
         LOGGER.info("STARTED: Verifying alerts when management network cable is"
                     " disconnected/connected")
@@ -756,7 +759,7 @@ class TestNetworkFault:
     def test_public_data_nw_cable_faults_21508(self):
         """
         TEST-21508: Test alerts when public data network cable is
-        disconnected/connected
+        disconnected and connected.
         """
         LOGGER.info("STARTED: Verifying alerts when public data network cable "
                     "is disconnected/connected")
