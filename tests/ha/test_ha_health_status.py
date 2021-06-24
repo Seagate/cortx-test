@@ -39,6 +39,7 @@ from commons import pswdmanager
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ha.ha_common_libs import HALibs
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ class TestHAHealthStatus:
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.csm_alerts_obj = SystemAlerts()
         cls.alert_type = RAS_TEST_CFG["alert_types"]
+        cls.ha_obj = HALibs()
 
         cls.node_list = []
         cls.host_list = []
@@ -125,36 +127,6 @@ class TestHAHealthStatus:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
-    def check_csm_service(self, nd_obj):
-        """
-        Helper function to get the node on which the CSM service is running.
-        :param nd_obj: node object for running pcs command
-        :return: sys_obj
-        """
-        res = nd_obj.execute_cmd(common_cmds.CMD_PCS_SERV.format("csm_agent"))
-        data = str(res, 'UTF-8')
-        for index, srvnode in enumerate(self.srvnode_list):
-            if srvnode in data:
-                sys_obj = self.sys_list[index]
-                break
-        return sys_obj
-
-    def check_service_other_nodes(self, node_id):
-        """
-        Helper function to get services status on nodes which are online.
-        :param node_id: node which is down to be skipped
-        :return: boolean
-        """
-        for node in range(self.num_nodes):
-            if node != node_id:
-                node_name = "srvnode-{}".format(node+1)
-                res = self.node_list[node].execute_cmd(common_cmds.CMD_PCS_GREP.format(node_name))
-                data = str(res, 'UTF-8')
-                for line in data:
-                    if "FAILED" in line or "Stopped" in line:
-                        return False
-        return True
-
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
@@ -167,7 +139,7 @@ class TestHAHealthStatus:
         LOGGER.info("Started: Test to check node status one by one for all nodes with safe shutdown.")
 
         LOGGER.info("Check in cortxcli that all nodes are shown online.")
-        sys_obj = self.check_csm_service(self.node_list[0])
+        sys_obj = self.ha_obj.check_csm_service(self.node_list[0], self.srvnode_list, self.sys_list)
         sys_obj.open_connection()
         res = sys_obj.login_cortx_cli()
         assert_utils.assert_true(res[0], res[1])
@@ -193,12 +165,12 @@ class TestHAHealthStatus:
             time.sleep(10)
             resp = system_utils.check_ping(self.host_list[node])
             assert_utils.assert_false(resp,  "Host has not shutdown yet.")
-            LOGGER.info("Check in cortxcli that the status is changed for node to offline")
+            LOGGER.info("Check in cortxcli that the status is changed for node to Failed")
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node+1]
-            sys_obj = self.check_csm_service(nd_obj)
+            sys_obj = self.ha_obj.check_csm_service(nd_obj, self.srvnode_list, self.sys_list)
             sys_obj.open_connection()
             res = sys_obj.login_cortx_cli()
             assert_utils.assert_true(res[0], res[1])
@@ -213,7 +185,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             #TODO: If CSM REST getting changed, add alert check from msg bus
             LOGGER.info("Check that cortx services on other nodes are not affected.")
-            resp = self.check_service_other_nodes(node)
+            resp = self.ha_obj.check_service_other_nodes(node, self.num_nodes, self.node_list)
             assert_utils.assert_true(resp, "Some services are down for other nodes.")
             LOGGER.info("Power on {}".format(node_name))
             if self.setup_type == "VM":
