@@ -652,12 +652,12 @@ class GenerateAlertWrapper:
 
             res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
                                                    field=cons.CONF_SYSFS_BASE_PATH)
-            LOGGER.info("Response: %s", res)
+            LOGGER.debug("Response: %s", res)
 
             LOGGER.info("Update network cable status in carrier file")
             cmd = commands.CMD_UPDATE_FILE.format(action, carrier_file_path)
             resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
-            LOGGER.info("Response: %s", resp)
+            LOGGER.debug("Response: %s", resp)
 
             return True, action
         except BaseException as error:
