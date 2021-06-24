@@ -56,7 +56,7 @@ def run_tesrunner_cmd(args, todo=False):
      -b=${Build} -t=${Build_Branch} -d=${DB_Update} -p=${Process_Cnt_Parallel_Exe}
       --force_serial_run ${Sequential_Execution}
     """
-    cmd_line = ['python3 -u testrunner.py ']
+    cmd_line = ['python3.7 -u testrunner.py ']
     _env = os.environ.copy()
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
