@@ -24,19 +24,18 @@ Prov test file for all the Prov tests scenarios for SW update disruptive.
 
 import os
 import logging
-import random
 import pytest
 import json
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
-from commons import constants as common_cnst
 from commons.utils import assert_utils
-from commons import pswdmanager
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_upgrade import ProvSWUpgrade
+from libs.di.di_run_man import RunDataCheckManager
+from libs.di.di_mgmt_ops import ManagementOPs
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -54,6 +53,7 @@ class TestSWUpdateDisruptive:
         """
         LOGGER.info("STARTED: Setup Module operations")
         cls.prov_obj = ProvSWUpgrade()
+        cls.mgnt_ops = ManagementOPs()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.build_update1 = os.getenv("Build_update1", PROV_CFG["build_def"])
         cls.build_update2 = os.getenv("Build_update2", PROV_CFG["build_def"])
@@ -150,7 +150,12 @@ class TestSWUpdateDisruptive:
         LOGGER.info("All nodes online and all services in cluster up and running.")
 
         LOGGER.info("Starting IOs on updated build version.")
-        #TODO: Add IOs from DI framework
+        users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        users = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
+        pref_dir = {"prefix_dir": 'TEST-23175'}
+        run_man_obj = RunDataCheckManager(users=users)
+        run_man_obj.run_io_sequentially(users=users, prefs=pref_dir)
+        #TODO: Need to add validation of IOs run
         LOGGER.info("IOs working fine with latest build upgraded.")
 
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components.")

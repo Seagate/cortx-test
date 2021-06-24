@@ -24,13 +24,7 @@ Provisioner utiltiy methods for sw upgrade functionality
 import shutil
 import logging
 import json
-import re
-from commons import constants as common_cnst
 from commons import commands as common_cmd
-from commons import params as prm
-from commons import pswdmanager
-from commons.utils import config_utils
-
 
 LOGGER = logging.getLogger(__name__)
 
