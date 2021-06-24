@@ -38,6 +38,7 @@ from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3CMD_TEST_CONFIG
+from commons.params import HA_TEST_CONFIG_PATH
 
 
 def split_args(sys_cmd: List):
@@ -93,6 +94,7 @@ CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH)
+HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
