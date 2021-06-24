@@ -40,7 +40,7 @@ from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ha.ha_common_libs import HALibs
-from libs.ha.ha_rest_libs import HaRestLibs
+from libs.csm.rest.csm_rest_system_health import SystemHealth
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ class TestHAHealthStatus:
         cls.csm_alerts_obj = SystemAlerts()
         cls.alert_type = RAS_TEST_CFG["alert_types"]
         cls.ha_obj = HALibs()
-        cls.ha_rest = HaRestLibs()
+        cls.ha_rest = SystemHealth()
 
         cls.node_list = []
         cls.host_list = []
