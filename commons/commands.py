@@ -181,14 +181,14 @@ CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
-CMD_RESET_PWD = "users reset_password"
+CMD_RESET_PWD = "users password"
 CMD_LIST_CSM_USERS = "users show"
 CMD_HELP_OPTION = "-h"
 CMD_S3ACC = "s3accounts"
 CMD_CREATE_S3ACC = "s3accounts create"
 CMD_SHOW_S3ACC = "s3accounts show"
 CMD_DELETE_S3ACC = "s3accounts delete {}"
-CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
+CMD_RESET_S3ACC_PWD = "s3accounts password {}"
 CMD_S3BKT_HELP = "s3buckets -h"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
@@ -210,7 +210,9 @@ CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
 CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
-CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
+CMD_HEALTH_SHOW = "health show \"{}\""
+CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
+CMD_RESET_IAM_PWD = "s3iamusers password {}"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
@@ -267,6 +269,8 @@ CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
+CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 
 # S3 awscli  Commands
@@ -306,3 +310,9 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
+
+# VM power operations:
+CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""

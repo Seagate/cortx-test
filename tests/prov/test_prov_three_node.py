@@ -86,8 +86,6 @@ class TestProvThreeNode:
         cls.prov_obj = Provisioner()
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         cls.ntp_data = {}
-        cls.CSM_USER = CortxCliCsmUser()
-        cls.CSM_USER.open_connection()
         cls.restored = True
         cls.hlt_obj_list = [cls.hlt_obj1, cls.hlt_obj2, cls.hlt_obj3]
         cls.no_nodes = len(cls.hlt_obj_list)
@@ -167,17 +165,21 @@ class TestProvThreeNode:
             assert_utils.assert_true(
                 resp[0], "Provisioner Installation Failed")
             LOGGER.info("Provisioner Version: %s", resp[1])
-
-        LOGGER.info("Creating config.ini file")
-        config_file = self.prov_obj.create_deployment_config(
-            test_cfg["config_template"], node_obj_list, mgmt_vip=self.mgmt_vip)
-        assert_utils.assert_true(config_file[0], config_file[1])
+        if os.path.exists(test_cfg["config_path_local"]):
+            LOGGER.info("Using provided config.ini file for deployment")
+            config_file = test_cfg["config_path_local"]
+        else:
+            LOGGER.info("Creating config.ini file")
+            resp = self.prov_obj.create_deployment_config(
+                test_cfg["config_template"], node_obj_list, mgmt_vip=self.mgmt_vip)
+            assert_utils.assert_true(resp[0], resp[1])
+            config_file = resp[1]
         self.nd1_obj.copy_file_to_remote(
-            config_file[1], test_cfg["config_path_remote"])
+            config_file, test_cfg["config_path_remote"])
         LOGGER.info(
-            "Created and copied config.ini file at %s on node %s",
+            "Copied config.ini file at %s on node %s",
             test_cfg["config_path_remote"],
-            self.nd1_obj)
+            self.nd1_obj.hostname)
 
         LOGGER.info("Performing Cortx Bootstrap")
         resp = self.prov_obj.bootstrap_cortx(
@@ -334,9 +336,11 @@ class TestProvThreeNode:
         LOGGER.info("All nodes are accessible and PCS looks clean.")
 
         LOGGER.info("Step 2: Validate that admin user is created")
-        resp = self.CSM_USER.login_cortx_cli()
+        CSM_USER = CortxCliCsmUser()
+        CSM_USER.open_connection()
+        resp = CSM_USER.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.CSM_USER.logout_cortx_cli()
+        resp = CSM_USER.logout_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Validated that admin user is created")
 
