@@ -614,8 +614,50 @@ class SoftwareAlert(RASCoreLib):
             disk_usage_thresh), "Disk usage threshold is not set as expected."
 
     def restart_sspl(self):
+        """Restart sspl service
+        """
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
         time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
         LOGGER.info("Verifying the status of sspl service is online")
+
+    def gen_cpu_fault(self, faulty_cpu_id:list):
+        """[summary]
+
+        :param n_cpu: 
+        :return [type]: 
+        """
+        n_cpu = faulty_cpu_id.intersection(self.get_available_cpus())
+        for cpu in n_cpu:    
+            cmd = commands.CPU_FAULT.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        return len(self.get_available_cpus().intersection(set(n_cpu))) == 0
+
+        
+    def resolv_cpu_fault(self, faulty_cpu_id:list):
+        """[summary]
+
+        :param n_cpu: 
+        :return [type]: 
+        """        
+        for cpu in faulty_cpu_id:    
+            cmd = commands.CPU_RESOLVE.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        return len(self.get_available_cpus().intersection(set(faulty_cpu_id))) == len(faulty_cpu_id)
+
+    def get_available_cpus(self):
+        """[summary]
+
+        :return [type]: 
+        """        
+        resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT)
+        resp = resp.split(",")
+        cpus = []
+        for i in resp:
+            if "-" in i:
+                start, end = i.split("-")
+                cpus.extend(list(range(int(start),int(end)+1)))
+            else:
+                cpus.append(int(i))
+        return set(cpus)

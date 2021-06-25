@@ -257,3 +257,9 @@ test_21588:
 test_21586:
   delta_disk_usage: -5
   resource_type: "node:os:disk_space"
+
+test_23045:
+  resource_type: "node:os:cpu"
+  faulty_cpu_id:
+    -0
+    -1

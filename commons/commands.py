@@ -314,3 +314,7 @@ CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+
+CPU_COUNT = "cat /sys/devices/system/cpu/online"
+CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
+CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
