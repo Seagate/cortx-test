@@ -1,4 +1,3 @@
-""" Script to Trigger Jenkins Job"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -17,11 +16,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+""" Script to Trigger Jenkins Job"""
 
+import sys
 import logging
+import argparse
 from commons.utils import assert_utils
 from libs.prov.provisioner import Provisioner
-
+from commons import constants
 JOB_DEPLOY_3N = 'VM-Deployment-R2-3Node'
 JOB_DEPLOY_1N = 'VM-Deployment-R2-1Node'
 JOB_DESTROY_3N = '3-Node-VM-Destroy'
@@ -93,3 +95,38 @@ def trigger_deploy_destroy_job(job, hostnames, node_ps, token, build='', mgmt_vi
                 "Job is not successful, please check the url.")
         else:
             LOGGER.error("Please check provided parameters")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-j", "--job", type=str, default='',
+                        help="Jenkins Job for 3N Deployment")
+    parser.add_argument("-l", "--hosts", type=str, default=[],
+                        help="Hostnames")
+    parser.add_argument("-p", "--node_pass", type=str,
+                        help="node password")
+    parser.add_argument("-b", "--build", type=str, default='',
+                        help="Build URL")
+    parser.add_argument("-t", "--token", type=str, default='',
+                        help="Token to trigger build")
+    parser.add_argument("-i", "--mgmt_vip", type=str, default='',
+                        help="Management VIP")
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    suffix = 'colo.seagate.com'
+    opts = parse_args()
+    job = opts.job if opts.job else JOB_DEPLOY_3N
+    hosts = list()
+    for host in opts.hosts.split(','):
+        hosts.append('.'.join([host.strip(), suffix]))
+    node_pass = opts.node_pass
+    token = opts.token if opts.token else constants.TOKEN_NAME
+    build = opts.build
+    mgmt_vip = opts.mgmt_vip
+    try:
+        trigger_deploy_destroy_job(job, hosts, node_pass, token, build=build, mgmt_vip=mgmt_vip)
+    except AssertionError as fault:
+        sys.exit(1)
+    sys.exit(0)

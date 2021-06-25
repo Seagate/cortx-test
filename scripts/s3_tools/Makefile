@@ -30,12 +30,18 @@ CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 
 
-aws:
+aws-install:
 
-	@echo "#Install and configure awscli."
-	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
+	@echo "### Install awscli. ###"
 	pip3 install awscli
 	pip3 install awscli-plugin-endpoint
+	@echo "### Installed awscli. ###"
+
+
+aws-configure:
+
+	@echo "### configure awscli. ###"
+	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
 	aws configure set plugins.endpoint awscli_plugin_endpoint
 	aws configure set s3.endpoint_url $(ENDPOINT)
 	aws configure set s3api.endpoint_url $(ENDPOINT)
@@ -44,13 +50,19 @@ aws:
 	aws configure set aws_secret_access_key $(SECRET)
 	aws configure set region "US"
 	aws configure set output "json"
-	@echo "#Installed and configured awscli."
+	@echo "### configured awscli. ###"
 
 
-s3cmd:
+s3cmd-install:
 
 	@echo "###Installing s3cmd in current machine###"
 	yum install -y s3cmd
+	@echo "###Installed s3cmd in current machine###"
+
+
+s3cmd-configure:
+
+	@echo "###Configure s3cmd in current machine###"
 	rm -rf /root/.s3cfg
 	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --dump-config >/root/.s3cfg
 	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
@@ -58,35 +70,47 @@ s3cmd:
 	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg
 	sed -i 's|^host_base =.*|host_base = s3.seagate.com|g' /root/.s3cfg
 	sed -i 's|^host_bucket =.*|host_bucket = s3.seagate.com|g' /root/.s3cfg
-	@echo "###Installed s3cmd in current machine###"
+	@echo "###Configured s3cmd in current machine###"
 
 
-s3fs:
+s3fs-install:
 
 	@echo "###Installing s3fs in current machine###"
 	yum install -y epel-release
 	yum install -y s3fs-fuse
+	@echo "###Installing s3fs in current machine###"
+
+
+s3fs-configure:
+
+	@echo "###configure s3fs in current machine###"
 	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
 	trust anchor $(CA_CRT)
 	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
 	@echo $(ACCESS):$(SECRET) >>/etc/passwd-s3fs
-	@echo "###Installed s3fs in current machine###"
+	@echo "###configured s3fs in current machine###"
 
 
-minio:
+minio-install:
 
 	@echo "###Installing minio client in current machine###"
 	rm -rf mc
 	wget https://dl.min.io/client/mc/release/linux-amd64/mc
 	chmod +x mc
-	./mc config host add s3 https://s3.seagate.com $(ACCESS) $(SECRET) --api S3v4
-	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
 	@echo "###Installed minio client in current machine###"
 
 
-jcloud-client:
+minio-configure:
+
+	@echo "###Configure minio client in current machine###"
+	./mc config host add s3 https://s3.seagate.com $(ACCESS) $(SECRET) --api S3v4
+	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
+	@echo "###configured minio client in current machine###"
+
+
+jcloud-client-install:
 
 	@echo "###Installing jCloud and Client in current machine###"
 	yum install -y java-1.8.0-openjdk
@@ -100,8 +124,32 @@ jcloud-client:
 	@echo "###Installed jcloud-client client in current machine###"
 
 
-install-tools: aws s3fs minio s3cmd jcloud-client
-	@echo "### All tools are installed###"
+aws: aws-install aws-configure
+	@echo "### Installed & configured aws tool. ###"
+
+
+s3fs: s3fs-install s3fs-configure
+	@echo "### Installed & configured s3fs tool. ###"
+
+
+s3cmd: s3cmd-install s3cmd-configure
+	@echo "### Installed & configured s3cmd tool. ###"
+
+
+minio: minio-install minio-configure
+	@echo "### Installed & configured minio tool. ###"
+
+
+install-tools: aws-install s3fs-install s3cmd-install minio-install jcloud-client-install
+	@echo "### All tools are installed. ###"
+
+
+configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
+	@echo "### All tools are configured. ###"
+
+
+all: clean aws s3fs s3cmd minio jcloud-client-install
+	@echo "### All tools are installed & configured. ###"
 
 
 clean:
@@ -118,9 +166,12 @@ clean:
 
 help :
 
-	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine."
-	@echo "aws          : Install & configure aws tool."
-	@echo "s3fs         : Install & configure s3fs tool."
-	@echo "s3cmd        : Install & configure s3cmd tool."
-	@echo "jcloud-client: Setup jcloud-client."
-	@echo "minio        : Install & configure minio tool. credentials: Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "all: Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "clean: Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean"
+	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools"
+	@echo "configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "jcloud-client: Setup jcloud-client. Eg: make jcloud-client"
+	@echo "minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"

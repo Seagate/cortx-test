@@ -13,8 +13,6 @@ Resource    ${RESOURCES}/resources/page_objects/firmwareUpdatepage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/common/common.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
-Variables   ${RESOURCES}/resources/common/common_variables.py
-
 
 Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
 ...  ${username}  ${password}
@@ -49,7 +47,7 @@ Create and login with CSM user
     Capture Page Screenshot  ${test_id}_${user_type}_user.png
     Re-login  ${user_type}${test_id}  ${new_password}  DASHBOARD_MENU_ID
     Validate CSM Login Success  ${user_type}${test_id}
-    sleep  2s  # Took time to load full dashboard
+    wait for page or element to load  2s  # Took time to load full dashboard
     Verify Presence of Stats And Alerts
     Capture Page Screenshot  ${test_id}_dashboard.png
 
@@ -60,7 +58,6 @@ Delete user
 
 *** Test Cases ***
 
-
 TEST-1213
     [Documentation]  Test that CSM user with role manager has access to dashboard and perform actions on alerts
     ...  Reference : https://jts.seagate.com/browse/TEST-1213
@@ -69,24 +66,24 @@ TEST-1213
     ${test_id}    Set Variable    TEST-1213
     Create and login with CSM user  ${user_type}  ${test_id}
     Click AlertPage Image
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  3s  # Took time to load all alerts
     Verify Presence of Details Comments Acknowledge
     Capture Page Screenshot  ${test_id}_alert.png
     Click Details Button
-    sleep  6s  # Took time to load alert details
+    wait for page or element to load  6s  # Took time to load alert details
     Capture Page Screenshot  ${test_id}_alert_details.png
     Go Back
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  5s  # Took time to load all alerts
     Verify Presence of Details Comments Acknowledge
     Click Comments Button
-    sleep  2s  # Took time to load comments
+    wait for page or element to load  3s  # Took time to load comments
     Capture Page Screenshot  ${test_id}_comments_before_add.png
     Add CommentInCommentBox Text
-    sleep  2s  # Took time to save comments
+    wait for page or element to load  10s  # Took time to save comments
     Capture Page Screenshot  ${test_id}_comments_during_add.png
     Click CommentsClose Button
     Click Comments Button
-    sleep  2s  # Took time to load comments
+    wait for page or element to load  3s  # Took time to load comments
     Capture Page Screenshot  ${test_id}_comments_after_add.png
     Click CommentsClose Image
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
@@ -100,19 +97,19 @@ TEST-1219
     ${test_id}    Set Variable    TEST-1219
     Create and login with CSM user  ${user_type}  ${test_id}
     Click AlertPageDashboard Image
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  3s  # Took time to load all alerts
     Verify Presence of Details Comments
     Verify Absence of Acknowledge
     Capture Page Screenshot  ${test_id}_alert.png
     Click Details Button
-    sleep  6s  # Took time to load alert details
+    wait for page or element to load  6s  # Took time to load alert details
     Capture Page Screenshot  ${test_id}_alert_details.png
     Go Back
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  3s  # Took time to load all alerts
     Verify Presence of Details Comments
     Verify Absence of Acknowledge
     Click Comments Button
-    sleep  2s  # Took time to save comments
+    wait for page or element to load  2s  # Took time to save comments
     Capture Page Screenshot  ${test_id}_comments.png
     Click CommentsClose Image
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
@@ -126,22 +123,22 @@ TEST-4409
     ${test_id}    Set Variable    TEST-4409
     Create and login with CSM user  ${user_type}  ${test_id}
     Click AlertPageDashboard Image
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  3s  # Took time to load all alerts
     Verify Presence of Details Comments
     Verify Absence of Acknowledge
     Capture Page Screenshot  ${test_id}_alert.png
     Click Details Button
-    sleep  6s  # Took time to load alert details
+    wait for page or element to load  6s  # Took time to load alert details
     Verify Presence of AlertEventDetails Image
     Capture Page Screenshot  ${test_id}_alert_details.png
     Click AlertEventDetails Button
-    sleep  3s  # Took time to load more alert details
+    wait for page or element to load  3s  # Took time to load more alert details
     Verify Presence of AlertEventDetailsBody Close
     Capture Page Screenshot  ${test_id}_more_alert_details.png
     Capture AlertEventDetails Screenshot  ${test_id}_more_alert_details_full.png
     Click AlertEventDetailsClose Button
     Go Back
-    sleep  3s  # Took time to load all alerts
+    wait for page or element to load  3s  # Took time to load all alerts
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     Delete user  ${user_type}  ${test_id}
 
@@ -192,7 +189,7 @@ TEST-7820
     # The below code shall now work on VM
     #Click On Upload New Software File Button
     #${path}=  Download SW ISO File  ${sw_version}  ${Download_File_Path}
-    #Upload File  CHOOSE_SW_UPDATE_FILE_BTN_ID  ${path}
+    #Upload File  CHOOSE_SW_UPDATE_FILE_BUTTON_ID  ${path}
     # These following lines should be executed in case you have the proper machine
     #Click On Upload New Software File Button
     #Click On Start Software Update Button
@@ -206,7 +203,7 @@ TEST-6150
     # The below code shall now work on VM
     #Click On Upload New Firmware File Button
     #${path}=  Download Firmware Binary  ${Download_File_Path}
-    #Upload File  CHOOSE_FW_UPDATE_FILE_BTN_ID  ${path}
+    #Upload File  CHOOSE_FW_UPDATE_FILE_BUTTON_ID  ${path}
     # These following lines should be executed in case you have the proper machine
     #Click On Upload New Firmware File Button
     #Click On Start Firmware Update Button
