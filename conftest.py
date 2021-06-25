@@ -753,7 +753,7 @@ def pytest_runtest_logstart(nodeid, location):
     skip_health_check = False
     breadcrumbs = os.path.split(location[0])
     for prefix in params.PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX:
-        if breadcrumbs[0].startswith(prefix):
+        if breadcrumbs[-1].startswith(prefix):
             skip_health_check = True
             break
     path = "file://" + os.path.realpath(location[0])
