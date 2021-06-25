@@ -138,7 +138,7 @@ optional arguments:
   --new_entry NEW_ENTRY
                         True for new entry , False for update
 
-e.g. python3 tools/setup_entry/setup_entry.py --dbuser <> --dbpassword <>
+e.g. python3 tools/setup_update/setup_entry.py --dbuser <> --dbpassword <>
 
 Name of setup specified in json file should be unique in case you are creating a new setup.
 For example in sample json setupname value should be unique `"setupname":"T2"`.
@@ -147,7 +147,7 @@ For example in sample json setupname value should be unique `"setupname":"T2"`.
 ## Steps to setup s3 client
 Script in project's path `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
 ```commandline
-Required arguments:
+Required arguments in configuration:
     ACCESS=<aws_access_key_id>
     SECRET=<aws_secret_access_key>
 optional arguments:
@@ -157,24 +157,25 @@ optional arguments:
     CA_CRT=<certificate_file_path>
     NFS_SHARE=<NFS_share_jclient_path>
 
-cd scripts/s3_tools/Makefile
-make help
-    install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine.
-    aws          : Install & configure aws tool.
-    s3fs         : Install & configure s3fs tool.
-    s3cmd        : Install & configure s3cmd tool.
-    jcloud-client: Setup jcloud-jclient.
-    minio        : Install & configure minio tools. credentials: Eg make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+make help --makefile=scripts/s3_tools/Makefile
+    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
+    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
+    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    jcloud-client: Setup jcloud-client. Eg: make jcloud-client
+    minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
 
 To install & configure all tools:
-make clean # Perform cleanup.
-make install-tools ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
 
 To install & configure specific tool(i.e aws):
-make aws ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
 
 To cleanup all tools:
-make clean
+make clean --makefile=scripts/s3_tools/Makefile
 
 ```
 

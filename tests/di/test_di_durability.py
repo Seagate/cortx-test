@@ -39,8 +39,8 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
 
 
-class TestDataDurability:
-    """Data Durability Test suite."""
+class TestDIDurability:
+    """DI Durability Test suite."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -225,7 +225,7 @@ class TestDataDurability:
             "Step 3: Verify range read (get) of an object whose metadata "
             "is corrupted")
         resp = self.s3_mp_test_obj.get_byte_range_of_object(
-            self.bucket_name, self.object_name, "1025", "8192")
+            self.bucket_name, self.object_name, 1025, 8192)
         assert_utils.assert_false(resp[0], resp[1])
         self.log.info(
             "Step 3: Range Read (get) of an object failed with an error")
@@ -417,7 +417,7 @@ class TestDataDurability:
             "Step 3: Verify range read (Get) of an object whose metadata"
             " is corrupted.")
         res = self.s3_mp_test_obj.get_byte_range_of_object(
-            self.bucket_name, self.object_name, "2025", "9216")
+            self.bucket_name, self.object_name, 2025, 9216)
         assert_utils.assert_false(res[0], res)
         self.log.info(
             "Step 3: Verified range read (Get) of an object whose metadata"
