@@ -55,12 +55,12 @@ class TestSWUpdateDisruptive:
         cls.prov_obj = ProvSWUpgrade()
         cls.mgnt_ops = ManagementOPs()
         cls.num_nodes = len(CMN_CFG["nodes"])
-        cls.build_update1 = os.getenv("Build_update1", PROV_CFG["build_def"])
-        cls.build_update2 = os.getenv("Build_update2", PROV_CFG["build_def"])
-        cls.build_update1 = "{}/{}".format(cls.build_update1,
-                                   "prod") if cls.build_update1 else "last_successful_prod"
-        cls.build_update2 = "{}/{}".format(cls.build_update2,
-                                           "prod") if cls.build_update2 else "last_successful_prod"
+        cls.build_up1 = os.getenv("Build_update1", None)
+        cls.build_up2 = os.getenv("Build_update2", None)
+        cls.build_update1 = "{}/{}".format(cls.build_up1,
+                                   "prod") if cls.build_up1 else PROV_CFG["build_def"]
+        cls.build_update2 = "{}/{}".format(cls.build_up2,
+                                           "prod") if cls.build_up2 else PROV_CFG["build_def"]
         cls.build_branch = os.getenv("Build_Branch", "stable")
         cls.build_iso1 = PROV_CFG["build_iso"].format(
             cls.build_branch, cls.build_update1, cls.build_update1)
@@ -122,23 +122,22 @@ class TestSWUpdateDisruptive:
         resp = nd_obj1.execute_cmd(common_cmds.CMD_SW_VER, read_lines=True)
         data = json.loads(resp[0])
         build_org = data["BUILD"]
-        version_org = data["BUILD"]
+        version_org = data["VERSION"]
         LOGGER.info("Current cortx version: {} and build on system: {}".format(version_org, build_org))
 
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
-        tmp_dir = "/root/iso/"
-        nd_obj1.make_dir(tmp_dir)
+        nd_obj1.make_dir(PROV_CFG["tmp_dir"])
         for dnld in self.iso1_list:
-            nd_obj1.execute_cmd(common_cmds.CMD_WGET.format(tmp_dir, dnld), read_lines=True)
+            nd_obj1.execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld), read_lines=True)
         LOGGER.info("Set the update repo.")
         resp = self.prov_obj.set_validate_repo(self.iso1_list, nd_obj1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(resp[1], self.build_update1,
+        assert_utils.assert_equal(resp[1], self.build_up1,
                                   "Set ISO version doesn't match with desired one.")
         LOGGER.info("Start the SW upgrade operation in offline mode.")
         resp = self.prov_obj.check_sw_upgrade(nd_obj1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_equal(resp[1], self.build_update1,
+        assert_utils.assert_equal(resp[1], self.build_up1,
                                   "SW build version on system doesn't match with desired one.")
         LOGGER.info("SW upgrade process completed and SW version updated from {} to {}"
                     .format(build_org, resp[1]))

@@ -42,6 +42,7 @@ build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/cent
 build_def: "last_successful_prod"
 cluster_start_msg: "Cluster start operation performed"
 confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
+tmp_dir: "/root/iso/"
 
 single-node:
   prereq:

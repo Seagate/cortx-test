@@ -40,8 +40,11 @@ class ProvSWUpgrade:
         """
         Setting the SW upgrade repo and validating it if set to desired build
         :param iso_list: list of iso files which need to be used for setting repo
+        :type: list
         :param node_object: node object for execution of command
-        :return: boolean, response
+        :type: object
+        :return: True/False, response
+        :rtype: boolean, str
         """
         try:
             LOGGER.info("ISO to be set in repo: {}".format(iso_list[0]))
@@ -66,8 +69,10 @@ class ProvSWUpgrade:
     def check_sw_upgrade(node_object):
         """
         Run the SW upgrade command and check the status.
-        :param node_object: node object to execute command on node.
-        :return: boolean, response
+        :param node_object: node object to execute command on node
+        :type: object
+        :return: True/False, response
+        :rtype: boolean, str
         """
         try:
             LOGGER.info("SW upgrade process starting...")
