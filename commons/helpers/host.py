@@ -130,11 +130,13 @@ class Host:
         while retry_count:
             try:
                 self.connect(**kwargs)
+                return True
                 break
-            except socket.timeout as error:
+            except (socket.timeout, BaseException) as error:
                 LOGGER.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)
+        return False
 
     def execute_cmd(self,
                     cmd: str,

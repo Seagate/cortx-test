@@ -291,6 +291,9 @@ class SwAlerts:
     ]
 
     SVCS_3P_UNAVAIL_VM = [
+        "statsd.service",
+        "lnet.service",
+        "hare-consul-agent.service",
         "glusterd.service",
         "multipathd.service",
         "scsi-network-relay.service"]
