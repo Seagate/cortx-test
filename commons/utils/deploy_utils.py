@@ -34,7 +34,6 @@ from commons.params import DB_HOSTNAME
 from commons.params import DB_NAME
 from commons.params import SYS_INFO_COLLECTION
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -83,11 +82,10 @@ class CreateSetupJson:
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
-    @staticmethod
     def add_nodes_details(self, host_number, node):
         return dict(
             host="srvnode-" + str(host_number),
-            hostname = node["hostname"],
+            hostname=node["hostname"],
             ip="node_ip",
             username=node["username"],
             password=node["password"]
@@ -126,7 +124,7 @@ class CreateSetupJson:
         sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
         cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
         resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-        key= resp1[0]
+        key = resp1[0]
         key = key.strip('\n')
         cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
         resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
@@ -141,10 +139,11 @@ class CreateSetupJson:
                     csm_admin_user=dict(username="",
                                         password="")
                     )
+
     def add_s3_details(self, s3):
         return dict(s3_server_ip=self.m_ip,
-                s3_server_user=dict(username=self.hosts[0]['username'],
-                                    password=self.hosts[0]['password']))
+                    s3_server_user=dict(username=self.hosts[0]['username'],
+                                        password=self.hosts[0]['password']))
 
 
 def register_setup_entry(hosts: List, new_entry=True):
