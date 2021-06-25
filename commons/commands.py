@@ -272,6 +272,9 @@ CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
 CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
+# LDAP commands
+CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
