@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label auto-awitch-ssc-vm-rhev4
+        label auto-switch-ssc-vm-rhev4
     }
 
     environment {
@@ -96,6 +96,12 @@ deactivate
             steps {
                 dir('cortx-test') {
                     script {
+                        def username = "admin"
+                        def password = "Seagate@1"
+                        def account_name = 'dadmin'
+                        def account_email = 'dadmin@seagate.com'
+                        def acc_password = 'Seagate@1'
+                        sh "python3.7 scripts/s3_tools/create_s3_account.py --mgmt_vip ${m_vip} --username ${username} --password ${password} --account_name ${account_name} --account_email ${account_email} --account_password ${acc_password}"
                         def keys = readFile "${WORKSPACE}/s3acc_secrets"
                         def (access, secret) = keys.tokenize(' ')
                         sh "cd ${WORKSPACE}/cortx-test/scripts/s3_tools/"
