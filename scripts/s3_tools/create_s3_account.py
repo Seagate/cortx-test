@@ -19,6 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """ Script for creating S3 account. """
+
 import argparse
 import requests
 
