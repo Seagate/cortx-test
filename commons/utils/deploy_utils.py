@@ -70,7 +70,8 @@ class CreateSetupJson:
                                  parallel_client_cnt=0,
                                  is_setup_free=True))
         for host_number, host in enumerate(self.hosts):
-            nodes.append(self.add_nodes_details(host_number, host))
+            node_details = self.add_nodes_details(host_number, host)
+            nodes.append(node_details)
         target_setup.update({'nodes': nodes})
         target_setup.update({'enclosure': self.add_enclosure_details(enc)})
         target_setup.update({'pdu': self.add_pdu_details(pdu)})
@@ -82,7 +83,8 @@ class CreateSetupJson:
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
-    def add_nodes_details(self, host_number, node):
+    @staticmethod
+    def add_nodes_details(host_number, node):
         return dict(
             host="srvnode-" + str(host_number),
             hostname=node["hostname"],
