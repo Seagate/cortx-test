@@ -38,9 +38,11 @@ class HALibs:
         Helper function to know the node where CSM service is running.
         :param node_object: node object for the node to execute command
         :param srvnode_list: list of srvnode names
-        :param sys_list: Llst of system objects
+        :param sys_list: List of system objects
         :return: system_object
         """
+        if len(srvnode_list) == 0 or len(sys_list) == 0:
+            raise ValueError("srvnode_list or sys_list list is empty")
         res = node_object.execute_cmd(
             common_cmd.CMD_PCS_SERV.format("csm_agent"))
         data = str(res, 'UTF-8')
@@ -78,7 +80,7 @@ class HALibs:
             status: str,
             node_id: int = None):
         """
-        This method will get number of node
+        This method will verify node status with health show node command response
         :param response: List Response for health status command
         :param status: Expected status value for node
         :param node_id: Expected status value for specific node_id

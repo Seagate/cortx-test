@@ -392,9 +392,9 @@ class SystemHealth(RestTestLib):
         :return: System health resource Get rest API response
         """
         try:
-            # Building request url to get Node Health status
+            # Building request url to get resource Health status
             self.log.info("Reading health of %s ...", resource)
-            endpoint = self.config["health_resource_endpoint"]
+            endpoint = self.config["health_resource_endpoint"].format(resource)
             self.log.info(
                 "Endpoint for reading capacity is %s", endpoint)
             self.log.info(
@@ -438,6 +438,7 @@ class SystemHealth(RestTestLib):
         param = None
         if res_key:
             param = dict()
+            # Generate the dict of key-value need to be fetched with Get API call
             param[f"{res_key}"] = res_val
         node_resp = self.get_health_status(resource="node", parameters=param)
         if node_id:
@@ -458,4 +459,4 @@ class SystemHealth(RestTestLib):
                     self.log.info('Node "%s" "%s" \nActual: "%s" \nExpected: "%s"',
                         node_dict["id"], exp_key, node_dict[f"{exp_key}"], exp_val)
                     return False, f'Node "{node_dict["id"]}" expected "{exp_key}" is not "{exp_val}"'
-                return True, f"All nodes are {exp_val}"
+            return True, f"All nodes are {exp_val}"

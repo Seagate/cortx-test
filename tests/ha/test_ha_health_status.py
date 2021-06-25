@@ -134,6 +134,23 @@ class TestHAHealthStatus:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
+    def polling_host(self, max_timeout: int, host_index: int, exp_resp: bool):
+        """
+        Helper function to poll for host ping response.
+        :param max_timeout: Max timeout allowed for expected response from ping
+        :param host_index: Host to ping
+        :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
+        :return: bool
+        """
+
+        poll = time.time() + max_timeout  # max timeout
+        while poll > time.time():
+            time.sleep(20)
+            resp = system_utils.check_ping(self.host_list[host_index])
+            if resp == exp_resp:
+                return True
+        return False
+
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
     @CTFailOn(error_handler)
@@ -277,8 +294,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
-            node_name = self.srvnode_list[node]
-            LOGGER.info("Shutting down %s", node_name)
+            LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
@@ -293,37 +309,44 @@ class TestHAHealthStatus:
             else:
                 self.bmc_list[node].bmc_node_power_on_off(
                     self.bmc_ip_list[node], self.bmc_user, self.bmc_pwd, "off")
-            LOGGER.info("Check if the %s has shutdown.", node_name)
-            time.sleep(10)
-            resp = system_utils.check_ping(self.host_list[node])
-            assert_utils.assert_false(
-                resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(
-                "Check in cortxcli that the status is changed for node to Failed")
-            if node_name == self.srvnode_list[-1]:
+                "Check if the %s has shutdown.",
+                self.srvnode_list[node])
+            resp = self.polling_host(
+                max_timeout=120, host_index=node, exp_resp=False)
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info("%s is powered off.", self.host_list[node])
+            LOGGER.info(
+                "Check %s is in Failed state and other nodes state is not affected",
+                self.srvnode_list[node])
+            LOGGER.info("Get the new node on which CSM service is running.")
+            if self.srvnode_list[node] == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node + 1]
-            LOGGER.info("Get the new node on which CSM service is running.")
             sys_obj = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
             sys_obj.open_connection()
             resp = sys_obj.login_cortx_cli()
-            assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status(
-                exp_key='state', exp_val='failed', node_id=node)
             assert_utils.assert_true(resp[0], resp[1])
             resp = sys_obj.check_health_status(
                 common_cmds.CMD_HEALTH_SHOW.format("node"))
             assert_utils.assert_true(resp[0], resp[1])
             resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.debug(
-                "Response for %s in cortxcli is: %s",
-                node_name,
+                "Response for node health in cortxcli is: %s",
                 resp_table)
-            resp = self.ha_obj.verify_node_health_status(
-                response=resp_table, status="failed", node_id=node)
-            assert_utils.assert_true(resp[0], resp[1])
+            check_rem_node = [
+                "failed" if num == node else "online" for num in range(
+                    self.num_nodes)]
+            for node_check, state in enumerate(check_rem_node):
+                resp = self.ha_rest.get_node_health_status(
+                    exp_key='state', exp_val=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
+                resp = self.ha_obj.verify_node_health_status(
+                    response=resp_table, status=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -336,9 +359,8 @@ class TestHAHealthStatus:
                 node, self.num_nodes, self.node_list)
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
-            LOGGER.info("Power on {}".format(node_name))
+            LOGGER.info("Power on %s", self.srvnode_list[node])
             if self.setup_type == "VM":
-                vm_name = self.host_list[node].split(".")[0]
                 res = system_utils.execute_cmd(
                     common_cmds.CMD_VM_POWER_ON .format(
                         self.vm_username, self.vm_password, vm_name))
@@ -347,11 +369,16 @@ class TestHAHealthStatus:
             else:
                 self.bmc_list[node].bmc_node_power_on_off(
                     self.bmc_ip_list[node], self.bmc_user, self.bmc_pwd, "on")
-            time.sleep(40)
-            resp = system_utils.check_ping(self.host_list[node])
+
+            # SSC cloud is taking more time to start VM host hence max_timeout
+            # 120
+            resp = self.polling_host(
+                max_timeout=120, host_index=node, exp_resp=True)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
-            LOGGER.info("Node %s has powered on", node_name)
+            LOGGER.info("%s is powered on.", self.host_list[node])
+            # To get all the services up and running
+            time.sleep(40)
             LOGGER.info("Check all nodes are back online in CLI.")
             resp = self.ha_rest.get_node_health_status(
                 exp_key='status', exp_val='online')
@@ -361,7 +388,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.info(
-                "Response for health check for all nodes: %s", resp_table)
+                "Response for node health in cortxcli is: %s", resp_table)
             resp = self.ha_obj.verify_node_health_status(
                 response=resp_table, status="online")
             assert_utils.assert_true(resp[0], resp[1])
@@ -375,6 +402,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj.close_connection()
             LOGGER.info(
-                "Node down/up worked fine for node: {}".format(node_name))
+                "Node down/up worked fine for node: %s",
+                self.srvnode_list[node])
         LOGGER.info(
             "Completed: Test to check node status one by one for all nodes with unsafe shutdown.")
