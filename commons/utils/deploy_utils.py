@@ -24,9 +24,12 @@ Utils help to achieve deployment, client setups and test env.
 """
 import os
 import logging
+import json
 from typing import List
 from urllib.parse import quote_plus
 from pymongo import MongoClient
+from commons import commands as common_cmd
+from commons.helpers.node_helper import Node
 from commons.params import DB_HOSTNAME
 from commons.params import DB_NAME
 from commons.params import SYS_INFO_COLLECTION
@@ -41,6 +44,16 @@ class CreateSetupJson:
         self.hosts = hosts
         self.repr_object = dict()
 
+        self.nd_obj_host = Node(hostname=hosts[0]['hostname'], username=hosts[0]['username'],
+                                password=hosts[0]['password'])
+        remote_path = "/opt/seagate/cortx_configs/provisioner_cluster.json"
+        local_path = os.path.join(os.getcwd() + "/provisioner_cluster.json")
+        self.nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+        with open('provisioner_cluster.json') as json_file:
+            self.data = json.load(json_file)
+        self.m_ip = self.data["cluster"][list(data["cluster"].keys())[0]]['network']['management'][
+            'virtual_host']
+
     def create_setup_entry(self, target_name, setup_type='VM'):
         target_setup = dict()
         enc = dict()
@@ -50,14 +63,15 @@ class CreateSetupJson:
         ldap = dict()
         bmc = list()
         csm = list()
+        s3 = list()
         target_setup.update(dict(setupname=target_name,
                                  setup_type=setup_type,
                                  setup_in_useby="",
                                  in_use_for_parallel=False,
                                  parallel_client_cnt=0,
                                  is_setup_free=True))
-        for host in self.hosts:
-            nodes.append(self._add_nodes_details(host))
+        for host_number, host in enumerate(self.hosts):
+            nodes.append(self._add_nodes_details(host_number, host))
         target_setup.update({'nodes': nodes})
         target_setup.update({'enclosure': self.add_enclosure_details(enc)})
         target_setup.update({'pdu': self.add_pdu_details(pdu)})
@@ -65,19 +79,17 @@ class CreateSetupJson:
         target_setup.update({'ldap': self.add_ldap_details(ldap)})
         target_setup.update({'bmc': self.add_bmc_details(bmc)})
         target_setup.update({'csm': self.add_csm_details(csm)})
+        target_setup.update({'s3': self.add_s3_details(s3)})
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
-    def _add_nodes_details(self, node):
+    def _add_nodes_details(self, host_number, node):
         return dict(
-            host="srv-node-0",
-            hostname="node 0 hostname",
-            ip="node 0 ip",
-            username="node 0 username",
-            password="node 0 password",
-            public_data_ip="",
-            private_data_ip="",
-            mgmt_ip=""
+            host="srvnode-" + str(host_number),
+            hostname = node["hostname"],
+            ip="node_ip",
+            username=node["username"],
+            password=node["password"]
         )
 
     def add_enclosure_details(self, enc):
@@ -110,15 +122,28 @@ class CreateSetupJson:
                     password="")
 
     def add_ldap_details(self, ldap):
-        return dict(username="",
-                    password="",
-                    sspl_pass="")
+        sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
+        cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
+        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+        key= resp1[0]
+        key = key.strip('\n')
+        cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
+        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+        ldap_pass = resp1[0]
+        ldap_pass = ldap_pass.strip('\n')
+        return dict(username="sgiamadmin",
+                    password=ldap_pass,
+                    sspl_pass=ldap_pass)
 
     def add_csm_details(self, csm):
-        return dict(mgmt_vip="",
+        return dict(mgmt_vip=self.m_ip,
                     csm_admin_user=dict(username="",
                                         password="")
                     )
+    def add_s3_details(self, s3):
+        return dict(s3_server_ip=self.m_ip,
+                s3_server_user=dict(username=self.hosts[0]['username'],
+                                    password=self.hosts[0]['password']))
 
 
 def register_setup_entry(hosts: List, new_entry=True):
