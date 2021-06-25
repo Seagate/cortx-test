@@ -205,13 +205,23 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         return True/False, Response.
         """
         try:
+            acc_details = dict()
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
                 self.login_cortx_cli()
             status, response = super().create_s3account_cortx_cli(
                 account_name=s3_user, account_email=email, password=s3_passwd)
-            LOGGER.debug(response)
+            if s3_user in response:
+                response = self.split_table_response(response)[0]
+                acc_details["account_name"] = response[0]
+                acc_details["account_email"] = response[1]
+                acc_details["account_id"] = response[2]
+                acc_details["canonical_id"] = response[3]
+                acc_details["access_key"] = response[4]
+                acc_details["secret_key"] = response[5]
+                LOGGER.info("Account Details: %s", acc_details)
+                response = acc_details
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          CSMAccountOperations.csm_user_create_s3account.__name__,
@@ -219,6 +229,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             raise CTException(err.CLI_ERROR, error.args)
         finally:
             self.logout_cortx_cli()
+
+        return status, response
 
     def csm_user_delete_s3account(self, s3_user, csm_user=None, passwd=None):
         """
