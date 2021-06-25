@@ -83,6 +83,7 @@ class CreateSetupJson:
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
+    @staticmethod
     def add_nodes_details(self, host_number, node):
         return dict(
             host="srvnode-" + str(host_number),
