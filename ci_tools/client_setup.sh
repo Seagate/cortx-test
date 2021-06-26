@@ -45,4 +45,3 @@ make clean
 make install-tools
 
 cd "$WORKSPACE/cortx-test/"
-
