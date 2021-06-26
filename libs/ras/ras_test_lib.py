@@ -1093,3 +1093,61 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
 
         return True, controller_vals
+
+    def create_obj_for_nodes(self, **kwargs) -> dict:
+        """
+        Function to get/create all server node related information/objects.
+        Inputs expected in kwargs:
+        ras_c=RAS class object
+        node_c=Node class object
+        hlt_c=Health class object
+        ctrl_c=ControllerLib class object
+        Example response dict:
+        {'srvnode-1': {'nd_num': 'srvnode-1.data.private',
+        'hostname': 'ssc-vm-5592', 'ip': '10.230.248.33',
+        'pu_data_ip': '192.168.56.53', 'pr_data_ip': '192.168.91.69',
+        'ras_obj': <libs.ras.ras_test_lib.RASTestLib object at 0x7fc676045fd0>,
+        'nd_obj': <commons.helpers.node_helper.Node object at 0x7fc676045e90>,
+        'hlt_obj': <commons.helpers.health_helper.Health object at 0x7fc66852fd50>,
+        'ctrl_obj': <commons.helpers.controller_helper.ControllerLib object at 0x7fc66852b310>},
+        'srvnode-2': {...}}
+        """
+        num_nodes = len(CMN_CFG["nodes"])
+        c_dict = {}
+        node_d = self.health_obj.get_current_srvnode()
+        ras_c = kwargs.get("ras_c", None)
+        nd_c = kwargs.get("node_c", None)
+        hlt_c = kwargs.get("hlt_c", None)
+        ctrl_c = kwargs.get("ctrl_c", None)
+        for n in range(1, num_nodes + 1):
+            c_dict[f"srvnode-{n}"] = {}
+            for k, v in node_d.items():
+                if f"srvnode-{n}" in v:
+                    c_dict[f"srvnode-{n}"]["nd_num"] = v
+                    c_dict[f"srvnode-{n}"]["hostname"] = k
+                    db_n = n - 1
+                    if CMN_CFG["nodes"][db_n]["hostname"].split('.')[0] == k:
+                        c_dict[f"srvnode-{n}"]["ip"] = CMN_CFG["nodes"][db_n]["ip"]
+                        c_dict[f"srvnode-{n}"]["pu_data_ip"] = CMN_CFG["nodes"][db_n]["public_data_ip"]
+                        c_dict[f"srvnode-{n}"]["pr_data_ip"] = CMN_CFG["nodes"][db_n]["private_data_ip"]
+
+                    host = CMN_CFG["nodes"][db_n]["hostname"]
+                    uname = CMN_CFG["nodes"][db_n]["username"]
+                    passwd = CMN_CFG["nodes"][db_n]["password"]
+                    ras_obj = ras_c(host=host, username=uname,
+                                    password=passwd) if ras_c is not None else None
+                    c_dict[f"srvnode-{n}"]["ras_obj"] = ras_obj
+                    nd_obj = nd_c(hostname=host, username=uname,
+                                  password=passwd) if nd_c is not None else None
+                    c_dict[f"srvnode-{n}"]["nd_obj"] = nd_obj
+                    hlt_obj = hlt_c(hostname=host, username=uname,
+                                    password=passwd) if hlt_c is not None else None
+                    c_dict[f"srvnode-{n}"]["hlt_obj"] = hlt_obj
+                    ctrl_obj = ctrl_c(
+                        host=host, h_user=uname, h_pwd=passwd,
+                        enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+                        enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+                        enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
+                    c_dict[f"srvnode-{n}"]["ctrl_obj"] = ctrl_obj
+
+        return c_dict

@@ -550,3 +550,21 @@ class Node(Host):
                 self.get_file_size.__name__, error)
             resp_val = error
         return flag, resp_val
+
+    def open_empty_file(self, fpath: str) -> bool:
+        """
+        Create empty file specified in path.
+        :param fpath: Non-existing file path.
+        :return: True/False
+        """
+        try:
+            if not self.path_exists(fpath):
+                log.debug("File '%s' not exists, creating file...", fpath)
+                self.execute_cmd(commands.CMD_TOUCH_FILE.format(fpath))
+            return self.path_exists(fpath)
+        except Exception as error:
+            log.error(
+                "%s %s: %s", const.EXCEPTION_ERROR,
+                self.open_empty_file.__name__, error)
+            return False
+
