@@ -117,7 +117,7 @@ def parse_args():
 if __name__ == '__main__':
     suffix = 'colo.seagate.com'
     opts = parse_args()
-    job = opts.job if opts.job else JOB_DEPLOY_3N
+    job = opts.job if opts.job else 'deploy'
     hosts = list()
     for host in opts.hosts.split(','):
         hosts.append('.'.join([host.strip(), suffix]))
