@@ -100,10 +100,15 @@ if __name__ == '__main__':
         help='New S3 account password',
         type=str)
     args = parser.parse_args()
-    create_s3_account(
+    response = create_s3_account(
         args.account_name,
         args.account_email,
         args.account_password,
         args.mgmt_vip,
         args.username,
         args.password)
+    access_key = response[1]["access_key"]
+    secret_key = response[1]["secret_key"]
+    with open('s3acc_secrets', 'w') as ptr:
+        ptr.write(access_key + ' ' + secret_key)
+    
