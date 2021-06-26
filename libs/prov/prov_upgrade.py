@@ -21,7 +21,6 @@
 """
 Provisioner utiltiy methods for sw upgrade functionality
 """
-import shutil
 import logging
 import json
 from commons import commands as common_cmd
@@ -34,6 +33,23 @@ class ProvSWUpgrade:
     This class contains utility methods for all the operations related
     to SW upgrade processes.
     """
+
+    @staticmethod
+    def get_build_version(node_object):
+        """
+        Helper function for getting current build version on system.
+        :param node_object: node object to execute command
+        :type: object
+        :return: build, version
+        :rtype: str, str
+        """
+        LOGGER.info("Check the current version of the build.")
+        resp = node_object.execute_cmd(common_cmd.CMD_SW_VER, read_lines=True)
+        data = json.loads(resp[0])
+        build_org = data["BUILD"]
+        version_org = data["VERSION"]
+
+        return build_org, version_org
 
     @staticmethod
     def set_validate_repo(iso_list, node_object):
@@ -65,8 +81,7 @@ class ProvSWUpgrade:
                 ProvSWUpgrade.set_validate_repo.__name__)
             return False, error
 
-    @staticmethod
-    def check_sw_upgrade(node_object):
+    def check_sw_upgrade(self, node_object):
         """
         Run the SW upgrade command and check the status.
         :param node_object: node object to execute command on node
@@ -84,10 +99,9 @@ class ProvSWUpgrade:
             LOGGER.info("SW upgrade process completed successfully.")
 
             LOGGER.info("Checking the build version on system.")
-            res = node_object.execute_cmd(common_cmd.CMD_SW_VER, read_lines=True)
-            data = json.loads(res[0])
-            build_new = data["BUILD"]
-            return True, build_new
+            res = self.get_build_version(node_object)
+
+            return True, res[0]
 
         except IOError as error:
             LOGGER.error(
