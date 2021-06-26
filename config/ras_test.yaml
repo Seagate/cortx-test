@@ -246,6 +246,14 @@ nw_port_fault:
   resource_type: "node:interface:nw"
   error_msg: "Failed to put management network port in"
 
+nw_cable_fault:
+  disconnect: 0
+  connect: 1
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw:cable"
+  error_msg: "Failed to {} management network cable"
+
 test_21587:
   delta_cpu_usage: -5
   resource_type: "node:os:cpu_usage"
