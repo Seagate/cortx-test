@@ -29,7 +29,7 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import toggle_nw_status, make_dirs, open_empty_file
+from commons.utils.system_utils import toggle_nw_status
 from commons import commands
 from commons.helpers.node_helper import Node
 
