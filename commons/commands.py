@@ -220,6 +220,8 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
