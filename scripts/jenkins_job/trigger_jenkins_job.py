@@ -79,10 +79,15 @@ def trigger_deploy_destroy_job(job, hostnames, node_ps, token, build='', mgmt_vi
             if len(hostnames) == 3:
                 LOGGER.info("3N destroy job will be triggered")
                 job_name = '3-Node-VM-Destroy'
-                parameters['NODE1'] = hostnames[0]
-                parameters['NODE2'] = hostnames[1]
-                parameters['NODE3'] = hostnames[2]
-                parameters['NODE_PASS'] = node_ps
+                parameters['HOST_NAME_1'] = hostnames[0]
+                parameters['HOST_NAME_2'] = hostnames[1]
+                parameters['HOST_NAME_3'] = hostnames[2]
+                parameters['PASSWORD'] = node_ps
+            elif len(hostnames) == 1:
+                LOGGER.info("1N destroy job will be triggered")
+                job_name = 'Single-Node-VM-Destroy'
+                parameters['HOST_NAME'] = hostnames[0]
+                parameters['PASSWORD'] = node_ps
             else:
                 valid_parameters = False
         if valid_parameters:
@@ -106,18 +111,21 @@ def parse_args():
     parser.add_argument("-p", "--node_pass", type=str,
                         help="node password")
     parser.add_argument("-b", "--build", type=str, default='',
-                        help="Build number")
+                        help="Build URL")
     parser.add_argument("-t", "--token", type=str, default='',
-                        help="Build number")
+                        help="Token to trigger build")
     parser.add_argument("-i", "--mgmt_vip", type=str, default='',
                         help="Management VIP")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
+    suffix = 'colo.seagate.com'
     opts = parse_args()
-    job = opts.job if opts.job else JOB_DEPLOY_3N
-    hosts = opts.hosts
+    job = opts.job if opts.job else 'deploy'
+    hosts = list()
+    for host in opts.hosts.split(','):
+        hosts.append('.'.join([host.strip(), suffix]))
     node_pass = opts.node_pass
     token = opts.token if opts.token else constants.TOKEN_NAME
     build = opts.build
