@@ -244,26 +244,6 @@ TEST-3583
         Delete CSM User  ${new_user_name}
     END
 
-TEST-7406
-    [Documentation]  Test that Non root user cannot change roles through csm GUI
-    ...  Reference : https://jts.seagate.com/browse/TEST-7406
-    [Tags]  Priority_High  TEST-7406
-    ${new_password}=  Generate New Password
-    ${new_user_name}=  Generate New User Name
-    ${users_type}=  Create List  manage  monitor
-    Navigate To Page  ${page_name}
-    FOR    ${value}    IN    @{users_type}
-        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
-        Log To Console And Report  operation for ${value}
-        Click On Confirm Button
-        Verify New User  ${new_user_name}
-        Re-login  ${new_user_name}  ${new_password}  ${page_name}
-        Validate CSM Login Success  ${new_user_name}
-        Verify Change User Type Radio Button Disabled  ${new_user_name}
-        Re-login  ${username}  ${password}  ${page_name}
-        Delete CSM User  ${new_user_name}
-    END
-
 TEST-5186
     [Documentation]  Test that root user is not getting deleted from the system
     ...  Reference : https://jts.seagate.com/browse/TEST-5186
@@ -305,7 +285,7 @@ TEST-18326
     [Documentation]  Test that csm Admin user is able to reset the s3 account users password through CSM GUI
     ...  Reference : https://jts.seagate.com/browse/TEST-18326
     [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -363,7 +343,7 @@ TEST-18330
     [Documentation]  Test that reset password for s3 account does not accept invalid password
     ...  Reference : https://jts.seagate.com/browse/TEST-18330
     [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -380,7 +360,7 @@ TEST-18332
     ...  disabled for password and confirm password does not match.
     ...  Reference : https://jts.seagate.com/browse/TEST-18332
     [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -396,7 +376,7 @@ TEST-21589
     [Documentation]  Test that CSM Admin user can delete empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21589
     [Tags]  Priority_High  TEST-21589  S3_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -407,25 +387,25 @@ TEST-21590
     [Documentation]  Test that CSM Admin user cannot delete non-empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21590
     [Tags]  Priority_High  TEST-21590  S3_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page  Bucket_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
     Click On Create Bucket Form
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
     wait for page or element to load
     Re-login  ${S3_account_name}  ${S3_password}  MANAGE_MENU_ID
-    Navigate To Page  Bucket_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
