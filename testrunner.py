@@ -48,7 +48,7 @@ def parse_args():
                         default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
-    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
+    parser.add_argument("-p", "--prc_cnt", type=int, default=4,
                         help="number of parallel processes")
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
