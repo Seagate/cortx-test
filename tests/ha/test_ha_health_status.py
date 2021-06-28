@@ -266,8 +266,8 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, unsafe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST, when
+        node goes offline and comes back online(one by one, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
@@ -413,37 +413,33 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_safe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes
-        offline and comes back online(single node multiple times, safe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST, when
+        node goes offline and comes back online(single node multiple times, safe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple safe shutdown.")
 
-        LOGGER.info("Check in cortxcli that all nodes are shown online.")
+        LOGGER.info("Get the node on for multiple unsafe shutdown.")
+        test_cli_node = random.choice([obj for obj in self.sys_list])
+        node_index = self.sys_list.index(test_cli_node)
+
+        LOGGER.info("Get the node on which CSM service is running.")
         sys_obj = self.ha_obj.check_csm_service(
             self.node_list[0], self.srvnode_list, self.sys_list)
-        LOGGER.info("Logging to cortxcli")
+        if sys_obj == test_cli_node:
+            LOGGER.info(
+                "CSM is running on selected %s",
+                self.srvnode_list[node_index])
+            LOGGER.info("Get the new node on which CSM service will failover.")
+            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
+                nd_obj = self.node_list[0]
+            else:
+                nd_obj = self.node_list[node_index + 1]
+            sys_obj = self.ha_obj.check_csm_service(
+                nd_obj, self.srvnode_list, self.sys_list)
         sys_obj.open_connection()
         resp = sys_obj.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.get_node_health_status(
-            exp_key='status', exp_val='online')
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = sys_obj.check_health_status(
-            common_cmds.CMD_HEALTH_SHOW.format("node"))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp_table = sys_obj.split_table_response(resp[1])
-        LOGGER.info("Response for health check for all nodes: %s", resp_table)
-        resp = self.ha_obj.verify_node_health_status(
-            response=resp_table, status="online")
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("All nodes are online.")
-
-        # Get the single node except the one on which the CSM service is
-        # running
-        test_cli_node = random.choice(
-            [obj for obj in self.sys_list if obj != sys_obj])
-        node_index = self.sys_list.index(test_cli_node)
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -455,7 +451,8 @@ class TestHAHealthStatus:
                 loop)
             if self.setup_type == "HW":
                 LOGGER.debug(
-                    "HW: Need to disable stonith on the %s before shutdown", self.srvnode_list[node_index])
+                    "HW: Need to disable stonith on the %s before shutdown",
+                    self.srvnode_list[node_index])
                 # TODO: Need to get the command once F-11A available.
             resp = self.node_list[node_index].execute_cmd(cmd="shutdown now")
             LOGGER.debug("Response for shutdown: %s", resp)
@@ -467,8 +464,9 @@ class TestHAHealthStatus:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
+
             LOGGER.info(
-                "Check %s is in Failed state and other nodes state is not affected",
+                "Check %s is in Failed state and other nodes state is not affected in CLI and REST ",
                 self.srvnode_list[node_index])
             resp = sys_obj.check_health_status(
                 common_cmds.CMD_HEALTH_SHOW.format("node"))
@@ -487,7 +485,7 @@ class TestHAHealthStatus:
                 resp = self.ha_obj.verify_node_health_status(
                     response=resp_table, status=state, node_id=node_check)
                 assert_utils.assert_true(resp[0], resp[1])
-            # cortxcli
+
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["fault"], False, "iem")
@@ -518,9 +516,10 @@ class TestHAHealthStatus:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
+
             # To get all the services up and running
             time.sleep(40)
-            LOGGER.info("Check all nodes are back online in CLI")
+            LOGGER.info("Check all nodes are back online in CLI and REST")
             resp = self.ha_rest.get_node_health_status(
                 exp_key='status', exp_val='online')
             assert_utils.assert_true(resp[0], resp[1])
@@ -534,7 +533,8 @@ class TestHAHealthStatus:
             resp = self.ha_obj.verify_node_health_status(
                 response=resp_table, status="online")
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("All nodes are online in CLI.")
+            LOGGER.info("Checked All nodes are online in CLI and REST.")
+
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["resolved"], True, "iem")
@@ -556,37 +556,33 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_unsafe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes
-        offline and comes back online(single node multiple times, unsafe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST, when
+        node goes offline and comes back online(single node multiple times, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple unsafe shutdown.")
 
-        LOGGER.info("Check in cortxcli that all nodes are shown online.")
+        LOGGER.info("Get the node on for multiple unsafe shutdown.")
+        test_cli_node = random.choice([obj for obj in self.sys_list])
+        node_index = self.sys_list.index(test_cli_node)
+
+        LOGGER.info("Get the node on which CSM service is running.")
         sys_obj = self.ha_obj.check_csm_service(
             self.node_list[0], self.srvnode_list, self.sys_list)
-        LOGGER.info("Logging in cortxcli")
+        if sys_obj == test_cli_node:
+            LOGGER.info(
+                "CSM is running on selected %s",
+                self.srvnode_list[node_index])
+            LOGGER.info("Get the new node on which CSM service will failover.")
+            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
+                nd_obj = self.node_list[0]
+            else:
+                nd_obj = self.node_list[node_index + 1]
+            sys_obj = self.ha_obj.check_csm_service(
+                nd_obj, self.srvnode_list, self.sys_list)
         sys_obj.open_connection()
         resp = sys_obj.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.get_node_health_status(
-            exp_key='status', exp_val='online')
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = sys_obj.check_health_status(
-            common_cmds.CMD_HEALTH_SHOW.format("node"))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp_table = sys_obj.split_table_response(resp[1])
-        LOGGER.info("Response for health check for all nodes: %s", resp_table)
-        resp = self.ha_obj.verify_node_health_status(
-            response=resp_table, status="online")
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("All nodes are online.")
-
-        # Get the single node except the one on which the CSM service is
-        # running
-        test_cli_node = random.choice(
-            [obj for obj in self.sys_list if obj != sys_obj])
-        node_index = self.sys_list.index(test_cli_node)
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -620,7 +616,7 @@ class TestHAHealthStatus:
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
             LOGGER.info(
-                "Check %s is in Failed state and other nodes state is not affected",
+                "Check %s is in Failed state and other nodes state is not affected in CLI and REST ",
                 self.srvnode_list[node_index])
             resp = sys_obj.check_health_status(
                 common_cmds.CMD_HEALTH_SHOW.format("node"))
@@ -639,7 +635,7 @@ class TestHAHealthStatus:
                 resp = self.ha_obj.verify_node_health_status(
                     response=resp_table, status=state, node_id=node_check)
                 assert_utils.assert_true(resp[0], resp[1])
-            # cortxcli
+
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["fault"], False, "iem")
@@ -669,9 +665,10 @@ class TestHAHealthStatus:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
+
             # To get all the services up and running
             time.sleep(40)
-            LOGGER.info("Check all nodes are back online in CLI")
+            LOGGER.info("Check all nodes are back online in CLI and REST")
             resp = self.ha_rest.get_node_health_status(
                 exp_key='status', exp_val='online')
             assert_utils.assert_true(resp[0], resp[1])
@@ -685,7 +682,8 @@ class TestHAHealthStatus:
             resp = self.ha_obj.verify_node_health_status(
                 response=resp_table, status="online")
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("All nodes are online in CLI.")
+            LOGGER.info("Checked All nodes are online in CLI and REST.")
+
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["resolved"], True, "iem")
