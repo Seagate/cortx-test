@@ -424,7 +424,7 @@ class TestHAHealthStatus:
             "Started: Test to check node status one by one on all nodes when nw interface on node goes"
             "down and comes back up")
 
-        LOGGER.info("Get the list of interfaces for all nodes.")
+        LOGGER.info("Get the list of private data interfaces for all nodes.")
         iface_list = []
         private_ip_list = []
         resp_ip = self.node_list[0].execute_cmd(common_cmds.CMD_HOSTS, read_lines=True)
@@ -435,7 +435,7 @@ class TestHAHealthStatus:
                     private_ip_list.append(ip)
                     res = self.node_list[node].execute_cmd(common_cmds.CMD_IFACE_IP.format(ip),
                                                            read_lines=True)
-                    ifname = res[0].strip(':')
+                    ifname = res[0].replace(':', '')
                     iface_list.append(ifname)
         LOGGER.debug("List of private data interfaces on all nodes: {}".format(iface_list))
 
