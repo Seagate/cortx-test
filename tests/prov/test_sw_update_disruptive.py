@@ -25,7 +25,6 @@ Prov test file for all the Prov tests scenarios for SW update disruptive.
 import os
 import logging
 import pytest
-import itertools
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
@@ -120,6 +119,18 @@ class TestSWUpdateDisruptive:
         build = self.prov_obj.get_build_version(self.node_list[0])
         LOGGER.info("Current cortx build: {} and version on system: {}".format(build[0], build[1]))
 
+        LOGGER.info("Check that update builds are different.")
+        assert_utils.assert_not_equal(build[0], self.build_up1,
+                                      "SW upgrade from same build to same build not supported.")
+
+        LOGGER.info("Start IOs on the current SW version.")
+        users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        data = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'TEST-23175-{}'.format(self.build_up1)}
+        run_data_chk_obj.start_io(
+            users=data, buckets=None, files_count=8, prefs=pref_dir)
+
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
         self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
         for dnld in self.iso1_list:
@@ -144,14 +155,10 @@ class TestSWUpdateDisruptive:
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes online and all services in cluster up and running.")
 
-        LOGGER.info("Starting IOs on updated build version.")
-        users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
-        users = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
-        pref_dir = {"prefix_dir": 'TEST-23175'}
-        run_man_obj = RunDataCheckManager(users=users)
-        run_man_obj.run_io_sequentially(users=users, prefs=pref_dir)
-        #TODO: Need to add validation of IOs run
-        LOGGER.info("IOs working fine with latest build upgraded.")
+        LOGGER.info("Checking DI for IOs run before upgrade.")
+        run_data_chk_obj.stop_io(users=data, di_check=True)
+        #TODO: Need to add validation of IOs run from DI framework.
+        LOGGER.info("IOs working fine with latest build {} upgraded.".format(self.build_up1))
 
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components.")
 
@@ -176,6 +183,15 @@ class TestSWUpdateDisruptive:
             build_cur = self.prov_obj.get_build_version(self.node_list[0])
             LOGGER.info("Current cortx build: {} and version on system: {}"
                         .format(build_cur[0], build_cur[1]))
+
+            LOGGER.info("Start IOs on the current SW version.")
+            users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
+            data = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
+            run_data_chk_obj = RunDataCheckManager(users=data)
+            pref_dir = {"prefix_dir": 'TEST-23206-{}'.format(build)}
+            run_data_chk_obj.start_io(
+                users=data, buckets=None, files_count=8, prefs=pref_dir)
+
             LOGGER.info("Download the upgrade ISO, SIG file and GPG key for build: {}"
                         .format(build))
             if self.node_list[0].path_exists(PROV_CFG["tmp_dir"]):
@@ -203,13 +219,9 @@ class TestSWUpdateDisruptive:
                 assert_utils.assert_true(res[0], res[1])
             LOGGER.info("All nodes online and all services in cluster up and running.")
 
-            LOGGER.info("Starting IOs on updated build version: {}".format(build))
-            users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
-            users = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
-            pref_dir = {"prefix_dir": 'TEST-23206'}
-            run_man_obj = RunDataCheckManager(users=users)
-            run_man_obj.run_io_sequentially(users=users, prefs=pref_dir)
-            # TODO: Need to add validation of IOs run
-            LOGGER.info("IOs working fine with latest build upgraded.")
+            LOGGER.info("Checking DI for IOs run before upgrade.")
+            run_data_chk_obj.stop_io(users=data, di_check=True)
+            # TODO: Need to add validation of IOs run from DI framework.
+            LOGGER.info("IOs working fine with latest build {} upgraded.".format(build))
 
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components in succession.")
