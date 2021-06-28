@@ -79,10 +79,15 @@ def trigger_deploy_destroy_job(job, hostnames, node_ps, token, build='', mgmt_vi
             if len(hostnames) == 3:
                 LOGGER.info("3N destroy job will be triggered")
                 job_name = '3-Node-VM-Destroy'
-                parameters['NODE1'] = hostnames[0]
-                parameters['NODE2'] = hostnames[1]
-                parameters['NODE3'] = hostnames[2]
-                parameters['NODE_PASS'] = node_ps
+                parameters['HOST_NAME_1'] = hostnames[0]
+                parameters['HOST_NAME_2'] = hostnames[1]
+                parameters['HOST_NAME_3'] = hostnames[2]
+                parameters['PASSWORD'] = node_ps
+            elif len(hostnames) == 1:
+                LOGGER.info("1N destroy job will be triggered")
+                job_name = 'Single-Node-VM-Destroy'
+                parameters['HOST_NAME'] = hostnames[0]
+                parameters['PASSWORD'] = node_ps
             else:
                 valid_parameters = False
         if valid_parameters:
