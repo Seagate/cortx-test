@@ -110,3 +110,17 @@ class CortxCliSystemtOperations(CortxCli):
             LOGGER.error("Failed to shutdown system node")
 
         return True, output
+
+    def check_health_status(self, cmd: str):
+        """
+        This function is used to check the health status from cortxcli.
+        :param cmd: command to be run
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Checking health status using cli command")
+        output = self.execute_cli_commands(cmd, patterns=["Resource", "Status"])[1]
+        if "error" in output.lower() or "exception" in output.lower():
+            LOGGER.error("Unable to check health status")
+            return False, output
+
+        return True, output
