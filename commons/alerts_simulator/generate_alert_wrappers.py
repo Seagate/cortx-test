@@ -24,12 +24,14 @@ This file contains the wrapper functions used by Alert Simulation API.
 import logging
 import time
 import random
+import os
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import run_remote_cmd, toggle_nw_status
+from commons.utils.system_utils import toggle_nw_status
 from commons import commands
+from commons.helpers.node_helper import Node
 
 LOGGER = logging.getLogger(__name__)
 
@@ -609,5 +611,57 @@ class GenerateAlertWrapper:
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_network_port_fault
+                         .__name__, error)
+            return False, error
+
+    @staticmethod
+    def create_resolve_network_cable_faults(host, h_user, h_pwd,
+                                            input_parameters):
+        """
+        Function to create and resolve the network cable fault on node
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        device = input_parameters['device']
+        action = input_parameters['action']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+
+        LOGGER.info("Simulating network cable fault using sysfs")
+        try:
+            carrier_file_path = f"/tmp/sys/class/net/{device}/carrier"
+            LOGGER.info(f"Make network cable of {device} on {host} {action}")
+            LOGGER.info("Creating dummy network path")
+            if not node_connect.path_exists(carrier_file_path):
+                node_connect.make_dir(dpath=os.path.dirname(carrier_file_path))
+                node_connect.open_empty_file(fpath=carrier_file_path)
+
+            LOGGER.info("Update sysfs_base_path in sspl.conf file")
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_SYSFS_BASE_PATH': "/tmp/sys/"})
+
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_SYSFS_BASE_PATH)
+            LOGGER.debug("Response: %s", res)
+
+            LOGGER.info("Update network cable status in carrier file")
+            cmd = commands.CMD_UPDATE_FILE.format(action, carrier_file_path)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            return True, action
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.create_resolve_network_cable_faults
                          .__name__, error)
             return False, error
