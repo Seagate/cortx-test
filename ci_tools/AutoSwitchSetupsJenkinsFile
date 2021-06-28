@@ -72,7 +72,7 @@ pipeline {
                             export PYTHONPATH=$WORKSPACE/cortx-test:$PYTHONPATH
                             cd $WORKSPACE/cortx-test/
                             echo $PYTHONPATH
-                            python3.7 scripts/jenkins_job/trigger_jenkins_job.py -l ${vm_list} -p seagate -t ${TOKEN} -b ${Build_Path} -i ${m_vip}
+                            python3.7 scripts/jenkins_job/trigger_jenkins_job.py -j deploy -l ${vm_list} -p seagate -t ${TOKEN} -b ${Build_Path} -i ${m_vip}
                             deactivate
                         
                         '''
