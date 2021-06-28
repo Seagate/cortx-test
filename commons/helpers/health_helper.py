@@ -495,7 +495,7 @@ class Health(Host):
         cmd = commands.CMD_SALT_GET_HOST
         LOG.info("Running command: %s", cmd)
         resp = self.execute_cmd(cmd)
-        resp = (resp.decode("utf-8").split('\n'))[0].split()
+        resp = (resp.decode("utf-8").split('\n'))
         for ele in resp:
             if 'srvnode' not in ansi_escape.sub('', ele).strip():
                 node.append(ansi_escape.sub('', ele).strip())
