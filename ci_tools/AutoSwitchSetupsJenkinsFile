@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label any
-    }
+    agent { label 'auto-switch-ssc-vm-rhev4'}
 
     environment {
         AWS_ACCESS_KEY_ID     = ''
@@ -20,30 +18,25 @@ pipeline {
     }
 
     parameters {
+        string(name: 'TEs', description: 'Space separated TEs', trim: true)
+        string(name: 'client', description: 'Setup Client machine', trim: true)
         string(name: 'Branch', defaultValue: 'dev', description: 'Branch name of cortx-test', trim: true)
         string(name: 'TestPlanNumber', defaultValue: 'TEST-18383', description: 'Master Test plan number to clone', trim: true)
-        string(name: 'TEs_To_Exclude', description: 'Space separated TEs from template TP which you want to exclude from execution.', trim: true)
-        string(name: 'Target_Node', description: 'Name of target setup mentioned in database', trim: true)
-        string(name: 'Setup_Type', defaultValue: 'default', description: 'Either of default/isolated/nearfull', trim: true)
-        choice(name: 'Platform_Type', choices: ['VM', 'HW', 'OVA'], description: 'Is target a VM or a HW or an OVA?')
-        text(name: 'DESC', description: 'This job triggers CSM GUI, Cortx-test and Load tests in parallel')
+        string(name: 'SetupName', description: 'Name of target setup mentioned in database', trim: true)
+        text(name: 'DESC', description: 'This job triggers deploy setup and runs Cortx-test TE')
         string(name: 'Nodes_In_Target', defaultValue: '3', description: 'Number of nodes in target: 3 or 3N', trim: true)
-        string(name: 'Server_Type', description: 'HPC/DELL/SMC', trim: true)
-        string(name: 'Enclosure_Type', defaultValue: '5U84',description: '5U84/PODS/JBOD', trim: true)
+        string(name: 'vm_list', defaultValue: '', description: 'List of VMs for 3 Node Setup', trim: true)
+        string(name: 'm_vip', defaultValue: '', description: 'Mgmt VIP', trim: true)
         string(name: 'Build', description: 'Build number of target', trim: true)
+        string(name: 'Build_Path', description: '3 Node Build Path', trim: true)
         string(name: 'Build_Type', defaultValue: 'stable', description: 'Branch name from which build is cut stable/main', trim: true)
-        credentials(
-                credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
-                defaultValue: '',
-                description: 'JIRA Credentials.',
-                name: 'JIRA_CRED',
-                required: true)
-        string(name: 'Git_Branch_Name', defaultValue: 'dev', description: 'Branch name of Cortx-test', trim: true)
-        booleanParam(name: 'Need_pip_source', description: 'Tick this if you want to add source in requirements installation. e.g. pip3 install -r requirements.txt -i https://pypi.python.org/simple/')
         booleanParam(name: 'DB_Update', description: 'Tick this if you want to push test execution data to database')
         booleanParam(name: 'Sequential_Execution', description: 'Tick this if you want to have sequential execution')
         string(name: 'Process_Cnt_Parallel_Exe', defaultValue: '2', description: 'If Sequential Execution is not selected, then provide number of parallel process to run.', trim: true)
-        string(name: 'Node_VM_details', defaultValue: 'comma separated FQDNs here', description: 'comma separated FQDN of the vms on which', trim: true)
+        string(name: 'JIRA_ID', description: 'Jira User ID', trim: true)
+        password(name: 'JIRA_PASSWORD', defaultValue: '', description: 'Jira Password of User ID')
+        string(name: 'TOKEN', defaultValue: "mk\$4Seagate", description: 'Deployment Token', trim: true)
+
     }
 
     stages {
@@ -53,9 +46,12 @@ pipeline {
                 script {
                     step([$class: 'WsCleanup'])
                     dir('cortx-test'){
+                        sh "pwd"
                         checkout([$class: 'GitSCM', branches: [[name: "${Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'AuthorInChangelog'], [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'cortx-admin-github', url: 'https://github.com/Seagate/cortx-test.git']]])
+                        sh label: '', script: 'chmod 777 ./ci_tools/client_setup.sh'
                         sh './ci_tools/client_setup.sh'
                     }
+                    sh "pwd"
                 }
 
             }
@@ -65,12 +61,68 @@ pipeline {
                 ansiColor('xterm') {
                     echo "Executing 3 Node Deployment and Health Check on setup."
                 }
-                retry(3) { // Retries x number of times until its successful
-                    sh 'python3 scripts/jenkins_job/trigger_jenkins_job.py'
+
+                dir('cortx-test') {
+                    retry(3) { // Retries x number of times until its successful
+                        script {
+                            try {
+                                sh "cd ${WORKSPACE}/cortx-test/"
+                                // sh "export PYTHONPATH=${$WORKSPACE}/cortx-test:${PYTHONPATH}"
+                                // sh "echo ${PYTHONPATH}"
+                                // sh "python3.7 scripts/jenkins_job/trigger_jenkins_job.py -l ${vm_list} -p seagate -t ${TOKEN} -b ${Build_Path} -i ${m_vip}"
+                                sh label: '', script: '''source virenv/bin/activate
+                                export PYTHONPATH=$WORKSPACE/cortx-test:$PYTHONPATH
+                                cd $WORKSPACE/cortx-test/
+                                echo $PYTHONPATH
+                                python3.7 scripts/jenkins_job/trigger_jenkins_job.py -j deploy -l ${vm_list} -p seagate -t ${TOKEN} -b ${Build_Path} -i ${m_vip}
+                                deactivate
+                            
+                            '''
+                            } catch (e) {
+                                echo 'Err: 3N Deploy Build failed with Error: ' + e.toString()
+                                echo 'Trying to destroy the 3N'
+                                sh label: '', script: '''source virenv/bin/activate
+                                export PYTHONPATH=$WORKSPACE/cortx-test:$PYTHONPATH
+                                cd $WORKSPACE/cortx-test/
+                                echo $PYTHONPATH
+                                python3.7 scripts/jenkins_job/trigger_jenkins_job.py -j destroy -l ${vm_list} -p seagate -t ${TOKEN} -b ${Build_Path} -i ${m_vip}
+                                deactivate
+                                '''
+                            } finally {
+                                echo 'Retry if failed'
+                            }
+                        }
+
+                    }
+                    script {
+                        sh label: '', script: '''source virenv/bin/activate
+python3.7 -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
+python3.7 -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
+deactivate
+'''
+                    }
                 }
-                script {
-                    // verify health here
+            }
+        }
+        stage('Configure AWS') {
+            steps {
+                dir('cortx-test') {
+                    script {
+                        def username = "admin"
+                        def password = "Seagate@1"
+                        def account_name = 'dadmin'
+                        def account_email = 'dadmin@seagate.com'
+                        def acc_password = 'Seagate@1'
+                        sh "python3.7 scripts/s3_tools/create_s3_account.py --mgmt_vip ${m_vip} --username ${username} --password ${password} --account_name ${account_name} --account_email ${account_email} --account_password ${acc_password}"
+                        def keys = readFile "${WORKSPACE}/s3acc_secrets"
+                        def (access, secret) = keys.tokenize(' ')
+                        sh "cd ${WORKSPACE}/cortx-test/scripts/s3_tools/"
+                        sh "make clean --makefile=scripts/s3_tools/Makefile"
+                        sh "make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS=access SECRET=secret"
+
+                    }
                 }
+
             }
         }
         stage('Cortx-Text Automation Trigger') {
@@ -80,8 +132,14 @@ pipeline {
                     echo "Executing $name"
                 }
                 catchError {
-                    sh './ci_tools/run_tests.sh'
-
+                    sh label: '', script: '''source virenv/bin/activate
+                            export PYTHONPATH=$WORKSPACE/cortx-test:$PYTHONPATH
+                            cd $WORKSPACE/cortx-test/
+                            echo $PYTHONPATH
+                            python3.7 setup_switch.py -te ${TEs} -tp ${TestPlanNumber} -b ${Build} -t ${Build_Type} -d ${DB_Update} -pe ${Process_Cnt_Parallel_Exe} -tg ${SetupName}
+                            deactivate
+                        
+                    '''
                 }
                 echo currentBuild.result
             }
@@ -89,8 +147,19 @@ pipeline {
 
     }
 
-
     post {
+        always {
+            cleanWs()
+            dir("${env.WORKSPACE}@tmp") {
+                deleteDir()
+            }
+            dir("${env.WORKSPACE}@script") {
+                deleteDir()
+            }
+            dir("${env.WORKSPACE}@script@tmp") {
+                deleteDir()
+            }
+        }
         success {
             echo "The pipeline ${currentBuild.fullDisplayName} completed successfully."
         }

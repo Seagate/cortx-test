@@ -33,7 +33,7 @@ AUDIT_LOG_TAB_ID = "goToAuditLog"
 HEALTH_TAB_ID = "Health"
 SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
-LYVE_PILOT_ID= "Lyve Pilot"
+LYVE_PILOT_MENU_ID= "Lyve Pilot"
 
 # Settings
 SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
@@ -44,7 +44,7 @@ SETTINGS_NTP_ID = 'menu-NTP'
 SETTINGS_NTP_BUTTON_ID = 'goToNTP'
 SETTINGS_SSL_ID = 'menu-SSL Certificate'
 SETTINGS_SSL_BUTTON_ID = 'goToSSL'
-CHOOSE_SSL_UPDATE_FILE_BTN_ID = 'file'
+CHOOSE_SSL_UPDATE_FILE_BUTTON_ID = 'file'
 UPLOAD_SSL_FILE_PEM_ID = 'btnUploadSSL'
 INSTALL_SSL_FILE_PEM_ID = 'btnInstallFirmware'
 CONFIRMAATION_INSTALL_SSL_ID = 'confirmation-dialogbox-btn'
@@ -97,7 +97,7 @@ CLOSE_DUPLICATE_ACCOUNT_ALERT_MESSAGE_ID = 'close-msg-dialogbox'
 EDIT_S3_ACCOUNT_OPTION_ID = 's3-edit-account'
 UPDATE_S3_ACCOUNT_PASSWORD_FIELD_ID = 'accountPasswordEdit'
 UPDATE_S3_ACCOUNT_CONFIRM_PASSWORD_FIELD_ID = 'confirmPasswordEdit'
-UPDATE_S3_ACCOUNT_BTN_ID = 'btnEditPassword'
+UPDATE_S3_ACCOUNT_BUTTON_ID = 'btnEditPassword'
 INVALID_S3_ACCOUNT_PASSWORD_MSG_ID = 's3-editpassword-invalid'
 PASSWORD_REQUIRED_MSG_ID = 's3-editpassword-required'
 CONFIRM_PASSWORD_ERROR_MSG_ID = 's3-editpassword-notmatch'
@@ -109,7 +109,7 @@ ACCESS_KEY_TABLE_HEADERS_XPATH = '//*[@id="s3-accesskey-datatable"]//table/tr/th
 ACCESS_KEY_TABLE_DATA_XPATH = '//*[@id="s3-accesskey-datatable"]//table/tbody/tr/td'
 ADD_S3_ACCOUNT_ACCESS_KEY_ID = 's3-accesskey-add-btn'
 ACCESS_KEY_GENERATE_MEG_XPATH = '//*[@id="app"]//div[@class="v-card v-sheet theme--light"]//span'
-ACCESS_KEY_DOWNLOAD_AND_CLOSE_BTN_ID = 'download-csv-dialog-btn'
+ACCESS_KEY_DOWNLOAD_AND_CLOSE_BUTTON_ID = 'download-csv-dialog-btn'
 DELETE_ACCESS_KEY_ID = 's3-accesskey-datatable-delete-{0}'
 NEW_ACCESS_KEY_TABLE_XPATH = '//*[@id="download-csv-dialog-datatable"]/tr/td'
 CONFIRM_DELET_ACCESS_KEY_ID = 'confirmation-dialogbox-btn'
@@ -119,7 +119,7 @@ S3_ACCOUNT_REST_OPTION_ID = 'iam-reset-password'
 S3_ACCOUNT_RESET_NEW_PASSWORD_ID = 'user-password'
 S3ACCOUNT_INVALID_PASSWORD_ERROR_MSG_ID = 'iam-password-invalid-error'
 S3ACCOUNT_MISS_MATCH_PASSWORD_ERROR_MSG_ID = 'iam-confirmpass-notmatch-error'
-S3_ACCOUNT_POP_UP_CANCEL_BTN_ID = 'cancel-button'
+S3_ACCOUNT_POP_UP_CANCEL_BUTTON_ID = 'cancel-button'
 S3_ACCOUNT_RESET_CONFIRM_PASSWORD_ID = 'confirm-password'
 S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID = 'reset-password-button'
 S3_ACCOUNT_SUCCESS_MESSAGE_ID = 's3-success-dialog'
@@ -174,19 +174,19 @@ ADD_MONITOR_USER_RADIO_BUTTON_ID = "lblLocalMonitor"
 NEW_USER_CONFIRM_OK_BUTTON_ID = "user-dialog-close-btn"
 INVALID_LOCAL_USER_MSG_ID = "localuser-invalid"
 PASSWORD_MISS_MATCH_MSG_ID = "localuser-confirmpassword-notmatch"
-CONFIRM_DELETE_BOX_BTN_ID = "confirmation-dialogbox-btn"
+CONFIRM_DELETE_BOX_BUTTON_ID = "confirmation-dialogbox-btn"
 UPDATE_USER_EMAIL_ID_INPUT_ID = "email"
 UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
-DELETE_S3_ACCOUNT_BY_ADMIN_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
+DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
-DELETE_USER_BTN_ID = "localuser-deleteicon"
+DELETE_USER_BUTTON_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
-CHANGE_PASSWORD_BTN_ID = "change-password-text"
-UPDATE_USER_BTN_ID = "lblLocalApplyInterface"
+CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
+UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
@@ -250,6 +250,7 @@ SUBJECT_COMMON_NAME_VALUE_ID = 'subject_common_name_value'
 SUBJECT_COUNTRY_NAME_VALUE_ID = 'subject-country_name_value'
 SUBJECT_LOCALITY_NAME_VALUE_ID = 'subject_locality_name_value'
 SUBJECT_ORGANIZATION_VALUE_ID = 'subject_organization_name_value'
+SERIAL_NO_XPATH	= "//*[contains(text(),'Serial No')]"
 
 # Audit Log Section
 AUDIT_LOG_VIEW_BUTTON_ID = "auditlog-viewbtn"
@@ -275,7 +276,7 @@ CLOSE_DUPLICATE_BUCKET_MESSAGE_ID = "close-msg-dialogbox"
 CANCEL_BUCKET_DELETION_ID = "confirmation-dialog-cancel-btn"
 CANCEL_BUCKET_DELITION_ICON_ID = "confirmation-dialogclose"
 EDIT_BUCKET_ICON_ID = "bucket-edit-icon"
-UPDATE_BUCKET_POLICY_BTN_ID = "update-bucketpolicy"
+UPDATE_BUCKET_POLICY_BUTTON_ID = "update-bucketpolicy"
 BUCKET_POLICY_FORM_ID = "bucket-policy"
 BUCKET_POLICY_FORM_HEADING_ID = "bucket-json-policy-lbl"
 CANCEL_BUCKET_POLICY_FORM_ID = "cancel-bucket-policy"
@@ -286,11 +287,10 @@ BUCKET_URL_TOOLTIP_XPATH = "//*[@id='copy-bucket-url-{0}']"
 BUCKET_URL_TOOLTIP_TEXT_ID = "copy-tooltip"
 BUCKET_URL_ON_BUCKET_CREATION_XPATH = "//*[@id='bucket-url-td-value']"
 
-
 # Software Update Page
-UPLOAD_SW_FILE_BTN_ID = "btnInstallHotfix"
-CHOOSE_SW_UPDATE_FILE_BTN_ID = "file"
-CANCEL_SW_UPDATE_UPLOAD_BTN_ID = "btnCancelInstallHotfix"
+UPLOAD_SW_FILE_BUTTON_ID = "btnInstallHotfix"
+CHOOSE_SW_UPDATE_FILE_BUTTON_ID = "file"
+CANCEL_SW_UPDATE_UPLOAD_BUTTON_ID = "btnCancelInstallHotfix"
 START_SW_UPDATE_BUTTON_ID = "btnStartUpgrade"
 PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 
@@ -298,6 +298,12 @@ PAGE_LOADING_MSG_ID = "lblLoaderMessage"
 BUCKETS_TAB_ID = "s3bucketstab"
 
 # Firmware Update
-UPLOAD_FW_FILE_BTN_ID = "btnInstallFirmware"
-CHOOSE_FW_UPDATE_FILE_BTN_ID = "file"
+UPLOAD_FW_FILE_BUTTON_ID = "btnInstallFirmware"
+CHOOSE_FW_UPDATE_FILE_BUTTON_ID = "file"
 START_FW_UPDATE_BUTTON_ID = "btnStartUpgrade"
+
+# System maintenance
+SYSTEM_MAINTENANCE_BUTTON_ID = "goToSystemMaintenance"
+START_SERVICE_BUTTON_ID = "btnStartResource"
+STOP_SERVICE_BUTTON_ID = "btnStopResource"
+SHUTDOWN_SERVICE_BUTTON_ID = "btnShutdownResource"

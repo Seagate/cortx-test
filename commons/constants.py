@@ -88,12 +88,17 @@ CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
 CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_CPU_USAGE = "NODEDATAMSGHANDLER>cpu_usage_threshold"
+CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
+CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
 CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
+CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 
 """ S3 constants """
+LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
@@ -307,3 +312,8 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+
+
+class Sizes:
+    KB = 1024
+    MB = KB * KB
