@@ -102,14 +102,17 @@ def configure_haproxy_lb(*hostname, username: str, password: str):
     instance_per_node = 1
     server_haproxy_cfg = config['default']['haproxy_config']
     local_haproxy_cfg = config['default']['tmp_haproxy_config']
-    s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:2808{2} check maxconn 110\n"
-    authinstance = "    server s3authserver-instance1 srvnode-{0}.data.private:28050\n"
+    s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:{2} check maxconn 110\n"
+    authinstance = "    server s3authserver-instance{0} srvnode-{1}.data.private:28050\n"
     total_s3_instances = list()
     total_auth_instances = list()
     for node in range(len(hostname)):
-        for i in range(instance_per_node):
-            total_s3_instances.append(s3instance.format(i, node, i))
-        total_auth_instances.append(authinstance.format(node))
+        start_inst = (node * instance_per_node)
+        end_inst = ((node + 1) * instance_per_node)
+        for i in range(start_inst, end_inst):
+            port = "2807{}".format((i%instance_per_node)+1)
+            total_s3_instances.append(s3instance.format(i+1, node+1, port))
+        total_auth_instances.append(authinstance.format(node+1, node+1))
     LOGGER.debug(total_s3_instances)
     LOGGER.debug(total_auth_instances)
 
@@ -127,17 +130,22 @@ def configure_haproxy_lb(*hostname, username: str, password: str):
                     line = "".join(["#", line] + total_auth_instances)
                 f.write(line)
         nd_obj.copy_file_to_remote(local_haproxy_cfg, server_haproxy_cfg)
+        cmd = "systemctl restart haproxy"
+        nd_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.info("Restarted haproxy service")
     LOGGER.info("Configured s3 instances in haproxy.cfg on all the nodes")
 
 def main():
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("nodes", help="hostnames for each node", nargs="+")
+    parser.add_argument("--node_count", help="Number of nodes in cluster", required=True, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
     parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
     args = parser.parse_args()
-    print(args.nodes)
     nodes = args.nodes
+    node_count = args.node_count
+    assert len(nodes) == node_count, "Number of nodes provided does not match with node_count"
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
@@ -169,6 +177,7 @@ def main():
         mgmt_vip=args.mgmt_vip,
         admin_user=admin_user,
         admin_passwd=admin_passwd)
+    print("target_name: %s", setupname)
     client_conf.run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)

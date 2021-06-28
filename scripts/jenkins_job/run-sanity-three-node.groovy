@@ -19,7 +19,6 @@ source venv/bin/activate
 python --version
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
-export HOSTNAME="${HOSTNAME}"
 export MGMT_VIP="${MGMT_VIP}"
 export HOST_PASS="${HOST_PASS}"
 python3.7 setup.py install
@@ -32,7 +31,7 @@ deactivate
 		stage('CLIENT_CONFIG') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-python3.7 scripts/jenkins_job/multinode_server_client_setup.py "${HOST1}" "${HOST2}" "${HOST3}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
+python3.7 scripts/jenkins_job/multinode_server_client_setup.py "${HOST1}" "${HOST2}" "${HOST3}" --node_count 3 --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
 deactivate
 '''
 			}
@@ -50,6 +49,7 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export HOSTNAME="${HOST1}"
 sh scripts/jenkins_job/run_tests.sh
 deactivate
 '''
