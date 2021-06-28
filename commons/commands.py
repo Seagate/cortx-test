@@ -240,6 +240,11 @@ CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
 CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
 GET_CHRONY = "grep '{}' /etc/chrony.conf"
 CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
+CMD_WGET = "cd {0}; wget {1}"
+CMD_SW_VER = "provisioner get_release_version"
+CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
+CMD_ISO_VER = "provisioner get_iso_version"
+CMD_SW_UP = "provisioner sw_upgrade --offline"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
