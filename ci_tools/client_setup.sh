@@ -70,5 +70,5 @@ then
   wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip
   unzip chromedriver_linux64.zip
   chmod 777 chromedriver
-  mv chromedriver $WORKSPACE/cortx-test/venv/bin
+  mv chromedriver $WORKSPACE/cortx-test/virenv/bin
 fi
