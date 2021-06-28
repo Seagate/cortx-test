@@ -29,15 +29,15 @@ Click AlertEventDetailsClose Button
 
 Click NewAlert Tab
     [Documentation]  click on New Alert tab on Alert page
-    Click Element    ${NEW_ALERT_XPATH}
+    Click Element    ${NEW_ALERT_ID}
 
 Click ActiveAlert Tab
     [Documentation]  click on Active Alert tab on Alert page
-    Click Element    ${ACTIVE_ALERT_XPATH}
+    Click Element    ${ACTIVE_ALERT_ID}
 
 Click AlertHistory Tab
     [Documentation]  click on Alert History tab on Alert page
-    Click Element    ${ALERT_HISTORY_XPATH}
+    Click Element    ${ALERT_HISTORY_ID}
 
 Capture AlertEventDetails Screenshot
     [Documentation]  On Alert Details Page, Capture More Alerts Details Screenshot
