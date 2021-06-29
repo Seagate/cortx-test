@@ -110,27 +110,9 @@ class TestDIDurability:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
-    def filter_bin_md5(self, file_checksum):
-        """
-        Function to clean binary md5 response.
-        :param file_checksum: encoded binary md5 data with newline char
-        :return: filter binary md5 data
-        """
-        self.log.debug("Actual MD5 %s", file_checksum)
-        if "\\n" in file_checksum[2:-1]:
-            bin_checksum = file_checksum[2:-1].replace("\\n", "")
-        elif "\n" in file_checksum[2:-1]:
-            bin_checksum = file_checksum[2:-1].replace("\n", "")
-        else:
-            bin_checksum = file_checksum[2:-1]
-        self.log.debug("Filter MD5 %s", bin_checksum)
-
-        return bin_checksum
-
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22483')
-    @CTFailOn(error_handler)
     def test_toggle_checksum_feature_with_no_data_loss_22483(self):
         """
         Enable / disable checksum feature (data and metadata check flags and
@@ -175,7 +157,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22492')
-    @CTFailOn(error_handler)
     def test_verify_read_corrupt_metadata_at_motr_lvl_22492(self):
         """
         Corrupt metadata of an object at Motr level and verify read (Get).
@@ -220,7 +201,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22493')
-    @CTFailOn(error_handler)
     def test_verify_range_read_corrupt_metadata_at_motr_lvl_22493(self):
         """
         Corrupt metadata of an object at Motr level and verify range read(Get).
@@ -256,7 +236,6 @@ class TestDIDurability:
 
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
-    @CTFailOn(error_handler)
     def test_object_data_integrity_while_upload_using_correct_checksum_22497(
             self):
         """
@@ -278,7 +257,7 @@ class TestDIDurability:
                       "checksum ) for all obj")
         checksum_dict = {}
         for file in self.file_lst:
-            checksum_dict[file] = system_utils.calculate_checksum(file)
+            checksum_dict[file] = system_utils.calculate_checksum(file, filter_resp=True)
         self.log.info("Step 2: Calculate MD5checksum ("
                       "base64-encoded MD5 checksum ) for all obj")
         self.log.info(
@@ -287,7 +266,7 @@ class TestDIDurability:
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for file, binary_checksum in checksum_dict.items():
-            bin_checksum = self.filter_bin_md5(binary_checksum[1])
+            bin_checksum = binary_checksum[1]
             resp = self.s3_test_obj.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
                 content_md5=bin_checksum)
@@ -301,7 +280,6 @@ class TestDIDurability:
 
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
-    @CTFailOn(error_handler)
     def test_object_di_while_upload_using_incorrect_checksum_22498(self):
         """
         Test to verify object integrity during the upload with different
@@ -350,7 +328,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22501')
-    @CTFailOn(error_handler)
     def test_checksum_validation_file_spread_across_storage_22501(self):
         """
         Test checksum validation of a file spread across storage set .
@@ -372,7 +349,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22909')
-    @CTFailOn(error_handler)
     def test_corrupt_data_blocks_obj_motr_verify_read_22909(self):
         """
         Corrupt data blocks of an object at Motr level and verify read (Get).
@@ -413,7 +389,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22910')
-    @CTFailOn(error_handler)
     def test_corrupt_data_blocks_obj_motr_verify_range_read_22910(self):
         """
         Corrupt data blocks of an object at Motr level and verify range read.
@@ -452,10 +427,8 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
-    # @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
-    @CTFailOn(error_handler)
     def test_verify_data_integrity_during_upload_combination_checksum_22912(self):
         """
         Test to verify object integrity during an upload with correct checksum.
@@ -474,8 +447,7 @@ class TestDIDurability:
         self.log.info(
             "Step 2: Put and object with checksum algo or ETAG.")
         system_utils.create_file(self.file_path, 8)
-        file_checksum = self.filter_bin_md5(
-            system_utils.calculate_checksum(self.file_path)[1])
+        file_checksum = system_utils.calculate_checksum(self.file_path, filter_resp=True)[1]
         res = self.s3_test_obj.put_object_with_all_kwargs(
             Bucket=self.bucket_name, Key=self.object_name, Body=self.file_path,
             ServerSideEncryption='AES256')
@@ -497,7 +469,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22913')
-    @CTFailOn(error_handler)
     def test_data_unit_checksum_validate_chcksum_error_22913(self):
         """
         Exercise Data unit checksum validation (Motr metadata extent corrupt) and validate
@@ -537,7 +508,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22914')
-    @CTFailOn(error_handler)
     def test_corrupt_data_blocks_obj_motr_verify_range_read_22914(self):
         """
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
@@ -577,7 +547,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22915')
-    @CTFailOn(error_handler)
     def test_motr_panic_due_to_misconfig_verify_error_22915(self):
         """
         Create Motr panic by some misconfiguration in Motr and Verify S3 checksum error detection.
@@ -618,7 +587,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22916')
-    @CTFailOn(error_handler)
     def test_disable_checkum_validation_download_chunk_upload_22916(self):
         """
         With Checksum flag  Disabled, download of the chunk uploaded object should
@@ -657,7 +625,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22926')
-    @CTFailOn(error_handler)
     def test_enable_validation_induce_corruption_detect_error_22926(self):
         """
         With Flag enabled, when data or metadata corruption induced, download of
@@ -707,7 +674,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22930')
-    @CTFailOn(error_handler)
     def test_disable_checkcum_should_not_validate_file_no_error_22930(self):
         """
         Disabling of Checksum feature should not do any checksum validation even if data
@@ -763,7 +729,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22931')
-    @CTFailOn(error_handler)
     def test_checksum_validation_with_ha_22931(self):
         """
         Combine checksum feature with HA.
