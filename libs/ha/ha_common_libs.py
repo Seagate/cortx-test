@@ -22,8 +22,9 @@
 HA utility methods
 """
 import logging
+import time
 from commons import commands as common_cmd
-
+from commons.utils import system_utils
 LOGGER = logging.getLogger(__name__)
 
 
@@ -93,3 +94,49 @@ class HALibs:
             if item[2] != status.lower():
                 return False, f"Node {item[1 + 1]} status is {item[2]}"
         return True, f"All node status are {status}"
+
+    @staticmethod
+    def polling_host(max_timeout: int, host_index: int, exp_resp: bool, host_list: list):
+        """
+        Helper function to poll for host ping response.
+        :param max_timeout: Max timeout allowed for expected response from ping
+        :param host_index: Host to ping
+        :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
+        :param host_list: Host list for hosts in current cluster
+        :return: bool
+        """
+
+        poll = time.time() + max_timeout  # max timeout
+        while poll > time.time():
+            time.sleep(20)
+            resp = system_utils.check_ping(host_list[host_index])
+            if resp == exp_resp:
+                return True
+        return False
+
+    @staticmethod
+    def get_iface_ip_list(node_list: list, num_nodes: int):
+        """
+        Helper function to get ip and intrefaces for private data network ports.
+        :param node_list: List of nodes in cluster
+        :param num_nodes: Number of nodes in cluster
+        :return: interface list, ip list
+        :rtype: list,list
+        """
+        iface_list = []
+        private_ip_list = []
+        LOGGER.info("Execute command to gte private data IPs for all nodes.")
+        resp_ip = node_list[0].execute_cmd(common_cmd.CMD_HOSTS, read_lines=True)
+        LOGGER.debug("Response for /etc/hosts: {}".format(resp_ip))
+        for node in range(num_nodes):
+            for line in resp_ip:
+                if "srvnode-{}.data.private".format(node + 1) in line:
+                    ip = line.split()[0]
+                    private_ip_list.append(ip)
+                    res = node_list[node].execute_cmd(common_cmd.CMD_IFACE_IP.format(ip),
+                                                           read_lines=True)
+                    ifname = res[0].replace(':', '')
+                    iface_list.append(ifname)
+
+        return iface_list, private_ip_list
+
