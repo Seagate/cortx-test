@@ -163,7 +163,6 @@ class TestHAHealthStatus:
         sys_obj.close_connection()
         LOGGER.info("All nodes are online.")
 
-
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
     @CTFailOn(error_handler)
