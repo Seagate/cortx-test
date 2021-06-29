@@ -330,7 +330,7 @@ class TestIAMUserManagement:
         self.log.info("Created iam user with name %s", self.iam_password)
         self.log.info("Step 4. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22794_ios")
+            ios="Stop", log_prefix="test_23398_ios")
         self.log.info(
             "Step 5. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
