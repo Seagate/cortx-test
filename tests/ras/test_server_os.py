@@ -374,9 +374,10 @@ class TestServerOS:
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         test_cfg = RAS_TEST_CFG["test_23045"]
-
-        self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
-            url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+        import pdb 
+        pdb.set_trace()
+        #self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
+        #    url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
         LOGGER.info("Step 1: Generate CPU fault.")
         resp = self.sw_alert_obj.gen_cpu_fault(test_cfg["faulty_cpu_id"])
         assert resp[0], resp[1]
@@ -390,6 +391,7 @@ class TestServerOS:
             LOGGER.info("Verified the generated alert on the SSPL")
 
         LOGGER.info("Step 3: Checking CPU fault alerts on CSM REST API")
+        LOGGER.info()
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
                 self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]

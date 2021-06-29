@@ -259,7 +259,7 @@ test_21586:
   resource_type: "node:os:disk_space"
 
 test_23045:
-  resource_type: "node:os:cpu"
+  resource_type: "node:os:cpu:core"
   faulty_cpu_id:
-    -0
-    -1
+    - 0
+    - 1

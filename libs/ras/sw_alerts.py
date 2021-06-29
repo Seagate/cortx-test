@@ -618,9 +618,11 @@ class SoftwareAlert(RASCoreLib):
         """
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
-        assert resp, "Failed to restart sspl-ll"
-        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
-        LOGGER.info("Verifying the status of sspl service is online")
+        if resp:
+            time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+            LOGGER.info("Verifying the status of sspl service is online")
+        else:
+            LOGGER.error("Failed to restart sspl-ll")
 
     def gen_cpu_fault(self, faulty_cpu_id:list):
         """[summary]
@@ -628,11 +630,14 @@ class SoftwareAlert(RASCoreLib):
         :param n_cpu: 
         :return [type]: 
         """
-        n_cpu = faulty_cpu_id.intersection(self.get_available_cpus())
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        n_cpu = set(faulty_cpu_id).intersection(self.get_available_cpus())
         for cpu in n_cpu:    
+            LOGGER.info("Generating CPU fault for CPU-%s",cpu)
             cmd = commands.CPU_FAULT.format(cpu)
             self.node_utils.execute_cmd(cmd=cmd)
-        return len(self.get_available_cpus().intersection(set(n_cpu))) == 0
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(set(n_cpu))) == 0,"Could not create CPU fault"
 
         
     def resolv_cpu_fault(self, faulty_cpu_id:list):
@@ -641,18 +646,25 @@ class SoftwareAlert(RASCoreLib):
         :param n_cpu: 
         :return [type]: 
         """        
-        for cpu in faulty_cpu_id:    
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        for cpu in faulty_cpu_id:   
+            LOGGER.info("Resolving CPU fault for CPU-%s", cpu)
             cmd = commands.CPU_RESOLVE.format(cpu)
             self.node_utils.execute_cmd(cmd=cmd)
-        return len(self.get_available_cpus().intersection(set(faulty_cpu_id))) == len(faulty_cpu_id)
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(set(faulty_cpu_id))) == len(faulty_cpu_id), "Could not resolve CPU fault"
 
     def get_available_cpus(self):
         """[summary]
 
         :return [type]: 
-        """        
-        resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT)
-        resp = resp.split(",")
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
+        LOGGER.DEBUG("%s response : %s",commands.CPU_COUNT, resp)
+        if "," in resp:
+            resp = resp.split(",")
+        else:
+            resp = [resp]
         cpus = []
         for i in resp:
             if "-" in i:
@@ -660,4 +672,5 @@ class SoftwareAlert(RASCoreLib):
                 cpus.extend(list(range(int(start),int(end)+1)))
             else:
                 cpus.append(int(i))
+        LOGGER.info("Available CPUs : %s",cpus)
         return set(cpus)
