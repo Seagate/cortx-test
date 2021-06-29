@@ -78,7 +78,7 @@ TEST-1215
     [Tags]  Priority_High  user_role  TEST-1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${s3_password} =  Create S3 account
     wait for page or element to load  3s
@@ -86,10 +86,7 @@ TEST-1215
     CSM GUI Logout
     wait for page or element to load
     Delete S3 Account  ${S3_account_name}  ${s3_password}
-    wait for page or element to load
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    Navigate To Page    MANAGE_MENU_ID
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID  False
     Delete CSM User  ${new_user_name}
 
 TEST-1217
@@ -106,10 +103,7 @@ TEST-1217
     wait for page or element to load
     Click button    ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID }
     wait for page or element to load
-    Enter Username And Password  ${username}  ${password}
-    Click Sigin Button
-    wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID  False
     Delete CSM User  ${new_csm_user_name}
 
 TEST-18327
@@ -118,7 +112,7 @@ TEST-18327
     [Tags]  Priority_High  TEST-18327  S3_test  Smoke_test
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -136,7 +130,7 @@ TEST-21591
     [Tags]  Priority_High  TEST-21591  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -153,26 +147,26 @@ TEST-21592
     [Tags]  Priority_High  TEST-21592  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page  Bucket_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
     Click On Create Bucket Form
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
     Re-login  ${new_csm_user_name}  ${new_password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
     wait for page or element to load
     Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page  Bucket_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
     wait for page or element to load
