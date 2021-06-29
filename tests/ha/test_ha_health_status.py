@@ -413,12 +413,14 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_safe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST, when
-        node goes offline and comes back online(single node multiple times, safe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST, when node
+        goes down and comes back up(single node multiple times, safe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple safe shutdown.")
 
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
         LOGGER.info("Get the node on for multiple unsafe shutdown.")
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
@@ -459,8 +461,8 @@ class TestHAHealthStatus:
             LOGGER.info(
                 "Check if the %s has shutdown.",
                 self.srvnode_list[node_index])
-            resp = self.polling_host(
-                max_timeout=120, host_index=node_index, exp_resp=False)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node_index, exp_resp=False,  host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
@@ -511,8 +513,8 @@ class TestHAHealthStatus:
                     self.bmc_ip_list[node_index], self.bmc_user, self.bmc_pwd, "on")
             # SSC cloud is taking more time to start VM host hence max_timeout
             # 120
-            resp = self.polling_host(
-                max_timeout=120, host_index=node_index, exp_resp=True)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node_index, exp_resp=True,  host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
@@ -556,12 +558,14 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_unsafe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST, when
-        node goes offline and comes back online(single node multiple times, unsafe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST, when node
+        goes down and comes back up(single node multiple times, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple unsafe shutdown.")
 
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
         LOGGER.info("Get the node on for multiple unsafe shutdown.")
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
@@ -609,8 +613,8 @@ class TestHAHealthStatus:
             LOGGER.info(
                 "Check if the %s has shutdown.",
                 self.srvnode_list[node_index])
-            resp = self.polling_host(
-                max_timeout=120, host_index=node_index, exp_resp=False)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node_index, exp_resp=False,  host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
@@ -660,8 +664,8 @@ class TestHAHealthStatus:
                     self.bmc_ip_list[node_index], self.bmc_user, self.bmc_pwd, "on")
             # SSC cloud is taking more time to start VM host hence max_timeout
             # 120
-            resp = self.polling_host(
-                max_timeout=120, host_index=node_index, exp_resp=True)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node_index, exp_resp=True,  host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
