@@ -120,26 +120,7 @@ class TestHAHealthStatus:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are online and PCS looks clean.")
-        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
-        sys_obj = self.ha_obj.check_csm_service(
-            self.node_list[0], self.srvnode_list, self.sys_list)
-        sys_obj.open_connection()
-        res = sys_obj.login_cortx_cli()
-        assert_utils.assert_true(res[0], res[1])
-        resp = self.ha_rest.get_node_health_status(
-            exp_key='status', exp_val='online')
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = sys_obj.check_health_status(
-            common_cmds.CMD_HEALTH_SHOW.format("node"))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp_table = sys_obj.split_table_response(resp[1])
-        LOGGER.info("Response for health check for all nodes: %s", resp_table)
-        resp = self.ha_obj.verify_node_health_status(
-            response=resp_table, status="online")
-        assert_utils.assert_true(resp[0], resp[1])
-        sys_obj.logout_cortx_cli()
-        sys_obj.close_connection()
-        LOGGER.info("All nodes are online.")
+
         LOGGER.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -154,6 +135,33 @@ class TestHAHealthStatus:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
+    def status_nodes_online(self):
+        """
+        Helper function to check that all nodes are shown online in cortx cli/REST
+        before starting any other operations.
+        """
+        LOGGER.info("Check the node which is running CSM service and login to CSM on that node.")
+        sys_obj = self.ha_obj.check_csm_service(
+            self.node_list[0], self.srvnode_list, self.sys_list)
+        sys_obj.open_connection()
+        res = sys_obj.login_cortx_cli()
+        assert_utils.assert_true(res[0], res[1])
+        resp = sys_obj.check_health_status(
+            common_cmds.CMD_HEALTH_SHOW.format("node"))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp_table = sys_obj.split_table_response(resp[1])
+        LOGGER.info("Response for health check for all nodes: %s", resp_table)
+        resp = self.ha_obj.verify_node_health_status(
+            response=resp_table, status="online")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Check REST response for node status.")
+        resp = self.ha_rest.get_node_health_status(
+            exp_key='status', exp_val='online')
+        assert_utils.assert_true(resp[0], resp[1])
+        sys_obj.logout_cortx_cli()
+        sys_obj.close_connection()
+        LOGGER.info("All nodes are online.")
+
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
@@ -165,6 +173,9 @@ class TestHAHealthStatus:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with safe shutdown.")
+
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -280,6 +291,9 @@ class TestHAHealthStatus:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
+
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -407,6 +421,9 @@ class TestHAHealthStatus:
         LOGGER.info(
             "Started: Test to check node status one by one on all nodes when nw interface on node goes"
             "down and comes back up")
+
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
