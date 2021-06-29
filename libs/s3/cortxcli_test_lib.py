@@ -144,6 +144,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         return True/False, Response s3 accounts dict.
         """
         try:
+            accounts = dict()
             if csm_user:
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
@@ -151,8 +152,6 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
             status, response = super().show_s3account_cortx_cli(output_format='json')
             if status:
                 accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
-            else:
-                accounts = dict()
             LOGGER.debug(accounts)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -637,7 +636,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
         :param user_name: Name of the user own s3 user.
         :param passwd: Password of the user own s3 user.
         :param s3user: For whom access key needs to be created.
-        :return: True/False and response.
+        :return: True/False and dictionary.
         """
         try:
             self.login_cortx_cli(username=user_name, password=passwd)
