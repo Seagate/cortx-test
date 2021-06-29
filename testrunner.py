@@ -58,6 +58,8 @@ def parse_args():
                                             "perform additional checksum check")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['ALL'], help="Space separated test types")
+    parser.add_argument("--xml_report", type=str, default='report.xml',
+                        help="xml report name")
     return parser.parse_args()
 
 
@@ -150,6 +152,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
         cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
+
+    if args.xml_report:
+        if parallel_exe:
+            cmd_line = cmd_line + ["--junitxml=log/parallel_" + te_id + args.xml_report]
+        else:
+            cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + args.xml_report]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
