@@ -27,6 +27,18 @@ Click AlertEventDetailsClose Button
     [Documentation]  On Alert Page, click on Details icon
     Click Element    ${ALERT_MORE_DETAILS_CLOSE_ICON_XPATH}
 
+Click NewAlert Tab
+    [Documentation]  click on New Alert tab on Alert page
+    Click Element    ${NEW_ALERT_ID}
+
+Click ActiveAlert Tab
+    [Documentation]  click on Active Alert tab on Alert page
+    Click Element    ${ACTIVE_ALERT_ID}
+
+Click AlertHistory Tab
+    [Documentation]  click on Alert History tab on Alert page
+    Click Element    ${ALERT_HISTORY_ID}
+
 Capture AlertEventDetails Screenshot
     [Documentation]  On Alert Details Page, Capture More Alerts Details Screenshot
     [Arguments]  ${filename}
@@ -116,3 +128,146 @@ Verify Presence SSL certificate expires alert
     ...  Log To Console And Report  ${found}
     ...  AND  Capture Page Screenshot
     ...  AND  Fail  # correct Description not found in the alert, failing test
+
+Acknowledge alert
+    [Arguments]  ${servicename}
+    Action On The Table Element  ${PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH}  ${servicename}
+
+Fail if New alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts exist
+    [Arguments]  ${servicename}
+    ${found1}=  Set Variable  False
+    ${found2}=  Set Variable  False
+    ${Description1} =  Set Variable  ${servicename}.service in failed state.
+    ${Description2} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description1}
+    Log To Console And Report  ${Description2}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found1}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description1}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found1}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+        ${found2}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description2}
+        Run Keyword If  ${found2} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found2}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Verify failed alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Pass  # correct Description not found in the alert, failing test
+    END
+
+Verify inactive alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Verify failed resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Verify inactive resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
+    END
+
+Acknowledge if Active alerts exist SW Service
+    [Documentation]  Acknowledge if SW Service alerts exist
+    [Arguments]  ${servicename}
+    ${found1}=  Set Variable  False
+    ${found2}=  Set Variable  False
+    ${Description1} =  Set Variable  ${servicename}.service in failed state.
+    ${Description2} =  Set Variable  ${servicename}.service in inactive state.
+    Log To Console And Report  ${Description1}
+    Log To Console And Report  ${Description2}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click ActiveAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Capture Page Screenshot
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found1}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description1}
+        Run Keyword If  ${found1} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found1}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
+        ${found2}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description2}
+        Run Keyword If  ${found2} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found2}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
+    END

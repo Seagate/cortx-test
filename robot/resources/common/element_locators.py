@@ -60,6 +60,9 @@ ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
 ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_TABLE_ID = 'tblAlertLarge'
+NEW_ALERT_ID     = 'tab-1'
+ACTIVE_ALERT_ID  = 'tab-2'
+ALERT_HISTORY_ID = 'tab-3'
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
@@ -69,6 +72,7 @@ ALERT_MORE_DETAILS_CLOSE_ICON_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
 ALERTS_COMMENT_TEXT_XPATH = '//*[@class="cortx-comment"]//span[@class="cortx-text-md"]'
+PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//div[@class='cortx-icon-btn cortx-acknowledge-icon']"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
