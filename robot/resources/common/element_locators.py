@@ -9,7 +9,8 @@ CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 
 # CSM Dashboard Locators
 LOGGED_IN_USER_NAME_ID = 'header-username'
-LOG_OUT_ID = 'logout-icon'
+USER_DROPDOWN_ID = 'logout-icon'
+LOG_OUT_ID = 'logout-link'
 CAPACITY_TOTAL_LABEL_ID = 'capacity-total-text'
 CAPACITY_AVAILABLE_LABEL_ID = 'capacity-available-text'
 CAPACITY_USED_LABEL_ID = 'capacity-used-text'
@@ -22,11 +23,13 @@ TOTAL_CAPACITY_VALUE_XPATH = "//*[@id='capacity-total']/td[3]"
 
 # Menus
 MANAGE_MENU_ID = 'Manage'
-S3_ACCOUNTS_TAB_ID = 's3accountstab'
+ADMINISTRATIVE_USER_TAB_ID = "tab-1"
+CSM_S3_ACCOUNTS_TAB_ID = 'tab-2'
 SETTINGS_ID = 'Settings'
 EMAIL_NOTIFICATION_ID = 'goToNotifications'
-IAM_USER_TAB_ID = "s3iamuserstab"
-BUCKET_TAB_ID = "s3bucketstab"
+S3_ACCOUNTS_TAB_ID = 'tab-1'
+S3_IAM_USER_TAB_ID = 'tab-2'
+S3_BUCKET_TAB_ID   = 'tab-3'
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
@@ -60,6 +63,9 @@ ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
 ALERT_MORE_DETAILS_CLOSE_ICON_ID = 'alert-showalert-details-dialogbox'
 ALERT_COMMENT_TEXT_ID = 'alert-comment-textarea'
 ALERT_TABLE_ID = 'tblAlertLarge'
+NEW_ALERT_ID     = 'tab-1'
+ACTIVE_ALERT_ID  = 'tab-2'
+ALERT_HISTORY_ID = 'tab-3'
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
@@ -69,6 +75,7 @@ ALERT_MORE_DETAILS_CLOSE_ICON_XPATH = '//*[@id="app"]//div[@class ="cortx-modal-
 ALERT_COMMENT_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/div'
 ALERT_ACKNOWLEDGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/div/span[2]/div'
 ALERTS_COMMENT_TEXT_XPATH = '//*[@class="cortx-comment"]//span[@class="cortx-text-md"]'
+PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//div[@class='cortx-icon-btn cortx-acknowledge-icon']"
 
 #  S3 Config
 S3_ACCOUNTS_TABLE_XPATH = '//*[@id="s3-datatable"]//table/tbody/tr/td'
@@ -157,7 +164,6 @@ CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody
 CSM_USER_EDIT_XPATH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-editicon"]'
 CSM_USER_DELETE_XAPTH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
 CSM_TABLE_ELEMENTS_XPATH = '//*[@id="localuser-tabledata"]//table//tbody//tr//td'
-ADMINISTRATIVE_USER_TAB_ID = "userstab"
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
 ADD_USER_USER_NAME_INPUT_BOX_ID = "txtLocalHostname"
 ADD_USER_PASSWORD_INPUT_ID = "txtLocalPass"
