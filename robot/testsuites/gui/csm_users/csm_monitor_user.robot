@@ -164,20 +164,20 @@ TEST-22768
     [Documentation]  Test that CSM user with role monitor cannot delete empty or non-empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-22768
     [Tags]  Priority_High  TEST-22768  S3_test
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Absence of Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete s3 account using csm user  ${S3_account_name}
     Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID

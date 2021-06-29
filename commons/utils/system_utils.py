@@ -1071,8 +1071,8 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
     cmd = commands.IP_LINK_CMD.format(device, status)
     LOGGER.info("Running command: %s", cmd)
     res = run_remote_cmd(
-            hostname=host, username=username, password=pwd, cmd=cmd,
-            read_lines=True)
+        hostname=host, username=username, password=pwd, cmd=cmd,
+        read_lines=True)
     LOGGER.debug("Response: %s", res)
 
     LOGGER.debug(res)
@@ -1124,3 +1124,39 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     LOGGER.info("File list: %s", file_path_list)
 
     return file_path_list
+
+
+def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+    """
+    Validate the s3bench parallel execution log file for failure.
+
+    :param log_dir: Log directory path.
+    :param log_prefix: s3 bench log prefix.
+    :return: bool, response.
+    """
+    LOGGER.info("S3 parallel ios log validation started.")
+    log_file_list = list_dir(log_dir)
+    log_path = None
+    for filename in log_file_list:
+        if filename.startswith(log_prefix):
+            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("IO log path: %s", log_path)
+    if not log_path:
+        return False, f"failed to generate logs for parallel run: {log_prefix}."
+    lines = open(log_path).readlines()
+    resp_filtered = [
+        line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
+    LOGGER.info("'Error count' filtered list: %s", resp_filtered)
+    for response in resp_filtered:
+        if int(response.split(":")[1].strip()) != 0:
+            return False, response
+    LOGGER.info("Observed no Error count in io log.")
+    error_kws = ["with error ", "panic", "status code", "exit status 2"]
+    for error in error_kws:
+        if error in ",".join(lines):
+            return False, f"{error} Found in S3Bench Run."
+    LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
+    remove_file(log_path)
+    LOGGER.info("S3 parallel ios log validation completed.")
+
+    return True, "S3 parallel ios completed successfully."
