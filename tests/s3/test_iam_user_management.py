@@ -256,33 +256,6 @@ class TestIAMUserManagement:
             f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")
 
-    def validate_parallel_execution(self, log_prefix=None):
-        """Check parallel execution failure."""
-        self.log.info("S3 parallel ios log validation started.")
-        log_file_list = system_utils.list_dir(s3bench.LOG_DIR)
-        log_path = None
-        for filename in log_file_list:
-            if filename.startswith(log_prefix):
-                log_path = os.path.join(s3bench.LOG_DIR, filename)
-        self.log.info("IO log path: %s", log_path)
-        assert_utils.assert_is_not_none(
-            log_path, "failed to generate logs for parallel S3 IO.")
-        lines = open(log_path).readlines()
-        resp_filtered = [
-            line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
-        self.log.info("'Error count' filtered list: %s", resp_filtered)
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        self.log.info("Observed no Error count in io log.")
-        error_kws = ["with error ", "panic", "status code", "exit status 2"]
-        for error in error_kws:
-            assert_utils.assert_not_equal(
-                error, ",".join(lines), f"{error} Found in S3Bench Run.")
-        self.log.info("Observed no Error keyword '%s' in io log.", error_kws)
-        system_utils.remove_file(log_path)
-        self.log.info("S3 parallel ios log validation completed.")
-
     def start_stop_validate_parallel_s3ios(
             self, ios=None, log_prefix=None, duration="0h1m"):
         """Start/stop parallel s3 io's and validate io's worked successfully."""
@@ -303,7 +276,8 @@ class TestIAMUserManagement:
                     "Parallel IOs stopped: %s",
                     not self.parallel_ios.is_alive())
             if log_prefix:
-                self.validate_parallel_execution(log_prefix)
+                resp = system_utils.validate_s3bench_parallel_execution(s3bench.LOG_DIR, log_prefix)
+                assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
