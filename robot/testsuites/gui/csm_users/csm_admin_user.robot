@@ -40,7 +40,6 @@ SSL certificate expiration alert Verification
     ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
     ${file_name}=  Set Variable  stx_${days}.pem
     Verify SSL status  ${installation_status_init}  ${file_name}
-    # These following lines should be executed in case you have the proper machine
     Install uploaded SSL
     wait for page or element to load  5 minutes  #will re-start all service
     Close Browser
@@ -339,7 +338,6 @@ TEST-9045
     SSL Upload  ${Download_File_Path}  ${server_file_name}
     Verify SSL status  ${installation_status_init}  ${server_file_name} 
     Capture Page Screenshot  ${test_id}_ssl_uploaded.png
-    # These following lines should be executed in case you have the proper machine
     Install uploaded SSL
     wait for page or element to load  5 minutes  #will re-start all service
     Close Browser
