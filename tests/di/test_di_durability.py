@@ -31,6 +31,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from libs.s3 import CMN_CFG, S3_CFG
@@ -42,7 +43,7 @@ from libs.s3 import cortxcli_test_lib
 class TestDIDurability:
     """DI Durability Test suite."""
 
-    @pytest.fixture(autouse=True)
+    @pytest.yield_fixture(autouse=True)
     def setup(self):
         """
         Function will be invoked prior to each test case.
@@ -50,10 +51,11 @@ class TestDIDurability:
         It will perform all prerequisite test suite steps if any.
         """
         self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: setup test operations.")
+        self.log.info("STARTED: Setup test operations.")
         self.secure_range = secrets.SystemRandom()
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-        self.log.info("STARTED: setup test operations.")
+        self.s3_test_obj = S3TestLib()
+        self.s3_mp_test_obj = S3MultipartTestLib()
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.bucket_name = "data-durability-bkt{}".format(perf_counter_ns())
@@ -85,8 +87,6 @@ class TestDIDurability:
             system_utils.remove_file(self.file_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
-        self.s3_test_obj = S3TestLib()
-        self.s3_mp_test_obj = S3MultipartTestLib()
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
             resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
@@ -237,7 +237,6 @@ class TestDIDurability:
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
     @CTFailOn(error_handler)
@@ -271,9 +270,13 @@ class TestDIDurability:
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for file, binary_checksum in checksum_dict.items():
+            if "\\n" in binary_checksum[1][2:-1]:
+                bin_checksum = binary_checksum[1][2:-1].replace("\\n", "")
+            else:
+                bin_checksum = binary_checksum[1][2:-1]
             resp = self.s3_test_obj.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
-                content_md5=binary_checksum)
+                content_md5=bin_checksum)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 3: Put objects into a bucket with calculated checksum pass"
@@ -282,7 +285,6 @@ class TestDIDurability:
             "ENDED: Test to verify object integrity during the upload "
             "with correct checksum.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22498')
     @CTFailOn(error_handler)
@@ -315,11 +317,15 @@ class TestDIDurability:
             "checksum pass in content-md5 field")
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        for file, binary_checksum in checksum_dict.items():
-            resp = self.s3_test_obj.put_object(
-                bucket_name=self.bucket_name, object_name=file, file_path=file,
-                content_md5=binary_checksum)
-            assert_utils.assert_false(resp[0], resp[1])
+        try:
+            self.s3_test_obj.put_object(
+                bucket_name=self.bucket_name, object_name=self.file_lst[-1],
+                file_path=self.file_lst[-1],
+                content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
+        except CTException as error:
+            self.log.debug("Failed to put %s with an incorrect checksum %s", file, error)
+            assert_utils.assert_in(
+                "The Content-MD5 you specified is not valid", error.message, error.message)
         self.log.info(
             "Step 3: Failed to put objects into bucket with different "
             "calculated checksum")
@@ -431,3 +437,360 @@ class TestDIDurability:
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22912')
+    @CTFailOn(error_handler)
+    def test_verify_data_integrity_during_upload_combination_checksum_22912(self):
+        """
+        Test to verify object integrity during an upload with correct checksum.
+        Specify checksum and checksum algorithm or ETAG during
+        PUT(SHA1, MD5 with and without digest, CRC ( check multi-part)).
+        """
+        self.log.info(
+            "STARTED: Test to verify object integrity during an upload with correct checksum."
+            "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
+            "digest, CRC ( check multi-part))")
+        self.log.info(
+            "Step 1: Create a bucket.")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.info(
+            "Step 1: Created a bucket.")
+        self.log.info(
+            "Step 3: Put and object with checksum, checksum algo or ETAG.")
+        system_utils.create_file(self.file_path, 10)
+        file_checksum = system_utils.calculate_checksum(self.file_path)
+        if "\\n" in file_checksum[1][2:-1]:
+            bin_checksum = file_checksum[1][2:-1].replace("\\n", "")
+        elif "\n" in file_checksum[1][2:-1]:
+            bin_checksum = file_checksum[1][2:-1].replace("\n", "")
+        else:
+            bin_checksum = file_checksum[1][2:-1]
+        import pdb
+        pdb.set_trace()
+        res = self.s3_test_obj.put_object(
+            self.bucket_name, self.object_name,
+            ServerSideEncryption='AES256')
+        assert_utils.assert_true(res[0], res)
+        self.log.info(
+            "Step 3: Put an object with checksum, checksum algo or ETAG.")
+        self.log.info(
+            "ENDED: Test to verify object integrity during an upload with correct checksum."
+            "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
+            "digest, CRC ( check multi-part))")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22913')
+    @CTFailOn(error_handler)
+    def test_data_unit_checksum_validate_chcksum_error_22913(self):
+        """
+        Exercise Data unit checksum validation (Motr metadata extent corrupt) and validate
+        checksum error detection by S3/Motr.
+        """
+        self.log.info(
+            "STARTED: Exercise Data unit checksum validation (Motr metadata extent corrupt) and"
+            "validate checksum error detection by S3/Motr")
+        self.log.info(
+            "Step 1: Create a bucket and upload latge size object into a bucket.")
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, 50)
+        self.log.info(
+            "Step 1: Created a bucket and upload object into a bucket.")
+        self.log.info(
+            "Step 2: Corrupt Motr metadata extent of an object.")
+        # resp = corrupt_metadata_extent_of_an_obj(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Corrupted Motr metadata extent of an object.")
+        self.log.info(
+            "Step 3: Verify Motr detects checksum error and push errors in logs file.")
+        # res = check_motr_log()
+        # assert_utils.assert_true(res[0], res)
+        self.log.info(
+            "Step 3: Verified Motr detects checksum error and push errors in logs file.")
+        self.log.info(
+            "Step 4: Verify get object failed due to checksum error.")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_false(resp[0], resp)
+        self.log.info(
+            "Step 4: Get object failed due to checksum error.")
+        self.log.info(
+            "ENDED: Exercise Data unit checksum validation (Motr metadata extent corrupt) and"
+            "validate checksum error detection by S3/Motr")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22914')
+    @CTFailOn(error_handler)
+    def test_corrupt_data_blocks_obj_motr_verify_range_read_22914(self):
+        """
+        Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
+        checksum error detection by S3/Motr.
+        """
+        self.log.info(
+            "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
+            "and validate checksum error detection by S3/Motr")
+        self.log.info(
+            "Step 1: Create a bucket and upload large size object into a bucket.")
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, 50)
+        self.log.info(
+            "Step 1: Created a bucket and upload object into a bucket.")
+        self.log.info(
+            "Step 2: Corrupt Motr blocks data or metadata of data blocks.")
+        # resp = corrupt_metadata_of_data_block(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Corrupted Motr blocks data or metadata of data blocks.")
+        self.log.info(
+            "Step 3: Verify Motr detects checksum error and push errors in logs file.")
+        # res = check_motr_log()
+        # assert_utils.assert_true(res[0], res)
+        self.log.info(
+            "Step 3: Verified Motr detects checksum error and push errors in logs file.")
+        self.log.info(
+            "Step 4: Verify get object.")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_false(resp[0], resp)
+        self.log.info(
+            "Step 4: Get object failed due to checksum error.")
+        self.log.info(
+            "ENDED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
+            "and validate checksum error detection by S3/Motr")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22915')
+    @CTFailOn(error_handler)
+    def test_motr_panic_due_to_misconfig_verify_error_22915(self):
+        """
+        Create Motr panic by some misconfiguration in Motr and Verify S3 checksum error detection.
+        """
+        self.log.info(
+            "STARTED: Create Motr panic by some misconfiguration in Motr and Verify S3 checksum"
+            " error detection.")
+        self.log.info(
+            "Step 1: Create a bucket and upload object into a bucket.")
+        # range
+        self.s3_test_obj.create_bucket_put_object(
+            self.bucket_name, self.object_name, self.file_path, self.file_size)
+        self.log.info(
+            "Step 1: Created a bucket and upload object into a bucket.")
+        self.log.info(
+            "Step 2: Create motr panic by doing some misconfiguration in motr cfg.")
+        # resp = corrupt_data_block_of_an_obj(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Created motr panic by doing some misconfiguration in motr cfg.")
+        self.log.info(
+            "Step 3: Get an object.")
+        res = self.s3_mp_test_obj.get_object(
+            self.bucket_name, self.object_name)
+        assert_utils.assert_false(res[0], res)
+        self.log.info(
+            "Step 3: Verified get object.")
+        self.log.info(
+            "Step 4: Check for expected errors in motr logs or notification.")
+        # resp = get_motr_s3_logs()
+        # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
+        self.log.info(
+            "Step 4: Checked for expected errors in motr logs or notification.")
+        self.log.info(
+            "ENDED: Create Motr panic by some misconfiguration in Motr and Verify S3 checksum"
+            " error detection.")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22916')
+    @CTFailOn(error_handler)
+    def test_disable_checkum_validation_download_chunk_upload_22916(self):
+        """
+        With Checksum flag  Disabled, download of the chunk uploaded object should
+        succeed ( 30 MB -100 MB).
+        """
+        self.log.info(
+            "STARTED: With Checksum flag  Disabled, download of the chunk uploaded object should"
+            "succeed ( 30 MB -100 MB).")
+        self.log.info(
+            "Step 1: Disable checksum verification flag.")
+        # resp = corrupt_data_block_of_an_obj(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Disabled checksum flag successfully.")
+        self.log.info(
+            "Step 2: Create a bucket and upload object of size 200 MB into a bucket.")
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_equal(self.bucket_name, resp[1], resp)
+        system_utils.create_file(self.file_path, 200)
+        self.s3_test_obj.put_object(self.bucket_name, self.object_name)
+        self.log.info(
+            "Step 2: Created a bucket and upload object into a bucket.")
+        self.log.info(
+            "Step 3: Download chunk uploaded object.")
+        if os.path.exists(self.file_path):
+            os.remove(self.file_path)
+        res = self.s3_mp_test_obj.object_download(
+            self.bucket_name, self.object_name, self.file_path)
+        assert_utils.assert_true(res[0], res)
+        self.log.info(
+            "Step 3: Download chunk uploaded object is successful.")
+        self.log.info(
+            "ENDED: Corrupt data blocks of an object at Motr level and "
+            "verify range read (Get.")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22926')
+    @CTFailOn(error_handler)
+    def test_enable_validation_induce_corruption_detect_error_22926(self):
+        """
+        With Flag enabled, when data or metadata corruption induced, download of
+        corrupted data should flag error.
+        """
+        self.log.info(
+            "STARTED: With Flag enabled, when data or metadata corruption induced, download of"
+            "corrupted data should flag error.")
+        self.log.info(
+            "Step 1: Enable checksum verification flag.")
+        # resp = eanble_checksum_flag(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Enabled checksum flag successfully.")
+        self.log.info(
+            "Step 1: Create a bucket and upload object into a bucket.")
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        for i in range(self.secure_range.randint(2, 8)):
+            file_name = f"{self.file_path}{i}"
+            system_utils.create_file(file_name, 20)
+            resp = self.s3_test_obj.put_object(
+                bucket_name=self.bucket_name, object_name=file_name, file_path=self.file_path)
+            self.file_lst.append(file_name)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Created a bucket and upload object into a bucket.")
+        self.log.info("Step 2: Induce metadata or data corruption.")
+        # resp = induce_metadata_corruption(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Induced metadata or data corruption.")
+        self.log.info(
+            "Step 3: Verify download corrupted object.")
+        for i in self.file_lst:
+            dest_name = f"{i}_download"
+            res = self.s3_mp_test_obj.object_download(
+                self.bucket_name, i, dest_name)
+            self.debug(res)
+            # assert_utils.assert_false(res[0], res)
+        self.log.info(
+            "Step 3: Download object failed with corruption error.")
+        self.log.info(
+            "ENDED: Corrupt data blocks of an object at Motr level and "
+            "verify range read (Get.")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22930')
+    @CTFailOn(error_handler)
+    def test_disable_checkcum_should_not_validate_file_no_error_22930(self):
+        """
+        Disabling of Checksum feature should not do any checksum validation even if data
+        corrupted.
+        """
+        self.log.info(
+            "STARTED: Disabling of Checksum feature should not do any checksum validation even "
+            "if data corrupted")
+        self.log.info(
+            "Step 1: Enable checksum verification flag.")
+        # resp = eanble_checksum_flag(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Enabled checksum flag successfully.")
+        self.log.info(
+            "Step 1: Create a bucket and upload N object into a bucket.")
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        for i in range(self.secure_range.randint(2, 8)):
+            file_name = f"{self.file_path}{i}"
+            system_utils.create_file(file_name, 20)
+            resp = self.s3_test_obj.put_object(
+                bucket_name=self.bucket_name, object_name=file_name, file_path=self.file_path)
+            self.file_lst.append(file_name)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Created a bucket and upload N object into a bucket.")
+        self.log.info(
+            "Step 2: Corrupt data blocks of an object at motr level.")
+        # resp = corrupt_an_obj(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Corrupted data blocks of an object at motr level.")
+        self.log.info(
+            "Step 3: Verify range read (Get) of an object whose metadata"
+            " is corrupted.")
+        for obj in self.file_lst:
+            res = self.s3_mp_test_obj.get_object(self.bucket_name, obj)
+            assert_utils.assert_false(res[0], res)
+        self.log.info(
+            "Step 3: Verified range read (Get) of an object whose metadata"
+            " is corrupted.")
+        self.log.info(
+            "Step 4: Check for expected errors in logs or notification.")
+        # resp = get_motr_s3_logs()
+        # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
+        self.log.info(
+            "Step 4: Checked for expected errors in logs or notification.")
+        self.log.info(
+            "ENDED: Disabling of Checksum feature should not do any checksum validation even "
+            "if data corrupted")
+
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-22931')
+    @CTFailOn(error_handler)
+    def test_checksum_validation_with_ha_22931(self):
+        """
+        Combine checksum feature with HA.
+        a) Corrupt from a node and read with other nodes.
+        """
+        self.log.info(
+            "STARTED: Combine checksum feature with HA, corrupt from a node and read with other"
+            "nodes")
+        self.log.info(
+            "Step 1: Enable checksum verification flag.")
+        # resp = enable_checksum_flag(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Enabled checksum flag successfully.")
+        self.log.info(
+            "Step 1: Create a bucket and upload object into a bucket.")
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        for i in range(self.secure_range.randint(2, 8)):
+            file_name = f"{self.file_path}{i}"
+            system_utils.create_file(file_name, 20)
+            resp = self.s3_test_obj.put_object(
+                bucket_name=self.bucket_name, object_name=file_name, file_path=self.file_path)
+            self.file_lst.append(file_name)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 1: Created a bucket and upload object into a bucket.")
+        self.log.info(
+            "Step 2: Corrupt data blocks of an object at motr level.")
+        # resp = corrupt_an_obj(object)
+        # assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "Step 2: Corrupted data blocks of an object at motr level.")
+        self.log.info(
+            "Step 3: Verify get object from another node")
+        s3_node_obj = S3TestLib(endpoint_url=CMN_CFG["nodes"][1]["hostname"])
+        for obj in self.file_lst:
+            res = s3_node_obj.get_object(self.bucket_name, obj)
+            assert_utils.assert_false(res[0], res)
+        self.log.info(
+            "Step 3: Verified get object from another node")
+        self.log.info(
+            "ENDED: Combine checksum feature with HA, corrupt from a node and read with other "
+            "nodes")
