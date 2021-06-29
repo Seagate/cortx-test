@@ -750,6 +750,12 @@ def pytest_runtest_logstart(nodeid, location):
     :return:
     """
     current_suite = None
+    skip_health_check = False
+    breadcrumbs = os.path.split(location[0])
+    for prefix in params.PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX:
+        if breadcrumbs[-1].startswith(prefix):
+            skip_health_check = True
+            break
     path = "file://" + os.path.realpath(location[0])
     if location[1]:
         path += ":" +str(location[1] + 1)
@@ -774,7 +780,7 @@ def pytest_runtest_logstart(nodeid, location):
             suite = current_suite
     # Check health status of target
     target = Globals.TARGET
-    if not Globals.LOCAL_RUN:
+    if not Globals.LOCAL_RUN and not skip_health_check:
         try:
             check_cortx_cluster_health()
             check_cluster_storage()

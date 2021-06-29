@@ -35,7 +35,39 @@ def parse_args():
                         help="Build type (Release/Dev)")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['TODO'], help="Space separated test types")
+    parser.add_argument("-d", "--db_update", type=str_to_bool,
+                        default=True,
+                        help="Update Reports DB. Can be false in case reports db is down")
+    parser.add_argument("-u", "--jira_update", type=str_to_bool,
+                        default=True,
+                        help="Update Jira. Can be false in case Jira is down")
+    parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
+                        help="parallel_exe: True for parallel, False for sequential")
+    parser.add_argument("-tg", "--target", type=str,
+                        default='', help="Target setup details")
+    parser.add_argument("-ll", "--log_level", type=int, default=10,
+                        help="log level value")
+    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
+                        help="number of parallel processes")
+    parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
+                        default=False, nargs='?', const=True,
+                        help="Force sequential run if you face problems with parallel run")
+    parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
+                        default=False, help="Helps set DI check enabled so that tests "
+                                            "perform additional checksum check")
     return parser.parse_args()
+
+
+def str_to_bool(val):
+    """To convert a string value to bool."""
+    if isinstance(val, bool):
+        return val
+    if val.lower() in ('yes', 'true', 'y', '1'):
+        return True
+    elif val.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def initialize_loghandler(log) -> None:
@@ -56,7 +88,7 @@ def run_tesrunner_cmd(args, todo=False):
      -b=${Build} -t=${Build_Branch} -d=${DB_Update} -p=${Process_Cnt_Parallel_Exe}
       --force_serial_run ${Sequential_Execution}
     """
-    cmd_line = ['python3 -u testrunner.py ']
+    cmd_line = ['python3.7 -u testrunner.py ']
     _env = os.environ.copy()
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
@@ -234,7 +266,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    runner.cleanup()
     initialize_loghandler(LOGGER)
     opts = parse_args()
     main(opts)
