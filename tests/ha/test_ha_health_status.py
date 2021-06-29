@@ -154,30 +154,14 @@ class TestHAHealthStatus:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
-    def polling_host(self, max_timeout: int, host_index: int, exp_resp: bool):
-        """
-        Helper function to poll for host ping response.
-        :param max_timeout: Max timeout allowed for expected response from ping
-        :param host_index: Host to ping
-        :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
-        :return: bool
-        """
-
-        poll = time.time() + max_timeout  # max timeout
-        while poll > time.time():
-            time.sleep(20)
-            resp = system_utils.check_ping(self.host_list[host_index])
-            if resp == exp_resp:
-                return True
-        return False
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_safe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, safe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        and comes back up(one by one, safe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with safe shutdown.")
@@ -193,8 +177,8 @@ class TestHAHealthStatus:
             resp = self.node_list[node].execute_cmd(cmd="shutdown now")
             LOGGER.debug("Response for shutdown: {}".format(resp))
             LOGGER.info("Check if the {} has shutdown.".format(node_name))
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=False)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=False, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, "Host has not shutdown yet.")
 
@@ -251,8 +235,8 @@ class TestHAHealthStatus:
                 self.bmc_list[node].bmc_node_power_on_off(
                     self.bmc_ip_list[node], self.bmc_user, self.bmc_pwd, "on")
             # SSC cloud is taking time to start VM host hence max_timeout 120
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=True)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=True, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, "Host has not powered on yet.")
             LOGGER.info("{} has powered on".format(node_name))
@@ -291,8 +275,8 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, unsafe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        and comes back up(one by one, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
@@ -317,8 +301,8 @@ class TestHAHealthStatus:
             LOGGER.info(
                 "Check if the %s has shutdown.",
                 self.srvnode_list[node])
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=False)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=False, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node])
@@ -377,8 +361,8 @@ class TestHAHealthStatus:
 
             # SSC cloud is taking more time to start VM host hence max_timeout
             # 120
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=True)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=True, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info("%s is powered on.", self.host_list[node])
@@ -417,27 +401,19 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_nw_down(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when nw interface on node foes down
-        and comes back up (one by one)
+        Test to Check that correct node status is shown in Cortx CLI and REST when nw interface
+        on node goes down and comes back up (one by one)
         """
         LOGGER.info(
             "Started: Test to check node status one by one on all nodes when nw interface on node goes"
             "down and comes back up")
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
-        iface_list = []
-        private_ip_list = []
-        resp_ip = self.node_list[0].execute_cmd(common_cmds.CMD_HOSTS, read_lines=True)
-        for node in range(self.num_nodes):
-            for line in resp_ip:
-                if "srvnode-{}.data.private".format(node + 1) in line:
-                    ip = line.split( )[0]
-                    private_ip_list.append(ip)
-                    res = self.node_list[node].execute_cmd(common_cmds.CMD_IFACE_IP.format(ip),
-                                                           read_lines=True)
-                    ifname = res[0].replace(':', '')
-                    iface_list.append(ifname)
-        LOGGER.debug("List of private data interfaces on all nodes: {}".format(iface_list))
+        response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
+        iface_list = response[0]
+        private_ip_list = response[1]
+        LOGGER.debug("List of private data IP : {} and interfaces on all nodes: {}"
+                     .format(private_ip_list, iface_list))
 
         for node in range(self.num_nodes):
             node_name = self.srvnode_list[node]
@@ -520,7 +496,7 @@ class TestHAHealthStatus:
             sys_obj.logout_cortx_cli()
             sys_obj.close_connection()
             LOGGER.info(
-                "Node down/up worked fine for node: {}".format(node_name))
+                "Node nw interface down/up worked fine for node: {}".format(node_name))
 
         LOGGER.info(
             "Completed: Test to check node status one by one on all nodes when nw interface on node goes"
