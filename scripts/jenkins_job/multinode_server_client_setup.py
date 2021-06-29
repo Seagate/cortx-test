@@ -195,6 +195,7 @@ def main():
 
     client_conf.setup_chrome()
     configure_haproxy_lb(*nodes, username=username, password=args.password)
+    print("Mutlinode Server-Client Setup Done.")
 
 
 if __name__ == "__main__":
