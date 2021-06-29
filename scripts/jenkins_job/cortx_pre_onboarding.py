@@ -29,7 +29,7 @@ class CSMBoarding(unittest.TestCase):
         chrome_options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.implicitly_wait(30)
-        self.csm_mgmt_ip = os.getenv('HOSTNAME')
+        self.csm_mgmt_ip = os.getenv('MGMT_VIP')
         self.default_username = pswdmanager.decrypt(config['csmboarding']['username'])
         self.default_password = pswdmanager.decrypt(config['csmboarding']['password'])
         self.admin_user = os.getenv('ADMIN_USR', self.default_username)
