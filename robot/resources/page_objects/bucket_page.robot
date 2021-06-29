@@ -177,7 +177,7 @@ Refresh To Bucket Page
     [Documentation]  This keyword will refresh the page to Bucket page
     Reload Page
     wait for page or element to load
-    Navigate To Page  BUCKET_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
 
 Verify the bucket url in buckets table
     [Documentation]  This keyword verifys the bucket url in buckets table.

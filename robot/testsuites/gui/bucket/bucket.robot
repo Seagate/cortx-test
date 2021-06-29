@@ -38,7 +38,7 @@ Login To S3 Account
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     wait for page or element to load
     Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page  Bucket_TAB_ID
+    Navigate To Page  S3_BUCKET_TAB_ID
 
 Delete S3 Account And Close Browser
     [Documentation]  This key word is for test case teardown which delete s3 account and close browsers
