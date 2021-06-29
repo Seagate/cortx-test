@@ -31,12 +31,12 @@ Login To S3 Account
     [Documentation]  This key word is for test case setup which create s3 account and login to it
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
     wait for page or element to load  3s
     Re-login  ${S3_account_name}  ${s3password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page   IAM_USER_TAB_ID
+    Navigate To Page   S3_IAM_USER_TAB_ID
     wait for page or element to load  3s
     set suite variable    ${S3_account_name}
     set suite variable    ${s3password}
@@ -223,7 +223,7 @@ TEST-1021
     Validate CSM Login Failure
     Reload Page
     wait for page or element to load
-    Re-login  ${S3_account_name}  ${s3password}  IAM_USER_TAB_ID  False
+    Re-login  ${S3_account_name}  ${s3password}  S3_IAM_USER_TAB_ID  False
     Delete IAMuser  ${iamusername}
     wait for page or element to load  # Need to reload the uses
 

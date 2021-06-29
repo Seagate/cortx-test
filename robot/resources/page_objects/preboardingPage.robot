@@ -65,11 +65,12 @@ Preboarding
     [Arguments]  ${url}  ${browser}  ${headless}
     Run Keyword If  ${headless} == True  Open URL In Headless  ${url}preboarding/welcome  ${browser}
     ...  ELSE  Open URL  ${url}preboarding/welcome  ${browser}
+    wait for page or element to load  3s
     Page Should Contain Button  ${welcome_start_button_id}
     Click Start Button
-    sleep  3s
+    wait for page or element to load  3s
     Page Should Contain Button  ${elua_button_id}
-    sleep  3s
+    wait for page or element to load  3s
     Log To Console And Report  Waiting for receiving GUI response...
 
 navigate to csm admin creation page
