@@ -84,7 +84,7 @@ class TestDIDurability:
         self.log.info("STARTED: Teardown operations")
         self.log.info("Deleting the file created locally for object")
         if system_utils.path_exists(self.file_path):
-            system_utils.remove_file(self.file_path)
+            system_utils.remove_dirs(self.test_dir_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3_test_obj.bucket_list()
@@ -109,6 +109,23 @@ class TestDIDurability:
         self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
+
+    def filter_bin_md5(self, file_checksum):
+        """
+        Function to clean binary md5 response.
+        :param file_checksum: encoded binary md5 data with newline char
+        :return: filter binary md5 data
+        """
+        self.log.debug("Actual MD5 %s", file_checksum)
+        if "\\n" in file_checksum[2:-1]:
+            bin_checksum = file_checksum[2:-1].replace("\\n", "")
+        elif "\n" in file_checksum[2:-1]:
+            bin_checksum = file_checksum[2:-1].replace("\n", "")
+        else:
+            bin_checksum = file_checksum[2:-1]
+        self.log.debug("Filter MD5 %s", bin_checksum)
+
+        return bin_checksum
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -270,10 +287,7 @@ class TestDIDurability:
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for file, binary_checksum in checksum_dict.items():
-            if "\\n" in binary_checksum[1][2:-1]:
-                bin_checksum = binary_checksum[1][2:-1].replace("\\n", "")
-            else:
-                bin_checksum = binary_checksum[1][2:-1]
+            bin_checksum = self.filter_bin_md5(binary_checksum[1])
             resp = self.s3_test_obj.put_object(
                 bucket_name=self.bucket_name, object_name=file, file_path=file,
                 content_md5=bin_checksum)
@@ -438,7 +452,7 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    # @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
     @CTFailOn(error_handler)
@@ -458,20 +472,20 @@ class TestDIDurability:
         self.log.info(
             "Step 1: Created a bucket.")
         self.log.info(
-            "Step 3: Put and object with checksum, checksum algo or ETAG.")
-        system_utils.create_file(self.file_path, 10)
-        file_checksum = system_utils.calculate_checksum(self.file_path)
-        if "\\n" in file_checksum[1][2:-1]:
-            bin_checksum = file_checksum[1][2:-1].replace("\\n", "")
-        elif "\n" in file_checksum[1][2:-1]:
-            bin_checksum = file_checksum[1][2:-1].replace("\n", "")
-        else:
-            bin_checksum = file_checksum[1][2:-1]
-        import pdb
-        pdb.set_trace()
-        res = self.s3_test_obj.put_object(
-            self.bucket_name, self.object_name,
+            "Step 2: Put and object with checksum algo or ETAG.")
+        system_utils.create_file(self.file_path, 8)
+        file_checksum = self.filter_bin_md5(
+            system_utils.calculate_checksum(self.file_path)[1])
+        res = self.s3_test_obj.put_object_with_all_kwargs(
+            Bucket=self.bucket_name, Key=self.object_name, Body=self.file_path,
             ServerSideEncryption='AES256')
+        assert_utils.assert_equal(res["ResponseMetadata"]["HTTPStatusCode"], 200, res)
+        self.log.info(
+            "Step 2: Put and object with md5 checksum.")
+        res = self.s3_test_obj.put_object(
+            self.bucket_name, self.object_name, self.file_path,
+            content_md5=file_checksum)
+        self.log.debug(res)
         assert_utils.assert_true(res[0], res)
         self.log.info(
             "Step 3: Put an object with checksum, checksum algo or ETAG.")
