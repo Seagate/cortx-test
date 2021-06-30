@@ -283,8 +283,8 @@ class SwAlerts:
 #        "elasticsearch.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-#        "haproxy.service",  # commented due to defect EOS-20842
-        "slapd.service",
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
+#        "slapd.service", # brings down the csm
         "lnet.service",
         "salt-master.service",
         "salt-minion.service",
