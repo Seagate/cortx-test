@@ -532,7 +532,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
         self.status_nodes_online()
-        LOGGER.info("Get the node on for multiple unsafe shutdown.")
+        LOGGER.info("Get the node for multiple unsafe shutdown.")
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
 
@@ -541,7 +541,7 @@ class TestHAHealthStatus:
             self.srvnode_list[node_index])
         for loop in range(11):
             LOGGER.info(
-                "Shutting down %s for %s time",
+                "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
             if self.setup_type == "HW":
@@ -650,7 +650,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj.close_connection()
             LOGGER.info(
-                "Node down/up worked fine for node: %s for %s time",
+                "Node down/up worked fine for node: %s, Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
@@ -669,7 +669,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
         self.status_nodes_online()
-        LOGGER.info("Get the node on for multiple unsafe shutdown.")
+        LOGGER.info("Get the node for multiple unsafe shutdown.")
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
 
@@ -678,7 +678,7 @@ class TestHAHealthStatus:
             self.srvnode_list[node_index])
         for loop in range(11):
             LOGGER.info(
-                "Shutting down %s for %s time",
+                "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
             if self.setup_type == "HW":
@@ -793,7 +793,7 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj.close_connection()
             LOGGER.info(
-                "Node down/up worked fine for node: %s for %s time",
+                "Node down/up worked fine for node: %s, Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
