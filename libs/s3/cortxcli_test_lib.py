@@ -135,6 +135,128 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return response
 
+    def csm_user_list_s3accounts(self, csm_user=None, passwd=None):
+        """
+        Listing s3accounts using csm user(default with admin role).
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        return True/False, Response s3 accounts dict.
+        """
+        try:
+            accounts = dict()
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
+            status, response = super().show_s3account_cortx_cli(output_format='json')
+            if status:
+                accounts = self.format_str_to_dict(input_str=response)["s3_accounts"]
+            LOGGER.debug(accounts)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.csm_user_list_s3accounts.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return status, accounts
+
+    def csm_user_show_s3accounts(self, csm_user=None, passwd=None):
+        """
+        s3accounts using csm user(default with admin role).
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        return True/False, Response s3 accounts dict.
+        """
+        try:
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
+            status, response = super().show_s3account_cortx_cli(output_format='json')
+            if status:
+                accounts = self.format_str_to_dict(input_str=response)
+            else:
+                accounts = dict()
+            LOGGER.debug(accounts)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.csm_user_show_s3accounts.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return status, accounts
+
+    def csm_user_create_s3account(self, s3_user, email, s3_passwd, csm_user=None, passwd=None):
+        """
+        Create s3 account user using csm user(default with admin role).
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        :param s3_user: Name of the s3 account user.
+        :param email: Email id of the s3 account user.
+        :param s3_passwd: Password of the s3 account user.
+        return True/False, Response.
+        """
+        try:
+            acc_details = dict()
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
+            status, response = super().create_s3account_cortx_cli(
+                account_name=s3_user, account_email=email, password=s3_passwd)
+            if s3_user in response:
+                response = self.split_table_response(response)[0]
+                acc_details["account_name"] = response[0]
+                acc_details["account_email"] = response[1]
+                acc_details["account_id"] = response[2]
+                acc_details["canonical_id"] = response[3]
+                acc_details["access_key"] = response[4]
+                acc_details["secret_key"] = response[5]
+                LOGGER.info("Account Details: %s", acc_details)
+                response = acc_details
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.csm_user_create_s3account.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
+
+    def csm_user_delete_s3account(self, s3_user, csm_user=None, passwd=None):
+        """
+        Delete s3 account user using csm user(default with admin role).
+
+        :param csm_user: Name of the csm user.
+        :param passwd: password of the csm user.
+        :param s3_user: Name of the s3 account user.
+        return True/False, Response.
+        """
+        try:
+            if csm_user:
+                self.login_cortx_cli(username=csm_user, password=passwd)
+            else:
+                self.login_cortx_cli()
+            status, response = super().delete_s3account_cortx_cli(account_name=s3_user)
+            LOGGER.debug(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         CSMAccountOperations.csm_user_delete_s3account.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args)
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
+
     def csm_users_list(self) -> tuple:
         """
         Listing accounts using  cortxcli.
@@ -484,6 +606,50 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
         :param object session_obj: session object of host connection if already established
         """
         super().__init__(session_obj=session_obj)
+
+    def create_s3_user_access_key(self, user_name: str, passwd: str, s3user: str) -> tuple:
+        """
+        Function will create a s3 account access key.
+
+        :param user_name: Name of the user own s3 user.
+        :param passwd: Password of the user own s3 user.
+        :param s3user: For whom access key needs to be created.
+        :return: True/False and response.
+        """
+        try:
+            self.login_cortx_cli(username=user_name, password=passwd)
+            status, response = self.create_s3user_access_key(s3user)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _S3AccessKeys.create_s3_user_access_key.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
+
+    def show_s3_user_access_key(self, user_name: str, passwd: str, s3user: str) -> tuple:
+        """
+        Function will show a s3 account access key.
+
+        :param user_name: Name of the user own s3 user.
+        :param passwd: Password of the user own s3 user.
+        :param s3user: For whom access key needs to be created.
+        :return: True/False and dictionary.
+        """
+        try:
+            self.login_cortx_cli(username=user_name, password=passwd)
+            status, response = self.show_s3user_access_key(s3user)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         _S3AccessKeys.show_s3_user_access_key.__name__,
+                         error)
+            raise CTException(err.CLI_ERROR, error.args[0])
+        finally:
+            self.logout_cortx_cli()
+
+        return status, response
 
     def create_s3user_access_key_cortx_cli(
             self,
