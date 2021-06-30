@@ -78,9 +78,14 @@ class TestIAMUserManagement:
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.cli_test_obj = CortxCliTestLib()
         self.log.info("Creating s3 account with name %s", self.s3acc_name)
-        resp = self.cli_test_obj.create_account_cortxcli(
-            self.s3acc_name, self.s3acc_email, self.acc_password)
+        resp = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3acc_obj.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3acc_obj.logout_cortx_cli()
         self.log.info("Created s3 account")
         self.parallel_ios = None
         self.account_dict = dict()
@@ -250,7 +255,6 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-23399")
     def test_23399_list_user(self):
         """
@@ -327,7 +331,7 @@ class TestIAMUserManagement:
         self.log.info("Step 5: Verify access key is created")
         resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
         access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        assert create_access_key[1]["access_key"] in access_keys
+        assert_utils.assert_in(create_access_key[1]["access_key"], access_keys)
         self.log.info("Verified access key is created")
         self.log.info("Step 6. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
@@ -338,7 +342,6 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.tags("TEST-23401")
     def test_23401_delete_iam_user(self):
         """
