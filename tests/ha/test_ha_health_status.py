@@ -532,7 +532,7 @@ class TestHAHealthStatus:
 
         LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
         self.status_nodes_online()
-        LOGGER.info("Get the node for multiple unsafe shutdown.")
+        LOGGER.info("Get the node for multiple safe shutdown.")
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
 
