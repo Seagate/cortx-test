@@ -49,6 +49,7 @@ def run_cmd(cmd):
     result = str(proc.communicate())
     return result
 
+
 def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_passwd):
     """
     Creation of new host entry in database.
@@ -61,7 +62,7 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
     :return: none
     """
     json_file = "tools/setup_update/setup_entry.json"
-    new_setupname = hostname.split(".")[0]
+    new_setupname = os.getenv("Target_Node")
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
 
     with open(json_file, 'r') as file:
@@ -95,6 +96,7 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
 
     return new_setupname
 
+
 def set_s3_endpoints(cluster_ip):
     """
     Set s3 endpoints to cluster ip in /etc/hosts
@@ -126,6 +128,7 @@ def setup_chrome():
     bin_path = os.path.join("venv", "bin")
     shutil.copy("chromedriver", bin_path)
 
+
 def configure_server_node(obj, mg_ip):
     """
     Method to configure server node for firewall and haproxy
@@ -152,7 +155,6 @@ def configure_server_node(obj, mg_ip):
         read_file = file.readlines()
     read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
     read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
-
 
     with open(local_path, 'w') as file:
         read_file = "".join(read_file)
@@ -200,6 +202,7 @@ def main():
     print("Setting up chrome")
     setup_chrome()
     configure_server_node(nd_obj_host, clstr_ip)
+
 
 if __name__ == "__main__":
     main()

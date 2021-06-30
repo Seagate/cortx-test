@@ -5,10 +5,24 @@ pipeline {
  			customWorkspace "/root/workspace/${JOB_BASE_NAME}"
 		}
     }
+    environment {
+		Target_Node = 'three-node-' + "${"${HOST1}".split("\\.")[0]}"
+		Build_Branch = "${"${CORTX_BUILD}".split("\\#")[0]}"
+		Build_ID = "${"${CORTX_BUILD}".split("\\#")[1]}"
+		Sequential_Execution = 'true'
+		Original_TP = 'TEST-24047'
+		Sanity_TE = 'TEST-24048'
+		Setup_Type = 'default'
+		Platform_Type = 'VM'
+		Nodes_In_Target = 3
+		Server_Type = 'SMC'
+		Enclosure_Type = '5U84'
+    }
     stages {
 		stage('CODE_CHECKOUT') {
-			steps {
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test/']]])
+			steps{
+				cleanWs()
+			    checkout([$class: 'GitSCM', branches: [[name: '*/EOS-21228-integrate-test-runner-in-sanity']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'ef9a4dc6-3f22-42bf-bafe-a39ba5042683', url: 'https://github.com/NiteshMahajan/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -45,23 +59,75 @@ deactivate
 '''
 			}
 		}
-
-		stage('TEST_EXECUTION') {
+		stage('COPY_TP_TE') {
 			steps{
-			    sh label: '', script: '''source venv/bin/activate
-export HOSTNAME="${HOST1}"
-sh scripts/jenkins_job/run_tests.sh
+				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					sh label: '', script: '''source venv/bin/activate
+python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_ID} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
 '''
+}
+			}
+		}
+		stage('SANITY_TEST_EXECUTION') {
+			steps{
+				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					sh label: '', script: '''source venv/bin/activate
+set +x
+INPUT=cloned_tp_info.csv
+OLDIFS=$IFS
+IFS=','
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read tp_id te_id old_te
+do
+    old_te=$(echo $old_te | sed -e 's/\r//g')
+    if [ "${old_te}" == "${Sanity_TE}" ]
+		then
+			echo "Running Sanity Tests"
+			echo "tp_id : $tp_id"
+			echo "te_id : $te_id"
+			echo "old_te : $old_te"
+			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_ID} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report sanity-results.xml
+		fi
+done < $INPUT
+IFS=$OLDIFS
+deactivate
+'''				}
+			}
+		}
+		stage('REGRESSION_TEST_EXECUTION') {
+			steps{
+				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+					sh label: '', script: '''source venv/bin/activate
+set +x
+INPUT=cloned_tp_info.csv
+OLDIFS=$IFS
+IFS=','
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read tp_id te_id old_te
+do
+    old_te=$(echo $old_te | sed -e 's/\r//g')
+    if [ "${old_te}" != "${Sanity_TE}" ]
+		then
+			echo "Running Regression Tests"
+			echo "tp_id : $tp_id"
+			echo "te_id : $te_id"
+			echo "old_te : $old_te"
+			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_ID} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report regression-results.xml
+		fi
+done < $INPUT
+IFS=$OLDIFS
+deactivate
+'''
+				}
 			}
 		}
     }
 	post {
 		always {
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html', followSymlinks: false
-			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
+			    junit allowEmptyResults: true, testResults: 'log/*results.xml'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com'
 			}
 		}
 	}
