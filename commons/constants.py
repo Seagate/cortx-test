@@ -273,12 +273,11 @@ EXCLUSIVE_LOCK = 'exclusive'
 
 class SwAlerts:
     SVCS_3P = [
-        "hare-consul-agent.service",
-        "elasticsearch.service",
+#        "elasticsearch.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
 #        "haproxy.service",  # commented due to defect EOS-20842
-        "hare-consul-agent.service",
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
         "lnet.service",
         "slapd.service",
         "lnet.service",
