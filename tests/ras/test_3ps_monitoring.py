@@ -47,7 +47,7 @@ class Test3PSvcMonitoring:
     @classmethod
     def setup_class(cls):
         """Setup for module."""
-        LOGGER.info("Running setup_class")
+        LOGGER.info("############ Running setup_class ############")
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
@@ -65,11 +65,11 @@ class Test3PSvcMonitoring:
             cls.external_svcs = const.SVCS_3P_ENABLED_VM
         else:
             cls.external_svcs = const.SVCS_3P
-        LOGGER.info("Completed setup_class")
+        LOGGER.info("############ Completed setup_class ############")
 
     def setup_method(self):
         """Setup operations per test."""
-        LOGGER.info("Running setup_method")
+        LOGGER.info("############ Running setup_method ############")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
@@ -116,11 +116,11 @@ class Test3PSvcMonitoring:
         res = self.ras_test_obj.sspl_log_collect()
         assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
-        LOGGER.info("Successfully performed Setup operations")
+        LOGGER.info("############ Setup method completed ############")
 
     def teardown_method(self):
         """Teardown operations."""
-        LOGGER.info("Performing Teardown operation")
+        LOGGER.info("############ Performing Teardown operation ############")
 
         if self.changed_level:
             kv_store_path = LOG_STORE_PATH
@@ -156,7 +156,7 @@ class Test3PSvcMonitoring:
                     self.node_obj.remove_file(filename=file)
         except FileNotFoundError as error:
             LOGGER.warning(error)
-        LOGGER.info("Successfully performed Teardown operation")
+        LOGGER.info("############ Successfully performed Teardown operation ############")
 
     @pytest.mark.tags("TEST-19609")
     @pytest.mark.cluster_monitor_ops
@@ -280,6 +280,7 @@ class Test3PSvcMonitoring:
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = const.SVCS_3P
         for svc in external_svcs:
+            LOGGER.info("###############################################################")
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
             LOGGER.info("Step 1: Deactivating %s service...", svc)
             starttime = time.time()
@@ -331,6 +332,7 @@ class Test3PSvcMonitoring:
             assert self.csm_alert_obj.verify_csm_response(starttime, e_csm_resp["alert_type"], True)
             LOGGER.info("Step 7: Verified the fault alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
+            LOGGER.info("###############################################################")
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
