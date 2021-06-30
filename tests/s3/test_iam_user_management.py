@@ -21,7 +21,6 @@
 """CSM CLI IAM user TestSuite"""
 
 import os
-import time
 import logging
 from time import perf_counter_ns
 from multiprocessing import Process
@@ -39,6 +38,7 @@ from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+
 S3_OBJ = s3_test_lib.S3TestLib()
 
 
@@ -406,8 +406,8 @@ class TestIAMUserManagement:
             self.user_name)
         resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
         access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        assert iam_access_key in access_keys
-        assert len(access_keys) == 2
+        assert_utils.assert_in(iam_access_key, access_keys)
+        assert_utils.assert_equal(len(access_keys), 2)
         self.log.info(
             "Verified two access keys are present for IAM user %s",
             self.user_name)
@@ -459,9 +459,8 @@ class TestIAMUserManagement:
         self.log.info("Step 5: Verify access key is created")
         resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
         access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        assert iam_access_key in access_keys
+        assert_utils.assert_in(iam_access_key, access_keys)
         self.log.info("Verified access key is created")
-
         self.log.info("Step 6: Deleting access key of IAM user %s", self.user_name)
         resp = self.access_key_obj.delete_s3access_key(
             access_key=iam_access_key, user_name=self.user_name)
@@ -472,7 +471,7 @@ class TestIAMUserManagement:
             self.user_name)
         resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
         access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        assert iam_access_key not in access_keys
+        assert_utils.assert_not_in(iam_access_key, access_keys)
         self.log.info(
             "Verified access key is deleted for IAM user %s",
             self.user_name)
