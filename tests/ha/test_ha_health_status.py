@@ -120,6 +120,7 @@ class TestHAHealthStatus:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are online and PCS looks clean.")
+
         LOGGER.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -134,35 +135,12 @@ class TestHAHealthStatus:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
-    def polling_host(self, max_timeout: int, host_index: int, exp_resp: bool):
+    def status_nodes_online(self):
         """
-        Helper function to poll for host ping response.
-        :param max_timeout: Max timeout allowed for expected response from ping
-        :param host_index: Host to ping
-        :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
-        :return: bool
+        Helper function to check that all nodes are shown online in cortx cli/REST
+        before starting any other operations.
         """
-
-        poll = time.time() + max_timeout  # max timeout
-        while poll > time.time():
-            time.sleep(20)
-            resp = system_utils.check_ping(self.host_list[host_index])
-            if resp == exp_resp:
-                return True
-        return False
-
-    @pytest.mark.ha
-    @pytest.mark.tags("TEST-22544")
-    @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe(self):
-        """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, safe shutdown)
-        """
-        LOGGER.info(
-            "Started: Test to check node status one by one for all nodes with safe shutdown.")
-
-        LOGGER.info("Check in cortxcli that all nodes are shown online.")
+        LOGGER.info("Check the node which is running CSM service and login to CSM on that node.")
         sys_obj = self.ha_obj.check_csm_service(
             self.node_list[0], self.srvnode_list, self.sys_list)
         sys_obj.open_connection()
@@ -172,12 +150,32 @@ class TestHAHealthStatus:
             common_cmds.CMD_HEALTH_SHOW.format("node"))
         assert_utils.assert_true(resp[0], resp[1])
         resp_table = sys_obj.split_table_response(resp[1])
-        LOGGER.info(
-            "Response for health check for all nodes: {}".format(resp_table))
-        # TODO: assert if any node is offline
+        LOGGER.info("Response for health check for all nodes: %s", resp_table)
+        resp = self.ha_obj.verify_node_health_status(
+            response=resp_table, status="online")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Check REST response for node status.")
+        resp = self.ha_rest.get_node_health_status(
+            exp_key='status', exp_val='online')
+        assert_utils.assert_true(resp[0], resp[1])
         sys_obj.logout_cortx_cli()
         sys_obj.close_connection()
         LOGGER.info("All nodes are online.")
+
+
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-22544")
+    @CTFailOn(error_handler)
+    def test_nodes_one_by_one_safe(self):
+        """
+        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        and comes back up(one by one, safe shutdown)
+        """
+        LOGGER.info(
+            "Started: Test to check node status one by one for all nodes with safe shutdown.")
+
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -189,12 +187,14 @@ class TestHAHealthStatus:
                 # TODO: Need to get the command once F-11A available.
             resp = self.node_list[node].execute_cmd(cmd="shutdown now")
             LOGGER.debug("Response for shutdown: {}".format(resp))
-            LOGGER.info("Check if the node has shutdown.")
-            time.sleep(10)
-            resp = system_utils.check_ping(self.host_list[node])
-            assert_utils.assert_false(resp, "Host has not shutdown yet.")
+            LOGGER.info("Check if the {} has shutdown.".format(node_name))
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=False, host_list=self.host_list)
+            assert_utils.assert_true(
+                resp, "Host has not shutdown yet.")
+
             LOGGER.info(
-                "Check in cortxcli that the status is changed for node to Failed")
+                "Check in cortxcli and REST that the status is changed for {} to Failed".format(node_name))
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -209,21 +209,31 @@ class TestHAHealthStatus:
             assert_utils.assert_true(resp[0], resp[1])
             resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.debug(
-                "Response for {} in cortxcli is: {}".format(
-                    node_name, resp_table))
-            # TODO: Check if node is shown offline and other nodes as online in
-            # cortxcli
+                "Response in cortxcli is: {}".format(resp_table))
+            check_rem_node = [
+                "failed" if num == node else "online" for num in range(
+                    self.num_nodes)]
+            for node_check, state in enumerate(check_rem_node):
+                resp = self.ha_rest.get_node_health_status(
+                    exp_key='state', exp_val=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
+                resp = self.ha_obj.verify_node_health_status(
+                    response=resp_table, status=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
+
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["fault"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
             resp = self.ha_obj.check_service_other_nodes(
                 node, self.num_nodes, self.node_list)
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
+
             LOGGER.info("Power on {}".format(node_name))
             if self.setup_type == "VM":
                 vm_name = self.host_list[node].split(".")[0]
@@ -235,18 +245,29 @@ class TestHAHealthStatus:
             else:
                 self.bmc_list[node].bmc_node_power_on_off(
                     self.bmc_ip_list[node], self.bmc_user, self.bmc_pwd, "on")
+            # SSC cloud is taking time to start VM host hence max_timeout 120
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=True, host_list=self.host_list)
+            assert_utils.assert_true(
+                resp, "Host has not powered on yet.")
+            LOGGER.info("{} has powered on".format(node_name))
+            # To get all the services up and running
             time.sleep(40)
-            resp = system_utils.check_ping(self.host_list[node])
-            assert_utils.assert_true(resp, "Host has not powered on yet.")
-            LOGGER.info("Node {} has powered on".format(node_name))
-            LOGGER.info("Check all nodes are back online in CLI.")
+
+            LOGGER.info("Check all nodes are back online in CLI and REST.")
+            resp = self.ha_rest.get_node_health_status(
+                exp_key='status', exp_val='online')
+            assert_utils.assert_true(resp[0], resp[1])
             resp = sys_obj.check_health_status(
                 common_cmds.CMD_HEALTH_SHOW.format("node"))
             assert_utils.assert_true(resp[0], resp[1])
             resp_table = sys_obj.split_table_response(resp[1])
             LOGGER.info(
                 "Response for health check for all nodes: {}".format(resp_table))
-            # TODO: assert if any node is offline
+            resp = self.ha_obj.verify_node_health_status(
+                response=resp_table, status="online")
+            assert_utils.assert_true(resp[0], resp[1])
+
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["resolved"], True, "iem")
@@ -265,32 +286,14 @@ class TestHAHealthStatus:
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI when node goes offline and comes back
-        online(one by one, unsafe shutdown)
+        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        and comes back up(one by one, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
 
-        LOGGER.info("Check in cortxcli that all nodes are shown online.")
-        sys_obj = self.ha_obj.check_csm_service(
-            self.node_list[0], self.srvnode_list, self.sys_list)
-        sys_obj.open_connection()
-        res = sys_obj.login_cortx_cli()
-        assert_utils.assert_true(res[0], res[1])
-        resp = self.ha_rest.get_node_health_status(
-            exp_key='status', exp_val='online')
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = sys_obj.check_health_status(
-            common_cmds.CMD_HEALTH_SHOW.format("node"))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp_table = sys_obj.split_table_response(resp[1])
-        LOGGER.info("Response for health check for all nodes: %s", resp_table)
-        resp = self.ha_obj.verify_node_health_status(
-            response=resp_table, status="online")
-        assert_utils.assert_true(resp[0], resp[1])
-        sys_obj.logout_cortx_cli()
-        sys_obj.close_connection()
-        LOGGER.info("All nodes are online.")
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -312,8 +315,8 @@ class TestHAHealthStatus:
             LOGGER.info(
                 "Check if the %s has shutdown.",
                 self.srvnode_list[node])
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=False)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=False, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node])
@@ -372,8 +375,8 @@ class TestHAHealthStatus:
 
             # SSC cloud is taking more time to start VM host hence max_timeout
             # 120
-            resp = self.polling_host(
-                max_timeout=120, host_index=node, exp_resp=True)
+            resp = self.ha_obj.polling_host(
+                max_timeout=120, host_index=node, exp_resp=True, host_list=self.host_list)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info("%s is powered on.", self.host_list[node])
@@ -406,3 +409,112 @@ class TestHAHealthStatus:
                 self.srvnode_list[node])
         LOGGER.info(
             "Completed: Test to check node status one by one for all nodes with unsafe shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-23274")
+    @CTFailOn(error_handler)
+    def test_nodes_one_by_one_nw_down(self):
+        """
+        Test to Check that correct node status is shown in Cortx CLI and REST when nw interface
+        on node goes down and comes back up (one by one)
+        """
+        LOGGER.info(
+            "Started: Test to check node status one by one on all nodes when nw interface on node goes"
+            "down and comes back up")
+
+        LOGGER.info("Check in cortxcli and REST that all nodes are shown online.")
+        self.status_nodes_online()
+
+        LOGGER.info("Get the list of private data interfaces for all nodes.")
+        response = self.ha_obj.get_iface_ip_list(node_list=self.node_list, num_nodes=self.num_nodes)
+        iface_list = response[0]
+        private_ip_list = response[1]
+        LOGGER.debug("List of private data IP : {} and interfaces on all nodes: {}"
+                     .format(private_ip_list, iface_list))
+
+        for node in range(self.num_nodes):
+            node_name = self.srvnode_list[node]
+            LOGGER.info("Make the private data interface down for {}".format(node_name))
+            self.node_list[node].execute_cmd(common_cmds.IP_LINK_CMD
+                                             .format(iface_list[node], "down"), read_lines=True)
+            if node_name == self.srvnode_list[-1]:
+                nd_obj = self.node_list[0]
+            else:
+                nd_obj = self.node_list[node + 1]
+            resp = nd_obj.execute_cmd(common_cmds.CMD_PING.format(private_ip_list[node]),
+                                      read_lines=True, exc=False)
+            assert_utils.assert_in("Name or service not known", resp[1][0], "Node interface still up.")
+
+            LOGGER.info(
+                "Check in cortxcli and REST that the status is changed for {} to Failed".format(node_name))
+            sys_obj = self.ha_obj.check_csm_service(
+                nd_obj, self.srvnode_list, self.sys_list)
+            sys_obj.open_connection()
+            res = sys_obj.login_cortx_cli()
+            assert_utils.assert_true(res[0], res[1])
+            resp = sys_obj.check_health_status(
+                common_cmds.CMD_HEALTH_SHOW.format("node"))
+            assert_utils.assert_true(resp[0], resp[1])
+            resp_table = sys_obj.split_table_response(resp[1])
+            LOGGER.debug(
+                "Response in cortxcli is: {}".format(resp_table))
+            check_rem_node = [
+                "failed" if num == node else "online" for num in range(
+                    self.num_nodes)]
+            for node_check, state in enumerate(check_rem_node):
+                resp = self.ha_rest.get_node_health_status(
+                    exp_key='state', exp_val=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
+                resp = self.ha_obj.verify_node_health_status(
+                    response=resp_table, status=state, node_id=node_check)
+                assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Check for the node down alert.")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                self.starttime, self.alert_type["fault"], False, "iem")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM")
+            # TODO: If CSM REST getting changed, add alert check from msg bus
+
+            LOGGER.info(
+                "Check that cortx services on other nodes are not affected.")
+            resp = self.ha_obj.check_service_other_nodes(
+                node, self.num_nodes, self.node_list)
+            assert_utils.assert_true(
+                resp, "Some services are down for other nodes.")
+
+            LOGGER.info("Make the private data interface back up for {}".format(node_name))
+            self.node_list[node].execute_cmd(common_cmds.IP_LINK_CMD
+                                             .format(iface_list[node], "up"), read_lines=True)
+            resp = nd_obj.execute_cmd(common_cmds.CMD_PING.format(private_ip_list[node]),
+                                      read_lines=True, exc=False)
+            assert_utils.assert_not_in("Name or service not known", resp[1][0],
+                                       "Node interface still down.")
+            # To get all the services up and running
+            time.sleep(40)
+            LOGGER.info("Check all nodes are back online in CLI and REST.")
+            resp = self.ha_rest.get_node_health_status(
+                exp_key='status', exp_val='online')
+            assert_utils.assert_true(resp[0], resp[1])
+            resp = sys_obj.check_health_status(
+                common_cmds.CMD_HEALTH_SHOW.format("node"))
+            assert_utils.assert_true(resp[0], resp[1])
+            resp_table = sys_obj.split_table_response(resp[1])
+            LOGGER.info(
+                "Response for health check for all nodes: {}".format(resp_table))
+            resp = self.ha_obj.verify_node_health_status(
+                response=resp_table, status="online")
+            assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Check for the node back up alert.")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                self.starttime, self.alert_type["resolved"], True, "iem")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM")
+            # TODO: If CSM REST getting changed, add alert check from msg bus
+            sys_obj.logout_cortx_cli()
+            sys_obj.close_connection()
+            LOGGER.info(
+                "Node nw interface down/up worked fine for node: {}".format(node_name))
+
+        LOGGER.info(
+            "Completed: Test to check node status one by one on all nodes when nw interface on node goes"
+            "down and comes back up")

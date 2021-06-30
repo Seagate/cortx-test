@@ -37,11 +37,9 @@ LOGGER = logging.getLogger(__name__)
 class ControllerLib:
     """Controller helper functions."""
 
-    def __init__(self, host=CMN_CFG["nodes"][0]["host"], h_user=CMN_CFG["nodes"][0]["username"],
-                 h_pwd=CMN_CFG["nodes"][0]["password"],
-                 enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
-                 enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
-                 enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"]):
+    def __init__(self, host: str = None, h_user: str = None, h_pwd: str = None,
+                 enclosure_ip: str = None, enclosure_user: str = None,
+                 enclosure_pwd: str = None) -> None:
         """
         Method to initialize members of ControllerLib class.
 
@@ -58,12 +56,19 @@ class ControllerLib:
         :param enclosure_pwd: password of the enclosure
         :type enclosure_pwd: str
         """
-        self.host = host
-        self.h_user = h_user
-        self.h_pwd = h_pwd
-        self.enclosure_ip = enclosure_ip
-        self.enclosure_user = enclosure_user
-        self.enclosure_pwd = enclosure_pwd
+        nd_cfg = CMN_CFG.get("nodes", None)
+        ctrl_cfg = CMN_CFG.get("enclosure", None)
+        self.host = host if host else nd_cfg[0]["host"] if nd_cfg else None
+        self.h_pwd = h_pwd if h_pwd else nd_cfg[0]["password"] if nd_cfg else None
+        self.h_user = h_user if h_user else nd_cfg[0]["username"] if nd_cfg else None
+
+        self.enclosure_ip = enclosure_ip if enclosure_ip else ctrl_cfg[
+            "primary_enclosure_ip"] if ctrl_cfg else None
+        self.enclosure_user = enclosure_user if enclosure_user else ctrl_cfg[
+            "enclosure_user"] if ctrl_cfg else None
+        self.enclosure_pwd = enclosure_pwd if enclosure_pwd else ctrl_cfg[
+            "enclosure_pwd"] if ctrl_cfg else None
+
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
 

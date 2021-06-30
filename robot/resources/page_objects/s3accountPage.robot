@@ -156,7 +156,7 @@ Edit S3 account
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
     sleep  5s
-    wait until element is visible  ${LOG_OUT_ID}  timeout=20
+    wait until element is visible  ${USER_DROPDOWN_ID}  timeout=20
     CSM GUI Logout
     Run Keywords
     ...  Enter Username And Password    ${s3_account_name}  ${password}
