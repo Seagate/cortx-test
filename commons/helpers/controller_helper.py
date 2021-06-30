@@ -37,11 +37,9 @@ LOGGER = logging.getLogger(__name__)
 class ControllerLib:
     """Controller helper functions."""
 
-    def __init__(self, host=CMN_CFG["nodes"][0]["host"], h_user=CMN_CFG["nodes"][0]["username"],
-                 h_pwd=CMN_CFG["nodes"][0]["password"],
-                 enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
-                 enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
-                 enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"]):
+    def __init__(self, host: str = None, h_user: str = None, h_pwd: str = None,
+                 enclosure_ip: str = None, enclosure_user: str = None,
+                 enclosure_pwd: str = None) -> None:
         """
         Method to initialize members of ControllerLib class.
 
@@ -58,12 +56,19 @@ class ControllerLib:
         :param enclosure_pwd: password of the enclosure
         :type enclosure_pwd: str
         """
-        self.host = host
-        self.h_user = h_user
-        self.h_pwd = h_pwd
-        self.enclosure_ip = enclosure_ip
-        self.enclosure_user = enclosure_user
-        self.enclosure_pwd = enclosure_pwd
+        nd_cfg = CMN_CFG.get("nodes", None)
+        ctrl_cfg = CMN_CFG.get("enclosure", None)
+        self.host = host if host else nd_cfg[0]["host"] if nd_cfg else None
+        self.h_pwd = h_pwd if h_pwd else nd_cfg[0]["password"] if nd_cfg else None
+        self.h_user = h_user if h_user else nd_cfg[0]["username"] if nd_cfg else None
+
+        self.enclosure_ip = enclosure_ip if enclosure_ip else ctrl_cfg[
+            "primary_enclosure_ip"] if ctrl_cfg else None
+        self.enclosure_user = enclosure_user if enclosure_user else ctrl_cfg[
+            "enclosure_user"] if ctrl_cfg else None
+        self.enclosure_pwd = enclosure_pwd if enclosure_pwd else ctrl_cfg[
+            "enclosure_pwd"] if ctrl_cfg else None
+
         self.node_obj = Node(hostname=self.host, username=self.h_user,
                              password=self.h_pwd)
 
@@ -878,7 +883,7 @@ class ControllerLib:
 
                     LOGGER.info("Adding spare drive %s to disk group %s", key,
                                 disk_group)
-                    cmd = common_cmd.ADD_SPARES.format(key, disk_group)
+                    cmd = common_cmd.ADD_SPARES_CMD.format(key, disk_group)
                     command = f"python3 /root/telnet_operations.py " \
                               f"--telnet_op='set_drive_status_telnet(" \
                               f"enclosure_ip=\"{self.enclosure_ip}\", " \
@@ -961,25 +966,47 @@ class ControllerLib:
             LOGGER.error("Failed to get drive details")
             return status, drive_dict
 
-    def poll_dg_recon_status(self, disk_group: str) -> Tuple[bool, int]:
+    def poll_dg_recon_status(self, disk_group: str, percent: int = 100) \
+            -> Tuple[str, str, int]:
         """
         Function to poll disk group reconstruction progress
 
         :param disk_group: Disk group in which drives to be added
         :type: str
+        :param percent: Upto which percent status shpuld be polled
+        :type: int
         :return: status, progress percent
         :rtype: bool, int
         """
         LOGGER.info("Polling disk group reconstruction percent")
         recon_percent = 0
-        while recon_percent != 100:
+        while True:
             status, disk_group_dict = self.get_show_disk_group()
             LOGGER.info("Reconstruction percent: %s", recon_percent)
-            recon_percent = disk_group_dict[disk_group].get('job_percent', 100)
+            recon_percent = disk_group_dict[disk_group].get('job_percent',
+                                                            '100%')
+            recon_percent = int(recon_percent.split("%")[0])
+            if recon_percent >= percent:
+                LOGGER.info("Checking if recon_percent >= percent")
+                LOGGER.info("Reconstruction percent went beyond expected "
+                            "percent. Reconstruction percent: %s%",
+                            recon_percent)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group]['health'] == "OK":
+                LOGGER.info("Reconstruction of disk group %s completed. Disk "
+                            "group is in healthy state", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
+            elif disk_group_dict[disk_group].get('job') is None:
+                LOGGER.info("No job is running", disk_group)
+                health = disk_group_dict[disk_group]['health']
+                job = disk_group_dict[disk_group].get('job', 'No job running')
+                final_percent = recon_percent
+                break
 
-        if disk_group_dict[disk_group]['health'] == 'OK':
-            LOGGER.info("Reconstruction of disk group %s completed. Disk "
-                        "group is in healthy state", disk_group)
-            return True, recon_percent
-
-        return False, recon_percent
+        return health, job, final_percent

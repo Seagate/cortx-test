@@ -611,6 +611,7 @@ class RASCoreLib:
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
+        LOGGER.debug(cmd)
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=cmn_cons.BYTES_TO_READ)
 
@@ -640,9 +641,9 @@ class RASCoreLib:
         if os.path.exists(local_path):
             os.remove(local_path)
         _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                        local_path=local_path,
-                                        host=self.host,
-                                        user=self.username, pwd=self.pwd)
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern
@@ -785,7 +786,7 @@ class RASCoreLib:
         result = run_remote_cmd(hostname=self.host, username=self.username,
                                 password=self.pwd, cmd=cmd)
         result = result[1].decode('utf-8').strip().split('\n')
-        LOGGER.info("Response: %s", result)
+        LOGGER.debug("Response: %s", result)
         res = json.loads(result[0])
         return res[0]
 
@@ -843,7 +844,7 @@ class RASCoreLib:
                                     username=self.username,
                                     password=self.pwd, cmd=cmd)
             result = result[0]
-            LOGGER.info("Response: %s", result)
+            LOGGER.debug("Response: %s", result)
 
     def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:
         """

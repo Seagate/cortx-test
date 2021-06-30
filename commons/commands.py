@@ -1,5 +1,4 @@
 """All the constants are alphabetically arranged."""
-CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_times_percent(interval=1)[2])'"
 CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
@@ -20,6 +19,7 @@ PCS_RESOURCE_SHOW_CMD = "pcs resource show"
 PCS_RESOURCE_RESTART_CMD = "pcs resource restart {}"
 PCS_RESOURCE_ENABLE_CMD = "pcs resource enable {}"
 PCS_RESOURCE_DISABLE_CMD = "pcs resource disable {}"
+PCS_RESOURCE_CMD = "pcs resource {} {} {}"
 PGREP_CMD = "sudo pgrep {}"
 PKIL_CMD = "pkill {}"
 RPM_GREP_CMD = "rpm -qa | grep {}"
@@ -34,6 +34,10 @@ ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
+GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
+IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
+CMD_UPDATE_FILE = "echo {} > {}"
+CMD_TOUCH_FILE = "touch {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -97,8 +101,6 @@ S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
 
 # Commands used in RAS libs
-START_RABBITMQ_READER_CMD = "python3 /opt/seagate/sspl/low-level/tests/manual/rabbitmq_reader.py" \
-                            " {} {} {}"
 SHOW_DISKS_CMD = "show disks"
 """File consists of the commands used in all the components."""
 # RAS Commands
@@ -106,7 +108,6 @@ PCS_RESOURCE_DISABLE_ENABLE = "pcs resource {} {}"
 SYSTEMCTL_STATUS = "systemctl status {}"
 START_RABBITMQ_READER_CMD = "python3 /root/rabbitmq_reader.py {} {} {}"
 REMOVE_UNWANTED_CONSUL = "/usr/bin/consul kv delete --recurse SSPL_"
-SHOW_DISKS_CMD = "show disks"
 CMD_SHOW_DISK_GROUP = "show disk-groups"
 CMD_SHOW_XP_STATUS = "show expander-status"
 CMD_SHOW_VOLUMES = "show volumes"
@@ -135,14 +136,11 @@ INSTALL_SSH_PASS_CMD = "yum -y install sshpass"
 SCREEN_CMD = "screen -d -m -L -S 'screen_RMQ' {}"
 SSH_CMD = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} {}"
 RESOLVE_FAN_FAULT = "ipmitool event {} {} deassert"
-CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil." \
-                "cpu_times_percent(interval=1)[2])'"
+CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=1))'"
 CPU_USAGE_KEY = "cpu_usage_threshold"
 STRING_MANIPULATION = "echo '{}' | tr -dc '[:alnum:]-'"
 REBOOT_NODE_CMD = "init 6"
 GENERATE_FAN_FAULT = "ipmitool event {} {}"
-MEM_USAGE_CMD = "python3 -c 'import psutil; " \
-                "print(psutil.virtual_memory().percent)'"
 MDADM_CMD = "mdadm {}"
 MDADM_UPDATE_CONFIG = "--detail --scan >"
 MDADM_CREATE_ARRAY = "--create {} --run --level=1 --raid-devices={}"
@@ -172,121 +170,10 @@ IPMI_SDR_LIST_CMD = "ipmitool sdr list"
 
 # All the constants are alphabetically arranged.
 """All the constants are alphabetically arranged."""
-CREATE_FILE = "dd if={} of={} bs={} count={}"
-FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
-GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
-LS_CMD = "ls {}"
-LST_PRVSN_DIR = "ls /opt/seagate/"
-LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
-MOTR_START_FIDS = "hctl mero process start --fid {}"
-MOTR_STATUS_CMD = "hctl status"
-MOTR_STOP_FIDS = "hctl mero process stop --fid {} --force"
-NETSAT_CMD = "netstat -tnlp | grep {}"
-PCS_CLUSTER_START = "pcs cluster start {}"
-PCS_CLUSTER_STOP = "pcs cluster stop {}"
-PCS_RESOURCES_CLEANUP = "pcs resource cleanup {}"
-PCS_RESOURCE_SHOW_CMD = "pcs resource show"
-PCS_RESOURCE_RESTART_CMD = "pcs resource restart {}"
-PCS_RESOURCE_ENABLE_CMD = "pcs resource enable {}"
-PCS_RESOURCE_DISABLE_CMD = "pcs resource disable {}"
 PCS_RESOURCE_STATUS_CMD = "pcs resource show {}"
-PGREP_CMD = "sudo pgrep {}"
-PKIL_CMD = "pkill {}"
-RPM_GREP_CMD = "rpm -qa | grep {}"
-RPM_INSTALL_CMD = "yum install -y {0}"
-SYSTEM_CTL_CMD = "systemctl {} {}"
-SYSTEM_CTL_STATUS_CMD = "systemctl status {}"
-SYSTEM_CTL_RESTART_CMD = "systemctl restart {}"
-SYSTEM_CTL_START_CMD = "systemctl start {}"
-SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
+SYSTEM_CTL_RELOAD_CMD = "systemctl reload {}"
 GET_PID_CMD = "systemctl status {}.service | grep PID"
 KILL_CMD = "kill -9 {}"
-
-# S3IAMCLI Commands
-BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
-CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
-CREATE_ACC_USR_S3IAMCLI = "s3iamcli CreateUser -n {} --access_key={} " \
-                          "--secret_key={}"
-CMD_LIST_ACC = "s3iamcli Listaccounts --ldapuser={} --ldappasswd={}"
-CMD_LST_USR = "s3iamcli ListUsers --access_key={} --secret_key={}"
-CMD_CREATE_ACC = "s3iamcli CreateAccount -n {} -e {} --ldapuser={} " \
-                 "--ldappasswd={}"
-CMD_DEL_ACC = "s3iamcli deleteaccount -n {} --access_key={} --secret_key={}"
-CMD_DEL_ACC_FORCE = "s3iamcli deleteaccount -n {} --access_key={} " \
-                    "--secret_key={} --force"
-UPDATE_ACC_LOGIN_PROFILE = "s3iamcli UpdateAccountLoginProfile -n {} " \
-                           "--access_key={} --secret_key={}"
-UPDATE_USR_LOGIN_PROFILE = "s3iamcli UpdateUserLoginProfile -n {} " \
-                           "--access_key={} --secret_key={}"
-GET_ACC_PROFILE = "s3iamcli GetAccountLoginProfile -n {} --access_key={} " \
-                  "--secret_key={}"
-GET_TEMP_ACC_DURATION = "s3iamcli GetTempAuthCredentials -a {} --password {} " \
-                        "-d {}"
-GET_TEMP_ACC = "s3iamcli GetTempAuthCredentials -a {} --password {}"
-GET_TEMP_USR_DURATION = "s3iamcli GetTempAuthCredentials -a {} -n {} " \
-                        "--password {} -d {}"
-GET_TEMP_USR = "s3iamcli GetTempAuthCredentials -a {} -n {} --password {}"
-CMD_CHANGE_PWD = "s3iamcli ChangePassword --old_password {} --new_password " \
-                 "{} --access_key={} --secret_key={}"
-CREATE_USR_PROFILE_PWD_RESET = "s3iamcli CreateUserLoginProfile -n {} " \
-                               "--password={} --access_key={} --secret_key={}" \
-                               " --password-reset-required"
-CREATE_USR_PROFILE_NO_PWD_RESET = "s3iamcli CreateUserLoginProfile -n {} " \
-                                  "--password={} --access_key={} " \
-                                  "--secret_key={} --no-password-reset-required"
-CREATE_ACC_PROFILE_PWD_RESET = "s3iamcli CreateAccountLoginProfile -n {} " \
-                               "--password={} --access_key={} --secret_key={}" \
-                               " --password-reset-required"
-CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET = "s3iamcli CreateAccountLoginProfile " \
-                                        "-n {} --password={} --access_key={} " \
-                                        "--secret_key={}"
-CREATE_ACC_RROFILE_NO_PWD_RESET = "s3iamcli CreateAccountLoginProfile -n {} " \
-                                  "--password={} --access_key={} " \
-                                  "--secret_key={} --no-password-reset-required"
-CREATE_ACC_RROFILE_WITH_BOTH_RESET = "s3iamcli CreateAccountLoginProfile -n " \
-                                     "{} --password={} --access_key={} " \
-                                     "--secret_key={} " \
-                                     "--password-reset-required " \
-                                     "--no-password-reset-required"
-UPDATE_ACC_PROFILE_RESET = "s3iamcli UpdateAccountLoginProfile -n {} " \
-                           "--password={} --access_key={} --secret_key={} " \
-                           "--password-reset-required"
-UPDATE_ACC_PROFILE_NO_RESET = "s3iamcli UpdateAccountLoginProfile -n {} " \
-                              "--password={} --access_key={} --secret_key={} " \
-                              "--no-password-reset-required"
-UPDATE_ACC_PROFILE_BOTH_RESET = "s3iamcli UpdateAccountLoginProfile -n {} " \
-                                "--password={} --access_key={} " \
-                                "--secret_key={} --password-reset-required " \
-                                "--no-password-reset-required"
-UPDATE_USR_PROFILE_RESET = "s3iamcli UpdateUserLoginProfile -n {} " \
-                           "--password={} --access_key={} " \
-                           "--secret_key={} --password-reset-required"
-UPDATE_ACC_PROFILE = "s3iamcli UpdateUserLoginProfile -n {} --password={} " \
-                     "--access_key={} --secret_key={} " \
-                     "--no-password-reset-required"
-UPDATE_USR_PROFILE_BOTH_RESET = "s3iamcli UpdateUserLoginProfile -n {0} " \
-                                "--password={1} --access_key={2} " \
-                                "--secret_key={3} --password-reset-required " \
-                                "--no-password-reset-required"
-GET_USRLOGING_PROFILE = "s3iamcli GetUserLoginProfile -n {} --access_key={} " \
-                        "--secret_key={}"
-CREATE_USR_LOGIN_PROFILE_NO_RESET = "s3iamcli CreateUserLoginProfile -n {} " \
-                                    "--password={} --access_key={} " \
-                                    "--secret_key={} " \
-                                    "--password-reset-required " \
-                                    "--no-password-reset-required"
-CREATE_USR_LOGIN_PROFILE = "s3iamcli CreateUserLoginProfile -n {} " \
-                           "--password={} --access_key={} --secret_key={}"
-RESET_ACCESS_ACC = "s3iamcli resetaccountaccesskey -n {} --ldapuser={} " \
-                   "--ldappasswd={}"
-DEL_ACNT_USING_TEMP_CREDS = "s3iamcli deleteaccount -n {} --access_key={} " \
-                            "--secret_key={} --session_token={}"
-DEL_ACNT_USING_TEMP_CREDS_FORCE = "s3iamcli deleteaccount -n {} " \
-                                  "--access_key={} --secret_key={} " \
-                                  "--session_token={} --force"
-S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
-S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
-S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
 
 # CORTXCLI Commands
 CMD_LOGIN_CORTXCLI = "cortxcli"
@@ -294,14 +181,14 @@ CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
-CMD_RESET_PWD = "users reset_password"
+CMD_RESET_PWD = "users password"
 CMD_LIST_CSM_USERS = "users show"
 CMD_HELP_OPTION = "-h"
 CMD_S3ACC = "s3accounts"
 CMD_CREATE_S3ACC = "s3accounts create"
 CMD_SHOW_S3ACC = "s3accounts show"
 CMD_DELETE_S3ACC = "s3accounts delete {}"
-CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
+CMD_RESET_S3ACC_PWD = "s3accounts password {}"
 CMD_S3BKT_HELP = "s3buckets -h"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
@@ -319,11 +206,15 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
+CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
 CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
-CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
+CMD_HEALTH_SHOW = "health show \"{}\""
+CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
+CMD_RESET_IAM_PWD = "s3iamusers password {}"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
@@ -331,6 +222,8 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
@@ -346,6 +239,16 @@ CMD_SETUP_PRVSNR = "provisioner setup_provisioner --logfile " \
 CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
 CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
 CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
+CMD_PILLAR_DATA = "salt \"{}\" grains.get {}"
+CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
+CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
+GET_CHRONY = "grep '{}' /etc/chrony.conf"
+CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
+CMD_WGET = "cd {0}; wget {1}"
+CMD_SW_VER = "provisioner get_release_version"
+CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
+CMD_ISO_VER = "provisioner get_iso_version"
+CMD_SW_UP = "provisioner sw_upgrade --offline"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -375,6 +278,12 @@ CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
+CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GREP = "pcs status --full | grep {}"
+CMD_SALT_GET_HOST = 'salt "*" grains.get host'
+# LDAP commands
+CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -413,3 +322,9 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
+
+# VM power operations:
+CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""

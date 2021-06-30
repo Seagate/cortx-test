@@ -27,6 +27,8 @@ import time
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
+from config import RAS_VAL
+from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,22 +40,22 @@ class SoftwareAlert(RASCoreLib):
         super().__init__(host, username, password)
         self.svc_path = None
 
-    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list, timeout: int = 5):
+    def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list,
+                             ignore_param: list, timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
-        :param svc: service name on whoch action is to be performed
+        :param svc: service name on which action is to be performed
         :param action: start/stop/restart/..
         :param monitor_svcs: other services which should be monitored along with action.
         :param timeout: time to wait for service to change state before declaring timeout
+        :param ignore_param: List of parameters that can be avoided while checking remaining service
+         change state
         :return [type]: bool, expected csm response
         """
-        try:
-            monitor_svcs.remove(svc)
-        except ValueError:
-            pass
+        monitor_svcs_rem = [svc_rem for svc_rem in monitor_svcs if svc_rem != svc]
 
-        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
-        prev_svcs_status = self.get_svc_status(monitor_svcs)
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
+        prev_svcs_status = self.get_svc_status(monitor_svcs_rem)
 
         LOGGER.info("Get systemctl status for %s ...", svc)
         prev_svc_state = self.get_svc_status([svc])[svc]
@@ -63,8 +65,12 @@ class SoftwareAlert(RASCoreLib):
             self.put_svc_deactivating(svc)
         elif action == "activating":
             self.put_svc_activating(svc)
+        elif action == "restarting":
+            self.put_svc_restarting(svc)
         elif action == "failed":
             self.put_svc_failed(svc)
+        elif action == "reloading":
+            self.put_svc_reloading(svc)
         else:
             self.node_utils.send_systemctl_cmd(action, [svc], exc=True)
 
@@ -72,7 +78,7 @@ class SoftwareAlert(RASCoreLib):
         starttime = time.time()
         svc_result = False
         time_lapsed = 0
-        while(not svc_result and time_lapsed < timeout):
+        while not svc_result and time_lapsed < timeout:
             services_status = self.get_svc_status([svc])
             a_sysctl_resp = services_status[svc]
             e_sysctl_resp = self.get_expected_systemctl_resp(action)
@@ -86,12 +92,14 @@ class SoftwareAlert(RASCoreLib):
         else:
             LOGGER.info("%s service state is NOT as expected.", svc)
 
-        LOGGER.info("Get systemctl status for %s ...", monitor_svcs)
-        new_svcs_status = self.get_svc_status(monitor_svcs)
-        if "timestamp" in new_svcs_status:
-            new_svcs_status.pop("timestamp")
-        if "timestamp" in prev_svcs_status:
-            prev_svcs_status.pop("timestamp")
+        LOGGER.info("Get systemctl status for %s ...", monitor_svcs_rem)
+        new_svcs_status = self.get_svc_status(monitor_svcs_rem)
+        for svcs in new_svcs_status.keys():
+            [new_svcs_status[svcs].pop(key, None) for key in ignore_param]
+
+        for svcs in prev_svcs_status.keys():
+            [prev_svcs_status[svcs].pop(key, None) for key in ignore_param]
+
         monitor_svcs_result = new_svcs_status == prev_svcs_status
         if monitor_svcs_result:
             LOGGER.info("There is no change in the state of other services")
@@ -103,7 +111,7 @@ class SoftwareAlert(RASCoreLib):
         return result, e_csm_resp
 
     def verify_systemctl_response(self, expected: dict, actual: dict):
-        """Verify systemctl status actual response against expected dictornary
+        """Verify systemctl status actual response against expected dictionary
 
         :param expected: Expected systemctl response dictionary
         :param actual: Actual systemctl response in form of dictionary
@@ -171,7 +179,13 @@ class SoftwareAlert(RASCoreLib):
         elif action == "activating":
             csm_response = None
 
+        elif action == "restarting":
+            csm_response = None
+
         elif action == "failed":
+            csm_response = None
+
+        elif action == "reloading":
             csm_response = None
         return csm_response
 
@@ -195,8 +209,12 @@ class SoftwareAlert(RASCoreLib):
             systemctl_status = {'state': 'deactivating'}
         elif action == "activating":
             systemctl_status = {'state': 'activating'}
+        elif action == "restarting":
+            systemctl_status = {'state': 'activating'}
         elif action == "failed":
             systemctl_status = {'state': 'failed'}
+        elif action == "reloading":
+            systemctl_status = {'state': 'reloading'}
         return systemctl_status
 
     def get_svc_status(self, services: list):
@@ -321,6 +339,18 @@ class SoftwareAlert(RASCoreLib):
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_STOP_CMD.format(svc))
 
+    def put_svc_reloading(self, svc):
+        """Function to generate reloading alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecReload": "/bin/sleep 50"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RELOAD_CMD.format(svc))
+
     def put_svc_activating(self, svc):
         """Function to generate activating alert
 
@@ -333,6 +363,18 @@ class SoftwareAlert(RASCoreLib):
                     "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
+
+    def put_svc_restarting(self, svc):
+        """Function to generate restarting alert
+
+        :param svc: Service Name
+        """
+        self.write_svc_file(
+            svc, {
+                "Service": {
+                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+        self.apply_svc_setting()
+        self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_RESTART_CMD.format(svc))
 
     def recover_svc(self, svc: str, attempt_start: bool = True, timeout=200):
         """
@@ -390,10 +432,22 @@ class SoftwareAlert(RASCoreLib):
                     op[section].update({key: txt[-1]})
         return op
 
+    def store_svc_config(self, svc):
+        """Store the service configuration file
+
+        :param svc: service name whose file needs to be store
+        """
+
+        fpath = self.get_svc_status([svc])[svc]["path"]
+        self.node_utils.make_dir(const.SVC_COPY_CONFG_PATH)
+        res = self.cp_file(path=fpath, backup_path=const.SVC_COPY_CONFG_PATH)
+        LOGGER.info("Copy file resp : %s", res)
+        return fpath
+
     def write_svc_file(self, svc, content):
         """Writes content to the service configuration file
 
-        :param svc: Service name whose configaration file is to be modified.
+        :param svc: Service name whose configuration file is to be modified.
         :param content: Content to added or updated. It should be in format {section:{key:value}}
         """
         fpath = self.get_svc_status([svc])[svc]["path"]
@@ -415,21 +469,153 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info(txt)
 
     def apply_svc_setting(self):
-        """Apply the changed setting using reload deemon command.
+        """Apply the changed setting using reload daemon command.
+
         """
         reload_systemctl = "systemctl daemon-reload"
         LOGGER.info("Sending %s command...", reload_systemctl)
         self.node_utils.execute_cmd(cmd=reload_systemctl)
         LOGGER.info("Successfully reloaded systemctl.")
 
-    def restore_svc_config(self):
-        """Removes the changed configuration file and restroes the orhiginal one.
+    def restore_svc_config(self, teardown_restore=False, svc_path_dict: dict = None):
+        """Removes the changed configuration file and restores the original one.
+
+        :param teardown_restore: Service configuration file restored from backup folder in teardown.
+        :param svc_path_dict: dictionary for service and its configaration file path
         """
+
         LOGGER.info("Restoring the service configuration...")
-        try:
-            self.node_utils.remove_file(self.svc_path)
-        except FileNotFoundError:
-            LOGGER.info("Ignoring file %s not found", self.svc_path)
-        self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
-        self.apply_svc_setting()
+        if not teardown_restore:
+            try:
+                self.node_utils.remove_file(self.svc_path)
+            except FileNotFoundError:
+                LOGGER.info("Ignoring file %s not found", self.svc_path)
+            self.node_utils.rename_file(self.get_tmp_svc_path(), self.svc_path)
+            self.apply_svc_setting()
+        else:
+            for svc_path_val in svc_path_dict.values():
+                fname = os.path.split(svc_path_val)
+                tmp_svc_path = const.SVC_COPY_CONFG_PATH + fname[1]
+                self.cp_file(path=tmp_svc_path, backup_path=svc_path_val)
+            self.apply_svc_setting()
+            self.node_utils.delete_dir_sftp(const.SVC_COPY_CONFG_PATH)
         LOGGER.info("Service configuration is successfully restored.")
+
+    ############### Server OS functions####################
+    def gen_cpu_usage_fault_thres(self, delta_cpu_usage):
+        """Creates CPU faults
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_thresh(self, cpu_usage_thresh):
+        """Resolves CPU faults
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def gen_mem_usage_fault(self, delta_mem_usage):
+        """Creates memory faults
+
+        :param delta_mem_usage: Delta to be added to memory usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching memory usage from server node")
+        mem_usage = self.health_obj.get_memory_usage()
+        LOGGER.info("Current memory usage of server is %s", mem_usage)
+        mem_usage_thresh = float("{:.1f}".format(sum([mem_usage, delta_mem_usage])))
+        LOGGER.info("Setting new value of host_memory_usage_threshold to %s", mem_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def resolv_mem_usage_fault(self, mem_usage_thresh):
+        """Resolves memory faults
+
+        :param mem_usage_thresh: Value to the memory usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def gen_disk_usage_fault(self, delta_disk_usage):
+        """Creates disk faults
+
+        :param delta_disk_usage: Delta to be added to disk usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching disk usage from server node")
+        status, disk_usage = self.node_utils.disk_usage_python_interpreter_cmd(
+            dir_path="/", field_val=3)
+        if not status:
+            return False, "Unable to read disk usage"
+        LOGGER.info("Current disk usage of server is %s", disk_usage)
+        disk_usage_thresh = float("{:.1f}".format(sum([float(disk_usage), delta_disk_usage])))
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def resolv_disk_usage_fault(self, disk_usage_thresh):
+        """Resolves disk faults
+
+        :param disk_usage_thresh: Value of the disk threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.restart_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def restart_sspl(self):
+        LOGGER.info("Restarting sspl service")
+        resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        assert resp, "Failed to restart sspl-ll"
+        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+        LOGGER.info("Verifying the status of sspl service is online")

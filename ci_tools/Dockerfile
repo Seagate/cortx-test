@@ -3,7 +3,7 @@ FROM centos:7
 # Enter PAT of your github account
 ARG GIT_TOKEN
 RUN yum update -y
-RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make sqlite-devel
+RUN yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make sqlite-devel sudo
 RUN cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz
 RUN cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-shared --enable-loadable-sqlite-extensions
 RUN cd /usr/src/Python-3.7.9 && make altinstall
@@ -42,4 +42,6 @@ ENV BRANCH=stable
 ENV NODES=1
 ENV SERVER_TYPE=AA
 ENV ENCLOSURE_TYPE=5u84
+ENV SKIP_TE=None
+ENV PYTHON_VAR=python3.7
 COPY secrets.json .

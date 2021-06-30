@@ -1,8 +1,10 @@
 *** Settings ***
 Documentation    This suite verifies the testcases for csm user creation
-Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
-Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/page_objects/alertPage.robot
+Resource    ${RESOURCES}/resources/page_objects/bucket_page.robot
+Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
+Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 
@@ -17,8 +19,8 @@ Force Tags  CSM_GUI  CSM_USER
 ${browser}  chrome
 ${headless}  True
 ${navigate_to_subpage}  False
-${Sub_tab}  None
-${page name}  MANAGE_MENU_ID
+${Sub_tab}  ADMINISTRATIVE_USER_TAB_ID
+${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
@@ -29,11 +31,12 @@ Create and login with CSM monitor user
     [Documentation]  This keyword is to create and login with csm monitor user
     ${new_user_name}=  Generate New User Name
     ${new_password}=  Generate New Password
-    Navigate To Page  ${page name}
+    Navigate To Page  ${page_name}  ${Sub_tab}
+    wait for page or element to load
     Create New CSM User  ${new_user_name}  ${new_password}  monitor
-    Click On Confirm Button
+    Click On Confirm Button 
     Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page name}
+    Re-login  ${new_user_name}  ${new_password}  ${page_name}
     [Return]  ${new_user_name}  ${new_password}
 
 *** Test Cases ***
@@ -155,4 +158,27 @@ TEST-18329
     wait for page or element to load
     Verify Absence of Reset Passwrod Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-22768
+    [Documentation]  Test that CSM user with role monitor cannot delete empty or non-empty s3 account
+    ...  Reference : https://jts.seagate.com/browse/TEST-22768
+    [Tags]  Priority_High  TEST-22768  S3_test
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Verify Absence of Delete Button on S3account
+    Re-login  ${username}  ${password}  ${page_name}
+    wait for page or element to load
+    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    wait for page or element to load
+    Delete s3 account using csm user  ${S3_account_name}
+    Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
     Delete CSM User  ${new_user_name}

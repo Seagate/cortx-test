@@ -199,7 +199,7 @@ class DataGenerator:
 
 if __name__ == '__main__':
     # Test Data Generator here.
-    d = DataGenerator(c_ratio=2)
+    d = DataGenerator(c_ratio=1)
     buf, csum = d.generate(1024 * 1024 * 5, seed=10)
     print(csum)
     d.save_buf_to_file(buf, csum, 1024 * 1024, "test-1")

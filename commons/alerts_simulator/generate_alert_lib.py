@@ -60,10 +60,12 @@ class AlertType(Enum, settings=NoAlias):
     RAID_REMOVE_DISK_ALERT = 6
     RAID_ADD_DISK_ALERT = 6
     IEM_TEST_ERROR_ALERT = 7
-    MGMT_NW_PORT_FAULT = 8
-    MGMT_NW_PRT_FAULT_RESOLVED = 9
+    NW_PORT_FAULT = 8
+    NW_PORT_FAULT_RESOLVED = 9
     DG_FAULT = 10
     DG_FAULT_RESOLVED = 11
+    NW_CABLE_FAULT = 12
+    NW_CABLE_FAULT_RESOLVED = 12
 
 
 class GenerateAlertLib:
@@ -151,12 +153,12 @@ class GenerateAlertLib:
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
             8: {
-                'cmd': 'create_mgmt_network_fault',
+                'cmd': 'create_network_port_fault',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
             9: {
-                'cmd': 'resolve_mgmt_network_fault',
+                'cmd': 'resolve_network_port_fault',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
@@ -171,7 +173,12 @@ class GenerateAlertLib:
                 'args': f'(encl_ip="{enc_ip}", encl_user="{enc_user}", '
                         f'encl_pwd="{enc_pwd}", host="{host}", '
                         f'h_user="{h_user}", h_pwd="{h_pwd}", '
-                        f'input_parameters={input_parameters})'}
+                        f'input_parameters={input_parameters})'},
+            12: {
+                'cmd': 'create_resolve_network_cable_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
         }
 
         arguments = (switcher[alert_type.value]['args'])

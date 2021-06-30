@@ -24,12 +24,14 @@ This file contains the wrapper functions used by Alert Simulation API.
 import logging
 import time
 import random
+import os
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import run_remote_cmd, toggle_nw_status
+from commons.utils.system_utils import toggle_nw_status
 from commons import commands
+from commons.helpers.node_helper import Node
 
 LOGGER = logging.getLogger(__name__)
 
@@ -375,6 +377,7 @@ class GenerateAlertWrapper:
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
+            LOGGER.info("Disk group info: %s", disk_group_dict)
             if not status:
                 return status, "Failed to get information about disk groups"
             elif disk_group_dict[disk_group]['health'] != 'OK':
@@ -389,6 +392,8 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Picking two random drives from disk group %s", disk_group)
             drives = random.sample(drive_list, 2)
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                drives = [drives[-1]]
             LOGGER.info("Removing drive : %s", drives)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
                                                    controller_name=ctrl_name,
@@ -452,14 +457,29 @@ class GenerateAlertWrapper:
         try:
             LOGGER.info("Check state of disk group")
             status, disk_group_dict = controller_obj.get_show_disk_group()
+            LOGGER.info("Disk group info: %s", disk_group_dict)
             if not status:
                 return status, "Failed to get information about disk groups"
             elif disk_group_dict[disk_group]['health'] == 'OK':
-                LOGGER.info("Provided disk group is in healthy state.")
+                LOGGER.info("Provided disk group is already in healthy state.")
                 return status, disk_group_dict[disk_group]['health']
 
             LOGGER.info("RAID type of disk group %s is %s", disk_group,
                         disk_group_dict[disk_group]['raidtype'])
+
+            if disk_group_dict[disk_group]['raidtype'] == "ADAPT" and \
+                    disk_group_dict[disk_group].get('job') is None:
+                LOGGER.info("No intermediate job is running")
+            elif disk_group_dict[disk_group]['raidtype'] == "ADAPT":
+                LOGGER.info("Wait for %s job to complete.",
+                            disk_group_dict[disk_group]['job'])
+                dg_health, job, poll_percent = controller_obj.poll_dg_recon_status(
+                        disk_group=disk_group)
+                if poll_percent == 100:
+                    LOGGER.info("Completed job %s", job)
+                else:
+                    LOGGER.error("Job %s failed", job)
+                    return False, f"Job progress: {poll_percent}"
 
             LOGGER.info("Adding drives %s", phy_num)
             resp = controller_obj.remove_add_drive(enclosure_id=enclid,
@@ -470,7 +490,7 @@ class GenerateAlertWrapper:
             if not resp[0]:
                 return resp[0], f"Failed to add drives {phy_num} to disk " \
                                 f"group {disk_group}"
-
+            time.sleep(15)
             LOGGER.info("Adding drives to the disk group %s", disk_group)
             if disk_group_dict[disk_group]['raidtype'] == "ADAPT":
                 LOGGER.info("Check usage of drives %s", phy_num)
@@ -502,23 +522,30 @@ class GenerateAlertWrapper:
 
             LOGGER.info("Check if reconstruction of disk group is started")
             status, disk_group_dict = controller_obj.get_show_disk_group()
-            if disk_group_dict[disk_group]['job'] == 'RCON':
-                LOGGER.info("Successfully started reconstruction of disk "
+            if disk_group_dict[disk_group]['job'] == 'RCON' or \
+                    disk_group_dict[disk_group]['job'] == 'RBAL' or \
+                    disk_group_dict[disk_group]['job'] == 'EXPD':
+                LOGGER.info("Successfully started recovery of disk "
                             "group %s", disk_group)
             else:
                 return False, "Failed to start Disk Group reconstruction"
 
             if poll:
-                poll_status, poll_percent = controller_obj.poll_dg_recon_status(
+                dg_health, job, poll_percent = controller_obj.poll_dg_recon_status(
                     disk_group=disk_group)
-                if poll_status:
+                if poll_percent == 100 or dg_health == "OK":
                     LOGGER.info("Successfully recovered disk group %s \n "
-                                "Reconstruction percent = %s", disk_group,
+                                "Reconstruction percent: %s", disk_group,
                                 poll_percent)
-                    return poll_status, poll_percent
+                    LOGGER.info("Disk group health state is: %s", dg_health)
+                    return True, f"Reconstruction progress: {poll_percent}"
                 else:
-                    LOGGER.error("Failed to recover disk group %s", disk_group)
-                    return poll_status, poll_percent
+                    LOGGER.error("Failed to recover disk group %s \n "
+                                 "Reconstruction percent: %s", disk_group,
+                                 poll_percent)
+                    LOGGER.info("Disk group health state is: %s", dg_health)
+                    return False, f"Reconstruction progress: {poll_percent}"
+            return True, "Reconstruction started"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.resolve_disk_group_failures.__name__,
@@ -526,9 +553,9 @@ class GenerateAlertWrapper:
             return False, error
 
     @staticmethod
-    def create_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+    def create_network_port_fault(host, h_user, h_pwd, input_parameters):
         """
-        Function to generate the management network fault on node
+        Function to generate the network port fault on node
         :param host: host
         :type host: str
         :param h_user: username
@@ -543,22 +570,23 @@ class GenerateAlertWrapper:
         """
         try:
             device = input_parameters['device']
-            status = input_parameters['status']
-            LOGGER.info(f"Creating management fault on resource {device} on "
+            status = "down"
+            LOGGER.info(f"Creating nw fault for resource {device} on "
                         f"{host}")
             LOGGER.info(f"Making {device} {status} on {host}")
             resp = toggle_nw_status(device=device, status=status, host=host,
                                     username=h_user, pwd=h_pwd)
-            return resp, "Created Mgmt NW Port Fault"
+            return resp, f"Created NW Port Fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
-                         GenerateAlertWrapper.create_mgmt_network_fault.__name__, error)
+                         GenerateAlertWrapper.create_network_port_fault
+                         .__name__, error)
             return False, error
 
     @staticmethod
-    def resolve_mgmt_network_fault(host, h_user, h_pwd, input_parameters):
+    def resolve_network_port_fault(host, h_user, h_pwd, input_parameters):
         """
-        Function to resolve the management network fault on node
+        Function to resolve the network port fault on node
         :param host: host from which command is to be run
         :type host: str
         :param h_user: username
@@ -573,22 +601,67 @@ class GenerateAlertWrapper:
         """
         try:
             device = input_parameters['device']
-            status = input_parameters['status']
-            host_data_ip = input_parameters['host_data_ip']
-            LOGGER.info(f"Resolving management fault on resource {device} on "
+            status = "up"
+            LOGGER.info(f"Resolving network fault for resource {device} on "
                         f"{host}")
-            LOGGER.info(f"Making {device} {status} from {host} using Data IP "
-                        f"{host_data_ip}")
-            ip_link_cmd = commands.IP_LINK_CMD.format(device, status)
-            LOGGER.info(f"Running command {ip_link_cmd} on {host} through "
-                        f"data ip {host_data_ip}")
-            resp = run_remote_cmd(hostname=host_data_ip, username=h_user,
-                                  password=h_pwd, cmd=ip_link_cmd,
-                                  read_lines=True)
+            resp = toggle_nw_status(device=device, status=status, host=host,
+                                    username=h_user, pwd=h_pwd)
             LOGGER.info(resp)
-            return resp
+            return resp, f"Resolved NW fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
-                         GenerateAlertWrapper.resolve_mgmt_network_fault.__name__,
-                         error)
+                         GenerateAlertWrapper.resolve_network_port_fault
+                         .__name__, error)
+            return False, error
+
+    @staticmethod
+    def create_resolve_network_cable_faults(host, h_user, h_pwd,
+                                            input_parameters):
+        """
+        Function to create and resolve the network cable fault on node
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        device = input_parameters['device']
+        action = input_parameters['action']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+
+        LOGGER.info("Simulating network cable fault using sysfs")
+        try:
+            carrier_file_path = f"/tmp/sys/class/net/{device}/carrier"
+            LOGGER.info(f"Make network cable of {device} on {host} {action}")
+            LOGGER.info("Creating dummy network path")
+            if not node_connect.path_exists(carrier_file_path):
+                node_connect.make_dir(dpath=os.path.dirname(carrier_file_path))
+                node_connect.open_empty_file(fpath=carrier_file_path)
+
+            LOGGER.info("Update sysfs_base_path in sspl.conf file")
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_SYSFS_BASE_PATH': "/tmp/sys/"})
+
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_SYSFS_BASE_PATH)
+            LOGGER.debug("Response: %s", res)
+
+            LOGGER.info("Update network cable status in carrier file")
+            cmd = commands.CMD_UPDATE_FILE.format(action, carrier_file_path)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            return True, action
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.create_resolve_network_cable_faults
+                         .__name__, error)
             return False, error
