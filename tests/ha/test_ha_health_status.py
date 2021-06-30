@@ -536,24 +536,6 @@ class TestHAHealthStatus:
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
 
-        LOGGER.info("Get the node on which CSM service is running.")
-        sys_obj = self.ha_obj.check_csm_service(
-            self.node_list[0], self.srvnode_list, self.sys_list)
-        if sys_obj == test_cli_node:
-            LOGGER.info(
-                "CSM is running on selected %s",
-                self.srvnode_list[node_index])
-            LOGGER.info("Get the new node on which CSM service will failover.")
-            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
-                nd_obj = self.node_list[0]
-            else:
-                nd_obj = self.node_list[node_index + 1]
-            sys_obj = self.ha_obj.check_csm_service(
-                nd_obj, self.srvnode_list, self.sys_list)
-        sys_obj.open_connection()
-        resp = sys_obj.login_cortx_cli()
-        assert_utils.assert_true(resp[0], resp[1])
-
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
@@ -578,6 +560,16 @@ class TestHAHealthStatus:
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
+            LOGGER.info("Get the new node on which CSM service failover.")
+            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
+                nd_obj = self.node_list[0]
+            else:
+                nd_obj = self.node_list[node_index + 1]
+            sys_obj = self.ha_obj.check_csm_service(
+                nd_obj, self.srvnode_list, self.sys_list)
+            sys_obj.open_connection()
+            resp = sys_obj.login_cortx_cli()
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Check %s is in Failed state and other nodes state is not affected in CLI and REST ",
                 self.srvnode_list[node_index])
@@ -681,24 +673,6 @@ class TestHAHealthStatus:
         test_cli_node = random.choice([obj for obj in self.sys_list])
         node_index = self.sys_list.index(test_cli_node)
 
-        LOGGER.info("Get the node on which CSM service is running.")
-        sys_obj = self.ha_obj.check_csm_service(
-            self.node_list[0], self.srvnode_list, self.sys_list)
-        if sys_obj == test_cli_node:
-            LOGGER.info(
-                "CSM is running on selected %s",
-                self.srvnode_list[node_index])
-            LOGGER.info("Get the new node on which CSM service will failover.")
-            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
-                nd_obj = self.node_list[0]
-            else:
-                nd_obj = self.node_list[node_index + 1]
-            sys_obj = self.ha_obj.check_csm_service(
-                nd_obj, self.srvnode_list, self.sys_list)
-        sys_obj.open_connection()
-        resp = sys_obj.login_cortx_cli()
-        assert_utils.assert_true(resp[0], resp[1])
-
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
@@ -730,6 +704,16 @@ class TestHAHealthStatus:
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
 
+            LOGGER.info("Get the new node on which CSM service failover.")
+            if self.srvnode_list[node_index] == self.srvnode_list[-1]:
+                nd_obj = self.node_list[0]
+            else:
+                nd_obj = self.node_list[node_index + 1]
+            sys_obj = self.ha_obj.check_csm_service(
+                nd_obj, self.srvnode_list, self.sys_list)
+            sys_obj.open_connection()
+            resp = sys_obj.login_cortx_cli()
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Check %s is in Failed state and other nodes state is not affected in CLI and REST ",
                 self.srvnode_list[node_index])
