@@ -49,8 +49,11 @@ class TestIAMUserManagement:
     def setup_class(cls):
         cls.log = logging.getLogger(__name__)
         cls.log.info("Setup s3 bench tool")
-        res = s3bench.setup_s3bench()
-        assert_utils.assert_true(res, res)
+        cls.log.info("Check s3 bench tool installed.")
+        res = system_utils.path_exists("/root/go/src/s3bench")
+        if not res:
+            res = s3bench.setup_s3bench()
+            assert_utils.assert_true(res, res)
         cls.test_dir_path = os.path.join(
             TEST_DATA_FOLDER, "TestIAMUserManagement")
         if not system_utils.path_exists(cls.test_dir_path):
