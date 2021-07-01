@@ -11,7 +11,7 @@ export PYTHONPATH=$LIB:$SITE_PKGS:$CORTX_TEST_ROOT
 
 if [ "$SKIP_TE" != "None" ];
 then
-  "$PYTHON_VAR" -u tools/clone_test_plan/clone_test_plan.py -tp="$TEST_PLAN_NUMBER" -b="$BUILD" -s="$SETUP_TYPE" -c="$COMMENT_JIRA" -br="$BRANCH" -n="$NODES" -sr="$SERVER_TYPE" -e="$ENCLOSURE_TYPE" -st "$SKIP_TE"
+  "$PYTHON_VAR" -u tools/clone_test_plan/clone_test_plan.py -tp="$TEST_PLAN_NUMBER" -b="$BUILD" -s="$SETUP_TYPE" -c="$COMMENT_JIRA" -br="$BRANCH" -n="$NODES" -sr="$SERVER_TYPE" -e="$ENCLOSURE_TYPE" -st $SKIP_TE
 else
   "$PYTHON_VAR" -u tools/clone_test_plan/clone_test_plan.py -tp="$TEST_PLAN_NUMBER" -b="$BUILD" -s="$SETUP_TYPE" -c="$COMMENT_JIRA" -br="$BRANCH" -n="$NODES" -sr="$SERVER_TYPE" -e="$ENCLOSURE_TYPE"
 fi
