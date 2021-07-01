@@ -294,7 +294,7 @@ class SoftwareAlert(RASCoreLib):
         self.write_svc_file(
             svc, {
                 "Service": {
-                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+                    "ExecStartPre": "/bin/sleep 500", "TimeoutStartSec": "600"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
 
