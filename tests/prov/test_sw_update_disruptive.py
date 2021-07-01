@@ -225,3 +225,49 @@ class TestSWUpdateDisruptive:
             LOGGER.info("IOs working fine with latest build {} upgraded.".format(build))
 
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components in succession.")
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.tags("TEST-23176")
+    @CTFailOn(error_handler)
+    def sw_upgrade_with_incompatible_ISO(self):
+        """
+        This test will trigger SW upgrade with incompatible ISO and on healthy system to check
+        if SW upgrade fails. Also once process is complete, it will check if old version is
+        shown on provisioner and check system health and Run IOs.
+        """
+        LOGGER.info("Started: SW upgrade disruptive with incompatible ISO for CORTX sw components.")
+
+        build = self.prov_obj.get_build_version(self.node_list[0])
+        LOGGER.info("Current cortx build: {} and version on system: {}".format(build[0], build[1]))
+
+        current_build_iso = PROV_CFG["build_iso"].format(self.build_branch, build[0], build[0])
+        current_build_sig = PROV_CFG["build_sig"].format(self.build_branch, build[0], build[0])
+        current_build_key = PROV_CFG["build_key"].format(self.build_branch, build[0])
+        current_iso_list = [current_build_iso, current_build_sig, current_build_key]
+
+        LOGGER.info("Start IOs on the current SW version.")
+        users = self.mgnt_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        data = self.mgnt_ops.create_buckets(nbuckets=10, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'TEST-23176-{}'.format(build[0])}
+        run_data_chk_obj.start_io(
+            users=data, buckets=None, files_count=8, prefs=pref_dir)
+
+        LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
+        self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
+        for dnld in current_iso_list:
+            self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
+                                          read_lines=True)
+        LOGGER.info("Set the upgrade repo.")
+        resp = self.prov_obj.set_validate_repo(current_iso_list, self.node_list[0])
+        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
+        #TODO: Need to add condition to check error msg for failure of set upgrade repo
+        #assert_utils.assert_in("incompatible build version", resp[1], f"Set upgrade repo failed with error: {resp[1]}")
+
+        LOGGER.info("Start the SW upgrade operation in offline mode.")
+        resp = self.prov_obj.check_sw_upgrade(self.node_list[0])
+        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
+        expected_err = "no upgrade release is available"
+        assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: {resp[1]} expected error: {expected_err}")
+
+        LOGGER.info("Completed: SW upgrade disruptive with incompatible ISO for CORTX sw components.")
