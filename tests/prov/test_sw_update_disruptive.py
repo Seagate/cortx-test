@@ -62,9 +62,9 @@ class TestSWUpdateDisruptive:
                                            "prod") if cls.build_up2 else PROV_CFG["build_def"]
         cls.build_branch = os.getenv("Build_Branch", "stable")
         cls.build_iso1 = PROV_CFG["build_iso"].format(
-            cls.build_branch, cls.build_update1, cls.build_update1)
+            cls.build_branch, cls.build_update1, cls.build_up1)
         cls.build_sig1 = PROV_CFG["build_sig"].format(
-            cls.build_branch, cls.build_update1, cls.build_update1)
+            cls.build_branch, cls.build_update1, cls.build_up1)
         cls.build_key1 = PROV_CFG["build_key"].format(
             cls.build_branch, cls.build_update1)
         cls.build_iso2 = PROV_CFG["build_iso"].format(
@@ -75,6 +75,12 @@ class TestSWUpdateDisruptive:
             cls.build_branch, cls.build_update2)
         cls.iso1_list = [cls.build_iso1, cls.build_sig1, cls.build_key1]
         cls.iso2_list = [cls.build_iso2, cls.build_sig2, cls.build_key2]
+        cls.repo1_list = [PROV_CFG["iso_repo"].format(cls.build_up1),
+                          PROV_CFG["sig_repo"].format(cls.build_up1),
+                          PROV_CFG["key_repo"]]
+        cls.repo2_list = [PROV_CFG["iso_repo"].format(cls.build_up2),
+                          PROV_CFG["sig_repo"].format(cls.build_up2),
+                          PROV_CFG["key_repo"]]
         cls.node_list = []
         cls.host_list = []
         cls.hlt_list = []
@@ -108,7 +114,7 @@ class TestSWUpdateDisruptive:
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-23175")
     @CTFailOn(error_handler)
-    def sw_upgrade(self):
+    def test_sw_upgrade(self):
         """
         This test will trigger SW upgrade with correct ISO and on healthy system to check
         if SW upgrade command works fine. Also once process is complete, it will check if new
@@ -137,7 +143,7 @@ class TestSWUpdateDisruptive:
             self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
                                           read_lines=True)
         LOGGER.info("Set the update repo.")
-        resp = self.prov_obj.set_validate_repo(self.iso1_list, self.node_list[0])
+        resp = self.prov_obj.set_validate_repo(self.repo1_list, self.node_list[0])
         assert_utils.assert_true(resp[0], "Given sw upgrade version is not compatible.")
         assert_utils.assert_equal(resp[1], self.build_up1,
                                   "Set ISO version doesn't match with desired one.")
@@ -165,7 +171,7 @@ class TestSWUpdateDisruptive:
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-23206")
     @CTFailOn(error_handler)
-    def sw_upgrade_multiple(self):
+    def test_sw_upgrade_multiple(self):
         """
         This test will trigger SW upgrade with correct ISO and on healthy system to check
         if SW upgrade command works fine in succession. Also once process is complete, it
