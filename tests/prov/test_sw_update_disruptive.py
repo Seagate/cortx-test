@@ -108,7 +108,7 @@ class TestSWUpdateDisruptive:
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-23175")
     @CTFailOn(error_handler)
-    def sw_upgrade(self):
+    def test_sw_upgrade(self):
         """
         This test will trigger SW upgrade with correct ISO and on healthy system to check
         if SW upgrade command works fine. Also once process is complete, it will check if new
@@ -165,7 +165,7 @@ class TestSWUpdateDisruptive:
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-23206")
     @CTFailOn(error_handler)
-    def sw_upgrade_multiple(self):
+    def test_sw_upgrade_multiple(self):
         """
         This test will trigger SW upgrade with correct ISO and on healthy system to check
         if SW upgrade command works fine in succession. Also once process is complete, it
@@ -229,7 +229,7 @@ class TestSWUpdateDisruptive:
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-23176")
     @CTFailOn(error_handler)
-    def sw_upgrade_with_incompatible_ISO(self):
+    def test_sw_upgrade_with_incompatible_ISO(self):
         """
         This test will trigger SW upgrade with incompatible ISO and on healthy system to check
         if SW upgrade fails. Also once process is complete, it will check if old version is
@@ -266,8 +266,13 @@ class TestSWUpdateDisruptive:
 
         LOGGER.info("Start the SW upgrade operation in offline mode.")
         resp = self.prov_obj.check_sw_upgrade(self.node_list[0])
-        assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
+        assert_utils.assert_false(resp[0], "offline SW upgrade worked fine, which is not expected as upgrade build and current build are same")
         expected_err = "no upgrade release is available"
         assert_utils.assert_in(expected_err, resp[1], f"offline SW upgrade failed with error: {resp[1]} expected error: {expected_err}")
+
+        LOGGER.info("Checking DI for IOs run before upgrade.")
+        run_data_chk_obj.stop_io(users=data, di_check=True)
+        # TODO: Need to add validation of IOs run from DI framework.
+        LOGGER.info("IOs working fine after upgrade failed")
 
         LOGGER.info("Completed: SW upgrade disruptive with incompatible ISO for CORTX sw components.")
