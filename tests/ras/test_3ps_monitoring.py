@@ -193,12 +193,11 @@ class Test3PSvcMonitoring:
     @pytest.mark.tags("TEST-19609")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    @pytest.mark.skip
     def test_19609_3ps_monitoring(self):
         "Tests 3rd party service monitoring and management"
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        external_svcs = const.SVCS_3P
+        external_svcs = self.external_svcs
 
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
@@ -207,44 +206,45 @@ class Test3PSvcMonitoring:
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
             assert result, "Failed in stop service"
+            LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
+            time.sleep(self.intrmdt_state_timeout)
             assert self.csm_alert_obj.verify_csm_response(
-                starttime, const.ResourceType.SW_SVC, False)
+                starttime, const.ResourceType.SW_SVC, False, svc)
 
             LOGGER.info("Starting %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
             assert result, " Failed in start service"
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
 
             LOGGER.info("Disabling %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(
                 svc, "disable", external_svcs)
             assert result, "Failed in disable service"
-            assert self.csm_alert_obj.verify_csm_response(
-                starttime, const.ResourceType.SW_SVC, False)
+            assert not self.csm_alert_obj.verify_csm_response(
+                starttime, const.ResourceType.SW_SVC, False, svc)
 
             LOGGER.info("Enabling %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(
                 svc, "enable", external_svcs)
             assert result, "Failed in enable service"
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            assert not self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
 
             LOGGER.info("Restarting %s service...", svc)
             starttime = time.time()
-            result = self.sw_alert_obj.run_verify_svc_state(
-                svc, "restart", external_svcs)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "restart", external_svcs)
             assert result, "Failed in restart service"
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
-            # TODO message bus check.
+            assert not self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
+
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19963")
-    def test_multiple_services_monitoring_19963(self):
+    def test_19963_multiple_services_monitoring(self):
         """
         Multiple 3rd party services monitoring and management
         """
@@ -315,7 +315,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
             LOGGER.info("Step 1: Deactivating %s service...", svc)
             starttime = time.time()
-            result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", [])  # external_svcs
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
             assert result, "Failed in deactivating service"
             LOGGER.info("Step 1: Deactivated %s service...", svc)
 
@@ -372,12 +372,12 @@ class Test3PSvcMonitoring:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
             LOGGER.info("Step 1: Stopping %s service...", svc)
-            result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", self.external_svcs)
             assert result, "Failed in stop service"
 
             LOGGER.info("Step 2: Activating %s service...", svc)
             starttime = time.time()
-            result = self.sw_alert_obj.run_verify_svc_state(svc, "activating", external_svcs)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "activating", self.external_svcs)
             assert result, "Failed in activating service"
             LOGGER.info("Step 2: Activated %s service...", svc)
 
@@ -392,14 +392,13 @@ class Test3PSvcMonitoring:
                 assert resp[0], resp[1]
                 LOGGER.info("Step 4: Verified the fault alert on message bus")
 
-
             LOGGER.info("Step 5: Checking the fault alert on CSM")
             resp = self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, False, svc)
             assert resp, "Fault alert is not reported on CSM"
             LOGGER.info("Step 5: Verified the fault alert on CSM")
 
             LOGGER.info("Step 6: Wait for the %s service to start", svc)
-            op = self.sw_alert_obj.recover_svc(svc, attempt_start=False, timeout=200)
+            op = self.sw_alert_obj.recover_svc(svc, attempt_start=False, timeout=500)
             LOGGER.info("Service recovery details : %s", op)
             assert op["state"] == "active", "Unable to recover the service"
             LOGGER.info("Step 6: %s service is active and running", svc)
@@ -448,60 +447,55 @@ class Test3PSvcMonitoring:
 
             LOGGER.info("Step 2: Wait for : %s seconds", self.intrmdt_state_timeout)
             time.sleep(self.intrmdt_state_timeout)
-
+            LOGGER.info("Step 2: Wait complete.")
             if self.start_msg_bus:
-                LOGGER.info("Step 3: Checking the fault alert on message bus")
+                LOGGER.info("Checking the fault alert on message bus")
                 alert_list = [const.ResourceType.SW_SVC, const.Severity.CRITICAL,
                               const.AlertType.FAULT, svc]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list,restart=False)
                 assert resp[0], resp[1]
-                LOGGER.info("Step 3: Verified the fault alert on message bus")
+                LOGGER.info("Verified the fault alert on message bus")
 
-
-            LOGGER.info("Step 4: Checking the fault alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
-            LOGGER.info("Step 4: Verified the fault alert on CSM")
-
-            LOGGER.info("Step 5: Restore %s service config and wait to start", svc)
+            LOGGER.info("Step 3: Restore %s service config and wait to start", svc)
             self.sw_alert_obj.restore_svc_config()
             op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
             LOGGER.info("Service recovery details : %s", op)
             assert op["state"] == "active", f"Unable to recover {svc} service"
-            LOGGER.info("Step 5: %s service is active and running", svc)
+            LOGGER.info("Step 3: %s service is active and running", svc)
 
             if self.start_msg_bus:
-                LOGGER.info("Step 6: Checking the fault resolved alert on message bus")
+                LOGGER.info("Checking the fault resolved alert on message bus")
                 alert_list = [const.ResourceType.SW_SVC, const.Severity.INFO,
                               const.AlertType.RESOLVED, svc]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
                 assert resp[0], resp[1]
-                LOGGER.info("Step 6: Verified the fault resolved alert on message bus")
+                LOGGER.info("Verified the fault resolved alert on message bus")
 
 
-            LOGGER.info("Step 7: Checking the fault resolved alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
-            LOGGER.info("Step 7: Verified the fault resolved alert on CSM")
+            LOGGER.info("Step 4: Checking the fault resolved alert on CSM")
+            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
+            LOGGER.info("Step 4: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    @pytest.mark.tags("TEST-21193")
-    def test_21193_failed_alerts(self):
+    @pytest.mark.tags("TEST-21198")
+    def test_21198_failed_alerts(self):
         """
         Test when service file is missing and related process is killed.
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         LOGGER.info("External services : %s", self.external_svcs)
-        for svc in self.external_svcs:
+        ignore_svc = ["lnet.service"]
+        svcs = list(set(self.external_svcs) - set(ignore_svc))
+        for svc in svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-
             LOGGER.info("Step 1: Fail %s service...", svc)
             starttime = time.time()
-            result = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
-                                                                        timeout=60)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "failed", svcs, timeout=60)
             assert result, f"Failed in failing {svc} service"
             LOGGER.info("Step 1: Failed %s service...", svc)
 
@@ -515,8 +509,7 @@ class Test3PSvcMonitoring:
                 LOGGER.info("Step 2: Verified the fault alert on message bus")
 
             LOGGER.info("Step 3: Checking the fault alert on CSM")
-
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, False, svc)
             LOGGER.info("Step 3: Verified the fault alert on CSM")
 
             self.sw_alert_obj.restore_svc_config()
@@ -538,7 +531,7 @@ class Test3PSvcMonitoring:
 
             LOGGER.info("Step 6: Checking the fault resolved alert on CSM")
 
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
             LOGGER.info("Step 6: Verified the fault resolved alert on CSM")
 
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
@@ -552,7 +545,9 @@ class Test3PSvcMonitoring:
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
-        for svc in self.external_svcs:
+        ignore_svc = ["lnet.service"]
+        svcs = list(set(self.external_svcs) - set(ignore_svc))
+        for svc in svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
 
             thrs_inact_time_tmp = 20
@@ -580,9 +575,8 @@ class Test3PSvcMonitoring:
                 assert resp[0], resp[1]
                 LOGGER.info("Step 3: Verified the fault alert on message bus")
 
-
             LOGGER.info("Step 4: Checking the fault alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            #assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, False, svc)
             LOGGER.info("Step 4: Verified the fault alert on CSM")
 
             LOGGER.info("Step 5: Restore threshold_inactive_time to {}".format(self.thrs_inact_time_org))
@@ -609,8 +603,7 @@ class Test3PSvcMonitoring:
                 assert resp[0], resp[1]
                 LOGGER.info("Step 7: Verified the fault resolved alert on message bus")
 
-
             LOGGER.info("Step 8: Checking the fault resolved alert on CSM")
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
+            #assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
             LOGGER.info("Step 8: Verified the fault resolved alert on CSM")
             LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
