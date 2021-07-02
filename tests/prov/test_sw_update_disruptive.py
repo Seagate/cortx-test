@@ -138,9 +138,8 @@ class TestSWUpdateDisruptive:
             users=data, buckets=None, files_count=8, prefs=pref_dir)
 
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
-        self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
         for dnld in self.iso1_list:
-            self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
+            self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(dnld),
                                           read_lines=True)
         LOGGER.info("Set the update repo.")
         resp = self.prov_obj.set_validate_repo(self.repo1_list, self.node_list[0])
