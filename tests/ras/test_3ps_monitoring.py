@@ -201,22 +201,21 @@ class Test3PSvcMonitoring:
 
         for svc in external_svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-
             LOGGER.info("Stopping %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
             assert result, "Failed in stop service"
             LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
             time.sleep(self.intrmdt_state_timeout)
-            assert self.csm_alert_obj.verify_csm_response(
-                starttime, const.ResourceType.SW_SVC, False, svc)
+            resp =  self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, False, svc)
+            assert resp[0], resp[1]
 
             LOGGER.info("Starting %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
             assert result, " Failed in start service"
-            assert self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True, svc)
-
+            resp= self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, True, svc)
+            assert resp[0], resp[1]
             LOGGER.info("Disabling %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(
@@ -244,17 +243,14 @@ class Test3PSvcMonitoring:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19963")
-    def test_19963_multiple_services_monitoring(self):
+    def test_19963_multiple_services_monitoring(self, run_io_async):
         """
         Multiple 3rd party services monitoring and management
         """
-        LOGGER.info("Step 1: Start IOs")
-        # TODO: Add command to start IOs in background.
-
-        LOGGER.info("Step 2: Stopping multiple randomly selected services")
-        num_services = random.randint(0, 5)
-        random_services = random.sample(const.SVCS_3P, num_services)
-
+        starttime = time.time()
+        LOGGER.info("Step 1: Stopping multiple randomly selected services")
+        num_services = random.randint(0, len(self.external_svcs))
+        random_services = random.sample(self.external_svcs, num_services)
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
         LOGGER.info("Checking that %s services are in stopped state",
                     random_services)
@@ -268,12 +264,15 @@ class Test3PSvcMonitoring:
                 active_list.append(random_services[i])
             assert_true(False, f"Failed to put {active_list} services in "
                                f"stopped/inactive state")
-        LOGGER.info(f"Step 2: Successfully stopped {random_services}")
+        LOGGER.info(f"Step 1: Successfully stopped {random_services}")
 
-        time.sleep(self.timeouts["alert_timeout"])
-        LOGGER.info("Step 3: Check if fault alert is generated for "
-                    "%s services", random_services)
-        # TODO: Check alert in message bus and using CSM cli/rest.
+        LOGGER.info("Step 2: Wait for : %s seconds", self.intrmdt_state_timeout)
+        time.sleep(self.intrmdt_state_timeout)
+        LOGGER.info("Step 2: Wait completed")
+
+        LOGGER.info("Step 3: Check if fault alert is generated for %s services", random_services)
+        resp= self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, False)
+        assert resp[0], resp[1]
 
         LOGGER.info("Step 4: Starting %s", random_services)
         self.node_obj.send_systemctl_cmd("start", services=random_services)
@@ -291,15 +290,9 @@ class Test3PSvcMonitoring:
         LOGGER.info("Step 4: Successfully started %s", random_services)
 
         time.sleep(self.timeouts["alert_timeout"])
-        LOGGER.info("Step 5: Check if fault_resolved alert is generated for "
-                    "%s services", random_services)
-        # TODO: Check alert in message bus and using CSM cli/rest.
-
-        LOGGER.info("Step 6: Check IO state")
-        # TODO: Check IO state after performing operations on services
-
-        LOGGER.info("Step 7: Stop IOs")
-        # TODO: Stop background IOs.
+        LOGGER.info("Step 5: Check if fault_resolved alert is generated for %s services", random_services)
+        resp= self.csm_alert_obj.wait_for_alert(200, starttime, const.ResourceType.SW_SVC, True)
+        assert resp[0], resp[1]
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -584,7 +577,7 @@ class Test3PSvcMonitoring:
                 url=self.sspl_cfg_url, encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": self.thrs_inact_time_org})
             resp = self.ras_test_obj.get_conf_store_vals(url=self.sspl_cfg_url,
                                                          field=self.sspl_thrs_inact_time)
-            assert resp == self.thrs_inact_time_org, "Unable to restore threshold_inactive_time"
+            assert int(resp) == int(self.thrs_inact_time_org), "Unable to restore threshold_inactive_time"
             LOGGER.info("Step 5: Restored threshold_inactive_time is : %s", resp)
 
             LOGGER.info("Step 6: Restore %s service config and wait to start", svc)
