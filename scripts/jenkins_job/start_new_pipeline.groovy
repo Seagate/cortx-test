@@ -20,7 +20,6 @@ python --version
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
 export HOSTNAME="${HOSTNAME}"
-export MGMT_VIP="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 python3.7 setup.py install
 python3.7 setup.py develop
@@ -40,6 +39,7 @@ deactivate
 		stage('CSM_Boarding') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${HOSTNAME}"
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
 deactivate
