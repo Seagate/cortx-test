@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import argparse
 import csv
@@ -156,6 +157,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
+    if prc.returncode == 1:
+        print('Exiting test runner due to bad health of deployment')
+        sys.exit(1)
+    if prc.returncode == 2:
+        print('Exiting test runner due to health check script error')
+        sys.exit(2)
 
 
 def delete_status_files():
