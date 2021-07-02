@@ -141,6 +141,7 @@ class Onboarding:
     password_ip = "password"
     login_btn = "login-userbtn"
     continue_btn = "//*[contains(text(),'Continue')]"
+    ssl_choose_file = '//*[@id="file"]'
     sys_ip = "txtappliancename"
     dns_server_ip = "0txtDnsServer"
     dns_search_ip = "0txtSearchDomain"
