@@ -16,7 +16,7 @@ Restcall:
     Content-Type: 'application/json'
   test_s3account_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
   test_csmuser_password : "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
-  rest_login_endpoint : "/api/v2/login"
+  rest_login_endpoint : "/api/v1/login"
   alerts_endpoint : "/api/v1/alerts"
   alerts_history_endpoint: "/api/v1/alerts_history"
   s3accounts_endpoint : "/api/v1/s3_accounts"
