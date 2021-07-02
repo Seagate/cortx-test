@@ -124,6 +124,17 @@ jcloud-client-install:
 	@echo "###Installed jcloud-client client in current machine###"
 
 
+s3bench-install:
+
+	@echo "###Installing s3bench tool###"
+	rm -rf /root/go/src/s3bench
+	sudo yum install -y go
+	go get github.com/Seagate/s3bench
+	trust anchor /etc/ssl/stx-s3-clients/s3/ca.crt
+	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
+	@echo "###Installed s3bench tool###"
+
+
 aws: aws-install aws-configure
 	@echo "### Installed & configured aws tool. ###"
 
@@ -140,7 +151,7 @@ minio: minio-install minio-configure
 	@echo "### Installed & configured minio tool. ###"
 
 
-install-tools: aws-install s3fs-install s3cmd-install minio-install jcloud-client-install
+install-tools: aws-install s3fs-install s3cmd-install minio-install jcloud-client-install s3bench-install
 	@echo "### All tools are installed. ###"
 
 
@@ -148,7 +159,7 @@ configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
 	@echo "### All tools are configured. ###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -161,17 +172,19 @@ clean:
 	rm -rf /etc/passwd-s3fs
 	rm -rf mc
 	rm -rf /root/jclientCloud/
+	rm -rf /root/go/src/s3bench
 	@echo "cleanup-tools completed."
 
 
 help :
 
-	@echo "all: Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-	@echo "clean: Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean"
-	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools"
-	@echo "configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-	@echo "aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-	@echo "s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-	@echo "s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>"
-	@echo "jcloud-client: Setup jcloud-client. Eg: make jcloud-client"
-	@echo "minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "all: Install & configure tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make all --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "clean: Remove installed tools like s3fs, s3cmd, minio, jclientcloud, s3bench. Eg: make clean --makefile=<makefile_path>"
+	@echo "install-tools: Install tools like aws, s3fs, s3cmd, minio, s3bench call in case its a new machine. Eg: make install-tools --makefile=<makefile_path>"
+	@echo "configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "aws: Install & configure aws tool. Eg: make aws --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "s3fs: Install & configure s3fs tool. Eg: make s3fs --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "s3cmd: Install & configure s3cmd tool. Eg: make s3cmd --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "jcloud-client-install: Setup jcloud-client. Eg: make jcloud-client --makefile=<makefile_path>"
+	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
+	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
