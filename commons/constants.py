@@ -281,11 +281,11 @@ EXCLUSIVE_LOCK = 'exclusive'
 class SwAlerts:
     SVCS_3P = [
 #        "elasticsearch.service", # brings down the csm
-        "statsd.service",
-        "rsyslog.service",
 #        "hare-consul-agent.service", # Disabled on VM EOS-20861
 #        "slapd.service", # brings down the csm
-        "lnet.service",
+        "statsd.service",
+        "rsyslog.service",
+#        "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
