@@ -784,8 +784,13 @@ def pytest_runtest_logstart(nodeid, location):
         try:
             check_cortx_cluster_health()
             check_cluster_storage()
-        except (AssertionError, Exception) as fault:
+        except AssertionError as fault:
+            LOGGER.error(f"Health check failed for setup with exception {fault}")
             pytest.exit(f'Health check failed for cluster {target}', 1)
+        except Exception as fault:
+            # This could be permission issues as exception of anytype is handled.
+            LOGGER.error(f"Health check script failed with exception {fault}")
+            pytest.exit(f'Cannot continue as Health check script failed for {target}', 2)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
