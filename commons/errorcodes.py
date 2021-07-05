@@ -202,6 +202,15 @@ S3_SERVER_ERROR = CTError(5007, "S3 Server Error")
 S3_CLIENT_ERROR = CTError(4007, "S3 Client Error")
 S3_ERROR = CTError(0o0001, "S3 Error")
 
+# S3 rest error
+S3_REST_AUTHENTICATION_ERROR: Any = CTError(401, "S3-REST Authentication Error")
+S3_REST_VERIFICATION_FAILED: Any = CTError(401, "Unexpected output fetched for S3-REST")
+S3_REST_GET_REQUEST_FAILED: Any = CTError(400, "S3-REST GET request failed")
+S3_REST_POST_REQUEST_FAILED: Any = CTError(400, "S3-REST POST request failed")
+S3_REST_PUT_REQUEST_FAILED: Any = CTError(400, "S3-REST PUT request failed")
+S3_REST_DELETE_REQUEST_FAILED: Any = CTError(400, "S3-REST DELETE request failed")
+S3_REST_PATCH_REQUEST_FAILED: Any = CTError(400, "S3-REST PATCH request failed")
+
 # RAS
 RAS_ERROR = CTError(6007, "RAS Error")
 
