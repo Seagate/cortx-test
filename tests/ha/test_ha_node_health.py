@@ -146,15 +146,17 @@ class TestHANodeHealth:
             node_obj = self.node_list[0]
 
         LOGGER.info("Get the node which is running CSM service.")
-        sys_obj = self.ha_obj.check_csm_service(
+        resp = self.ha_obj.check_csm_service(
             node_obj, self.srvnode_list, self.sys_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        sys_obj = resp[1]
 
         LOGGER.info("Check all nodes health status is online in CLI and REST")
         check_rem_node = ["online" for _ in range(self.num_nodes)]
         resp = self.ha_obj.verify_node_health_status(
             sys_obj, status=check_rem_node)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+        resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("All nodes health status is online in CLI and REST")
 
@@ -194,15 +196,17 @@ class TestHANodeHealth:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node + 1]
-            sys_obj = self.ha_obj.check_csm_service(
+            resp = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(resp[0], resp[1])
+            sys_obj = resp[1]
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
             resp = self.ha_obj.verify_node_health_status(
                 sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
@@ -300,15 +304,17 @@ class TestHANodeHealth:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node + 1]
-            sys_obj = self.ha_obj.check_csm_service(
+            resp = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(resp[0], resp[1])
+            sys_obj = resp[1]
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
             resp = self.ha_obj.verify_node_health_status(
                 sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
@@ -394,15 +400,17 @@ class TestHANodeHealth:
 
             LOGGER.info(
                 "Check in cortxcli and REST that the status is changed for {} to Failed".format(node_name))
-            sys_obj = self.ha_obj.check_csm_service(
+            resp = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(resp[0], resp[1])
+            sys_obj = resp[1]
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
             resp = self.ha_obj.verify_node_health_status(
                 sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
@@ -489,8 +497,10 @@ class TestHANodeHealth:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node_index + 1]
-            sys_obj = self.ha_obj.check_csm_service(
+            resp = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(resp[0], resp[1])
+            sys_obj = resp[1]
 
             check_rem_node = [
                 "failed" if num == node_index else "online" for num in range(
@@ -498,7 +508,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.verify_node_health_status(
                 sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
@@ -603,8 +613,10 @@ class TestHANodeHealth:
                 nd_obj = self.node_list[0]
             else:
                 nd_obj = self.node_list[node_index + 1]
-            sys_obj = self.ha_obj.check_csm_service(
+            resp = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(resp[0], resp[1])
+            sys_obj = resp[1]
 
             check_rem_node = [
                 "failed" if num == node_index else "online" for num in range(
@@ -612,7 +624,7 @@ class TestHANodeHealth:
             resp = self.ha_obj.verify_node_health_status(
                 sys_obj, status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = self.ha_rest.get_node_health_status_rest(check_rem_node)
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")

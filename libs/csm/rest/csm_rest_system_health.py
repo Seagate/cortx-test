@@ -408,8 +408,12 @@ class SystemHealth(RestTestLib):
                 params=parameters,
                 save_json=True)
             if response.status_code != 200:
+                self.log.error(f'Response ={response.text}\n'
+                               f'Request Headers={response.request.headers}\n'
+                               f'Request Body={response.request.body}')
                 raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
                                   msg=f"Failed to get {endpoint} response.")
+
             self.log.info(
                 "Response returned is:\n %s", response.json())
             return response

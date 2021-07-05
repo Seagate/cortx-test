@@ -43,7 +43,7 @@ class HALibs:
         :param node_object: node object for the node to execute command
         :param srvnode_list: list of srvnode names
         :param sys_list: List of system objects
-        :return: system_object
+        :return: boolean, system_object/error
         """
         try:
             if len(srvnode_list) == 0 or len(sys_list) == 0:
@@ -55,13 +55,13 @@ class HALibs:
                 if srvnode in data:
                     LOGGER.info("CSM running on: {}".format(srvnode))
                     sys_obj = sys_list[index]
-                    return sys_obj
-        except Exception as error:
+                    return True, sys_obj
+        except IOError as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HALibs.check_csm_service.__name__,
                          error)
-            raise CTException(err.CLI_ERROR, error.args[0]) from error
+            return False, error
 
     @staticmethod
     def check_service_other_nodes(node_id, num_nodes, node_list):
@@ -84,12 +84,12 @@ class HALibs:
                         if "FAILED" in line or "Stopped" in line:
                             return False
             return True
-        except Exception as error:
+        except IOError as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HALibs.check_service_other_nodes.__name__,
                          error)
-            raise CTException(err.CLI_ERROR, error.args[0]) from error
+            return False
 
     @staticmethod
     def verify_node_health_status(
