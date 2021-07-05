@@ -407,6 +407,9 @@ class SystemHealth(RestTestLib):
                 headers=self.headers,
                 params=parameters,
                 save_json=True)
+            if response.status_code != 200:
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                                  msg=f"Failed to get {endpoint} response.")
             self.log.info(
                 "Response returned is:\n %s", response.json())
             return response
@@ -419,7 +422,7 @@ class SystemHealth(RestTestLib):
             raise CTException(
                 err.CSM_REST_GET_REQUEST_FAILED, error) from error
 
-    def get_node_health_status_rest(self, exp_status: list, node_id: int = None):
+    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None):
         """
         This method will get and verify health status of node
         :param exp_status: List of expected node health status
