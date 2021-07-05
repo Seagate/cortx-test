@@ -41,7 +41,7 @@ class SoftwareAlert(RASCoreLib):
         self.svc_path = None
 
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list,
-                             ignore_param: list=['timestamp','comment'], timeout: int = 5):
+                             ignore_param: list = ['timestamp', 'comment'], timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on which action is to be performed
