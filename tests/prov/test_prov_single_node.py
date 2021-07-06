@@ -50,7 +50,7 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.build = os.getenv("Build", None)
-        cls.build_branch = os.getenv("Build_Type", "stable")
+        cls.build_branch = os.getenv("Build_Branch", "stable")
         if cls.build:
             if cls.build_branch == "stable" or cls.build_branch == "main":
                 cls.build = "{}/{}".format(cls.build, "prod")
