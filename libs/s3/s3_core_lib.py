@@ -101,6 +101,16 @@ class S3Lib:
 
         return response
 
+    def put_object_with_all_kwargs(self, **kwargs):
+        """
+        Putting Object to the Bucket.
+        :return: response.
+        """
+        LOGGER.debug("input for put_object are: %s ", kwargs)
+        response = self.s3_client.put_object(**kwargs)
+        LOGGER.debug("output: %s ", response)
+        return response
+
     def put_object(self,
                    bucket_name: str = None,
                    object_name: str = None,

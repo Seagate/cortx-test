@@ -189,15 +189,36 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     return cmd
 
 
+def filter_bin_md5(file_checksum):
+    """
+    Function to clean binary md5 response.
+    :param file_checksum: encoded binary md5 data with newline char
+    :return: filter binary md5 data
+    """
+    LOGGER.debug("Actual MD5 %s", file_checksum)
+    if "\\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\\n", "")
+    elif "\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\n", "")
+    else:
+        bin_checksum = file_checksum[2:-1]
+    LOGGER.debug("Filter MD5 %s", bin_checksum)
+
+    return bin_checksum
+
+
 def calculate_checksum(
         file_path: str,
         binary_bz64: bool = True,
-        options: str = "") -> tuple:
+        options: str = "",
+        **kwargs) -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param file_path: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
+    :param options: option for md5sum tool
+    :keyword filter_resp: filter md5 checksum cmd response True/False
     :return: string or MD5 object
     """
     if not os.path.exists(file_path):
@@ -210,6 +231,8 @@ def calculate_checksum(
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
     LOGGER.debug("Output: %s", str(result))
+    if kwargs.get("filter_resp", None) and binary_bz64:
+        result = (result[0], filter_bin_md5(result[1]))
     return result
 
 
