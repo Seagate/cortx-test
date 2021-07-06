@@ -24,9 +24,7 @@ Prov test file for all the Prov tests scenarios for single node VM.
 
 import os
 import logging
-import random
 import pytest
-from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
 from commons import constants as common_cnst
@@ -34,7 +32,6 @@ from commons.utils import assert_utils
 from commons import pswdmanager
 from config import CMN_CFG, PROV_CFG
 from libs.prov.provisioner import Provisioner
-from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -53,11 +50,15 @@ class TestProvSingleNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.build = os.getenv("Build", None)
-        cls.build = "{}/{}".format(cls.build,
-                                   "prod") if cls.build else "last_successful_prod"
-        cls.build_branch = os.getenv("Build_Branch", "stable")
+        cls.build_branch = os.getenv("Build_Type", "stable")
+        if cls.build:
+            if cls.build_branch == "stable" or cls.build_branch == "main":
+                cls.build = "{}/{}".format(cls.build, "prod")
+        else:
+            cls.build = "last_successful_prod"
         cls.build_path = PROV_CFG["build_url"].format(
             cls.build_branch, cls.build)
+
         LOGGER.info(
             "User provided Hostname: {} and build path: {}".format(
                 cls.host, cls.build_path))
@@ -65,14 +66,7 @@ class TestProvSingleNode:
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
                           password=cls.passwd)
-        cls.hlt_obj = Health(hostname=cls.host, username=cls.uname,
-                             password=cls.passwd)
         cls.prov_obj = Provisioner()
-        cls.set_ntp = None
-        cls.restored = True
-        cls.CSM_USER = CortxCliCsmUser()
-        cls.CSM_USER.open_connection()
-        cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         LOGGER.info("Done: Setup module operations")
 
     def teardown_method(self):

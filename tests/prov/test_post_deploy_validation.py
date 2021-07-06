@@ -239,9 +239,9 @@ class TestPostDeploySingleNode:
             "-----     Completed NTP configuration Validation     -----")
 
 
-class TestPostDeployThreeNode:
+class TestPostDeployMultiNode:
     """
-    Test suite for post deploy scenarios for three node VM.
+    Test suite for post deploy scenarios for multinode VM.
     """
 
     @classmethod
@@ -251,35 +251,21 @@ class TestPostDeployThreeNode:
         """
         LOGGER.info("STARTED: Setup Module operations")
         cls.setup_type = CMN_CFG["setup_type"]
-        cls.host1 = CMN_CFG["nodes"][0]["hostname"]
-        cls.uname1 = CMN_CFG["nodes"][0]["username"]
-        cls.passwd1 = CMN_CFG["nodes"][0]["password"]
-        cls.nd1_obj = Node(hostname=cls.host1, username=cls.uname1,
-                           password=cls.passwd1)
-        cls.hlt_obj1 = Health(hostname=cls.host1, username=cls.uname1,
-                              password=cls.passwd1)
+        cls.node_obj_list = list()
+        cls.hlt_obj_list = list()
+        for node in CMN_CFG["nodes"]:
+            nd_obj = Node(hostname=node["hostname"], username=node["username"],
+                           password=node["password"])
+            cls.node_obj_list.append(nd_obj)
+            hlt_obj = Health(hostname=node["hostname"], username=node["username"],
+                              password=node["password"])
+            cls.hlt_obj_list.append(hlt_obj)
 
-        cls.host2 = CMN_CFG["nodes"][1]["hostname"]
-        cls.uname2 = CMN_CFG["nodes"][1]["username"]
-        cls.passwd2 = CMN_CFG["nodes"][1]["password"]
-        cls.nd2_obj = Node(hostname=cls.host2, username=cls.uname2,
-                           password=cls.passwd2)
-        cls.hlt_obj2 = Health(hostname=cls.host2, username=cls.uname2,
-                              password=cls.passwd2)
-
-        cls.host3 = CMN_CFG["nodes"][2]["hostname"]
-        cls.uname3 = CMN_CFG["nodes"][2]["username"]
-        cls.passwd3 = CMN_CFG["nodes"][2]["password"]
-        cls.nd3_obj = Node(hostname=cls.host3, username=cls.uname3,
-                           password=cls.passwd3)
-        cls.hlt_obj3 = Health(hostname=cls.host3, username=cls.uname3,
-                              password=cls.passwd3)
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.prov_obj = Provisioner()
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         cls.ntp_data = {}
         cls.restored = True
-        cls.hlt_obj_list = [cls.hlt_obj1, cls.hlt_obj2, cls.hlt_obj3]
         cls.no_nodes = len(cls.hlt_obj_list)
         LOGGER.info("Done: Setup module operations")
 
@@ -291,13 +277,13 @@ class TestPostDeployThreeNode:
             LOGGER.info("TEARDOWN: Restore NTP configuration data.")
             for node in range(1, self.no_nodes+1):
                 resp = self.prov_obj.set_ntpsysconfg(
-                    node_obj=self.nd1_obj,
+                    node_obj=self.node_obj_list[0],
                     time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_true(resp[0], resp[1])
 
                 resp = self.prov_obj.sysconfg_verification(
-                    self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
+                    self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                     exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                     exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
                 assert_utils.assert_true(resp[0], resp[1])
@@ -309,12 +295,12 @@ class TestPostDeployThreeNode:
     @pytest.mark.multinode
     @pytest.mark.tags("TEST-21919")
     @CTFailOn(error_handler)
-    def test_verify_services_three_node_vm(self):
+    def test_verify_services_multi_node_vm(self):
         """
         Prov test for verification of all services on deployed system
         """
         LOGGER.info("Check that all cortx services are up")
-        resp = self.nd1_obj.execute_cmd(
+        resp = self.node_obj_list[0].execute_cmd(
             cmd=common_cmds.CMD_PCS_STATUS_FULL, read_lines=True)
         LOGGER.info("PCS status: %s", resp)
         for line in resp:
@@ -324,8 +310,7 @@ class TestPostDeployThreeNode:
                 "Some services are not up")
 
         LOGGER.info("Check that all third party services are up")
-        node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
-        for node in node_obj_list:
+        for node in self.node_obj_list:
             LOGGER.info(
                 "Verifying third party services running on node %s",
                 node.hostname)
@@ -349,8 +334,7 @@ class TestPostDeployThreeNode:
                         PROV_CFG["system"]["active"]), len(
                         PROV_CFG["services"]["hw_specific"]))
 
-        health_obj_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
-        for node in health_obj_list:
+        for node in self.hlt_obj_list:
             LOGGER.info(
                 "Checking all services are running on respective ports")
             resp = self.prov_obj.verify_services_ports(
@@ -371,8 +355,7 @@ class TestPostDeployThreeNode:
         """
         LOGGER.info("Started: confstore keys validation.")
         LOGGER.info("Check that the cluster is up and running.")
-        hlt_list = [self.hlt_obj1, self.hlt_obj2, self.hlt_obj3]
-        for hlt_obj in hlt_list:
+        for hlt_obj in self.hlt_obj_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are accessible and PCS looks clean.")
@@ -382,7 +365,7 @@ class TestPostDeployThreeNode:
                 LOGGER.info(
                     "Verification of {} from pillar as well as confstore template.".format(key))
                 output = self.prov_obj.confstore_verification(
-                    key, self.nd1_obj, node_id)
+                    key, self.node_obj_list[0], node_id)
                 assert_utils.assert_true(output[0], output[1])
 
         LOGGER.info("Completed: confstore keys validation.")
@@ -401,7 +384,7 @@ class TestPostDeployThreeNode:
         for node in range(1, self.no_nodes+1):
             LOGGER.info(f"Store NTP configuration data for srvnode-{node}.")
             resp = self.prov_obj.get_ntpsysconfg(
-                self.ntp_keys, self.nd1_obj, node)
+                self.ntp_keys, self.node_obj_list[0], node)
             assert_utils.assert_true(resp[0], resp[1])
             self.ntp_data[f"srvnode-{node}"] = resp[1]
             LOGGER.info(
@@ -429,7 +412,7 @@ class TestPostDeployThreeNode:
             "Step 3: Validate that NTP Configuration is same on all applicable nodes")
         for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.sysconfg_verification(
-                self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
+                self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                 exp_t_srv=self.ntp_data["srvnode-1"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data["srvnode-1"][self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
@@ -441,7 +424,7 @@ class TestPostDeployThreeNode:
         LOGGER.info("Step 4: Validate time_server is set to {} in /etc/chrony.conf".format(
             ntp_time_server_val))
         resp = self.prov_obj.get_chrony(
-            node_obj=self.nd1_obj,
+            node_obj=self.node_obj_list[0],
             time_server=ntp_time_server_val)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 4: Validated time_server in /etc/chrony.conf response = {}".format(
@@ -455,7 +438,7 @@ class TestPostDeployThreeNode:
             set_timesrv_ip, set_timezone))
         for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.set_ntpsysconfg(
-                node_obj=self.nd1_obj,
+                node_obj=self.node_obj_list[0],
                 time_server=set_timesrv_ip,
                 timezone=set_timezone)
             assert_utils.assert_true(resp[0], resp[1])
@@ -463,7 +446,7 @@ class TestPostDeployThreeNode:
         LOGGER.info("Step 6: Validate set NTP configuration in pillar data")
         for node in range(1, self.no_nodes+1):
             resp = self.prov_obj.sysconfg_verification(
-                self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
+                self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                 exp_t_srv=set_timesrv_ip, exp_t_zone=set_timezone)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 6: Validated set NTP Configuration on srvnode-{}:{}".format(
@@ -471,7 +454,7 @@ class TestPostDeployThreeNode:
 
         LOGGER.info("Step 7: Validate set time_server in /etc/chrony.conf")
         resp = self.prov_obj.get_chrony(
-            node_obj=self.nd1_obj,
+            node_obj=self.node_obj_list[0],
             time_server=set_timesrv_ip)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Validated set time_server in /etc/chrony.conf response = {}".format(
@@ -479,12 +462,12 @@ class TestPostDeployThreeNode:
 
         LOGGER.info("Step 8: Restore NTP configuration data.")
         for node in range(1, self.no_nodes+1):
-            resp = self.prov_obj.set_ntpsysconfg(node_obj=self.nd1_obj,
+            resp = self.prov_obj.set_ntpsysconfg(node_obj=self.node_obj_list[0],
                                                  time_server=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                                                  timezone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])
             resp = self.prov_obj.sysconfg_verification(
-                self.ntp_keys, node_obj=self.nd1_obj, node_id=node,
+                self.ntp_keys, node_obj=self.node_obj_list[0], node_id=node,
                 exp_t_srv=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[0]],
                 exp_t_zone=self.ntp_data[f"srvnode-{node}"][self.ntp_keys[1]])
             assert_utils.assert_true(resp[0], resp[1])

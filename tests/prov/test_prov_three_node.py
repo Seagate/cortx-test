@@ -25,17 +25,12 @@ Prov test file for all the Prov tests scenarios for single node VM.
 import os
 import logging
 import time
-import random
 import pytest
-from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons import commands as common_cmds
 from commons.utils import assert_utils
-from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler
 from config import CMN_CFG, PROV_CFG
 from libs.prov.provisioner import Provisioner
-from libs.csm.cli.cli_csm_user import CortxCliCsmUser
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -54,41 +49,35 @@ class TestProvThreeNode:
         LOGGER.info("STARTED: Setup Module operations")
         cls.setup_type = CMN_CFG["setup_type"]
         cls.build = os.getenv("Build", None)
-        cls.build = "{}/{}".format(cls.build,
-                                   "prod") if cls.build else "last_successful_prod"
-        cls.build_branch = os.getenv("Build_Branch", "stable")
+        cls.build_branch = os.getenv("Build_Type", "stable")
+        if cls.build:
+            if cls.build_branch == "stable" or cls.build_branch == "main":
+                cls.build = "{}/{}".format(cls.build, "prod")
+        else:
+            cls.build = "last_successful_prod"
         cls.build_url = PROV_CFG["build_url"].format(
             cls.build_branch, cls.build)
+
         cls.host1 = CMN_CFG["nodes"][0]["hostname"]
         cls.uname1 = CMN_CFG["nodes"][0]["username"]
         cls.passwd1 = CMN_CFG["nodes"][0]["password"]
         cls.nd1_obj = Node(hostname=cls.host1, username=cls.uname1,
                            password=cls.passwd1)
-        cls.hlt_obj1 = Health(hostname=cls.host1, username=cls.uname1,
-                              password=cls.passwd1)
 
         cls.host2 = CMN_CFG["nodes"][1]["hostname"]
         cls.uname2 = CMN_CFG["nodes"][1]["username"]
         cls.passwd2 = CMN_CFG["nodes"][1]["password"]
         cls.nd2_obj = Node(hostname=cls.host2, username=cls.uname2,
                            password=cls.passwd2)
-        cls.hlt_obj2 = Health(hostname=cls.host2, username=cls.uname2,
-                              password=cls.passwd2)
 
         cls.host3 = CMN_CFG["nodes"][2]["hostname"]
         cls.uname3 = CMN_CFG["nodes"][2]["username"]
         cls.passwd3 = CMN_CFG["nodes"][2]["password"]
         cls.nd3_obj = Node(hostname=cls.host3, username=cls.uname3,
                            password=cls.passwd3)
-        cls.hlt_obj3 = Health(hostname=cls.host3, username=cls.uname3,
-                              password=cls.passwd3)
+
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.prov_obj = Provisioner()
-        cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
-        cls.ntp_data = {}
-        cls.restored = True
-        cls.hlt_obj_list = [cls.hlt_obj1, cls.hlt_obj2, cls.hlt_obj3]
-        cls.no_nodes = len(cls.hlt_obj_list)
         LOGGER.info("Done: Setup module operations")
 
     def teardown_method(self):
@@ -104,7 +93,10 @@ class TestProvThreeNode:
         """
         Prov test for deployment of 3-node node VM
         """
-        LOGGER.info("Starting Deployment with Build %s/%s", self.build_branch, self.build)
+        LOGGER.info(
+            "Starting Deployment on nodes:\n %s\n %s\n %s".format(
+                self.host1, self.host2, self.host3))
+        LOGGER.info("Starting Deployment with Build:\n %s", self.build_url)
         test_cfg = PROV_CFG["3-node-vm"]
         node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]
         for nd_obj in node_obj_list:
