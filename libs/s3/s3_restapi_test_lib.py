@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""S3 account REST API operation Library."""
+"""S3 REST API operation Library."""
 
 import logging
 
@@ -42,6 +42,7 @@ class S3AccountOperationsRestAPI(RestS3user):
         self.endpoint = CSM_REST_CFG["s3accounts_endpoint"]
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def create_s3_account(self, user_name, email_id, passwd) -> tuple:
         """
         Function will create new s3 account user.
@@ -63,8 +64,8 @@ class S3AccountOperationsRestAPI(RestS3user):
                 endpoint=self.endpoint,
                 data=data,
                 headers=self.headers)
-            if response.status_code != "200" and response.ok is not True:
-                raise Exception(response.json()["message"])
+            if response.status_code != 200 and response.ok is not True:
+                return False, response.json()["message"]
             account_details = response.json()
             LOGGER.info("Account Details: %s", account_details)
 
@@ -79,11 +80,12 @@ class S3AccountOperationsRestAPI(RestS3user):
                 err.S3_REST_POST_REQUEST_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def list_s3_accounts(self) -> tuple:
         """
         Function will list down all created s3 accounts.
 
-        :return: bool, response of create user.
+        :return: bool, account list.
         """
         try:
             accounts = []
@@ -91,10 +93,11 @@ class S3AccountOperationsRestAPI(RestS3user):
             # Fetching api response
             response = self.restapi.rest_call(
                 "get", endpoint=self.endpoint, headers=self.headers)
-            if response.status_code == "200" and response.ok is True:
-                accounts = [acc["account_name"]
-                            for acc in response.json()["s3_accounts"]]
-                LOGGER.debug("s3 accounts: %s", accounts)
+            if response.status_code != 200 and response.ok is not True:
+                return False, response.json()["message"]
+            accounts = [acc["account_name"]
+                        for acc in response.json()["s3_accounts"]]
+            LOGGER.debug("s3 accounts: %s", accounts)
 
             return True, accounts
         except BaseException as error:
@@ -107,12 +110,13 @@ class S3AccountOperationsRestAPI(RestS3user):
                 err.S3_REST_GET_REQUEST_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def delete_s3_account(self, user_name):
         """
         Function will delete the required user.
 
-        :param user_name: user name of the account need to be deleted
-        :return: response delete s3account
+        :param user_name: user name of the account need to be deleted.
+        :return: bool, response of deleted s3account.
         """
         try:
             LOGGER.debug("delete s3accounts user : %s", user_name)
@@ -121,20 +125,21 @@ class S3AccountOperationsRestAPI(RestS3user):
             # Fetching api response
             response = self.restapi.rest_call(
                 "delete", endpoint=endpoint, headers=self.headers)
-            if response.status_code != "200" and response.ok is not True:
-                raise Exception(response.json()["message"])
+            if response.status_code != 200 and response.ok is not True:
+                return False, response.json()["message"]
 
             return True, response.json()["message"]
         except BaseException as error:
             LOGGER.error(
                 "%s %s: %s",
                 Rest.EXCEPTION_ERROR,
-                S3AccountOperationsRestAPI.delete_s3_account_user.__name__,
+                S3AccountOperationsRestAPI.delete_s3_account.__name__,
                 error)
             raise CTException(
                 err.S3_REST_DELETE_REQUEST_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def reset_s3account_password(self, user_name, new_password):
         """
         Function will update the s3 account password.
@@ -154,9 +159,8 @@ class S3AccountOperationsRestAPI(RestS3user):
             response = self.restapi.rest_call(
                 "patch", data=data, endpoint=endpoint,
                 headers=self.headers)
-            if response.status_code != "200" and response.ok is not True:
-                raise Exception(
-                    f"Failed to reset password for '{user_name}' s3 account", )
+            if response.status_code != 200 and response.ok is not True:
+                return False, f"Failed to reset password for '{user_name}' s3 account"
 
             return True, response.json()["account_name"]
         except BaseException as error:
@@ -169,13 +173,14 @@ class S3AccountOperationsRestAPI(RestS3user):
                 err.S3_REST_PATCH_REQUEST_FAILED, error) from error
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def create_s3account_access_key(
             self,
             user_name,
             passwd,
             reset_access_key="true"):
         """
-        Function will create the new s3 account access key.
+        Function will create/reset the access key for s3 account .
 
         :param user_name: Name of the s3 account user.
         :param passwd: New password of the s3 account user.
@@ -193,9 +198,8 @@ class S3AccountOperationsRestAPI(RestS3user):
             response = self.restapi.rest_call(
                 "patch", data=data, endpoint=endpoint,
                 headers=self.headers)
-            if response.status_code != "200" and response.ok is not True:
-                raise Exception(
-                    f"Failed to reset password for '{user_name}'", )
+            if response.status_code != 200 and response.ok is not True:
+                return False, f"Failed to reset password for '{user_name}'"
 
             return True, response.json()
         except BaseException as error:

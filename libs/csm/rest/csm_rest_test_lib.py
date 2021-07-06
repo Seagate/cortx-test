@@ -28,6 +28,7 @@ from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_core_lib import RestClient
 from config import CSM_REST_CFG
 
+
 class RestTestLib:
     """
         This is the class for common test library
@@ -65,9 +66,9 @@ class RestTestLib:
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestTestLib.rest_login.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.rest_login.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -96,9 +97,9 @@ class RestTestLib:
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestTestLib.custom_rest_login.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.custom_rest_login.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
@@ -147,7 +148,31 @@ class RestTestLib:
                                f"Request body : {response.request.body}")
                 raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             return func(self, *args, **kwargs)
+
         return create_authenticate_header
+
+    def rest_logout(func):
+        """
+        :type: Decorator
+        :functionality: logout the session after any rest calls.
+        """
+
+        def inner_func(self, *args, **kwargs):
+            """
+            This function will fetch the login token and create the authentication header.
+            :param self: reference of class object.
+            :param args: arguments of the executable function.
+            :param kwargs: keyword arguments of the executable function.
+            :return: function executables.
+            """
+            # Execute prior functions.
+            response = func(self, *args, **kwargs)
+            # logout session.
+            self.restapi.rest_call(
+                "post", endpoint=self.config["rest_logout_endpoint"], headers=self.headers)
+            return response
+
+        return inner_func
 
     def update_csm_config_for_user(self, user_type, username, password):
         """
@@ -167,12 +192,11 @@ class RestTestLib:
             return user_type in self.config
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestTestLib.update_csm_config_for_user.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.update_csm_config_for_user.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
-
 
     def get_headers(self, user_name, user_password):
         """
