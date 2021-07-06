@@ -393,7 +393,6 @@ class TestServerOS:
             LOGGER.info("Verified the generated alert on the SSPL")
 
         LOGGER.info("Step 3: Checking CPU fault alerts on CSM REST API")
-        LOGGER.info()
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
                     self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]
