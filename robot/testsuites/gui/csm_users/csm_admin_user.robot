@@ -407,3 +407,27 @@ TEST-21590
     Navigate To Page  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+TEST-23042
+    [Documentation]  Test that admin user should able to create users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23042
+    [Tags]  Priority_High  Smoke_test  TEST-23042
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23047
+    [Documentation]  Test that admin user should able to delete users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23047
+    [Tags]  Priority_High  Smoke_test  TEST-23047
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
