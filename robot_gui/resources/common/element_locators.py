@@ -162,10 +162,10 @@ CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
 CSM_USER_EDIT_XPATH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-editicon"]'
-CSM_USER_DELETE_XAPTH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
-CSM_TABLE_ELEMENTS_XPATH = '//*[@id="localuser-tabledata"]//table//tbody//tr//td'
+CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]' #'//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
+CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td' #'//*[@id="localuser-tabledata"]//table//tbody//tr//td'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
-ADD_USER_USER_NAME_INPUT_BOX_ID = "txtLocalHostname"
+ADD_USER_USER_NAME_INPUT_BOX_ID = "txtUsername" #"txtLocalHostname"
 ADD_USER_PASSWORD_INPUT_ID = "txtLocalPass"
 ADD_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmPass"
 ADD_USER_EMAIL_ID_INPUT_ID = "useremail"
@@ -182,6 +182,7 @@ UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
 DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
+ADD_ADMIN_USER_RADIO_BUTTON_ID = "lblLocalAdmin"
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
