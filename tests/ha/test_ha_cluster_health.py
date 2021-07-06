@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-HA test suite for node status reflected for multinode.
+HA test suite for cluster status reflected for multinode.
 """
 
 import logging
@@ -47,9 +47,9 @@ from libs.ha.ha_common_libs import HALibs
 LOGGER = logging.getLogger(__name__)
 
 
-class TestHAHealthStatus:
+class TestHAClusterHealth:
     """
-    Test suite for node status tests of HA.
+    Test suite for cluster status tests of HA.
     """
 
     @classmethod
@@ -113,15 +113,18 @@ class TestHAHealthStatus:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.starttime = time.time()
+        self.start_time = time.time()
         if self.setup_type == "HW":
             for bmc_obj in self.bmc_list:
                 self.bmc_ip_list.append(bmc_obj.get_bmc_ip())
-        LOGGER.info("Checking if all nodes online and PCS clean.")
+        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
-        LOGGER.info("All nodes are online and PCS looks clean.")
+        LOGGER.info("All nodes are reachable and PCS looks clean.")
+
+        LOGGER.info("Check in cortxcli and REST that cluster is shown online.")
+        self.status_cluster_resource_online()
 
         LOGGER.info("ENDED: Setup Operations")
 
@@ -166,6 +169,7 @@ class TestHAHealthStatus:
         sys_obj.close_connection()
         LOGGER.info("All nodes health status is online in CLI and REST")
 
+    # pylint: disable=R0201
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22893")
     @CTFailOn(error_handler)
@@ -175,9 +179,6 @@ class TestHAHealthStatus:
         and comes back up(one by one, safe shutdown)
         """
         LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
-
-        LOGGER.info("Check in cortxcli and REST that cluster is shown online.")
-        self.status_cluster_resource_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -224,7 +225,7 @@ class TestHAHealthStatus:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["fault"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -260,7 +261,7 @@ class TestHAHealthStatus:
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
+                self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -270,6 +271,7 @@ class TestHAHealthStatus:
         LOGGER.info(
             "Completed: Test to check node status one by one for all nodes with safe shutdown.")
 
+    # pylint: disable=R0201
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22895")
     @CTFailOn(error_handler)
@@ -281,9 +283,6 @@ class TestHAHealthStatus:
         LOGGER.info(
             "Started: Test to check cluster status one by one by making all nodes down and up, "
             "with unsafe shutdown.")
-
-        LOGGER.info("Check in cortxcli and REST that cluster is shown online.")
-        self.status_cluster_resource_online()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -334,7 +333,7 @@ class TestHAHealthStatus:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["fault"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -370,7 +369,7 @@ class TestHAHealthStatus:
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
+                self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -392,9 +391,6 @@ class TestHAHealthStatus:
             "Started: Test to check cluster status by making two nodes down and up, "
             "with safe shutdown.")
 
-        LOGGER.info("Check in cortxcli and REST that all nodes & cluster/rack/site are online.")
-        self.status_cluster_resource_online()
-
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22873")
     @CTFailOn(error_handler)
@@ -406,6 +402,3 @@ class TestHAHealthStatus:
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
             "with unsafe shutdown.")
-
-        LOGGER.info("Check in cortxcli and REST that all nodes & cluster/rack/site are online.")
-        self.status_cluster_resource_online()
