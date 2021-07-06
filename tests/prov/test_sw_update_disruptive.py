@@ -62,9 +62,9 @@ class TestSWUpdateDisruptive:
                                            "prod") if cls.build_up2 else PROV_CFG["build_def"]
         cls.build_branch = os.getenv("Build_Branch", "stable")
         cls.build_iso1 = PROV_CFG["build_iso"].format(
-            cls.build_branch, cls.build_update1, cls.build_update1)
+            cls.build_branch, cls.build_update1, cls.build_up1)
         cls.build_sig1 = PROV_CFG["build_sig"].format(
-            cls.build_branch, cls.build_update1, cls.build_update1)
+            cls.build_branch, cls.build_update1, cls.build_up1)
         cls.build_key1 = PROV_CFG["build_key"].format(
             cls.build_branch, cls.build_update1)
         cls.build_iso2 = PROV_CFG["build_iso"].format(
@@ -75,6 +75,12 @@ class TestSWUpdateDisruptive:
             cls.build_branch, cls.build_update2)
         cls.iso1_list = [cls.build_iso1, cls.build_sig1, cls.build_key1]
         cls.iso2_list = [cls.build_iso2, cls.build_sig2, cls.build_key2]
+        cls.repo1_list = [PROV_CFG["iso_repo"].format(cls.build_up1),
+                          PROV_CFG["sig_repo"].format(cls.build_up1),
+                          PROV_CFG["key_repo"]]
+        cls.repo2_list = [PROV_CFG["iso_repo"].format(cls.build_up2),
+                          PROV_CFG["sig_repo"].format(cls.build_up2),
+                          PROV_CFG["key_repo"]]
         cls.node_list = []
         cls.host_list = []
         cls.hlt_list = []
@@ -132,12 +138,11 @@ class TestSWUpdateDisruptive:
             users=data, buckets=None, files_count=8, prefs=pref_dir)
 
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
-        self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
         for dnld in self.iso1_list:
-            self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
+            self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(dnld),
                                           read_lines=True)
         LOGGER.info("Set the update repo.")
-        resp = self.prov_obj.set_validate_repo(self.iso1_list, self.node_list[0])
+        resp = self.prov_obj.set_validate_repo(self.repo1_list, self.node_list[0])
         assert_utils.assert_true(resp[0], "Given sw upgrade version is not compatible.")
         assert_utils.assert_equal(resp[1], self.build_up1,
                                   "Set ISO version doesn't match with desired one.")
@@ -240,9 +245,10 @@ class TestSWUpdateDisruptive:
         build = self.prov_obj.get_build_version(self.node_list[0])
         LOGGER.info("Current cortx build: {} and version on system: {}".format(build[0], build[1]))
 
-        current_build_iso = PROV_CFG["build_iso"].format(self.build_branch, build[0], build[0])
-        current_build_sig = PROV_CFG["build_sig"].format(self.build_branch, build[0], build[0])
-        current_build_key = PROV_CFG["build_key"].format(self.build_branch, build[0])
+        build_update = "{}/{}".format(build[0], "prod")
+        current_build_iso = PROV_CFG["build_iso"].format(self.build_branch, build_update, build[0])
+        current_build_sig = PROV_CFG["build_sig"].format(self.build_branch, build_update, build[0])
+        current_build_key = PROV_CFG["build_key"].format(self.build_branch, build_update)
         current_iso_list = [current_build_iso, current_build_sig, current_build_key]
 
         LOGGER.info("Start IOs on the current SW version.")
@@ -254,12 +260,15 @@ class TestSWUpdateDisruptive:
             users=data, buckets=None, files_count=8, prefs=pref_dir)
 
         LOGGER.info("Download the upgrade ISO, SIG file and GPG key")
-        self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
         for dnld in current_iso_list:
             self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
                                           read_lines=True)
         LOGGER.info("Set the upgrade repo.")
-        resp = self.prov_obj.set_validate_repo(current_iso_list, self.node_list[0])
+        repo_list = [PROV_CFG["iso_repo"].format(build[0]),
+                      PROV_CFG["sig_repo"].format(build[0]),
+                      PROV_CFG["key_repo"]]
+
+        resp = self.prov_obj.set_validate_repo(repo_list, self.node_list[0])
         assert_utils.assert_false(resp[0], "set upgrade repo worked fine, which is not expected as upgrade build and current build are same")
         #TODO: Need to add condition to check error msg for failure of set upgrade repo
         #assert_utils.assert_in("incompatible build version", resp[1], f"Set upgrade repo failed with error: {resp[1]}")
