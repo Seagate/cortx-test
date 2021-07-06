@@ -133,6 +133,110 @@ Acknowledge alert
     [Arguments]  ${servicename}
     Action On The Table Element  ${PARTICULAR_ALERT_ACKNOWLEDGE_ICON_XPATH}  ${servicename}
 
+Fail if alert already exists in New alerts tab
+    [Documentation]  Find and mark Fail if alert description already exist
+    [Arguments]  ${description} 
+    ${found}=  Set Variable  False
+    Log To Console And Report  ${description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # description found in the alert, failing test
+    END
+
+print alert table
+    [Documentation]  Verify Presence of any alert with description
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        Log To Console And Report  ${item}
+    END
+
+Check if alert exists in New alerts tab
+    [Documentation]  Find and mark Fail if alert description not exist
+    [Arguments]  ${description}
+    ${found}=  Set Variable  False
+    Log To Console And Report  ${description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Log To Console And Report  ${item}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing test
+
+Check if alert exists in Active alerts tab
+    [Documentation]  Find and mark Fail if alert description not exist
+    [Arguments]  ${description}
+    ${found}=  Set Variable  False
+    Log To Console And Report  ${description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click ActiveAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Capture Page Screenshot
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing test
+
+Check if alert exists in Alert history tab
+    [Documentation]  Find and mark Fail if alert description not exist
+    [Arguments]  ${description}
+    ${found}=  Set Variable  False
+    Log To Console And Report  ${description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click AlertHistory Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Capture Page Screenshot
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing test
+
 Fail if New alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts exist
     [Arguments]  ${servicename}
