@@ -451,41 +451,18 @@ class SystemHealth(RestTestLib):
                     return False, f'Node-"{index+1}" health status is {node_dict["status"]}'
         return True, f"Node health status is as expected"
 
-    def check_site_health_status_rest(self, exp_status: str):
+    def check_resource_health_status_rest(self, resource: str, exp_status: str):
         """
-        This method will get and check health status of site health status
-        :param exp_status: Expected health status of site
+        This method will get and check health status of resource health status
+        :param resource: Get the health status for resource
+        :param exp_status: Expected health status of resource
         :return: bool, Response Message
         """
-        site_resp = self.get_health_status(resource="site")
-        site_dict = site_resp.json()["data"]
-        if site_dict['status'] != exp_status.lower():
-            return False, f"site's health status is {site_dict['status']}"
-        return True, f"site's health status is {site_dict['status']}"
-
-    def check_rack_health_status_rest(self, exp_status: str):
-        """
-        This method will get and check health status of rack health status
-        :param exp_status: Expected health status of rack
-        :return: bool, Response Message
-        """
-        rack_resp = self.get_health_status(resource="rack")
-        rack_dict = rack_resp.json()["data"]
-        if rack_dict['status'] != exp_status.lower():
-            return False, f"rack's health status is {rack_dict['status']}"
-        return True, f"rack's health status is {rack_dict['status']}"
-
-    def check_cluster_health_status_rest(self, exp_status: str):
-        """
-        This method will get and check health status of cluster health status
-        :param exp_status: Expected health status of cluster
-        :return: bool, Response Message
-        """
-        cls_resp = self.get_health_status(resource="cluster")
-        cls_dict = cls_resp.json()["data"]
-        if cls_dict['status'] != exp_status.lower():
-            return False, f"cluster's health status is {cls_dict['status']}"
-        return True, f"cluster's health status is {cls_dict['status']}"
+        health_resp = self.get_health_status(resource=resource)
+        health_dict = health_resp.json()["data"]
+        if health_dict['status'] != exp_status.lower():
+            return False, f"{resource}'s health status is {health_dict['status']}"
+        return True, f"{resource}'s health status is {health_dict['status']}"
 
     def check_csr_health_status_rest(self, exp_status: str):
         """
@@ -493,12 +470,12 @@ class SystemHealth(RestTestLib):
         :param exp_status: Expected health status of cluster, site and rack
         :return: bool, Response Message
         """
-        cls_resp = self.check_cluster_health_status_rest(exp_status)
+        cls_resp = self.check_resource_health_status_rest(resource="cluster", exp_status=exp_status)
         self.log.info(cls_resp[1])
-        site_resp = self.check_site_health_status_rest(exp_status)
+        site_resp = self.check_resource_health_status_rest(resource="site", exp_status=exp_status)
         self.log.info(site_resp[1])
-        rack_resp = self.check_rack_health_status_rest(exp_status)
+        rack_resp = self.check_resource_health_status_rest(resource="rack", exp_status=exp_status)
         self.log.info(rack_resp[1])
-        if cls_resp[0] and site_resp[0] and rack_resp[0]:
+        if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
         return False, f"Cluster, site and rack health status is not as expected"

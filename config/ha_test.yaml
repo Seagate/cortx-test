@@ -4,3 +4,5 @@ vm_params:
 
 common_params:
   loop_count: 11
+  power_on_time: 120
+  power_off_time: 120
