@@ -6,16 +6,16 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Variables   ${RESOURCES}/resources/common/element_locators.py
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
-Force Tags  CSM_GUI  SWServicesAlerts
 
 *** Test Cases ***
 
+CHECK_IN_NEW_ALERTS
+    [Documentation]  CSM GUI: Check if alert present in new alert table
+    [Tags]  Priority_High  R2  CHECK_IN_NEW_ALERTS
+    Check if alert exists in New alerts tab  ${description}
 
 TEST-21262
     [Documentation]  CSM GUI: Verify Alerts for SW Service : HAProxy
