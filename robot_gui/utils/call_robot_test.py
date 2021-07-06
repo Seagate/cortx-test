@@ -58,6 +58,7 @@ def form_run_cli_cmd(arg_dict):
     Form command line for robot test
     """
     cmd = []
+    test_path = ''
     for k, v in arg_dict.items():
         if k == 'log_path':
             cmd.append('-d')
@@ -69,5 +70,7 @@ def form_run_cli_cmd(arg_dict):
         elif k == 'tag':
             cmd.append('-i')
             cmd.append(v)
-    cmd.append('testsuites/gui/.')
+        elif k == 'test_path':
+            test_path = v
+    cmd.append(test_path)
     return cmd
