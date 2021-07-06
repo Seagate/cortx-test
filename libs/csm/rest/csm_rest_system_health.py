@@ -471,11 +471,17 @@ class SystemHealth(RestTestLib):
         :return: bool, Response Message
         """
         cls_resp = self.check_resource_health_status_rest(resource="cluster", exp_status=exp_status)
-        self.log.info(cls_resp[1])
+        self.log.debug(cls_resp[1])
+        if not cls_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=cls_resp[1])
         site_resp = self.check_resource_health_status_rest(resource="site", exp_status=exp_status)
-        self.log.info(site_resp[1])
+        self.log.debug(site_resp[1])
+        if not site_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=site_resp[1])
         rack_resp = self.check_resource_health_status_rest(resource="rack", exp_status=exp_status)
-        self.log.info(rack_resp[1])
+        self.log.debug(rack_resp[1])
+        if not rack_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
         if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
         return False, f"Cluster, site and rack health status is not as expected"

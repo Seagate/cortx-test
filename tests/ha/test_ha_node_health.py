@@ -22,7 +22,6 @@
 HA test suite for node status reflected for multinode.
 """
 
-import os
 import logging
 import random
 import time
@@ -36,7 +35,6 @@ from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
-from commons import pswdmanager
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -62,22 +60,12 @@ class TestHANodeHealth:
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
         cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
-        cls.bmc_user = CMN_CFG["bmc"]["username"]
-        cls.bmc_pwd = CMN_CFG["bmc"]["password"]
-        cls.vm_username = os.getenv(
-            "QA_VM_POOL_ID", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv(
-            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
-                HA_CFG["vm_params"]["passwd"]))
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.csm_alerts_obj = SystemAlerts()
         cls.alert_type = RAS_TEST_CFG["alert_types"]
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.loop_count = HA_CFG["common_params"]["loop_count"]
-        cls.t_power_on = HA_CFG["common_params"]["power_on_time"]
-        cls.t_power_off = HA_CFG["common_params"]["power_off_time"]
 
         cls.node_list = []
         cls.host_list = []
@@ -86,7 +74,6 @@ class TestHANodeHealth:
         cls.cli_list = []
         cls.hlt_list = []
         cls.srvnode_list = []
-        cls.bmc_ip_list = []
         cls.restored = True
 
         for node in range(cls.num_nodes):
@@ -117,15 +104,16 @@ class TestHANodeHealth:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.starttime = time.time()
-        if self.setup_type == "HW":
-            for bmc_obj in self.bmc_list:
-                self.bmc_ip_list.append(bmc_obj.get_bmc_ip())
         LOGGER.info(
             "Checking in cortxcli and REST that all nodes are shown online and PCS clean.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
-        self.status_nodes_online()
+        self.ha_obj.status_nodes_online(
+            node_obj=self.node_list[0],
+            srvnode_list=self.srvnode_list,
+            sys_list=self.sys_list,
+            no_nodes=self.num_nodes)
         LOGGER.info("All nodes are online and PCS looks clean.")
 
         LOGGER.info("ENDED: Setup Operations")
@@ -140,8 +128,7 @@ class TestHANodeHealth:
             for node in range(self.num_nodes):
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
-                    resp = self.safe_unsafe_host_on_off(
-                        node_id=node, action="on", exp_poll=True, timeout=self.t_power_on)
+                    resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
 
@@ -150,78 +137,6 @@ class TestHANodeHealth:
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
-
-    def status_nodes_online(self, node_obj=None):
-        """
-        Helper function to check that all nodes are shown online in cortx cli/REST
-        before starting any other operations.
-        """
-        if node_obj is None:
-            node_obj = self.node_list[0]
-
-        LOGGER.info("Get the node which is running CSM service.")
-        resp = self.ha_obj.check_csm_service(
-            node_obj, self.srvnode_list, self.sys_list)
-        assert_utils.assert_true(resp[0], resp[1])
-        sys_obj = resp[1]
-
-        LOGGER.info("Check all nodes health status is online in CLI and REST")
-        check_rem_node = ["online" for _ in range(self.num_nodes)]
-        resp = self.ha_obj.verify_node_health_status(
-            sys_obj, status=check_rem_node)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("All nodes health status is online in CLI and REST")
-
-    def safe_unsafe_host_on_off(
-            self,
-            node_id: int,
-            action: str,
-            exp_poll: bool,
-            timeout: int,
-            is_safe: bool = None):
-        """
-        Helper function for safe/unsafe host power on/off
-        :param node_id: Id for host to be power on/off
-        :param action: Action to be perform on host power on/off
-        :param exp_poll: Expected polling status from host as per the action (on/off True/False)
-        :param timeout: Max timeout allowed to perform power on/off action
-        :param is_safe: Power off host with safe/unsafe shutdown
-        """
-        if action.lower() == "off":
-            if is_safe:
-                resp = self.node_list[node_id].execute_cmd(cmd="shutdown now")
-                LOGGER.debug("Response for shutdown: {}".format(resp))
-            else:
-                if self.setup_type == "VM":
-                    vm_name = self.host_list[node_id].split(".")[0]
-                    res = system_utils.execute_cmd(
-                        common_cmds.CMD_VM_POWER_OFF.format(
-                            self.vm_username, self.vm_password, vm_name))
-                    assert_utils.assert_true(
-                        res[0], f"VM power {action} command not executed")
-                else:
-                    self.bmc_list[node_id].bmc_node_power_on_off(
-                        self.bmc_ip_list[node_id], self.bmc_user, self.bmc_pwd, action)
-        else:
-            if self.setup_type == "VM":
-                vm_name = self.host_list[node_id].split(".")[0]
-                res = system_utils.execute_cmd(
-                    common_cmds.CMD_VM_POWER_ON.format(
-                        self.vm_username, self.vm_password, vm_name))
-                assert_utils.assert_true(
-                    res[0], f"VM power {action} command not executed")
-            else:
-                self.bmc_list[node_id].bmc_node_power_on_off(
-                    self.bmc_ip_list[node_id], self.bmc_user, self.bmc_pwd, action)
-
-        LOGGER.info("Check if %s is powered %s.",
-                    self.srvnode_list[node_id], action)
-        # SSC cloud is taking time to on/off VM host hence timeout
-        resp = self.ha_obj.polling_host(
-            max_timeout=timeout, host_index=node_id, exp_resp=exp_poll, host_list=self.host_list)
-        return resp
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
@@ -243,8 +158,7 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 # TODO: Need to get the command once F-11A available.
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node, action="off", exp_poll=False, timeout=self.t_power_off, is_safe=True)
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node], is_safe=True)
             assert_utils.assert_true(
                 resp, "Host has not shutdown yet.")
 
@@ -281,8 +195,7 @@ class TestHANodeHealth:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info("Power on {}".format(node_name))
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node, action="on", exp_poll=True, timeout=self.t_power_on)
+            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
                 resp, "Host has not powered on yet.")
             LOGGER.info("{} has powered on".format(node_name))
@@ -291,7 +204,11 @@ class TestHANodeHealth:
             time.sleep(40)
 
             LOGGER.info("Check all nodes are back online in CLI and REST.")
-            self.status_nodes_online(node_obj=nd_obj)
+            self.ha_obj.status_nodes_online(
+                node_obj=nd_obj,
+                srvnode_list=self.srvnode_list,
+                sys_list=self.sys_list,
+                no_nodes=self.num_nodes)
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -324,8 +241,10 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 # TODO: Need to get the command once F-11A available.
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node, action="off", exp_poll=False, timeout=self.t_power_off, is_safe=False)
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node],
+                bmc_obj=self.bmc_list[node],
+                node_obj=self.node_list[node])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node])
@@ -362,17 +281,20 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node])
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node, action="on", exp_poll=True, timeout=self.t_power_on)
+            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info("%s is powered on.", self.host_list[node])
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
-            LOGGER.info("Check all nodes are back online in CLI.")
-            self.status_nodes_online(node_obj=nd_obj)
-            LOGGER.info("All nodes are online in CLI.")
+            LOGGER.info("Check all nodes are back online in CLI and REST.")
+            self.ha_obj.status_nodes_online(
+                node_obj=nd_obj,
+                srvnode_list=self.srvnode_list,
+                sys_list=self.sys_list,
+                no_nodes=self.num_nodes)
+            LOGGER.info("All nodes are online in CLI and REST.")
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["resolved"], True, "iem")
@@ -470,7 +392,11 @@ class TestHANodeHealth:
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info("Check all nodes are back online in CLI and REST.")
-            self.status_nodes_online(node_obj=nd_obj)
+            self.ha_obj.status_nodes_online(
+                node_obj=nd_obj,
+                srvnode_list=self.srvnode_list,
+                sys_list=self.sys_list,
+                no_nodes=self.num_nodes)
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -514,8 +440,7 @@ class TestHANodeHealth:
                     self.srvnode_list[node_index])
                 # TODO: Need to get the command once F-11A available.
 
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node_index, action="off", exp_poll=False, timeout=self.t_power_off, is_safe=True)
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node_index], is_safe=True)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
@@ -552,8 +477,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node_index, action="on", exp_poll=True, timeout=self.t_power_on)
+            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
@@ -562,7 +486,11 @@ class TestHANodeHealth:
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info("Checked All nodes are online in CLI and REST.")
-            self.status_nodes_online(node_obj=nd_obj)
+            self.ha_obj.status_nodes_online(
+                node_obj=nd_obj,
+                srvnode_list=self.srvnode_list,
+                sys_list=self.sys_list,
+                no_nodes=self.num_nodes)
             LOGGER.info("Check for the node back up alert.")
 
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -605,8 +533,10 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 # TODO: Need to get the command once F-11A available.
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node_index, action="off", exp_poll=False, timeout=self.t_power_off, is_safe=False)
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node_index],
+                bmc_obj=self.bmc_list[node_index],
+                node_obj=self.node_list[node_index])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
@@ -643,8 +573,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.safe_unsafe_host_on_off(
-                node_id=node_index, action="on", exp_poll=True, timeout=self.t_power_on)
+            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
@@ -653,7 +582,11 @@ class TestHANodeHealth:
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info("Check all nodes are back online in CLI and REST")
-            self.status_nodes_online(node_obj=nd_obj)
+            self.ha_obj.status_nodes_online(
+                node_obj=nd_obj,
+                srvnode_list=self.srvnode_list,
+                sys_list=self.sys_list,
+                no_nodes=self.num_nodes)
             LOGGER.info("Checked All nodes are online in CLI and REST.")
 
             LOGGER.info("Check for the node back up alert.")

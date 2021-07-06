@@ -21,13 +21,17 @@
 """
 HA utility methods
 """
+import os
 import logging
 import time
 from commons import commands as common_cmd
 from commons.utils import system_utils
 from commons.exceptions import CTException
 from commons import errorcodes as err
+from commons import pswdmanager
 from commons.constants import Rest as Const
+from config import CMN_CFG, HA_CFG
+from libs.csm.rest.csm_rest_system_health import SystemHealth
 LOGGER = logging.getLogger(__name__)
 
 
@@ -35,6 +39,20 @@ class HALibs:
     """
     This class contains common utility methods for HA related operations.
     """
+
+    def __init__(self):
+        self.system_health = SystemHealth()
+        self.setup_type = CMN_CFG["setup_type"]
+        self.vm_username = os.getenv(
+            "QA_VM_POOL_ID", pswdmanager.decrypt(
+                HA_CFG["vm_params"]["uname"]))
+        self.vm_password = os.getenv(
+            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
+                HA_CFG["vm_params"]["passwd"]))
+        self.bmc_user = CMN_CFG["bmc"]["username"]
+        self.bmc_pwd = CMN_CFG["bmc"]["password"]
+        self.t_power_on = HA_CFG["common_params"]["power_on_time"]
+        self.t_power_off = HA_CFG["common_params"]["power_off_time"]
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -126,6 +144,7 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
+            sys_obj.close_connection()
 
     @staticmethod
     def verify_csr_health_status(
@@ -162,26 +181,25 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
+            sys_obj.close_connection()
 
     @staticmethod
     def polling_host(
             max_timeout: int,
-            host_index: int,
-            exp_resp: bool,
-            host_list: list):
+            host: str,
+            exp_resp: bool):
         """
         Helper function to poll for host ping response.
         :param max_timeout: Max timeout allowed for expected response from ping
-        :param host_index: Host to ping
+        :param host: Host to ping
         :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
-        :param host_list: Host list for hosts in current cluster
         :return: bool
         """
 
         poll = time.time() + max_timeout  # max timeout
         while poll > time.time():
             time.sleep(20)
-            resp = system_utils.check_ping(host_list[host_index])
+            resp = system_utils.check_ping(host)
             if resp == exp_resp:
                 return True
         return False
@@ -220,3 +238,85 @@ class HALibs:
                          HALibs.get_iface_ip_list.__name__,
                          error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
+
+    def host_unsafe_power_on(self, host, bmc_obj):
+        """
+        Helper function for unsafe host power on
+        :param host: Host to be power on
+        :param bmc_obj: BMC object
+        """
+
+        if self.setup_type == "VM":
+            vm_name = host.split(".")[0]
+            resp = system_utils.execute_cmd(
+                common_cmd.CMD_VM_POWER_ON.format(
+                    self.vm_username, self.vm_password, vm_name))
+            if not resp[0]:
+                raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
+        else:
+            bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd, "on")
+
+        LOGGER.info("Check if %s is powered on.", host)
+        # SSC cloud is taking time to on VM host hence timeout
+        resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True)
+        return resp
+
+    def host_safe_unsafe_power_off(self, host: str, bmc_obj=None, node_obj=None, is_safe: bool = None):
+        """
+        Helper function for safe/unsafe host power off
+        :param host: Host to be power off
+        :param bmc_obj: BMC object
+        :param node_obj: Node object
+        :param is_safe: Power off host with safe/unsafe shutdown
+        """
+        if is_safe:
+            resp = node_obj.execute_cmd(cmd="shutdown now")
+            LOGGER.debug("Response for shutdown: {}".format(resp))
+        else:
+            if self.setup_type == "VM":
+                vm_name = host.split(".")[0]
+                resp = system_utils.execute_cmd(
+                    common_cmd.CMD_VM_POWER_OFF.format(
+                        self.vm_username, self.vm_password, vm_name))
+                if not resp[0]:
+                    raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power off command not executed")
+            else:
+                bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd, "off")
+
+        LOGGER.info("Check if %s is powered off.", host)
+        # SSC cloud is taking time to off VM host hence timeout
+        resp = self.polling_host(
+            max_timeout=self.t_power_off, host=host, exp_resp=False)
+        return resp
+
+    def status_nodes_online(self, node_obj, srvnode_list, sys_list, no_nodes: int):
+        """
+        Helper function to check that all nodes are shown online in cortx cli/REST
+        :param node_obj: Node object to execute command
+        :param srvnode_list: List of srvnode names
+        :param sys_list: List of system objects
+        :param no_nodes: Number of nodes in system
+        """
+        try:
+            LOGGER.info("Get the node which is running CSM service.")
+            resp = self.check_csm_service(node_obj, srvnode_list, sys_list)
+            if not resp[0]:
+                raise CTException(err.CLI_COMMAND_FAILURE, resp[1])
+
+            sys_obj = resp[1]
+            LOGGER.info("Check all nodes health status is online in CLI and REST")
+            check_rem_node = ["online" for _ in range(no_nodes)]
+            cli_resp = self.verify_node_health_status(
+                sys_obj, status=check_rem_node)
+            if not cli_resp[0]:
+                raise CTException(err.HA_BAD_NODE_HEALTH, cli_resp[1])
+            LOGGER.info("CLI response for nodes health status. %s", cli_resp[1])
+            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_node)
+            if not rest_resp[0]:
+                raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
+            LOGGER.info("REST response for nodes health status. %s", rest_resp[1])
+        except Exception as error:
+            LOGGER.error("%s %s: %s",
+                     Const.EXCEPTION_ERROR,
+                     HALibs.status_nodes_online.__name__,
+                     error)
