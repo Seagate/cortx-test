@@ -614,8 +614,68 @@ class SoftwareAlert(RASCoreLib):
             disk_usage_thresh), "Disk usage threshold is not set as expected."
 
     def restart_sspl(self):
+        """Restart sspl service
+        """
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
-        assert resp, "Failed to restart sspl-ll"
-        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
-        LOGGER.info("Verifying the status of sspl service is online")
+        if resp:
+            time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+            LOGGER.info("Verifying the status of sspl service is online")
+            resp = self.health_obj.pcs_service_status(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+            result = resp[0]
+        else:
+            LOGGER.error("Failed to restart sspl-ll")
+            result = False
+        return result
+
+    def gen_cpu_fault(self, faulty_cpu_id: list):
+        """Generate CPU faults
+
+        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be created.
+        :return [tuple]: bool, error message
+        """
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        n_cpu = set(faulty_cpu_id).intersection(self.get_available_cpus())
+        for cpu in n_cpu:
+            LOGGER.info("Generating CPU fault for CPU-%s", cpu)
+            cmd = commands.CPU_FAULT.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(
+            set(n_cpu))) == 0, "Could not create CPU fault"
+
+    def resolv_cpu_fault(self, faulty_cpu_id: list):
+        """Resolve the CPU faults
+
+        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be resolved
+        :return [type]: bool, error message
+        """
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        for cpu in faulty_cpu_id:
+            LOGGER.info("Resolving CPU fault for CPU-%s", cpu)
+            cmd = commands.CPU_RESOLVE.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(set(faulty_cpu_id))
+                   ) == len(faulty_cpu_id), "Could not resolve CPU fault"
+
+    def get_available_cpus(self):
+        """Find the available online CPUs
+
+        :return [list]: List of core ID which are online.
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
+        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        if "," in resp:
+            resp = resp.split(",")
+        else:
+            resp = [resp]
+        cpus = []
+        for i in resp:
+            if "-" in i:
+                start, end = i.split("-")
+                cpus.extend(list(range(int(start), int(end) + 1)))
+            else:
+                cpus.append(int(i))
+        LOGGER.info("Available CPUs : %s", cpus)
+        return set(cpus)
