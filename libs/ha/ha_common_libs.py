@@ -239,11 +239,12 @@ class HALibs:
                          error)
             raise CTException(err.CLI_ERROR, error.args[0]) from error
 
-    def host_unsafe_power_on(self, host, bmc_obj):
+    def host_power_on(self, host: str, bmc_obj=None):
         """
-        Helper function for unsafe host power on
+        Helper function for host power on
         :param host: Host to be power on
         :param bmc_obj: BMC object
+        :rtype: boolean from polling_host() response
         """
 
         if self.setup_type == "VM":
@@ -268,9 +269,10 @@ class HALibs:
         :param bmc_obj: BMC object
         :param node_obj: Node object
         :param is_safe: Power off host with safe/unsafe shutdown
+        :rtype: boolean from polling_host() response
         """
         if is_safe:
-            resp = node_obj.execute_cmd(cmd="shutdown now")
+            resp = node_obj.execute_cmd(cmd="shutdown now", exc=False)
             LOGGER.debug("Response for shutdown: {}".format(resp))
         else:
             if self.setup_type == "VM":
@@ -296,6 +298,7 @@ class HALibs:
         :param srvnode_list: List of srvnode names
         :param sys_list: List of system objects
         :param no_nodes: Number of nodes in system
+        :rtype: None
         """
         try:
             LOGGER.info("Get the node which is running CSM service.")

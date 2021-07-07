@@ -128,7 +128,7 @@ class TestHANodeHealth:
             for node in range(self.num_nodes):
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
-                    resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+                    resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
 
@@ -195,7 +195,7 @@ class TestHANodeHealth:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info("Power on {}".format(node_name))
-            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
                 resp, "Host has not powered on yet.")
             LOGGER.info("{} has powered on".format(node_name))
@@ -477,7 +477,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
@@ -573,7 +573,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node_index])
-            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node_index], bmc_obj=self.bmc_list[node_index])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not powered on yet.")
             LOGGER.info("%s is powered on", self.host_list[node_index])
