@@ -183,8 +183,9 @@ class TestSWUpdateDisruptive:
                                       "SW upgrade from same build to same build not supported.")
 
         iso_list = [self.iso1_list, self.iso2_list]
+        repo_list = [self.repo1_list, self.repo2_list]
         build_list = [self.build_up1, self.build_up2]
-        for iso, build in zip(iso_list, build_list):
+        for iso, repo, build in zip(iso_list, repo_list, build_list):
             build_cur = self.prov_obj.get_build_version(self.node_list[0])
             LOGGER.info("Current cortx build: {} and version on system: {}"
                         .format(build_cur[0], build_cur[1]))
@@ -199,14 +200,11 @@ class TestSWUpdateDisruptive:
 
             LOGGER.info("Download the upgrade ISO, SIG file and GPG key for build: {}"
                         .format(build))
-            if self.node_list[0].path_exists(PROV_CFG["tmp_dir"]):
-                self.node_list[0].execute_cmd(common_cmds.CMD_REMOVE_DIR)
-            self.node_list[0].make_dir(PROV_CFG["tmp_dir"])
             for dnld in iso:
-                self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
+                self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(dnld),
                                               read_lines=True)
             LOGGER.info("Set the update repo.")
-            resp = self.prov_obj.set_validate_repo(iso, self.node_list[0])
+            resp = self.prov_obj.set_validate_repo(repo, self.node_list[0])
             assert_utils.assert_true(resp[0], "Given sw upgrade version is not compatible.")
             assert_utils.assert_equal(resp[1], build,
                                       "Set ISO version doesn't match with desired one.")
