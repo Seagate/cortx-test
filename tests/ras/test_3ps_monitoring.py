@@ -134,7 +134,7 @@ class Test3PSvcMonitoring:
 
     def teardown_method(self):
         """Teardown operations."""
-        LOGGER.info("Performing Teardown operation")
+        LOGGER.info("############ Performing Teardown operation ############")
         resp = self.ras_test_obj.get_conf_store_vals(
             url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
         if resp != self.thrs_inact_time_org:
