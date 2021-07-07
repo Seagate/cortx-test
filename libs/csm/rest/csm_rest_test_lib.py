@@ -159,7 +159,7 @@ class RestTestLib:
 
         def inner_func(self, *args, **kwargs):
             """
-            This function will fetch the login token and create the authentication header.
+            This function will execute any rest call and logout the session.
             :param self: reference of class object.
             :param args: arguments of the executable function.
             :param kwargs: keyword arguments of the executable function.
@@ -168,8 +168,10 @@ class RestTestLib:
             # Execute prior functions.
             response = func(self, *args, **kwargs)
             # logout session.
-            self.restapi.rest_call(
+            resp = self.restapi.rest_call(
                 "post", endpoint=self.config["rest_logout_endpoint"], headers=self.headers)
+            if resp.status_code != const.SUCCESS_STATUS:
+                raise CTException(err.CSM_REST_AUTHENTICATION_ERROR)
             return response
 
         return inner_func

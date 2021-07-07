@@ -88,7 +88,6 @@ class S3AccountOperationsRestAPI(RestS3user):
         :return: bool, account list.
         """
         try:
-            accounts = []
             LOGGER.debug("Fetch all s3 accounts ...")
             # Fetching api response
             response = self.restapi.rest_call(

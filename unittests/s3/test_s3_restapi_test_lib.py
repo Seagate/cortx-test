@@ -32,9 +32,11 @@ class TestS3RestAPI:
 
     def test_create_s3_account(self):
         """Test create s3 account."""
-        resp = self.s3_rest_obj.create_s3_account(self.username, self.email, self.password)
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
         assert_utils.assert_true(resp[0], resp)
-        resp = self.s3_rest_obj.create_s3_account(self.username, self.email, self.password)
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
         assert_utils.assert_false(resp[0], resp)
 
     def test_list_s3_accounts(self):
@@ -44,7 +46,8 @@ class TestS3RestAPI:
 
     def test_delete_s3_account(self):
         """Test delete s3 account."""
-        resp = self.s3_rest_obj.create_s3_account(self.username, self.email, self.password)
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
         assert_utils.assert_true(resp[0], resp)
         resp = self.s3_rest_obj.delete_s3_account(self.username)
         assert_utils.assert_true(resp[0], resp[1])
@@ -53,16 +56,21 @@ class TestS3RestAPI:
 
     def test_reset_s3account_password(self):
         """Test reset s3 account password."""
-        resp = self.s3_rest_obj.create_s3_account(self.username, self.email, self.password)
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
         assert_utils.assert_true(resp[0], resp)
-        resp = self.s3_rest_obj.reset_s3account_password(self.username, self.new_password)
+        resp = self.s3_rest_obj.reset_s3account_password(
+            self.username, self.new_password)
         assert_utils.assert_true(resp[0], resp[1])
 
     def test_create_s3account_access_key(self):
         """Test create s3 account access key."""
-        resp = self.s3_rest_obj.create_s3_account(self.username, self.email, self.password)
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
         assert_utils.assert_true(resp[0], resp)
-        resp = self.s3_rest_obj.create_s3account_access_key(self.username, self.password)
+        resp = self.s3_rest_obj.create_s3account_access_key(
+            self.username, self.password)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.s3_rest_obj.create_s3account_access_key(self.username, self.password)
+        resp = self.s3_rest_obj.create_s3account_access_key(
+            self.username, self.password)
         assert_utils.assert_true(resp[0], resp[1])
