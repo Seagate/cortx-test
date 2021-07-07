@@ -25,7 +25,6 @@ import time
 import logging
 import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons.constants import SwAlerts as const
 from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.assert_utils import *
