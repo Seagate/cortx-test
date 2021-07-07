@@ -710,7 +710,10 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     :param remote_path: path on NFS share
     :param log: log file string e.g. s3bench
     """
-    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    if log == 'csm_gui':
+        support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
+    else:
+        support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -858,6 +861,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
+        upload_supporting_logs(test_id, remote_path, "csm_gui")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
