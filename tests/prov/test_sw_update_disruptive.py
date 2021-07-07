@@ -227,4 +227,8 @@ class TestSWUpdateDisruptive:
             # TODO: Need to add validation of IOs run from DI framework.
             LOGGER.info("IOs working fine with latest build {} upgraded.".format(build))
 
+            LOGGER.info("Removing KEY file to avoid conflicts.")
+            self.node_list[0].remove_file(filename=PROV_CFG["key_repo"])
+            self.node_list[0].remove_file(filename=PROV_CFG["key1_repo"])
+
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components in succession.")
