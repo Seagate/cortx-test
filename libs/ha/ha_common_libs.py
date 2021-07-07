@@ -262,7 +262,7 @@ class HALibs:
         resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True)
         return resp
 
-    def host_safe_unsafe_power_off(self, host: str, bmc_obj=None, node_obj=None, is_safe: bool = None):
+    def host_safe_unsafe_power_off(self, host: str, bmc_obj=None, node_obj=None, is_safe: bool = False):
         """
         Helper function for safe/unsafe host power off
         :param host: Host to be power off
