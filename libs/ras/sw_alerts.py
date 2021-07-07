@@ -41,7 +41,7 @@ class SoftwareAlert(RASCoreLib):
         self.svc_path = None
 
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list,
-                             ignore_param: list, timeout: int = 5):
+                             ignore_param: list = ['timestamp', 'comment'], timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on which action is to be performed
@@ -105,10 +105,8 @@ class SoftwareAlert(RASCoreLib):
             LOGGER.info("There is no change in the state of other services")
         else:
             LOGGER.error("There is change in the state of the other services")
-
-        e_csm_resp = self.get_expected_csm_resp(action, prev_svc_state)
         result = svc_result and monitor_svcs_result
-        return result, e_csm_resp
+        return result
 
     def verify_systemctl_response(self, expected: dict, actual: dict):
         """Verify systemctl status actual response against expected dictionary
@@ -124,70 +122,6 @@ class SoftwareAlert(RASCoreLib):
             if actual[key] != value:
                 result = False
         return result
-
-    def get_expected_csm_resp(self, action: str, prev_state: dict):
-        """
-        #TODO: This function will be refined when the CSM is available for testing.
-        """
-        svc_fault_response = {"description": "{service_name} is failed state.",
-                              "alert_type": "fault",
-                              "serverity": "critical",
-                              "impact": "{service_name} service is unavailable.",
-                              "recommendation": "Try to restart the service."}
-
-        svc_timeout_response = {"description": "{service_name} in a "
-                                "{inactive/activating/reloading/deactivating} state for more than"
-                                "{threshold_inactive_time} seconds. ",
-                                "alert_type": "fault",
-                                "serverity": "critical",
-                                "impact": "{service_name} service is unavailable.",
-                                "recommendation": "Try to restart the service."}
-
-        svc_resolved_response = {"description": "{service} in active state.",
-                                 "alert_type": "fault_resolved ",
-                                 "serverity": "informational",
-                                 "impact": "{service} service is available now.",
-                                 "recommendation": ""}
-
-        if action == "start":
-            if prev_state['state'] not in ["active"]:
-                csm_response = svc_resolved_response
-            else:
-                csm_response = None
-
-        elif action == "stop":
-            if prev_state['state'] not in ['inactive']:
-                csm_response = svc_fault_response
-            else:
-                csm_response = None
-
-        elif action == "restart":
-            if prev_state['state'] not in ['inactive', 'failed']:
-                csm_response = None
-            else:
-                csm_response = None
-
-        elif action == "enable":
-            csm_response = None
-
-        elif action == "disable":
-            csm_response = None
-
-        elif action == "deactivating":
-            csm_response = None
-
-        elif action == "activating":
-            csm_response = None
-
-        elif action == "restarting":
-            csm_response = None
-
-        elif action == "failed":
-            csm_response = None
-
-        elif action == "reloading":
-            csm_response = None
-        return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
         """Find the expected response based on action performed on the service and it's previous
@@ -360,7 +294,7 @@ class SoftwareAlert(RASCoreLib):
         self.write_svc_file(
             svc, {
                 "Service": {
-                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+                    "ExecStartPre": "/bin/sleep 500", "TimeoutStartSec": "600"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
 
@@ -614,8 +548,68 @@ class SoftwareAlert(RASCoreLib):
             disk_usage_thresh), "Disk usage threshold is not set as expected."
 
     def restart_sspl(self):
+        """Restart sspl service
+        """
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
-        assert resp, "Failed to restart sspl-ll"
-        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
-        LOGGER.info("Verifying the status of sspl service is online")
+        if resp:
+            time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+            LOGGER.info("Verifying the status of sspl service is online")
+            resp = self.health_obj.pcs_service_status(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+            result = resp[0]
+        else:
+            LOGGER.error("Failed to restart sspl-ll")
+            result = False
+        return result
+
+    def gen_cpu_fault(self, faulty_cpu_id: list):
+        """Generate CPU faults
+
+        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be created.
+        :return [tuple]: bool, error message
+        """
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        n_cpu = set(faulty_cpu_id).intersection(self.get_available_cpus())
+        for cpu in n_cpu:
+            LOGGER.info("Generating CPU fault for CPU-%s", cpu)
+            cmd = commands.CPU_FAULT.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(
+            set(n_cpu))) == 0, "Could not create CPU fault"
+
+    def resolv_cpu_fault(self, faulty_cpu_id: list):
+        """Resolve the CPU faults
+
+        :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be resolved
+        :return [type]: bool, error message
+        """
+        faulty_cpu_id = [int(i) for i in faulty_cpu_id]
+        for cpu in faulty_cpu_id:
+            LOGGER.info("Resolving CPU fault for CPU-%s", cpu)
+            cmd = commands.CPU_RESOLVE.format(cpu)
+            self.node_utils.execute_cmd(cmd=cmd)
+        self.restart_sspl()
+        return len(self.get_available_cpus().intersection(set(faulty_cpu_id))
+                   ) == len(faulty_cpu_id), "Could not resolve CPU fault"
+
+    def get_available_cpus(self):
+        """Find the available online CPUs
+
+        :return [list]: List of core ID which are online.
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
+        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        if "," in resp:
+            resp = resp.split(",")
+        else:
+            resp = [resp]
+        cpus = []
+        for i in resp:
+            if "-" in i:
+                start, end = i.split("-")
+                cpus.extend(list(range(int(start), int(end) + 1)))
+            else:
+                cpus.append(int(i))
+        LOGGER.info("Available CPUs : %s", cpus)
+        return set(cpus)
