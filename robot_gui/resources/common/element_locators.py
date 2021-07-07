@@ -183,6 +183,11 @@ DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
 DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
 ADD_ADMIN_USER_RADIO_BUTTON_ID = "lblLocalAdmin"
+CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
+CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
+CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
+CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
