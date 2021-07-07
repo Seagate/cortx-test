@@ -127,6 +127,7 @@ class S3AccountOperationsRestAPI(RestS3user):
                 "delete", endpoint=endpoint, headers=self.headers)
             if response.status_code != 200 and response.ok is not True:
                 return False, response.json()["message"]
+            LOGGER.debug(response.json())
 
             return True, response.json()["message"]
         except BaseException as error:
@@ -161,6 +162,7 @@ class S3AccountOperationsRestAPI(RestS3user):
                 headers=self.headers)
             if response.status_code != 200 and response.ok is not True:
                 return False, f"Failed to reset password for '{user_name}' s3 account"
+            LOGGER.debug(response.json())
 
             return True, response.json()["account_name"]
         except BaseException as error:
@@ -200,6 +202,7 @@ class S3AccountOperationsRestAPI(RestS3user):
                 headers=self.headers)
             if response.status_code != 200 and response.ok is not True:
                 return False, f"Failed to reset password for '{user_name}'"
+            LOGGER.debug(response.json())
 
             return True, response.json()
         except BaseException as error:
