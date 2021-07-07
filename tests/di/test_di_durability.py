@@ -37,6 +37,7 @@ from libs.s3 import CMN_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib
+from boto3.s3.transfer import TransferConfig
 
 
 class TestDIDurability:
@@ -53,6 +54,8 @@ class TestDIDurability:
         self.log.info("STARTED: setup test operations.")
         self.secure_range = secrets.SystemRandom()
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.s3_test_obj = S3TestLib()
+        self.s3_mp_test_obj = S3MultipartTestLib()
         self.log.info("STARTED: setup test operations.")
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -85,8 +88,6 @@ class TestDIDurability:
             system_utils.remove_file(self.file_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
-        self.s3_test_obj = S3TestLib()
-        self.s3_mp_test_obj = S3MultipartTestLib()
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
             resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
@@ -431,3 +432,124 @@ class TestDIDurability:
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
+
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-23688')
+    @CTFailOn(error_handler)
+    def test_23688(self):
+        """
+        Test to verify object integrity of large objects with the multipart threshold
+        to value just lower the object size.
+        """
+        self.log.info(
+            "STARTED: Test to verify object integrity of large objects with the multipart threshold"
+            "to value just lower the object size.")
+        resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
+        # Due to space constrain, using MB size obj in VM and GB size obj in HW
+        if "VM" == CMN_CFG.get("setup_type"):
+            file_size_count = 1  # used while creating file.i.e 1M* fileSizeCount
+            gb_sz = 1024 ** 2  # used for setting MP threshold
+
+        else:
+            file_size_count = 1024  # used while creating file.i.e 1M* fileSizeCount
+            gb_sz = 1024 ** 3  # used for setting MP threshold
+        obj_upload_size_lst = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        obj_down_size_lst = [9, 19, 28, 38, 489, 58, 69, 78, 88, 99]
+        for up_sz, dw_sz in zip(obj_upload_size_lst, obj_down_size_lst):
+            self.log.info("Creating obj of size %s and calculating checksum for it",
+                          up_sz * file_size_count)
+            system_utils.create_file(self.file_path, up_sz * file_size_count)
+            old_checksum = system_utils.get_file_checksum(self.file_path)
+            self.log.info("Created obj of size %s and calculated checksum %s ",
+                          up_sz * file_size_count, old_checksum[1])
+            self.log.info("Setting default multipart threshold value")
+            config = TransferConfig(multipart_threshold=1024 * 1024 * 8)
+            self.log.info("Uploading an object into bucket")
+            resp_upload = self.s3_test_obj.object_upload(
+                self.bucket_name, self.object_name, self.file_path)
+            assert_utils.assert_true(resp_upload[0], resp_upload[1])
+            self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
+            self.log.info("Removing uploaded object from a local path.")
+            os.remove(self.file_path)
+            self.log.info("Setting multipart threshold value to %s, less than uploaded obj size",
+                          dw_sz * gb_sz)
+            config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
+            self.download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
+            self.log.debug("Downloading obj from %s bucket at local path %s",
+                           self.bucket_name, self.download_obj_path)
+            resp_get_obj = self.s3_test_obj.object_download(
+                self.bucket_name, self.object_name, self.download_obj_path, Config=config)
+            assert_utils.assert_true(resp_get_obj[0], resp_get_obj[1])
+            self.log.debug("Downloaded obj from %s bucket at local path %s",
+                           self.bucket_name, self.download_obj_path)
+            self.log.debug("Calculating checksum for the object downloaded and comparing with "
+                           "uploaded obj checksum")
+            new_checksum = system_utils.get_file_checksum(self.download_obj_path)
+            self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
+            assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
+            os.remove(self.download_obj_path)
+            self.log.debug("Validated uploaded and downloaded object checksum and removed "
+                           "downloaded obj from local.")
+        self.log.info(
+            "ENDED: Test to verify object integrity of large objects with multipart threshold"
+            "to value just lower the object size.")
+
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-23689')
+    @CTFailOn(error_handler)
+    def test_23689(self):
+        """
+        Test to verify object integrity of large objects with the multipart threshold to value
+        greater than the object size.
+        """
+        self.log.info(
+            "STARTED: Test to verify object integrity of large objects with the multipart "
+            "threshold to value greater than the object size.")
+        resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
+        assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
+        if "VM" == CMN_CFG.get("setup_type"):
+            file_size_count = 1  # used while creating file.i.e 1M* fileSizeCount
+            gb_sz = 1024 ** 2  # used for setting MP threshold
+
+        else:
+            file_size_count = 1024  # used while creating file.i.e 1M* fileSizeCount
+            gb_sz = 1024 ** 3  # used for setting MP threshold
+        obj_upload_size_lst = [9, 19, 28, 38, 49, 58, 68, 78, 88, 99]
+        obj_down_size_lst = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        for up_sz, dw_sz in zip(obj_upload_size_lst, obj_down_size_lst):
+            self.log.info("Creating obj of size %s and calculating checksum for it",
+                          up_sz * file_size_count)
+            system_utils.create_file(self.file_path, up_sz * file_size_count)
+            old_checksum = system_utils.get_file_checksum(self.file_path)
+            self.log.info("Created obj of size %s and calculated checksum %s ",
+                          up_sz * file_size_count, old_checksum[1])
+            self.log.info("Setting default multipart threshold value")
+            config = TransferConfig(multipart_threshold=1024 * 1024 * 8)
+            self.log.info("Uploading an object into bucket")
+            resp_upload = self.s3_test_obj.object_upload(
+                self.bucket_name, self.object_name, self.file_path)
+            assert_utils.assert_true(resp_upload[0], resp_upload[1])
+            self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
+            self.log.info("Removing uploaded object from a local path.")
+            os.remove(self.file_path)
+            self.log.info("Setting multipart threshold value to %s, greater than uploaded obj size",
+                          dw_sz * gb_sz)
+            config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
+            self.download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
+            self.log.debug("Downloading obj from %s bucket at local path %s",
+                           self.bucket_name, self.download_obj_path)
+            resp_get_obj = self.s3_test_obj.object_download(
+                self.bucket_name, self.object_name, self.download_obj_path, Config=config)
+            assert_utils.assert_true(resp_get_obj[0], resp_get_obj[1])
+            self.log.debug("Downloaded obj from %s bucket at local path %s",
+                           self.bucket_name, self.download_obj_path)
+            self.log.debug("Calculating checksum for the object downloaded and comparing with "
+                           "uploaded obj checksum")
+            new_checksum = system_utils.get_file_checksum(self.download_obj_path)
+            self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
+            assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
+            os.remove(self.download_obj_path)
+        self.log.info(
+            "ENDED: Test to verify object integrity of large objects with the multipart "
+            "threshold to value greater than the object size.")
