@@ -155,7 +155,9 @@ class TestHAClusterHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 # TODO: Need to get the command once F-11A available.
-            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node], is_safe=True)
+            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
+                                                          node_obj=self.node_list[node],
+                                                          is_safe=True)
             assert_utils.assert_true(resp, "Host has not shutdown yet.")
 
             LOGGER.info(
@@ -166,15 +168,17 @@ class TestHAClusterHealth:
                 nd_obj = self.node_list[node + 1]
             sys_obj = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(
+                resp, f"{sys_obj[0]} Could not get server which has CSM service running.")
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
             LOGGER.info("Verify node status via CortxCLI")
             resp = self.ha_obj.verify_node_health_status(
-                sys_obj, status=check_rem_node)
+                sys_obj[1], status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
-            resp = self.ha_obj.verify_csr_health_status(sys_obj, "failed")
+            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], "failed")
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Verify node status via REST")
@@ -221,7 +225,7 @@ class TestHAClusterHealth:
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
         LOGGER.info(
-            "Completed: Test to check cluster status one by one for all nodes with safe shutdown.")
+            "Complete: Test to check cluster status one by one for all nodes with safe shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -259,15 +263,17 @@ class TestHAClusterHealth:
                 nd_obj = self.node_list[node + 1]
             sys_obj = self.ha_obj.check_csm_service(
                 nd_obj, self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(
+                resp, f"{sys_obj[0]} Could not get server which has CSM service running.")
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
             LOGGER.info("Verify node status via CortxCLI")
             resp = self.ha_obj.verify_node_health_status(
-                sys_obj, status=check_rem_node)
+                sys_obj[1], status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
-            resp = self.ha_obj.verify_csr_health_status(sys_obj, "failed")
+            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], "degraded")
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Verify node status via REST")
@@ -313,8 +319,9 @@ class TestHAClusterHealth:
             LOGGER.info("fNode down/up worked fine for node: {self.srvnode_list[node]}")
 
         LOGGER.info(
-            "Completed: Test to check cluster status one by one for all nodes with unsafe shutdown.")
+            "Complete: Test to check cluster status one by one for all nodes with unsafe shutdown.")
 
+    # pylint: disable=R0201
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22872")
     @CTFailOn(error_handler)
@@ -326,7 +333,62 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
             "with safe shutdown.")
+        self.restored = False
+        LOGGER.info("Shutdown two nodes.")
+        for node in range(len(self.srvnode_list)):
+            LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to disable stonith on the node before shutdown")
+                # TODO: Need to get the command once F-11A available.
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node],
+                bmc_obj=self.bmc_list[node],
+                node_obj=self.node_list[node],
+                is_safe=True
+            )
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info(f"{self.host_list[node]} is powered off.")
 
+        check_rem_node = [["online", "failed", "online"],
+                          ["online", "online", "online"]]
+        cluster_status = ["degraded", "online"]
+
+        for node in range(len(self.srvnode_list)):
+            LOGGER.info(f"Power on {self.srvnode_list[node]}")
+            resp = self.ha_obj.host_power_on(
+                host=self.host_list[node],
+                bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not powered on yet.")
+            LOGGER.info(f"{self.host_list[node]} is powered on.")
+
+            # Get the system object on which csm is running
+            sys_obj = self.ha_obj.check_csm_service(
+                self.node_list[node], self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(
+                resp, f"{sys_obj[1]} Could not get server which has CSM service running.")
+
+            LOGGER.info("Verify node status via CortxCLI")
+            resp = self.ha_obj.verify_node_health_status(
+                sys_obj[1], status=check_rem_node[node])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
+            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], cluster_status[node])
+            assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Verify node status via REST")
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node[node])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Verify Cluster/Site/Rack status via REST")
+            resp = self.ha_rest.check_csr_health_status_rest(cluster_status[node])
+            assert_utils.assert_true(resp[0], resp[1])
+        self.restored = True
+        LOGGER.info(
+            "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
+
+    # pylint: disable=R0201
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22873")
     @CTFailOn(error_handler)
@@ -338,3 +400,56 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
             "with unsafe shutdown.")
+        self.restored = False
+        LOGGER.info("Shutdown two nodes.")
+        for node in range(len(self.srvnode_list)):
+            LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to disable stonith on the node before shutdown")
+                # TODO: Need to get the command once F-11A available.
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node],
+                bmc_obj=self.bmc_list[node],
+                node_obj=self.node_list[node],
+            )
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not shutdown yet.")
+            LOGGER.info(f"{self.host_list[node]} is powered off.")
+
+        check_rem_node = [["online", "failed", "online"],
+                          ["online", "online", "online"]]
+        cluster_status = ["degraded", "online"]
+
+        for node in range(len(self.srvnode_list)):
+            LOGGER.info(f"Power on {self.srvnode_list[node]}")
+            resp = self.ha_obj.host_power_on(
+                host=self.host_list[node],
+                bmc_obj=self.bmc_list[node])
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} has not powered on yet.")
+            LOGGER.info(f"{self.host_list[node]} is powered on.")
+
+            # Get the system object on which csm is running
+            sys_obj = self.ha_obj.check_csm_service(
+                self.node_list[node], self.srvnode_list, self.sys_list)
+            assert_utils.assert_true(
+                resp, f"{sys_obj[1]} Could not get server which has CSM service running.")
+
+            LOGGER.info("Verify node status via CortxCLI")
+            resp = self.ha_obj.verify_node_health_status(
+                sys_obj[1], status=check_rem_node[node])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
+            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], cluster_status[node])
+            assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Verify node status via REST")
+            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node[node])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Verify Cluster/Site/Rack status via REST")
+            resp = self.ha_rest.check_csr_health_status_rest(cluster_status[node])
+            assert_utils.assert_true(resp[0], resp[1])
+        self.restored = True
+        LOGGER.info(
+            "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
