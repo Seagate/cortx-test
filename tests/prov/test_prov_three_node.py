@@ -94,8 +94,8 @@ class TestProvThreeNode:
         Prov test for deployment of 3-node node VM
         """
         LOGGER.info(
-            "Starting Deployment on nodes:\n %s\n %s\n %s".format(
-                self.host1, self.host2, self.host3))
+            "Starting Deployment on nodes:\n %s\n %s\n %s",
+            self.host1, self.host2, self.host3)
         LOGGER.info("Starting Deployment with Build:\n %s", self.build_url)
         test_cfg = PROV_CFG["3-node-vm"]
         node_obj_list = [self.nd1_obj, self.nd2_obj, self.nd3_obj]

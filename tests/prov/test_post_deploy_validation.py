@@ -266,7 +266,7 @@ class TestPostDeployMultiNode:
         cls.ntp_keys = PROV_CFG['system_ntp']['ntp_data']
         cls.ntp_data = {}
         cls.restored = True
-        cls.no_nodes = len(cls.hlt_obj_list)
+        cls.no_nodes = len(CMN_CFG["nodes"])
         LOGGER.info("Done: Setup module operations")
 
     def teardown_method(self):
@@ -360,7 +360,7 @@ class TestPostDeployMultiNode:
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("All nodes are accessible and PCS looks clean.")
 
-        for node_id in range(1, 4):
+        for node_id in range(1, self.no_nodes+1):
             for key in PROV_CFG["confstore_list"]:
                 LOGGER.info(
                     "Verification of {} from pillar as well as confstore template.".format(key))
