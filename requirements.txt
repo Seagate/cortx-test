@@ -54,7 +54,6 @@ redexpect
 robotframework==3.2.2
 robotframework-pythonlibcore==2.1.0
 robotframework-seleniumlibrary==4.5.0
-selenium==3.141.0
 s3transfer==0.2.1
 schedule
 selenium==3.141.0
