@@ -323,3 +323,39 @@ class HALibs:
                      Const.EXCEPTION_ERROR,
                      HALibs.status_nodes_online.__name__,
                      error)
+
+    def status_cluster_resource_online(self, srvnode_list: list, sys_list: list, node_obj):
+        """
+        Check cluster/rack/site/nodes are shown online in Cortx CLI/REST
+        :param srvnode_list: list of srvnode names
+        :param sys_list: list of sys objects for all nodes
+        :param node_obj: node object from which health will be verified
+        """
+        LOGGER.info("Check the node which is running CSM service and login to CSM on that node.")
+        sys_obj = self.check_csm_service(node_obj, srvnode_list, sys_list)
+
+        LOGGER.info("Check cluster, site and rack health status is online in CLI")
+        resp = self.verify_csr_health_status(sys_obj[1], status="online")
+        if not resp[0]:
+            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
+
+        LOGGER.info("Check cluster, site and rack health status is online in REST")
+        resp = self.system_health.check_csr_health_status_rest(exp_status='online')
+        if resp[0]:
+            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
+
+        LOGGER.info("Cluster, site and rack health status is online in CLI and REST")
+
+        LOGGER.info("Check all nodes health status is online in CLI")
+        check_rem_node = ["online" for _ in range(len(srvnode_list))]
+        resp = self.verify_node_health_status(sys_obj[1], status=check_rem_node)
+        if resp[0]:
+            raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
+
+        LOGGER.info("Check all nodes health status is online in REST")
+        resp = self.system_health.verify_node_health_status_rest(check_rem_node)
+        if resp[0]:
+            raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
+
+        LOGGER.info("Node health status is online in CLI and REST")
+
