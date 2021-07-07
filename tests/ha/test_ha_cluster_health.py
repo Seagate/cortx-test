@@ -236,7 +236,7 @@ class TestHAClusterHealth:
         """
         LOGGER.info(
             "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
-
+        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
             LOGGER.info("Shutting down {}".format(self.srvnode_list[node]))
@@ -316,7 +316,7 @@ class TestHAClusterHealth:
                 "Node down/up worked fine for node: {}".format(self.srvnode_list[node]))
 
         LOGGER.info(
-            "Completed: Test to check cluster status one by one for all nodes with safe shutdown.")
+            "Completed: Test to check cluster status one by one for all nodes with unsafe shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22872")
