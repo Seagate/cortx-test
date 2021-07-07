@@ -235,8 +235,7 @@ class TestDIDurability:
 
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
-    def test_object_data_integrity_while_upload_using_correct_checksum_22497(
-            self):
+    def test_object_data_integrity_while_upload_using_correct_checksum_22497(self):
         """
         Test to verify object integrity during the the upload with correct
         checksum.
@@ -314,7 +313,8 @@ class TestDIDurability:
                 file_path=self.file_lst[-1],
                 content_md5="8clkXbwU793H2KMiaF8m6dadadadaw==")
         except CTException as error:
-            self.log.debug("Failed to put %s with an incorrect checksum %s", file, error)
+            self.log.debug(
+                "Failed to put %s with an incorrect checksum %s", self.file_lst[-1], error)
             assert_utils.assert_in(
                 "The Content-MD5 you specified is not valid", error.message, error.message)
         self.log.info(
@@ -425,7 +425,6 @@ class TestDIDurability:
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
-
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
@@ -804,7 +803,7 @@ class TestDIDurability:
             self.log.info("Created obj of size %s and calculated checksum %s ",
                           up_sz * file_size_count, old_checksum[1])
             self.log.info("Setting default multipart threshold value")
-            config = TransferConfig(multipart_threshold=1024 * 1024 * 8)
+            TransferConfig(multipart_threshold=1024 * 1024 * 8)
             self.log.info("Uploading an object into bucket")
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
@@ -815,20 +814,20 @@ class TestDIDurability:
             self.log.info("Setting multipart threshold value to %s, less than uploaded obj size",
                           dw_sz * gb_sz)
             config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
-            self.download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
+            download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
             self.log.debug("Downloading obj from %s bucket at local path %s",
-                           self.bucket_name, self.download_obj_path)
+                           self.bucket_name, download_obj_path)
             resp_get_obj = self.s3_test_obj.object_download(
-                self.bucket_name, self.object_name, self.download_obj_path, Config=config)
+                self.bucket_name, self.object_name, download_obj_path, Config=config)
             assert_utils.assert_true(resp_get_obj[0], resp_get_obj[1])
             self.log.debug("Downloaded obj from %s bucket at local path %s",
-                           self.bucket_name, self.download_obj_path)
+                           self.bucket_name, download_obj_path)
             self.log.debug("Calculating checksum for the object downloaded and comparing with "
                            "uploaded obj checksum")
-            new_checksum = system_utils.get_file_checksum(self.download_obj_path)
+            new_checksum = system_utils.get_file_checksum(download_obj_path)
             self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
             assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
-            os.remove(self.download_obj_path)
+            os.remove(download_obj_path)
             self.log.debug("Validated uploaded and downloaded object checksum and removed "
                            "downloaded obj from local.")
         self.log.info(
@@ -864,7 +863,7 @@ class TestDIDurability:
             self.log.info("Created obj of size %s and calculated checksum %s ",
                           up_sz * file_size_count, old_checksum[1])
             self.log.info("Setting default multipart threshold value")
-            config = TransferConfig(multipart_threshold=1024 * 1024 * 8)
+            TransferConfig(multipart_threshold=1024 * 1024 * 8)
             self.log.info("Uploading an object into bucket")
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
@@ -875,20 +874,20 @@ class TestDIDurability:
             self.log.info("Setting multipart threshold value to %s, greater than uploaded obj size",
                           dw_sz * gb_sz)
             config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
-            self.download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
+            download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
             self.log.debug("Downloading obj from %s bucket at local path %s",
-                           self.bucket_name, self.download_obj_path)
+                           self.bucket_name, download_obj_path)
             resp_get_obj = self.s3_test_obj.object_download(
-                self.bucket_name, self.object_name, self.download_obj_path, Config=config)
+                self.bucket_name, self.object_name, download_obj_path, Config=config)
             assert_utils.assert_true(resp_get_obj[0], resp_get_obj[1])
             self.log.debug("Downloaded obj from %s bucket at local path %s",
-                           self.bucket_name, self.download_obj_path)
+                           self.bucket_name, download_obj_path)
             self.log.debug("Calculating checksum for the object downloaded and comparing with "
                            "uploaded obj checksum")
-            new_checksum = system_utils.get_file_checksum(self.download_obj_path)
+            new_checksum = system_utils.get_file_checksum(download_obj_path)
             self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
             assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
-            os.remove(self.download_obj_path)
+            os.remove(download_obj_path)
         self.log.info(
             "ENDED: Test to verify object integrity of large objects with the multipart "
             "threshold to value greater than the object size.")
