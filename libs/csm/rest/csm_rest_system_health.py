@@ -407,6 +407,13 @@ class SystemHealth(RestTestLib):
                 headers=self.headers,
                 params=parameters,
                 save_json=True)
+            if response.status_code != 200:
+                self.log.error(f'Response ={response.text}\n'
+                               f'Request Headers={response.request.headers}\n'
+                               f'Request Body={response.request.body}')
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                                  msg=f"Failed to get {endpoint} response.")
+
             self.log.info(
                 "Response returned is:\n %s", response.json())
             return response
@@ -419,44 +426,62 @@ class SystemHealth(RestTestLib):
             raise CTException(
                 err.CSM_REST_GET_REQUEST_FAILED, error) from error
 
-    def get_node_health_status(
-            self,
-            exp_key: str = None,
-            exp_val=None,
-            res_key: str = None,
-            res_val=None,
-            node_id: int = None):
+    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None):
         """
-        This method will get and verify status of node
-        :param exp_val: Expected value from get node health
-        :param exp_key: Expected value key from get node health
-        :param res_key: Resource key to be get as parameter
-        :param res_val: Resource value to be get as parameter
-        :param node_id: NodeID for which data to be fetched
+        This method will get and verify health status of node
+        :param exp_status: List of expected node health status
+        :param node_id: To get and verify node health status for node_id
         :return: bool, Response Message
         """
-        param = None
-        if res_key:
-            param = dict()
-            # Generate the dict of key-value need to be fetched with Get API call
-            param[f"{res_key}"] = res_val
-        node_resp = self.get_health_status(resource="node", parameters=param)
         if node_id:
-            node_dict = node_resp.json()["data"][node_id]
-            if node_dict[f"{exp_key}"] == exp_val.lower():
-                self.log.info('Node "%s" "%s" \nActual: "%s" \nExpected: "%s"',
-                            node_id, exp_key, node_dict[f"{exp_key}"], exp_val)
-                return True, f'Node "{node_id}" "{exp_key}" is "{exp_val}"'
-            self.log.info('Node "%s" "%s" \nActual: "%s" \nExpected: "%s"',
-                        node_id, exp_key, node_dict[f"{exp_key}"], exp_val)
-            return False, f'Node "{node_id}" expected "{exp_key}" is not "{exp_val}"'
+            param = dict()
+            param["resource_id"] = node_id
+            node_resp = self.get_health_status(resource="node", parameters=param)
+            if node_resp.json()["data"][0]["status"] != exp_status[0].lower():
+                return False, f'Node health status is {node_resp.json()["data"][0]["status"]}'
         else:
-            for node_dict in node_resp.json()["data"]:
-                if node_dict[f"{exp_key}"] == exp_val.lower():
-                    self.log.info('Node "%s" "%s" \nActual: "%s" \nExpected: "%s"',
-                        node_dict["id"], exp_key, node_dict[f"{exp_key}"], exp_val)
+            node_resp = self.get_health_status(resource="node")
+            for index, node_dict in enumerate(node_resp.json()["data"]):
+                if node_dict['status'] == exp_status[index].lower():
+                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                                  index+1, node_dict['status'], exp_status[index])
                 else:
-                    self.log.info('Node "%s" "%s" \nActual: "%s" \nExpected: "%s"',
-                        node_dict["id"], exp_key, node_dict[f"{exp_key}"], exp_val)
-                    return False, f'Node "{node_dict["id"]}" expected "{exp_key}" is not "{exp_val}"'
-            return True, f"All nodes are {exp_val}"
+                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                                  index+1, node_dict['status'], exp_status[index])
+                    return False, f'Node-"{index+1}" health status is {node_dict["status"]}'
+        return True, f"Node health status is as expected"
+
+    def check_resource_health_status_rest(self, resource: str, exp_status: str):
+        """
+        This method will get and check health status of resource health status
+        :param resource: Get the health status for resource
+        :param exp_status: Expected health status of resource
+        :return: bool, Response Message
+        """
+        health_resp = self.get_health_status(resource=resource)
+        health_dict = health_resp.json()["data"]
+        if health_dict['status'] != exp_status.lower():
+            return False, f"{resource}'s health status is {health_dict['status']}"
+        return True, f"{resource}'s health status is {health_dict['status']}"
+
+    def check_csr_health_status_rest(self, exp_status: str):
+        """
+        This method will get and check cluster, site and rack health status
+        :param exp_status: Expected health status of cluster, site and rack
+        :return: bool, Response Message
+        """
+        cls_resp = self.check_resource_health_status_rest(resource="cluster", exp_status=exp_status)
+        self.log.debug(cls_resp[1])
+        if not cls_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=cls_resp[1])
+        site_resp = self.check_resource_health_status_rest(resource="site", exp_status=exp_status)
+        self.log.debug(site_resp[1])
+        if not site_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=site_resp[1])
+        rack_resp = self.check_resource_health_status_rest(resource="rack", exp_status=exp_status)
+        self.log.debug(rack_resp[1])
+        if not rack_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
+        if rack_resp[0] and site_resp[0] and cls_resp[0]:
+            return True, f"Cluster, site and rack health status is {exp_status}"
+        return False, f"Cluster, site and rack health status is not as expected"
