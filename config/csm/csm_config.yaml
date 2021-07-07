@@ -33,7 +33,7 @@ Restcall:
   stats_endpoint: "/api/v1/stats"
   capacity_endpoint: "/api/v1/capacity"
   health_component_endpoint: "/api/v1/system/health/components"
-  health_resource_endpoint: "/api/v1/system/health/{}"
+  health_resource_endpoint: "/api/v2/system/health/{}"
 
 CliConfig:
   iam_user:
