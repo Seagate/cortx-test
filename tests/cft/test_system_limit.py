@@ -440,6 +440,14 @@ class TestS3IOSystemLimits:
         1 IAM user per s3 account, 1 bucket per s3 account
         """
         test = "test_13693"
+
+        response = self.s3_account_obj.list_all_created_s3account()
+        assert response.status_code == Const.SUCCESS_STATUS, f"List account Response is " \
+                                                             f"{response.status_code}. Expected " \
+                                                             f"it to be {Const.SUCCESS_STATUS}"
+        s3_accounts = response.json()
+        assert len(s3_accounts) == 0, f"The system already has s3 accounts present: {s3_accounts}"
+
         self.create(test)
 
         # ToDo: Create one extra S3 account and verify limit response is 403
