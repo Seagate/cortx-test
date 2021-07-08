@@ -204,3 +204,7 @@ S3_ERROR = CTError(0o0001, "S3 Error")
 
 # RAS
 RAS_ERROR = CTError(6007, "RAS Error")
+
+# HA
+HA_BAD_CLUSTER_HEALTH = CTError(7001, "Cluster Health is not good")
+HA_BAD_NODE_HEALTH = CTError(7002, "Node Health is not good")
