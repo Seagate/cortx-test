@@ -209,11 +209,11 @@ class TestSample:
         run_data_chk_obj = RunDataCheckManager(users=data)
         pref_dir = {"prefix_dir": 'test_13'}
 
-        future_class = multiprocessing.Value('b', False)
+        future_obj = multiprocessing.Value('b', False)
         star_res = run_data_chk_obj.start_io(
-            users=data, buckets=None, files_count=8, prefs=pref_dir, future_class=future_class)
-        assert future_class.value, "Upload failed"
-        print(future_class.value)
+            users=data, buckets=None, files_count=8, prefs=pref_dir, future_obj=future_obj)
+        assert future_obj.value, "Upload failed"
+        print(future_obj.value)
         assert star_res, "Upload failed"
         time.sleep(60)
         stop_res = run_data_chk_obj.stop_io(users=data, di_check=True)
