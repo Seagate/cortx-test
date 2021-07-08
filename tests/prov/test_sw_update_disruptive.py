@@ -68,9 +68,9 @@ class TestSWUpdateDisruptive:
         cls.build_key1 = PROV_CFG["build_key"].format(
             cls.build_branch, cls.build_update1)
         cls.build_iso2 = PROV_CFG["build_iso"].format(
-            cls.build_branch, cls.build_update2, cls.build_update2)
+            cls.build_branch, cls.build_update2, cls.build_up2)
         cls.build_sig2 = PROV_CFG["build_sig"].format(
-            cls.build_branch, cls.build_update2, cls.build_update2)
+            cls.build_branch, cls.build_update2, cls.build_up2)
         cls.build_key2 = PROV_CFG["build_key"].format(
             cls.build_branch, cls.build_update2)
         cls.iso1_list = [cls.build_iso1, cls.build_sig1, cls.build_key1]
