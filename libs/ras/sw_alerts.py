@@ -41,7 +41,7 @@ class SoftwareAlert(RASCoreLib):
         self.svc_path = None
 
     def run_verify_svc_state(self, svc: str, action: str, monitor_svcs: list,
-                             ignore_param: list, timeout: int = 5):
+                             ignore_param: list = ['timestamp', 'comment'], timeout: int = 5):
         """Perform the given action on the given service and verify systemctl response.
 
         :param svc: service name on which action is to be performed
@@ -105,10 +105,8 @@ class SoftwareAlert(RASCoreLib):
             LOGGER.info("There is no change in the state of other services")
         else:
             LOGGER.error("There is change in the state of the other services")
-
-        e_csm_resp = self.get_expected_csm_resp(action, prev_svc_state)
         result = svc_result and monitor_svcs_result
-        return result, e_csm_resp
+        return result
 
     def verify_systemctl_response(self, expected: dict, actual: dict):
         """Verify systemctl status actual response against expected dictionary
@@ -124,70 +122,6 @@ class SoftwareAlert(RASCoreLib):
             if actual[key] != value:
                 result = False
         return result
-
-    def get_expected_csm_resp(self, action: str, prev_state: dict):
-        """
-        #TODO: This function will be refined when the CSM is available for testing.
-        """
-        svc_fault_response = {"description": "{service_name} is failed state.",
-                              "alert_type": "fault",
-                              "serverity": "critical",
-                              "impact": "{service_name} service is unavailable.",
-                              "recommendation": "Try to restart the service."}
-
-        svc_timeout_response = {"description": "{service_name} in a "
-                                "{inactive/activating/reloading/deactivating} state for more than"
-                                "{threshold_inactive_time} seconds. ",
-                                "alert_type": "fault",
-                                "serverity": "critical",
-                                "impact": "{service_name} service is unavailable.",
-                                "recommendation": "Try to restart the service."}
-
-        svc_resolved_response = {"description": "{service} in active state.",
-                                 "alert_type": "fault_resolved ",
-                                 "serverity": "informational",
-                                 "impact": "{service} service is available now.",
-                                 "recommendation": ""}
-
-        if action == "start":
-            if prev_state['state'] not in ["active"]:
-                csm_response = svc_resolved_response
-            else:
-                csm_response = None
-
-        elif action == "stop":
-            if prev_state['state'] not in ['inactive']:
-                csm_response = svc_fault_response
-            else:
-                csm_response = None
-
-        elif action == "restart":
-            if prev_state['state'] not in ['inactive', 'failed']:
-                csm_response = None
-            else:
-                csm_response = None
-
-        elif action == "enable":
-            csm_response = None
-
-        elif action == "disable":
-            csm_response = None
-
-        elif action == "deactivating":
-            csm_response = None
-
-        elif action == "activating":
-            csm_response = None
-
-        elif action == "restarting":
-            csm_response = None
-
-        elif action == "failed":
-            csm_response = None
-
-        elif action == "reloading":
-            csm_response = None
-        return csm_response
 
     def get_expected_systemctl_resp(self, action: str):
         """Find the expected response based on action performed on the service and it's previous
@@ -360,7 +294,7 @@ class SoftwareAlert(RASCoreLib):
         self.write_svc_file(
             svc, {
                 "Service": {
-                    "ExecStartPre": "/bin/sleep 200", "TimeoutStartSec": "500"}})
+                    "ExecStartPre": "/bin/sleep 500", "TimeoutStartSec": "600"}})
         self.apply_svc_setting()
         self.node_utils.host_obj.exec_command(commands.SYSTEM_CTL_START_CMD.format(svc))
 
