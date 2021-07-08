@@ -194,6 +194,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["fault"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -222,6 +223,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
@@ -289,6 +291,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["fault"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -316,6 +319,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info("fNode down/up worked fine for node: {self.srvnode_list[node]}")
 
@@ -369,6 +373,7 @@ class TestHAClusterHealth:
                     self.start_time, self.alert_type["fault"], False, "iem")
                 assert_utils.assert_true(resp, "Failed to get alert in CSM")
                 # TODO: If CSM REST getting changed, add alert check from msg bus
+                self.start_time = time.time()
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
@@ -408,6 +413,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
         self.restored = True
         LOGGER.info(
@@ -459,6 +465,7 @@ class TestHAClusterHealth:
                     self.start_time, self.alert_type["fault"], False, "iem")
                 assert_utils.assert_true(resp, "Failed to get alert in CSM")
                 # TODO: If CSM REST getting changed, add alert check from msg bus
+                self.start_time = time.time()
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
@@ -497,6 +504,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
         self.restored = True
         LOGGER.info(
