@@ -787,23 +787,25 @@ class TestDIDurability:
         assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
         # Due to space constrain, using MB size obj in VM and GB size obj in HW
         if "VM" == CMN_CFG.get("setup_type"):
+            base_limit = 500
+            upper_limit = 5001
+            step_limit = 500
             file_size_count = 1  # used while creating file.i.e 1M* fileSizeCount
             gb_sz = 1024 ** 2  # used for setting MP threshold
 
         else:
+            base_limit = 10
+            upper_limit = 101
+            step_limit = 10
             file_size_count = 1024  # used while creating file.i.e 1M* fileSizeCount
             gb_sz = 1024 ** 3  # used for setting MP threshold
-        obj_upload_size_lst = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        obj_down_size_lst = [9, 19, 28, 38, 489, 58, 69, 78, 88, 99]
-        for up_sz, dw_sz in zip(obj_upload_size_lst, obj_down_size_lst):
+        for up_sz in range(base_limit, upper_limit, step_limit):
             self.log.info("Creating obj of size %s and calculating checksum for it",
                           up_sz * file_size_count)
             system_utils.create_file(self.file_path, up_sz * file_size_count)
-            old_checksum = system_utils.get_file_checksum(self.file_path)
+            old_checksum = system_utils.calculate_checksum(self.file_path)
             self.log.info("Created obj of size %s and calculated checksum %s ",
                           up_sz * file_size_count, old_checksum[1])
-            self.log.info("Setting default multipart threshold value")
-            TransferConfig(multipart_threshold=1024 * 1024 * 8)
             self.log.info("Uploading an object into bucket")
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
@@ -812,8 +814,8 @@ class TestDIDurability:
             self.log.info("Removing uploaded object from a local path.")
             os.remove(self.file_path)
             self.log.info("Setting multipart threshold value to %s, less than uploaded obj size",
-                          dw_sz * gb_sz)
-            config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
+                          (up_sz - 5) * gb_sz)
+            config = TransferConfig(multipart_threshold=(up_sz - 5) * gb_sz)
             download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
             self.log.debug("Downloading obj from %s bucket at local path %s",
                            self.bucket_name, download_obj_path)
@@ -824,7 +826,7 @@ class TestDIDurability:
                            self.bucket_name, download_obj_path)
             self.log.debug("Calculating checksum for the object downloaded and comparing with "
                            "uploaded obj checksum")
-            new_checksum = system_utils.get_file_checksum(download_obj_path)
+            new_checksum = system_utils.calculate_checksum(download_obj_path)
             self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
             assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
             os.remove(download_obj_path)
@@ -847,23 +849,25 @@ class TestDIDurability:
         resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
         if "VM" == CMN_CFG.get("setup_type"):
+            base_limit = 500
+            upper_limit = 5001
+            step_limit = 500
             file_size_count = 1  # used while creating file.i.e 1M* fileSizeCount
             gb_sz = 1024 ** 2  # used for setting MP threshold
 
         else:
+            base_limit = 10
+            upper_limit = 101
+            step_limit = 10
             file_size_count = 1024  # used while creating file.i.e 1M* fileSizeCount
             gb_sz = 1024 ** 3  # used for setting MP threshold
-        obj_upload_size_lst = [9, 19, 28, 38, 49, 58, 68, 78, 88, 99]
-        obj_down_size_lst = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        for up_sz, dw_sz in zip(obj_upload_size_lst, obj_down_size_lst):
+        for up_sz in range(base_limit, upper_limit, step_limit):
             self.log.info("Creating obj of size %s and calculating checksum for it",
-                          up_sz * file_size_count)
-            system_utils.create_file(self.file_path, up_sz * file_size_count)
-            old_checksum = system_utils.get_file_checksum(self.file_path)
+                          (up_sz - 5) * file_size_count)
+            system_utils.create_file(self.file_path, (up_sz - 5) * file_size_count)
+            old_checksum = system_utils.calculate_checksum(self.file_path)
             self.log.info("Created obj of size %s and calculated checksum %s ",
-                          up_sz * file_size_count, old_checksum[1])
-            self.log.info("Setting default multipart threshold value")
-            TransferConfig(multipart_threshold=1024 * 1024 * 8)
+                          (up_sz - 5) * file_size_count, old_checksum[1])
             self.log.info("Uploading an object into bucket")
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
@@ -872,8 +876,8 @@ class TestDIDurability:
             self.log.info("Removing uploaded object from a local path.")
             os.remove(self.file_path)
             self.log.info("Setting multipart threshold value to %s, greater than uploaded obj size",
-                          dw_sz * gb_sz)
-            config = TransferConfig(multipart_threshold=dw_sz * gb_sz)
+                          up_sz * gb_sz)
+            config = TransferConfig(multipart_threshold=up_sz * gb_sz)
             download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
             self.log.debug("Downloading obj from %s bucket at local path %s",
                            self.bucket_name, download_obj_path)
@@ -884,7 +888,7 @@ class TestDIDurability:
                            self.bucket_name, download_obj_path)
             self.log.debug("Calculating checksum for the object downloaded and comparing with "
                            "uploaded obj checksum")
-            new_checksum = system_utils.get_file_checksum(download_obj_path)
+            new_checksum = system_utils.calculate_checksum(download_obj_path)
             self.log.debug("Calculated checksum for the object downloaded %s", new_checksum)
             assert_utils.assert_equal(new_checksum[1], old_checksum[1], "Incorrect checksum")
             os.remove(download_obj_path)
