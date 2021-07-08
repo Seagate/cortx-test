@@ -71,8 +71,9 @@ class ProvSWUpgrade:
                 if "ERROR" in line or "failed" in line:
                     return False, resp
             res = node_object.execute_cmd(common_cmd.CMD_ISO_VER, read_lines=True)
-            LOGGER.debug("Response for ISO version: {}".format(res))
-            data = res[0].split('-')
+            data = res[0].strip()
+            LOGGER.debug("Response for ISO version: {}".format(data))
+            data = data.split('-')
             return True, data[1]
 
         except IOError as error:
