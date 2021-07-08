@@ -23,11 +23,10 @@ HA test suite for cluster status reflected for multinode.
 """
 
 import logging
-import random
 import time
 
 import pytest
-
+from random import SystemRandom
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.bmc_helper import Bmc
@@ -66,7 +65,7 @@ class TestHAClusterHealth:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.loop_count = HA_CFG["common_params"]["loop_count"]
-
+        cls.system_random = SystemRandom()
         cls.node_list = []
         cls.host_list = []
         cls.bmc_list = []
@@ -337,7 +336,7 @@ class TestHAClusterHealth:
         self.restored = False
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
         check_rem_node = []
         for index in range(len(self.srvnode_list)):
             if index in off_nodes:
@@ -414,7 +413,7 @@ class TestHAClusterHealth:
         self.restored = False
 
         LOGGER.info("Shutdown two nodes randomly.")
-        off_nodes = random.sample(range(len(self.srvnode_list)), 2)
+        off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
         check_rem_node = []
         for index in range(len(self.srvnode_list)):
             if index in off_nodes:
