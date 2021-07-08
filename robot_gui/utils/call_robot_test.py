@@ -45,11 +45,9 @@ def trigger_robot(arg_dict):
     LOGGER.info("Robot log path is {}".format(log_path))
     with open(log_path, 'r') as f:
         data = f.read()
-        if 'status="FAIL"' in data:
-            LOGGER.error("Robot test failed")
+        if 'fail="1"' in data or 'fail="2"' in data:
             return False
         else:
-            LOGGER.info("Robot test passed")
             return True
 
 
