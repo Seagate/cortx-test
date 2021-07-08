@@ -23,7 +23,7 @@ HA test suite for node status reflected for multinode.
 """
 
 import logging
-import random
+from random import SystemRandom
 import time
 import pytest
 from commons.helpers.health_helper import Health
@@ -34,6 +34,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
@@ -66,6 +67,7 @@ class TestHANodeHealth:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.loop_count = HA_CFG["common_params"]["loop_count"]
+        cls.system_random = SystemRandom()
 
         cls.node_list = []
         cls.host_list = []
@@ -158,7 +160,10 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 # TODO: Need to get the command once F-11A available.
-            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node], is_safe=True)
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node],
+                node_obj=self.node_list[node],
+                is_safe=True)
             assert_utils.assert_true(
                 resp, "Host has not shutdown yet.")
 
@@ -215,6 +220,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: {}".format(node_name))
@@ -281,7 +287,7 @@ class TestHANodeHealth:
             assert_utils.assert_true(
                 resp, "Some services are down for other nodes.")
             LOGGER.info("Power on %s", self.srvnode_list[node])
-            resp = self.ha_obj.host_unsafe_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
+            resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info("%s is powered on.", self.host_list[node])
@@ -300,6 +306,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s",
@@ -366,7 +373,7 @@ class TestHANodeHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["fault"], False, "iem")
+                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, False, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -400,9 +407,10 @@ class TestHANodeHealth:
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
+                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node nw interface down/up worked fine for node: {}".format(node_name))
@@ -423,8 +431,7 @@ class TestHANodeHealth:
             "Started: Test to check single node status with multiple safe shutdown.")
         self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
-        test_cli_node = random.choice([obj for obj in self.sys_list])
-        node_index = self.sys_list.index(test_cli_node)
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -440,7 +447,10 @@ class TestHANodeHealth:
                     self.srvnode_list[node_index])
                 # TODO: Need to get the command once F-11A available.
 
-            resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node_index], is_safe=True)
+            resp = self.ha_obj.host_safe_unsafe_power_off(
+                host=self.host_list[node_index],
+                node_obj=self.node_list[node_index],
+                is_safe=True)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
@@ -497,6 +507,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s, Loop: %s",
@@ -518,8 +529,7 @@ class TestHANodeHealth:
         self.restored = False
 
         LOGGER.info("Get the node for multiple unsafe shutdown.")
-        test_cli_node = random.choice([obj for obj in self.sys_list])
-        node_index = self.sys_list.index(test_cli_node)
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -594,6 +604,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s, Loop: %s",
