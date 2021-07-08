@@ -8,6 +8,5 @@ test_12345:
     100Mb: 1.56
     1Gb: 0.03
     10Gb: 0.01
-  total_objects: 10000
   loops: 1
   clients: 10
