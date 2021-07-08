@@ -23,10 +23,11 @@ HA test suite for cluster status reflected for multinode.
 """
 
 import logging
+import secrets
 import time
 
 import pytest
-from random import SystemRandom
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.bmc_helper import Bmc
@@ -65,7 +66,7 @@ class TestHAClusterHealth:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.loop_count = HA_CFG["common_params"]["loop_count"]
-        cls.system_random = SystemRandom()
+        cls.system_random = secrets.SystemRandom()
         cls.node_list = []
         cls.host_list = []
         cls.bmc_list = []
@@ -178,7 +179,7 @@ class TestHAClusterHealth:
                 sys_obj[1], status=check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
-            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], "failed")
+            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], "degraded")
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Verify node status via REST")
@@ -346,7 +347,7 @@ class TestHAClusterHealth:
 
         cluster_status = ["degraded", "online"]
 
-        for node in off_nodes:
+        for count, node in enumerate(off_nodes):
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -361,6 +362,13 @@ class TestHAClusterHealth:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(f"{self.host_list[node]} is powered off.")
+
+            if count == 0:
+                LOGGER.info("Check for the node down alert.")
+                resp = self.csm_alerts_obj.verify_csm_response(
+                    self.start_time, self.alert_type["fault"], False, "iem")
+                assert_utils.assert_true(resp, "Failed to get alert in CSM")
+                # TODO: If CSM REST getting changed, add alert check from msg bus
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
@@ -394,6 +402,13 @@ class TestHAClusterHealth:
             LOGGER.info("Verify Cluster/Site/Rack status via REST")
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Check for the node back up alert.")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                self.start_time, self.alert_type["resolved"], True, "iem")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM")
+            # TODO: If CSM REST getting changed, add alert check from msg bus
+
         self.restored = True
         LOGGER.info(
             "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
@@ -423,7 +438,7 @@ class TestHAClusterHealth:
 
         cluster_status = ["degraded", "online"]
 
-        for node in off_nodes:
+        for count, node in enumerate(off_nodes):
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -437,6 +452,13 @@ class TestHAClusterHealth:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(f"{self.host_list[node]} is powered off.")
+
+            if count == 0:
+                LOGGER.info("Check for the node down alert.")
+                resp = self.csm_alerts_obj.verify_csm_response(
+                    self.start_time, self.alert_type["fault"], False, "iem")
+                assert_utils.assert_true(resp, "Failed to get alert in CSM")
+                # TODO: If CSM REST getting changed, add alert check from msg bus
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
@@ -469,6 +491,13 @@ class TestHAClusterHealth:
             LOGGER.info("Verify Cluster/Site/Rack status via REST")
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Check for the node back up alert.")
+            resp = self.csm_alerts_obj.verify_csm_response(
+                self.start_time, self.alert_type["resolved"], True, "iem")
+            assert_utils.assert_true(resp, "Failed to get alert in CSM")
+            # TODO: If CSM REST getting changed, add alert check from msg bus
+
         self.restored = True
         LOGGER.info(
             "Complete: Test to check cluster status two nodes off & on with unsafe shutdown.")
