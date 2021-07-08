@@ -64,7 +64,7 @@ class S3AccountOperationsRestAPI(RestS3user):
                 endpoint=self.endpoint,
                 data=data,
                 headers=self.headers)
-            if response.status_code != 200 and response.ok is not True:
+            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, response.json()["message"]
             account_details = response.json()
             LOGGER.info("Account Details: %s", account_details)
@@ -92,7 +92,7 @@ class S3AccountOperationsRestAPI(RestS3user):
             # Fetching api response
             response = self.restapi.rest_call(
                 "get", endpoint=self.endpoint, headers=self.headers)
-            if response.status_code != 200 and response.ok is not True:
+            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, response.json()["message"]
             accounts = [acc["account_name"]
                         for acc in response.json()["s3_accounts"]]
@@ -124,7 +124,7 @@ class S3AccountOperationsRestAPI(RestS3user):
             # Fetching api response
             response = self.restapi.rest_call(
                 "delete", endpoint=endpoint, headers=self.headers)
-            if response.status_code != 200 and response.ok is not True:
+            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, response.json()["message"]
             LOGGER.debug(response.json())
 
@@ -159,7 +159,7 @@ class S3AccountOperationsRestAPI(RestS3user):
             response = self.restapi.rest_call(
                 "patch", data=data, endpoint=endpoint,
                 headers=self.headers)
-            if response.status_code != 200 and response.ok is not True:
+            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, f"Failed to reset password for '{user_name}' s3 account"
             LOGGER.debug(response.json())
 
@@ -199,7 +199,7 @@ class S3AccountOperationsRestAPI(RestS3user):
             response = self.restapi.rest_call(
                 "patch", data=data, endpoint=endpoint,
                 headers=self.headers)
-            if response.status_code != 200 and response.ok is not True:
+            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
                 return False, f"Failed to reset password for '{user_name}'"
             LOGGER.debug(response.json())
 
