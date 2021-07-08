@@ -71,10 +71,9 @@ class TestDataPathValidation:
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
         self.log.info("Test file path: %s", self.file_path)
-        self.log.info(
-            "Step : Install and Configure S3bench tool and validate the testcase.")
-        res = s3bench_obj.setup_s3bench()
-        assert_utils.assert_true(res, res)
+        self.log.info("Check s3 bench tool installed.")
+        res = system_utils.path_exists(s3bench_obj.S3_BENCH_PATH)
+        assert_utils.assert_true(res, f"S3bench tools not installed: {s3bench_obj.S3_BENCH_PATH}")
         self.log.info("ENDED: Setup operations")
         yield
         self.log.info("STARTED: Teardown operations")

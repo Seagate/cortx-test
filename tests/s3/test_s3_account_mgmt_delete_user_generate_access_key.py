@@ -62,8 +62,8 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.resources_dict = dict()
         self.csm_user_list = list()
         self.log.info("Check s3 bench tool installed.")
-        res = system_utils.path_exists("/root/go/src/s3bench")
-        assert_utils.assert_true(res, "S3bench tools not installed: /root/go/src/s3bench")
+        res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
+        assert_utils.assert_true(res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(
             TEST_DATA_FOLDER, "TestAccountUserManagementDeleteAccount")
         if not system_utils.path_exists(self.test_dir_path):
