@@ -134,7 +134,7 @@ class TestBucketLocation:
         self.log.info(
             "Verify get bucket location for the bucket which is not present")
 
-    @pytest.mark.parallel
+    # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
