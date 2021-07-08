@@ -23,7 +23,7 @@ HA test suite for node status reflected for multinode.
 """
 
 import logging
-import random
+from random import SystemRandom
 import time
 import pytest
 from commons.helpers.health_helper import Health
@@ -34,6 +34,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
@@ -66,6 +67,7 @@ class TestHANodeHealth:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.loop_count = HA_CFG["common_params"]["loop_count"]
+        cls.system_random = SystemRandom()
 
         cls.node_list = []
         cls.host_list = []
@@ -369,7 +371,7 @@ class TestHANodeHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["fault"], False, "iem")
+                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, False, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -403,7 +405,7 @@ class TestHANodeHealth:
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
+                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -426,7 +428,7 @@ class TestHANodeHealth:
             "Started: Test to check single node status with multiple safe shutdown.")
         self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
-        node_index = random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -523,7 +525,7 @@ class TestHANodeHealth:
         self.restored = False
 
         LOGGER.info("Get the node for multiple unsafe shutdown.")
-        node_index = random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",

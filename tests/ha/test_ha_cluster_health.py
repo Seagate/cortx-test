@@ -24,7 +24,6 @@ HA test suite for cluster status reflected for multinode.
 
 import logging
 import time
-import random
 import pytest
 
 from commons.ct_fail_on import CTFailOn
@@ -35,6 +34,7 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons import commands as common_cmds
+from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
@@ -346,14 +346,15 @@ class TestHAClusterHealth:
     @CTFailOn(error_handler)
     def test_single_node_multiple_safe_shutdown(self):
         """
-        Check that correct cluster status is shown in Cortx CLI and REST when node
+        Check that correct cluster/site/rack and node status is shown in Cortx CLI and REST when node
         goes down and comes back up (single node multiple times, safe shutdown)
         """
         LOGGER.info(
-            "Started: Test to check cluster status, with multiple safe shutdown to single node.")
+            "Started: Test to check cluster/site/rack and node status with safe "
+            "shutdown of single node multiple times.")
         self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
-        node_index = random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check cluster status.",
@@ -442,11 +443,13 @@ class TestHAClusterHealth:
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
             LOGGER.info(
-                "Check for cluster degraded/online status with %s down/up worked fine for Loop: %s",
+                "Check for cluster/site/rack degraded/online and node failed/online status "
+                "with %s down/up worked fine for Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check cluster status, with multiple safe shutdown to single node.")
+            "Completed: Test to check cluster/site/rack and node status with safe "
+            "shutdown of single node multiple times.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -454,14 +457,15 @@ class TestHAClusterHealth:
     @CTFailOn(error_handler)
     def test_single_node_multiple_unsafe_shutdown(self):
         """
-        Check that correct cluster status is shown in Cortx CLI and REST when
+        Check that correct cluster/site/rack and node status is shown in Cortx CLI and REST when
         node goes down and comes back up(single node multiple times, unsafe shutdown
         """
         LOGGER.info(
-            "Started: Test to check cluster status, with multiple unsafe shutdown to single node.")
+            "Started: Test to check cluster/site/rack and node status with unsafe "
+            "shutdown of single node multiple times.")
         self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
-        node_index = random.choice(range(self.num_nodes))
+        node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
             "Shutdown %s node multiple time and check cluster status.",
@@ -551,11 +555,13 @@ class TestHAClusterHealth:
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
             LOGGER.info(
-                "Check for cluster degraded/online status with %s down/up worked fine for Loop: %s",
+                "Check for cluster/site/rack degraded/online and node failed/online status "
+                "with %s down/up worked fine for Loop: %s",
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check cluster status, with multiple unsafe shutdown to single node.")
+            "Completed: Test to check cluster/site/rack and node status with unsafe "
+            "shutdown of single node multiple times.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -563,11 +569,11 @@ class TestHAClusterHealth:
     @CTFailOn(error_handler)
     def test_one_by_one_network_port_down(self):
         """
-        Test to Check that degraded cluster status is shown in Cortx CLI and REST when nw interface
-        on node goes down and comes back up (one by one)
+        Test to Check that correct cluster/site/rack and node status is shown in Cortx CLI and REST
+        when nw interface on node goes down and comes back up (one by one)
         """
         LOGGER.info(
-            "Started: Test to check cluster status, when one by one all node's nw"
+            "Started: Test to check cluster/site/rack and node status, when one by one all node's nw"
             " interface goes down and comes back up")
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
@@ -628,7 +634,7 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["fault"], False, "iem")
+                self.start_time, SwAlertsconst.ResourceType.NW_INTFC, False, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -662,14 +668,15 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["resolved"], True, "iem")
+                self.start_time, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
             LOGGER.info(
-                "Check for cluster degraded/online status with %s nw interface down/up worked fine",
+                "Check for cluster/site/rack degraded/online and node failed/online "
+                "status with %s nw interface down/up worked fine",
                 self.srvnode_list[node])
 
         LOGGER.info(
-            "Completed: Test to check cluster status, when one by one all node's nw"
+            "Completed: Test to check cluster/site/rack and node status, when one by one all node's nw"
             " interface goes down and comes back up")
