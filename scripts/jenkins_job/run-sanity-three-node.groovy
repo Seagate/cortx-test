@@ -8,7 +8,7 @@ pipeline {
     environment {
 		Target_Node = 'three-node-' + "${"${HOST1}".split("\\.")[0]}"
 		Build_Branch = "${"${CORTX_BUILD}".split("\\#")[0]}"
-		Build_ID = "${"${CORTX_BUILD}".split("\\#")[1]}"
+		Build_VER = "${"${CORTX_BUILD}".split("\\#")[1]}"
 		Sequential_Execution = 'true'
 		Original_TP = 'TEST-24047'
 		Sanity_TE = 'TEST-24048'
@@ -63,7 +63,7 @@ deactivate
 			steps{
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
-python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_ID} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
+python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
 '''
 }
@@ -87,7 +87,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_ID} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report sanity-results.xml
+			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report sanity-results.xml
 		fi
 done < $INPUT
 IFS=$OLDIFS
