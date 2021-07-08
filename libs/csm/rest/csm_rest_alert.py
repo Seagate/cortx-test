@@ -238,7 +238,7 @@ class SystemAlerts(RestTestLib):
         time_lapsed = 0
         resp = False
         while(time_lapsed < timeout and not resp):
-            resp = self.csm_alert_obj.verify_csm_response(*args, **kwargs)
+            resp = self.verify_csm_response(*args, **kwargs)
             time.sleep(1)
             time_lapsed = time_lapsed + 1
         assert resp, "CSM alert is not reported within {}".format(timeout)
