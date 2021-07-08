@@ -220,6 +220,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: {}".format(node_name))
@@ -305,6 +306,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s",
@@ -408,6 +410,7 @@ class TestHANodeHealth:
                 self.starttime, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node nw interface down/up worked fine for node: {}".format(node_name))
@@ -504,6 +507,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s, Loop: %s",
@@ -600,6 +604,7 @@ class TestHANodeHealth:
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.starttime = time.time()
 
             LOGGER.info(
                 "Node down/up worked fine for node: %s, Loop: %s",

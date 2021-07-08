@@ -441,6 +441,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online status "
@@ -553,6 +554,7 @@ class TestHAClusterHealth:
                 self.start_time, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online status "
@@ -671,6 +673,7 @@ class TestHAClusterHealth:
                 self.start_time, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online "
