@@ -280,13 +280,12 @@ EXCLUSIVE_LOCK = 'exclusive'
 
 class SwAlerts:
     SVCS_3P = [
-        "hare-consul-agent.service",
-        "elasticsearch.service",
+#        "elasticsearch.service", # brings down the csm
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
+#        "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-#        "haproxy.service",  # commented due to defect EOS-20842
-        "slapd.service",
-        "lnet.service",
+#        "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
@@ -312,6 +311,7 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+        NW_INTFC = "node:interface:nw"
 
 
 class Sizes:
