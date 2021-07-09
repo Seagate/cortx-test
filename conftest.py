@@ -408,6 +408,7 @@ def pytest_configure(config):
         else:
             Globals.JIRA_UPDATE = False
 
+    pytest.dns_rr_counter = 0
     # Handle parallel execution.
     if not hasattr(config, 'workerinput'):
         config.shared_directory = tempfile.mkdtemp()
