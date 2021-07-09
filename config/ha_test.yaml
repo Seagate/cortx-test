@@ -1,0 +1,8 @@
+vm_params:
+  uname: "Wy3kDTDH70ZfSqD0S7EinXiUNzdqtUcsoGmduDd3Ofo="
+  passwd: "ItoPnYPoGVTg+IzlbzMr9wCO/aRjevBu55jkx+13WUI="
+
+common_params:
+  loop_count: 11
+  power_on_time: 120
+  power_off_time: 300

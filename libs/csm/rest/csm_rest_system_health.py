@@ -382,3 +382,106 @@ class SystemHealth(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def get_health_status(self, resource: str, parameters: dict = None):
+        """
+        This method will Get rest API response for the resource system health
+        :param parameters: filter the node status response with specific param values
+        :param resource: endpoint parameters for rest call
+        :return: System health resource Get rest API response
+        """
+        try:
+            # Building request url to get resource Health status
+            self.log.info("Reading health of %s ...", resource)
+            endpoint = self.config["health_resource_endpoint"].format(resource)
+            self.log.info(
+                "Endpoint for reading capacity is %s", endpoint)
+            self.log.info(
+                "Filter get response with parameters %s", parameters)
+
+            # Fetching api response
+            response = self.restapi.rest_call(
+                request_type="get",
+                endpoint=endpoint,
+                headers=self.headers,
+                params=parameters,
+                save_json=True)
+            if response.status_code != 200:
+                self.log.error(f'Response ={response.text}\n'
+                               f'Request Headers={response.request.headers}\n'
+                               f'Request Body={response.request.body}')
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                                  msg=f"Failed to get {endpoint} response.")
+
+            self.log.info(
+                "Response returned is:\n %s", response.json())
+            return response
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                         const.EXCEPTION_ERROR,
+                         SystemHealth.get_health_status.__name__,
+                         error)
+            raise CTException(
+                err.CSM_REST_GET_REQUEST_FAILED, error) from error
+
+    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None):
+        """
+        This method will get and verify health status of node
+        :param exp_status: List of expected node health status
+        :param node_id: To get and verify node health status for node_id
+        :return: bool, Response Message
+        """
+        if node_id:
+            param = dict()
+            param["resource_id"] = node_id
+            node_resp = self.get_health_status(resource="node", parameters=param)
+            if node_resp.json()["data"][0]["status"] != exp_status[0].lower():
+                return False, f'Node health status is {node_resp.json()["data"][0]["status"]}'
+        else:
+            node_resp = self.get_health_status(resource="node")
+            for index, node_dict in enumerate(node_resp.json()["data"]):
+                if node_dict['status'] == exp_status[index].lower():
+                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                                  index+1, node_dict['status'], exp_status[index])
+                else:
+                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                                  index+1, node_dict['status'], exp_status[index])
+                    return False, f'Node-"{index+1}" health status is {node_dict["status"]}'
+        return True, f"Node health status is as expected"
+
+    def check_resource_health_status_rest(self, resource: str, exp_status: str):
+        """
+        This method will get and check health status of resource health status
+        :param resource: Get the health status for resource
+        :param exp_status: Expected health status of resource
+        :return: bool, Response Message
+        """
+        health_resp = self.get_health_status(resource=resource)
+        health_dict = health_resp.json()["data"]
+        if health_dict['status'] != exp_status.lower():
+            return False, f"{resource}'s health status is {health_dict['status']}"
+        return True, f"{resource}'s health status is {health_dict['status']}"
+
+    def check_csr_health_status_rest(self, exp_status: str):
+        """
+        This method will get and check cluster, site and rack health status
+        :param exp_status: Expected health status of cluster, site and rack
+        :return: bool, Response Message
+        """
+        cls_resp = self.check_resource_health_status_rest(resource="cluster", exp_status=exp_status)
+        self.log.debug(cls_resp[1])
+        if not cls_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=cls_resp[1])
+        site_resp = self.check_resource_health_status_rest(resource="site", exp_status=exp_status)
+        self.log.debug(site_resp[1])
+        if not site_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=site_resp[1])
+        rack_resp = self.check_resource_health_status_rest(resource="rack", exp_status=exp_status)
+        self.log.debug(rack_resp[1])
+        if not rack_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
+        if rack_resp[0] and site_resp[0] and cls_resp[0]:
+            return True, f"Cluster, site and rack health status is {exp_status}"
+        return False, f"Cluster, site and rack health status is not as expected"

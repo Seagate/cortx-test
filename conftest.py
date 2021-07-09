@@ -605,7 +605,18 @@ def pytest_runtest_makereport(item, call):
     db_update = ast.literal_eval(str(item.config.option.db_update))
     if not _local:
         test_id = CACHE.lookup(report.nodeid)
-        if report.when == 'teardown':
+        if report.when == 'setup' and item.rep_setup.failed:
+            # Fail eagerly in Jira, when you know setup failed.
+            # The status is again anyhow updated in teardown as it was earlier.
+            try:
+                if jira_update:
+                    jira_id, jira_pwd = get_jira_credential()
+                    task = jira_utils.JiraTask(jira_id, jira_pwd)
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+            except (requests.exceptions.RequestException, Exception) as fault:
+                LOGGER.exception(str(fault))
+                LOGGER.error("Failed to execute Jira update for %s", test_id)
+        elif report.when == 'teardown':
             try:
                 remote_path = os.path.join(params.NFS_BASE_DIR,
                                            Globals.BUILD, Globals.TP_TKT,
@@ -750,6 +761,12 @@ def pytest_runtest_logstart(nodeid, location):
     :return:
     """
     current_suite = None
+    skip_health_check = False
+    breadcrumbs = os.path.split(location[0])
+    for prefix in params.PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX:
+        if breadcrumbs[-1].startswith(prefix):
+            skip_health_check = True
+            break
     path = "file://" + os.path.realpath(location[0])
     if location[1]:
         path += ":" +str(location[1] + 1)
@@ -774,12 +791,17 @@ def pytest_runtest_logstart(nodeid, location):
             suite = current_suite
     # Check health status of target
     target = Globals.TARGET
-    if not Globals.LOCAL_RUN:
+    if not Globals.LOCAL_RUN and not skip_health_check:
         try:
             check_cortx_cluster_health()
             check_cluster_storage()
-        except (AssertionError, Exception) as fault:
+        except AssertionError as fault:
+            LOGGER.error(f"Health check failed for setup with exception {fault}")
             pytest.exit(f'Health check failed for cluster {target}', 1)
+        except Exception as fault:
+            # This could be permission issues as exception of anytype is handled.
+            LOGGER.error(f"Health check script failed with exception {fault}")
+            pytest.exit(f'Cannot continue as Health check script failed for {target}', 2)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
@@ -805,7 +827,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                     fp.write(rec + '\n')
         return
     test_id = CACHE.lookup(report.nodeid)
-    if report.when == 'setup':
+    if report.when == 'setup' and report.outcome == 'passed':
+        # If you reach here and when you know setup passed.
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)

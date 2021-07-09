@@ -1,5 +1,4 @@
 """All the constants are alphabetically arranged."""
-CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_times_percent(interval=1)[2])'"
 CREATE_FILE = "dd if={} of={} bs={} count={}"
 FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
@@ -37,6 +36,8 @@ CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
+CMD_UPDATE_FILE = "echo {} > {}"
+CMD_TOUCH_FILE = "touch {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -135,6 +136,7 @@ INSTALL_SSH_PASS_CMD = "yum -y install sshpass"
 SCREEN_CMD = "screen -d -m -L -S 'screen_RMQ' {}"
 SSH_CMD = "sshpass -p {} ssh -o 'StrictHostKeyChecking no' {}@{} {}"
 RESOLVE_FAN_FAULT = "ipmitool event {} {} deassert"
+CPU_USAGE_CMD = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=1))'"
 CPU_USAGE_KEY = "cpu_usage_threshold"
 STRING_MANIPULATION = "echo '{}' | tr -dc '[:alnum:]-'"
 REBOOT_NODE_CMD = "init 6"
@@ -179,14 +181,14 @@ CMD_LOGOUT_CORTXCLI = "exit"
 CMD_CREATE_CSM_USER = "users create"
 CMD_DELETE_CSM_USER = "users delete"
 CMD_UPDATE_ROLE = "users update"
-CMD_RESET_PWD = "users reset_password"
+CMD_RESET_PWD = "users password"
 CMD_LIST_CSM_USERS = "users show"
 CMD_HELP_OPTION = "-h"
 CMD_S3ACC = "s3accounts"
 CMD_CREATE_S3ACC = "s3accounts create"
 CMD_SHOW_S3ACC = "s3accounts show"
 CMD_DELETE_S3ACC = "s3accounts delete {}"
-CMD_RESET_S3ACC_PWD = "s3accounts reset_password {}"
+CMD_RESET_S3ACC_PWD = "s3accounts password {}"
 CMD_S3BKT_HELP = "s3buckets -h"
 CMD_CREATE_BUCKET = "s3buckets create {}"
 CMD_SHOW_BUCKETS = "s3buckets show"
@@ -204,11 +206,15 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
+CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
 CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
 CMD_UPDATE_ACCESS_KEY = "s3accesskeys update"
-CMD_RESET_IAM_PWD = "s3iamusers reset_password {}"
+CMD_HEALTH_SHOW = "health show \"{}\""
+CMD_HEALTH_ID = "health show \"{}\" -i \"{}\""
+CMD_RESET_IAM_PWD = "s3iamusers password {}"
 
 # Linux System Commands
 CMD_MKDIR = "mkdir -p {}"
@@ -216,6 +222,8 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
@@ -236,6 +244,11 @@ CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
 CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
 GET_CHRONY = "grep '{}' /etc/chrony.conf"
 CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
+CMD_WGET = "wget {}"
+CMD_SW_VER = "provisioner get_release_version"
+CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
+CMD_ISO_VER = "provisioner get_iso_version"
+CMD_SW_UP = "provisioner sw_upgrade --offline"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -265,7 +278,12 @@ CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
+CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
+# LDAP commands
+CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -304,3 +322,13 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
+
+# VM power operations:
+CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+
+CPU_COUNT = "cat /sys/devices/system/cpu/online"
+CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
+CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"

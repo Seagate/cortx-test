@@ -8,12 +8,18 @@ from commons import params
 from commons import cortxlogging
 from commons.utils import deploy_utils
 from commons.utils import system_utils
+from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
 from commons.constants import LOCAL_S3_CERT_PATH
 from testrunner import get_setup_details
+from libs.prov.provisioner import Provisioner
 from scripts.ssc_cloud.vm_management import VmStateManagement
 
-
+JOB_DEPLOY_3N = 'VM-Deployment-R2-3Node'
+JOB_DEPLOY_1N = 'VM-Deployment-R2-1Node'
+JOB_DESTROY_3N = '3-Node-VM-Destroy'
+JEN_DEPLOY_URL = "http://eos-jenkins.colo.seagate.com/job/Cortx-Deployment"
+JEN_DESTROY_URL = "http://eos-jenkins.colo.seagate.com/job/Provisioner"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -29,7 +35,39 @@ def parse_args():
                         help="Build type (Release/Dev)")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['TODO'], help="Space separated test types")
+    parser.add_argument("-d", "--db_update", type=str_to_bool,
+                        default=True,
+                        help="Update Reports DB. Can be false in case reports db is down")
+    parser.add_argument("-u", "--jira_update", type=str_to_bool,
+                        default=True,
+                        help="Update Jira. Can be false in case Jira is down")
+    parser.add_argument("-pe", "--parallel_exe", type=str, default=False,
+                        help="parallel_exe: True for parallel, False for sequential")
+    parser.add_argument("-tg", "--target", type=str,
+                        default='', help="Target setup details")
+    parser.add_argument("-ll", "--log_level", type=int, default=10,
+                        help="log level value")
+    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
+                        help="number of parallel processes")
+    parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
+                        default=False, nargs='?', const=True,
+                        help="Force sequential run if you face problems with parallel run")
+    parser.add_argument("-i", "--data_integrity_chk", type=str_to_bool,
+                        default=False, help="Helps set DI check enabled so that tests "
+                                            "perform additional checksum check")
     return parser.parse_args()
+
+
+def str_to_bool(val):
+    """To convert a string value to bool."""
+    if isinstance(val, bool):
+        return val
+    if val.lower() in ('yes', 'true', 'y', '1'):
+        return True
+    elif val.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def initialize_loghandler(log) -> None:
@@ -50,7 +88,7 @@ def run_tesrunner_cmd(args, todo=False):
      -b=${Build} -t=${Build_Branch} -d=${DB_Update} -p=${Process_Cnt_Parallel_Exe}
       --force_serial_run ${Sequential_Execution}
     """
-    cmd_line = ['python3 -u testrunner.py ']
+    cmd_line = ['python3.7 -u testrunner.py ']
     _env = os.environ.copy()
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
@@ -86,8 +124,19 @@ def run_tesrunner_cmd(args, todo=False):
     return rc
 
 
-def trigger_destory_and_deployment(vm_machines, reties=3):
-    return 1
+def trigger_deployment(vm_machines, parameters, token, reties=3):
+    """
+    Trigger Jenkins N Node job.
+    """
+    output = Provisioner.build_job(job_name=JOB_DEPLOY_3N,
+                                   parameters=parameters,
+                                   token=token,
+                                   jen_url=JEN_DEPLOY_URL)
+    LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+    assert_utils.assert_equal(
+        output['result'],
+        "SUCCESS",
+        "Job is not successful, please check the url.")
 
 
 def set_s3_endpoints(cluster_ip):
@@ -124,7 +173,7 @@ def setup_client(host, clstr_ip):
 def update_vm_db(args):
     """
     Free VM from setup.
-    This fucntion would be refactored to use service_acount_access when it is added as
+    This function would be refactored to use service_acount_access when it is added as
     a module.
     """
 
@@ -145,15 +194,40 @@ def update_vm_db(args):
     lock_released = vm_state.unlock_system(args.setupname)
 
 
-def destroy_vm():
+def destroy_vm(hosts, token, build='', mgmt_vip='', node_passwd=None):
     """
     Destroy VM from setup.
     """
+    if not hosts:
+        raise EnvironmentError('list of hosts is mandatory')
+    job_name = JOB_DESTROY_3N
+    parameters = dict()
+    jenkins_url = JEN_DESTROY_URL
+    valid_parameters = False
+    if hosts % 3 == 0:
+        valid_parameters = True
+        LOGGER.info("Multi nodes destroy job will be triggered")
+        parameters['NODE1'] = hosts[0]
+        parameters['NODE2'] = hosts[1]
+        parameters['NODE3'] = hosts[2]
+        parameters['NODE_PASS'] = node_passwd
+    if not valid_parameters:
+        LOGGER.error('Please check provided parameters')
+        raise EnvironmentError('Please check provided parameters')
+    output = Provisioner.build_job(
+        job_name, parameters, token, jenkins_url)
+    LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+    assert_utils.assert_equal(output['result'], "SUCCESS",
+                              "Job is not successful, please check the url.")
 
 
-def post_test_execution_action():
-    destroy_vm()
-    update_vm_db()
+def post_test_execution_action(*args, **kwargs):
+    hosts = kwargs.get('hosts')
+    token = kwargs.get('build')
+    mgmt_vip = kwargs.get('mgmt_vip')
+    node_passwd = kwargs.get('node_pass')
+    destroy_vm(hosts, token, build='', mgmt_vip='', node_passwd=None)
+    update_vm_db(args=args)
 
 
 def main(args):
@@ -177,18 +251,21 @@ def main(args):
                 status = run_tesrunner_cmd(args=args, todo=True)
             attempts += 1
             if status:
-                ret = trigger_destory_and_deployment(args.hosts, reties=3)
-
+                ret = destroy_vm(args.hosts, args.token, node_passwd=None)
+                if not ret:
+                    raise EnvironmentError('Distroy VM ran into errors')
+                ret = trigger_deployment()
+                if not ret:
+                    raise EnvironmentError('Deployment Job ran into errors')
             if ret:
                 status = run_tesrunner_cmd(args=args, todo=True)
             if not status:
                 te_completed = True
     else:
-        post_test_execution_action()
+        post_test_execution_action(args, kwargs=dict())
 
 
 if __name__ == '__main__':
-    runner.cleanup()
     initialize_loghandler(LOGGER)
     opts = parse_args()
     main(opts)

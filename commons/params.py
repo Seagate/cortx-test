@@ -45,6 +45,7 @@ PROV_TEST_CONFIG_PATH = "config/prov/prov_test.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
+HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -109,3 +110,5 @@ DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
+
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov']
