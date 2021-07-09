@@ -65,7 +65,7 @@ class TestDataDurability:
         self.object_name = "obj_data_durability"
         self.sleep_time = 10
         self.file_size = 5
-        self.host_ip = CMN_CFG["nodes"][0]["host"]
+        self.host_ip = CMN_CFG["nodes"][0]["hostname"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]

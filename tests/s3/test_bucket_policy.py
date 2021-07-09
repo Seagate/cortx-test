@@ -782,16 +782,7 @@ class TestBucketPolicy:
             assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Step 3 : Get bucket policy with another account is failed")
-        # Cleanup activity
-        self.log.info("Deleting an account %s", self.account_name)
-        self.cli_obj.login_cortx_cli(
-            username=self.account_name, password=self.s3acc_passwd)
-        self.log.debug("Deleting %s account", self.account_name)
-        self.cli_obj.delete_all_buckets_cortx_cli()
-        self.cli_obj.logout_cortx_cli()
-        self.cli_obj.delete_account_cortxcli(
-            account_name=self.account_name, password=self.s3acc_passwd)
-        self.log.info("Account %s is deleted", self.account_name)
+        self.account_list.append(self.account_name)
         self.log.info(
             "ENDED: verify get-bucket-policy for the bucket from account2."
             "Do not apply any ACL permissions or "
