@@ -43,7 +43,7 @@ from testfixtures import LogCapture
 from strip_ansi import strip_ansi
 from typing import List
 from filelock import FileLock
-from threading import Thread
+from threading import Thread, Lock
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
@@ -405,6 +405,7 @@ def pytest_configure(config):
         else:
             Globals.JIRA_UPDATE = False
 
+    pytest.dns_rr_counter = 0
     # Handle parallel execution.
     if not hasattr(config, 'workerinput'):
         config.shared_directory = tempfile.mkdtemp()
@@ -422,7 +423,6 @@ def pytest_configure_node(node):
 
     node.workerinput['shared_dir'] = node.config.shared_directory
 
-    pytest.dns_rr_counter = 0
 
 
 def pytest_sessionstart(session: Session) -> None:
@@ -902,14 +902,21 @@ def generate_random_string():
 
 
 def dns_rr_counter():
-    import threading
-    with threading.Lock():
+    """
+    Lib to return incremented counter
+    :return: integer value
+    """
+    with Lock():
         pytest.dns_rr_counter += 1
         return pytest.dns_rr_counter
 
 
 @pytest.fixture(autouse=True)
 def get_db_cfg(request):
+    """
+    Fixture runtime change s3_url and iam_url for every test based on lb/s3_dns value from DB
+    entry.
+    """
     from config import CMN_CFG, S3_CFG
     if request.config.getoption('--target'):
         setup_query = {"setupname": request.config.getoption('--target')}
