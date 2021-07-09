@@ -1,3 +1,21 @@
+alert_types:
+  fault: "fault"
+  resolved: "fault_resolved"
+  missing: "missing"
+  insertion: "insertion"
+  get: "get"
+
+network_interfaces:
+  VM:
+    MGMT: "eth0"
+    PUBLIC_DATA: "eth1"
+    PRIVATE_DATA: "eth3"
+  HW:
+    #Check network interface names when R2 HW is available
+    MGMT: "eno1"
+    PUBLIC_DATA: "enp175s0f0"
+    PRIVATE_DATA: "enp175s0f1"
+
 test_3005:
   alert: True
   du_val: 8
@@ -213,3 +231,43 @@ test_5343:
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
 
+test_22060:
+  disk_group: "dg00"
+  resource_type: "node:enclosure:disk-group"
+  enclid: 0
+  ctrl_name: ['A', 'B']
+  operation_fault: "Disabled"
+  operation_fault_resolved: "Enabled"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+nw_port_fault:
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw"
+  error_msg: "Failed to put management network port in"
+
+nw_cable_fault:
+  disconnect: 0
+  connect: 1
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw:cable"
+  error_msg: "Failed to {} management network cable"
+
+test_21587:
+  delta_cpu_usage: -5
+  resource_type: "node:os:cpu_usage"
+
+test_21588:
+  delta_mem_usage: -5
+  resource_type: "node:os:memory_usage"
+
+test_21586:
+  delta_disk_usage: -5
+  resource_type: "node:os:disk_space"
+
+test_23045:
+  resource_type: "node:os:cpu:core"
+  faulty_cpu_id:
+    - 0
+    - 1

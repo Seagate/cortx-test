@@ -27,7 +27,7 @@ import logging
 from datetime import datetime, timedelta
 
 from commons.utils.config_utils import read_yaml
-from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs
+from commons.utils.system_utils import path_exists, run_local_cmd, make_dirs, remove_dirs
 
 LOGGER = logging.getLogger(__name__)
 cfg_obj = read_yaml("scripts/s3_bench/config.yaml")[1]
@@ -36,23 +36,38 @@ S3_BENCH_PATH = cfg_obj["s3bench_path"]
 
 
 def setup_s3bench(
-        get_cmd=cfg_obj["s3bench_get"],
-        git_url=cfg_obj["s3bench_git"],
-        path=cfg_obj["go_path"]):
+        get_cmd=cfg_obj["s3bench_get"]):
     """
     Configuring client machine with s3bench dependencies.
     :param string get_cmd: S3Bench go get command
-    :param string git_url: S3Bench git url command
-    :param string path: Go src path
     :return bool: True/False
     """
-    if not (path_exists(path) or path_exists(S3_BENCH_PATH)):
-        run_local_cmd(cfg_obj["cmd_go"])
-        # executing go get for s3bench
-        run_local_cmd(get_cmd)
-        run_local_cmd(cfg_obj["s3bench_trust"])
-        # Clone s3bench to go src
-        run_local_cmd(git_url.format(S3_BENCH_PATH))
+    LOGGER.debug("Installing go/s3bench.")
+    # Install go
+    ret = run_local_cmd(cfg_obj["cmd_go"])
+    if not ret[0]:
+        LOGGER.error("%s", ret[1])
+        return False
+    # Install go get for s3bench
+    ret = run_local_cmd(get_cmd)
+    if not ret[0]:
+        LOGGER.error("%s", ret[1])
+        return False
+    ret = run_local_cmd(cfg_obj["s3bench_trust"])
+    if not ret[0]:
+        LOGGER.error("%s", ret[1])
+        return False
+    # Remove old directory if present
+    if path_exists(S3_BENCH_PATH):
+        resp = remove_dirs(S3_BENCH_PATH)
+        if not resp:
+            LOGGER.error("Unable to remove %s", S3_BENCH_PATH)
+            return False
+    ret = run_local_cmd(cfg_obj["s3bench_git"].format(S3_BENCH_PATH))
+    if not ret[0]:
+        LOGGER.error("%s", ret[1])
+        return False
+
     return True
 
 
@@ -103,7 +118,7 @@ def create_json_reps(list_resp):
     return js_res
 
 
-def check_log_file_error(file_path, errors):
+def check_log_file_error(file_path, errors=None):
     """
     Function to find out error is reported in given file or not
     :param str file_path: the file in which error is to be searched
@@ -111,8 +126,12 @@ def check_log_file_error(file_path, errors):
     :return: errorFound: True (if error is seen) else False
     :rtype: Boolean
     """
+    if not errors:
+        errors = ["with error ", "panic", "status code",
+                  "flag provided but not defined"]
     error_found = False
     LOGGER.info("Debug: Log File Path {}".format(file_path))
+    resp_filtered = []
     with open(file_path, "r") as s3LogFile:
         for line in s3LogFile:
             for error in errors:
@@ -120,6 +139,14 @@ def check_log_file_error(file_path, errors):
                     error_found = True
                     LOGGER.error(f"{error} Found in S3Bench Run : {line}")
                     return error_found
+            if 'Errors Count:' in line and "reportFormat" not in line:
+                resp_filtered.append(line)
+    LOGGER.info("'Error count' filtered list: %s", resp_filtered)
+    for response in resp_filtered:
+        error_found = int(response.split(":")[1].strip()) != 0
+    if not resp_filtered:
+        error_found = True
+
     return error_found
 
 

@@ -32,6 +32,8 @@ from commons.helpers.health_helper import Health
 from libs.s3 import S3H_OBJ
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
+from commons.helpers.controller_helper import ControllerLib
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,6 +56,12 @@ class RASCoreLib:
             hostname=self.host, username=self.username, password=self.pwd)
         self.health_obj = Health(hostname=self.host, username=self.username,
                                  password=self.pwd)
+        self.controller_obj = ControllerLib(
+            host=self.host, h_user=self.username, h_pwd=self.pwd,
+            enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+            enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+            enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
+
         self.s3obj = S3H_OBJ
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
@@ -178,7 +186,7 @@ class RASCoreLib:
         :rtype: bool
         """
         file_path = cmn_cons.MSG_BUS_READER_PATH
-        local_path_msg_bus = cmn_cons.MSG_BUS_READER_PATH
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_LOCAL_PATH
         LOGGER.debug("Copying file to %s", self.host)
         self.node_utils.copy_file_to_remote(
             local_path=local_path_msg_bus, remote_path=file_path)
@@ -603,6 +611,7 @@ class RASCoreLib:
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
+        LOGGER.debug(cmd)
         response = self.node_utils.execute_cmd(cmd=cmd,
                                                read_nbytes=cmn_cons.BYTES_TO_READ)
 
@@ -632,9 +641,9 @@ class RASCoreLib:
         if os.path.exists(local_path):
             os.remove(local_path)
         _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                        local_path=local_path,
-                                        host=self.host,
-                                        user=self.username, pwd=self.pwd)
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern
@@ -777,7 +786,7 @@ class RASCoreLib:
         result = run_remote_cmd(hostname=self.host, username=self.username,
                                 password=self.pwd, cmd=cmd)
         result = result[1].decode('utf-8').strip().split('\n')
-        LOGGER.info("Response: %s", result)
+        LOGGER.debug("Response: %s", result)
         res = json.loads(result[0])
         return res[0]
 
@@ -834,8 +843,8 @@ class RASCoreLib:
             result = run_remote_cmd(hostname=self.host,
                                     username=self.username,
                                     password=self.pwd, cmd=cmd)
-            result = result[0].decode('utf-8').strip().split('\n')
-            LOGGER.info("Response: %s", result)
+            result = result[0]
+            LOGGER.debug("Response: %s", result)
 
     def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:
         """

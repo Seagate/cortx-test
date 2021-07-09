@@ -40,6 +40,53 @@ class CortxCliS3AccessKeys(CortxCli):
         """
         super().__init__(session_obj=session_obj)
 
+    def create_s3user_access_key(self,
+                                  user_name: str) -> tuple:
+        """
+        This function will create/generate access key for s3 user using CORTX CLI.
+
+        :param user_name: Name of s3 user for which access key should be created.
+        :return: True/False and dictionary
+        """
+        response_dict = {}
+        command = commands.CMD_CREATE_S3ACC_ACCESS_KEY.format(user_name)
+        LOGGER.info("Creating s3accesskey for user %s", user_name)
+        response = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
+        if "[Y/n]" in response:
+            response = self.execute_cli_commands(cmd="Y", patterns=["Access Key"])[1]
+            if "Access Key" in response:
+                LOGGER.info("Response returned: \n%s", response)
+                response = self.split_table_response(response)
+                response_dict["access_key"] = response[0][0]
+                response_dict["secret_key"] = response[0][1]
+                return True, response_dict
+
+        return False, response
+
+    def show_s3user_access_key(
+            self,
+            user_name: str,
+            output_format: str = "json") -> tuple:
+        """
+        This function will list access keys of given s3 user.
+
+        :param user_name: Name of s3 user
+        :param output_format: Format for show access key (optional) (default value: table)
+                       (possible values: table/xml/json)
+        :return: True/False and dictionary.
+        """
+        command = "{0} -f {1}".format(commands.CMD_SHOW_S3ACC_ACCESS_KEY.format(user_name), output_format)
+        LOGGER.info("Listing s3 user accesskey of user %s", user_name)
+        status, response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])
+        if output_format == "json":
+            response = self.format_str_to_dict(response)
+        if output_format == "xml":
+            response = self.xml_data_parsing(response)
+        if output_format == "table":
+            response = self.split_table_response(response)
+
+        return status, response
+
     def create_s3_iam_access_key(self,
                                  user_name: str) -> tuple:
         """
@@ -57,11 +104,11 @@ class CortxCliS3AccessKeys(CortxCli):
             if "Access Key" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 response = self.split_table_response(response)
-                response_dict["access_key"] = response[0][1]
-                response_dict["secret_key"] = response[0][2]
+                response_dict["access_key"] = response[0][0]
+                response_dict["secret_key"] = response[0][1]
                 return True, response_dict
 
-        return False, response_dict
+        return False, response
 
     def delete_s3access_key(self,
                             access_key: str,
@@ -102,7 +149,7 @@ class CortxCliS3AccessKeys(CortxCli):
         command = "{0} {1} -f {2}".format(
             commands.CMD_SHOW_ACCESS_KEY, user_name, output_format)
         LOGGER.info("Listing s3accesskey of user %s", user_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(cmd=command, patterns=["Access Key", "access_keys"])[1]
         if output_format == "json":
             response = self.format_str_to_dict(response)
         if output_format == "xml":

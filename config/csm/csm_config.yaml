@@ -1,6 +1,6 @@
 # Configurations for Rest API
 Restcall:
-  port : 28100
+  port : 443
   jsonfile : 'rest_call.json'
   csm_user_manage:
     username: "csm_user_manage"
@@ -33,12 +33,14 @@ Restcall:
   stats_endpoint: "/api/v1/stats"
   capacity_endpoint: "/api/v1/capacity"
   health_component_endpoint: "/api/v1/system/health/components"
+  health_resource_endpoint: "/api/v2/system/health/{}"
 
 CliConfig:
   iam_user:
     password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
   s3_account:
     password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="
+    invalid_password: "+f/IrJZZsp5s6F2kQAup+5/Od1IHAr3avkDPHdgbU7I="
   csm_user:
     password: "cmTWHmhFPTRudB+GOaql0UVi8qMd1qKOzImFb0E0+g4="
     update_password: "LiNnmJz5veaPXEXC06Ghl9DtwaGnZX/909a99IkzREo="

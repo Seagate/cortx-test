@@ -25,9 +25,7 @@ import time
 import json
 import datetime
 from commons.constants import Rest as const
-from commons import constants as ras_cons
-from commons.helpers.node_helper import Node
-from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
@@ -231,6 +229,19 @@ class SystemAlerts(RestTestLib):
 
         self.log.error("Couldn't find matching alert")
         return False
+
+    def wait_for_alert(self, timeout: int, *args, **kwargs):
+        """Wait for alert on CSM until timeout is reached.
+
+        :param timeout: in seconds.
+        """
+        time_lapsed = 0
+        resp = False
+        while(time_lapsed < timeout and not resp):
+            resp = self.verify_csm_response(*args, **kwargs)
+            time.sleep(1)
+            time_lapsed = time_lapsed + 1
+        assert resp, "CSM alert is not reported within {}".format(timeout)
 
     def get_alerts_id_after(self, starttime):
         """

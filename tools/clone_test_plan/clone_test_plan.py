@@ -36,8 +36,10 @@ jira_task = JiraTask()
 ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19719', 'TEST-19717',
                 'TEST-19716', 'TEST-19709', 'TEST-19708', 'TEST-19707', 'TEST-19704', 'TEST-19701']
 
+vm_hw_skip_tes = ['TEST-19713']
 
-def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
+
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes):
     """
     Process existing te and create new te
     """
@@ -45,11 +47,12 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys):
     new_te_id, is_te_skipped, test_list = jira_task.create_new_test_exe(te, tp_info, skip_tes)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
-        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['platform'],
-                                                test_list)
+        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
+                                                tp_info['platform'], test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
+            old_tes.append(te)
             if is_te_skipped:
                 new_skipped_te.append(new_te_id)
             response_add = jira_task.add_te_to_tp([new_te_id], new_tp_key)
@@ -78,11 +81,12 @@ def main(args):
     tp_info['affect_version'] = args.affect_version
     tp_info['fix_version'] = args.fix_version
 
-    new_tp_key = jira_task.create_new_test_plan(test_plan, tp_info)
+    new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
         sys.exit('New test plan creation failed')
     else:
         print("New test plan {} created".format(new_tp_key))
+        tp_info['env'] = env_field
 
     test_executions = jira_task.get_test_executions_from_test_plan(test_plan)
     te_keys_all = [te["key"] for te in test_executions]
@@ -91,10 +95,11 @@ def main(args):
         te_keys = [te for te in te_keys_all if te not in ova_skip_tes]
         tp_info['platform'] = 'VM'
     else:
-        te_keys = te_keys_all
+        te_keys = [te for te in te_keys_all if te not in vm_hw_skip_tes]
     print("test executions of existing test plan {}".format(te_keys))
 
     skip_tes = []
+
     if args.skip_te:
         try:
             skip_te_arg = args.skip_te
@@ -106,9 +111,10 @@ def main(args):
     with Manager() as manager:
         new_skipped_te = manager.list()
         new_te_keys = manager.list()
+        old_tes = manager.list()
         for te in te_keys:
             p = Process(target=process_te, args=(te, tp_info, skip_tes, new_tp_key,
-                                                 new_skipped_te, new_te_keys))
+                                                 new_skipped_te, new_te_keys, old_tes))
             p.start()
             prcs.append(p)
 
@@ -117,12 +123,14 @@ def main(args):
 
         new_skipped_te = list(new_skipped_te)
         new_te_keys = list(new_te_keys)
+        old_tes = list(old_tes)
         print("New Test Plan: {}".format(new_tp_key))
         with open(os.path.join(os.getcwd(), CLONED_TP_CSV), 'w', newline='') as tp_info_csv:
             writer = csv.writer(tp_info_csv)
-            for te in new_te_keys:
+            for i, te in enumerate(new_te_keys):
+                old_te = old_tes[i]
                 if te not in new_skipped_te:
-                    writer.writerow([new_tp_key.strip(), te.strip()])
+                    writer.writerow([new_tp_key.strip(), te.strip(), old_te.strip()])
 
         if args.comment_jira:
             current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')

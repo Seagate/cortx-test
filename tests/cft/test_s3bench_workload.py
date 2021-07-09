@@ -26,6 +26,7 @@ import pytest
 from commons import configmanager
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
+from config import CMN_CFG
 
 
 class TestWorkloadS3Bench:
@@ -35,6 +36,7 @@ class TestWorkloadS3Bench:
         cls.log = logging.getLogger(__name__)
         test_config = "config/cft/test_s3bench_workload.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
+        cls.setup_type = CMN_CFG["setup_type"]
 
     @pytest.mark.longevity
     @pytest.mark.tags("TEST-19658")
@@ -42,7 +44,10 @@ class TestWorkloadS3Bench:
         """Longevity Test with distributed workload"""
         test_cfg = self.cft_test_cfg["test_12345"]
         distribution = test_cfg["workloads_distribution"]
-        total_obj = test_cfg["total_objects"]
+        if self.setup_type == "HW":
+            total_obj = 10000
+        else:
+            total_obj = 1000
         loops = test_cfg["loops"]
         clients = test_cfg["clients"]
         bucket_name = "test-bucket"
@@ -60,14 +65,13 @@ class TestWorkloadS3Bench:
                 resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
                                        num_clients=clients, num_sample=samples,
                                        obj_name_pref="loadgen_test_", obj_size=size,
-                                       skip_cleanup=False, duration=None, verbose=True,
+                                       skip_cleanup=False, duration=None,
                                        log_file_prefix="TEST-19658")
                 self.log.info(
                     f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
                     f"clients.")
                 self.log.info(f"Log Path {resp[1]}")
-                assert not s3bench.check_log_file_error(resp[1],
-                                                        ["with error ", "panic", "status code"]), \
+                assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
 
     @pytest.mark.scalability
@@ -77,19 +81,17 @@ class TestWorkloadS3Bench:
         bucket_name = "test-bucket"
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
-            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb",
-            "1Gb", "4Gb", "8Gb", "16Gb"
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb"
         ]
+        if self.setup_type == "HW":
+            workloads.extend(["4Gb", "8Gb", "16Gb"])
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=1,
                                    num_sample=5, obj_name_pref="loadgen_test_", obj_size=workload,
-                                   skip_cleanup=False, duration=None, verbose=True,
-                                   log_file_prefix="TEST-19471")
+                                   skip_cleanup=False, duration=None, log_file_prefix="TEST-19471")
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
-            assert not s3bench.check_log_file_error(resp[1],
-                                                    ["with error ", "panic", "status code",
-                                                     "flag provided but not defined"]), \
+            assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"

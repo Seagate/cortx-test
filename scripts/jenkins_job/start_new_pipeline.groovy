@@ -1,7 +1,7 @@
 pipeline {
 	agent {
         node {
-			label 'ssc-vm-3053'
+			label 'ssc-vm-4830'
  			customWorkspace "/root/workspace/${JOB_BASE_NAME}"
 		}
     }
@@ -39,6 +39,7 @@ deactivate
 		stage('CSM_Boarding') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${HOSTNAME}"
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
 deactivate
@@ -49,6 +50,7 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export HOSTNAME="${HOSTNAME}"
 sh scripts/jenkins_job/run_tests.sh
 deactivate
 '''
@@ -60,7 +62,7 @@ deactivate
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
 			}
 		}
 	}

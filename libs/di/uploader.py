@@ -22,13 +22,12 @@
 """Multithreaded and greenlet based Upload tasks. Upload files and data blobs."""
 
 import os
+import sys
 import queue
 import random
 import logging
 import csv
-import fcntl
 import hashlib
-import re
 import time
 import multiprocessing as mp
 from boto3.s3.transfer import TransferConfig
@@ -39,6 +38,12 @@ from libs.di import di_base
 from libs.di import data_man
 from libs.di import data_generator
 from commons.params import USER_JSON
+
+try:
+    if sys.platform in ['linux', 'linux2']:
+        import fcntl
+except ModuleNotFoundError as error:
+    logging.error(error)
 
 uploadObjects = []
 LOGGER = logging.getLogger(__name__)
@@ -54,7 +59,7 @@ class Uploader:
     def __init__(self):
         self.change_manager = data_man.DataManager()
 
-    def upload(self, user, keys, buckets, files_count, prefs):
+    def upload(self, user, keys, buckets, files_count, prefs, stop_event):
         user_name = user.replace('_', '-')
         timestamp = time.strftime(params.DT_PATTERN_PREFIX)
         s3connections = di_base.init_s3_conn(user_name=user_name,
@@ -64,27 +69,38 @@ class Uploader:
 
         workers = Workers()
         workers.start_workers(func=self._upload)
-
         for bucket in buckets:
             for ix in range(files_count):
-                workQ = queue.Queue()
-                workQ.func = self._upload
-                kwargs = dict()
-                kwargs['user'] = user
-                kwargs['bucket'] = bucket
-                kwargs['s3connections'] = s3connections
-                kwargs['pool_len'] = pool_len
-                kwargs['file_number'] = ix
-                kwargs['prefs'] = prefs
-                workQ.put(kwargs)
-                workers.wenque(workQ)
-                LOGGER.info(f"Enqueued item {ix} for download and checksum compare")
-            LOGGER.info(f"processed items {ix} to upload for user {user}")
+                if not stop_event.is_set():
+                    workQ = queue.Queue()
+                    workQ.func = self._upload
+                    kwargs = dict()
+                    kwargs['user'] = user
+                    kwargs['bucket'] = bucket
+                    kwargs['s3connections'] = s3connections
+                    kwargs['pool_len'] = pool_len
+                    kwargs['file_number'] = ix
+                    kwargs['prefs'] = prefs
+                    workQ.put(kwargs)
+                    workers.wenque(workQ)
+                else:
+                    LOGGER.debug(
+                        "Stop event has been set, remaining objects will be "
+                        "skipped.")
+                    print("Stop event has been set, remaining objects will be"
+                          " skipped.")
+                    break
+                LOGGER.info(
+                    f"Enqueued item {ix} for download and checksum compare")
+            LOGGER.info(
+                f"processed items {ix} to upload for user {user}")
         workers.end_workers()
         LOGGER.info('Upload Workers shutdown completed successfully')
         if len(uploadObjects) > 0:
             with open(params.UPLOADED_FILES, 'a', newline='') as fp:
-                wr = csv.writer(fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='', escapechar='\\')
+                wr = csv.writer(
+                    fp, quoting=csv.QUOTE_NONE, delimiter=',', quotechar='',
+                    escapechar='\\')
                 fcntl.flock(fp, fcntl.LOCK_EX)
                 wr.writerows(uploadObjects)
                 fcntl.flock(fp, fcntl.LOCK_UN)
@@ -114,22 +130,24 @@ class Uploader:
                                        Config=Uploader.tsfrConfig)
             print(f'uploaded file {file_path} for user {user_name}')
         except Exception as e:
-            LOGGER.info(f'{file_path} in bucket {bucket} Upload caught exception: {e}')
+            LOGGER.info(
+                f'{file_path} in bucket {bucket} Upload caught exception: {e}')
         else:
             LOGGER.info(f'{file_path} in bucket {bucket} Upload Done')
             with open(file_path, 'rb') as fp:
                 md5sum = hashlib.md5(fp.read()).hexdigest()
             obj_name = os.path.basename(file_path)
+            stat_info = os.stat(file_path)
             row_data = [user_name, bucket, obj_name, md5sum]
             uploadObjects.append(row_data)
-            Uploader.change_manager.add_files_to_bucket(user_name,
-                                                        bucket,
-                                                        obj_name,
-                                                        md5sum,
-                                                        size
-                                                        )
+            file_object = dict(name=obj_name, checksum=md5sum, seed=seed,
+                               size=size, mtime=stat_info.st_mtime)
+            self.change_manager.add_file_to_bucket(
+                user_name, bucket, file_object)
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
-    def start(self, users, buckets, files_count, prefs):
+    def start(self, users, buckets, files_count, prefs, stop_event):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
         users_home = params.LOG_DIR
@@ -138,10 +156,16 @@ class Uploader:
         jobs = []
         for user, udict in users.items():
             keys = [udict['accesskey'], udict['secretkey']]
-            p = mp.Process(target=self.upload, args=(user, keys, buckets, files_count, prefs))
+            buckets = udict["buckets"]
+            p = mp.Process(target=self.upload, args=(
+                user, keys, buckets, files_count, prefs, stop_event))
             jobs.append(p)
         for p in jobs:
-            p.start()
+            if not stop_event.is_set():
+                p.start()
+
         for p in jobs:
-            p.join()
-        LOGGER.info(f'Upload Done for all users {users}')
+            if p.is_alive():
+                LOGGER.info("started joining")
+                p.join()
+        LOGGER.info(f'Upload started for all users {users}')

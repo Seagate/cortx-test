@@ -46,9 +46,9 @@ class CortxCli(CortxCliClient):
     def __init__(
             self,
             # For the stop gap arrangement till we have nodeadmin user
-            host: str = CMN_CFG["csm"]["mgmt_vip"],
-            username: str = CMN_CFG["nodes"][0]["username"],
-            password: str = CMN_CFG["nodes"][0]["password"],
+            host: str = None,
+            username: str = None,
+            password: str = None,
             **kwargs):
         """
         This method initializes members of CortxCli and its parent class
@@ -59,6 +59,11 @@ class CortxCli(CortxCliClient):
         :keyword int port: port number
         """
         self.log = logging.getLogger(__name__)
+        csm = CMN_CFG.get("csm")
+        nodes = CMN_CFG.get("nodes")
+        host = host if host else csm["mgmt_vip"] if csm else None
+        username = username if username else nodes[0]["username"] if nodes else None
+        password = password if password else nodes[0]["password"] if nodes else None
         session_obj = kwargs.get("session_obj", None)
         port = kwargs.get("port", 22)
         super().__init__(
@@ -72,7 +77,7 @@ class CortxCli(CortxCliClient):
             self,
             cmd: str,
             patterns: list,
-            time_out: int = 120) -> tuple:
+            time_out: int = 300) -> tuple:
         """
         This function executes command on interactive shell on csm server and returns output
         :param str cmd: command to execute on shell
@@ -81,7 +86,12 @@ class CortxCli(CortxCliClient):
         :return: output of executed command
         """
         try:
-            default_patterns = ["Error", "exception", "Session expired"]
+            default_patterns = [
+                "Error",
+                "exception",
+                "Session expired",
+                "usage:",
+                "command not found"]
             default_patterns.extend(patterns)
             self.log.debug("Default patterns : %s", default_patterns)
             index, output = super().execute_cli_commands(
@@ -104,8 +114,8 @@ class CortxCli(CortxCliClient):
 
     def login_cortx_cli(
             self,
-            username: str = CMN_CFG["csm"]["csm_admin_user"]["username"],
-            password: str = CMN_CFG["csm"]["csm_admin_user"]["password"],
+            username: str = None,
+            password: str = None,
             **kwargs) -> tuple:
         """
         This function will be used to login to CORTX CLI with given credentials
@@ -115,6 +125,9 @@ class CortxCli(CortxCliClient):
         :keyword login_cortxcli: command for login to CLI
         :return: True/False and output
         """
+        csm = CMN_CFG.get("csm")
+        username = username if username else csm["csm_admin_user"]["username"] if csm else None
+        password = password if password else csm["csm_admin_user"]["password"] if csm else None
         username_param = kwargs.get("username_param", None)
         login_cortxcli = kwargs.get("cmd", commands.CMD_LOGIN_CORTXCLI)
         if username_param:

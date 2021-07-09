@@ -25,11 +25,14 @@
 from commons.helpers.s3_helper import S3Helper
 from commons.utils import config_utils
 from commons.params import S3_CONFIG
+
 from config import CMN_CFG, S3_CFG
+
 S3H_OBJ = S3Helper.get_instance()
 
 CM_CFG = CMN_CFG
 # S3 default access_key, secret key.
 ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
-LDAP_USERNAME = CMN_CFG["ldap"]["username"]  # Ldap username.
-LDAP_PASSWD = CMN_CFG["ldap"]["password"]  # Ldap password.
+ldap = CMN_CFG.get("ldap", None)
+LDAP_USERNAME = ldap["username"] if ldap else None  # Ldap username.
+LDAP_PASSWD = ldap["password"] if ldap else None  # Ldap password.

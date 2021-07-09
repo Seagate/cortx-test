@@ -64,7 +64,7 @@ class TestDataDurability:
         self.object_name = "obj_data_durability"
         self.sleep_time = 10
         self.file_size = 5
-        self.host_ip = CMN_CFG["nodes"][0]["host"]
+        self.host_ip = CMN_CFG["nodes"][0]["hostname"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
@@ -79,38 +79,35 @@ class TestDataDurability:
             username=self.uname,
             password=self.passwd)
         self.acc_del = False
+        self.s3_account = []
         self.log.info("ENDED: setup test operations.")
         yield
         self.log.info("STARTED: Teardown operations")
-        self.log.info(
-            "Deleting all buckets/objects created during TC execution")
+        self.log.info("Deleting the file created locally for object")
+        if system_utils.path_exists(self.file_path):
+            system_utils.remove_file(self.file_path)
+        self.log.info("Local file was deleted")
+        self.log.info("Deleting all buckets/objects created during TC execution")
         resp = S3T_OBJ.bucket_list()
         if self.bucket_name in resp[1]:
             resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
-        if self.acc_del:
-            self.log.info("Deleting the IAM accounts and users")
-            all_accounts = self.cli_obj.list_accounts_cortxcli()
-            iam_accounts = [acc["account_name"]
-                            for acc in all_accounts if self.account_name == acc["account_name"]]
-            self.log.debug(iam_accounts)
-            if iam_accounts:
-                for acc in iam_accounts:
-                    self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-                    resp = self.cli_obj.login_cortx_cli(
-                        username=acc, password=self.s3acc_passwd)
-                    self.log.debug("Deleting %s account", acc)
-                    self.cli_obj.delete_all_iam_users()
-                    self.cli_obj.logout_cortx_cli()
-                    self.cli_obj.delete_account_cortxcli(
-                        account_name=acc, password=self.s3acc_passwd)
-                    self.log.info("Deleted %s account successfully", acc)
-            self.log.info("Deleted the IAM accounts and users")
-        self.log.info("Deleting the file created locally for object")
-        if system_utils.path_exists(self.file_path):
-            system_utils.remove_file(self.file_path)
-        self.log.info("Local file was deleted")
+        self.log.info("Deleting the IAM accounts and users")
+        self.log.debug(self.s3_account)
+        if self.s3_account:
+            for acc in self.s3_account:
+                self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+                resp = self.cli_obj.login_cortx_cli(
+                    username=acc, password=self.s3acc_passwd)
+                self.log.debug("Deleting %s account", acc)
+                self.cli_obj.delete_all_iam_users()
+                self.cli_obj.logout_cortx_cli()
+                self.cli_obj.delete_account_cortxcli(
+                    account_name=acc, password=self.s3acc_passwd)
+                self.log.info("Deleted %s account successfully", acc)
+        self.log.info("Deleted the IAM accounts and users")
+        self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
@@ -264,6 +261,7 @@ class TestDataDurability:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["AccessKeyId"]
         secret_key = resp[1]["SecretKey"]
+        self.s3_account.append(self.account_name)
         s3_temp_obj = S3TestLib(
             access_key=access_key, secret_key=secret_key)
         self.log.info(
@@ -296,7 +294,6 @@ class TestDataDurability:
         # Cleanup activity
         resp = s3_temp_obj.delete_bucket(self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.acc_del = True
         self.log.info(
             "ENDED: Test NO data loss in case of account credentials change")
 

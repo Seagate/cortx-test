@@ -1,0 +1,73 @@
+system:
+  offline: "offline"
+  stopped: "Stopped"
+  active: "active"
+services:
+  all:
+    - "firewalld"
+    - "hare-consul-agent.service"
+    - "elasticsearch.service"
+    - "statsd.service"
+    - "rsyslog.service"
+    - "haproxy.service"
+    - "slapd.service"
+    - "glusterd.service"
+    - "kafka-zookeeper.service"
+    - "salt-master.service"
+    - "salt-minion.service"
+    - "lnet.service"
+  hw_specific:
+    - "multipathd.service"
+    - "scsi-network-relay.service"
+service_ports:
+  csm: ["28100"]
+  dhclient: ["68"]
+  dns: ["53"]
+  elasticsearch: ["9200", "9300"]
+  haproxy: ["443"]
+  ntp: ["123"]
+  ldap: ["389"]
+  redis: ["6379"]
+  salt-master: ["4505", "4506"]
+  smtp: ["25"]
+  s3: ["9443"]
+  uds: ["5000"]
+build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
+build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso"
+build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso.sig"
+build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/cortx_iso/RPM-GPG-KEY-Seagate"
+iso_repo: "cortx-2.0.0-{}-upgrade.iso"
+sig_repo: "cortx-2.0.0-{}-upgrade.iso.sig"
+key_repo: "RPM-GPG-KEY-Seagate"
+key1_repo: "RPM-GPG-KEY-Seagate.gpg"
+build_def: "last_successful_prod"
+cluster_start_msg: "Cluster start operation performed"
+confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
+
+single-node:
+  prereq:
+    count: 2
+    os_release: "CentOS Linux release 7.8.2003 (Core)"
+    kernel: "3.10.0-1127.el7.x86_64"
+  deploy:
+    job_name: "QA-R2-Single-Node-Deployment"
+    success_msg: "SUCCESS"
+
+3-node-vm:
+  prereq:
+    min_disks: 8
+    os_release: "CentOS Linux release 7.8.2003 (Core)"
+    kernel: "3.10.0-1127.el7.x86_64"
+    cpu_cores: 4
+    memory: 8
+    prvsnr_version: 0.36.0
+  config_template: "config/prov/three_node_config.ini"
+  config_path_local: "prov_config.ini"
+  config_path_remote: "/root/config.ini"
+  setup-type: "3_node"
+  cluster_start_delay: 180
+
+system_ntp:
+    ntp_data: ['time_server:', 'time_zone:']
+    timeserver: ['10.30.127.102', 'time.seagate.com']
+    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']

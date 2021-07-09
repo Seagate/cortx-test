@@ -49,15 +49,19 @@ ras_sspl_alert:
   service:
     sspl_service: "sspl-ll"
     kafka_service: "kafka"
-  sspl_resource_id: "sspl-ll-clone"
+    kafka_zookeeper: "kafka-zookeeper"
+    csm_web: "csm_web"
+    csm_agent: "csm_agent"
+  sspl_resource_id: "monitor_group-clone"
   mc_debug_port: 7900
   telnet_sleep_val: 120
   max_wait_time: 320
   default_cpu_usage: 80
   csm_error_msg: "Failed to get alerts using CSM REST API"
   csm_alert_gen_delay: 60
+  alert_wait_threshold: 30
   default_mem_usage: 80
-  start_msg_bus: False
+  start_msg_bus: True
   selinux_key: "SELINUX"
   selinux_disabled: "disabled"
   selinux_enforced: "enforcing"
@@ -82,3 +86,11 @@ raid_param:
   md0_path: "/dev/md0"
   disk_path: "/dev/{}"
   resync_delay: 300
+
+nw_fault_params:
+  min_wait_time: 180
+  max_wait_time: 300
+  min_wait_after_io: 160
+
+test21196:
+  ignore_params: ['timestamp','comment']

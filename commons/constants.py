@@ -40,7 +40,7 @@ DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
-MSG_BUS_READER_PATH = "scripts/server_scripts/read_message_bus.py"
+MSG_BUS_READER_PATH = "/root/read_message_bus.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
@@ -88,9 +88,17 @@ CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
 CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
 CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
 CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_CPU_USAGE = "NODEDATAMSGHANDLER>cpu_usage_threshold"
+CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
+CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
+CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
+SSPL_CFG_URL = "yaml:///etc/sspl.conf"
+SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
+CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 
 """ S3 constants """
+LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
@@ -264,6 +272,7 @@ JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
 JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
+PIP_CONFIG = "/etc/pip.conf"
 
 #Locking server
 SHARED_LOCK = 'shared'
@@ -271,20 +280,27 @@ EXCLUSIVE_LOCK = 'exclusive'
 
 class SwAlerts:
     SVCS_3P = [
-        "hare-consul-agent.service",
-        "elasticsearch.service",
+#        "elasticsearch.service", # brings down the csm
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
+#        "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-        "haproxy.service",
-        "slapd.service",
-        "lnet.service",
+#        "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
         "multipathd.service",
-        "scsi-network-relay.service",
-        "Kafka"]
+        "scsi-network-relay.service"
+    ]
 
+    SVCS_3P_UNAVAIL_VM = [
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"]
+
+    SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
+
+    SVC_LOAD_TIMEOUT_SEC = 30
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
@@ -295,3 +311,9 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+        NW_INTFC = "node:interface:nw"
+
+
+class Sizes:
+    KB = 1024
+    MB = KB * KB

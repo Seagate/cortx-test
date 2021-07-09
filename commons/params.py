@@ -30,6 +30,7 @@ LOG_DIR_NAME = 'log'
 LATEST_LOG_FOLDER = 'latest'
 LOG_DIR = os.path.join(SCRIPT_HOME, LOG_DIR_NAME)
 TEST_DATA_FOLDER = 'TestData'
+VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
@@ -40,10 +41,11 @@ S3CMD_TEST_CONFIG = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
 S3_LDAP_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "test_openldap.yaml")
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
-PROV_TEST_CONFIG_PATH = "config/prov_test.yaml"
+PROV_TEST_CONFIG_PATH = "config/prov/prov_test.yaml"
 COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
+HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -77,6 +79,7 @@ apollojenkins.pun.seagate.com:27017/
 DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
 LOCAL_LOG_PATH = "/root/pytest_logs"
+VM_COLLECTION = "r2_vm_pool"
 
 # Jenkins url for deployment
 JENKINS_URL = "http://eos-jenkins.mero.colo.seagate.com/job/QA/"
@@ -107,3 +110,5 @@ DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
+
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov']
