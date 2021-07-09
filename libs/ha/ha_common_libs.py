@@ -262,7 +262,8 @@ class HALibs:
         resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True)
         return resp
 
-    def host_safe_unsafe_power_off(self, host: str, bmc_obj=None, node_obj=None, is_safe: bool = False):
+    def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
+                                   node_obj=None, is_safe: bool = False):
         """
         Helper function for safe/unsafe host power off
         :param host: Host to be power off
@@ -281,9 +282,11 @@ class HALibs:
                     common_cmd.CMD_VM_POWER_OFF.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not resp[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power off command not executed")
+                    raise CTException(err.CLI_COMMAND_FAILURE,
+                                      msg=f"VM power off command not executed")
             else:
-                bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd, "off")
+                bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(),
+                                              self.bmc_user, self.bmc_pwd, "off")
 
         LOGGER.info("Check if %s is powered off.", host)
         # SSC cloud is taking time to off VM host hence timeout
@@ -320,9 +323,9 @@ class HALibs:
             LOGGER.info("REST response for nodes health status. %s", rest_resp[1])
         except Exception as error:
             LOGGER.error("%s %s: %s",
-                     Const.EXCEPTION_ERROR,
-                     HALibs.status_nodes_online.__name__,
-                     error)
+                         Const.EXCEPTION_ERROR,
+                         HALibs.status_nodes_online.__name__,
+                         error)
 
     def status_cluster_resource_online(self, srvnode_list: list, sys_list: list, node_obj):
         """
@@ -358,4 +361,3 @@ class HALibs:
             raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
 
         LOGGER.info("Node health status is online in CLI and REST")
-
