@@ -1369,7 +1369,7 @@ class Test3PSvcMonitoringGUI:
         """
         Multiple 3rd party services monitoring and management
         """
-        secretsGenerator  = secrets.SystemRandom()
+        secure_range  = secrets.SystemRandom()
         starttime = time.time()
         gui_dict = dict()
         gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
