@@ -60,9 +60,11 @@ class TestCopyObjects:
         2. Check cluster status, all services are running.
         """
         LOGGER.info("STARTED: test setup.")
+        self.nodes = CMN_CFG["nodes"]
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
-        assert_utils.assert_true(res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+        assert_utils.assert_true(
+            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestS3CopyObject")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -129,9 +131,8 @@ class TestCopyObjects:
         """Check the cluster health."""
         LOGGER.info(
             "Check cluster status, all services are running.")
-        nodes = CMN_CFG["nodes"]
-        LOGGER.info(nodes)
-        for _, node in enumerate(nodes):
+        LOGGER.info(self.nodes)
+        for _, node in enumerate(self.nodes):
             health_obj = Health(hostname=node["hostname"],
                                 username=node["username"],
                                 password=node["password"])
@@ -201,11 +202,12 @@ class TestCopyObjects:
                     "Parallel IOs stopped: %s",
                     not self.parallel_ios.is_alive())
             if log_prefix:
-                resp = system_utils.validate_s3bench_parallel_execution(s3bench.LOG_DIR, log_prefix)
+                resp = system_utils.validate_s3bench_parallel_execution(
+                    s3bench.LOG_DIR, log_prefix)
                 assert_utils.assert_true(resp[0], resp[1])
 
-    def create_bucket_put_object(self,
-                                 s3_test_obj=None,
+    @staticmethod
+    def create_bucket_put_object(s3_test_obj=None,
                                  bucket_name=None,
                                  object_name=None,
                                  file_path=None,
@@ -1744,10 +1746,11 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19900")
-    @pytest.mark.parametrize("object_name", ["new% (1234) ::#$$^**", "cp-object"])
+    @pytest.mark.parametrize("object_name",
+                             ["new% (1234) ::#$$^**", "cp-object"])
     def test_19900(self, object_name):
         """
-        Copy object while S3 IOs are in progress
+        Copy object while S3 IOs are in progress.
 
         Copy object specifying bucket name and object under folders with special character
         or string in object name.
