@@ -22,7 +22,7 @@
 
 import os
 import time
-import random
+import secrets
 import logging
 import pytest
 from config import CMN_CFG, RAS_VAL
@@ -1369,6 +1369,7 @@ class Test3PSvcMonitoringGUI:
         """
         Multiple 3rd party services monitoring and management
         """
+        secretsGenerator  = secrets.SystemRandom()
         starttime = time.time()
         gui_dict = dict()
         gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
@@ -1382,8 +1383,8 @@ class Test3PSvcMonitoringGUI:
         assert_equals(True, gui_response, 'GUI FAILED')
 
         LOGGER.info("Stopping multiple randomly selected services")
-        num_services = random.randint(0, len(self.external_svcs))
-        random_services = random.sample(self.external_svcs, num_services)
+        num_services = secure_range.randrange(0, len(self.external_svcs))
+        random_services = secure_range.sample(self.external_svcs, num_services)
         self.node_obj.send_systemctl_cmd("stop", services=random_services)
         LOGGER.info("Checking that %s services are in stopped state",
                     random_services)
