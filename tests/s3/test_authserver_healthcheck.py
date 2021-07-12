@@ -45,7 +45,7 @@ class TestAuthServerHealthCheckAPI:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["host"],
+        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["hostname"],
                         username=CM_CFG["nodes"][0]["username"],
                         password=CM_CFG["nodes"][0]["password"])
         cls.service = "haproxy"
