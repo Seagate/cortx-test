@@ -33,6 +33,7 @@ from commons.constants import SwAlerts as const
 from commons import cortxlogging
 from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from commons.helpers.health_helper import Health
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 
@@ -555,15 +556,13 @@ class Test3PSvcMonitoring:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
             LOGGER.info("Step 1: Disable %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "disable", [],
-                                                                        timeout=60)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "disable", [], timeout=60)
             assert result, f"Failed in disabling {svc} service"
             LOGGER.info("Step 1: Disabled %s service...", svc)
 
             LOGGER.info("Step 2: Fail %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
-                                                                        timeout=60)
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [], timeout=60)
             assert result, f"Failed in failing {svc} service"
             LOGGER.info("Step 2: Failed %s service...", svc)
 
@@ -572,6 +571,7 @@ class Test3PSvcMonitoring:
                 assert not self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, False)
                 LOGGER.info("Step 3: Verified NO fault alert on CSM")
 
+            
             self.sw_alert_obj.restore_svc_config()
             LOGGER.info("Step 4: Wait for the %s service to start", svc)
             op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
@@ -584,36 +584,36 @@ class Test3PSvcMonitoring:
             assert not self.csm_alert_obj.verify_csm_response(starttime, const.ResourceType.SW_SVC, True)
             LOGGER.info("Step 5: Verified NO fault resolved alert on CSM")
 
-#            LOGGER.info("Step 6: Reboot system started..")
-#            resp = self.sw_alert_obj.node_utils.shutdown_node(options="-r")
-#            assert resp[0], resp[1]
-#            LOGGER.info("Waiting for 2 mins to setup to shutdown...")
-#            time.sleep(180)
-#            LOGGER.info("Polling the setup for reconnection...")
-#            resp = self.sw_alert_obj.node_utils.reconnect(retry_count=30,wait_time=60)
-#            assert resp, "System hasn't recovered from reboot in within 30mins."
-#            LOGGER.info("Waiting for the setup to start all services...")
-#            online = False
-#            retries = 10
-#            while not online and retries > 0:
-#                try:
-#                    online, msg = self.health_obj.check_node_health()
-#                except BaseException as error:
-#                    online = False
-#                time.sleep(180)
-#                retries = retries - 1
-#            LOGGER.info("Step 6: Reboot system completed.")
+            LOGGER.info("Step 6: Reboot system started..")
+            resp = self.sw_alert_obj.node_utils.shutdown_node(options="-r")
+            assert resp[0], resp[1]
+            LOGGER.info("Waiting for 2 mins to setup to shutdown...")
+            time.sleep(180)
+            LOGGER.info("Polling the setup for reconnection...")
+            resp = self.sw_alert_obj.node_utils.reconnect(retry_count=30,wait_time=60)
+            assert resp, "System hasn't recovered from reboot in within 30mins."
+            LOGGER.info("Waiting for the setup to start all services...")
+            online = False
+            retries = 10
+            while not online and retries > 0:
+                try:
+                    online, msg = self.health_obj.check_node_health()
+                except BaseException as error:
+                    online = False
+                time.sleep(180)
+                retries = retries - 1
+            LOGGER.info("Step 6: Reboot system completed.")
 
             LOGGER.info("Step 7: Enable %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "enable", [],
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "enable", [],
                                                                         timeout=60)
             assert result, f"Failed in enabling {svc} service"
             LOGGER.info("Step 7: Enable %s service...", svc)
 
             LOGGER.info("Step 8: Fail %s service...", svc)
             starttime = time.time()
-            result, e_csm_resp = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
+            result = self.sw_alert_obj.run_verify_svc_state(svc, "failed", [],
                                                                         timeout=60)
             assert result, f"Failed in failing {svc} service"
             LOGGER.info("Step 8: Failed %s service...", svc)
