@@ -27,10 +27,13 @@ import logging
 import json
 import subprocess
 import shutil
+import configparser
 from zipfile import ZipFile
 from commons.helpers.node_helper import Node
 
 # Global Constants
+config_file = 'scripts/jenkins_job/config.ini'
+config = configparser.ConfigParser()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -61,36 +64,32 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
     :param str admin_passwd: admin password for cortxcli
     :return: none
     """
-    json_file = "tools/setup_update/setup_entry.json"
+    json_file = config['default']['setup_entry_json']
     new_setupname = os.getenv("Target_Node")
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
-
     with open(json_file, 'r') as file:
         json_data = json.load(file)
 
-    for item in json_data:
-        if item == "setupname":
-           json_data[item] = new_setupname
-    json_data_nodes = json_data["nodes"]
-    for item in json_data_nodes:
-        if item['host'] == "eos-node-0":
-            item['host'] = "eosnode-1"
-        if item['hostname'] == "node 0 hostname":
-            item['hostname'] = hostname
-        if item['username'] == "node 0 username":
-            item['username'] = username
-        if item['password'] == "node 0 password":
-            item['password'] = password
-        if item['ip'] == "node 0 ip":
-            item['ip'] = ip_addr
-    json_data_csm = json_data["csm"]
-    for item in json_data_csm:
-        if item == "mgmt_vip":
-            json_data_csm[item] = ip_addr
-        if item == "csm_admin_user":
-            json_data_csm[item].update(username=admin_user, password=admin_passwd)
+    json_data["setupname"] = new_setupname
+    nodes = list()
+    node_info = {
+        "host": "srvnode-1",
+        "hostname": hostname,
+        "ip": ip_addr,
+        "username": username,
+        "password": password,
+        "public_data_ip": "",
+        "private_data_ip": "",
+        "mgmt_ip": ip_addr
+    }
+    nodes.append(node_info)
 
-    print("new file data: {}".format(json_data))
+    json_data["nodes"] = nodes
+    json_data["csm"]["mgmt_vip"] = ip_addr
+    json_data["csm"]["csm_admin_user"].update(
+        username=admin_user, password=admin_passwd)
+
+    LOGGER.info("new file data: {}".format(json_data))
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 

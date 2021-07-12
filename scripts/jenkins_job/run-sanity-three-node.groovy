@@ -9,7 +9,7 @@ pipeline {
 		Target_Node = 'three-node-' + "${"${HOST1}".split("\\.")[0]}"
 		Build_Branch = "${"${CORTX_BUILD}".split("\\#")[0]}"
 		Build_VER = "${"${CORTX_BUILD}".split("\\#")[1]}"
-		Sequential_Execution = 'true'
+		Sequential_Execution = true
 		Original_TP = 'TEST-24047'
 		Sanity_TE = 'TEST-24048'
 		Setup_Type = 'default'
@@ -17,6 +17,9 @@ pipeline {
 		Nodes_In_Target = 3
 		Server_Type = 'SMC'
 		Enclosure_Type = '5U84'
+		DB_Update = false
+		Current_TP = "None"
+		Sanity_Failed = true
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -53,6 +56,7 @@ deactivate
 		stage('CSM_Boarding') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${MGMT_VIP}"
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
 deactivate
@@ -72,8 +76,12 @@ deactivate
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
-					sh label: '', script: '''source venv/bin/activate
+					sh label: '', script: '''#!/bin/sh
+source venv/bin/activate
 set +x
+echo 'Creating s3 account and configuring awscli on client'
+pytest scripts/jenkins_job/aws_configure.py --local True --target ${Target_Node}
+set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
 IFS=','
@@ -87,7 +95,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report sanity-results.xml
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report sanity_results.xml)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -96,9 +104,13 @@ deactivate
 			}
 		}
 		stage('REGRESSION_TEST_EXECUTION') {
-			steps{
+			steps {
+				script {
+			        Sanity_Failed = false
+			    }
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
-					sh label: '', script: '''source venv/bin/activate
+					sh label: '', script: '''#!/bin/sh
+source venv/bin/activate
 set +x
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
@@ -113,7 +125,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_ID} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} --xml_report regression-results.xml
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report regrssion_results.xml)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -125,6 +137,19 @@ deactivate
     }
 	post {
 		always {
+		    script {
+        		  if ( fileExists('cloned_tp_info.csv') ) {
+            		  def records = readCSV file: 'cloned_tp_info.csv'
+            		  Current_TP = records[0][0]
+        		  }
+        		  echo "TP: ${Current_TP}"
+        		  if ( env.Sanity_Failed.toBoolean() ) {
+        		      echo "Alert: Sanity Failed"
+        		  }
+        		  else {
+        		      echo "Sanity Passed"
+		          }
+		     }
 			catchError(stageResult: 'FAILURE') {
 			    junit allowEmptyResults: true, testResults: 'log/*results.xml'
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com'
