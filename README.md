@@ -1,11 +1,11 @@
 # cortx-test
 CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. Right now (which might change in future though) it can be devided into following logical parts a) test framework. b) test execution framework. c) robot framework and d) tools (reporting, DI, clone TP, etc.,).
 
-Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. It explains about raising a PR as well, however you need to get familiar with code base and documentation before raising any PR. Following this document will give you enough insights and start contributing.
+Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. It explains about raising a PR as well, however you need to get familiar with code base and documentation before raising any PR. Following Readme document will give you enough insights and start contributing.
 
 ## Get the Sources
 Clone Cortx-Test repository.
-git clone https://github.com/Seagate/cortx-test.git
+`git clone https://github.com/Seagate/cortx-test.git`
 
 ## Git Commands
 Learn generic Git commands to make yourself comfortable with git. 
