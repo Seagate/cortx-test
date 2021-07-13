@@ -37,10 +37,6 @@ class CortxCliS3BktPolicyOperations(CortxCli):
     """
     This class has all s3 bucket policy operations
     """
-    node1_helper_obj = Node(
-        hostname=CMN_CFG["csm"]["mgmt_vip"],
-        username=CMN_CFG["nodes"][0]["username"],
-        password=CMN_CFG["nodes"][0]["password"])
 
     def __init__(self, session_obj: object = None):
         """
@@ -128,10 +124,16 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param remote_file_path: Remote file path
         :return: None
         """
+        csm = CMN_CFG.get("csm")
+        nodes = CMN_CFG.get("nodes")
+        node1_helper_obj = Node(
+            hostname=csm["mgmt_vip"],
+            username=nodes[0]["username"],
+            password=nodes[0]["password"])
         if os.path.exists(local_file_path):
             os.remove(local_file_path)
         with open(local_file_path, "w") as data:
             json.dump(bkt_policy, data, indent=4)
-        self.node1_helper_obj.copy_file_to_remote(
+        node1_helper_obj.copy_file_to_remote(
             local_file_path, remote_file_path)
         time.sleep(2)
