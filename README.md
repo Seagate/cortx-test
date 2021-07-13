@@ -1,19 +1,25 @@
 # cortx-test
-CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. Right now (which might change in future though) it can be devided into following logical parts a) test framework. b) test execution framework. c) robot framework and d) tools (reporting, DI, clone TP, etc.,).
+CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. Right now, it can be divided into following logical loosely coupled parts a) test framework. b) test execution framework. c) robot framework and d) tools (reporting, DI, clone TP, etc.,).
 
-Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. It explains about raising a PR as well, however you need to get familiar with code base and documentation before raising any PR. Following Readme document will give you enough insights and start contributing.
+## Start Here
+Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+
+You may need a seperate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
+
 
 ## Get the Sources
 Clone Cortx-Test repository.
 ```
 git clone https://github.com/Seagate/cortx-test.git
 ```
+
 ## Git Commands
 Learn generic Git commands to make yourself comfortable with git. 
 
-Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream. People should be able to checkin even when they have read access.  
+Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream where commits happen on your forked repository and then you can raise a PR to merge it to Seagate's Cortx-Test reporsitory. Memebers having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to checkin even when they have read access to Seagate Repositories.   
 
 ## Set up dev environment
+Following steps helps to setup client side env, where test framework runs. 
     
     1. `yum update -y`
     
@@ -44,12 +50,13 @@ Engineers contributing to test framework should undertand the review process. We
     11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
     configure aws and copy cert file.
     
-    Alternatively by skipping step 8 to 10, you can also set python environment with using virtual env.
+    Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
 
 ## MongoDB as Configuration Management Database
-Cortx-test uses MongoDB as backend to store Cortx setup details. These details are specific
+Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
-based on the setup. A sample template is as shown below.
+based on the setup. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
+
 
 ```json
 
@@ -132,6 +139,10 @@ based on the setup. A sample template is as shown below.
     }
     }
 ```   
+```
+An example setup json configuration is shown below:
+
+```
 
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
 ```commandline
