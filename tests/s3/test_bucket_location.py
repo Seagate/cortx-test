@@ -156,6 +156,7 @@ class TestBucketLocation:
             password=self.s3acc_password)
         assert_utils.assert_true(acc1_resp[0], acc1_resp[1])
         s3_acl_obj_1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG['s3_url'],
             access_key=acc1_resp[1]["access_key"],
             secret_key=acc1_resp[1]["secret_key"])
         s3_obj_1 = s3_test_lib.S3TestLib(
