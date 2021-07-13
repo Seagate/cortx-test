@@ -73,8 +73,12 @@ elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
 # Will revisit this once we fix the singleton/s3helper issue
 elif proc_name in ["testrunner.py", "testrunner"]:
-    target = split_args([
-        i for i in sys.argv if '-tg' in i or '--target' in i])[1]
+    if '-tg' in pytest_args:
+        target = pytest_args[pytest_args.index("-tg") + 1]
+    elif '--target' in pytest_args:
+        target = pytest_args[pytest_args.index("--target") + 1]
+    else:
+        target = os.environ.get("TARGET") if os.environ.get("TARGET") else None
 else:
     target = None
 

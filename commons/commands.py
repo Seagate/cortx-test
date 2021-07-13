@@ -244,7 +244,7 @@ CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
 CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
 GET_CHRONY = "grep '{}' /etc/chrony.conf"
 CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
-CMD_WGET = "cd {0}; wget {1}"
+CMD_WGET = "wget {}"
 CMD_SW_VER = "provisioner get_release_version"
 CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
 CMD_ISO_VER = "provisioner get_iso_version"
@@ -328,3 +328,7 @@ CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+
+CPU_COUNT = "cat /sys/devices/system/cpu/online"
+CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
+CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"

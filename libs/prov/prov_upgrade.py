@@ -65,14 +65,15 @@ class ProvSWUpgrade:
         try:
             LOGGER.info("ISO to be set in repo: {}".format(iso_list[0]))
             resp = node_object.execute_cmd(common_cmd.CMD_SW_SET_REPO
-                                           .format(iso_list[0], iso_list[1], iso_list[3]), read_lines=True)
+                                           .format(iso_list[0], iso_list[1], iso_list[2]), read_lines=True)
             LOGGER.debug("Set repo response: {}".format(resp))
             for line in resp:
                 if "ERROR" in line or "failed" in line:
                     return False, resp
             res = node_object.execute_cmd(common_cmd.CMD_ISO_VER, read_lines=True)
-            LOGGER.debug("Response for ISO version: {}".format(res))
-            data = res[0].split('-')
+            data = res[0].strip()
+            LOGGER.debug("Response for ISO version: {}".format(data))
+            data = data.split('-')
             return True, data[1]
 
         except IOError as error:
