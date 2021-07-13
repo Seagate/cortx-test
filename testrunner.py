@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
-                        help="xml report name")
+                        help="Generates xml format report if set True, default is False")
     return parser.parse_args()
 
 
