@@ -107,7 +107,7 @@ Verify Presence SSL certificate expires alert
     [Documentation]  Verify Presence of SSL certificate expires alert
     [Arguments]  ${days}
     ${found}=  Set Variable  False
-    ${type}=  Set Variable  Resource type: iem
+    ${type}=  Set Variable  Resource type: node:iem
     ${Description} =  Set Variable If  ${days} == 0  SSL certificate expired
     ...  ${days} > 0  ${days} day(s) left. Please refer user guide on how to update the certificate.
     Log To Console And Report  ${Description}

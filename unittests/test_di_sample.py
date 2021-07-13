@@ -1,6 +1,7 @@
 import time
 import pytest
 import logging
+import multiprocessing
 from conftest import run_io_async
 from libs.di.di_run_man import RunDataCheckManager
 from libs.di.di_mgmt_ops import ManagementOPs
@@ -196,3 +197,52 @@ class TestSample:
         run_data_chk_obj.stop_io_async(users=data, di_check=True,
                                        eventual_stop=True)
         assert False, "msg"
+
+    def test_13(self):
+        """
+        Test verify start IO sleep for sometime and verify IO within test sequentially with and w/o
+        future value to check upload started.
+        """
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=2, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_13'}
+
+        future_obj = multiprocessing.Value('b', False)
+        star_res = run_data_chk_obj.start_io(
+            users=data, buckets=None, files_count=8, prefs=pref_dir, future_obj=future_obj)
+        assert future_obj.value, "Upload failed"
+        print(future_obj.value)
+        assert star_res, "Upload failed"
+        time.sleep(60)
+        stop_res = run_data_chk_obj.stop_io(users=data, di_check=True)
+        assert stop_res[0], "download failed"
+
+        # Start IO without passing future class
+        star_res = run_data_chk_obj.start_io(
+            users=data, buckets=None, files_count=8, prefs=pref_dir)
+        print(star_res)
+        assert star_res, "Upload failed"
+        time.sleep(60)
+        stop_res = run_data_chk_obj.stop_io(users=data, di_check=True)
+        assert stop_res[0], "download failed"
+
+        assert True, "msg"
+
+    def test_14(self):
+        """
+        Test start BG IO sleep for sometime and verify IO within test
+        """
+        mgm_ops = ManagementOPs()
+        users = mgm_ops.create_account_users(nusers=2, use_cortx_cli=False)
+        data = mgm_ops.create_buckets(nbuckets=2, users=users)
+        run_data_chk_obj = RunDataCheckManager(users=data)
+        pref_dir = {"prefix_dir": 'test_14'}
+        run_data_chk_obj.start_io_async(
+            users=data, buckets=None, files_count=8, prefs=pref_dir)
+        time.sleep(60)
+        stop_res = run_data_chk_obj.stop_io_async(users=data, di_check=True)
+        assert stop_res[0], "download failed"
+        self.log.debug("Download: %s", stop_res)
+        assert True, "msg"
