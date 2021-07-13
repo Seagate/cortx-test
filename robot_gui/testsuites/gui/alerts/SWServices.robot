@@ -235,6 +235,7 @@ TEST-21257
     Verify inactive resolved alerts exist SW Service  ${servicename}
     Verify failed alerts exist SW Service  ${servicename}
 
+
 #TEST-19878
 #    [Documentation]  CSM GUI: Verify Alerts for SW Service
 #    ...  Reference : https://jts.seagate.com/browse/TEST-19878
