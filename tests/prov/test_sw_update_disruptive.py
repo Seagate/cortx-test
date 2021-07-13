@@ -321,7 +321,7 @@ class TestSWUpdateDisruptive:
             self.node_list[0].execute_cmd(common_cmds.CMD_WGET.format(PROV_CFG["tmp_dir"], dnld),
                                           read_lines=True)
 
-        LOGGER.info("Stop services")
+        LOGGER.info("Stop cluster")
         cmd = "pcs cluster stop srvnode-1.data.private"
         self.node_list[0].execute_cmd(cmd, read_lines=True)
 
