@@ -5,8 +5,9 @@ Make sure you brush up your Git knowledge if you are coming from svn or other ve
 
 ## Get the Sources
 Clone Cortx-Test repository.
-`git clone https://github.com/Seagate/cortx-test.git`
-
+```
+git clone https://github.com/Seagate/cortx-test.git
+```
 ## Git Commands
 Learn generic Git commands to make yourself comfortable with git. 
 
