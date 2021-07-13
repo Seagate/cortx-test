@@ -59,7 +59,7 @@ def parse_args():
                                             "perform additional checksum check")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['ALL'], help="Space separated test types")
-    parser.add_argument("--xml_report", type=str, default='report.xml',
+    parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="xml report name")
     return parser.parse_args()
 
@@ -156,9 +156,9 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     if args.xml_report:
         if parallel_exe:
-            cmd_line = cmd_line + ["--junitxml=log/parallel_" + te_id + args.xml_report]
+            cmd_line = cmd_line + ["--junitxml=log/parallel_" + te_id + "report.xml"]
         else:
-            cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + args.xml_report]
+            cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]

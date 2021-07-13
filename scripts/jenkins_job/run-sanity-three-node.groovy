@@ -95,7 +95,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report sanity_results.xml --html_report sanity_results.html)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -125,7 +125,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report regrssion_results.xml --html_report regrssion_results.html)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -143,7 +143,8 @@ deactivate
             		  Current_TP = records[0][0]
         		  }
         		  echo "TP: ${Current_TP}"
-        		  if ( env.Sanity_Failed.toBoolean() ) {
+        		  echo "Sanity Failed: ${Sanity_Failed}"
+        		  if ( "${Sanity_Failed}" == true ) {
         		      echo "Alert: Sanity Failed"
         		  }
         		  else {
@@ -151,8 +152,8 @@ deactivate
 		          }
 		     }
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*results.xml, log/*results.html', followSymlinks: false
-			    junit allowEmptyResults: true, testResults: 'log/*results.xml'
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, *.png', followSymlinks: false
+			    junit allowEmptyResults: true, testResults: 'log/*report.xml'
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'cortx.automation@seagate.com'
 			}
 		}
