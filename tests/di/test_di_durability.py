@@ -495,8 +495,8 @@ class TestDIDurability:
         res = self.s3_test_obj.put_object(
             self.bucket_name, self.object_name, self.file_path,
             content_md5=file_checksum)
-        self.log.debug(res)
-        assert_utils.assert_true(res[0], res)
+        assert_utils.assert_true(
+            res[0], f"Failed to put an object with md5 checksum and reason is:{res}")
         self.log.info(
             "Step 3: Put an object with checksum, checksum algo or ETAG.")
         self.log.info(
