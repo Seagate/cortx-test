@@ -66,7 +66,8 @@ class TestBucketLocation:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
-            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
+            self.cortx_obj.delete_account_cortxcli(
+                account_name=acc, password=self.s3acc_password)
         self.cortx_obj.close_connection()
         self.log.info("ENDED: Teardown test operations.")
 
@@ -125,15 +126,15 @@ class TestBucketLocation:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "NoSuchBucket" in str(
-                error.message), error.message
+            assert_utils.assert_in("NoSuchBucket", str(
+                error.message), error.message)
         self.log.info(
             "Step 1 : Get bucket location on non existing bucket failed with error %s",
             "NoSuchBucket")
         self.log.info(
             "Verify get bucket location for the bucket which is not present")
 
-    @pytest.mark.parallel
+    # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
@@ -254,8 +255,8 @@ class TestBucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert "AccessDenied" in str(
-                error.message), error.message
+            assert_utils.assert_in("AccessDenied", str(
+                error.message), error.message)
         self.log.info(
             "Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")
