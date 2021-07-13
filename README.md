@@ -1,10 +1,10 @@
 # cortx-test
 CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. 
 Right now, it can be divided into following logical loosely coupled parts 
-a. test framework. 
-b. test execution framework. 
-c. robot framework and 
-d. tools (reporting, DI, clone TP, etc.,).
+* a. test framework. 
+* b. test execution framework. 
+* c. robot framework and 
+* d. tools (reporting, DI, clone TP, etc.,).
 
 ## Start Here
 Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
@@ -197,7 +197,50 @@ based on the setup. A sample template is as shown below. This template is feed t
 ```   
 ```
 An example setup json configuration is shown below:
-
+{"setupname": "RAS-Monitor",
+"setup_type": "VM",
+"setup_in_useby": "",
+"in_use_for_parallel": false,
+"parallel_client_cnt": 0,
+"is_setup_free": true,
+"nodes": [   {"host": "eosnode-1",
+              "hostname": "ssc-vm-2793.colo.seagate.com",
+              "ip": "10.230.248.51",
+              "username": "root",
+              "password": "",
+              "public_data_ip": "192.168.61.218"},
+             {"host": "eos-node-1",
+             "hostname": "node 1 hostname",
+             "ip": "node 1 ip address",
+             "username": "node 1 username",
+             "password": "node 1 password",
+             "public_data_ip": "172.19.19.7"}
+             ],
+"enclosure": {"primary_enclosure_ip": "10.0.0.2",
+              "secondary_enclosure_ip": "10.0.0.3",
+              "enclosure_user": "manage",
+              "enclosure_pwd": ""},
+"pdu": {"ip": "",
+      "username": "",
+      "password": "",
+      "power_on": "on",
+      "power_off": "off",
+      "sleep_time": 120},
+"gem_controller": {"ip": "",
+      "username": "",
+      "password": "",
+      "port1": "9012",
+      "port2": "9014"},
+"bmc": {"username": "",
+       "password": ""},
+"ldap": {"username": "sgiamadmin",
+         "password": "",
+         "sspl_pass": ""},
+"csm": {"mgmt_vip": "ssc-vm-2793.colo.seagate.com",
+        "csm_admin_user": {"username": "admin",
+                            "password": ""}
+                            },
+"s3": {"s3_server_ip": "10.230.248.51", "s3_server_user": "root", "s3_server_pwd": ""}}
 ```
 
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
