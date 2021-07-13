@@ -19,8 +19,8 @@ git remote -v
 git remote add upstream git@github.com:Seagate/cortx-test.git
 git remote -v
 Issuing the above command again will return you output as shown below.
-> origin    https://github.com/YOUR_USERNAME/YOUR_FORK.git (fetch)
-> origin    https://github.com/YOUR_USERNAME/YOUR_FORK.git (push)
+> origin    https://github.com/YOUR_USERNAME/cortx-test.git (fetch)
+> origin    https://github.com/YOUR_USERNAME/cortx-test.git (push)
 > upstream        https://github.com/Seagate/cortx-test.git (fetch)
 > upstream        https://github.com/Seagate/cortx-test.git (push)
 git fetch upstream
