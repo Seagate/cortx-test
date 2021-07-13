@@ -1,7 +1,44 @@
 # cortx-test
-Test Automation project for LDR R2 and future versions.
+CORTX-TEST is an automation repository for multiple automation projects developed for LDR R2 and future versions. 
+Right now, it can be divided into following logical loosely coupled parts 
+* Test framework. 
+* Test execution framework. 
+* Robot framework and 
+* Tools (reporting, DI, clone TP, etc.,).
+
+## Start Here
+Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
+
+You may need a seperate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
+
+
+## Get the Sources
+Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
+```
+git clone https://github.com/Seagate/cortx-test.git
+cd cortx-test/
+git status
+git branch
+git checkout dev
+git remote -v
+git remote add upstream git@github.com:Seagate/cortx-test.git
+git remote -v
+Issuing the above command again will return you output as shown below.
+> origin    https://github.com/YOUR_USERNAME/cortx-test.git (fetch)
+> origin    https://github.com/YOUR_USERNAME/cortx-test.git (push)
+> upstream        https://github.com/Seagate/cortx-test.git (fetch)
+> upstream        https://github.com/Seagate/cortx-test.git (push)
+git fetch upstream
+git pull upstream dev
+```
+
+## Git Commands
+Learn generic Git commands to make yourself comfortable with git. 
+
+Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream where commits happen on your forked repository and then you can raise a PR to merge it to Seagate's Cortx-Test reporsitory. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to checkin even when they have read access to Seagate Repositories.   
 
 ## Set up dev environment
+Following steps helps to setup client side env, where test framework runs. These steps assumes that you have installed git client and cloned Cortx-test.  
     
     1. `yum update -y`
     
@@ -27,17 +64,55 @@ Test Automation project for LDR R2 and future versions.
     
     9. `pip install pysqlite3`
     
-    10. `pip install --ignore-installed -r requirements.txt`
+    10. Change dir to cortx-test project directory, make sure a requirement file is present in project dir. Use following command to install python packages.
+    `pip install --ignore-installed -r requirements.txt`
     
     11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
     configure aws and copy cert file.
     
-    Alternatively by skipping step 8 to 10, you can also set python environment with using virtual env.
+    Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
+
+## Steps to setup s3 client
+To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
+Script in project's root folder cortx-test `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
+```commandline
+Required arguments in configuration:
+    ACCESS=<aws_access_key_id>
+    SECRET=<aws_secret_access_key>
+optional arguments:
+    -i, --ignore-errors  Ignore all errors in commands executed to remake files.
+    -k, --keep-going     Continue as much as possible after an error.
+    ENDPOINT=<s3_endpoint>
+    CA_CRT=<certificate_file_path>
+    NFS_SHARE=<NFS_share_jclient_path>
+
+make help --makefile=scripts/s3_tools/Makefile
+    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
+    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
+    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    jcloud-client: Setup jcloud-client. Eg: make jcloud-client
+    minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+
+To install & configure all tools:
+make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+
+To install & configure specific tool(i.e aws):
+make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+
+To cleanup all tools:
+make clean --makefile=scripts/s3_tools/Makefile
+
+```
 
 ## MongoDB as Configuration Management Database
-Cortx-test uses MongoDB as backend to store Cortx setup details. These details are specific
+Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
-based on the setup. A sample template is as shown below.
+based on the setup. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
+
 
 ```json
 
@@ -120,6 +195,53 @@ based on the setup. A sample template is as shown below.
     }
     }
 ```   
+```
+An example setup json configuration is shown below:
+{"setupname": "RAS-Monitor",
+"setup_type": "VM",
+"setup_in_useby": "",
+"in_use_for_parallel": false,
+"parallel_client_cnt": 0,
+"is_setup_free": true,
+"nodes": [   {"host": "eosnode-1",
+              "hostname": "ssc-vm-2793.colo.seagate.com",
+              "ip": "10.230.248.51",
+              "username": "root",
+              "password": "",
+              "public_data_ip": "192.168.61.218"},
+             {"host": "eos-node-1",
+             "hostname": "node 1 hostname",
+             "ip": "node 1 ip address",
+             "username": "node 1 username",
+             "password": "node 1 password",
+             "public_data_ip": "172.19.19.7"}
+             ],
+"enclosure": {"primary_enclosure_ip": "10.0.0.2",
+              "secondary_enclosure_ip": "10.0.0.3",
+              "enclosure_user": "manage",
+              "enclosure_pwd": ""},
+"pdu": {"ip": "",
+      "username": "",
+      "password": "",
+      "power_on": "on",
+      "power_off": "off",
+      "sleep_time": 120},
+"gem_controller": {"ip": "",
+      "username": "",
+      "password": "",
+      "port1": "9012",
+      "port2": "9014"},
+"bmc": {"username": "",
+       "password": ""},
+"ldap": {"username": "sgiamadmin",
+         "password": "",
+         "sspl_pass": ""},
+"csm": {"mgmt_vip": "ssc-vm-2793.colo.seagate.com",
+        "csm_admin_user": {"username": "admin",
+                            "password": ""}
+                            },
+"s3": {"s3_server_ip": "10.230.248.51", "s3_server_user": "root", "s3_server_pwd": ""}}
+```
 
 Script in project's path `tools/setup_update` can be used to generate a setup specific config entry. 
 ```commandline
@@ -144,40 +266,6 @@ Name of setup specified in json file should be unique in case you are creating a
 For example in sample json setupname value should be unique `"setupname":"T2"`.
 ```
 
-## Steps to setup s3 client
-Script in project's path `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
-```commandline
-Required arguments in configuration:
-    ACCESS=<aws_access_key_id>
-    SECRET=<aws_secret_access_key>
-optional arguments:
-    -i, --ignore-errors  Ignore all errors in commands executed to remake files.
-    -k, --keep-going     Continue as much as possible after an error.
-    ENDPOINT=<s3_endpoint>
-    CA_CRT=<certificate_file_path>
-    NFS_SHARE=<NFS_share_jclient_path>
-
-make help --makefile=scripts/s3_tools/Makefile
-    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
-    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
-    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    jcloud-client: Setup jcloud-client. Eg: make jcloud-client
-    minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
-
-To install & configure all tools:
-make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
-
-To install & configure specific tool(i.e aws):
-make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
-
-To cleanup all tools:
-make clean --makefile=scripts/s3_tools/Makefile
-
-```
 
 ## Steps to run test automation locally
 
