@@ -37,9 +37,9 @@ class CortxCliSystemtOperations(CortxCli):
     def __init__(
             self,
             session_obj: object = None,
-            host=CMN_CFG["nodes"][0]["host"],
-            username=CMN_CFG["nodes"][0]["username"],
-            password=CMN_CFG["nodes"][0]["password"]):
+            host=None,
+            username=None,
+            password=None):
         """
         This method initializes members of CortxCliSystemtOperations
         :param object session_obj: session object of host connection if already established
