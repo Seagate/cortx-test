@@ -25,7 +25,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/EOS-21228-integrate-test-runner-in-sanity']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'ef9a4dc6-3f22-42bf-bafe-a39ba5042683', url: 'https://github.com/NiteshMahajan/cortx-test.git']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test/']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -95,7 +95,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report sanity_results.xml)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report sanity_results.xml --html_report sanity_results.html)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -125,7 +125,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report regrssion_results.xml)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report regrssion_results.xml --html_report regrssion_results.html)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -151,8 +151,9 @@ deactivate
 		          }
 		     }
 			catchError(stageResult: 'FAILURE') {
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*results.xml, log/*results.html', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/*results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'cortx.automation@seagate.com'
 			}
 		}
 	}

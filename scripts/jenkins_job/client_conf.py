@@ -34,6 +34,7 @@ from commons.helpers.node_helper import Node
 # Global Constants
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
+config.read(config_file)
 LOGGER = logging.getLogger(__name__)
 
 
