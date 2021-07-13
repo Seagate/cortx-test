@@ -8,18 +8,32 @@ You may need a seperate client vm with any Linux Flavour to install client side 
 
 
 ## Get the Sources
-Clone Cortx-Test repository.
+Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
 ```
 git clone https://github.com/Seagate/cortx-test.git
+cd cortx-test/
+git status
+git branch
+git checkout dev
+git remote -v
+git remote add upstream git@github.com:Seagate/cortx-test.git
+git remote -v
+Issuing the above command again will return you output as shown below.
+> origin    https://github.com/YOUR_USERNAME/YOUR_FORK.git (fetch)
+> origin    https://github.com/YOUR_USERNAME/YOUR_FORK.git (push)
+> upstream        https://github.com/Seagate/cortx-test.git (fetch)
+> upstream        https://github.com/Seagate/cortx-test.git (push)
+git fetch upstream
+git pull upstream dev
 ```
 
 ## Git Commands
 Learn generic Git commands to make yourself comfortable with git. 
 
-Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream where commits happen on your forked repository and then you can raise a PR to merge it to Seagate's Cortx-Test reporsitory. Memebers having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to checkin even when they have read access to Seagate Repositories.   
+Engineers contributing to test framework should undertand the review process. We following the concept of upstreams and downstream where commits happen on your forked repository and then you can raise a PR to merge it to Seagate's Cortx-Test reporsitory. Members having write access to Cortx-Test can create server side feature branch if multiple developers are working on same feature branch. Team should be able to checkin even when they have read access to Seagate Repositories.   
 
 ## Set up dev environment
-Following steps helps to setup client side env, where test framework runs. 
+Following steps helps to setup client side env, where test framework runs. These steps assumes that you have installed git client and cloned Cortx-test.  
     
     1. `yum update -y`
     
@@ -45,12 +59,49 @@ Following steps helps to setup client side env, where test framework runs.
     
     9. `pip install pysqlite3`
     
-    10. `pip install --ignore-installed -r requirements.txt`
+    10. Change dir to cortx-test project directory, make sure a requirement file is present in project dir. Use following command to install python packages.
+    `pip install --ignore-installed -r requirements.txt`
     
     11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
     configure aws and copy cert file.
     
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
+
+## Steps to setup s3 client
+To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
+Script in project's root folder cortx-test `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
+```commandline
+Required arguments in configuration:
+    ACCESS=<aws_access_key_id>
+    SECRET=<aws_secret_access_key>
+optional arguments:
+    -i, --ignore-errors  Ignore all errors in commands executed to remake files.
+    -k, --keep-going     Continue as much as possible after an error.
+    ENDPOINT=<s3_endpoint>
+    CA_CRT=<certificate_file_path>
+    NFS_SHARE=<NFS_share_jclient_path>
+
+make help --makefile=scripts/s3_tools/Makefile
+    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
+    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
+    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    jcloud-client: Setup jcloud-client. Eg: make jcloud-client
+    minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+
+To install & configure all tools:
+make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+
+To install & configure specific tool(i.e aws):
+make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+
+To cleanup all tools:
+make clean --makefile=scripts/s3_tools/Makefile
+
+```
 
 ## MongoDB as Configuration Management Database
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
@@ -167,40 +218,6 @@ Name of setup specified in json file should be unique in case you are creating a
 For example in sample json setupname value should be unique `"setupname":"T2"`.
 ```
 
-## Steps to setup s3 client
-Script in project's path `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
-```commandline
-Required arguments in configuration:
-    ACCESS=<aws_access_key_id>
-    SECRET=<aws_secret_access_key>
-optional arguments:
-    -i, --ignore-errors  Ignore all errors in commands executed to remake files.
-    -k, --keep-going     Continue as much as possible after an error.
-    ENDPOINT=<s3_endpoint>
-    CA_CRT=<certificate_file_path>
-    NFS_SHARE=<NFS_share_jclient_path>
-
-make help --makefile=scripts/s3_tools/Makefile
-    all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    clean         : Remove installed tools like aws, s3fs, s3cmd, minio. Eg: make clean
-    install-tools : Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make install-tools
-    configure-tools: Install tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make configure-tools ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    aws          : Install & configure aws tool. Eg: make aws ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    s3fs         : Install & configure s3fs tool. Eg: make s3fs ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
-    jcloud-client: Setup jcloud-client. Eg: make jcloud-client
-    minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
-
-To install & configure all tools:
-make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
-
-To install & configure specific tool(i.e aws):
-make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
-
-To cleanup all tools:
-make clean --makefile=scripts/s3_tools/Makefile
-
-```
 
 ## Steps to run test automation locally
 
