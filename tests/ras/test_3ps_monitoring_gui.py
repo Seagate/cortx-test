@@ -87,7 +87,6 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("############ Running setup_method ############")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         services = self.cm_cfg["service"]
-        sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
         LOGGER.info("Check that all basic services are active")
