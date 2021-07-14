@@ -42,7 +42,10 @@ class TestCliSystem:
             - Initialize few common variables
         """
         cls.log = logging.getLogger(__name__)
-        cls.system_obj_node1 = CortxCliSystemtOperations()
+        cls.system_obj_node1 = CortxCliSystemtOperations(
+            host=CMN_CFG["nodes"][0]["host"],
+            username=CMN_CFG["nodes"][0]["username"],
+            password=CMN_CFG["nodes"][0]["password"])
         cls.system_obj_node2 = CortxCliSystemtOperations(
             host=CMN_CFG["nodes"][1]["host"],
             username=CMN_CFG["nodes"][1]["username"],
@@ -107,7 +110,12 @@ class TestCliSystem:
             self.system_obj_node1.logout_cortx_cli()
             self.log.info("Logged out from CSMCLI console successfully")
         if self.node_stop:
+            csm = CMN_CFG.get("csm")
+            nodes = CMN_CFG.get("nodes")
             cli_sys_ser = CortxCliSystemtOperations(
+                host=csm["mgmt_vip"],
+                username=nodes[0]["username"],
+                password=nodes[0]["password"],
                 session_obj=self.node2_obj.session_obj)
             self.csm_cli_login = cli_sys_ser.login_cortx_cli()
             assert_utils.assert_equals(

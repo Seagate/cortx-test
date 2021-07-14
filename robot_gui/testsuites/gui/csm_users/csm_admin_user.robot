@@ -467,3 +467,9 @@ TEST-23612
     wait for page or element to load
     Delete CSM User  ${new_user_name}
     Verify Deleted User  ${new_user_name}
+
+TEST-11153
+    [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
+    ...  Reference : https://jts.seagate.com/browse/TEST-11153
+    [Tags]  full    TEST-11153
+    SSL certificate expiration alert Verification  0

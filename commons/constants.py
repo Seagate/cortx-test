@@ -311,6 +311,7 @@ class SwAlerts:
 
     class ResourceType:
         SW_SVC = "node:sw:os:service"
+        NW_INTFC = "node:interface:nw"
 
 
 class Sizes:
