@@ -665,3 +665,81 @@ class GenerateAlertWrapper:
                          GenerateAlertWrapper.create_resolve_network_cable_faults
                          .__name__, error)
             return False, error
+
+    @staticmethod
+    def disconnect_os_drive(host, h_user, h_pwd, input_parameters):
+        """
+        Function to disconnect OS disk from node
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        drive_name = input_parameters['drive_name']
+        drive_count = input_parameters['drive_count']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+        try:
+            cmd = commands.DISCONNECT_OS_DRIVE_CMD.format(drive_name)
+            LOGGER.info(f"Running command {cmd}")
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+
+            time.sleep(30)
+            LOGGER.info("Getting node drive details")
+            resp = ras_test_obj.get_node_drive_details()
+            d_count = resp[3]
+            if not resp[0] or d_count != drive_count - 1:
+                return False, f"Failed to remove OS disk {drive_name}"
+
+            return True, f"Successfully removed OS disk {drive_name}"
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.disconnect_os_drive.__name__,
+                         error)
+            return False, error
+
+    @staticmethod
+    def connect_os_drive(host, h_user, h_pwd, input_parameters):
+        """
+        Function to connect the OS drive
+        :param host: host ip address
+        :type host: str
+        :param h_user: host username
+        :type: str
+        :param h_pwd: host password
+        :type: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, status
+        :rtype: Boolean, str
+        """
+        host_num = input_parameters['host_num']
+        drive_count = input_parameters['drive_count']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+        try:
+            cmd = commands.CONNECT_OS_DRIVE_CMD.format(host_num)
+            LOGGER.info(f"Running command {cmd}")
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+
+            time.sleep(30)
+            LOGGER.info("Getting node drive details")
+            resp = ras_test_obj.get_node_drive_details()
+            d_count = resp[3]
+            if not resp[0] or d_count != drive_count:
+                return False, f"Failed to connect OS disk"
+
+            return True, f"Successfully connected OS disk"
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.connect_os_drive.__name__,
+                         error)
+            return False, error

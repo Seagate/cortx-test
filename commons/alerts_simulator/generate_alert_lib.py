@@ -66,6 +66,8 @@ class AlertType(Enum, settings=NoAlias):
     DG_FAULT_RESOLVED = 11
     NW_CABLE_FAULT = 12
     NW_CABLE_FAULT_RESOLVED = 12
+    OS_DISK_DISABLE = 13
+    OS_DISK_ENABLE = 14
 
 
 class GenerateAlertLib:
@@ -176,6 +178,16 @@ class GenerateAlertLib:
                         f'input_parameters={input_parameters})'},
             12: {
                 'cmd': 'create_resolve_network_cable_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            13: {
+                'cmd': 'disconnect_os_drive',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            14: {
+                'cmd': 'connect_os_drive',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},

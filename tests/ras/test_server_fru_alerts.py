@@ -210,88 +210,114 @@ class TestServerFruAlerts:
         common_cfg = RAS_VAL["ras_sspl_alert"]
         csm_error_msg = common_cfg["csm_error_msg"]
         test_cfg = RAS_TEST_CFG["TEST-23606"]
+        df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
+                          columns='Iteration0'.split())
+        df = df.assign(Iteration0='Pass')
 
         LOGGER.info("Step 1: Getting details of drive to be removed")
         resp = self.ras_test_obj.get_node_drive_details()
-        assert_true(resp[0], resp)
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+
+        assert_true(resp[0], f"Step 1: Failed to get details of OS disks. "
+                             f"Response: {resp}")
 
         drive_name = resp[1].split("/")[2]
         host_num = resp[2]
         drive_count = resp[3]
-        LOGGER.info(f"Drive details:\nOS drive name: {drive_name} \n"
-                    f"Host number: {host_num} \n"
-                    f"OS Drive count: {drive_count} \n")
+        LOGGER.info("Step 1: Drive details:\nOS drive name: %s \n"
+                    "Host number: %s \nOS Drive count: %s \n",
+                    drive_name, host_num, drive_count)
 
-
-        LOGGER.info("Step 2: Disabling phy number %s", phy_num)
+        LOGGER.info("Creating fault...")
+        LOGGER.info("Step 2: Disconnecting OS drive %s", drive_name)
         resp = self.alert_api_obj.generate_alert(
-            AlertType.DISK_DISABLE,
-            input_parameters={"enclid": test_cfg["encl"],
-                              "ctrl_name": test_cfg["ctrl"],
-                              "phy_num": phy_num,
-                              "operation": test_cfg["operation_fault"],
-                              "exp_status": test_cfg["degraded_phy_status"],
-                              "telnet_file": common_cfg["file"]["telnet_xml"]})
-        assert_true(resp[0], resp[1])
-
-        phy_stat = test_cfg["degraded_phy_status"]
-        LOGGER.info("Step 2: Successfully put phy in %s state", phy_stat)
-
-        if phy_num < 10:
-            resource_id = "disk_00.0{}".format(phy_num)
+            AlertType.OS_DISK_DISABLE,
+            input_parameters={"drive_name": drive_name,
+                              "drive_count": drive_count})
+        if not resp[0]:
+            df['Iteration0']['Step2'] = 'Fail'
+            LOGGER.error("Step 2: Failed to create fault. Error: %s", resp[1])
         else:
-            resource_id = "disk_00.{}".format(phy_num)
-        time.sleep(common_cfg["sleep_val"])
+            LOGGER.info("Step 2: Successfully disabled/disconnected drive\n "
+                        "Response: %s", drive_name, resp)
 
-        LOGGER.info("Step 3: Checking CSM REST API for alert")
+        time.sleep(self.cm_cfg["sleep_val"])
+        if self.start_msg_bus:
+            LOGGER.info("Step 3: Verifying alert logs for fault alert ")
+            alert_list = [test_cfg["resource_type"], self.alert_types["missing"]]
+            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            if not resp[0]:
+                df['Iteration0']['Step3'] = 'Fail'
+                LOGGER.error("Step 3: Expected alert not found. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 3: Checked generated alert logs. Response: "
+                            "%s", resp)
+
+        LOGGER.info("Step 4: Checking CSM REST API for alert")
         time.sleep(common_cfg["csm_alert_gen_delay"])
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
-                                                          test_cfg[
-                                                              "alert_type"],
+                                                          self.alert_types["missing"],
                                                           False,
                                                           test_cfg[
-                                                              "resource_type"],
-                                                          resource_id)
+                                                              "resource_type"])
 
-        LOGGER.info("Step 4: Clearing metadata of drive %s", phy_num)
-        drive_num = f"0.{phy_num}"
-        resp = self.controller_obj.clear_drive_metadata(drive_num=drive_num)
-        assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: Cleared %s drive metadata successfully", drive_num)
+        # if not resp_csm[0]:
+        #     df['Iteration0']['Step4'] = 'Fail'
+        #     LOGGER.error("Step 4: Expected alert not found. Error: %s",
+        #     test_cfg["csm_error_msg"])
+        # else:
+        #     LOGGER.info("Step 4: Successfully checked CSM REST API for "
+        #     "fault alert. Response: %s", resp_csm)
 
-        LOGGER.info("Step 5: Again enabling phy number %s", phy_num)
-        i = 0
-        while i < test_cfg["retry"]:
-            resp = self.alert_api_obj.generate_alert(
-                AlertType.DISK_ENABLE,
-                input_parameters={"enclid": test_cfg["encl"],
-                                  "ctrl_name": test_cfg["ctrl"],
-                                  "phy_num": phy_num,
-                                  "operation": test_cfg[
-                                      "operation_fault_resolved"],
-                                  "exp_status": test_cfg["ok_phy_status"],
-                                  "telnet_file": common_cfg["file"][
-                                      "telnet_xml"]})
+        LOGGER.info("Resolving fault...")
+        LOGGER.info("Step 5: Connecting OS drive %s", drive_name)
+        resp = self.alert_api_obj.generate_alert(
+                AlertType.OS_DISK_ENABLE,
+                input_parameters={"host_num": host_num,
+                                  "drive_count": drive_count})
 
-            phy_stat = test_cfg["ok_phy_status"]
-            if resp[1] == phy_stat:
-                break
-            elif i == 1:
-                assert phy_stat == resp[1], f"Step 4: Failed to put phy in " \
-                                            f"{phy_stat} state"
-
-        LOGGER.info("Step 5: Successfully put phy in %s state", phy_stat)
+        if not resp[0]:
+            df['Iteration0']['Step5'] = 'Fail'
+            LOGGER.error("Step 5: Failed to resolve fault. Error: %s", resp[1])
+        else:
+            LOGGER.info("Step 5: Successfully connected disk %s\n Response: %s",
+                        drive_name, resp)
 
         if self.start_msg_bus:
             LOGGER.info("Step 6: Checking the generated alert logs")
-            alert_list = [test_cfg["resource_type"], test_cfg["alert_type"],
-                          resource_id]
+            alert_list = [test_cfg["resource_type"],
+                          self.alert_types["insertion"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
-            assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Checked generated alert logs")
+            if not resp[0]:
+                df['Iteration0']['Step6'] = 'Fail'
+                LOGGER.error("Step 6: Expected alert not found. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 6: Checked generated alert logs\n "
+                            "Response: %s", resp)
+                LOGGER.info("Step 6: Checked generated alert logs")
 
-        assert_true(resp_csm, csm_error_msg)
-        LOGGER.info("Step 3: Successfully checked CSM REST API for alerts")
+        LOGGER.info("Step 7: Checking CSM REST API for alert")
+        time.sleep(common_cfg["csm_alert_gen_delay"])
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                          self.alert_types[
+                                                              "insertion"],
+                                                          True,
+                                                          test_cfg[
+                                                              "resource_type"])
 
-        LOGGER.info(
-            "ENDED: Test Disabling a drive from disk group")
+        # if not resp_csm[0]:
+        #     df['Iteration0']['Step7'] = 'Fail'
+        #     LOGGER.error("Step 7: Expected alert not found. Error: %s",
+        #     test_cfg["csm_error_msg"])
+        # else:
+        #     LOGGER.info("Step 7: Successfully checked CSM REST API for "
+        #     "fault alert. Response: %s", resp_csm)
+
+        LOGGER.info("Summary of test: %s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
+        LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
