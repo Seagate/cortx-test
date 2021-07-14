@@ -271,3 +271,6 @@ test_23045:
   faulty_cpu_id:
     - 0
     - 1
+
+TEST-23606:
+  resource_type: "node:os:disk"

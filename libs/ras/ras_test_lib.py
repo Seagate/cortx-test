@@ -1154,3 +1154,71 @@ class RASTestLib(RASCoreLib):
                     c_dict[f"srvnode-{n}"]["ctrl_obj"] = ctrl_obj
 
         return c_dict
+
+    def get_node_drive_details(self):
+        """
+        Function to get details of the drives connected to node
+        :return: True/False, drive_name, host_num, drive_count
+        :rtype: Boolean, str, int, int
+        """
+        try:
+            filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
+            tempfile = RAS_VAL["ras_sspl_alert"]["file"]["temp_txt_file"]
+
+            cmd = common_commands.LSSCSI_CMD.format(filepath)
+            LOGGER.info(f"Running command {cmd}")
+            response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
+                                                username=self.username,
+                                                password=self.pwd,
+                                                read_lines=True, shell=False)
+            if not response[0]:
+                return response
+
+            LOGGER.info(f"Copying file from remote to local")
+            resp = self.node_utils.copy_file_to_local(remote_path=filepath,
+                                                      local_path=localpath)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Getting drive information")
+            cmd = common_commands.LINUX_STRING_CMD.format("ATA", filepath, tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Checking OS drive count")
+            cmd = common_commands.LINE_COUNT_CMD.format(tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+
+            drive_count = int(resp[1])
+            if not resp[0] or drive_count < 2:
+                return resp
+
+            LOGGER.info(f"{drive_count} number of drives are connected to node "
+                        f"{self.host}")
+
+            LOGGER.info(f"Getting LUN number of OS drive")
+            cmd = f"sed '1d' {tempfile} | awk '{{print $1}}'"
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
+
+            numeric_filter = filter(str.isdigit, resp[1].split(':')[0])
+            host_num = "".join(numeric_filter)
+
+            LOGGER.info(f"Getting name of OS drive")
+            cmd = f"sed '1d' {tempfile} | awk '{{print $NF}}'"
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            drive_name = resp[1]
+            return True, drive_name, host_num, drive_count
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_node_drive_details.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+        finally:
+            if os.path.exists(localpath):
+                os.remove(localpath)
+            if os.path.exists(tempfile):
+                os.remove(tempfile)
+            self.node_utils.remove_file(filename=filepath)
