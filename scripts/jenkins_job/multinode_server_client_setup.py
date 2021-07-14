@@ -53,7 +53,7 @@ def create_db_entry(
     :return: Target name
     """
     json_file = config['default']['setup_entry_json']
-    new_setupname = hostname[0].split(".")[0]
+    new_setupname = os.getenv("Target_Node")
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
     with open(json_file, 'r') as file:
         json_data = json.load(file)
