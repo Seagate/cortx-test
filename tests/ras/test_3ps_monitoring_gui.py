@@ -65,7 +65,8 @@ class Test3PSvcMonitoringGUI:
         cls.intrmdt_state_timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
         cls.sspl_thrs_inact_time = CONF_SSPL_SRV_THRS_INACT_TIME
         cls.thrs_inact_time_org = None
-        if CMN_CFG["setup_type"] == "VM":
+        cls.setup_type = CMN_CFG["setup_type"]
+        if cls.setup_type == "VM":
             cls.external_svcs = const.SVCS_3P_ENABLED_VM
         else:
             cls.external_svcs = const.SVCS_3P
@@ -89,25 +90,10 @@ class Test3PSvcMonitoringGUI:
         sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
-        LOGGER.info("Check SSPL status")
-        res = self.sw_alert_obj.get_svc_status([sspl_svc])[sspl_svc]
-        LOGGER.info("SSPL status response %s : ", res)
-        assert res["state"] == "active", "SSPL is not in active state"
-
-        LOGGER.info("Check CSM Web status")
-        res = self.sw_alert_obj.get_svc_status(["csm_web"])["csm_web"]
-        LOGGER.info("CSM web status response %s : ", res)
-        assert res["state"] == "active", "CSM web is not in active state"
-
-        LOGGER.info("Check CSM Agent status")
-        res = self.sw_alert_obj.get_svc_status(["csm_agent"])["csm_agent"]
-        LOGGER.info("CSM Agent status response %s : ", res)
-        assert res["state"] == "active", "CSM Agent is not in active state"
-
-        LOGGER.info("Check Kafka status")
-        res = self.sw_alert_obj.get_svc_status(["kafka"])["kafka"]
-        LOGGER.info("Kafka status response %s : ", res)
-        assert res["state"] == "active", "Kafka is not in active state"
+        LOGGER.info("Check that all basic services are active")
+        resp = self.sw_alert_obj.get_inactive_svcs(RAS_VAL["sspl_config"]["service"])
+        assert resp == [], f"{resp} are in inactive state"
+        LOGGER.info("All 3rd party services are in active state.")
 
         LOGGER.info("Check that all the 3rd party services are enabled.")
         resp = self.sw_alert_obj.get_disabled_svcs(self.external_svcs)
@@ -203,7 +189,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21265")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21265_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : SaltStack"
         test_case_name = cortxlogging.get_frame()
@@ -386,7 +371,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21257")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21257_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : ElasticSearch-OSS"
         test_case_name = cortxlogging.get_frame()
@@ -483,7 +467,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21256")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21256_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Consul"
         test_case_name = cortxlogging.get_frame()
@@ -580,9 +563,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21258")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21258_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Scsi-network-relay"
+        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -677,7 +660,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21260")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21260_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Statsd"
         test_case_name = cortxlogging.get_frame()
@@ -774,9 +756,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21266")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21266_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : GlusterFS"
+        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -871,7 +853,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21264")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21264_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Lustre"
         test_case_name = cortxlogging.get_frame()
@@ -968,7 +949,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21261")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21261_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Rsyslog"
         test_case_name = cortxlogging.get_frame()
@@ -1069,7 +1049,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21263")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21263_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : OpenLDAP"
         test_case_name = cortxlogging.get_frame()
@@ -1166,9 +1145,9 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21267")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21267_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Multipathd"
+        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
@@ -1263,7 +1242,6 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.tags("TEST-21259")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-
     def test_21259_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Kafka"
         test_case_name = cortxlogging.get_frame()
