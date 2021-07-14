@@ -44,10 +44,11 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
     Process existing te and create new te
     """
     # create new te
-    new_te_id, is_te_skipped, test_list = jira_task.create_new_test_exe(te, tp_info, skip_tes)
+    jt = JiraTask()
+    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
-        response = jira_task.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
+        response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
                                                 tp_info['platform'], test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
@@ -55,7 +56,7 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
             old_tes.append(te)
             if is_te_skipped:
                 new_skipped_te.append(new_te_id)
-            response_add = jira_task.add_te_to_tp([new_te_id], new_tp_key)
+            response_add = jt.add_te_to_tp([new_te_id], new_tp_key)
             if response_add:
                 print("TEs are added to TP")
             else:
