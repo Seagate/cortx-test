@@ -101,6 +101,16 @@ class S3Lib:
 
         return response
 
+    def put_object_with_all_kwargs(self, **kwargs):
+        """
+        Putting Object to the Bucket.
+        :return: response.
+        """
+        LOGGER.debug("input for put_object are: %s ", kwargs)
+        response = self.s3_client.put_object(**kwargs)
+        LOGGER.debug("output: %s ", response)
+        return response
+
     def put_object(self,
                    bucket_name: str = None,
                    object_name: str = None,
@@ -160,10 +170,8 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        LOGGER.info("Uploading object")
         self.s3_resource.meta.client.upload_file(
             file_path, bucket_name, object_name)
-        LOGGER.info("Uploading object done")
 
         return file_path
 
@@ -271,7 +279,8 @@ class S3Lib:
     def object_download(self,
                         bucket_name: str = None,
                         obj_name: str = None,
-                        file_path: str = None) -> str:
+                        file_path: str = None,
+                        **kwargs) -> str:
         """
         Downloading Object of the required Bucket.
 
@@ -280,7 +289,7 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
+        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
         LOGGER.debug(
             "The %s has been downloaded successfully at mentioned file path %s",
             obj_name,

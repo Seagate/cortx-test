@@ -605,7 +605,18 @@ def pytest_runtest_makereport(item, call):
     db_update = ast.literal_eval(str(item.config.option.db_update))
     if not _local:
         test_id = CACHE.lookup(report.nodeid)
-        if report.when == 'teardown':
+        if report.when == 'setup' and item.rep_setup.failed:
+            # Fail eagerly in Jira, when you know setup failed.
+            # The status is again anyhow updated in teardown as it was earlier.
+            try:
+                if jira_update:
+                    jira_id, jira_pwd = get_jira_credential()
+                    task = jira_utils.JiraTask(jira_id, jira_pwd)
+                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+            except (requests.exceptions.RequestException, Exception) as fault:
+                LOGGER.exception(str(fault))
+                LOGGER.error("Failed to execute Jira update for %s", test_id)
+        elif report.when == 'teardown':
             try:
                 remote_path = os.path.join(params.NFS_BASE_DIR,
                                            Globals.BUILD, Globals.TP_TKT,
@@ -699,7 +710,10 @@ def upload_supporting_logs(test_id: str, remote_path: str, log: str):
     :param remote_path: path on NFS share
     :param log: log file string e.g. s3bench
     """
-    support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
+    if log == 'csm_gui':
+        support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_Gui_Logs/*")
+    else:
+        support_logs = glob.glob(f"{LOG_DIR}/latest/{test_id}_{log}_*")
     for support_log in support_logs:
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
@@ -816,7 +830,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                     fp.write(rec + '\n')
         return
     test_id = CACHE.lookup(report.nodeid)
-    if report.when == 'setup':
+    if report.when == 'setup' and report.outcome == 'passed':
+        # If you reach here and when you know setup passed.
         if Globals.JIRA_UPDATE:
             jira_id, jira_pwd = get_jira_credential()
             task = jira_utils.JiraTask(jira_id, jira_pwd)
@@ -846,6 +861,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
         else:
             LOGGER.error("Failed to upload log file at location %s", resp[1])
         upload_supporting_logs(test_id, remote_path, "s3bench")
+        upload_supporting_logs(test_id, remote_path, "csm_gui")
         LOGGER.info("Adding log file path to %s", test_id)
         comment = "Log file path: {}".format(os.path.join(resp[1], name))
         if Globals.JIRA_UPDATE:
