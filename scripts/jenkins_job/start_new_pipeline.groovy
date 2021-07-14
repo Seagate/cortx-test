@@ -39,6 +39,7 @@ deactivate
 		stage('CSM_Boarding') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${HOSTNAME}"
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
 deactivate
@@ -49,6 +50,7 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export HOSTNAME="${HOSTNAME}"
 sh scripts/jenkins_job/run_tests.sh
 deactivate
 '''

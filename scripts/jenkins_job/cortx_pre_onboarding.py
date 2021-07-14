@@ -29,9 +29,11 @@ class CSMBoarding(unittest.TestCase):
         chrome_options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.implicitly_wait(30)
-        self.csm_mgmt_ip = os.getenv('HOSTNAME')
-        self.default_username = pswdmanager.decrypt(config['csmboarding']['username'])
-        self.default_password = pswdmanager.decrypt(config['csmboarding']['password'])
+        self.csm_mgmt_ip = os.getenv('MGMT_VIP')
+        self.default_username = pswdmanager.decrypt(
+            config['csmboarding']['username'])
+        self.default_password = pswdmanager.decrypt(
+            config['csmboarding']['password'])
         self.admin_user = os.getenv('ADMIN_USR', self.default_username)
         self.admin_pwd = os.getenv('ADMIN_PWD', self.default_password)
         self.host_passwd = os.getenv('HOST_PASS')
@@ -47,7 +49,8 @@ class CSMBoarding(unittest.TestCase):
         try:
             if self.create_admin_user:
                 browser = self.driver
-                preboarding_url = config['csmboarding']['preboarding_url'].format(self.csm_mgmt_ip)
+                preboarding_url = config['csmboarding']['preboarding_url'].format(
+                    self.csm_mgmt_ip)
                 browser.get(preboarding_url)
                 ele = self.get_element(By.ID, loc.Preboarding.start_btn)
                 ele.click()
@@ -66,17 +69,25 @@ class CSMBoarding(unittest.TestCase):
                 ele = self.get_element(By.ID, loc.Preboarding.create_btn)
                 ele.click()
                 ele = self.get_element(By.ID, loc.Preboarding.userlogin_ip)
+                self.driver.save_screenshot("".join(["Success-Preboarding-Screenshot",
+                                                     str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
                 print("Admin user is created")
-                print("Username: {} \nPassword: {}".format(self.admin_user, self.admin_pwd))
+                print(
+                    "Username: {} \nPassword: {}".format(
+                        self.admin_user,
+                        self.admin_pwd))
             else:
                 print("Admin user already present. Skipping Preboarding")
-        except:
+        except BaseException:
+            self.driver.save_screenshot("".join(["Failure-Preboarding-Screenshot",
+                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
             self.assertTrue(False, "Failed to create Admin User")
 
     def test_onboarding(self):
         try:
             browser = self.driver
-            onboarding_url = config['csmboarding']['onboarding_url'].format(self.csm_mgmt_ip)
+            onboarding_url = config['csmboarding']['onboarding_url'].format(
+                self.csm_mgmt_ip)
             browser.get(onboarding_url)
             ele = self.get_element(By.ID, loc.Onboarding.username_ip)
             self.clear_send(ele, self.admin_user)
@@ -88,6 +99,7 @@ class CSMBoarding(unittest.TestCase):
             self.clear_send(ele, config['csmboarding']['system'])
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
+            ele = self.get_element(By.XPATH, loc.Onboarding.ssl_choose_file)
             ele = self.get_element(By.XPATH, loc.Onboarding.continue_btn)
             ele.click()
             ele = self.get_element(By.ID, loc.Onboarding.dns_server_ip)
@@ -110,13 +122,20 @@ class CSMBoarding(unittest.TestCase):
             ele.click()
             ele = self.get_element(By.ID, loc.Onboarding.finish_btn)
             ele.click()
+            self.driver.save_screenshot("".join(["Success-Onboarding-Screenshot",
+                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
             print("Onboarding completed!")
-        except:
+        except BaseException:
+            self.driver.save_screenshot("".join(["Failure-Onboarding-Screenshot",
+                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
             self.assertTrue(False, "Onboarding Failed")
 
     def get_element(self, by, loc):
         time.sleep(2)
-        ele = WebDriverWait(self.driver, 60).until(EC.presence_of_element_located((by, loc)))
+        ele = WebDriverWait(
+            self.driver, 60).until(
+            EC.presence_of_element_located(
+                (by, loc)))
         return ele
 
     def clear_send(self, ele, txt):
@@ -158,6 +177,7 @@ class CSMBoarding(unittest.TestCase):
         except BaseException as error:
             print(error)
             return error
+
 
 if __name__ == "__main__":
     unittest.main()

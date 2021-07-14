@@ -189,15 +189,36 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     return cmd
 
 
+def filter_bin_md5(file_checksum):
+    """
+    Function to clean binary md5 response.
+    :param file_checksum: encoded binary md5 data with newline char
+    :return: filter binary md5 data
+    """
+    LOGGER.debug("Actual MD5 %s", file_checksum)
+    if "\\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\\n", "")
+    elif "\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\n", "")
+    else:
+        bin_checksum = file_checksum[2:-1]
+    LOGGER.debug("Filter MD5 %s", bin_checksum)
+
+    return bin_checksum
+
+
 def calculate_checksum(
         file_path: str,
         binary_bz64: bool = True,
-        options: str = "") -> tuple:
+        options: str = "",
+        **kwargs) -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
     :param file_path: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
+    :param options: option for md5sum tool
+    :keyword filter_resp: filter md5 checksum cmd response True/False
     :return: string or MD5 object
     """
     if not os.path.exists(file_path):
@@ -210,6 +231,8 @@ def calculate_checksum(
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
     LOGGER.debug("Output: %s", str(result))
+    if kwargs.get("filter_resp", None) and binary_bz64:
+        result = (result[0], filter_bin_md5(result[1]))
     return result
 
 
@@ -1048,8 +1071,8 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
     cmd = commands.IP_LINK_CMD.format(device, status)
     LOGGER.info("Running command: %s", cmd)
     res = run_remote_cmd(
-            hostname=host, username=username, password=pwd, cmd=cmd,
-            read_lines=True)
+        hostname=host, username=username, password=pwd, cmd=cmd,
+        read_lines=True)
     LOGGER.debug("Response: %s", res)
 
     LOGGER.debug(res)
@@ -1101,3 +1124,39 @@ def create_dir_hierarchy_and_objects(directory_path=None,
     LOGGER.info("File list: %s", file_path_list)
 
     return file_path_list
+
+
+def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+    """
+    Validate the s3bench parallel execution log file for failure.
+
+    :param log_dir: Log directory path.
+    :param log_prefix: s3 bench log prefix.
+    :return: bool, response.
+    """
+    LOGGER.info("S3 parallel ios log validation started.")
+    log_file_list = list_dir(log_dir)
+    log_path = None
+    for filename in log_file_list:
+        if filename.startswith(log_prefix):
+            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("IO log path: %s", log_path)
+    if not log_path:
+        return False, f"failed to generate logs for parallel run: {log_prefix}."
+    lines = open(log_path).readlines()
+    resp_filtered = [
+        line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
+    LOGGER.info("'Error count' filtered list: %s", resp_filtered)
+    for response in resp_filtered:
+        if int(response.split(":")[1].strip()) != 0:
+            return False, response
+    LOGGER.info("Observed no Error count in io log.")
+    error_kws = ["with error ", "panic", "status code", "exit status 2"]
+    for error in error_kws:
+        if error in ",".join(lines):
+            return False, f"{error} Found in S3Bench Run."
+    LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
+    remove_file(log_path)
+    LOGGER.info("S3 parallel ios log validation completed.")
+
+    return True, "S3 parallel ios completed successfully."
