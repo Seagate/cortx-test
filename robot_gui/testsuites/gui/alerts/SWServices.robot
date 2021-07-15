@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation    This suite verifies the testcases for ssl details
+Documentation    This suite verifies the testcases for SWServices
 Resource    ${RESOURCES}/resources/page_objects/alertPage.robot
 Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
@@ -10,233 +10,73 @@ Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${passw
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
 
+*** Variables ***
+${url}
+${browser}  chrome
+${headless}  True
+${username}
+${password}
+${description}
+${servicename}  statsd.service
+
 *** Test Cases ***
 
-CHECK_IN_NEW_ALERTS
-    [Documentation]  CSM GUI: Check if alert present in new alert table
-    [Tags]  Priority_High  R2  CHECK_IN_NEW_ALERTS
+SW_SERVICE_VERIFY_INIT
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : init
+    [Tags]  Priority_High  R2  SW_SERVICE_INIT
+    Fail if New alerts exist SW Service  ${servicename}
+    Acknowledge if Active alerts exist SW Service  ${servicename}
+
+SW_SERVICE_VERIFY_FAIL
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : fail
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_FAIL
+    # fail service
+    Verify failed alerts exist SW Service  ${servicename}
+
+SW_SERVICE_VERIFY_FAIL_RESOLVED
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : failed resolved
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_FAIL_RESOLVED
+    # start fail service
+    Verify and Acknowledge failed resolved alerts exist SW Service  ${servicename}
+
+SW_SERVICE_VERIFY_INACTIVATE
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : inactive
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_INACTIVATE
+    # inactive service
+    Verify inactive alerts exist SW Service  ${servicename}
+
+SW_SERVICE_VERIFY_INACTIVATE_RESOLVED
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : inactive resolved
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_INACTIVATE_RESOLVED
+    # start inactive service
+    Verify and Acknowledge inactive resolved alerts exist SW Service  ${servicename}
+
+SW_SERVICE_VERIFY_DEACTIVATE
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : deactivat
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_DEACTIVATE
+    # deactivat service
     Check if alert exists in New alerts tab  ${description}
+    Verify deactivating alerts exist SW Service  ${servicename}
 
-TEST-21262
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : HAProxy
-    ...  Reference : https://jts.seagate.com/browse/TEST-21262
-    [Tags]  Priority_High  R2 TEST-21262
-    ${servicename} =  Set Variable  haproxy
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
+SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED
+    [Documentation]  CSM GUI: Verify Alerts for SW Service : deactivated resolved
+    [Tags]  Priority_High  R2  SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED
+    # start deactivated service
+    Check if alert exists in Active alerts tab  ${description}
+    Verify and Acknowledge deactivating resolved alerts exist SW Service  ${servicename}
 
-TEST-21267
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Multipathd
-    ...  Reference : https://jts.seagate.com/browse/TEST-TEST-21267
-    [Tags]  Priority_High  R2 TEST-TEST-21267
-    ${servicename} =  Set Variable  multipathd
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21266
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : GlusterFS
-    ...  Reference : https://jts.seagate.com/browse/TEST-21266
-    [Tags]  Priority_High  R2 TEST-21266
-    ${servicename} =  Set Variable  glusterd
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21265
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : SaltStack
-    ...  Reference : https://jts.seagate.com/browse/TEST-21265
-    [Tags]  Priority_High  R2 TEST-21265
-    ${servicename} =  Set Variable  salt-master
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-    ${servicename} =  Set Variable  salt-minion
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21264
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Lustre
-    ...  Reference : https://jts.seagate.com/browse/TEST-21264
-    [Tags]  Priority_High  R2 TEST-21264
-    ${servicename} =  Set Variable  lnet
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21263
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : OpenLDAP
-    ...  Reference : https://jts.seagate.com/browse/TEST-21263
-    [Tags]  Priority_High  R2 TEST-21263
-    ${servicename} =  Set Variable  slapd
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-
-TEST-21261
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Rsyslog
-    ...  Reference : https://jts.seagate.com/browse/TEST-21261
-    [Tags]  Priority_High  R2 TEST-21261
-    ${servicename} =  Set Variable  rsyslog
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21260
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Statsd
-    ...  Reference : https://jts.seagate.com/browse/TEST-21260
-    [Tags]  Priority_High  R2 TEST-21260
-    ${servicename} =  Set Variable  statsd
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-
-TEST-21259
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Kafka
-    ...  Reference : https://jts.seagate.com/browse/TEST-21259
-    [Tags]  Priority_High  R2 TEST-21259
-    ${servicename} =  Set Variable  kafka
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21258
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Scsi-network-relay
-    ...  Reference : https://jts.seagate.com/browse/TEST-21258
-    [Tags]  Priority_High  R2 TEST-21258
-    ${servicename} =  Set Variable  scsi-network-relay
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21256
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : Consul
-    ...  Reference : https://jts.seagate.com/browse/TEST-21256
-    [Tags]  Priority_High  R2 TEST-21256
-    ${servicename} =  Set Variable  hare-consul-agent
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-TEST-21257
-    [Documentation]  CSM GUI: Verify Alerts for SW Service : ElasticSearch-OSS
-    ...  Reference : https://jts.seagate.com/browse/TEST-21257
-    [Tags]  Priority_High  R2 TEST-21257
-    ${servicename} =  Set Variable  elasticsearch
-    Fail if New alerts exist SW Service  ${servicename}
-    Acknowledge if Active alerts exist SW Service  ${servicename}
-    # fail service
-    Verify failed alerts exist SW Service  ${servicename}
-    # start service
-    Verify failed resolved alerts exist SW Service  ${servicename}
-    # inactive service
-    Verify inactive alerts exist SW Service  ${servicename}
-    # start service
-    Verify inactive resolved alerts exist SW Service  ${servicename}
-    Verify failed alerts exist SW Service  ${servicename}
-
-
-#TEST-19878
-#    [Documentation]  CSM GUI: Verify Alerts for SW Service
-#    ...  Reference : https://jts.seagate.com/browse/TEST-19878
-#    [Tags]  Priority_High  R2 TEST-19878
+# TEST-21262
+#     [Documentation]  CSM GUI: Verify Alerts for SW Service : HAProxy
+#     ...  Reference : https://jts.seagate.com/browse/TEST-21262
+#     [Tags]  Priority_High  R2 TEST-21262
+#     Fail if New alerts exist SW Service  ${servicename}
+#     Acknowledge if Active alerts exist SW Service  ${servicename}
+#     # fail service
+#     Verify failed alerts exist SW Service  ${servicename}
+#     # start service
+#     Verify failed resolved alerts exist SW Service  ${servicename}
+#     # inactive service
+#     Verify inactive alerts exist SW Service  ${servicename}
+#     # start service
+#     Verify inactive resolved alerts exist SW Service  ${servicename}
+#     Verify failed alerts exist SW Service  ${servicename}
