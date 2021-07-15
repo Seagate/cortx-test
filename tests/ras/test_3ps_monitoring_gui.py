@@ -20,7 +20,6 @@
 
 """SSPL test cases: Primary Node."""
 
-import os
 import time
 import secrets
 import logging
@@ -523,8 +522,7 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.sw_alert
     def test_21266_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : GlusterFS"
-        assert_equals(self.setup_type, "HW", 'Test valid on HW only') 
-        # TODO: may need to update after BUG : EOS-20795
+        assert_equals(self.setup_type, "HW", 'Test valid on HW only')  # TODO: may need to update after BUG : EOS-20795
         # TODO: verify while TE
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
