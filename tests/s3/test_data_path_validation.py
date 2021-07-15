@@ -172,32 +172,6 @@ class TestDataPathValidation:
             "panic", ",".join(
                 resp[1]), f"S3 IO's failed: {resp[1]}")
 
-    def validate_s3io_log(self, log_prefix):
-        """
-        Validate the io logs for failures.
-
-        :param log_prefix: IO's s3 log path.
-        """
-        log_list = system_utils.list_dir(s3bench_obj.LOG_DIR)
-        log_path = None
-        for filename in log_list:
-            if filename.startswith(log_prefix):
-                log_path = os.path.join(s3bench_obj.LOG_DIR, filename)
-        self.log_file.append(log_path)
-        self.log.info("IO log path: %s", log_path)
-        assert_utils.assert_true(
-            os.path.exists(log_path),
-            f"failed to generate log: {log_path}")
-        all_data = open(log_path).readline()
-        resp_filtered = [i for i in all_data if 'Number of Errors' in i]
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        assert_utils.assert_not_in("exit status 2", ",".join(all_data),
-                                   f"S3 IO's failed: {all_data}")
-        assert_utils.assert_not_in("panic", ",".join(
-            all_data), f"S3 IO's failed: {all_data}")
-
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-8735')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
@@ -360,9 +334,11 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"test-1745-{request_load}")
+                log_file_prefix=f"TEST-8731_s3bench-{request_load}")
             self.log.debug(res)
-            self.validate_s3io_log(f"test-1745-{request_load}")
+            resp = system_utils.validate_s3bench_parallel_execution(
+                s3bench_obj.LOG_DIR, f"TEST-8731_s3bench-{request_load}")
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed concurrent I/O with 100 client and"
             "gradually increasing requests.")
@@ -416,9 +392,11 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"test-1746-{request_load}")
+                log_file_prefix=f"TEST-8732_s3bench-{request_load}")
             self.log.debug(res)
-            self.validate_s3io_log(f"test-1746-{request_load}")
+            resp = system_utils.validate_s3bench_parallel_execution(
+                s3bench_obj.LOG_DIR, f"TEST-8732_s3bench-{request_load}")
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: completed concurrent I/O with multiple client and increasing"
             " request on single bucket.")
@@ -481,8 +459,10 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"test-1747-{client}")
-            self.validate_s3io_log(f"test-1747-{client}")
+                log_file_prefix=f"Test-8733-{client}")
+            resp = system_utils.validate_s3bench_parallel_execution(
+                s3bench_obj.LOG_DIR, f"TEST-8733_s3bench-{request_load}")
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Completed concurrent I/O with increasing client and"
             " request on multiple buckets.")
@@ -545,8 +525,10 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"test-1748-{request_load}")
-            self.validate_s3io_log(f"test-1748-{request_load}")
+                log_file_prefix=f"Test-8734_s3bench-{request_load}")
+            resp = system_utils.validate_s3bench_parallel_execution(
+                s3bench_obj.LOG_DIR, f"TEST-8734_s3bench-{request_load}")
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Start concurrent I/O with increasing client and request.")
         self.log.info("Step 3: checking system stability")
