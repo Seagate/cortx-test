@@ -10,6 +10,14 @@ Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${passw
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
 
+*** Variables ***
+${url}
+${browser}  chrome
+${headless}  True
+${username}
+${password}
+${description}
+
 *** Test Cases ***
 
 CHECK_IN_NEW_ALERTS
