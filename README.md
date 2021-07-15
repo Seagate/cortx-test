@@ -81,7 +81,7 @@ Change dir to your local repository root folder.
 cd cortx-test/ci_tools
 ./client_setup.sh 
 ```
-This script should handle client setups.
+This script should handle client setup. However note that python configure does not have switch --enable-loadable-sqlite-extensions in script.
 
 ## Steps to setup s3 client
 To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
@@ -123,7 +123,6 @@ make clean --makefile=scripts/s3_tools/Makefile
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
 based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
-
 
 ```json
 
