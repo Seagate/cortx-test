@@ -96,6 +96,7 @@ class CortxCliClient:
     def close_connection(self, cln_session_obj: bool = False):
         """
         This function will close the ssh connection created in init
+        :param bool cln_session_obj: To clean the session object for next session
         :return: None
         """
         self.session_obj.exit()
