@@ -407,3 +407,9 @@ TEST-21590
     Navigate To Page  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+TEST-11153
+    [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
+    ...  Reference : https://jts.seagate.com/browse/TEST-11153
+    [Tags]  full    TEST-11153
+    SSL certificate expiration alert Verification  0
