@@ -36,7 +36,7 @@ from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
-from robot_gui.utils.call_robot_test import trigger_robot
+from libs.ras.sw_alerts_gui import SoftwareAlertGUI
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,14 +71,7 @@ class Test3PSvcMonitoringGUI:
         else:
             cls.external_svcs = const.SVCS_3P
         # required for Robot_GUI
-        cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
-        cls.csm_url = "https://" + cls.mgmt_vip + "/#"
-        cls.cwd = os.getcwd()
-        cls.robot_gui_path = os.path.join(cls.cwd + '/robot_gui/')
-        cls.robot_test_path = cls.robot_gui_path + 'testsuites/gui/.'
-        cls.browser_type = 'chrome'
-        cls.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
+        cls.ras_gui_obj = SoftwareAlertGUI()
         LOGGER.info("External service list : %s", cls.external_svcs)
         LOGGER.info("############ Completed setup_class ############")
 
@@ -196,16 +189,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "salt-master.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -213,16 +197,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -230,16 +206,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -249,15 +218,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -267,31 +229,15 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
 
         svc = "salt-minion.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -299,16 +245,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -316,16 +254,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -335,15 +266,9 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
+
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -353,16 +278,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -378,16 +296,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "elasticsearch.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -395,16 +304,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -412,16 +313,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -431,15 +325,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -449,16 +336,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -474,16 +354,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "hare-consul-agent.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -491,16 +362,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -508,16 +371,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -527,15 +383,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -545,16 +394,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -571,16 +413,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "scsi-network-relay.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -588,16 +421,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -605,16 +430,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -624,15 +442,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -642,16 +453,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -667,16 +471,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "statsd.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -684,16 +479,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -701,16 +488,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -720,15 +500,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -738,16 +511,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -757,23 +523,16 @@ class Test3PSvcMonitoringGUI:
     @pytest.mark.sw_alert
     def test_21266_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : GlusterFS"
-        assert_equals(self.setup_type, "HW", 'Test valid on HW only')
+        assert_equals(self.setup_type, "HW", 'Test valid on HW only') 
+        # TODO: may need to update after BUG : EOS-20795
+        # TODO: verify while TE
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         external_svcs = self.external_svcs
 
         svc = "glusterd.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -781,16 +540,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -798,16 +549,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -817,15 +561,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -835,16 +572,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -860,16 +590,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "lnet.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -877,16 +598,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -894,16 +607,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -913,15 +619,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -931,16 +630,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -956,16 +648,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "rsyslog.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -975,16 +658,9 @@ class Test3PSvcMonitoringGUI:
 
         # Rsyslog is the medium to raise alerts. So when Rsyslog is down, no alerts will come.
         # Once Rsyslog is up, then both alerts will come.
-        # gui_dict = dict()
-        # gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        # gui_dict['test_path'] = self.robot_test_path
-        # gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-        #                         self.browser_type, 'username:' + self.csm_user,
-        #                         'servicename:' + svc,
-        #                         'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        # gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        # gui_response = trigger_robot(gui_dict)
-        # assert_equals(True, gui_response, 'GUI FAILED')
+        # LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        # self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
+        # TODO: verify while TE
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -992,16 +668,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -1013,15 +682,9 @@ class Test3PSvcMonitoringGUI:
 
         # Rsyslog is the medium to raise alerts. So when Rsyslog is down, no alerts will come.
         # Once Rsyslog is up, then both alerts will come.
-        # gui_dict = dict()
-        # gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        # gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-        #                         self.browser_type, 'username:' + self.csm_user,
-        #                         'servicename:' + svc,
-        #                         'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        # gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        # gui_response = trigger_robot(gui_dict)
-        # assert_equals(True, gui_response, 'GUI FAILED')
+        # LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        # self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
+        # TODO: verify while TE
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -1031,16 +694,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -1056,16 +712,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "slapd.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -1073,16 +720,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -1090,16 +729,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -1109,15 +741,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -1127,16 +752,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -1153,16 +771,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "multipathd.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -1170,16 +779,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -1187,16 +788,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -1206,15 +800,8 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
 
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        LOGGER.info(" verify the sw service is in deactivat state service:  %s ------", svc)
+        self.ras_gui_objverify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -1224,16 +811,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -1249,16 +829,7 @@ class Test3PSvcMonitoringGUI:
 
         svc = "kafka.service"
         LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        self.ras_gui_obj.verify_sw_service_init(svc)
 
         LOGGER.info("Stopping %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", external_svcs)
@@ -1268,16 +839,9 @@ class Test3PSvcMonitoringGUI:
 
         # Kafka is the medium to raise alerts. So when Kafka is down, no alerts will come.
         # Once Kafka is up, then both alerts will come.
-        # gui_dict = dict()
-        # gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
-        # gui_dict['test_path'] = self.robot_test_path
-        # gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-        #                         self.browser_type, 'username:' + self.csm_user,
-        #                         'servicename:' + svc,
-        #                         'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        # gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE'
-        # gui_response = trigger_robot(gui_dict)
-        # assert_equals(True, gui_response, 'GUI FAILED')
+        # LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        # self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
+        # TODO: verify while TE
 
         LOGGER.info("Starting %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "start", external_svcs)
@@ -1285,16 +849,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_INACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service inactive alert is in resolved state :  %s ------", svc)
+        self.ras_gui_obj.verify_sw_service_inactive_alert_resolved(svc)
 
         LOGGER.info("Deactivating %s service...", svc)
         result = self.sw_alert_obj.run_verify_svc_state(svc, "deactivating", self.external_svcs)
@@ -1306,15 +863,8 @@ class Test3PSvcMonitoringGUI:
 
         # Kafka is the medium to raise alerts. So when Kafka is down, no alerts will come.
         # Once Kafka is up, then both alerts will come.
-        # gui_dict = dict()
-        # gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
-        # gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-        #                         self.browser_type, 'username:' + self.csm_user,
-        #                         'servicename:' + svc,
-        #                         'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        # gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE'
-        # gui_response = trigger_robot(gui_dict)
-        # assert_equals(True, gui_response, 'GUI FAILED')
+        # LOGGER.info(" verify the sw service is in inactive state service:  %s ------", svc)
+        # self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
         op = self.sw_alert_obj.recover_svc(svc)
@@ -1324,16 +874,9 @@ class Test3PSvcMonitoringGUI:
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
         time.sleep(self.intrmdt_state_timeout)
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+
+        LOGGER.info(" verify the sw service deactivat alert is in resolved state :  %s ------", svc)
+        self.verify_sw_service_deactivat_alert_resolved(svc)
 
         LOGGER.info("----- Completed verifying operations on service:  %s ------", svc)
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -1347,17 +890,10 @@ class Test3PSvcMonitoringGUI:
         Multiple 3rd party services monitoring and management
         """
         secure_range  = secrets.SystemRandom()
-        starttime = time.time()
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_INIT_Gui_Logs_' + svc
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'servicename:' + svc,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'SW_SERVICE_INIT'
-        gui_response = trigger_robot(gui_dict)
-        assert_equals(True, gui_response, 'GUI FAILED')
+        # svc = "salt-master.service"
+        # LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
+        # self.ras_gui_obj.verify_sw_service_init(svc)
+        # TODO: enable while TE
 
         LOGGER.info("Stopping multiple randomly selected services")
         num_services = secure_range.randrange(0, len(self.external_svcs))
