@@ -888,6 +888,7 @@ class Test3PSvcMonitoringGUI:
         Multiple 3rd party services monitoring and management
         """
         secure_range  = secrets.SystemRandom()
+        starttime = time.time()
         # svc = "salt-master.service"
         # LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
         # self.ras_gui_obj.verify_sw_service_init(svc)

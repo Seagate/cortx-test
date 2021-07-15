@@ -83,7 +83,7 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_node_state_online")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_online'+ loop
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_online'+ node_id
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -100,7 +100,7 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_node_state_failed")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_failed'+ loop
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_failed'+ node_id
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
