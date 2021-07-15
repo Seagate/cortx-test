@@ -36,7 +36,6 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons import commands as common_cmds
-from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
@@ -109,7 +108,6 @@ class TestHAClusterHealthGUI:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
-        self.start_time = time.time()
         LOGGER.info("Checking if all nodes are reachable and PCS clean.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -223,8 +221,6 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state_degraded()
 
-            self.start_time = time.time()
-
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
             resp = self.ha_obj.check_service_other_nodes(
@@ -253,8 +249,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(node_name) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
@@ -336,8 +330,6 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state_degraded()
 
-            self.start_time = time.time()
-
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
             resp = self.ha_obj.check_service_other_nodes(
@@ -365,8 +357,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(self.srvnode_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
             LOGGER.info("fNode down/up worked fine for node: {self.srvnode_list[node]}")
 
@@ -429,8 +419,6 @@ class TestHAClusterHealthGUI:
                 LOGGER.info("Verify Cluster is in degraded state ")
                 self.ha_gui_obj.verify_cluster_state_degraded()
 
-                self.start_time = time.time()
-
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
             resp = self.ha_obj.host_power_on(
@@ -470,8 +458,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(self.host_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
         self.restored = True
         LOGGER.info(
@@ -532,8 +518,6 @@ class TestHAClusterHealthGUI:
                 LOGGER.info("Verify Cluster is in degraded state ")
                 self.ha_gui_obj.verify_cluster_state_degraded()
 
-                self.start_time = time.time()
-
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Power on {self.srvnode_list[node]}")
             resp = self.ha_obj.host_power_on(
@@ -572,8 +556,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(self.host_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
         self.restored = True
         LOGGER.info(
@@ -694,8 +676,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(self.host_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online status "
@@ -822,8 +802,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_node_state_online(self.host_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online status "
@@ -963,8 +941,6 @@ class TestHAClusterHealthGUI:
             self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state_online()
-
-            self.start_time = time.time()
 
             LOGGER.info(
                 "Check for cluster/site/rack degraded/online and node failed/online "

@@ -34,7 +34,6 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
