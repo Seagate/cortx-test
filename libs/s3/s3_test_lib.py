@@ -204,7 +204,7 @@ class S3TestLib(S3Lib):
         LOGGER.info("Uploading object")
         try:
             response = super().object_upload(bucket_name, object_name, file_path)
-            LOGGER.info("Uploading object done")
+            LOGGER.info("Successfully uploaded an object: %s", response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.object_upload.__name__,
@@ -320,7 +320,8 @@ class S3TestLib(S3Lib):
             self,
             bucket_name: str = None,
             obj_name: str = None,
-            file_path: str = None) -> tuple:
+            file_path: str = None,
+            **kwargs) -> tuple:
         """
         Downloading Object of the required Bucket.
 
@@ -333,7 +334,7 @@ class S3TestLib(S3Lib):
             if os.path.exists(file_path):
                 os.remove(file_path)
             LOGGER.info("Starting downloading the object")
-            response = super().object_download(bucket_name, obj_name, file_path)
+            response = super().object_download(bucket_name, obj_name, file_path, **kwargs)
             LOGGER.debug(
                 "The %s has been downloaded successfully at mentioned file path %s",
                 obj_name,
