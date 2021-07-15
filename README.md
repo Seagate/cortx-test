@@ -75,6 +75,14 @@ Following steps helps to setup client side env, where test framework runs. These
     
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
 
+## Script to setup client environemnt (Alternate option to manual steps)
+Change dir to your local repository root folder.
+```
+cd cortx-test/ci_tools
+./client_setup.sh 
+```
+This script should handle client setups.
+
 ## Steps to setup s3 client
 To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
 Script in project's root folder cortx-test `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
