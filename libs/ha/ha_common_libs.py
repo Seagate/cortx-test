@@ -144,7 +144,7 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
-            sys_obj.close_connection()
+            sys_obj.close_connection(cln_session_obj=True)
 
     @staticmethod
     def verify_csr_health_status(
@@ -181,10 +181,9 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
-            sys_obj.close_connection()
+            sys_obj.close_connection(cln_session_obj=True)
 
-    @staticmethod
-    def polling_host(
+    def polling_host(self,
             max_timeout: int,
             host: str,
             exp_resp: bool):
@@ -199,8 +198,25 @@ class HALibs:
         poll = time.time() + max_timeout  # max timeout
         while poll > time.time():
             time.sleep(20)
+            exp_state = False
             resp = system_utils.check_ping(host)
-            if resp == exp_resp:
+            if self.setup_type == "VM":
+                vm_name = host.split(".")[0]
+                vm_info = system_utils.execute_cmd(
+                    common_cmd.CMD_VM_INFO.format(
+                        self.vm_username, self.vm_password, vm_name))
+                data = vm_info[1].split("\\n")
+                pw_state = ""
+                for lines in data:
+                    if 'power_state' in lines:
+                        pw_state = (lines.split(':')[1].strip('," '))
+                LOGGER.debug("Power state for %s : %s", host, pw_state)
+                if exp_resp:
+                    exp_state = pw_state == 'up'
+                else:
+                    exp_state = pw_state == 'down'
+
+            if resp == exp_resp and exp_state:
                 return True
         return False
 
@@ -228,7 +244,7 @@ class HALibs:
                         private_ip_list.append(ip)
                         res = node_list[node].execute_cmd(
                             common_cmd.CMD_IFACE_IP.format(ip), read_lines=True)
-                        ifname = res[0].replace(':', '')
+                        ifname = res[0].strip(":\n")
                         iface_list.append(ifname)
 
             return iface_list, private_ip_list

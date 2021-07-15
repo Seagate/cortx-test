@@ -93,10 +93,12 @@ class CortxCliClient:
 
         return index, output
 
-    def close_connection(self):
+    def close_connection(self, cln_session_obj: bool = False):
         """
         This function will close the ssh connection created in init
         :return: None
         """
         self.session_obj.exit()
+        if cln_session_obj:
+            self.session_obj = None
         self.log.debug("Closed ssh connection with host %s", self.host)
