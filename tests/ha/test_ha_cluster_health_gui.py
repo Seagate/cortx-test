@@ -152,6 +152,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22894")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_safe_shutdown_gui(self):
@@ -257,6 +258,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22896")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe_shutdown_gui(self):
@@ -365,6 +367,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22903")
     @CTFailOn(error_handler)
     def test_two_nodes_down_safe_shutdown_gui(self):
@@ -465,6 +468,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22904")
     @CTFailOn(error_handler)
     def test_two_nodes_down_unsafe_shutdown_gui(self):
@@ -563,6 +567,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22898")
     @CTFailOn(error_handler)
     def test_single_node_multiple_safe_shutdown_gui(self):
@@ -688,6 +693,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22899")
     @CTFailOn(error_handler)
     def test_single_node_multiple_unsafe_shutdown_gui(self):
@@ -814,6 +820,7 @@ class TestHAClusterHealthGUI:
 
     # pylint: disable=R0201
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-23384")
     @CTFailOn(error_handler)
     def test_one_by_one_network_port_down_gui(self):

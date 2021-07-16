@@ -154,6 +154,7 @@ class TestHANodeHealthGUI:
         LOGGER.info("ENDED: Teardown Operations.")
 
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22573")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_safe_gui(self):
@@ -250,6 +251,7 @@ class TestHANodeHealthGUI:
             "Completed: Test to check node status one by one for all nodes with safe shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22575")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe_gui(self):
@@ -346,6 +348,7 @@ class TestHANodeHealthGUI:
             "Completed: Test to check node status one by one for all nodes with unsafe shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-23275")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_nw_down_gui(self):
@@ -468,6 +471,7 @@ class TestHANodeHealthGUI:
             "down and comes back up")
 
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22624")
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_safe_gui(self):
@@ -573,6 +577,7 @@ class TestHANodeHealthGUI:
             "Completed: Test to check single node status with multiple safe shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22625")
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_unsafe_gui(self):
