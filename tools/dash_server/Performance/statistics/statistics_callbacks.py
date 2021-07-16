@@ -31,7 +31,7 @@ from Performance.statistics.statistics_functions import get_s3benchmark_data,\
 from common import app
 from Performance.styles import dict_style_header, dict_style_cell
 from Performance.statistics.statistics_functions import update_hsbench_callbacks, get_dash_table, get_bucketops
-from Performance.global_functions import benchmark_config
+from Performance.global_functions import benchmark_config, get_distinct_keys, sort_object_sizes_list
 
 
 statistics_column_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
@@ -62,8 +62,11 @@ def s3bench_callback(n_clicks, release, branch, build, profile):
         raise PreventUpdate
 
     if n_clicks > 0:
-        objects = fetch_configs_from_file(
-            benchmark_config, 'S3bench', 'object_size')
+        objects = get_distinct_keys(release, 'Object_Size', {'Name': 'S3bench', 'Branch': branch, 'Build': build})
+        objects = sort_object_sizes_list(objects)
+        # print(f'S3bench NO_TABLE_ID sorted')
+        # print(objects)
+
         threads = []
         data = {
             'Object Sizes': statistics_column_headings
@@ -175,7 +178,11 @@ def get_cosbench_workload_headings(html, sessions, buckets):
 
 
 def benchmark_global(bench, workload, release, branch, build, table_ID, profile):
-    objects = fetch_configs_from_file(benchmark_config, bench, 'object_size')
+    objects = get_distinct_keys(release, 'Object_Size', {'Name': bench, 'Branch': branch, 'Build': build})
+    objects = sort_object_sizes_list(objects)
+    # print(f'{bench} {table_ID} sorted')
+    # print(objects)
+
     data = {
         'Object Sizes': multiple_buckets_headings
     }

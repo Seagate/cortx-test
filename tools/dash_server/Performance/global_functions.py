@@ -138,7 +138,18 @@ def sort_builds_list(builds):
     return data_sorted
 
 
+def get_unique_object_sizes(input_list):
+    unique_list = []
+    for x in input_list:
+        if x not in unique_list:
+            unique_list.append(x)
+    return unique_list
+
+
 def sort_object_sizes_list(obj_sizes):
+    #Remove any space in object size string, it should only have number and two letter unit without space
+    obj_sizes = [ s.replace(' ', '') for s in obj_sizes ]
+
     sizes_sorted = {
         'Kb': [], 'Mb': [], 'Gb': [],
     }
@@ -165,6 +176,10 @@ def sort_object_sizes_list(obj_sizes):
                     break
     if any(rest):
         data_sorted.extend(rest)
+
+    # Removing duplicate sizes which appear if multiple unit format exist on DB to store object size
+    data_sorted = get_unique_object_sizes(data_sorted)
+
     return data_sorted
 
 
