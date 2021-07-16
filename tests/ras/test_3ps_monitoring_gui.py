@@ -179,6 +179,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21265")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21265_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : SaltStack"
@@ -286,6 +287,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21257")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21257_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : ElasticSearch-OSS"
@@ -344,6 +346,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21256")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21256_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Consul"
@@ -402,6 +405,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21258")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21258_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Scsi-network-relay"
@@ -461,6 +465,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21260")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21260_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Statsd"
@@ -519,6 +524,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21266")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21266_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : GlusterFS"
@@ -637,6 +643,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21261")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21261_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Rsyslog"
@@ -701,6 +708,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21263")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21263_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : OpenLDAP"
@@ -759,6 +767,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21267")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21267_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Multipathd"
@@ -818,6 +827,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.tags("TEST-21259")
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_21259_3ps_monitoring_gui(self):
         "CSM GUI: Verify Alerts for SW Service : Kafka"
@@ -881,6 +891,7 @@ class Test3PSvcMonitoringGUI:
 
     @pytest.mark.skip
     @pytest.mark.cluster_monitor_ops
+    @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-19878")
     def test_19878_multiple_services_monitoring_gui(self):
