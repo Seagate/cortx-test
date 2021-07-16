@@ -741,12 +741,12 @@ class TestS3IOSystemLimits:
             response = S3_MP_TEST_OBJ.upload_part(
                 data, bucket, obj_name, upload_id=mpu_id, part_number=1)
         except CTException as error:
-            self.log.info(f"error : {error}")
+            self.log.error(f"{error}")
             assert_utils.assert_in("EntityTooLarge", error.message, error.message)
         else:
+            self.log.error(f"Response = {response}")
             assert_utils.assert_true(False, "Could not catch exception while uploading "
                                             "part of size > 5GiB")
-            self.log.error(f"Response = {response}")
         self.log.info("Aborting multipart upload")
         res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket, obj_name, mpu_id)
         assert_utils.assert_true(res[0], res[1])
@@ -788,9 +788,9 @@ class TestS3IOSystemLimits:
             self.log.info(f"error : {error}")
             assert_utils.assert_in("EntityTooSmall", error.message, error.message)
         else:
+            self.log.error(f"Response = {response}")
             assert_utils.assert_true(False, "Could not catch exception while completing multipart "
                                             "upload with first part size of 4MB")
-            self.log.error(f"Response = {response}")
         self.log.info("Aborting multipart upload")
         res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket, obj_name, mpu_id)
         assert_utils.assert_true(res[0], res[1])
