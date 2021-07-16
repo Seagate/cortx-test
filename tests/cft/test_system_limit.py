@@ -685,9 +685,9 @@ class TestS3IOSystemLimits:
 
             self.log.info(f"Creating a object: {object_name} size: {obj_size}")
             self.log.info(f"Metadata m_key: {m_key} m_value: {m_value}")
-            system_utils.create_file(self.test_file, obj_size)
+            system_utils.create_file(self.test_file_path, obj_size)
             try:
-                res = S3_TEST_OBJ.put_object(bucket_name, object_name, self.test_file,
+                res = S3_TEST_OBJ.put_object(bucket_name, object_name, self.test_file_path,
                                              m_key=m_key, m_value=m_value)
             except CTException as error:
                 if metadata > metadata_limit:
@@ -713,6 +713,142 @@ class TestS3IOSystemLimits:
                     self.log.error(f"Could not see exception while uploading object with "
                                    f"metadata size of {metadata} > {metadata_limit}")
                     assert_utils.assert_true(False, res[1])
+
+        self.log.info(f"Deleting bucket {bucket_name}")
+        res = S3_TEST_OBJ.delete_bucket(bucket_name, True)
+        assert_utils.assert_true(res[0], res[1])
+
+    def verify_max_part_limit(self, bucket, obj_name):
+        """
+        Verify max part size limit
+            Initiate new multipart upload and get the upload ID.
+            Create a file of 5.1GB
+            Upload the file as first part and expect error EntityTooLarge
+            Cancel multipart upload if present
+        """
+        self.log.info("Verifying maximum part size limit")
+        self.log.info("Initiating multipart uploads")
+        res = S3_MP_TEST_OBJ.create_multipart_upload(bucket, obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info(f"Creating a object: {obj_name} size > 5GiB")
+        system_utils.create_file(self.test_file_path, 5121, "/dev/urandom", '1M')
+        with open(self.test_file_path, "rb") as file_pointer:
+            data = file_pointer.read()
+        self.log.info("Uploading part 1 of length %s", str(len(data)))
+        try:
+            response = S3_MP_TEST_OBJ.upload_part(
+                data, bucket, obj_name, upload_id=mpu_id, part_number=1)
+        except CTException as error:
+            self.log.error(f"{error}")
+            assert_utils.assert_in("EntityTooLarge", error.message, error.message)
+        else:
+            self.log.error(f"Response = {response}")
+            assert_utils.assert_true(False, "Could not catch exception while uploading "
+                                            "part of size > 5GiB")
+        self.log.info("Aborting multipart upload")
+        res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket, obj_name, mpu_id)
+        assert_utils.assert_true(res[0], res[1])
+
+    def verify_min_part_limit(self, bucket, obj_name):
+        """
+        Verify min part size limit
+            Initiate new multipart upload and get the upload ID.
+            Create a file of 4MB, upload the file as first part
+            Upload the same 4MB file as second part
+            Complete multipart upload, and expect error EntityTooSmall
+            Cancel multipart upload if present
+        """
+        self.log.info("Verifying minimum part size limit")
+        self.log.info("Initiating multipart uploads")
+        res = S3_MP_TEST_OBJ.create_multipart_upload(bucket, obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        parts = []
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info(f"Creating a object: {obj_name} size < 5MiB")
+        system_utils.create_file(self.test_file_path, 4, "/dev/urandom", '1M')
+        with open(self.test_file_path, "rb") as file_pointer:
+            data = file_pointer.read()
+        self.log.info("Uploading part 1 of length %s", str(len(data)))
+        response = S3_MP_TEST_OBJ.upload_part(
+            data, bucket, obj_name, upload_id=mpu_id, part_number=1)
+        assert_utils.assert_true(response[0], response[1])
+        parts.append({"PartNumber": 1, "ETag": response[1]["ETag"]})
+        self.log.info("Uploading part 2 of length %s", str(len(data)))
+        response = S3_MP_TEST_OBJ.upload_part(
+            data, bucket, obj_name, upload_id=mpu_id, part_number=2)
+        assert_utils.assert_true(response[0], response[1])
+        parts.append({"PartNumber": 2, "ETag": response[1]["ETag"]})
+        try:
+            response = S3_MP_TEST_OBJ.complete_multipart_upload(mpu_id, parts,
+                                                                bucket, obj_name)
+        except CTException as error:
+            self.log.info(f"error : {error}")
+            assert_utils.assert_in("EntityTooSmall", error.message, error.message)
+        else:
+            self.log.error(f"Response = {response}")
+            assert_utils.assert_true(False, "Could not catch exception while completing multipart "
+                                            "upload with first part size of 4MB")
+        self.log.info("Aborting multipart upload")
+        res = S3_MP_TEST_OBJ.abort_multipart_upload(bucket, obj_name, mpu_id)
+        assert_utils.assert_true(res[0], res[1])
+
+    def verify_actual_limit(self, bucket, obj_name):
+        """
+        Verify actual part limits
+            Create a file of 5GiB, upload the file as first part.
+            Create a file of 5MiB, upload the file as second part.
+            Complete multipart upload without any error.
+        """
+        parts = []
+        self.log.info("Verifying actual part size limit")
+        self.log.info("Initiating multipart uploads")
+        res = S3_MP_TEST_OBJ.create_multipart_upload(bucket, obj_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info(f"Creating a object: {obj_name} size 5GiB")
+        system_utils.create_file(self.test_file_path, 5120, "/dev/urandom", '1M')
+        with open(self.test_file_path, "rb") as file_pointer:
+            data = file_pointer.read()
+        self.log.info("Uploading part 1 of length %s", str(len(data)))
+        response = S3_MP_TEST_OBJ.upload_part(
+            data, bucket, obj_name, upload_id=mpu_id, part_number=1)
+        assert_utils.assert_true(response[0], response[1])
+        parts.append({"PartNumber": 1, "ETag": response[1]["ETag"]})
+        self.log.info(f"Creating a object: {obj_name} size 5MiB")
+        system_utils.create_file(self.test_file_path, 5, "/dev/urandom", '1M')
+        with open(self.test_file_path, "rb") as file_pointer:
+            data = file_pointer.read()
+        self.log.info("Uploading part 2 of length %s", str(len(data)))
+        response = S3_MP_TEST_OBJ.upload_part(
+            data, bucket, obj_name, upload_id=mpu_id, part_number=2)
+        assert_utils.assert_true(response[0], response[1])
+        parts.append({"PartNumber": 2, "ETag": response[1]["ETag"]})
+        response = S3_MP_TEST_OBJ.complete_multipart_upload(mpu_id, parts,
+                                                            bucket, obj_name)
+        assert_utils.assert_true(response[0], response[1])
+        self.log.info("Multipart upload with part 1 of 5GiB and part 2 of 5MiB is successful.")
+
+    @pytest.mark.scalability
+    @pytest.mark.tags("TEST-20273")
+    @CTFailOn(error_handler)
+    def test_max_min_part_limit_20273(self):
+        bucket_name = f"mp-bkt-test20273-{int(time.time())}"
+        self.log.info("Creating a bucket with name : %s", bucket_name)
+        res = S3_TEST_OBJ.create_bucket(bucket_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(res[1], bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", bucket_name)
+
+        # Verify maximum part size limit
+        self.verify_max_part_limit(bucket_name, 'large')
+        # Verify minimum part size limit
+        self.verify_min_part_limit(bucket_name, 'small')
+        # Verify actual part limits
+        self.verify_actual_limit(bucket_name, 'large-object')
 
         self.log.info(f"Deleting bucket {bucket_name}")
         res = S3_TEST_OBJ.delete_bucket(bucket_name, True)
