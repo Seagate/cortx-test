@@ -110,7 +110,6 @@ Verify Presence SSL certificate expires alert
     ${type}=  Set Variable  Resource type: node:iem
     ${Description} =  Set Variable If  ${days} == 0  SSL certificate expired
     ...  ${days} > 0  ${days} day(s) left. Please refer user guide on how to update the certificate.
-
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -166,6 +165,7 @@ Check if alert exists in New alerts tab
     [Arguments]  ${description}
     ${found}=  Set Variable  False
     Log To Console And Report  ${description}
+    wait for page or element to load  2s
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
@@ -284,10 +284,13 @@ Fail if New alerts exist SW Service
     [Arguments]  ${servicename}
     ${found1}=  Set Variable  False
     ${found2}=  Set Variable  False
-    ${Description1} =  Set Variable  ${servicename}.service in failed state.
-    ${Description2} =  Set Variable  ${servicename}.service in inactive state.
+    ${found3}=  Set Variable  False
+    ${Description1} =  Set Variable  ${servicename} in failed state.
+    ${Description2} =  Set Variable  ${servicename} in inactive state.
+    ${Description3} =  Set Variable  ${servicename} in deactivating state.
     Log To Console And Report  ${Description1}
     Log To Console And Report  ${Description2}
+    Log To Console And Report  ${Description3}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
@@ -305,13 +308,19 @@ Fail if New alerts exist SW Service
         ...  Log To Console And Report  ${found2}
         ...  AND  Capture Page Screenshot
         ...  AND  Fail  # correct Description not found in the alert, failing test
+        ${found3}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description3}
+        Run Keyword If  ${found3} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found2}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Fail  # correct Description not found in the alert, failing test
     END
 
 Verify failed alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    ${Description} =  Set Variable  ${servicename} in failed state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -319,12 +328,16 @@ Verify failed alerts exist SW Service
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
         ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
-        Run Keyword If  ${found1} == True  # Description found in the alert
+        Run Keyword If  ${found} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
-        ...  AND  Pass  # correct Description not found in the alert, failing test
     END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
 
 Verify inactive alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
@@ -338,18 +351,22 @@ Verify inactive alerts exist SW Service
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
         ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
-        Run Keyword If  ${found1} == True  # Description found in the alert
+        Run Keyword If  ${found} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
-        ...  AND  Fail  # correct Description not found in the alert, failing test
     END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
 
-Verify failed resolved alerts exist SW Service
+Verify deactivating alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename}.service in failed state.
+    ${Description} =  Set Variable  ${servicename} in deactivating state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -357,18 +374,22 @@ Verify failed resolved alerts exist SW Service
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
         ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
-        Run Keyword If  ${found1} == True  # Description found in the alert
+        Run Keyword If  ${found} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
-        ...  AND  Fail  # correct Description not found in the alert, failing test
     END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
 
-Verify inactive resolved alerts exist SW Service
+Verify and Acknowledge failed resolved alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    ${Description} =  Set Variable  ${servicename} in failed state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -376,12 +397,71 @@ Verify inactive resolved alerts exist SW Service
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
         ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
-        Run Keyword If  ${found1} == True  # Description found in the alert
+        Run Keyword If  ${found} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
-        ...  AND  Fail  # correct Description not found in the alert, failing test
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
     END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
+
+Verify and Acknowledge inactive resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename} in inactive state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
+
+Verify and Acknowledge deactivating resolved alerts exist SW Service
+    [Documentation]  Find and mark Fail if SW Service alerts not exist
+    [Arguments]  ${servicename}
+    ${found}=  Set Variable  False
+    ${Description} =  Set Variable  ${servicename} in deactivating state.
+    Log To Console And Report  ${Description}
+    Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
+    END
+    Run Keyword If  ${found} == False
+    ...  Run Keywords
+    ...  Log To Console And Report  ${found}
+    ...  AND  Capture Page Screenshot
+    ...  AND  Fail  # description not found in the alert, failing
 
 Acknowledge if Active alerts exist
     [Documentation]  Acknowledge if alerts exist
@@ -411,10 +491,13 @@ Acknowledge if Active alerts exist SW Service
     [Arguments]  ${servicename}
     ${found1}=  Set Variable  False
     ${found2}=  Set Variable  False
-    ${Description1} =  Set Variable  ${servicename}.service in failed state.
-    ${Description2} =  Set Variable  ${servicename}.service in inactive state.
+    ${found3}=  Set Variable  False
+    ${Description1} =  Set Variable  ${servicename} in failed state.
+    ${Description2} =  Set Variable  ${servicename} in inactive state.
+    ${Description3} =  Set Variable  ${servicename} in deactivating state.
     Log To Console And Report  ${Description1}
     Log To Console And Report  ${Description2}
+    Log To Console And Report  ${Description3}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Click ActiveAlert Tab
@@ -428,15 +511,29 @@ Acknowledge if Active alerts exist SW Service
         ...  Run Keywords
         ...  Log To Console And Report  ${found1}
         ...  AND  Capture Page Screenshot
-        ...  AND  Acknowledge alert
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  wait for page or element to load  5s
         ...  AND  Click AlertHistory Tab
+        ...  AND  wait for page or element to load  5s
         ...  AND  Capture Page Screenshot
         ${found2}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description2}
         Run Keyword If  ${found2} == True  # Description found in the alert
         ...  Run Keywords
         ...  Log To Console And Report  ${found2}
         ...  AND  Capture Page Screenshot
-        ...  AND  Acknowledge alert
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  wait for page or element to load  5s
         ...  AND  Click AlertHistory Tab
+        ...  AND  wait for page or element to load  5s
+        ...  AND  Capture Page Screenshot
+        ${found3}=  Run Keyword And Return Status  Should Contain  ${item}  ${Description3}
+        Run Keyword If  ${found3} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found3}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert  ${servicename}
+        ...  AND  wait for page or element to load  5s
+        ...  AND  Click AlertHistory Tab
+        ...  AND  wait for page or element to load  5s
         ...  AND  Capture Page Screenshot
     END
