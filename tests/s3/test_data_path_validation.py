@@ -334,10 +334,10 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8731_s3bench-{request_load}")
+                log_file_prefix=f"TEST-8731_s3bench_{request_load}")
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
-                s3bench_obj.LOG_DIR, f"TEST-8731_s3bench-{request_load}")
+                s3bench_obj.LOG_DIR, f"TEST-8731_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed concurrent I/O with 100 client and"
@@ -392,10 +392,10 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"TEST-8732_s3bench-{request_load}")
+                log_file_prefix=f"TEST-8732_s3bench_{request_load}")
             self.log.debug(res)
             resp = system_utils.validate_s3bench_parallel_execution(
-                s3bench_obj.LOG_DIR, f"TEST-8732_s3bench-{request_load}")
+                s3bench_obj.LOG_DIR, f"TEST-8732_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: completed concurrent I/O with multiple client and increasing"
@@ -459,9 +459,9 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"Test-8733-{client}")
+                log_file_prefix=f"TEST-8733_s3bench_{request_load}")
             resp = system_utils.validate_s3bench_parallel_execution(
-                s3bench_obj.LOG_DIR, f"TEST-8733_s3bench-{request_load}")
+                s3bench_obj.LOG_DIR, f"TEST-8733_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Completed concurrent I/O with increasing client and"
@@ -525,9 +525,9 @@ class TestDataPathValidation:
                 num_sample=request_load,
                 obj_name_pref=self.object_name,
                 obj_size=obj_size,
-                log_file_prefix=f"Test-8734_s3bench-{request_load}")
+                log_file_prefix=f"TEST-8734_s3bench_{request_load}")
             resp = system_utils.validate_s3bench_parallel_execution(
-                s3bench_obj.LOG_DIR, f"TEST-8734_s3bench-{request_load}")
+                s3bench_obj.LOG_DIR, f"TEST-8734_s3bench_{request_load}")
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Start concurrent I/O with increasing client and request.")
