@@ -8,9 +8,9 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
+# Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+# ...  ${username}  ${password}
+# ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers

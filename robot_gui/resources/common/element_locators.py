@@ -315,3 +315,4 @@ SYSTEM_MAINTENANCE_BUTTON_ID = "goToSystemMaintenance"
 START_SERVICE_BUTTON_ID = "btnStartResource"
 STOP_SERVICE_BUTTON_ID = "btnStopResource"
 SHUTDOWN_SERVICE_BUTTON_ID = "btnShutdownResource"
+
