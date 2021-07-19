@@ -2013,8 +2013,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2024,8 +2023,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.create_csm_user_cli(
             csm_user_name="admin_user",
             email_id=self.email_id,
@@ -2054,8 +2052,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2066,11 +2063,9 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted csm user with admin role %s", self.user_name)
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
@@ -2096,8 +2091,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info(
@@ -2110,8 +2104,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with admin role %s", username)
@@ -2122,8 +2115,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.delete_csm_user(user_name=username)
         assert_utils.assert_false(resp[0], resp[1])
         self.logger.info(
@@ -2152,8 +2144,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info(
@@ -2166,8 +2157,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2178,8 +2168,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.delete_csm_user(user_name=username)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted csm user with manage role")
@@ -2204,8 +2193,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with admin role %s", self.user_name)
@@ -2216,18 +2204,15 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.reset_root_user_password(
             user_name=self.user_name,
             current_password=self.csm_user_pwd,
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Password has been changed for CSM user with admin role")
-
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.cluster_user_ops
@@ -2250,8 +2235,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info(
@@ -2264,8 +2248,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2282,8 +2265,7 @@ class TestCliCSMUser:
             current_password=self.csm_user_pwd,
             new_password=self.new_pwd,
             confirm_password=self.new_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -2308,8 +2290,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info(
@@ -2322,8 +2303,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2333,8 +2313,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=username,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.reset_root_user_password(
             user_name=self.user_name,
             current_password=self.csm_user_pwd,
@@ -2362,8 +2341,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2373,8 +2351,7 @@ class TestCliCSMUser:
             user_name=self.user_name,
             role="manage",
             current_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Changed role of other admin user from admin role to manage role")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -2395,8 +2372,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admn user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2406,8 +2382,7 @@ class TestCliCSMUser:
             user_name=self.user_name,
             role="monitor",
             current_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info(
             "Changed role of other admin user from admin role to monitor role")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -2431,8 +2406,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2443,8 +2417,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with manage role %s", username)
@@ -2453,8 +2426,7 @@ class TestCliCSMUser:
             user_name=username,
             role="admin",
             current_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of manage user to admin")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -2477,8 +2449,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2489,8 +2460,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2499,8 +2469,7 @@ class TestCliCSMUser:
             user_name=username,
             role="admin",
             current_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of monitor user to admin")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -2523,8 +2492,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with name %s", self.user_name)
@@ -2535,8 +2503,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2545,8 +2512,7 @@ class TestCliCSMUser:
             user_name=username,
             role="manage",
             current_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Changed role of monitor user to manage")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -2566,8 +2532,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{self.user_name}', Error : '{resp[1]}'"
                                          )
@@ -2578,8 +2543,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.update_role(
             user_name=self.user_name,
             role="manage",
@@ -2607,8 +2571,7 @@ class TestCliCSMUser:
             role="manage",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'"
                                          )
@@ -2619,8 +2582,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.update_role(
             user_name=self.user_name,
             role="monitor",
@@ -2650,8 +2612,7 @@ class TestCliCSMUser:
             role="admin",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM admin user '{self.user_name}',Error : '{resp[1]}'"
                                          )
@@ -2663,8 +2624,7 @@ class TestCliCSMUser:
             role="monitor",
             password=self.csm_user_pwd,
             confirm_password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created",
                                          f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
         self.logger.info("Created csm user with monitor role %s", username)
@@ -2674,8 +2634,7 @@ class TestCliCSMUser:
         resp = self.CSM_USER.login_cortx_cli(
             username=self.user_name,
             password=self.csm_user_pwd)
-        assert_utils.assert_equals(
-            True, resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.CSM_USER.update_role(
             user_name=username,
             role="admin",
