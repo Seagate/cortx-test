@@ -8,9 +8,9 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
+# Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+# ...  ${username}  ${password}
+# ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -407,6 +407,66 @@ TEST-21590
     Navigate To Page  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
+
+TEST-23042
+    [Documentation]  Test that admin user should able to create users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23042
+    [Tags]  Priority_High  Smoke_test  TEST-23042
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23047
+    [Documentation]  Test that admin user should able to delete users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23047
+    [Tags]  Priority_High  Smoke_test  TEST-23047
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+
+TEST-23608
+    [Documentation]  Test that User should able to search username, role from search icon.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23608
+    [Tags]  Priority_High  Smoke_test  TEST-23608
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name} 
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+
+TEST-23612
+    [Documentation]  Test that user should able to filter the search operation.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23612
+    [Tags]  Priority_High  Smoke_test  TEST-23612
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Select from filter  role
+    Search username and role  admin
+    Verify New User  ${new_user_name}
+    Reload Page
+    wait for page or element to load
+    Select from filter  username
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name} 
+    Reload Page
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
 
 TEST-11153
     [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
