@@ -187,7 +187,7 @@ class DataIntegrityValidator:
 
         if len(cls.failed_files) > 0:
             keys = cls.failed_files[0].keys()
-            with open(params.failed_files, 'w', newline='') as fp:
+            with open(params.FAILED_FILES, 'w', newline='') as fp:
                 wr = csv.DictWriter(fp, keys)
                 wr.writerows(cls.failed_files)
 
@@ -211,6 +211,7 @@ class DataIntegrityValidator:
         LOGGER.info("Failed files were {}  and "
                     "Checksum verified for Files {} ".format(summary['failed_files'],
                                                              summary['checksum_verified']))
+        return summary
 
 
 if __name__ == '__main__':
