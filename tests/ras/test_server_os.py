@@ -54,6 +54,7 @@ class TestServerOS:
         cls.default_cpu_usage = False
         cls.default_mem_usage = False
         cls.default_disk_usage = False
+        cls.default_cpu_fault = False
         cls.starttime = time.time()
         LOGGER.info("Completed setup_class.")
 
@@ -170,6 +171,11 @@ class TestServerOS:
             resp = self.sw_alert_obj.resolv_disk_usage_fault(self.default_disk_usage)
             assert resp[0], resp[1]
 
+        if self.default_cpu_fault:
+            LOGGER.info("Step 4: Resolving CPU fault.")
+            resp = self.sw_alert_obj.resolv_cpu_fault(self.default_cpu_fault)
+            assert resp[0], resp[1]
+
     @pytest.mark.tags("TEST-21587")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -202,7 +208,7 @@ class TestServerOS:
 
         LOGGER.info("Step 3: Checking CPU usage fault alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
+                            self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully verified CPU usage fault alert on CSM REST API")
 
@@ -229,7 +235,7 @@ class TestServerOS:
 
         LOGGER.info("Step 6: Checking CPU usage resolved alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+                        self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 6: Successfully verified CPU usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -266,7 +272,7 @@ class TestServerOS:
 
         LOGGER.info("Step 3: Checking Memory usage fault alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
+                            self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
 
@@ -293,7 +299,7 @@ class TestServerOS:
 
         LOGGER.info("Step 6: Checking Memory usage resolved alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+                          self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
@@ -330,7 +336,7 @@ class TestServerOS:
 
         LOGGER.info("Step 3: Checking Memory usage fault alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
+                            self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
 
@@ -358,8 +364,59 @@ class TestServerOS:
         LOGGER.info("Step 6: Checking Memory usage resolved alerts on CSM REST API")
 
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
-                self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
 
         LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.tags("TEST-23045")
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    def test_23045_cpu_fault(self):
+        """Test CPU fault and fault resolved alert.
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = RAS_TEST_CFG["test_23045"]
+        self.default_cpu_fault = test_cfg["faulty_cpu_id"]
+        LOGGER.info("Step 1: Generate CPU fault.")
+        resp = self.sw_alert_obj.gen_cpu_fault(test_cfg["faulty_cpu_id"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 1: CPU fault is created successfully.")
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 3: Checking CPU fault alerts on CSM REST API")
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
+                    self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
+
+        self.starttime = time.time()
+        LOGGER.info("Step 4: Resolving CPU fault.")
+        resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 4: CPU fault is resolved.")
+        self.default_cpu_fault = False
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 6: Checking CPU fault resolved alerts on CSM REST API")
+
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
+                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+        assert resp[0], resp[1]
+
+        LOGGER.info("Step 6: Successfully verified CPU fault resolved alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
