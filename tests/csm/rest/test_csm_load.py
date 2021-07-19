@@ -18,40 +18,40 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests various operation on CSM user using REST API
+"""Tests for performing load testing using Jmeter
 """
-import time
-import json
 import logging
 import pytest
-#from commons.constants import Rest as const
 from commons import configmanager
 from commons import cortxlogging
 from libs.jmeter.jmeter_integration import JmeterInt
 
+
 class TestCsmLoad():
-    """REST API Test cases for CSM users
+    """Test cases for performing CSM REST API load testing using jmeter
     """
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
+        cls.log.info("[STARTED]: Setup class")
         cls.log = logging.getLogger(__name__)
-        cls.log.info("Initializing test setups ......")
         cls.cmn_conf = configmanager.get_config_wrapper(
             fpath="config/csm/test_jmeter.yaml")["common_conf"]
         cls.jmx_obj = JmeterInt()
-        cls.log.info("Initiating Rest Client ...")
+        cls.log.info("[Completed]: Setup class")
 
+    @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
-    @pytest.mark.tags('TEST-10720')
+    @pytest.mark.tags('TEST-')
     def test_poc(self):
-        """Initiating the test case to verify List CSM user.
-
+        """Sample test to run any jmeter script.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        resp = self.jmx_obj.run_jmx("CSM_Login.jmx")
+        jmx_file = "CSM_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file)
         assert resp[0], resp[1]
         assert self.cmn_conf["error"] in resp[1], resp[1]
         self.log.info("##### Test completed -  %s #####", test_case_name)
