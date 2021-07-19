@@ -92,7 +92,7 @@ class S3MultipartTestLib(Multipart):
         return True, response
 
     def upload_part(self,
-                    body: str = None,
+                    body: bytes = None,
                     bucket_name: str = None,
                     object_name: str = None,
                     **kwargs) -> tuple:
