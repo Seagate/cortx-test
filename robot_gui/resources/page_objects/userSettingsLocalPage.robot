@@ -326,3 +326,23 @@ Verify Mismatch Password Error For Edit S3account
     Log To Console And Report  Status of S3_ACCOUNT_RESET_PASSWORD_BUTTON_ID is ${status}
     Should be equal  ${status}  true
     Click Element  ${S3_ACCOUNT_POP_UP_CANCEL_BUTTON_ID}
+
+Search username and role
+    [Documentation]  Functionality to search an entry in manage page.
+    [Arguments]  ${search_entry}
+    wait for page or element to load
+    input text  ${CSM_USER_SEARCH_BOX_XPATH}  ${search_entry}
+    Click Element  ${CSM_USER_SEARCH_ICON_XPATH}
+    wait for page or element to load
+
+Select from filter
+    [Documentation]  Functionality to filter in manage page for dropdown.
+    [Arguments]  ${filter_entry}
+    wait for page or element to load
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  2s
+    ${var}=  CATENATE  csm filter ${filter_entry} select xpath
+    Log To Console And Report  ${${var}}  
+    Element Should Be Enabled  ${${var}}
+    Click Element  ${${var}}
+    wait for page or element to load
