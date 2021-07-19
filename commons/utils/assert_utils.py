@@ -35,9 +35,9 @@ def assert_length(actual, matcher):
     assert_that(matcher, has_length(len(actual)))
 
 
-def assert_exact_string(string1, string2):
+def assert_exact_string(string1, string2, message=None):
     """assert_exact_string."""
-    assert_that(string1, contains_string(string2))
+    assert_that(string1, contains_string(string2), message)
 
 
 def assert_string(string1, string2):
