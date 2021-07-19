@@ -45,71 +45,44 @@ class HAGUILibs:
         self.csm_user = CMN_CFG["csm"]["csm_admin_user"]["username"]
         self.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
 
-    def verify_cluster_state_online(self):
+    def verify_cluster_state(self, status):
         """
-        This function will verify if cluster state online
+        This function will verify if cluster state degraded / online
         """
-        LOGGER.info("Start : verify_cluster_state_online")
+        LOGGER.info("Start : verify_cluster_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_cluster_state_online'
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_cluster_state'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'CHECK_IN_HEALTH_CLUSTER_ONLINE'
+        if status == "degraded":
+            gui_dict['tag'] = 'CHECK_IN_HEALTH_CLUSTER_DEGRADED'
+        else:
+            gui_dict['tag'] = 'CHECK_IN_HEALTH_CLUSTER_ONLINE'
         gui_response = trigger_robot(gui_dict)
         assert_true( gui_response, 'GUI FAILED')
-        LOGGER.info("End : verify_cluster_state_online")
+        LOGGER.info("End : verify_cluster_state")
 
-    def verify_cluster_state_degraded(self):
+    def verify_node_state(self, status, node_id = 0):
         """
-        This function will verify if cluster state degraded
+        This function will verify if node state failed / online
         """
-        LOGGER.info("Start : verify_cluster_state_degraded")
+        LOGGER.info("Start : verify_node_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_cluster_state_degraded'
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path]
-        gui_dict['tag'] = 'CHECK_IN_HEALTH_CLUSTER_DEGRADED'
-        gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
-        LOGGER.info("End : verify_cluster_state_degraded")
-
-    def verify_node_state_online(self, node_id = 0):
-        """
-        This function will Verify if node state online
-        """
-        LOGGER.info("Start : verify_node_state_online")
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_online'+ node_id
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ node_id
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
                                 "node_id:" + node_id]
-        gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_ONLINE'
+        if status == "failed":
+            gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_FAILED'
+        else:
+            gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_ONLINE'
         gui_response = trigger_robot(gui_dict)
         assert_true( gui_response, 'GUI FAILED')
-        LOGGER.info("End : verify_node_state_online")
-
-    def verify_node_state_failed(self, node_id = 0):
-        """
-        This function will verify if node state failed
-        """
-        LOGGER.info("Start : verify_node_state_failed")
-        gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state_failed'+ node_id
-        gui_dict['test_path'] = self.robot_test_path
-        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
-                                self.browser_type, 'username:' + self.csm_user,
-                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
-                                "node_id:" + node_id]
-        gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_FAILED'
-        gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
-        LOGGER.info("End : verify_node_state_failed")
+        LOGGER.info("End : verify_node_state")
 
     def verify_node_down_alert(self, node_id = 0):
         """
@@ -244,15 +217,17 @@ class HAGUILibs:
         assert_true( gui_response, 'GUI FAILED')
         LOGGER.info("End : acknowledge_network_interface_back_up_alerts")
 
-    def assert_if_network_interface_down_alert(self):
+    def assert_if_network_interface_down_alert_present(self):
         """
-        This function will assert if alert in new alert table already present
+        if we have any network port down before starting test tests, we should not continue the tests
+        This function will check if any "network interface ethX down" alert is present, we should not continue the tests.
+        This function will assert if network interface down alert in new alert table already present
         """
-        LOGGER.info("Start : assert_if_network_interface_down_alert")
+        LOGGER.info("Start : assert_if_network_interface_down_alert_present")
         alert_description = 'Network interface eth'
         # TODO: update alert_description if required
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/assert_if_network_interface_down_alert'
+        gui_dict['log_path'] = self.cwd + '/log/latest/assert_if_network_interface_down_alert_present'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -261,4 +236,4 @@ class HAGUILibs:
         gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS_AND_FAIL'
         gui_response = trigger_robot(gui_dict)
         assert_true( gui_response, 'GUI FAILED')
-        LOGGER.info("End : assert_if_network_interface_down_alert")
+        LOGGER.info("End : assert_if_network_interface_down_alert_present")
