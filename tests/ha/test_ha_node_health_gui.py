@@ -177,7 +177,7 @@ class TestHANodeHealthGUI:
         for node in node_list:
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -212,7 +212,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node down alert.")
             self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state_failed(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -240,7 +240,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
 
             self.starttime = time.time()
 
@@ -273,7 +273,7 @@ class TestHANodeHealthGUI:
         self.system_random.shuffle(node_list)
         for node in node_list:
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -310,7 +310,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node down alert.")
             self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state_failed(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -337,7 +337,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
 
             self.starttime = time.time()
 
@@ -367,7 +367,7 @@ class TestHANodeHealthGUI:
         LOGGER.info("Acknowledge network alerts if present in active alert table already")
         self.ha_gui_obj.acknowledge_network_interface_back_up_alerts()
         LOGGER.info("Fail if newtork alert in new alert table already present")
-        self.ha_gui_obj.assert_if_network_interface_down_alert()
+        self.ha_gui_obj.assert_if_network_interface_down_alert_present()
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(
@@ -383,7 +383,7 @@ class TestHANodeHealthGUI:
         for node in node_list:
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
             LOGGER.info(
                 "Make the private data interface down for {}".format(node_name))
             self.node_list[node].execute_cmd(
@@ -421,7 +421,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node down alert.")
             self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state_failed(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
             LOGGER.info("Verify Network interface down alert")
             self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node]) # TODO: update argument if required in TE
 
@@ -457,7 +457,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
             LOGGER.info("Verify Network interface up alert")
             self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node]) # TODO: update argument if required in TE
 
@@ -492,7 +492,7 @@ class TestHANodeHealthGUI:
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info("Verify if node state online")
-        self.ha_gui_obj.verify_node_state_online(node_index) # TODO: update argument if required in TE
+        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -538,7 +538,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node down alert.")
             self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state_failed(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -565,7 +565,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
 
             self.starttime = time.time()
 
@@ -598,7 +598,7 @@ class TestHANodeHealthGUI:
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info("Verify if node state online")
-        self.ha_gui_obj.verify_node_state_online(node_index) # TODO: update argument if required in TE
+        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -642,7 +642,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node down alert.")
             self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state_failed(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -670,7 +670,7 @@ class TestHANodeHealthGUI:
             LOGGER.info("Check for the node back up alert.")
             self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state_online(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
 
             self.starttime = time.time()
 
