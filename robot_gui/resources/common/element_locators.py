@@ -33,10 +33,16 @@ S3_BUCKET_TAB_ID   = 'tab-3'
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
-HEALTH_TAB_ID = "Health"
+HEALTH_MENU_ID = 'Health'
 SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
 LYVE_PILOT_MENU_ID= "Lyve Pilot"
+
+# Health
+GRAPHICAL_TAB_ID = 'tab-1'
+TABULAR_TAB_ID = 'tab-2'
+RESOURCE_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
+RESOURCE_STATUS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[{0}]//td[{1}]//div'
 
 # Settings
 SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
