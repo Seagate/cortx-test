@@ -346,6 +346,20 @@ pytest --capture=no --te_tkt TEST-17412 -d --tx 2*popen -rA unittests\<Your_Test
 pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging_hooks.py
 ```
 
+## Client Configuration:
+While ordering client on ssc-cloud, make sure
+1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
+2. For more large number of parallel IO connections, good to have 8 CPUs.
+3. By dafult 1GB of swap space is provided, need to order 1 extra disk, and create swap space out of extra disk, and mount it. 
+   
+   Procedure to create swap space of 8 GB: [A gist from one of the articles](https://www.thegeekdiary.com/centos-rhel-how-to-add-new-swap-partition/)
+    * Create new partition using fdisk command
+        * `fdisk /dev/sdb` # sda will generally have OS installation
+        * new (option `n`), primary (option `p`) partition, Default partition number, Default first sector, Last Sector `+8G`, Write (option `w`)
+    * Create swap on the partition using `mkswap /dev/sdb1` # Provide above created partition number for me it was sdb1
+    * Mount swap using `swapon /dev/sdb1`
+
+
 ## How to automate component level test cases
 Components level tests can be either pure component level tests which run 
 1. Tests run in the same process as code to be tested 
