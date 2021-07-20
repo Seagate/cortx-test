@@ -40,7 +40,7 @@ from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ha.ha_common_libs import HALibs
 from libs.csm.rest.csm_rest_system_health import SystemHealth
-from libs.ha.ha_common_libs import HAGUILibs
+from libs.ha.ha_common_libs_gui import HAGUILibs
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
