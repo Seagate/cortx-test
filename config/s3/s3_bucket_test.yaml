@@ -3006,3 +3006,12 @@ test_22283:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
+
+test_22287:
+  bucket_policy:
+    Statement:
+      - Effect: "Deny"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
