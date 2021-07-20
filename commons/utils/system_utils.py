@@ -1151,12 +1151,18 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
         if int(response.split(":")[1].strip()) != 0:
             return False, response
     LOGGER.info("Observed no Error count in io log.")
-    error_kws = ["with error ", "panic", "status code", "exit status 2"]
+    error_kws = [
+        "with error ",
+        "panic",
+        "status code",
+        "exit status 2",
+        "InternalError",
+        "ServiceUnavailable"]
     for error in error_kws:
         if error in ",".join(lines):
             return False, f"{error} Found in S3Bench Run."
     LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
-    remove_file(log_path)
+    # remove_file(log_path)  # Keeping logs for FA/Debugging.
     LOGGER.info("S3 parallel ios log validation completed.")
 
     return True, "S3 parallel ios completed successfully."
