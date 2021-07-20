@@ -2995,3 +2995,14 @@ test_6923:
           AWS: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
+
+# copy object bucket policy tests.
+test_22283:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
