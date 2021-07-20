@@ -10,7 +10,7 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
+#Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
@@ -90,20 +90,27 @@ TEST-1215
     Delete CSM User  ${new_user_name}
 
 TEST-1217
-    [Documentation]  Test that manager user can view and create CSM users.
+    [Documentation]  Test that manager user can view and create CSM users and should be able to edit his own email
     [Tags]  Priority_High  user_role  TEST-1217
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    ${new_csm_user_password}=  Generate New Password
     ${new_csm_user_name}=  Generate New User Name
+    ${new_csm_user_password}=  Generate New Password
+    ${updated_password}=  Generate New Password
+    ${updated_email}=  Generate New User Email
     Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
     Click On Confirm Button
     wait for page or element to load
-    Click Element  ${DELETE_ICON_MANAGE_USER_ID}
+    Edit CSM User Details  ${new_user_name}  ${updated_password}  ${updated_email}  ${new_password}
+    Re-login  ${new_user_name}  ${updated_password}  ${page_name}
+    Delete Logged In CSM User  ${new_user_name}
     wait for page or element to load
-    Click button    ${IAM_USER_SUCCESS_MESSAGE_BUTTON_ID }
-    wait for page or element to load
-    Re-login  ${username}  ${password}  MANAGE_MENU_ID  False
+    Enter Username And Password  ${new_user_name}  ${updated_password}
+    Click Sigin Button
+    Validate CSM Login Failure
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page_name}
     Delete CSM User  ${new_csm_user_name}
 
 TEST-18327
@@ -173,3 +180,19 @@ TEST-21592
     Re-login  ${username}  ${password}  ${page_name}  False
     wait for page or element to load
     Delete CSM User  ${new_csm_user_name}
+
+TEST-23044
+    [Documentation]  Test that CSM user with role manage cannot create user with admin role.
+    [Tags]  Priority_High  user_role  TEST-23044
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+#    ${new_admin_user_name}=  Generate New User Name
+#    ${new_admin_password}=  Generate New Password
+#    Navigate To Page  ${page_name}
+    Click button  ${ADD_USER_BUTTON_ID}
+    Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
+    Click button  ${CANCEL_NEW_CSM_USER_BUTTON_ID}
+    Re-login  ${username}  ${password}  ${page_name}
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
+

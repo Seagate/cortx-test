@@ -8,7 +8,7 @@ Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
+#Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
 ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
@@ -181,4 +181,13 @@ TEST-22768
     wait for page or element to load
     Delete s3 account using csm user  ${S3_account_name}
     Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
+    Delete CSM User  ${new_user_name}
+
+TEST-23046
+    [Documentation]  Test that CSM user with role monitor cannot create user with admin role.
+    [Tags]  Priority_High  user_role  TEST-23046
+    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load
+    Verify that monitor user is not able to create csm user
+    Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
