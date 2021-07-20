@@ -21,8 +21,8 @@
 
 import os
 import logging
-import pytest
 import time
+import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.params import TEST_DATA_FOLDER
 from commons.errorcodes import error_handler
@@ -34,18 +34,14 @@ from libs.s3.s3_test_lib import S3LibNoAuth
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from config import S3_CFG
 
-# S3_TEST_OBJ = S3TestLib()
-# ACL_OBJ = S3AclTestLib()
-# NO_AUTH_OBJ = S3LibNoAuth()
 
 
 class TestAllUsers:
-    """All Users Testsuite"""
+    """All Users Testsuite."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """
-        Function will be invoked prior to each test case.
+        """Function will be invoked prior to each test case.
 
         It will perform all prerequisite test suite steps if any.
         """
@@ -74,7 +70,6 @@ class TestAllUsers:
         self.log.info("STARTED: Teardown operations")
         if system_utils.path_exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
-        # bucket_list = S3_TEST_OBJ.bucket_list()[1]
         bucket_list = self.s3_test_obj.bucket_list()[1]
         if self.bucket_name in bucket_list:
             self.acl_obj.put_bucket_acl(
@@ -92,6 +87,7 @@ class TestAllUsers:
             mb_count):
         """
         This function creates a bucket and uploads an object to the bucket.
+
         :param bucket_name: Name of bucket to be created
         :param obj_name: Name of an object to be put to the bucket
         :param file_path: Path of the file to be created and uploaded to bucket
@@ -115,7 +111,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_375(self):
         """Check listing of objects in bucket without Authentication
-        when AllUsers have READ permission."""
+        when AllUsers have READ permission.
+        """
         self.log.info(
             "STARTED: Check listing of objects in bucket without "
             "Authentication when AllUsers have READ permission")
@@ -201,7 +198,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_377(self):
         """Delete an object from bucket without Authentication
-        when AllUsers have READ permission."""
+        when AllUsers have READ permission.
+        """
         self.log.info(
             "STARTED: Delete an object from bucket without Authentication "
             "when AllUsers have READ permission")
@@ -246,7 +244,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_378(self):
         """Read an object ACL from bucket without Authentication
-        when AllUsers have READ permission."""
+        when AllUsers have READ permission.
+        """
         self.log.info(
             "STARTED: Read an object ACL from bucket without Authentication "
             "when AllUsers have READ permission")
@@ -339,7 +338,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_380(self):
         """Update a bucket ACL for a bucket without Authentication
-        when AllUsers have READ permission."""
+        when AllUsers have READ permission.
+        """
         self.log.info(
             "STARTED: Update a bucket ACL for a bucket without Authentication "
             "when AllUsers have READ permission")
@@ -388,7 +388,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_381(self):
         """Update an object ACL from bucket without Authentication
-                when AllUsers have READ permission."""
+            when AllUsers have READ permission.
+        """
         self.log.info(
             "STARTED: Update an object ACL from bucket without Authentication "
             "when AllUsers have READ permission")
@@ -439,7 +440,8 @@ class TestAllUsers:
     @CTFailOn(error_handler)
     def test_382(self):
         """Listing of objects in bucket without Authentication
-        when AllUsers have WRITE permission."""
+        when AllUsers have WRITE permission.
+        """
         self.log.info(
             "STARTED: Listing of objects in bucket without Authentication "
             "when AllUsers have WRITE permission")
