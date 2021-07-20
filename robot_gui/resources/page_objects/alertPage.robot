@@ -464,13 +464,34 @@ Verify and Acknowledge deactivating resolved alerts exist SW Service
     ...  AND  Fail  # description not found in the alert, failing
 
 Acknowledge if Active alerts exist
-    [Documentation]  Acknowledge if alerts exist
+    [Documentation]  Acknowledge if alerts exist in Active Alert Tab
     [Arguments]  ${description}
     ${found}=  Set Variable  False
     Log To Console And Report  ${description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Click ActiveAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Capture Page Screenshot
+    ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
+    # loop through all alerts row
+    FOR    ${item}     IN      @{alert_table_row_data}
+        ${found}=  Run Keyword And Return Status  Should Contain  ${item}  ${description}
+        Run Keyword If  ${found} == True  # Description found in the alert
+        ...  Run Keywords
+        ...  Log To Console And Report  ${found}
+        ...  AND  Capture Page Screenshot
+        ...  AND  Acknowledge alert  ${description}
+        ...  AND  Click AlertHistory Tab
+        ...  AND  Capture Page Screenshot
+    END
+
+Acknowledge if New alerts exist
+    [Documentation]  Acknowledge if alerts exist in New Alert tab
+    [Arguments]  ${description}
+    ${found}=  Set Variable  False
+    Log To Console And Report  ${description}
+    Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Capture Page Screenshot
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
