@@ -14,7 +14,7 @@ build
 tmp
 venv/
 .vscode/
-robot/reports/
+robot_gui/reports/
 secrets.json
 setups.json
 log/
