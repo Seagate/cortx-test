@@ -1964,3 +1964,86 @@ class TestCopyObjects:
         LOGGER.info(
             "ENDED: Copy object specifying bucket name and object using wildcard while"
             " S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22283")
+    @CTFailOn(error_handler)
+    def test_22283(self):
+        """Use bucket policy to allow copy object to another account."""
+        LOGGER.info("STARTED: Use bucket policy to allow copy object to another account.")
+        LOGGER.info("Step 1: Create a bucket in Account1. Referred as bucket1.")
+        LOGGER.info("Step 2: Create and upload object to the above bucket1.")
+        LOGGER.info("Step 3: List object for the bucket1.")
+        LOGGER.info("Step 4: From Account2 create a bucket. Referred as bucket2.")
+        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: Using bucket policy Allow PutObject access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 7: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 9: From Account2 List Objects from bucket2. Check object is present and of same size as source object.")
+        LOGGER.info("ENDED: Use bucket policy to allow copy object to another account.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22287")
+    @CTFailOn(error_handler)
+    def test_22287(self):
+        """Use bucket policy to deny copy object to another account and allow through ACLs."""
+        LOGGER.info("STARTED: Use bucket policy to deny copy object to another account and allow through ACLs.")
+        LOGGER.info("Step 1: Create a bucket in Account1. Referred as bucket1.")
+        LOGGER.info("Step 2: Create and upload object to the above bucket1.")
+        LOGGER.info("Step 3: List object for the bucket1.")
+        LOGGER.info("Step 4: From Account2 create a bucket. Referred as bucket2.")
+        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: From Account2 on bucket2 grant Write ACL to Account1 and full control to account2.")
+        LOGGER.info("Step 7: From Account2 check the applied ACL in above step.")
+        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 9: From Account2 List Objects from bucket2 .Check object is present and of same size as source object.")
+        LOGGER.info("Step 10: Using bucket policy Deny PutObject access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 12: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("ENDED: Use bucket policy to deny copy object to another account and allow through ACLs.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22292")
+    @CTFailOn(error_handler)
+    def test_22292(self):
+        """Use bucket policy to allow copy object with object contain tagging."""
+        LOGGER.info("STARTED: Use bucket policy to allow copy object with object contain tagging.")
+        LOGGER.info("Step 1: Create a bucket in Account1 .Referred as bucket1.")
+        LOGGER.info("Step 2: Create and upload object to the above bucket1 .")
+        LOGGER.info("Step 3: List object for the bucket1.")
+        LOGGER.info("Step 4: From Account2 create a bucket. Referred as bucket2.")
+        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: Using bucket policy Allow PutObject access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 7: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2 .")
+        LOGGER.info("Step 9: From Account2 List Objects from bucket2. Check object is present and of same size as source object.")
+        LOGGER.info("Step 10: Put object tagging to the object1 of Account1 .")
+        LOGGER.info("Step 11: Get Object Tagging and check the tags are added .")
+        LOGGER.info("Step 12: From Account1 copy object from bucket1 to bucket2 .")
+        LOGGER.info("Step 13: Using bucket policy Allow PutObject and PutObjectTagging access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 14: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 15: From Account1 copy object from bucket1 to bucket2 .")
+        LOGGER.info("Step 16: From Account2 List Objects from bucket2. Check object is present and of same size as source object.")
+        LOGGER.info("ENDED: Use bucket policy to allow copy object with object contain tagging.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22299")
+    @CTFailOn(error_handler)
+    def test_22299(self):
+        """Use bucket policy to validate copy object with applied ACL."""
+        LOGGER.info("STARTED: Use bucket policy to validate copy object with applied ACL.")
+        LOGGER.info("Step 1: Create a bucket in Account1 .Referred as bucket1.")
+        LOGGER.info("Step 2: Create and upload object to the above bucket1.")
+        LOGGER.info("Step 3: List object for the bucket1.")
+        LOGGER.info("Step 4: From Account2 create a bucket. Referred as bucket2.")
+        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: Using bucket policy Allow PutObject access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 7: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 9: From Account2 List Objects from bucket2 .Check object is present and of same size as source object.")
+        LOGGER.info("Step 10: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
+        LOGGER.info("Step 11: Get bucket ACLs and check the ACL's got added.")
+        LOGGER.info("Step 12: Using bucket policy Allow PutObject and Deny PutObjectAcl access to Account1 on bucket2 of Account2.")
+        LOGGER.info("Step 13: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 14: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
+        LOGGER.info("ENDED: Use bucket policy to validate copy object with applied ACL.")
