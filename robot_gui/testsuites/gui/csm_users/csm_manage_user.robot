@@ -173,3 +173,19 @@ TEST-21592
     Re-login  ${username}  ${password}  ${page_name}  False
     wait for page or element to load
     Delete CSM User  ${new_csm_user_name}
+
+TEST-23782
+    [Documentation]  Test that manage user should be able to create and not able to delete users with monitor role from csm UI
+    [Tags]  Priority_High  user_role  TEST-23782
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click On Confirm Button
+    wait for page or element to load
+    Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${new_csm_user_name}
+    wait for page or element to load
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID
+    Delete CSM User  ${new_csm_user_name}
+    Delete CSM User  ${new_user_name}
