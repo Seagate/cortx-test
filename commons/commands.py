@@ -38,7 +38,7 @@ GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 CMD_UPDATE_FILE = "echo {} > {}"
 CMD_TOUCH_FILE = "touch {}"
-GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo"
+GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -223,7 +223,7 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
-CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands

@@ -144,7 +144,7 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
-            sys_obj.close_connection(cln_session_obj=True)
+            sys_obj.close_connection(set_session_obj_none=True)
 
     @staticmethod
     def verify_csr_health_status(
@@ -181,24 +181,25 @@ class HALibs:
             raise CTException(err.CLI_ERROR, error.args[0]) from error
         finally:
             sys_obj.logout_cortx_cli()
-            sys_obj.close_connection(cln_session_obj=True)
+            sys_obj.close_connection(set_session_obj_none=True)
 
     def polling_host(self,
             max_timeout: int,
             host: str,
-            exp_resp: bool):
+            exp_resp: bool,
+            bmc_obj):
         """
         Helper function to poll for host ping response.
         :param max_timeout: Max timeout allowed for expected response from ping
         :param host: Host to ping
         :param exp_resp: Expected resp True/False for host state Reachable/Unreachable
+        :param bmc_obj: BMC object
         :return: bool
         """
 
         poll = time.time() + max_timeout  # max timeout
         while poll > time.time():
             time.sleep(20)
-            exp_state = False
             resp = system_utils.check_ping(host)
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
@@ -215,6 +216,12 @@ class HALibs:
                     exp_state = pw_state == 'up'
                 else:
                     exp_state = pw_state == 'down'
+            else:
+                resp = bmc_obj.bmc_node_power_status(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd)
+                if exp_resp:
+                    exp_state = "on" in resp[0]
+                else:
+                    exp_state = "off" in resp[0]
 
             if resp == exp_resp and exp_state:
                 return True
@@ -275,7 +282,7 @@ class HALibs:
 
         LOGGER.info("Check if %s is powered on.", host)
         # SSC cloud is taking time to on VM host hence timeout
-        resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True)
+        resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True, bmc_obj=bmc_obj)
         return resp
 
     def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
@@ -307,7 +314,7 @@ class HALibs:
         LOGGER.info("Check if %s is powered off.", host)
         # SSC cloud is taking time to off VM host hence timeout
         resp = self.polling_host(
-            max_timeout=self.t_power_off, host=host, exp_resp=False)
+            max_timeout=self.t_power_off, host=host, exp_resp=False, bmc_obj=bmc_obj)
         return resp
 
     def status_nodes_online(self, node_obj, srvnode_list, sys_list, no_nodes: int):
