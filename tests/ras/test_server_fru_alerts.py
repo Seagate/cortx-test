@@ -208,7 +208,6 @@ class TestServerFruAlerts:
         LOGGER.info("STARTED: Test alerts for OS disk removal and insertion")
 
         common_cfg = RAS_VAL["ras_sspl_alert"]
-        csm_error_msg = common_cfg["csm_error_msg"]
         test_cfg = RAS_TEST_CFG["TEST-23606"]
         df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
                           columns='Iteration0'.split())
@@ -263,13 +262,13 @@ class TestServerFruAlerts:
                                                           test_cfg[
                                                               "resource_type"])
 
-        # if not resp_csm[0]:
-        #     df['Iteration0']['Step4'] = 'Fail'
-        #     LOGGER.error("Step 4: Expected alert not found. Error: %s",
-        #     test_cfg["csm_error_msg"])
-        # else:
-        #     LOGGER.info("Step 4: Successfully checked CSM REST API for "
-        #     "fault alert. Response: %s", resp_csm)
+        if not resp_csm[0]:
+            df['Iteration0']['Step4'] = 'Fail'
+            LOGGER.error("Step 4: Expected alert not found. Error: %s",
+                         test_cfg["csm_error_msg"])
+        else:
+            LOGGER.info("Step 4: Successfully checked CSM REST API for "
+                        "fault alert. Response: %s", resp_csm)
 
         LOGGER.info("Resolving fault...")
         LOGGER.info("Step 5: Connecting OS drive %s", drive_name)
@@ -308,13 +307,13 @@ class TestServerFruAlerts:
                                                           test_cfg[
                                                               "resource_type"])
 
-        # if not resp_csm[0]:
-        #     df['Iteration0']['Step7'] = 'Fail'
-        #     LOGGER.error("Step 7: Expected alert not found. Error: %s",
-        #     test_cfg["csm_error_msg"])
-        # else:
-        #     LOGGER.info("Step 7: Successfully checked CSM REST API for "
-        #     "fault alert. Response: %s", resp_csm)
+        if not resp_csm[0]:
+            df['Iteration0']['Step7'] = 'Fail'
+            LOGGER.error("Step 7: Expected alert not found. Error: %s",
+                         test_cfg["csm_error_msg"])
+        else:
+            LOGGER.info("Step 7: Successfully checked CSM REST API for "
+                        "fault alert. Response: %s", resp_csm)
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True

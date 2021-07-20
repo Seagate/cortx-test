@@ -25,6 +25,8 @@ class
 import logging
 import os
 import time
+import re
+import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
@@ -1190,26 +1192,25 @@ class RASTestLib(RASCoreLib):
             cmd = common_commands.LINE_COUNT_CMD.format(tempfile)
             resp = sys_utils.run_local_cmd(cmd=cmd)
 
-            drive_count = int(resp[1])
+            drive_count = int(re.findall(r'\d+', resp[1])[0])
             if not resp[0] or drive_count < 2:
                 return resp
 
             LOGGER.info(f"{drive_count} number of drives are connected to node "
                         f"{self.host}")
 
+            line_num = random.randint(1, drive_count)
             LOGGER.info(f"Getting LUN number of OS drive")
-            cmd = f"sed '1d' {tempfile} | awk '{{print $1}}'"
-            resp = sys_utils.run_local_cmd(cmd=cmd)
-            if not resp[0]:
-                return resp
+            cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+            resp = os.popen(cmd=cmd).read()
 
-            numeric_filter = filter(str.isdigit, resp[1].split(':')[0])
+            numeric_filter = filter(str.isdigit, resp.split(':')[0])
             host_num = "".join(numeric_filter)
 
             LOGGER.info(f"Getting name of OS drive")
-            cmd = f"sed '1d' {tempfile} | awk '{{print $NF}}'"
-            resp = sys_utils.run_local_cmd(cmd=cmd)
-            drive_name = resp[1]
+            cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+            resp = os.popen(cmd=cmd).read()
+            drive_name = resp.strip()
             return True, drive_name, host_num, drive_count
         except Exception as error:
             LOGGER.error("%s %s: %s".format(
