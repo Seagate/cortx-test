@@ -21,6 +21,7 @@
 """S3 copy object test module."""
 
 import os
+import json
 from time import perf_counter_ns
 from multiprocessing import Process
 
@@ -2012,6 +2013,7 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
             'Resource'].format(self.bucket_name2)
+        bucket_policy = json.dumps(bucket_policy)
         s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key2, secret_key=secret_key2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
@@ -2080,8 +2082,11 @@ class TestCopyObjects:
                     "full control to account2.")
         resp = s3_acl_obj2.put_bucket_acl(
             bucket_name=self.bucket_name2,
-            grant_write="id={}".format(canonical_id1),
             grant_full_control="id={}".format(canonical_id2))
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_acl_obj2.put_bucket_acl(
+            bucket_name=self.bucket_name2,
+            grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: From Account2 check the applied ACL in above step.")
         resp = s3_acl_obj2.get_bucket_acl(self.bucket_name2)
@@ -2107,6 +2112,7 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
             'Resource'].format(self.bucket_name2)
+        bucket_policy = json.dumps(bucket_policy)
         s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key2, secret_key=secret_key2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
@@ -2175,6 +2181,7 @@ class TestCopyObjects:
             'Resource'].format(self.bucket_name2)
         s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key2, secret_key=secret_key2)
+        bucket_policy1 = json.dumps(bucket_policy1)
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2206,16 +2213,16 @@ class TestCopyObjects:
             value="confidential")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Get Object Tagging and check the tags are added .")
-        resp = s3_tagging_usr_obj1.get_object_tagging(
+        resp = s3_tagging_usr_obj1.get_object_tags(
             self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
             resp[1][0]["Key"],
-            "designation",
+            f"designation{0}",
             resp[1])
         assert_utils.assert_equal(
             resp[1][0]["Value"],
-            "confidential",
+            f"confidential{0}",
             resp[1])
         LOGGER.info("Step 9: From Account1 copy object from bucket1 to bucket2.")
         try:
@@ -2235,6 +2242,7 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy2['Statement'][0]['Resource'] = bucket_policy2['Statement'][0][
             'Resource'].format(self.bucket_name2)
+        bucket_policy2 = json.dumps(bucket_policy2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2265,7 +2273,7 @@ class TestCopyObjects:
         """Use bucket policy to validate copy object with applied ACL."""
         LOGGER.info("STARTED: Use bucket policy to validate copy object with applied ACL.")
         bucket_policy1 = BKT_POLICY_CONF["test_22283"]["bucket_policy"]
-        bucket_policy2 = BKT_POLICY_CONF["test_22298"]["bucket_policy"]
+        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object "
                     "uploaded to the above bucket.")
         canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
@@ -2302,6 +2310,7 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy1['Statement'][0]['Resource'] = bucket_policy1['Statement'][0][
             'Resource'].format(self.bucket_name2)
+        bucket_policy1 = json.dumps(bucket_policy1)
         s3_policy_usr_obj2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key2, secret_key=secret_key2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
@@ -2349,6 +2358,7 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy2['Statement'][1]['Resource'] = bucket_policy2['Statement'][1][
             'Resource'].format(self.bucket_name2)
+        bucket_policy2 = json.dumps(bucket_policy2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
