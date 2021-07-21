@@ -131,8 +131,7 @@ class Host:
             try:
                 self.connect(**kwargs)
                 return True
-                break
-            except (socket.timeout, BaseException) as error:
+            except Exception as error:
                 LOGGER.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)

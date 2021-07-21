@@ -598,7 +598,7 @@ class Test3PSvcMonitoring:
             while not online and retries > 0:
                 try:
                     online, msg = self.health_obj.check_node_health()
-                except BaseException as error:
+                except Exception as error:
                     online = False
                 time.sleep(180)
                 retries = retries - 1
