@@ -1205,6 +1205,7 @@ class RASTestLib(RASCoreLib):
                 line_num = random.randint(1, drive_count)
                 LOGGER.info(f"Getting LUN number of OS drive")
                 cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+                LOGGER.info("Running command: %s", cmd)
                 resp = os.popen(cmd=cmd).read()
 
                 numeric_filter = filter(str.isdigit, resp.split(':')[0])
@@ -1212,6 +1213,7 @@ class RASTestLib(RASCoreLib):
 
                 LOGGER.info(f"Getting name of OS drive")
                 cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+                LOGGER.info("Running command: %s", cmd)
                 resp = os.popen(cmd=cmd).read()
                 drive_name = resp.strip()
                 return True, drive_name, host_num, drive_count
