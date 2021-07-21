@@ -36,6 +36,9 @@ CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
+CMD_UPDATE_FILE = "echo {} > {}"
+CMD_TOUCH_FILE = "touch {}"
+GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -204,6 +207,8 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
+CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
 CMD_DELETE_ACCESS_KEY = "s3accesskeys delete"
 CMD_SHOW_ACCESS_KEY = "s3accesskeys show -iu"
@@ -218,6 +223,8 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
+CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
@@ -238,6 +245,11 @@ CMD_GET_SYSTEM_NTP = "salt \"{}\" pillar.get system"
 CMD_SET_SYSTEM_NTP = "provisioner set_ntp --server {} --timezone '{}'"
 GET_CHRONY = "grep '{}' /etc/chrony.conf"
 CMD_CONFSTORE_TMPLT = "cat /opt/seagate/cortx_configs/provisioner_cluster.json | grep {}"
+CMD_WGET = "wget {}"
+CMD_SW_VER = "provisioner get_release_version"
+CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
+CMD_ISO_VER = "provisioner get_iso_version"
+CMD_SW_UP = "provisioner sw_upgrade --offline"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -270,6 +282,9 @@ CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
 CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
+# LDAP commands
+CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -314,3 +329,9 @@ CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
+              "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+
+CPU_COUNT = "cat /sys/devices/system/cpu/online"
+CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
+CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"

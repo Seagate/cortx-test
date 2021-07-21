@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import argparse
 import csv
@@ -48,7 +49,7 @@ def parse_args():
                         default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
-    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
+    parser.add_argument("-p", "--prc_cnt", type=int, default=4,
                         help="number of parallel processes")
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
@@ -58,6 +59,8 @@ def parse_args():
                                             "perform additional checksum check")
     parser.add_argument("-tt", "--test_type", nargs='+', type=str,
                         default=['ALL'], help="Space separated test types")
+    parser.add_argument("--xml_report", type=str_to_bool, default=False,
+                        help="Generates xml format report if set True, default is False")
     return parser.parse_args()
 
 
@@ -151,11 +154,23 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     if args.data_integrity_chk:  # redo for kafka tests remove when drunner is supported.
         cmd_line = cmd_line + ["--data_integrity_chk=" + str(True)]
 
+    if args.xml_report:
+        if parallel_exe:
+            cmd_line = cmd_line + ["--junitxml=log/parallel_" + te_id + "report.xml"]
+        else:
+            cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
+    if prc.returncode == 1:
+        print('Exiting test runner due to bad health of deployment')
+        sys.exit(1)
+    if prc.returncode == 2:
+        print('Exiting test runner due to health check script error')
+        sys.exit(2)
 
 
 def delete_status_files():

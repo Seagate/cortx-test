@@ -19,7 +19,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""s3 helper to have s3 services related classes & methods."""
+"""
+s3 helper to have s3 services related classes & methods.
+Note: S3 helper is singleton so please import it's object from libs.s3 __init__ as 'from libs.s3 import S3H_OBJ'.
+"""
 
 import os
 import re
@@ -43,7 +46,6 @@ class S3Helper:
     """S3 Helper class to perform S3 related operations."""
 
     __instance = None
-    cm_cfg = CMN_CFG["nodes"][0]
 
     def __init__(self) -> None:
         """Virtually private constructor."""
@@ -52,9 +54,10 @@ class S3Helper:
                 "S3Helper is a singleton!, "
                 "use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
-        self.host = self.cm_cfg["host"]
-        self.pwd = self.cm_cfg["password"]
-        self.user = self.cm_cfg["username"]
+        cm_cfg = CMN_CFG.get("nodes", None)
+        self.host = cm_cfg[0]["hostname"] if cm_cfg else None
+        self.pwd = cm_cfg[0]["password"] if cm_cfg else None
+        self.user = cm_cfg[0]["username"] if cm_cfg else None
 
     @staticmethod
     def get_instance() -> object:
@@ -713,8 +716,8 @@ class S3Helper:
         """
         try:
             if not os.path.isfile(path):
-                raise FileNotFoundError(
-                    "{} file is not present. Please configure aws in the system".format(path))
+                raise FileNotFoundError("{} file is not present. Please configure aws in the "
+                                        "system if you are running s3 test".format(path))
             access_key = config_utils.get_config(
                 path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(
@@ -723,7 +726,7 @@ class S3Helper:
             return access_key, secret_key
         except (FileNotFoundError, KeyError, NoSectionError) as error:
             LOGGER.warning(
-                "An exception occurred in %s: %s",
+                "%s: %s",
                 S3Helper.get_local_keys.__name__,
                 str(error))
             return None, None

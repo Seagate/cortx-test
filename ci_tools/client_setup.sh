@@ -11,6 +11,21 @@ else
     echo "$FILE does not exist."
 fi
 
+function check_installation {
+  pckarr=(unzip, google-chrome-stable_current_x86_64.rpm )
+  for i in  ${pckarr[*]}
+   do
+   isinstalled=$(rpm -q $i)
+   if [ !  "$isinstalled" == "package $i is not installed" ];
+   then
+     echo Package  $i already installed
+   else
+     echo $i is not installed!
+     yum install -y $i
+   fi
+   done
+}
+
 #yum update -y
 yum install -y nfs-utils
 
@@ -46,3 +61,14 @@ make install-tools
 
 cd "$WORKSPACE/cortx-test/"
 
+wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+
+check_installation
+
+if [[ -f "/usr/bin/google-chrome" ]]
+then
+  wget -N https://chromedriver.storage.googleapis.com/91.0.4472.19/chromedriver_linux64.zip
+  unzip chromedriver_linux64.zip
+  chmod 777 chromedriver
+  mv chromedriver $WORKSPACE/cortx-test/virenv/bin
+fi

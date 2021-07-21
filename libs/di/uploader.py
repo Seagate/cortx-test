@@ -22,15 +22,15 @@
 """Multithreaded and greenlet based Upload tasks. Upload files and data blobs."""
 
 import os
+import sys
 import queue
 import random
 import logging
 import csv
-import fcntl
 import hashlib
-import re
 import time
 import multiprocessing as mp
+from multiprocessing import Manager, Event
 from boto3.s3.transfer import TransferConfig
 from commons.utils import config_utils
 from commons.worker import Workers
@@ -39,6 +39,12 @@ from libs.di import di_base
 from libs.di import data_man
 from libs.di import data_generator
 from commons.params import USER_JSON
+
+try:
+    if sys.platform in ['linux', 'linux2']:
+        import fcntl
+except ModuleNotFoundError as error:
+    logging.error(error)
 
 uploadObjects = []
 LOGGER = logging.getLogger(__name__)
@@ -54,7 +60,7 @@ class Uploader:
     def __init__(self):
         self.change_manager = data_man.DataManager()
 
-    def upload(self, user, keys, buckets, files_count, prefs, stop_event):
+    def upload(self, user, keys, buckets, files_count, prefs, stop_event, future_obj):
         user_name = user.replace('_', '-')
         timestamp = time.strftime(params.DT_PATTERN_PREFIX)
         s3connections = di_base.init_s3_conn(user_name=user_name,
@@ -64,6 +70,8 @@ class Uploader:
 
         workers = Workers()
         workers.start_workers(func=self._upload)
+        if future_obj:
+            future_obj.value = True
         for bucket in buckets:
             for ix in range(files_count):
                 if not stop_event.is_set():
@@ -142,7 +150,7 @@ class Uploader:
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-    def start(self, users, buckets, files_count, prefs, stop_event):
+    def start(self, users, buckets, files_count, prefs, stop_event, future_obj=None):
         LOGGER.info(f'Starting uploads for users {users}')
         # check if users comply to specific schema
         users_home = params.LOG_DIR
@@ -153,7 +161,7 @@ class Uploader:
             keys = [udict['accesskey'], udict['secretkey']]
             buckets = udict["buckets"]
             p = mp.Process(target=self.upload, args=(
-                user, keys, buckets, files_count, prefs, stop_event))
+                user, keys, buckets, files_count, prefs, stop_event, future_obj))
             jobs.append(p)
         for p in jobs:
             if not stop_event.is_set():
