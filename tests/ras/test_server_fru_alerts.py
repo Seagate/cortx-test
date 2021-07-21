@@ -232,7 +232,7 @@ class TestServerFruAlerts:
         LOGGER.info("Step 2: Disconnecting OS drive %s", drive_name)
         resp = self.alert_api_obj.generate_alert(
             AlertType.OS_DISK_DISABLE,
-            input_parameters={"drive_name": drive_name,
+            input_parameters={"drive_name": drive_name.split("/")[-1],
                               "drive_count": drive_count})
         if not resp[0]:
             df['Iteration0']['Step2'] = 'Fail'
