@@ -722,4 +722,4 @@ class TestServerFruAlerts:
                             "step.")
 
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
-                    "node reboot")
+                    "sspl stop and start")
