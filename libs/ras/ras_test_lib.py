@@ -1193,7 +1193,7 @@ class RASTestLib(RASCoreLib):
             resp = sys_utils.run_local_cmd(cmd=cmd)
 
             drive_count = int(re.findall(r'\d+', resp[1])[0])
-            if not resp[0] or drive_count < 2:
+            if not resp[0]:
                 return resp
 
             LOGGER.info(f"{drive_count} number of drives are connected to node "
