@@ -478,7 +478,6 @@ TEST-23050
     [Documentation]  Test that admin user should not able to delete all users with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23050
     [Tags]  full    TEST-23050
-    # Create 3 admin
     Navigate To Page  ${page_name}
     FOR  ${index}  IN RANGE  3
         ${new_password}=  Generate New Password
@@ -487,15 +486,11 @@ TEST-23050
         Click On Confirm Button
     END
     Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
-    # list = Get admin users
     ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     Log To Console And Report  ${admin_users}
-    # new list = list - username
     Remove Values From List  ${admin_users}  ${username}
     Log To Console And Report  ${admin_users}
-    # delete all users in new list
     FOR  ${user}  IN  @{admin_users}
         Delete CSM User  ${user}
     END
-    # Should not be able to delete last user
     Verify Delete Action Disabled On The Table Element  ${username}
