@@ -692,9 +692,9 @@ class GenerateAlertWrapper:
             resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
 
             time.sleep(30)
-            LOGGER.info("Getting node drive details")
-            resp = ras_test_obj.get_node_drive_details()
-            d_count = resp[3]
+            LOGGER.info("Getting node drive count details")
+            resp = ras_test_obj.get_node_drive_details(check_drive_count=True)
+            d_count = resp[1]
             if not resp[0] or d_count != drive_count - 1:
                 return False, f"Failed to remove OS disk {drive_name}"
 
@@ -731,9 +731,9 @@ class GenerateAlertWrapper:
             resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
 
             time.sleep(30)
-            LOGGER.info("Getting node drive details")
-            resp = ras_test_obj.get_node_drive_details()
-            d_count = resp[3]
+            LOGGER.info("Getting node drive count details")
+            resp = ras_test_obj.get_node_drive_details(check_drive_count=True)
+            d_count = resp[1]
             if not resp[0] or d_count != drive_count:
                 return False, f"Failed to connect OS disk"
 

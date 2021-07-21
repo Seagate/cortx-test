@@ -1157,7 +1157,7 @@ class RASTestLib(RASCoreLib):
 
         return c_dict
 
-    def get_node_drive_details(self):
+    def get_node_drive_details(self, check_drive_count: bool = False):
         """
         Function to get details of the drives connected to node
         :return: True/False, drive_name, host_num, drive_count
@@ -1193,25 +1193,28 @@ class RASTestLib(RASCoreLib):
             resp = sys_utils.run_local_cmd(cmd=cmd)
 
             drive_count = int(re.findall(r'\d+', resp[1])[0])
-            if not resp[0] or drive_count < 2:
+            if not resp[0]:
                 return resp
 
             LOGGER.info(f"{drive_count} number of drives are connected to node "
                         f"{self.host}")
 
-            line_num = random.randint(1, drive_count)
-            LOGGER.info(f"Getting LUN number of OS drive")
-            cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
-            resp = os.popen(cmd=cmd).read()
+            if check_drive_count:
+                return resp[0], drive_count
+            else:
+                line_num = random.randint(1, drive_count)
+                LOGGER.info(f"Getting LUN number of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+                resp = os.popen(cmd=cmd).read()
 
-            numeric_filter = filter(str.isdigit, resp.split(':')[0])
-            host_num = "".join(numeric_filter)
+                numeric_filter = filter(str.isdigit, resp.split(':')[0])
+                host_num = "".join(numeric_filter)
 
-            LOGGER.info(f"Getting name of OS drive")
-            cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
-            resp = os.popen(cmd=cmd).read()
-            drive_name = resp.strip()
-            return True, drive_name, host_num, drive_count
+                LOGGER.info(f"Getting name of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+                resp = os.popen(cmd=cmd).read()
+                drive_name = resp.strip()
+                return True, drive_name, host_num, drive_count
         except Exception as error:
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
