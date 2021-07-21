@@ -166,9 +166,7 @@ class TestHAClusterHealth:
         LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
         self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             node_name = self.srvnode_list[node]
             LOGGER.info(f"Shutting down {node_name}")
             if self.setup_type == "HW":
@@ -267,9 +265,7 @@ class TestHAClusterHealth:
             "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
         self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -815,9 +811,7 @@ class TestHAClusterHealth:
             private_ip_list,
             iface_list)
 
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             LOGGER.info(
                 "Make the private data interface %s down for %s",
                 iface_list[node],

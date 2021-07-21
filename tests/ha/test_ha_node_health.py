@@ -170,9 +170,7 @@ class TestHANodeHealth:
         self.restored = False
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             node_name = self.srvnode_list[node]
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
@@ -266,9 +264,7 @@ class TestHANodeHealth:
         self.restored = False
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -370,9 +366,7 @@ class TestHANodeHealth:
             "List of private data IP : {} and interfaces on all nodes: {}" .format(
                 private_ip_list, iface_list))
 
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             node_name = self.srvnode_list[node]
             LOGGER.info(
                 "Make the private data interface %s down for %s", iface_list[node], node_name)
