@@ -52,13 +52,14 @@ class TestServerFruAlerts:
         """Setup for module."""
         LOGGER.info("Running setup_class")
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
-        cls.host = CMN_CFG["nodes"][0]["host"]
+        # cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.hostname = CMN_CFG["nodes"][0]["hostname"]
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.dg_failure = False
 
-        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
-                                      password=cls.passwd)
+        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname, password=cls.passwd)
         cls.node_obj = Node(hostname=cls.host, username=cls.uname,
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
@@ -75,6 +76,11 @@ class TestServerFruAlerts:
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.s3obj = S3H_OBJ
         cls.alert_types = RAS_TEST_CFG["alert_types"]
+        cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
+        node_d = cls.health_obj.get_current_srvnode()
+        cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
+            cls.hostname.split('.')[0] in node_d.keys() else assert_true(
+            False, "Node name not found")
 
         LOGGER.info("Successfully ran setup_class")
 
@@ -320,3 +326,400 @@ class TestServerFruAlerts:
         assert_true(result, "Test failed. Please check summary for failed "
                             "step.")
         LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23622")
+    @CTFailOn(error_handler)
+    def test_os_disk_alert_persistent_node_reboot_23622(self):
+        """
+        TEST-23622: Test verifies fault and fault resolved alerts of OS disk
+        are persistent across node reboot.
+        """
+        LOGGER.info("STARTED: Test alerts for OS disk are persistent across "
+                    "node reboot")
+
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        test_cfg = RAS_TEST_CFG["TEST-23606"]
+
+        LOGGER.info("Getting details of drive on which faults are to "
+                    "be created")
+        resp = self.ras_test_obj.get_node_drive_details()
+        assert_true(resp[0], f"Failed to get details of OS disks. "
+                             f"Response: {resp}")
+
+        drive_name = resp[1].split("/")[2]
+        host_num = resp[2]
+        drive_count = resp[3]
+        LOGGER.info("Drive details:\nOS drive name: %s \n"
+                    "Host number: %s \nOS Drive count: %s \n",
+                    drive_name, host_num, drive_count)
+
+        os_disk_faults = {
+            'availability': {'alert_enum': AlertType.OS_DISK_DISABLE,
+                             'resolve_enum': AlertType.OS_DISK_ENABLE,
+                             'fault_alert': self.alert_types["missing"],
+                             'resolved_alert': self.alert_types["insertion"]
+                             }
+                          }
+        df = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
+                          index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                'Step7 Step8'.split())
+
+        for key, value in os_disk_faults.items():
+            df[key] = 'Pass'
+            alert_enum = value['alert_enum']
+            resolve_enum = value['resolve_enum']
+            fault_alert = value['fault_alert']
+            resolved_alert = value['resolved_alert']
+            LOGGER.info("Step 1: Generating %s os disk fault on drive %s",
+                        key, drive_name)
+            resp = self.alert_api_obj.generate_alert(
+                alert_enum,
+                input_parameters={"drive_name": drive_name,
+                                  "drive_count": drive_count})
+            if not resp[0]:
+                df[key]['Step1'] = 'Fail'
+                LOGGER.error("Step 1: Failed to create fault. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 1: Successfully created fault on disk %s\n "
+                            "Response: %s", drive_name, resp)
+
+            time.sleep(self.cm_cfg["sleep_val"])
+            if self.start_msg_bus:
+                LOGGER.info("Step 2: Verifying alert logs for fault alert ")
+                alert_list = [test_cfg["resource_type"],
+                              fault_alert]
+                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                if not resp[0]:
+                    df[key]['Step2'] = 'Fail'
+                    LOGGER.error("Step 2: Expected alert not found. Error: %s",
+                                 resp[1])
+                else:
+                    LOGGER.info("Step 2: Checked generated alert logs. "
+                                "Response: %s", resp)
+
+            LOGGER.info("Step 3: Checking CSM REST API for alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              fault_alert,
+                                                              False,
+                                                              test_cfg[
+                                                               "resource_type"])
+
+            if not resp_csm[0]:
+                df[key]['Step3'] = 'Fail'
+                LOGGER.error("Step 3: Expected alert not found. Error: %s",
+                             test_cfg["csm_error_msg"])
+            else:
+                LOGGER.info("Step 3: Successfully checked CSM REST API for "
+                            "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Step 4: Rebooting node %s ", self.host)
+            resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
+                                             read_lines=True, exc=False)
+            LOGGER.info(
+                "Step 4: Rebooted node: %s, Response: %s", self.host, resp)
+            time.sleep(self.cm_cfg["reboot_delay"])
+
+            LOGGER.info("Step 5: Checking if fault alert is persistent "
+                        "in CSM across node reboot")
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              fault_alert,
+                                                              False,
+                                                              test_cfg[
+                                                               "resource_type"])
+
+            if not resp_csm[0]:
+                df[key]['Step5'] = 'Fail'
+                LOGGER.error("Step 5: Expected alert not found. Error: %s",
+                             test_cfg["csm_error_msg"])
+            else:
+                LOGGER.info("Step 5: Successfully checked CSM REST API for "
+                            "fault alert persistent across node reboot. "
+                            "Response: %s", resp_csm)
+
+            LOGGER.info("Step 6: Resolving fault")
+            resp = self.alert_api_obj.generate_alert(
+                resolve_enum,
+                input_parameters={"host_num": host_num,
+                                  "drive_count": drive_count})
+
+            if not resp[0]:
+                df[key]['Step6'] = 'Fail'
+                LOGGER.error("Step 6: Failed to resolve fault. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 6: Successfully resolved fault for disk %s\n "
+                            "Response: %s", drive_name, resp)
+
+            if self.start_msg_bus:
+                LOGGER.info("Step 7: Checking the generated alert logs")
+                alert_list = [test_cfg["resource_type"],
+                              resolved_alert]
+                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                if not resp[0]:
+                    df[key]['Step7'] = 'Fail'
+                    LOGGER.error("Step 7: Expected alert not found. Error: %s",
+                                 resp[1])
+                else:
+                    LOGGER.info("Step 7: Checked generated alert logs\n "
+                                "Response: %s", resp)
+                    LOGGER.info("Step 7: Checked generated alert logs")
+
+            LOGGER.info("Step 8: Checking CSM REST API for alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              resolved_alert,
+                                                              True,
+                                                              test_cfg[
+                                                               "resource_type"])
+
+            if not resp_csm[0]:
+                df[key]['Step8'] = 'Fail'
+                LOGGER.error("Step 8: Expected alert not found. Error: %s",
+                             test_cfg["csm_error_msg"])
+            else:
+                LOGGER.info("Step 8: Successfully checked CSM REST API for "
+                            "fault alert. Response: %s", resp_csm)
+
+        LOGGER.info("Summary of test: \n%s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
+
+        LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
+                    "node reboot")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23624")
+    @CTFailOn(error_handler)
+    def test_os_disk_alert_persistent_sspl_stop_start_23624(self):
+        """
+        TEST-23624: Test verifies fault and fault resolved alerts of OS disk
+        are persistent across sspl stop and start.
+        """
+        LOGGER.info("STARTED: Test alerts for OS disk are persistent across "
+                    "sspl stop and start")
+
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        test_cfg = RAS_TEST_CFG["TEST-23606"]
+        service = self.cm_cfg["service"]
+
+        LOGGER.info("Getting details of drive on which faults are to "
+                    "be created")
+        resp = self.ras_test_obj.get_node_drive_details()
+        assert_true(resp[0], f"Failed to get details of OS disks. "
+                             f"Response: {resp}")
+
+        drive_name = resp[1].split("/")[2]
+        host_num = resp[2]
+        drive_count = resp[3]
+        LOGGER.info("Drive details:\nOS drive name: %s \n"
+                    "Host number: %s \nOS Drive count: %s \n",
+                    drive_name, host_num, drive_count)
+
+        os_disk_faults = {
+            'availability': {'alert_enum': AlertType.OS_DISK_DISABLE,
+                             'resolve_enum': AlertType.OS_DISK_ENABLE,
+                             'fault_alert': self.alert_types["missing"],
+                             'resolved_alert': self.alert_types["insertion"]
+                             }
+            }
+        df = pd.DataFrame(columns=f"{list(os_disk_faults.keys())[0]} ".split(),
+                          index='Step1 Step2 Step3 Step4 Step5 Step6 '
+                                'Step7 Step8 Step9 Step10'.split())
+
+        for key, value in os_disk_faults.items():
+            df[key] = 'Pass'
+            alert_enum = value['alert_enum']
+            resolve_enum = value['resolve_enum']
+            fault_alert = value['fault_alert']
+            resolved_alert = value['resolved_alert']
+
+            LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
+                        self.sspl_resource_id)
+            resp = self.health_obj.pcs_resource_ops_cmd(
+                command="ban", resources=[self.sspl_resource_id],
+                srvnode=self.current_srvnode)
+            if not resp:
+                df[key]['Step1'] = 'Fail'
+                assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
+                                  f"on node {self.current_srvnode}")
+            LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
+            LOGGER.info("Step 1: Checking if SSPL is in stopped state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                               "sspl_service"]],
+                                                    decode=True, exc=False)
+            if resp[0] != "inactive":
+                df[key]['Step1'] = 'Fail'
+                compare(resp[0], "inactive")
+            else:
+                LOGGER.info("Step 1: Successfully stopped SSPL service")
+
+            LOGGER.info("Step 2: Generating %s os disk fault on drive %s",
+                        key, drive_name)
+            resp = self.alert_api_obj.generate_alert(
+                alert_enum,
+                input_parameters={"drive_name": drive_name,
+                                  "drive_count": drive_count})
+            if not resp[0]:
+                df[key]['Step2'] = 'Fail'
+                LOGGER.error("Step 2: Failed to create fault. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 2: Successfully created fault on disk %s\n "
+                            "Response: %s", drive_name, resp)
+
+            LOGGER.info("Step 3: Starting SSPL service")
+            resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
+                                                        resources=[
+                                                         self.sspl_resource_id],
+                                                        srvnode=
+                                                        self.current_srvnode)
+            if not resp:
+                df[key]['Step3'] = 'Fail'
+                assert_true(resp, f"Failed to clear/start "
+                                  f" {self.sspl_resource_id} "
+                                  f"on node {self.current_srvnode}")
+            LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
+            LOGGER.info("Step 3: Checking if SSPL is in running state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                               "sspl_service"]],
+                                                    decode=True, exc=False)
+            if resp[0] != "active":
+                df[key]['Step3'] = 'Fail'
+                compare(resp[0], "active")
+            else:
+                LOGGER.info("Step 3: Successfully started SSPL service")
+
+            time.sleep(self.cm_cfg["sleep_val"])
+            if self.start_msg_bus:
+                LOGGER.info("Step 4: Verifying alert logs for fault alert ")
+                alert_list = [test_cfg["resource_type"],
+                              fault_alert]
+                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                if not resp[0]:
+                    df[key]['Step4'] = 'Fail'
+                    LOGGER.error("Step 4: Expected alert not found. Error: %s",
+                                 resp[1])
+                else:
+                    LOGGER.info("Step 4: Checked generated alert logs. "
+                                "Response: %s", resp)
+
+            LOGGER.info("Step 5: Checking CSM REST API for alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              fault_alert,
+                                                              False,
+                                                              test_cfg[
+                                                               "resource_type"])
+
+            if not resp_csm[0]:
+                df[key]['Step5'] = 'Fail'
+                LOGGER.error("Step 5: Expected alert not found. Error: %s",
+                             test_cfg["csm_error_msg"])
+            else:
+                LOGGER.info("Step 5: Successfully checked CSM REST API for "
+                            "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Step 6: Again stopping pcs resource for SSPL: %s",
+                        self.sspl_resource_id)
+            resp = self.health_obj.pcs_resource_ops_cmd(
+                command="ban", resources=[self.sspl_resource_id],
+                srvnode=self.current_srvnode)
+            if not resp:
+                df[key]['Step6'] = 'Fail'
+                assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
+                                  f"on node {self.current_srvnode}")
+            LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
+            LOGGER.info("Step 6: Checking if SSPL is in stopped state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                               "sspl_service"]],
+                                                    decode=True, exc=False)
+            if resp[0] != "inactive":
+                df[key]['Step6'] = 'Fail'
+                compare(resp[0], "inactive")
+            else:
+                LOGGER.info("Step 6: Successfully stopped SSPL service")
+
+            LOGGER.info("Step 7: Resolving fault")
+            resp = self.alert_api_obj.generate_alert(
+                resolve_enum,
+                input_parameters={"host_num": host_num,
+                                  "drive_count": drive_count})
+
+            if not resp[0]:
+                df[key]['Step7'] = 'Fail'
+                LOGGER.error("Step 7: Failed to resolve fault. Error: %s",
+                             resp[1])
+            else:
+                LOGGER.info("Step 7: Successfully resolved fault for disk %s\n "
+                            "Response: %s", drive_name, resp)
+
+            LOGGER.info("Step 8: Starting SSPL service")
+            resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
+                                                        resources=[
+                                                         self.sspl_resource_id],
+                                                        srvnode=
+                                                        self.current_srvnode)
+            if not resp:
+                df[key]['Step8'] = 'Fail'
+                assert_true(resp, f"Failed to clear/start "
+                                  f" {self.sspl_resource_id} "
+                                  f"on node {self.current_srvnode}")
+            LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
+            LOGGER.info("Step 8: Checking if SSPL is in running state.")
+            resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                    services=[service[
+                                                               "sspl_service"]],
+                                                    decode=True, exc=False)
+            if resp[0] != "active":
+                df[key]['Step8'] = 'Fail'
+                compare(resp[0], "active")
+            else:
+                LOGGER.info("Step 8: Successfully started SSPL service")
+
+            time.sleep(self.cm_cfg["sleep_val"])
+            if self.start_msg_bus:
+                LOGGER.info("Step 9: Checking the generated alert logs")
+                alert_list = [test_cfg["resource_type"],
+                              resolved_alert]
+                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                if not resp[0]:
+                    df[key]['Step9'] = 'Fail'
+                    LOGGER.error("Step 7: Expected alert not found. Error: %s",
+                                 resp[1])
+                else:
+                    LOGGER.info("Step 9: Checked generated alert logs\n "
+                                "Response: %s", resp)
+                    LOGGER.info("Step 9: Checked generated alert logs")
+
+            LOGGER.info("Step 10: Checking CSM REST API for alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              resolved_alert,
+                                                              True,
+                                                              test_cfg[
+                                                               "resource_type"])
+
+            if not resp_csm[0]:
+                df[key]['Step10'] = 'Fail'
+                LOGGER.error("Step 10: Expected alert not found. Error: %s",
+                             test_cfg["csm_error_msg"])
+            else:
+                LOGGER.info("Step 10: Successfully checked CSM REST API for "
+                            "fault alert. Response: %s", resp_csm)
+
+        LOGGER.info("Summary of test: \n%s", df)
+        result = False if 'Fail' in df.values else True
+        assert_true(result, "Test failed. Please check summary for failed "
+                            "step.")
+
+        LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
+                    "node reboot")
