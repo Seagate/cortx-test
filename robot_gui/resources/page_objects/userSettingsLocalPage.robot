@@ -234,7 +234,7 @@ Verify Change User Type Radio Button Disabled
     [Documentation]  Functionality to verify Change User Type Radio Button Disabled
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
-    ${status}=  Get Element Attribute  ${RADIO_BTN_VALUE_XPATH}  disabled
+    ${status}=  Element Should Be Disabled  ${RADIO_BTN_VALUE_XPATH}
     Log To Console And Report  ${status}
     Should be equal  ${status}  true
 
@@ -346,3 +346,4 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
+    

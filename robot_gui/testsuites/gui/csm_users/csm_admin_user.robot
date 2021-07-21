@@ -51,6 +51,24 @@ SSL certificate expiration alert Verification
     # Find the alert and verifiy
     Verify Presence SSL certificate expires alert  ${days}
 
+
+Create account with input Role and Change Role from Admin account
+    [Documentation]  This keyword is used to create user with given input role and then change it to other possible roles
+    [Arguments]  ${cur_role}
+    FOR   ${new_role}  IN  admin  manage  monitor
+        ${new_password}=  Generate New Password
+        ${new_user_name}=  Generate New User Name
+        Run Keyword If  "${cur_role}" == "${new_role}"  Log To Console And Report  match, skipping
+        ...  ELSE
+        ...  Run Keywords
+        ...  Log To Console And Report  Create Account with role: ${cur_role}
+        ...  AND  Create New CSM User  ${new_user_name}  ${new_password}  ${cur_role}
+        ...  AND  Click On Confirm Button
+        ...  AND  Verify New User  ${new_user_name}
+        ...  AND  Edit CSM User Type  ${new_user_name}  ${new_role}
+        ...  AND  Delete CSM User  ${new_user_name}
+    END
+
 *** Test Cases ***
 
 TEST-5326
@@ -473,3 +491,37 @@ TEST-11153
     ...  Reference : https://jts.seagate.com/browse/TEST-11153
     [Tags]  full    TEST-11153
     SSL certificate expiration alert Verification  0
+
+TEST-23502
+    [Documentation]  Test that admin user should able to reset other users role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23502
+    [Tags]  Priority_High  TEST-23502
+    Navigate To Page  ${page_name}
+    FOR   ${cur_role}  IN   admin  manage  monitor
+        Create account with input Role and Change Role from Admin account  ${cur_role}
+    END
+
+TEST-23051
+    [Documentation]  Test that admin user should able to reset other uses password with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23051
+    [Tags]  Priority_High  TEST-23051
+    Navigate To Page  ${page_name}
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Log To Console And Report  Create Account with role: admin
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    ${change_password}=  Generate New Password
+    Edit CSM User Password  ${new_user_name}  ${change_password}
+    Re-login  ${new_user_name}  ${change_password}  MANAGE_MENU_ID
+    Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
+    Delete CSM User  ${new_user_name}
+
+TEST-23500
+    [Documentation]  Test that admin user should not able to reset own role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23500
+    [Tags]  Priority_High  TEST-23500
+    Navigate To Page  ${page_name}
+    Verify Change User Type Radio Button Disabled  ${username}
+
