@@ -346,4 +346,3 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
-    

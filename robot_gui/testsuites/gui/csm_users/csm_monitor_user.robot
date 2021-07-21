@@ -190,12 +190,10 @@ TEST-23053
     Log To Console And Report  Create Account with role: monitor
     ${monitor_user_name}  ${monitor_user_password}=  Create and login with CSM monitor user
     wait for page or element to load
-
     @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{admin_users}
         Log To Console And Report  Verify Edit Action Disable for ${user}
         Verify Edit Action Disabled On The Table Element  ${user}
     END
-
     Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${monitor_user_name}
