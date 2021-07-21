@@ -11,7 +11,7 @@ Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
 #Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-...  AND  Close Browser
+#...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -186,13 +186,9 @@ TEST-23044
     [Tags]  Priority_High  user_role  TEST-23044
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-#    ${new_admin_user_name}=  Generate New User Name
-#    ${new_admin_password}=  Generate New Password
-#    Navigate To Page  ${page_name}
-    Click button  ${ADD_USER_BUTTON_ID}
+    Click On Add User Button
     Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
-    Click button  ${CANCEL_NEW_CSM_USER_BUTTON_ID}
+    Click On Cancel Button
     Re-login  ${username}  ${password}  ${page_name}
     wait for page or element to load
     Delete CSM User  ${new_user_name}
-

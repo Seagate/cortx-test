@@ -79,7 +79,6 @@ Delete Logged In CSM User
     wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=30
     Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
 
-
 Verify Only Valid User Allowed For Username
     [Documentation]  Functionality to validate correc user name
     FOR    ${value}    IN    @{INVALID_LOCAL_USER}
