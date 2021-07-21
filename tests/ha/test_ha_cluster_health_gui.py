@@ -42,7 +42,7 @@ from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.ha.ha_common_libs import HALibs
-from libs.ha.ha_common_libs import HAGUILibs
+from libs.ha.ha_common_libs_gui import HAGUILibs
 
 LOGGER = logging.getLogger(__name__)
 
