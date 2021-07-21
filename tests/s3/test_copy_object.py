@@ -60,9 +60,11 @@ class TestCopyObjects:
         2. Check cluster status, all services are running.
         """
         LOGGER.info("STARTED: test setup.")
-        LOGGER.info("Setup s3 bench tool")
-        res = s3bench.setup_s3bench()
-        assert_utils.assert_true(res, res)
+        self.nodes = CMN_CFG["nodes"]
+        LOGGER.info("Check s3 bench tool installed.")
+        res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
+        assert_utils.assert_true(
+            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestS3CopyObject")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -129,9 +131,8 @@ class TestCopyObjects:
         """Check the cluster health."""
         LOGGER.info(
             "Check cluster status, all services are running.")
-        nodes = CMN_CFG["nodes"]
-        LOGGER.info(nodes)
-        for _, node in enumerate(nodes):
+        LOGGER.info(self.nodes)
+        for _, node in enumerate(self.nodes):
             health_obj = Health(hostname=node["hostname"],
                                 username=node["username"],
                                 password=node["password"])
@@ -181,32 +182,6 @@ class TestCopyObjects:
             f"failed to generate log: {resp[1]}")
         LOGGER.info("ENDED: s3 io's operations.")
 
-    def validate_parallel_execution(self, log_prefix=None):
-        """Check parallel execution failure."""
-        LOGGER.info("S3 parallel ios log validation started.")
-        logflist = system_utils.list_dir(s3bench.LOG_DIR)
-        log_path = None
-        for filename in logflist:
-            if filename.startswith(log_prefix):
-                log_path = os.path.join(s3bench.LOG_DIR, filename)
-        LOGGER.info("IO log path: %s", log_path)
-        assert_utils.assert_is_not_none(
-            log_path, "failed to generate logs for parallel S3 IO.")
-        lines = open(log_path).readlines()
-        resp_filtered = [
-            line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
-        LOGGER.info("'Error count' filtered list: %s", resp_filtered)
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        LOGGER.info("Observed no Error count in io log.")
-        error_kws = ["with error ", "panic", "status code", "exit status 2"]
-        for error in error_kws:
-            assert_utils.assert_not_equal(
-                error, ",".join(lines), f"{error} Found in S3Bench Run.")
-        LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
-        LOGGER.info("S3 parallel ios log validation completed.")
-
     def start_stop_validate_parallel_s3ios(
             self, ios=None, log_prefix=None, duration="0h2m"):
         """Start/stop parallel s3 io's and validate io's worked successfully."""
@@ -217,7 +192,7 @@ class TestCopyObjects:
             if not self.parallel_ios.is_alive():
                 self.parallel_ios.start()
             LOGGER.info("Parallel IOs started: %s for duration: %s",
-                          self.parallel_ios.is_alive(), duration)
+                        self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
                 resp = S3_OBJ.object_list(self.io_bucket_name)
@@ -227,10 +202,12 @@ class TestCopyObjects:
                     "Parallel IOs stopped: %s",
                     not self.parallel_ios.is_alive())
             if log_prefix:
-                self.validate_parallel_execution(log_prefix)
+                resp = system_utils.validate_s3bench_parallel_execution(
+                    s3bench.LOG_DIR, log_prefix)
+                assert_utils.assert_true(resp[0], resp[1])
 
-    def create_bucket_put_object(self,
-                                 s3_test_obj=None,
+    @staticmethod
+    def create_bucket_put_object(s3_test_obj=None,
                                  bucket_name=None,
                                  object_name=None,
                                  file_path=None,
@@ -319,7 +296,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19841_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19841_s3bench_ios", duration="0h4m")
         LOGGER.info("Step 3: Create bucket and put object in it.")
         s3_obj, s3_acl_obj = self.response1[1:3]
         resp = system_utils.create_file(
@@ -368,7 +345,7 @@ class TestCopyObjects:
             "FULL_CONTROL")
         LOGGER.info("Step 8: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19841_ios")
+            ios="Stop", log_prefix="TEST-19841_s3bench_ios")
         LOGGER.info(
             "Step 9: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -393,7 +370,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19842_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19842_s3bench_ios", duration="0h4m")
         LOGGER.info("Step 3: Create bucket and put object in it.")
         s3_obj, s3_acl_obj = self.response1[1:3]
         resp = system_utils.create_file(
@@ -444,7 +421,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("Step 8: Stop and validate S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19842_ios")
+            ios="Stop", log_prefix="TEST-19842_s3bench_ios")
         LOGGER.info(
             "Step 9: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -468,7 +445,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19843_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19843_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "Step 3: Create a bucket in Account1 and upload object in it.")
         canonical_id1, s3_obj1 = self.response1[:2]
@@ -533,7 +510,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19843_ios")
+            ios="Stop", log_prefix="TEST-19843_s3bench_ios")
         LOGGER.info(
             "Step 11: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -558,7 +535,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19844_ios", duration="0h6m")
+            ios="Start", log_prefix="TEST-19844_s3bench_ios", duration="0h6m")
         LOGGER.info(
             "Step 3: Create and upload object of size %s to the bucket.",
             object_size)
@@ -607,7 +584,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("Step 6: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19844_ios")
+            ios="Stop", log_prefix="TEST-19844_s3bench_ios")
         LOGGER.info(
             "Step 7: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -627,7 +604,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19846_ios", duration="0h6m")
+            ios="Start", log_prefix="TEST-19846_s3bench_ios", duration="0h6m")
         LOGGER.info(
             "Step 3: Create and upload object of size greater than 5GB to the bucket.")
         resp = system_utils.create_file(
@@ -670,7 +647,7 @@ class TestCopyObjects:
                 " copy source: 5368709120", error.message, error)
         LOGGER.info("Step 6: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19846_ios")
+            ios="Stop", log_prefix="TEST-19846_s3bench_ios")
         LOGGER.info(
             "Step 8: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -695,7 +672,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19847_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19847_s3bench_ios", duration="0h4m")
         LOGGER.info("Step 3: Create a bucket in Account1.")
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
@@ -763,7 +740,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 11: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19847_ios")
+            ios="Stop", log_prefix="TEST-19847_s3bench_ios")
         LOGGER.info(
             "Step 12: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -789,7 +766,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19848_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19848_s3bench_ios", duration="0h4m")
         LOGGER.info("Step 3: Create a bucket in Account1.")
         s3_obj1, s3_acl_obj1 = self.response1[1:3]
         resp = system_utils.create_file(
@@ -856,7 +833,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("Step 12: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19848_ios")
+            ios="Stop", log_prefix="TEST-19848_s3bench_ios")
         LOGGER.info(
             "Step 14: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -877,7 +854,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19849_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19849_s3bench_ios", duration="0h4m")
         LOGGER.info("Step 3: Create a bucket in Account1.")
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
@@ -942,7 +919,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 11: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19849_ios")
+            ios="Stop", log_prefix="TEST-19849_s3bench_ios")
         LOGGER.info(
             "Step 12: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -963,7 +940,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19850_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19850_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create 2 buckets in same accounts and upload object to the above bucket1.")
         s3_obj1, s3_acl_obj1 = self.response1[1:3]
@@ -1004,7 +981,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 10: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19850_ios")
+            ios="Stop", log_prefix="TEST-19850_s3bench_ios")
         LOGGER.info(
             "Step 13: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -1026,7 +1003,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19851_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19851_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "Step 3. Create a bucket in Account1 and upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1086,7 +1063,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("11. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19851_ios")
+            ios="Stop", log_prefix="TEST-19851_s3bench_ios")
         LOGGER.info(
             "setup 12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -1112,7 +1089,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19891_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19891_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create a bucket in Account1 and upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1170,7 +1147,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("11. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19891_ios")
+            ios="Stop", log_prefix="TEST-19891_s3bench_ios")
         LOGGER.info(
             "12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -1191,7 +1168,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19892_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19892_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create 2 buckets in same accounts upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1241,7 +1218,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19892_ios")
+            ios="Stop", log_prefix="TEST-19892_s3bench_ios")
         LOGGER.info(
             "10. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -1261,7 +1238,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19893_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19893_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create 2 buckets in same accounts upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1326,7 +1303,7 @@ class TestCopyObjects:
                 self.download_path), resp)
         LOGGER.info("10. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19893_ios")
+            ios="Stop", log_prefix="TEST-19893_s3bench_ios")
         LOGGER.info(
             "11. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1346,7 +1323,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19894_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19894_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create 2 buckets in same accounts upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1396,7 +1373,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19894_ios")
+            ios="Stop", log_prefix="TEST-19894_s3bench_ios")
         LOGGER.info(
             "10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1420,7 +1397,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19895_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19895_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create 2 buckets in same accounts upload object to the above bucket1.")
         resp = system_utils.create_file(
@@ -1476,7 +1453,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19895_ios")
+            ios="Stop", log_prefix="TEST-19895_s3bench_ios")
         LOGGER.info(
             "10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1500,7 +1477,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19896_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19896_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create a 2 bucket in Account1 and upload object in it.")
         resp = system_utils.create_file(
@@ -1552,7 +1529,7 @@ class TestCopyObjects:
         LOGGER.info("Matched ETag: %s, %s", put_etag, copy_etag)
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19896_ios")
+            ios="Stop", log_prefix="TEST-19896_s3bench_ios")
         LOGGER.info(
             "10. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -1573,7 +1550,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19897_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19897_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create a bucket in Account1 and upload object in it.")
         resp = system_utils.create_file(
@@ -1613,7 +1590,7 @@ class TestCopyObjects:
                 "Access Denied", error.message, error)
         LOGGER.info("8. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19897_ios")
+            ios="Stop", log_prefix="TEST-19897_s3bench_ios")
         LOGGER.info(
             "9. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1638,7 +1615,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19898_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19898_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create a bucket in Account1 and upload object in it.")
         resp = system_utils.create_file(
@@ -1678,7 +1655,7 @@ class TestCopyObjects:
                 "Access Denied", error.message, error)
         LOGGER.info("8. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19898_ios")
+            ios="Stop", log_prefix="TEST-19898_s3bench_ios")
         LOGGER.info(
             "9. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1706,7 +1683,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19899_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19899_s3bench_ios", duration="0h4m")
         LOGGER.info(
             "3. Create a bucket in Account1 and upload object in it.")
         resp = system_utils.create_file(
@@ -1757,7 +1734,7 @@ class TestCopyObjects:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("9. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19899_ios")
+            ios="Stop", log_prefix="TEST-19899_s3bench_ios")
         LOGGER.info(
             "10. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1769,10 +1746,11 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19900")
-    @pytest.mark.parametrize("object_name", ["new% (1234) ::#$$^**", "cp-object"])
+    @pytest.mark.parametrize("object_name",
+                             ["new% (1234) ::#$$^**", "cp-object"])
     def test_19900(self, object_name):
         """
-        Copy object while S3 IOs are in progress
+        Copy object while S3 IOs are in progress.
 
         Copy object specifying bucket name and object under folders with special character
         or string in object name.
@@ -1786,7 +1764,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("2. Start S3 IO")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_19900_ios", duration="0h4m")
+            ios="Start", log_prefix="TEST-19900_s3bench_ios", duration="0h4m")
         LOGGER.info("3. Create 2 buckets in same accounts .")
         resp = S3_OBJ.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -1860,7 +1838,7 @@ class TestCopyObjects:
                                  f"{self.object_name2} not present in {resp[1]}")
         LOGGER.info("10. Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_19900_ios")
+            ios="Stop", log_prefix="TEST-19900_s3bench_ios")
         LOGGER.info(
             "11. Check cluster status, all services are running after completing test")
         self.check_cluster_health()
@@ -1885,7 +1863,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_16899_ios", duration="0h3m")
+            ios="Start", log_prefix="TEST-16899_s3bench_ios", duration="0h3m")
         LOGGER.info("Step 3: Create bucket and put object in it.")
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
@@ -1910,7 +1888,7 @@ class TestCopyObjects:
                 "location or encryption attributes.", error.message, error.message)
         LOGGER.info("Step 5: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_16899_ios")
+            ios="Stop", log_prefix="TEST-16899_s3bench_ios")
         LOGGER.info(
             "Step 6: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -1935,7 +1913,7 @@ class TestCopyObjects:
         self.check_cluster_health()
         LOGGER.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_17110_ios", duration="0h3m")
+            ios="Start", log_prefix="TEST-17110_s3bench_ios", duration="0h3m")
         LOGGER.info("Step 3: Create bucket and put object in it.")
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
@@ -1979,7 +1957,7 @@ class TestCopyObjects:
                 " The specified key does not exist.", error.message, error.message)
         LOGGER.info("Step 7: Stop and validate parallel S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_17110_ios")
+            ios="Stop", log_prefix="TEST-17110_s3bench_ios")
         LOGGER.info(
             "Step 8: Check cluster status, all services are running")
         self.check_cluster_health()
