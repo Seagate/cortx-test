@@ -3015,3 +3015,30 @@ test_22287:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
+
+test_22292:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action:
+          "s3:PutObject"
+          "s3:PutObjectTagging"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22298:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+         CanonicalUser: "{}"
+        Action:
+         "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Deny",
+        Principal":
+          CanonicalUser: "{}"
+        Action:
+          "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
