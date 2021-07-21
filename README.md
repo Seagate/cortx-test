@@ -346,7 +346,7 @@ pytest --capture=no --te_tkt TEST-17412 -d --tx 2*popen -rA unittests\<Your_Test
 pytest --capture=no --te_tkt TEST-17412 -rA unittests\test_reporting_and_logging_hooks.py
 ```
 
-## Client Configuration:
+## Client Hardware Configuration
 While ordering client on ssc-cloud, make sure
 1. Have at least 8GB RAM for it, to support 1GB object size in s3bench tests.
 2. For more large number of parallel IO connections, good to have 8 CPUs.
