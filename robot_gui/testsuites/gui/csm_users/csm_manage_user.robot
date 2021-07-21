@@ -184,7 +184,7 @@ TEST-23782
     Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
     Click On Confirm Button
     wait for page or element to load
-    Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${new_csm_user_name}
+    Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
     wait for page or element to load
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${new_csm_user_name}

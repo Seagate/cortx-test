@@ -76,8 +76,8 @@ TEST-1239
     Verify that monitor user is not able to create delete csm user
     @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  3
     FOR    ${user}    IN    @{users_list}
-        Run Keyword If  "${user}" == "${new_user_name}"  Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user}
-        ...  ELSE  Verify Action Disabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user}
+        Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
+        ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}
     END
     ${changed_password}=  Generate New Password
     ${new_email}=  Generate New User Email

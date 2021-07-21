@@ -498,4 +498,4 @@ TEST-23050
         Delete CSM User  ${user}
     END
     # Should not be able to delete last user
-    Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+    Verify Delete Action Disabled On The Table Element  ${username}
