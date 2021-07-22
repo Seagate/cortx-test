@@ -172,6 +172,7 @@ CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent:
 CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
+CSM_TABLE_DROPDOWN_XPATH ='//*[@class="cortx-dropdown-title"]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
 ADD_USER_USER_NAME_INPUT_BOX_ID = "txtUsername" #"txtLocalHostname"
 ADD_USER_PASSWORD_INPUT_ID = "txtLocalPass"

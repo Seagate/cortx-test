@@ -207,3 +207,41 @@ TEST-23044
     Re-login  ${username}  ${password}  ${page_name}
     wait for page or element to load
     Delete CSM User  ${new_user_name}
+
+TEST-23889
+    [Documentation]  Test that manager user is able to change role of other manage role user (NOT self) from manage role to monitor role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23889
+    [Tags]  Priority_High  TEST-23889
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
+    Click On Confirm Button
+    Edit CSM User Type  ${new_csm_user_name}  monitor
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+    Delete CSM User  ${new_csm_user_name}
+
+TEST-23888
+    [Documentation]  Test that manager user is able to change role of other manage role user (NOT self) from manage role to monitor role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23888
+    [Tags]  Priority_High  TEST-23888
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click On Confirm Button
+    Edit CSM User Type  ${new_csm_user_name}  manage
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+    Delete CSM User  ${new_csm_user_name}
+
+TEST-23872
+    [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23872
+    [Tags]  Priority_High  TEST-23872  S3_test  Smoke_test
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
+    Run Keyword If  "${text}" == "${CSM_DROPDOWN_VALUE}"  Log to Console and Report  Default Rows are 10
