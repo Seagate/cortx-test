@@ -1975,7 +1975,7 @@ class TestCopyObjects:
         bucket_policy = BKT_POLICY_CONF["test_22283"]["bucket_policy"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object uploaded "
                     "to the above bucket.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1 = self.response1[:2]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         assert_utils.assert_true(resp[0], resp[1])
@@ -1983,7 +1983,8 @@ class TestCopyObjects:
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: From Account2 create a bucket and check bucket got created.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2 = self.response2[1]
+        access_key2, secret_key2 = self.response2[-2:]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -2003,7 +2004,7 @@ class TestCopyObjects:
                 " Access Denied",
                 err.message,
                 err.message)
-        LOGGER.info("Step 6: Using bucket policy Allow PutObject access to Account1 on "
+        LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
@@ -2016,16 +2017,16 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 5: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy, resp[1])
-        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: From Account1 copy object from bucket1 to bucket2.")
         status, response = s3_obj1.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        LOGGER.info("Step 9: From Account2 List Objects from bucket2. Check object is present "
+        LOGGER.info("Step 7: From Account2 List Objects from bucket2. Check object is present "
                     "and of same size as source object.")
         status, response = s3_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(status, response)
@@ -2048,7 +2049,7 @@ class TestCopyObjects:
         bucket_policy = BKT_POLICY_CONF["test_22287"]["bucket_policy"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object uploaded "
                     "to the above bucket.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1 = self.response1[:2]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         assert_utils.assert_true(resp[0], resp[1])
@@ -2075,22 +2076,22 @@ class TestCopyObjects:
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied",
                 err.message, err.message)
-        LOGGER.info("Step 6: From Account2 on bucket2 grant Write ACL to Account1 and "
+        LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and "
                     "full control to account2.")
         resp = s3_acl_obj2.put_bucket_multiple_grantee(
             bucket_name=self.bucket_name2,
             grant_full_control="id={}".format(canonical_id2),
             grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 7: From Account2 check the applied ACL in above step.")
+        LOGGER.info("Step 5: From Account2 check the applied ACL in above step.")
         resp = s3_acl_obj2.get_bucket_acl(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 8: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: From Account1 copy object from bucket1 to bucket2.")
         status, response = s3_obj1.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        LOGGER.info("Step 9: From Account2 List Objects from bucket2 .Check object is present and"
+        LOGGER.info("Step 7: From Account2 List Objects from bucket2 .Check object is present and"
                     " of same size as source object.")
         status, response = s3_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(status, response)
@@ -2099,7 +2100,7 @@ class TestCopyObjects:
         assert_utils.assert_equal(put_etag, copy_etag,
                                   f"Failed to match put etag: '{put_etag}' with "
                                   f"copy etag: {copy_etag}")
-        LOGGER.info("Step 10: Using bucket policy Deny PutObject access to Account1 on"
+        LOGGER.info("Step 8: Using bucket policy Deny PutObject access to Account1 on"
                     " bucket2 of Account2.")
         bucket_policy['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy['Statement'][0]['Principal'][
@@ -2112,11 +2113,11 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 9: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy, resp[1])
-        LOGGER.info("Step 12: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 10: From Account1 copy object from bucket1 to bucket2.")
         try:
             status, response = s3_obj1.copy_object(
                 self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
@@ -2139,7 +2140,8 @@ class TestCopyObjects:
         bucket_policy2 = BKT_POLICY_CONF["test_22292"]["bucket_policy"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object uploaded"
                     " to the above bucket.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1 = self.response1[:2]
+        access_key1, secret_key1 = self.response1[-2:]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         assert_utils.assert_true(resp[0], resp[1])
@@ -2147,7 +2149,8 @@ class TestCopyObjects:
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: From Account2 create a bucket and check bucket got created.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2 = self.response2[1]
+        access_key2, secret_key2 = self.response2[-2:]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -2166,7 +2169,7 @@ class TestCopyObjects:
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied",
                 err.message, err.message)
-        LOGGER.info("Step 3: Using bucket policy Allow PutObject access to Account1 on "
+        LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy1['Statement'][0]['Principal'][
@@ -2179,16 +2182,16 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy1)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 5: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy1, resp[1])
-        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: From Account1 copy object from bucket1 to bucket2.")
         status, response = s3_obj1.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        LOGGER.info("Step 6: From Account2 List Objects from bucket2. Check object is present and "
+        LOGGER.info("Step 7: From Account2 List Objects from bucket2. Check object is present and "
                     "of same size as source object.")
         status, response = s3_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(status, response)
@@ -2197,7 +2200,7 @@ class TestCopyObjects:
         assert_utils.assert_equal(put_etag, copy_etag,
                                   f"Failed to match put etag: '{put_etag}' "
                                   f"with copy etag: {copy_etag}")
-        LOGGER.info("Step 7: Put object tagging to the object1 of Account1 .")
+        LOGGER.info("Step 8: Put object tagging to the object1 of Account1 .")
         s3_tagging_usr_obj1 = S3TaggingTestLib(
             access_key=access_key1, secret_key=secret_key1)
         resp = s3_tagging_usr_obj1.set_object_tag(
@@ -2206,7 +2209,7 @@ class TestCopyObjects:
             key="designation",
             value="confidential")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 8: Get Object Tagging and check the tags are added .")
+        LOGGER.info("Step 9: Get Object Tagging and check the tags are added .")
         resp = s3_tagging_usr_obj1.get_object_tags(
             self.bucket_name1, self.object_name1)
         assert_utils.assert_true(resp[0], resp[1])
@@ -2218,7 +2221,7 @@ class TestCopyObjects:
             resp[1][0]["Value"],
             f"confidential{0}",
             resp[1])
-        LOGGER.info("Step 9: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 10: From Account1 copy object from bucket1 to bucket2.")
         try:
             status, response = s3_obj1.copy_object(
                 self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
@@ -2229,7 +2232,7 @@ class TestCopyObjects:
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied",
                 err.message, err.message)
-        LOGGER.info("Step 10: Using bucket policy Allow PutObject and PutObjectTagging access to "
+        LOGGER.info("Step 11: Using bucket policy Allow PutObject and PutObjectTagging access to "
                     "Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy2['Statement'][0]['Principal'][
@@ -2240,16 +2243,16 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 12: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy2, resp[1])
-        LOGGER.info("Step 12: From Account1 copy object from bucket1 to bucket2 .")
+        LOGGER.info("Step 13: From Account1 copy object from bucket1 to bucket2 .")
         status, response = s3_obj1.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        LOGGER.info("Step 13: From Account2 List Objects from bucket2. Check object is present and"
+        LOGGER.info("Step 14: From Account2 List Objects from bucket2. Check object is present and"
                     " of same size as source object.")
         status, response = s3_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(status, response)
@@ -2270,7 +2273,7 @@ class TestCopyObjects:
         bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object "
                     "uploaded to the above bucket.")
-        canonical_id1, s3_obj1, s3_acl_obj1, access_key1, secret_key1 = self.response1
+        canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
         resp = system_utils.create_file(
             fpath=self.file_path, count=10, b_size="1M")
         assert_utils.assert_true(resp[0], resp[1])
@@ -2278,7 +2281,8 @@ class TestCopyObjects:
             s3_obj1, self.bucket_name1, self.object_name1, self.file_path)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info("Step 2: From Account2 create a bucket and check bucket got created.")
-        canonical_id2, s3_obj2, s3_acl_obj2, access_key2, secret_key2 = self.response2
+        s3_obj2 = self.response2[1]
+        access_key2, secret_key2 = self.response2[-2:]
         resp = s3_obj2.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         resp = s3_obj2.bucket_list()
@@ -2297,7 +2301,7 @@ class TestCopyObjects:
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied",
                 err.message, err.message)
-        LOGGER.info("Step 3: Using bucket policy Allow PutObject access to Account1 on "
+        LOGGER.info("Step 4: Using bucket policy Allow PutObject access to Account1 on "
                     "bucket2 of Account2.")
         bucket_policy1['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy1['Statement'][0]['Principal'][
@@ -2310,16 +2314,16 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy1)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 4: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 5: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy1, resp[1])
-        LOGGER.info("Step 5: From Account1 copy object from bucket1 to bucket2.")
+        LOGGER.info("Step 6: From Account1 copy object from bucket1 to bucket2.")
         status, response = s3_obj1.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
-        LOGGER.info("Step 6: From Account2 List Objects from bucket2. Check object is present"
+        LOGGER.info("Step 7: From Account2 List Objects from bucket2. Check object is present"
                     " and of same size as source object.")
         status, response = s3_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(status, response)
@@ -2329,7 +2333,7 @@ class TestCopyObjects:
                                   f"Failed to match put etag: '{put_etag}' "
                                   f"with copy etag: {copy_etag}")
         LOGGER.info(
-            "Step 10: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
+            "Step 8: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
         resp = s3_acl_obj1.copy_object_acl(
             self.bucket_name1,
             self.object_name1,
@@ -2337,10 +2341,10 @@ class TestCopyObjects:
             self.object_name2,
             acl="bucket-owner-full-control")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: Get bucket ACLs and check the ACL's got added.")
+        LOGGER.info("Step 09: Get bucket ACLs and check the ACL's got added.")
         resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
         assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 12: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
+        LOGGER.info("Step 10: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
                     "to Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy2['Statement'][0]['Principal'][
@@ -2356,12 +2360,12 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 13: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy2, resp[1])
         LOGGER.info(
-            "Step 14: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
+            "Step 12: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
         try:
             resp = s3_acl_obj1.copy_object_acl(
                 self.bucket_name1,
