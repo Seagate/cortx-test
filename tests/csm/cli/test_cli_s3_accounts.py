@@ -119,6 +119,7 @@ class TestCliS3ACC:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-10872")
     @CTFailOn(error_handler)
     def test_1008_delete_s3_account(self):
@@ -754,6 +755,7 @@ class TestCliS3ACC:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-11231")
     @CTFailOn(error_handler)
     def test_882_perform_iam_operations(self):

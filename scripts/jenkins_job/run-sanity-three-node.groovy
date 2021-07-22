@@ -25,7 +25,7 @@ pipeline {
 		stage('CODE_CHECKOUT') {
 			steps{
 				cleanWs()
-			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test/']]])
+			    checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: 'https://github.com/Seagate/cortx-test.git']]])
 			}
 		}
 		stage('ENV_SETUP') {
@@ -75,6 +75,9 @@ deactivate
 		}
 		stage('SANITY_TEST_EXECUTION') {
 			steps{
+				script {
+			        env.Sanity_Failed = true
+			    }
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''#!/bin/sh
 source venv/bin/activate
@@ -106,7 +109,7 @@ deactivate
 		stage('REGRESSION_TEST_EXECUTION') {
 			steps {
 				script {
-			        Sanity_Failed = false
+			        env.Sanity_Failed = false
 			    }
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''#!/bin/sh
@@ -140,16 +143,8 @@ deactivate
 		    script {
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
-            		  Current_TP = records[0][0]
+            		  env.Current_TP = records[0][0]
         		  }
-        		  echo "TP: ${Current_TP}"
-        		  echo "Sanity Failed: ${Sanity_Failed}"
-        		  if ( "${Sanity_Failed}" == true ) {
-        		      echo "Alert: Sanity Failed"
-        		  }
-        		  else {
-        		      echo "Sanity Passed"
-		          }
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, *.png', followSymlinks: false

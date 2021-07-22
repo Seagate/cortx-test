@@ -120,6 +120,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7177")
     @CTFailOn(error_handler)
     def test_2393(self):
@@ -147,6 +148,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7178")
     @CTFailOn(error_handler)
     def test_2394(self):
@@ -253,6 +255,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7181")
     @CTFailOn(error_handler)
     def test_2395(self):
@@ -287,6 +290,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7182")
     @CTFailOn(error_handler)
     def test_2430(self):
@@ -366,6 +370,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7183")
     @CTFailOn(error_handler)
     def test_2400(self):
@@ -406,6 +411,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7184")
     @CTFailOn(error_handler)
     def test_2406(self):
@@ -551,6 +557,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7187")
     @CTFailOn(error_handler)
     def test_2403(self):
@@ -588,6 +595,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7190")
     @CTFailOn(error_handler)
     def test_2401(self):
@@ -629,6 +637,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7196")
     @CTFailOn(error_handler)
     def test_2410(self):
@@ -786,6 +795,7 @@ class TestCortxcli:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-7198")
     @CTFailOn(error_handler)
     def test_2407(self):
