@@ -25,7 +25,7 @@ import pytest
 from commons import configmanager
 from commons import cortxlogging
 from libs.jmeter.jmeter_integration import JmeterInt
-
+import re
 
 class TestCsmLoad():
     """Test cases for performing CSM REST API load testing using jmeter
@@ -35,8 +35,6 @@ class TestCsmLoad():
         """ This is method is for test suite set-up """
         cls.log.info("[STARTED]: Setup class")
         cls.log = logging.getLogger(__name__)
-        cls.cmn_conf = configmanager.get_config_wrapper(
-            fpath="config/csm/test_jmeter.yaml")["common_conf"]
         cls.jmx_obj = JmeterInt()
         cls.log.info("[Completed]: Setup class")
 
@@ -52,6 +50,5 @@ class TestCsmLoad():
         jmx_file = "CSM_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         resp = self.jmx_obj.run_jmx(jmx_file)
-        assert resp[0], resp[1]
-        assert self.cmn_conf["error"] in resp[1], resp[1]
+        assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)

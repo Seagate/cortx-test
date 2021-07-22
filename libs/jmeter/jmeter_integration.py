@@ -24,9 +24,10 @@
 import string
 import os
 import logging
+import re
 from commons.commands import JMX_CMD
 from commons.utils import system_utils
-from config import CSM_REST_CFG
+from config import JMETER_CFG
 
 
 class JmeterInt():
@@ -37,11 +38,11 @@ class JmeterInt():
         """Initialization of attributes
         """
         self.log = logging.getLogger(__name__)
-        self.jmeter_path = "/root/apache-jmeter-5.4/bin"
-        self.jmx_path = "scripts/jmx_files"
-        self.jtl_log_path = "log/jmeter/"
+        self.jmeter_path = JMETER_CFG["jmeter_path"]
+        self.jmx_path = JMETER_CFG["jmx_path"]
+        self.jtl_log_path = JMETER_CFG["jtl_log_path"]
 
-    def verify_log(self, log_file: str):
+    def append_log(self, log_file: str):
         """Append and verify log to the log file.
 
         :param log_file: log file name
@@ -56,11 +57,11 @@ class JmeterInt():
         :param jmx_file: jmx file located in the JMX_PATH
         :return [tuple]: boolean, Error message
         """
-        content = {"test.environment.hostname": CSM_REST_CFG["mgmt_vip"],
-                   "test.environment.port": CSM_REST_CFG["port"],
+        content = {"test.environment.hostname": JMETER_CFG["mgmt_vip"],
+                   "test.environment.port": JMETER_CFG["port"],
                    "test.environment.protocol": "https",
-                   "test.environment.adminuser": CSM_REST_CFG["csm_admin_user"]["username"],
-                   "test.environment.adminpswd": CSM_REST_CFG["csm_admin_user"]["password"]}
+                   "test.environment.adminuser": JMETER_CFG["csm_admin_user"]["username"],
+                   "test.environment.adminpswd": JMETER_CFG["csm_admin_user"]["password"]}
         self.log.info("Updating : %s ", content)
         resp = self.update_user_properties(content)
         if not resp:
@@ -73,15 +74,25 @@ class JmeterInt():
         log_file_path = os.path.join(self.jtl_log_path, log_file)
         self.log.info("Log file name : %s ", log_file_path)
         cmd = JMX_CMD.format(self.jmeter_path, jmx_file_path, log_file_path, self.jtl_log_path)
-        self.log.info("JMeter command : %s", cmd)
-        resp = system_utils.run_local_cmd(cmd)
-        self.verify_log(log_file_path)
+        self.log.info("Executing JMeter command : %s", cmd)
+        result, resp = system_utils.run_local_cmd(cmd)
+        self.log.info("Verify if any errors are reported...")
+        if result:
+            self.log.info("Jmeter execution completed.")
+            result = re.match(r"Err:\s*0\s*.*", resp) is not None
+        self.log.info("No Errors are reported in the Jmeter execution.")
+        self.append_log(log_file_path)
         return resp
 
     def update_user_properties(self, content: dict):
         """Update the user.properties file in the JMX_PATH/bin
 
-        :param content: content to be updated.
+        :param content: content to be updated. Below new parameter are added to user.properties.
+        {"test.environment.hostname": <Server machine IP address> ,
+         "test.environment.port": <REST API Port number>,
+         "test.environment.protocol": "https" / "hhtp",
+         "test.environment.adminuser": <CSM admin user name>,
+         "test.environment.adminpswd": <CSM Admin password>}
         :return [bool]: True is updated successfully.
         """
         result = False
@@ -107,7 +118,7 @@ class JmeterInt():
                 file.writelines(lines)
             read_lines = self.read_user_properties()
             return read_lines == lines
-        except BaseException:
+        except Exception:
             self.log.error("Failed in updating the file")
         return result
 
