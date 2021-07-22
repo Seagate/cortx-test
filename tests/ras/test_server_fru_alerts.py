@@ -52,14 +52,20 @@ class TestServerFruAlerts:
         """Setup for module."""
         LOGGER.info("Running setup_class")
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
-        # cls.host = CMN_CFG["nodes"][0]["host"]
-        cls.uname = CMN_CFG["nodes"][0]["username"]
-        cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.hostname = CMN_CFG["nodes"][0]["hostname"]
-        cls.host = CMN_CFG["nodes"][0]["hostname"]
-        cls.dg_failure = False
+        cls.node_cnt = len(CMN_CFG["nodes"])
+        LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
 
-        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname, password=cls.passwd)
+        LOGGER.info("Randomly picking node to create fault")
+        cls.test_node = random.randint(1, cls.node_cnt)
+
+        LOGGER.info("Fault testing will be done on node: %s", cls.test_node)
+        cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
+        cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
+        cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
+        cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
+
+        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
+                                      password=cls.passwd)
         cls.node_obj = Node(hostname=cls.host, username=cls.uname,
                             password=cls.passwd)
         cls.health_obj = Health(hostname=cls.host, username=cls.uname,
@@ -81,6 +87,15 @@ class TestServerFruAlerts:
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
             cls.hostname.split('.')[0] in node_d.keys() else assert_true(
             False, "Node name not found")
+
+        LOGGER.info("Creating objects for all the nodes in cluster")
+        objs = cls.ras_test_obj.create_obj_for_nodes(ras_c=RASTestLib,
+                                                     node_c=Node,
+                                                     hlt_c=Health,
+                                                     ctrl_c=ControllerLib)
+
+        for i, key in enumerate(objs.keys()):
+            globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
 
         LOGGER.info("Successfully ran setup_class")
 
@@ -118,22 +133,21 @@ class TestServerFruAlerts:
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        # services = [service["sspl_service"], service["kafka_service"],
-        #             service["csm_web"], service["csm_agent"]]
+        services = [service["sspl_service"], service["kafka_service"],
+                    service["csm_web"], service["csm_agent"]]
         self.node_obj.send_systemctl_cmd(command="restart",
                                          services=[service["sspl_service"]],
                                          decode=True)
         time.sleep(self.cm_cfg["sleep_val"])
 
-        # Revisit when R2 HW is available.
-        # for svc in services:
-        #     LOGGER.info("Checking status of %s service", svc)
-        #     resp = self.s3obj.get_s3server_service_status(service=svc,
-        #                                                   host=self.host,
-        #                                                   user=self.uname,
-        #                                                   pwd=self.passwd)
-        #     assert resp[0], resp[1]
-        #     LOGGER.info("%s service is active/running", svc)
+        for svc in services:
+            LOGGER.info("Checking status of %s service", svc)
+            resp = self.s3obj.get_s3server_service_status(service=svc,
+                                                          host=self.host,
+                                                          user=self.uname,
+                                                          pwd=self.passwd)
+            assert resp[0], resp[1]
+            LOGGER.info("%s service is active/running", svc)
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
@@ -244,10 +258,13 @@ class TestServerFruAlerts:
             df['Iteration0']['Step2'] = 'Fail'
             LOGGER.error("Step 2: Failed to create fault. Error: %s", resp[1])
         else:
-            LOGGER.info("Step 2: Successfully disabled/disconnected drive\n "
+            LOGGER.info("Step 2: Successfully disabled/disconnected drive %s\n "
                         "Response: %s", drive_name, resp)
 
         time.sleep(self.cm_cfg["sleep_val"])
+        # TODO: Check cluster health
+        # resp = f"srv{self.test_node}_hlt".check_node_health()
+
         if self.start_msg_bus:
             LOGGER.info("Step 3: Verifying alert logs for fault alert ")
             alert_list = [test_cfg["resource_type"], self.alert_types["missing"]]
@@ -289,6 +306,10 @@ class TestServerFruAlerts:
         else:
             LOGGER.info("Step 5: Successfully connected disk %s\n Response: %s",
                         drive_name, resp)
+
+        time.sleep(self.cm_cfg["sleep_val"])
+        # TODO: Check cluster health
+        # resp = f"srv{self.test_node}_hlt".check_node_health()
 
         if self.start_msg_bus:
             LOGGER.info("Step 6: Checking the generated alert logs")
@@ -387,6 +408,9 @@ class TestServerFruAlerts:
                             "Response: %s", drive_name, resp)
 
             time.sleep(self.cm_cfg["sleep_val"])
+            # TODO: Check cluster health
+            # resp = f"srv{self.test_node}_hlt".check_node_health()
+
             if self.start_msg_bus:
                 LOGGER.info("Step 2: Verifying alert logs for fault alert ")
                 alert_list = [test_cfg["resource_type"],
@@ -422,6 +446,8 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 4: Rebooted node: %s, Response: %s", self.host, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
+            # TODO: Check cluster health
+            # resp = f"srv{self.test_node}_hlt".check_node_health()
 
             LOGGER.info("Step 5: Checking if fault alert is persistent "
                         "in CSM across node reboot")
@@ -453,6 +479,10 @@ class TestServerFruAlerts:
             else:
                 LOGGER.info("Step 6: Successfully resolved fault for disk %s\n "
                             "Response: %s", drive_name, resp)
+
+            time.sleep(self.cm_cfg["sleep_val"])
+            # TODO: Check cluster health
+            # resp = f"srv{self.test_node}_hlt".check_node_health()
 
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the generated alert logs")
@@ -686,6 +716,9 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
             time.sleep(self.cm_cfg["sleep_val"])
+            # TODO: Check cluster health
+            # resp = f"srv{self.test_node}_hlt".check_node_health()
+
             if self.start_msg_bus:
                 LOGGER.info("Step 9: Checking the generated alert logs")
                 alert_list = [test_cfg["resource_type"],
