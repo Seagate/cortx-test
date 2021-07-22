@@ -34,19 +34,19 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.constants import SwAlerts as SwAlertsconst
 from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
 from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 from libs.csm.cli.cortx_cli import CortxCli
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ha.ha_common_libs import HALibs
 from libs.csm.rest.csm_rest_system_health import SystemHealth
+from libs.ha.ha_common_libs_gui import HAGUILibs
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
 
-class TestHANodeHealth:
+class TestHANodeHealthGUI:
     """
     Test suite for node status tests of HA.
     """
@@ -78,6 +78,9 @@ class TestHANodeHealth:
         cls.srvnode_list = []
         cls.restored = True
 
+        # required for Robot_GUI
+        cls.ha_gui_obj = HAGUILibs()
+
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
@@ -106,7 +109,6 @@ class TestHANodeHealth:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.starttime = time.time()
-        self.nw_data = None
         LOGGER.info(
             "Checking in cortxcli and REST that all nodes are shown online and PCS clean.")
         for hlt_obj in self.hlt_list:
@@ -129,27 +131,21 @@ class TestHANodeHealth:
         LOGGER.info("Checking if all nodes online and PCS clean after test.")
         if not self.restored:
             for node in range(self.num_nodes):
+                resp = self.node_list[node].execute_cmd(common_cmds.GET_IFCS_STATUS, read_lines=True)
+                LOGGER.debug("All eth status for %s = %s", self.srvnode_list[node], resp)
+                for eth_data in resp:
+                    if "DOWN" in eth_data:
+                        LOGGER.info(
+                            "Make the %s interface back up for %s", eth_data[0:4], self.srvnode_list[node])
+                        self.node_list[node].execute_cmd(
+                            common_cmds.IP_LINK_CMD.format(
+                                eth_data[0:4], "up"), read_lines=True)
+
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
                     resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
-                if self.nw_data:
-                    resp = self.node_list[node].execute_cmd(
-                        common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
-                    LOGGER.debug("%s interface status for %s = %s",
-                    self.nw_data[0][node], self.srvnode_list[node], resp[0])
-                    if "DOWN" in resp[0]:
-                        LOGGER.info(
-                            "Make the %s interface back up for %s", self.nw_data[0][node], self.srvnode_list[node])
-                        self.node_list[node].execute_cmd(
-                            common_cmds.IP_LINK_CMD.format(
-                                self.nw_data[0][node], "up"), read_lines=True)
-                        resp = self.node_list[node].execute_cmd(common_cmds.CMD_PING.format(
-                                self.nw_data[1][node]), read_lines=True, exc=False)
-                        assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                                "Node interface still down.")
-                    LOGGER.info("All network interfaces are up")
 
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -158,20 +154,30 @@ class TestHANodeHealth:
         LOGGER.info("ENDED: Teardown Operations.")
 
     @pytest.mark.ha
-    @pytest.mark.tags("TEST-22544")
+    @pytest.mark.csm_gui
+    @pytest.mark.tags("TEST-22573")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe(self):
+    def test_nodes_one_by_one_safe_gui(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        Test to Check that correct node status is shown in Cortx GUI when node goes down
         and comes back up(one by one, safe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with safe shutdown.")
         self.restored = False
 
+        LOGGER.info("Acknowledge node alerts if present in new alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
+        LOGGER.info("Acknowledge node alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
+
         LOGGER.info("Shutdown nodes one by one and check status.")
-        for node in range(self.num_nodes):
+        node_list = list(range(self.num_nodes))
+        self.system_random.shuffle(node_list)
+        for node in node_list:
             node_name = self.srvnode_list[node]
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -204,10 +210,9 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["get"], False, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state failed")
+            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -232,17 +237,11 @@ class TestHANodeHealth:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
-            LOGGER.info("Checking PCS clean after powered on %s", node_name)
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
-
             LOGGER.info("Check for the node back up alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+
             self.starttime = time.time()
 
             LOGGER.info(
@@ -252,19 +251,29 @@ class TestHANodeHealth:
             "Completed: Test to check node status one by one for all nodes with safe shutdown.")
 
     @pytest.mark.ha
-    @pytest.mark.tags("TEST-22574")
+    @pytest.mark.csm_gui
+    @pytest.mark.tags("TEST-22575")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_unsafe(self):
+    def test_nodes_one_by_one_unsafe_gui(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
+        Test to Check that correct node status is shown in Cortx GUI when node goes down
         and comes back up(one by one, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
         self.restored = False
 
+        LOGGER.info("Acknowledge node alerts if present in new alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
+        LOGGER.info("Acknowledge node alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
+
         LOGGER.info("Shutdown nodes one by one and check status.")
-        for node in range(self.num_nodes):
+        node_list = list(range(self.num_nodes))
+        self.system_random.shuffle(node_list)
+        for node in node_list:
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -299,10 +308,10 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["get"], False, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state failed")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
             resp = self.ha_obj.check_service_other_nodes(
@@ -323,18 +332,13 @@ class TestHANodeHealth:
                 srvnode_list=self.srvnode_list,
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
-
-            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
+            LOGGER.info("All nodes are online in CLI and REST.")
 
             LOGGER.info("Check for the node back up alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+
             self.starttime = time.time()
 
             LOGGER.info(
@@ -344,36 +348,47 @@ class TestHANodeHealth:
             "Completed: Test to check node status one by one for all nodes with unsafe shutdown.")
 
     @pytest.mark.ha
-    @pytest.mark.tags("TEST-23274")
+    @pytest.mark.csm_gui
+    @pytest.mark.tags("TEST-23275")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_nw_down(self):
+    def test_nodes_one_by_one_nw_down_gui(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST when nw interface
+        Test to Check that correct node status is shown in Cortx GUI when nw interface
         on node goes down and comes back up (one by one)
         """
         LOGGER.info(
             "Started: Test to check node status one by one on all nodes when nw interface on node goes"
             "down and comes back up")
-        self.restored = False
+
+        LOGGER.info("Acknowledge node alerts if present in new alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
+        LOGGER.info("Acknowledge node alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
+        LOGGER.info("Acknowledge network alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_network_interface_back_up_alerts()
+        LOGGER.info("Fail if newtork alert in new alert table already present")
+        self.ha_gui_obj.assert_if_network_interface_down_alert_present()
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(
             node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
-        self.nw_data = [iface_list, private_ip_list]
         LOGGER.debug(
             "List of private data IP : {} and interfaces on all nodes: {}" .format(
                 private_ip_list, iface_list))
 
-        for node in range(self.num_nodes):
+        node_list = list(range(self.num_nodes))
+        self.system_random.shuffle(node_list)
+        for node in node_list:
             node_name = self.srvnode_list[node]
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
             LOGGER.info(
-                "Make the private data interface %s down for %s", iface_list[node], node_name)
+                "Make the private data interface down for {}".format(node_name))
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "down"), read_lines=True)
-
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -404,10 +419,11 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, False, iface_list[node])
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state failed")
+            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
+            LOGGER.info("Verify Network interface down alert")
+            self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node]) # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -417,7 +433,7 @@ class TestHANodeHealth:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info(
-                "Make the private data interface %s back up for %s", iface_list[node], node_name)
+                "Make the private data interface back up for {}".format(node_name))
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "up"), read_lines=True)
@@ -438,18 +454,13 @@ class TestHANodeHealth:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
-            LOGGER.info("Checking PCS clean after making the private data interface %s down for %s",
-            iface_list[node], node_name)
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
-
             LOGGER.info("Check for the node back up alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, SwAlertsconst.ResourceType.NW_INTFC, True, iface_list[node])
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            LOGGER.info("Verify Network interface up alert")
+            self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node]) # TODO: update argument if required in TE
+
             self.starttime = time.time()
 
             LOGGER.info(
@@ -460,18 +471,28 @@ class TestHANodeHealth:
             "down and comes back up")
 
     @pytest.mark.ha
-    @pytest.mark.tags("TEST-22623")
+    @pytest.mark.csm_gui
+    @pytest.mark.tags("TEST-22624")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_safe(self):
+    def test_single_node_multiple_times_safe_gui(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST, when node
+        Test to Check that correct node status is shown in Cortx GUI, when node
         goes down and comes back up(single node multiple times, safe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple safe shutdown.")
         self.restored = False
+
+        LOGGER.info("Acknowledge node alerts if present in new alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
+        LOGGER.info("Acknowledge node alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
+
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
+
+        LOGGER.info("Verify if node state online")
+        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -515,10 +536,9 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["get"], False, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state failed")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -542,18 +562,11 @@ class TestHANodeHealth:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
-            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
-
             LOGGER.info("Check for the node back up alert.")
+            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
 
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
             self.starttime = time.time()
 
             LOGGER.info(
@@ -564,19 +577,28 @@ class TestHANodeHealth:
             "Completed: Test to check single node status with multiple safe shutdown.")
 
     @pytest.mark.ha
-    @pytest.mark.tags("TEST-22626")
+    @pytest.mark.csm_gui
+    @pytest.mark.tags("TEST-22625")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_unsafe(self):
+    def test_single_node_multiple_times_unsafe_gui(self):
         """
-        Test to Check that correct node status is shown in Cortx CLI and REST, when node
+        Test to Check that correct node status is shown in Cortx GUI, when node
         goes down and comes back up(single node multiple times, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple unsafe shutdown.")
         self.restored = False
 
+        LOGGER.info("Acknowledge node alerts if present in new alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
+        LOGGER.info("Acknowledge node alerts if present in active alert table already")
+        self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
+
         LOGGER.info("Get the node for multiple unsafe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
+
+        LOGGER.info("Verify if node state online")
+        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
@@ -618,10 +640,9 @@ class TestHANodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["get"], False, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state failed")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -644,17 +665,13 @@ class TestHANodeHealth:
                 srvnode_list=self.srvnode_list,
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
-            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
+            LOGGER.info("Checked All nodes are online in CLI and REST.")
 
             LOGGER.info("Check for the node back up alert.")
-            resp = self.csm_alerts_obj.verify_csm_response(
-                self.starttime, self.alert_type["resolved"], True, "iem")
-            assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
+            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            LOGGER.info("Verify if node state online")
+            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
+
             self.starttime = time.time()
 
             LOGGER.info(
