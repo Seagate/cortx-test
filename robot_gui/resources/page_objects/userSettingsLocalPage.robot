@@ -344,3 +344,41 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
+
+SSL certificate expiration alert Verification
+    [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
+    [Arguments]  ${days}
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    wait for page or element to load  20s
+    ${installation_status_init} =  Format String  not_installed
+    ${installation_status_success} =  Format String  installation_successful
+    ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
+    ${file_name}=  Set Variable  stx_${days}.pem
+    Verify SSL status  ${installation_status_init}  ${file_name}
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${file_name}
+    # Find the alert and verifiy
+    Verify Presence SSL certificate expires alert  ${days}
+
+Create account with input Role and Change Role from Admin account
+    [Documentation]  This keyword is used to create user with given input role and then change it to other possible roles
+    [Arguments]  ${cur_role}
+    FOR   ${new_role}  IN  admin  manage  monitor
+        ${new_password}=  Generate New Password
+        ${new_user_name}=  Generate New User Name
+        Run Keyword If  "${cur_role}" == "${new_role}"  Log To Console And Report  match, skipping
+        ...  ELSE
+        ...  Run Keywords
+        ...  Log To Console And Report  Create Account with role: ${cur_role}
+        ...  AND  Create New CSM User  ${new_user_name}  ${new_password}  ${cur_role}
+        ...  AND  Click On Confirm Button
+        ...  AND  Verify New User  ${new_user_name}
+        ...  AND  Edit CSM User Type  ${new_user_name}  ${new_role}
+        ...  AND  Delete CSM User  ${new_user_name}
+    END
