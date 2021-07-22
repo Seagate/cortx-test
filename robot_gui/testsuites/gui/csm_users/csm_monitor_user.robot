@@ -198,6 +198,6 @@ TEST-23046
     [Tags]  Priority_High  user_role  TEST-23046
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Verify monitor user is not able to create csm user
+    Verify Monitor User Is Not Able To Create Csm User
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
