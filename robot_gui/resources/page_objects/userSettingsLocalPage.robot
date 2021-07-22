@@ -357,3 +357,13 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
+
+Verify Delete Action Disabled On The Table Element
+    [Documentation]  Verify delete action disbled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
+Verify Edit Action Disabled On The Table Element
+    [Documentation]  Verify edit action disbled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Disabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}

@@ -69,11 +69,21 @@ TEST-5269
     Delete CSM User  ${new_user_name}
 
 TEST-1239
-    [Documentation]  Test that CSM user with role monitor cannot create, delete Any CSM users.
+    [Documentation]  Test that CSM user with role monitor cannot create, delete Any CSM users and can not edit user other than itself.
     [Tags]  Priority_High  user_role  TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
     Verify that monitor user is not able to create delete csm user
+    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  3
+    FOR    ${user}    IN    @{users_list}
+        Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
+        ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}
+    END
+    ${changed_password}=  Generate New Password
+    ${new_email}=  Generate New User Email
+    Edit CSM User Details  ${new_user_name}  ${changed_password}  ${new_email}  ${new_password}
+    Re-login  ${new_user_name}  ${changed_password}  ${page_name}
+    Validate CSM Login Success  ${new_user_name}
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
