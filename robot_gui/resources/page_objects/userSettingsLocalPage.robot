@@ -300,7 +300,7 @@ Verify that monitor user is not able to create delete csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
        Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
 
-Verify that monitor user is not able to create csm user
+Verify monitor user is not able to create csm user
        [Documentation]  this keyword verifys that monitor user not able to add new csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
 
