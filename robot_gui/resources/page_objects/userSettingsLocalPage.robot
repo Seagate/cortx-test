@@ -6,7 +6,7 @@ Resource   ${RESOURCES}/resources/common/common.robot
 
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
-    Click button    ${add user button id}
+    Click button    ${ADD_USER_BUTTON_ID}
 
 Click On Cancel Button
     [Documentation]  Perform click operation on cancel button
@@ -65,12 +65,19 @@ Verify New User
     List Should Contain Value  ${users_list}  ${user_name}
 
 Delete CSM User
-    [Documentation]  Functionality to validate correc user name
+    [Documentation]  Functionality to Delete CSM user
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
     wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
     click on confirm button
+
+Delete Logged In CSM User
+    [Documentation]  Functionality to Delete the logged in csm user
+    [Arguments]  ${user_name}
+    Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=30
+    Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
 
 Verify Only Valid User Allowed For Username
     [Documentation]  Functionality to validate correc user name
@@ -292,6 +299,10 @@ Verify that monitor user is not able to create delete csm user
        [Documentation]  this keyword verifys that monitor user not able to edit or delete csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
        Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
+
+Verify Monitor User Is Not Able To Create Csm User
+       [Documentation]  this keyword verifys that monitor user not able to add new csm user
+       Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
 
 Verify bucket Section Not Present
     [Documentation]  Functionality to verify bucket User Section Not Present.
