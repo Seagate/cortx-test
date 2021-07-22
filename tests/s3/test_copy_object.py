@@ -474,12 +474,9 @@ class TestCopyObjects:
         LOGGER.info(
             "Step 5: From Account2 on bucket2 grant Write ACL to Account1 and"
             " full control to account2.")
-        resp = s3_acl_obj2.put_bucket_acl(
+        resp = s3_acl_obj2.put_bucket_multiple_grantee(
             bucket_name=self.bucket_name2,
-            grant_full_control="id={}".format(canonical_id2))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_acl_obj2.put_bucket_acl(
-            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2),
             grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
@@ -2080,12 +2077,9 @@ class TestCopyObjects:
                 err.message, err.message)
         LOGGER.info("Step 6: From Account2 on bucket2 grant Write ACL to Account1 and "
                     "full control to account2.")
-        resp = s3_acl_obj2.put_bucket_acl(
+        resp = s3_acl_obj2.put_bucket_multiple_grantee(
             bucket_name=self.bucket_name2,
-            grant_full_control="id={}".format(canonical_id2))
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_acl_obj2.put_bucket_acl(
-            bucket_name=self.bucket_name2,
+            grant_full_control="id={}".format(canonical_id2),
             grant_write="id={}".format(canonical_id1))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: From Account2 check the applied ACL in above step.")

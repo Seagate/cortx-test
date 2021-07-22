@@ -1069,6 +1069,43 @@ class Acl(S3Lib):
 
         return response
 
+    def put_bucket_multiple_grantee(self,
+                                    bucket_name: str = None,
+                                    **kwargs) -> bool:
+        """
+        Set the permissions on a bucket using access control lists (ACL).
+
+        :param bucket_name: Name of the bucket
+        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+         permissions on the bucket.
+        :param grant_read: Allows grantee to list the objects in the bucket.
+        :param grant_read_acp: Allows grantee to read the bucket ACL.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+         in the bucket.
+        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        :return: True or False
+        """
+        grantee = {}
+        grant_full_control = kwargs.get("grant_full_control", None)
+        grant_read = kwargs.get("grant_read", None)
+        grant_read_acp = kwargs.get("grant_read_acp", None)
+        grant_write = kwargs.get("grant_write", None)
+        grant_write_acp = kwargs.get("grant_write_acp", None)
+
+        if grant_full_control:
+            grantee["GrantFullControl"] = grant_full_control
+        if grant_read:
+            grantee["GrantRead"] = grant_read
+        if grant_read_acp:
+            grantee["GrantReadACP"] = grant_read_acp
+        if grant_write:
+            grantee["GrantWrite"] = grant_write
+        if grant_write_acp:
+            grantee["GrantWriteACP"] = grant_write_acp
+        response = self.s3_client.put_bucket_acl(Bucket=bucket_name, **grantee)
+
+        return response
+
 
 class BucketPolicy(S3Lib):
     """Class containing methods to implement bucket policy functionality."""
