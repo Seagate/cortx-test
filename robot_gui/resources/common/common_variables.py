@@ -86,3 +86,6 @@ CAPACITY_WIDGET_LABEL_VALUE = "Capacity"
 Audit_log_days = ["One day", "Two days", "Three days",
                   "Four days", "Five days", "Six days", "Seven days"]
 
+#CSM User Table
+CSM_ROLE_COLUMN = 2
+CSM_USERNAME_COLUMN = 3
