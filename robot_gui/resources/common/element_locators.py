@@ -167,9 +167,9 @@ ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID = "Username*"
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]' #'//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-editicon"]'
-CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]' #'//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
-CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td' #'//*[@id="localuser-tabledata"]//table//tbody//tr//td'
+CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
