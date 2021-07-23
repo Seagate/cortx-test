@@ -64,14 +64,14 @@ class TestServerFruAlerts:
         cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
         cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
 
-        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
+        cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
-        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+        cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
                             password=cls.passwd)
-        cls.health_obj = Health(hostname=cls.host, username=cls.uname,
+        cls.health_obj = Health(hostname=cls.hostname, username=cls.uname,
                                 password=cls.passwd)
         cls.controller_obj = ControllerLib(
-            host=cls.host, h_user=cls.uname, h_pwd=cls.passwd,
+            host=cls.hostname, h_user=cls.uname, h_pwd=cls.passwd,
             enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
             enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
             enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
