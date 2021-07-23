@@ -451,6 +451,27 @@ TEST-11153
     [Tags]  full    TEST-11153
     SSL certificate expiration alert Verification  0
 
+TEST-23050
+    [Documentation]  Test that admin user should not able to delete all users with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23050
+    [Tags]  full    TEST-23050
+    Navigate To Page  ${page_name}
+    FOR  ${index}  IN RANGE  3
+        ${new_password}=  Generate New Password
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  admin
+        Click On Confirm Button
+    END
+    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
+    ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    Log To Console And Report  ${admin_users}
+    Remove Values From List  ${admin_users}  ${username}
+    Log To Console And Report  ${admin_users}
+    FOR  ${user}  IN  @{admin_users}
+        Delete CSM User  ${user}
+    END
+    Verify Delete Action Disabled On The Table Element  ${username}
+
 TEST-23502
     [Documentation]  Test that admin user should able to reset other users role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23502
