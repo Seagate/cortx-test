@@ -201,3 +201,18 @@ TEST-23046
     Verify Monitor User Is Not Able To Create Csm User
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
+
+TEST-23053
+    [Documentation]  Test that monitor user should not able to reset other uses password with  admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23053
+    [Tags]  Priority_High  TEST-23053
+    Log To Console And Report  Create Account with role: monitor
+    ${monitor_user_name}  ${monitor_user_password}=  Create and login with CSM monitor user
+    wait for page or element to load
+    @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    FOR    ${user}    IN    @{admin_users}
+        Log To Console And Report  Verify Edit Action Disable for ${user}
+        Verify Edit Action Disabled On The Table Element  ${user}
+    END
+    Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
+    Delete CSM User  ${monitor_user_name}
