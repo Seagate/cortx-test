@@ -160,7 +160,7 @@ def trigger_tests_from_te(args):
     jira_id, jira_pwd = get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
     test_list = get_tests_from_te(jira_obj, args, args.test_type)
-    
+ 
     if os.path.exists("main.log"):
         os.remove("main.log")
         #with open('main.log', 'w') as file:
