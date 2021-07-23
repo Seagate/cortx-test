@@ -800,11 +800,11 @@ def pytest_runtest_logstart(nodeid, location):
             check_cluster_storage()
         except AssertionError as fault:
             LOGGER.error(f"Health check failed for setup with exception {fault}")
-            pytest.exit(f'Health check failed for cluster {target}', 1)
+            pytest.exit(f'Health check failed for cluster {target}', 3)
         except Exception as fault:
             # This could be permission issues as exception of anytype is handled.
             LOGGER.error(f"Health check script failed with exception {fault}")
-            pytest.exit(f'Cannot continue as Health check script failed for {target}', 2)
+            pytest.exit(f'Cannot continue as Health check script failed for {target}', 4)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:

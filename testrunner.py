@@ -165,12 +165,12 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
-    if prc.returncode == 1:
+    if prc.returncode == 3:
         print('Exiting test runner due to bad health of deployment')
-        sys.exit(1)
-    if prc.returncode == 2:
+        sys.exit(3)
+    if prc.returncode == 4:
         print('Exiting test runner due to health check script error')
-        sys.exit(2)
+        sys.exit(4)
 
 
 def delete_status_files():
@@ -324,7 +324,10 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
             item['test_run_id'] = test_dict[test]
             test_meta.append(item)
         tp_meta['test_meta'] = test_meta
+        #import fcntl
+        #fcntl.flock(tp_meta, fcntl.LOCK_EX)
         json.dump(tp_meta, t_meta, ensure_ascii=False)
+        #fcntl.flock(tp_meta, fcntl.LOCK_UN)
     return tp_meta
 
 
@@ -491,7 +494,7 @@ def check_kafka_msg_trigger_test(args):
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
-            msg = consumer.poll(60)
+            msg = consumer.poll(1.0)
             if msg is None:
                 continue
             kafka_msg = msg.value()
@@ -514,9 +517,11 @@ def check_kafka_msg_trigger_test(args):
                 args.target = acquired_target
                 p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
                 p.start()
-
+                p.join()
         except KeyboardInterrupt:
             break
+        except BaseException as error:
+            received_stop_signal = True
     consumer.close()
 
 
@@ -566,7 +571,7 @@ def main(args):
         out, err = prc.communicate()
     elif args.te_ticket:
         trigger_tests_from_te(args)
-    else:
+    else:                                     # check distrubuted
         check_kafka_msg_trigger_test(args)
 
 
