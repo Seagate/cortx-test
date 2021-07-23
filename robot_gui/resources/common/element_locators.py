@@ -276,7 +276,13 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
-
+CURRENT_DATE_IN_DATE_PICKER_XPATH = '//button[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
+AUDIT_LOG_SEARCH_BAR_XPATH = '//input[@placeholder="Search"]'
+AUDIT_LOG_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
+AUDIT_LOG_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "{0}")]'
+AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
+AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
