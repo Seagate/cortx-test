@@ -156,7 +156,7 @@ class Health(Host):
             cmd = commands.PCS_CLUSTER_START.format(node_name)
 
         LOG.debug("Executing cmd: %s", cmd)
-        resp = self.execute_cmd(cmd, read_lines=False, exc=False)
+        resp = self.execute_cmd(cmd, read_lines=False)
         LOG.debug(resp)
 
         return resp[1]
