@@ -23,6 +23,7 @@
 import logging
 import json
 import time
+import xmltodict
 import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
@@ -155,7 +156,7 @@ class Health(Host):
             cmd = commands.PCS_CLUSTER_START.format(node_name)
 
         LOG.debug("Executing cmd: %s", cmd)
-        resp = self.execute_cmd(cmd, read_lines=False)
+        resp = self.execute_cmd(cmd, read_lines=False, exc=False)
         LOG.debug(resp)
 
         return resp[1]
@@ -264,21 +265,15 @@ class Health(Host):
 
     def hctl_status_json(self):
         """
-        This will Check Node status, Logs the output in debug.log file and
-        returns the response in json format.
-        :param str node: Node on which status to be checked
-        :return: Json response of stdout
-        :rtype: dict
+        This will get Node hctl status response in json format.
+        :return: dict
         """
         hctl_command = commands.HCTL_STATUS_CMD_JSON
         LOG.info("Executing Command %s on node %s",
                  hctl_command, self.hostname)
-        result = self.execute_cmd(hctl_command, read_lines=False)
-        result = result.decode("utf-8")
-        LOG.info("Response of the command %s:\n %s ",
-                 hctl_command, result)
+        result = self.execute_cmd(hctl_command, read_lines=False, exc=False)
         result = json.loads(result)
-
+        LOG.info("Response of the command %s:\n %s ", hctl_command, result)
         return result
 
     def get_sys_capacity(self):
@@ -341,15 +336,12 @@ class Health(Host):
 
     def check_node_health(self, resource_cleanup: bool = False) -> tuple:
         """
-        Check the node health and return True if all services up and running.
-
+        Check the node health (pcs and hctl status) and return True if all services up and running.
         1. Checking online status of node.
-        2. Check hax, confd, ioservice, s3server services up and running.
-        3. Check corosync, pacemaker, pcsd Daemons up and running.
-        4. Check kibana, csm-agent, csm-web  resource groups up and running.
-        5. Check s3auth, io_group, sspl-ll, s3backprod resources up and running.
+        2. Check hctl status response for all resources
+        3. Check pcs status response for all resources
         :param resource_cleanup: If True will do pcs resources cleanup.
-        :return: True or False, response.
+        :return: True or False, response/dictionary of failed hctl/pcs resources status.
         """
         LOG.info("Checking online status of %s node", self.hostname)
         response = check_ping(self.hostname)
@@ -358,60 +350,204 @@ class Health(Host):
         LOG.info("Node %s is online.", self.hostname)
 
         LOG.info("Checking hctl status for %s node", self.hostname)
-        response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True)
-        services = ["hax", "confd", "ioservice", "s3server"]
-        LOG.info("Checking status of services: %s", services)
-        LOG.info(response)
-        for line in response[1]:
-            if any([True if service in line else False for service in services]):
-                if not line.strip().startswith("[started]"):
-                    LOG.error("service down: %s", line)
-                    return False, response[0]
-        if "Cluster is not running" in ",".join(response[1]) or not response[0]:
-            return False, response[1]
-        LOG.info("Services: %s up and running", services)
+        response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True, exc=False)
+        if "Cluster is not running" in ",".join(response[1]):
+            LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n",
+                      self.hostname, response)
+            return False, f"Cluster is not running on {self.hostname}"
+
+        resp = self.hctl_status_json()
+        hctl_services_failed = {}
+        svcs_elem = {'service': None, 'status': None}
+        for node_data in resp['nodes']:
+            hctl_services_failed[node_data['name']] = []
+            for svcs in node_data['svcs']:
+                if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                    temp_svc = svcs_elem.copy()
+                    temp_svc['service'] = svcs['name']
+                    temp_svc['status'] = svcs['status']
+                    hctl_services_failed[node_data['name']].append(temp_svc)
+        
+        node_health_failure = {}
+        for key, val in hctl_services_failed.items():
+            if val:
+                node_health_failure['HCTL_STATUS'] = {key: val}
+
         if resource_cleanup:
             LOG.info("cleanup pcs resources for %s node", self.hostname)
             response = self.pcs_resource_cleanup(options="--all")
             if "Cleaned up all resources on all nodes" not in str(response):
                 return False, "Failed to clean up all resources on all nodes"
             time.sleep(10)
+
         LOG.info("Checking pcs status for %s node", self.hostname)
-        response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True)
-        LOG.info(response)
+        response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True, exc=False)
         if "cluster is not currently running on this node" in ",".join(response[1]):
-            LOG.info("cluster is not currently running on this node: %s", self.hostname)
-            return False, "cluster is not currently running on this node: {}".format(self.hostname)
+            LOG.debug(" ********* PCS status Response for %s ********* \n %s \n",
+                      self.hostname, response)
+            return False, f"cluster is not currently running on {self.hostname}"
 
-        daemons = ["corosync", "pacemaker", "pcsd"]
+        pcs_failed_data = {}
+        daemons = ["corosync:", "pacemaker:", "pcsd:"]
         LOG.info("Checking status of Daemons: %s", daemons)
-        for line in response[1]:
-            if any([True if daemon in line else False for daemon in daemons]):
-                if "active/enabled" not in line:
-                    return False, "daemons down: {}".format(line)
-        LOG.info("Daemons are active/enabled: %s", daemons)
+        for daemon in daemons:
+            for line in response:
+                if daemon in line:
+                    if "active/enabled" not in line:
+                        pcs_failed_data[daemon] = line
 
-        resource_group = ["kibana", "csm-agent", "csm-web", "s3backprod"]
-        LOG.info("Checking status of resource group: %s", resource_group)
-        for line in response[1]:
-            if any([True if resource in line else False for resource in resource_group]):
-                if "Started" not in line:
-                    return False, "resource down: {}".format(line)
-        LOG.info("All resource groups are running: %s", resource_group)
+        response = self.execute_cmd(cmd=commands.CMD_PCS_SERV, read_lines=False, exc=False)
+        response = str(response, 'UTF-8')
+        json_format = self.get_node_health_xml(pcs_response=response)
+        crm_mon_res = json_format['crm_mon']['resources']
 
-        resources = ["s3auth", "io_group", "sspl-ll"]
-        LOG.info("Checking status of resources: %s", resources)
-        for line in response[1]:
-            if any([True if resource in line else False for resource in resources]):
-                if "Started" not in response[1][response[1].index(line) + 1]:
-                    return False, "resource down: {}".format(
-                        " ".join([line, response[1][response[1].index(line) + 1]]))
-        LOG.info("All resources are running: %s", resources)
+        no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
 
-        if "Stopped" in ",".join(response[1]) or not response[0]:
-            return False, response[1]
+        clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
+        LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
+                  self.hostname, clone_set_dict)
+        for key, val in clone_set_dict.items():
+            for node, status in val.items():
+                if status != "Started":
+                    pcs_failed_data[key] = val
 
-        return True, "cluster {} up and running.".format(self.hostname)
+        resource_dict = self.get_resource_status(crm_mon_res)
+        LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
+                  self.hostname, resource_dict)
+        for resource, value in resource_dict.items():
+            if value['status'] != 'Started':
+                pcs_failed_data[resource] = value
+
+        group_dict = self.get_group_status(crm_mon_res)
+        LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
+                  self.hostname, group_dict)
+        for group, value in group_dict.items():
+            if value['status'] != 'Started':
+                pcs_failed_data[group] = value
+
+        if pcs_failed_data:
+            node_health_failure['PCS_STATUS'] = pcs_failed_data
+        if node_health_failure:
+            return False, node_health_failure
+        else:
+            return True, "cluster {} up and running.".format(self.hostname)
+
+    @staticmethod
+    def get_node_health_xml(pcs_response: str):
+        """
+        Get the node health pcs response in xml
+        param: pcs_response: pcs response from pcs status xml command
+        return: dict conversion of pcs status xml response command
+        """
+
+        formatted_data = pcs_response.replace("\n  ", "").replace(
+            "\n", ",").replace(",</", "</").split(",")[1:-1]
+        temp_dict = json.dumps(xmltodict.parse(formatted_data[0]))
+        json_format = json.loads(temp_dict)
+        return json_format
+
+    @staticmethod
+    def get_clone_set_status(crm_mon_res: dict, no_node: int):
+        """
+        Get the clone set from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        param: no_node: no of nodes
+        return: dict
+        """
+        clone_set = {}
+        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node+1)]
+        for clone_elem_resp in crm_mon_res['clone']:
+            if clone_elem_resp["@id"] == 'monitor_group-clone':
+                if no_node != 1:
+                    resource = []
+                    for val in clone_elem_resp['group']:
+                        resource.append(val['resource'])
+                else:
+                    resource = {}
+                    resource = clone_elem_resp['group']['resource']
+            else:
+                resource = clone_elem_resp['resource']
+            temp_dict = {}
+            clone_set[clone_elem_resp["@id"]] = {}
+            if no_node == 1:
+                if int(resource['@nodes_running_on']):
+                    node = resource['node']['@name']
+                    if resource['@blocked'] == 'true':
+                        temp_dict[node] = 'FAILED'
+                    else:
+                        temp_dict[node] = resource['@role']
+                else:
+                    temp_dict[node_dflt[0]] = resource['@role']
+                clone_set[clone_elem_resp["@id"]] = temp_dict
+            else:
+                temp_nodes = node_dflt[:]
+                for elem in resource:
+                    if int(elem['@nodes_running_on']):
+                        node = elem['node']['@name']
+                        if elem['@blocked'] == 'true':
+                            temp_dict[node] = 'FAILED'
+                        else:
+                            temp_dict[node] = elem['@role']
+                        temp_nodes.remove(node)
+                    else:
+                        for node in temp_nodes:
+                            temp_dict[node] = elem['@role']
+                            clone_set[clone_elem_resp["@id"]] = temp_dict
+                    clone_set[clone_elem_resp["@id"]] = temp_dict
+        return clone_set
+
+    @staticmethod
+    def get_resource_status(crm_mon_res: dict):
+        """
+        Get the resource status from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        return: dict
+        """
+        clone_set = {}
+        for resource_elem in crm_mon_res['resource']:
+            temp_dict = {'status': None, 'srvnode': None}
+            clone_set[resource_elem["@id"]] = {}
+            if int(resource_elem['@nodes_running_on']):
+                if resource_elem['@blocked'] == 'true':
+                    temp_dict['status'] = 'FAILED'
+                    temp_dict['srvnode'] = resource_elem['node']['@name']
+                else:
+                    temp_dict['status'] = resource_elem['@role']
+                    temp_dict['srvnode'] = resource_elem['node']['@name']
+            else:
+                temp_dict['status'] = resource_elem['@role']
+            clone_set[resource_elem["@id"]] = temp_dict
+        return clone_set
+
+    @staticmethod
+    def get_group_status(crm_mon_res: dict):
+        """
+        Get the group status from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        return: dict
+        """
+        clone_set = {}
+        for group in crm_mon_res['group']:
+            resource = []
+            if group['@id'] == 'ha_group':
+                resource.append(group['resource'])
+            else:
+                resource = group['resource']
+
+            for group_elem in resource:
+                temp_dict = {'status': None, 'srvnode': None}
+                clone_set[group_elem["@id"]] = {}
+                if int(group_elem['@nodes_running_on']):
+                    if group_elem['@blocked'] == 'true':
+                        temp_dict['status'] = 'FAILED'
+                        temp_dict['srvnode'] = group_elem['node']['@name']
+                    else:
+                        temp_dict['status'] = group_elem['@role']
+                        temp_dict['srvnode'] = group_elem['node']['@name']
+                else:
+                    temp_dict['status'] = group_elem['@role']
+                clone_set[group_elem["@id"]] = temp_dict
+        return clone_set
 
     def pcs_restart_cluster(self):
         """
