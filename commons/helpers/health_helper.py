@@ -373,7 +373,7 @@ class Health(Host):
                     temp_svc['service'] = svcs['name']
                     temp_svc['status'] = svcs['status']
                     hctl_services_failed[node_data['name']].append(temp_svc)
-        
+
         node_health_failure = {}
         for key, val in hctl_services_failed.items():
             if val:
@@ -413,7 +413,7 @@ class Health(Host):
         LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
                   self.hostname, clone_set_dict)
         for key, val in clone_set_dict.items():
-            for node, status in val.items():
+            for status in val.values():
                 if status != "Started":
                     pcs_failed_data[key] = val
 
