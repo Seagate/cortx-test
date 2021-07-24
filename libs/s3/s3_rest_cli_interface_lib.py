@@ -28,40 +28,49 @@ from commons.exceptions import CTException
 from libs.s3.cortxcli_test_lib import _S3AccountOperations
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
-cli_obj = _S3AccountOperations()
-rest_obj = S3AccountOperationsRestAPI()
 
 LOGGER = logging.getLogger(__name__)
 
 
 class S3Interface(ABC):
-    """S3 interface class to declare the methods."""
+    """S3 interface class to declare the abstract methods."""
 
     @abstractmethod
-    def create_s3_account(self):
-        pass
+    def create_s3_account(self, **kwargs):
+        """Abstract method to create the s3 account."""
+        LOGGER.info("Abstract method to create the s3 account.")
 
     @abstractmethod
-    def delete_s3_account(self):
-        pass
+    def delete_s3_account(self, **kwargs):
+        """Abstract method to delete s3 account."""
+        LOGGER.info("Abstract method to delete s3 account.")
 
     @abstractmethod
     def list_s3_accounts(self):
-        pass
+        """Abstract method to list s3 accounts."""
+        LOGGER.info("Abstract method to list s3 accounts.")
 
     @abstractmethod
-    def update_s3_account(self):
-        pass
+    def update_s3_account(self, **kwargs):
+        """Abstract method to update s3 account."""
+        LOGGER.info("Abstract method to update s3 account.")
 
     @abstractmethod
-    def generate_access_key(self):
-        pass
+    def generate_s3_access_key(self, **kwargs):
+        """Abstract method to create new s3 access key."""
+        LOGGER.info("Abstract method to create new s3 access key.")
 
 
 class S3AccountOperations(S3Interface):
     """S3 account interface class to do s3 account operations."""
 
-    def create_s3_account(self, acc_name=None, email_id=None, passwd=None) -> tuple:
+    def __init__(self):
+        """S3 account operations constructor."""
+        self.cli_obj = _S3AccountOperations()
+        self.rest_obj = S3AccountOperationsRestAPI()
+
+    def create_s3_account(self, acc_name=None,
+                          email_id=None, passwd=None) -> tuple:
         """
         Create s3 account and return response dict.
 
@@ -71,27 +80,17 @@ class S3AccountOperations(S3Interface):
         :return: bool, response of create user dict
         """
         try:
-            response = rest_obj.create_s3_account(acc_name, email_id, passwd)
-        except CTException as err:
-            LOGGER.error(err.message)
-            response = cli_obj.create_account_cortxcli(acc_name, email_id, passwd)
+            status, response = self.rest_obj.create_s3_account(
+                acc_name, email_id, passwd)
+            if not status and not (
+                    "already exists" in response or "Password Policy Not Met" in response):
+                raise RuntimeError(response) from RuntimeError
+        except (RuntimeError, CTException) as err:
+            LOGGER.error(err)
+            status, response = self.cli_obj.create_account_cortxcli(
+                acc_name, email_id, passwd)
 
-        return response
-
-    def delete_s3_account(self, acc_name=None) -> tuple:
-        """
-        Delete s3 account and return delete response.
-
-        :param acc_name: Name of the S3 account user.
-        :return: bool, response of delete user.
-        """
-        try:
-            response = rest_obj.delete_s3_account(acc_name)
-        except CTException as err:
-            LOGGER.error(err.message)
-            response = cli_obj.delete_account_cortxcli(acc_name)
-
-        return response
+        return status, response
 
     def list_s3_accounts(self) -> tuple:
         """
@@ -100,12 +99,14 @@ class S3AccountOperations(S3Interface):
         :return: bool, response of s3 accounts list.
         """
         try:
-            response = rest_obj.list_s3_accounts()
-        except CTException as err:
-            LOGGER.error(err.message)
-            response = cli_obj.list_accounts_cortxcli()
+            status, response = self.rest_obj.list_s3_accounts()
+            if not status:
+                raise RuntimeError(response) from RuntimeError
+        except (RuntimeError, CTException) as err:
+            LOGGER.error(err)
+            status, response = self.cli_obj.list_accounts_cortxcli()
 
-        return response
+        return status, response
 
     def update_s3_account(self, acc_name=None, new_passwd=None) -> tuple:
         """
@@ -116,14 +117,35 @@ class S3AccountOperations(S3Interface):
         :return: bool, response of update user.
         """
         try:
-            response = rest_obj.reset_s3account_password(acc_name, new_passwd)
-        except CTException as err:
-            LOGGER.error(err.message)
-            response = cli_obj.reset_s3_account_password(acc_name, new_password=new_passwd)
+            status, response = self.rest_obj.reset_s3account_password(
+                acc_name, new_passwd)
+            if not status and "Password Policy Not Met" not in response:
+                raise RuntimeError(response) from RuntimeError
+        except (RuntimeError, CTException) as err:
+            LOGGER.error(err)
+            status, response = self.cli_obj.reset_s3_account_password(
+                acc_name, new_password=new_passwd)
 
-        return response
+        return status, response
 
-    def generate_access_key(self, acc_name=None, passwd=None) -> tuple:
+    def delete_s3_account(self, acc_name=None) -> tuple:
+        """
+        Delete s3 account and return delete response.
+
+        :param acc_name: Name of the S3 account user.
+        :return: bool, response of delete user.
+        """
+        try:
+            status, response = self.rest_obj.delete_s3_account(acc_name)
+            if not status and "not exist" not in response:
+                raise RuntimeError(response) from RuntimeError
+        except (RuntimeError, CTException) as err:
+            LOGGER.error(err)
+            status, response = self.cli_obj.delete_account_cortxcli(acc_name)
+
+        return status, response
+
+    def generate_s3_access_key(self, acc_name=None, passwd=None) -> tuple:
         """
         Generate new access key for s3 account.
 
@@ -131,6 +153,6 @@ class S3AccountOperations(S3Interface):
         :param passwd: Password of the s3 account user.
         :return: bool, response of generated s3 account access key
         """
-        response = rest_obj.create_s3account_access_key(acc_name, passwd)
+        response = self.rest_obj.create_s3account_access_key(acc_name, passwd)
 
         return response
