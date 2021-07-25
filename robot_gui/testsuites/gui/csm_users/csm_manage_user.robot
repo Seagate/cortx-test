@@ -224,7 +224,7 @@ TEST-23889
     Delete CSM User  ${new_csm_user_name}
 
 TEST-23888
-    [Documentation]  Test that manager user is able to change role of other manage role user (NOT self) from manage role to monitor role from csm UI.
+    [Documentation]  Test: CSM GUI: Test that manage user should be able to change role of user with monitor role to manage role from csm UI.
     ...  Reference : https://jts.seagate.com/browse/TEST-23888
     [Tags]  Priority_High  TEST-23888
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
@@ -241,7 +241,7 @@ TEST-23888
 TEST-23872
     [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
     ...  Reference : https://jts.seagate.com/browse/TEST-23872
-    [Tags]  Priority_High  TEST-23872  S3_test  Smoke_test
+    [Tags]  Priority_High  TEST-23872
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
-    Run Keyword If  "${text}" == "${CSM_DROPDOWN_VALUE}"  Log to Console and Report  Default Rows are 10
+    Should be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
