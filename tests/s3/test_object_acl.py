@@ -35,9 +35,12 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from config import S3_OBJ_TST, S3_CFG
-from libs.s3 import s3_test_lib, s3_acl_test_lib, s3_tagging_test_lib
+from libs.s3 import iam_test_lib
 from libs.s3 import s3_multipart_test_lib
-from libs.s3 import cortxcli_test_lib
+from libs.s3 import s3_test_lib
+from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_tagging_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
 class TestObjectACL:
@@ -59,8 +62,7 @@ class TestObjectACL:
         self.tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
             endpoint_url=S3_CFG["s3_url"])
         self.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
-        self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestObjectACL")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestObjectACL")
         self.mupart_obj_path = os.path.join(self.test_dir_path, "mp_obj")
         self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
         if not system_utils.path_exists(self.test_dir_path):
@@ -86,7 +88,7 @@ class TestObjectACL:
         self.email_id_1 = "{}@seagate.com".format(self.account_name_1)
         self.account_name_2 = "objaclacc_two{}".format(time.perf_counter_ns())
         self.email_id_2 = "{}@seagate.com".format(self.account_name_2)
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.log.info("ENDED: SetUp Operations")
         yield
@@ -98,15 +100,13 @@ class TestObjectACL:
             resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.delete_accounts(self.account_list)
-        del self.cli_obj
         self.log.info("ENDED: Teardown operation.")
 
     def delete_accounts(self, accounts):
         """It will clean up resources which are getting created during test suite setup."""
         self.log.debug(accounts)
         for acc in accounts:
-            self.cli_obj.delete_account_cortxcli(
-                account_name=acc, password=self.s3acc_passwd)
+            self.rest_obj.delete_s3_account(acc)
             self.log.info("Deleted %s account successfully", acc)
 
     def create_bucket_obj(self, bucket, obj_name, s3_test_obj=None):
@@ -114,7 +114,7 @@ class TestObjectACL:
         Helper function to create bucket and object.
 
         :param str bucket: Name of the bucket.
-        :param str obj: Name of the object
+        :param str obj_name: Name of the object
         :param object s3_test_obj: Custom s3 test object
         :return: None
         """
@@ -142,8 +142,8 @@ class TestObjectACL:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             account_name, email_id)
-        create_account = self.cli_obj.create_account_cortxcli(
-            account_name=account_name, account_email=email_id, password=password)
+        create_account = self.rest_obj.create_s3_account(
+            acc_name=account_name, email_id=email_id, passwd=password)
         assert create_account[0], create_account[1]
         self.log.debug("Successfully created s3 account %s", create_account[1])
         access_key = create_account[1]["access_key"]
@@ -5371,6 +5371,7 @@ class TestObjectACL:
             "account2 by using acl xml")
         self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3451"]
+        self.log.info(test_cfg)
         self.log.info(
             "Creating account with name %s and email_id %s",
             self.account_name_2,
