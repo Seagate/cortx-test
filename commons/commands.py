@@ -38,6 +38,11 @@ GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 CMD_UPDATE_FILE = "echo {} > {}"
 CMD_TOUCH_FILE = "touch {}"
+LSSCSI_CMD = "lsscsi > {}"
+LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
+LINE_COUNT_CMD = "cat {} | wc -l"
+DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
+CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
 GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
 
 # S3IAMCLI Commands
