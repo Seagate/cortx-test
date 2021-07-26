@@ -8,9 +8,9 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
+# Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
+# ...  ${username}  ${password}
+# ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -27,29 +27,6 @@ ${username}
 ${password}
 ${Download_File_Path}  /root/Downloads
 ${server_file_name}  s3server.pem
-
-*** Keywords ***
-
-SSL certificate expiration alert Verification
-    [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
-    [Arguments]  ${days}
-    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
-    wait for page or element to load  20s
-    ${installation_status_init} =  Format String  not_installed
-    ${installation_status_success} =  Format String  installation_successful
-    ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
-    ${file_name}=  Set Variable  stx_${days}.pem
-    Verify SSL status  ${installation_status_init}  ${file_name}
-    Install uploaded SSL
-    wait for page or element to load  5 minutes  #will re-start all service
-    Close Browser
-    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    wait for page or element to load  20s  # Took time to load dashboard after install
-    Reload Page
-    wait for page or element to load  10s  # Took time to load dashboard after install
-    Verify SSL status  ${installation_status_success}  ${file_name}
-    # Find the alert and verifiy
-    Verify Presence SSL certificate expires alert  ${days}
 
 *** Test Cases ***
 
@@ -408,8 +385,123 @@ TEST-21590
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
+TEST-23042
+    [Documentation]  Test that admin user should able to create users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23042
+    [Tags]  Priority_High  Smoke_test  TEST-23042
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23047
+    [Documentation]  Test that admin user should able to delete users with admin role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23047
+    [Tags]  Priority_High  Smoke_test  TEST-23047
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+
+TEST-23608
+    [Documentation]  Test that User should able to search username, role from search icon.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23608
+    [Tags]  Priority_High  Smoke_test  TEST-23608
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name} 
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+
+TEST-23612
+    [Documentation]  Test that user should able to filter the search operation.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23612
+    [Tags]  Priority_High  Smoke_test  TEST-23612
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Select from filter  role
+    Search username and role  admin
+    Verify New User  ${new_user_name}
+    Reload Page
+    wait for page or element to load
+    Select from filter  username
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name} 
+    Reload Page
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
+
 TEST-11153
     [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
     ...  Reference : https://jts.seagate.com/browse/TEST-11153
     [Tags]  full    TEST-11153
     SSL certificate expiration alert Verification  0
+
+TEST-23050
+    [Documentation]  Test that admin user should not able to delete all users with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23050
+    [Tags]  full    TEST-23050
+    Navigate To Page  ${page_name}
+    FOR  ${index}  IN RANGE  3
+        ${new_password}=  Generate New Password
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  admin
+        Click On Confirm Button
+    END
+    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
+    ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    Log To Console And Report  ${admin_users}
+    Remove Values From List  ${admin_users}  ${username}
+    Log To Console And Report  ${admin_users}
+    FOR  ${user}  IN  @{admin_users}
+        Delete CSM User  ${user}
+    END
+    Verify Delete Action Disabled On The Table Element  ${username}
+
+TEST-23502
+    [Documentation]  Test that admin user should able to reset other users role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23502
+    [Tags]  Priority_High  TEST-23502
+    Navigate To Page  ${page_name}
+    FOR   ${cur_role}  IN   admin  manage  monitor
+        Create account with input Role and Change Role from Admin account  ${cur_role}
+    END
+
+TEST-23051
+    [Documentation]  Test that admin user should able to reset other uses password with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23051
+    [Tags]  Priority_High  TEST-23051
+    Navigate To Page  ${page_name}
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Log To Console And Report  Create Account with role: admin
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    ${change_password}=  Generate New Password
+    Edit CSM User Password  ${new_user_name}  ${change_password}
+    Re-login  ${new_user_name}  ${change_password}  MANAGE_MENU_ID
+    Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
+    Delete CSM User  ${new_user_name}
+
+TEST-23500
+    [Documentation]  Test that admin user should not able to reset own role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23500
+    [Tags]  Priority_High  TEST-23500
+    Navigate To Page  ${page_name}
+    Verify Change User Type Radio Button Disabled  ${username}
+
