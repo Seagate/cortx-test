@@ -505,3 +505,69 @@ TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
 
+TEST-23616
+    [Documentation]  Test that user should able to select multiple options form the drop down.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23616
+    [Tags]  Priority_High  Smoke_test  TEST-23616
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}   admin
+    Click On Confirm Button
+    Select from filter  username
+    Search username and role    admin
+    Select from filter  role
+    Search username and role    admin
+        @{Roles}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  ${role}
+        @{Usernames}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}   ${username}
+    FOR  ${Role}  ${Username}  IN ZIP  ${Roles}  ${Usernames}
+        Log  ${Role}  ${Username}
+        IF ${Role}  == admin  and  ${Username} contain admin
+                Log To Console And Report   ${Role}
+                Log To Console And Report   ${Username}
+            Else
+                Log to console And Report {Exp}
+            END
+        END
+
+TEST-23615
+    [Documentation]  Test that user should able to see role and username filter options.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23615
+    [Tags]  Priority_High  Smoke_test  TEST-23615
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Select from filter  role
+    Search username and role  admin
+    Verify New User  ${new_user_name}
+    Reload Page
+    wait for page or element to load
+    Select from filter  username
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name}
+    Reload Page
+
+TEST-23614
+    [Documentation]  Test that drop down would be appear when user click on the filter option.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23614
+    [Tags]  Priority_High  Smoke_test  TEST-23614
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Select from filter  role
+    wait for page or element to load
+    Reload Page
+
+TEST-23617
+    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23617
+    [Tags]  Priority_High  Smoke_test  TEST-23617
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Select from filter  username
+    wait for page or element to load
+    Reload Page
+
+
