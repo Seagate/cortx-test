@@ -38,6 +38,7 @@ from libs.s3 import S3H_OBJ, CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3 import cortxcli_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3 import S3_CFG
 
 
@@ -56,6 +57,7 @@ class TestDataDurability:
         self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.iamt_obj = IamTestLib(endpoint_url=S3_CFG["iam_url"])
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.log.info("STARTED: setup test operations.")
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -96,9 +98,7 @@ class TestDataDurability:
         self.log.debug(self.s3_account)
         if self.s3_account:
             for acc in self.s3_account:
-                self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-                self.cli_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_passwd)
+                self.cli_obj.login_cortx_cli(username=acc, password=self.s3acc_passwd)
                 self.log.debug("Deleting %s account", acc)
                 self.cli_obj.delete_all_iam_users()
                 self.cli_obj.logout_cortx_cli()
@@ -239,9 +239,9 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Uploading a object to a bucket %s", (
                 self.bucket_name))
-        resp = self.cli_obj.create_account_cortxcli(self.account_name,
-                                                    self.email_id,
-                                                    self.s3acc_passwd)
+        resp = self.rest_obj.create_s3_account(self.account_name,
+                                               self.email_id,
+                                               self.s3acc_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
