@@ -190,6 +190,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Test is invalid for R2")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -299,7 +300,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.delete_s3_account_user("non_existing_user")
-        assert response.status_code == const.FORBIDDEN
+        assert response.status_code == const.METHOD_NOT_FOUND
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -316,7 +317,7 @@ class TestS3user():
         self.log.info("##### Test started -  %s #####", test_case_name)
         response = self.s3user.delete_s3_account_user(
             self.s3user.config["s3account_user"]["username"], login_as="csm_admin_user")
-        assert response.status_code == const.FORBIDDEN
+        assert response.status_code == const.CONFLICT
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
