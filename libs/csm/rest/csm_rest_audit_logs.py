@@ -644,13 +644,13 @@ class RestAuditLogs(RestTestLib):
             text_file.close()
 
             self.log.info("audit_log_show_response.json() length is: %s",
-                len(audit_log_show_response.json()))
+                audit_log_show_response.json()['total_records'])
             self.log.info("extracted_file_content length is: %s",
                 len(extracted_file_content))
 
             self.log.info(
                 "Comparing the contents of audit log show api and audit log download api response")
-            if len(audit_log_show_response.json()) == len(extracted_file_content):
+            if audit_log_show_response.json()['total_records'] == len(extracted_file_content):
                 if audit_log_show_response.json() == extracted_file_content:
                     self.log.info(
                         "The audit log show api content and audit log download"
@@ -663,9 +663,18 @@ class RestAuditLogs(RestTestLib):
                     self.log.info(
                         "Ignoring the first 2 and that last 2 records from show"
                         " api response and verifying if the remaining ones match")
+                    import pdb 
+                    pdb.set_trace()
                     log_content = audit_log_show_response.json(
-                    )[2:len(audit_log_show_response.json())-3]
-                    if all(x in extracted_file_content for x in log_content):
+                    )['logs'][2:audit_log_show_response.json()['total_records']-3]
+                    result=True
+                    for x in log_content:
+                        if x['request_id'] not in extracted_file_content:
+                            self.log.error("Couldnt find %s from json in downloaded file", x)
+                            result = False
+
+                    #if all(x in extracted_file_content for x in log_content):
+                    if result:
                         self.log.info(
                             "The audit log show api content and audit log"
                             " download api content content match exactly! ")
@@ -684,20 +693,20 @@ class RestAuditLogs(RestTestLib):
                         shutil.rmtree(download_folder_path)
                         return False
             val = 0
-            if len(audit_log_show_response.json()) != len(extracted_file_content):
-                if len(audit_log_show_response.json()) > len(extracted_file_content):
+            if audit_log_show_response.json()['total_records'] != len(extracted_file_content):
+                if audit_log_show_response.json()['total_records'] > len(extracted_file_content):
                     self.log.info(
                         "The audit log show response content count is greater "
                         "than audit log download content count. Comparing the "
                         "content of audit log download with audit log show "
                         "content ...")
                     for i in range(0, len(extracted_file_content)):
-                        for j in range(0, len(audit_log_show_response.json())):
+                        for j in range(0, audit_log_show_response.json()['total_records']):
                             if extracted_file_content[i] == audit_log_show_response.json()[j]:
                                 val = i+1
                                 break
                     if (val == len(extracted_file_content) or
-                        val == len(audit_log_show_response.json())):
+                        val == audit_log_show_response.json()['total_records']):
                         self.log.info(
                             "The audit log download content match with the "
                             "audit log show api content")
@@ -715,19 +724,19 @@ class RestAuditLogs(RestTestLib):
                             "Deleting the files and the temporary directory...")
                         shutil.rmtree(download_folder_path)
                         return False
-                if len(extracted_file_content) > len(audit_log_show_response.json()):
+                if len(extracted_file_content) > audit_log_show_response.json()['total_records']:
                     self.log.info(
                         "The audit log download response content count is "
                         "greater than audit log show content count. Comparing "
                         "the content of audit log show with audit log download "
                         "content ...")
-                    for i in range(0, len(audit_log_show_response.json())):
+                    for i in range(0, audit_log_show_response.json()['total_records']):
                         for j in range(0, len(extracted_file_content)):
                             if extracted_file_content[j] == audit_log_show_response.json()[i]:
                                 val = i+1
                                 break
                     if (val == len(extracted_file_content) or
-                        val == len(audit_log_show_response.json())):
+                        val == audit_log_show_response.json()['total_records']):
                         self.log.info(
                             "The audit log show api content match with the "
                             "audit log download api content")

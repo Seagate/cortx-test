@@ -37,7 +37,7 @@ class TestSystemHealth():
         cls.system_health = SystemHealth()
         cls.log.info("Initiating test setup completed ...")
 
-
+    @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12786')
@@ -52,6 +52,7 @@ class TestSystemHealth():
         assert result
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17867')
@@ -70,7 +71,7 @@ class TestSystemHealth():
             assert result
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Known issue EOS-15448 ")
+    @pytest.mark.skip(reason="Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17868')
@@ -88,7 +89,7 @@ class TestSystemHealth():
         assert result
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.skip(reason="Known issue EOS-15448 ")
+    @pytest.mark.skip(reason="Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17869')
@@ -107,6 +108,7 @@ class TestSystemHealth():
             assert result
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17870')

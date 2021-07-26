@@ -265,7 +265,7 @@ class RestIamUser(RestTestLib):
                 user_type="valid", user_defined_role="manage")
             user_data = const.USER_DATA
             user_data = user_data.replace("testusername", data["username"]).replace(
-                "user_role", data["roles"][0])
+                "user_role", data["role"])
             self.log.debug("Payload for CSM user is %s", user_data)
             response = self.restapi.rest_call(
                 "post", endpoint=endpoint, data=user_data, headers=headers)
