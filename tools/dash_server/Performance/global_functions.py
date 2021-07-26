@@ -23,6 +23,7 @@ import yaml
 import sys
 from urllib.parse import quote_plus
 from Performance.mongodb_api import find_distinct_values
+from Performance.schemas import get_dropdown_labels
 
 config_path = 'Performance/configs/configs.yml'
 benchmark_config = 'Performance/configs/benchmark.yml'
@@ -101,20 +102,21 @@ def get_distinct_keys(release, field_to_query, query):
     return results
 
 
-def get_dict_from_array(options, makeReverse, allcaps=False):
+def get_dict_from_array(options, makeReverse, extension=None):
     if makeReverse:
         options.reverse()
-    versions = [
-        {'label': option, 'value': option} for option in options
-    ]
 
-    if allcaps:
+    if extension:
+        extension_value = get_dropdown_labels(extension)
         versions = [
-            {'label': option.upper(), 'value': option} for option in options
+            {'label': f"{option}{extension_value}", 'value': option} for option in options
         ]
         return versions
-
-    return versions
+    else:
+        versions = [
+            {'label': f"{option}", 'value': option} for option in options
+        ]
+        return versions
 
 
 def fetch_configs_from_file(benchmark_config, bench, prop):
@@ -151,17 +153,17 @@ def sort_object_sizes_list(obj_sizes):
     obj_sizes = [ s.replace(' ', '') for s in obj_sizes ]
 
     sizes_sorted = {
-        'Kb': [], 'Mb': [], 'Gb': [],
+        'KB': [], 'MB': [], 'GB': [],
     }
     rest = []
     data_sorted = []
     for size in obj_sizes:
-        if size.lower().endswith("kb"):
-            sizes_sorted['Kb'].append(size)
-        elif size.lower().endswith("mb"):
-            sizes_sorted['Mb'].append(size)
-        elif size.lower().endswith("gb"):
-            sizes_sorted['Gb'].append(size)
+        if size.upper().endswith("KB"):
+            sizes_sorted['KB'].append(size)
+        elif size.upper().endswith("MB"):
+            sizes_sorted['MB'].append(size)
+        elif size.upper().endswith("GB"):
+            sizes_sorted['GB'].append(size)
         else:
             rest.append(size)
 
