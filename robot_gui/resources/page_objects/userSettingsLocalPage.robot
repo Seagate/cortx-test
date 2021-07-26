@@ -6,7 +6,7 @@ Resource   ${RESOURCES}/resources/common/common.robot
 
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
-    Click button    ${add user button id}
+    Click button    ${ADD_USER_BUTTON_ID}
 
 Click On Cancel Button
     [Documentation]  Perform click operation on cancel button
@@ -65,12 +65,19 @@ Verify New User
     List Should Contain Value  ${users_list}  ${user_name}
 
 Delete CSM User
-    [Documentation]  Functionality to validate correc user name
+    [Documentation]  Functionality to Delete CSM user
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
     wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
     click on confirm button
+
+Delete Logged In CSM User
+    [Documentation]  Functionality to Delete the logged in csm user
+    [Arguments]  ${user_name}
+    Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
+    wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=30
+    Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
 
 Verify Only Valid User Allowed For Username
     [Documentation]  Functionality to validate correc user name
@@ -234,9 +241,7 @@ Verify Change User Type Radio Button Disabled
     [Documentation]  Functionality to verify Change User Type Radio Button Disabled
     [Arguments]  ${user_name}
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
-    ${status}=  Get Element Attribute  ${RADIO_BTN_VALUE_XPATH}  disabled
-    Log To Console And Report  ${status}
-    Should be equal  ${status}  true
+    Element Should Be Disabled  ${RADIO_BTN_VALUE_XPATH}
 
 Verify Admin User Should Not Contain Delete Icon
     [Documentation]  Functionality to verify Admin User Should Not Contain Delete Icon
@@ -293,6 +298,10 @@ Verify that monitor user is not able to create delete csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
        Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
 
+Verify Monitor User Is Not Able To Create Csm User
+       [Documentation]  this keyword verifys that monitor user not able to add new csm user
+       Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
+
 Verify bucket Section Not Present
     [Documentation]  Functionality to verify bucket User Section Not Present.
     Navigate To Page  MANAGE_MENU_ID
@@ -346,3 +355,51 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
+
+Verify Delete Action Disabled On The Table Element
+    [Documentation]  Verify delete action disbled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
+Verify Edit Action Disabled On The Table Element
+    [Documentation]  Verify edit action disbled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Disabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
+
+SSL certificate expiration alert Verification
+    [Documentation]  This keyword is used to test SSL related alerts for  diffrent expiry days
+    [Arguments]  ${days}
+    Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
+    wait for page or element to load  20s
+    ${installation_status_init} =  Format String  not_installed
+    ${installation_status_success} =  Format String  installation_successful
+    ${file_path}=  SSL Gennerate and Upload  ${days}  ${Download_File_Path}
+    ${file_name}=  Set Variable  stx_${days}.pem
+    Verify SSL status  ${installation_status_init}  ${file_name}
+    Install uploaded SSL
+    wait for page or element to load  5 minutes  #will re-start all service
+    Close Browser
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    wait for page or element to load  20s  # Took time to load dashboard after install
+    Reload Page
+    wait for page or element to load  10s  # Took time to load dashboard after install
+    Verify SSL status  ${installation_status_success}  ${file_name}
+    # Find the alert and verifiy
+    Verify Presence SSL certificate expires alert  ${days}
+
+Create account with input Role and Change Role from Admin account
+    [Documentation]  This keyword is used to create user with given input role and then change it to other possible roles
+    [Arguments]  ${cur_role}
+    FOR   ${new_role}  IN  admin  manage  monitor
+        ${new_password}=  Generate New Password
+        ${new_user_name}=  Generate New User Name
+        Run Keyword If  "${cur_role}" == "${new_role}"  Log To Console And Report  match, skipping
+        ...  ELSE
+        ...  Run Keywords
+        ...  Log To Console And Report  Create Account with role: ${cur_role}
+        ...  AND  Create New CSM User  ${new_user_name}  ${new_password}  ${cur_role}
+        ...  AND  Click On Confirm Button
+        ...  AND  Verify New User  ${new_user_name}
+        ...  AND  Edit CSM User Type  ${new_user_name}  ${new_role}
+        ...  AND  Delete CSM User  ${new_user_name}
+    END
