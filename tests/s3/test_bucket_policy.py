@@ -77,6 +77,7 @@ class TestBucketPolicy:
         self.s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             endpoint_url=S3_CFG["s3_url"])
         self.account_list = []
+        self.iam_obj_list = []
         self.obj_name_prefix = "obj_policy"
         self.acc_name_prefix = "acc1policy"
         self.user_name = "userpolicy_user_{}".format(time.perf_counter_ns())
@@ -127,9 +128,15 @@ class TestBucketPolicy:
         """It will clean up resources which are getting created during test suite setup."""
         self.log.debug(accounts)
         for acc in accounts:
+            for iam in self.iam_obj_list:
+                iam_users = iam.list_users()[1]
+                self.log.info("Deleting iam users '%s' and access keys", iam_users)
+                iam.delete_users_with_access_key(iam_users)
+            for user in self.iam_obj.list_users()[1]:
+                if self.user_name in user:
+                    self.log.info("Deleting iam user %s", user)
+                    self.iam_obj.delete_user(user)
             self.log.debug("Deleting %s account", acc)
-            if self.user_name:
-                IAM_OBJ.delete_user(self.user_name)
             self.rest_obj.delete_s3_account(acc)
             self.log.info("Deleted %s account successfully", acc)
 
@@ -424,8 +431,7 @@ class TestBucketPolicy:
                                                      ][condition_key] = date_time
         bkt_json_policy["Statement"][0]["Effect"] = effect
         bkt_json_policy["Statement"][0]["Resource"] = \
-            bkt_json_policy["Statement"][0]["Resource"].format(
-                self.bucket_name)
+            bkt_json_policy["Statement"][0]["Resource"].format(self.bucket_name)
         self.log.info("Bucket name: %s", self.bucket_name)
         bkt_list = self.s3_obj.bucket_list()[1]
         if self.bucket_name not in bkt_list:
@@ -1795,8 +1801,7 @@ class TestBucketPolicy:
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                self.user_name)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(self.user_name)
         self.put_invalid_policy(
             self.bucket_name,
             bucket_policy,
@@ -2091,7 +2096,6 @@ class TestBucketPolicy:
         self.log.info("Creating a user with name %s", self.user_name)
         self.iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-
         resp = self.iam_obj.create_user(self.user_name)
         assert resp[0], resp[1]
         self.log.info("User is created with name %s", self.user_name)
@@ -2468,8 +2472,10 @@ class TestBucketPolicy:
             access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_obj_acc_2.create_user(user_name_1)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_obj_acc_2)
         resp = iam_obj_acc_3.create_user(user_name_2)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_obj_acc_3)
         self.log.info("Step 3: Users are created in different accounts")
         self.log.info(
             "Step 4: Creating a json with combination of multiple arns")
@@ -2553,6 +2559,7 @@ class TestBucketPolicy:
             access_key=access_key, secret_key=secret_key)
         resp = iam_obj_acc_2.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_obj_acc_2)
         self.log.info(
             "Step 2: User is created with name %s in account 2",
             self.user_name)
@@ -2618,6 +2625,7 @@ class TestBucketPolicy:
             access_key=access_key, secret_key=secret_key)
         resp = iam_obj_acc_2.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_obj_acc_2)
         self.log.info(
             "Step 2: User is created with name %s in account 2",
             self.user_name)
@@ -3424,6 +3432,7 @@ class TestBucketPolicy:
             "also creating credentials for the same user", self.user_name)
         resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         resp = iam_new_obj.create_access_key(self.user_name)
         assert resp[0], resp[1]
         usr_access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -5553,8 +5562,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"]["aws:EpochTime"] = \
             bucket_policy["Statement"][0]["Condition"]["DateLessThanEqualsIfExists"][
                 "aws:EpochTime"].format(date_time)
@@ -6909,8 +6917,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -6967,8 +6974,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7029,8 +7035,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7091,8 +7096,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7150,8 +7154,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7201,8 +7204,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7253,8 +7255,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7314,8 +7315,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7375,8 +7375,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7435,8 +7434,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7496,8 +7494,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7557,8 +7554,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7617,8 +7613,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator: %s",
             bucket_policy)
@@ -7759,6 +7754,7 @@ _date."""
         s3_policy_acc2_obj = iam_test_lib.IamTestLib(
             access_key=access_key_2, secret_key=secret_key_2)
         resp = s3_policy_acc2_obj.create_user(user_name_2)
+        self.iam_obj_list.append(s3_policy_acc2_obj)
         assert resp[0], resp[1]
         user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Step 1: Created user using account 2 credential")
@@ -7876,6 +7872,7 @@ _date."""
             access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_obj_acc_2.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_obj_acc_2)
         user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Created user in account 2")
         self.log.info(
@@ -8080,6 +8077,7 @@ _date."""
             access_key=access_key_2, secret_key=secret_key_2)
         resp = iam_acc2_obj.create_user(user_name_2)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_acc2_obj)
         user_id_2 = resp[1]["User"]["UserId"]
         self.log.info("Step 1: Created user using account 2 credential")
         self.create_bucket_put_obj_with_dir(
@@ -8188,8 +8186,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8249,8 +8246,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8301,8 +8297,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8346,8 +8341,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8394,8 +8388,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8449,8 +8442,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8508,8 +8500,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8567,8 +8558,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 2: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8610,8 +8600,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8656,8 +8645,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8698,8 +8686,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8739,8 +8726,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8797,8 +8783,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8856,8 +8841,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -8934,8 +8918,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9023,8 +9006,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9104,8 +9086,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json with Null Condition operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9186,8 +9167,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json having valid condition key and invalid value")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9300,8 +9280,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json having valid condition key and invalid value")
         self.log.info(
@@ -9368,8 +9347,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json having valid condition key and invalid value")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9470,8 +9448,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 1: Created a json having valid condition key and invalid value")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9566,8 +9543,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy["Statement"][0]["Condition"]["StringEqualsIgnoreCase"]["s3:prefix"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEqualsIgnoreCase"][
                 "s3:prefix"].format("obj_policy")
@@ -9636,8 +9612,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy["Statement"][0]["Condition"]["StringNotEqualsIgnoreCase"]["s3:prefix"] = \
             bucket_policy["Statement"][0]["Condition"]["StringNotEqualsIgnoreCase"][
                 "s3:prefix"].format("obj_policy")
@@ -9724,8 +9699,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 2: Created a json file for bucket policy specifying StringLike Condition Operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9795,8 +9769,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(
             "Step 2: Created a json file for bucket policy specifying StringLike Condition Operator")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -9957,8 +9930,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(
             "Step 3:Put the bucket policy on the bucket and Get Bucket Policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -10043,8 +10015,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account2_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account2_id)
         bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-full-control"].format([account2_cid, account3_cid])
@@ -10083,28 +10054,23 @@ _date."""
             self.log.info(
                 "Put object with ACL : grant_full_control and grant_read")
             s3_obj1.put_object_with_acl2(self.bucket_name,
-                                         "{}{}".format(
-                                             object_lst[0], str(time.time())),
+                                         "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
-                                         grant_full_control="id={}".format(
-                                             account5_cid),
+                                         grant_full_control="id={}".format(account5_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
             s3_obj1.put_object_with_acl2(self.bucket_name,
-                                         "{}{}".format(
-                                             object_lst[0], str(time.time())),
+                                         "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
-                                         grant_full_control="id={}".format(
-                                             account5_cid),
+                                         grant_full_control="id={}".format(account5_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
             s3_obj1.put_object_with_acl(self.bucket_name,
-                                        "{}{}".format(
-                                            object_lst[0], str(time.time())),
+                                        "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
@@ -10289,8 +10255,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account2_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account2_id)
         bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-full-control"].format([account2_cid, account3_cid])
@@ -10331,28 +10296,23 @@ _date."""
         assert resp[0], resp[1]
         try:
             s3_obj1.put_object_with_acl2(self.bucket_name,
-                                         "{}{}".format(
-                                             object_lst[0], str(time.time())),
+                                         "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
-                                         grant_full_control="id={}".format(
-                                             account6_cid),
+                                         grant_full_control="id={}".format(account6_cid),
                                          grant_read="id={}".format(account4_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
             s3_obj1.put_object_with_acl2(self.bucket_name,
-                                         "{}{}".format(
-                                             object_lst[0], str(time.time())),
+                                         "{}{}".format(object_lst[0], str(time.time())),
                                          self.file_path,
-                                         grant_full_control="id={}".format(
-                                             account2_cid),
+                                         grant_full_control="id={}".format(account2_cid),
                                          grant_read="id={}".format(account3_cid))
         except CTException as error:
             assert err_message in error.message, error.message
         try:
             s3_obj1.put_object_with_acl(self.bucket_name,
-                                        "{}{}".format(
-                                            object_lst[0], str(time.time())),
+                                        "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account3_cid))
         except CTException as error:
@@ -10364,8 +10324,7 @@ _date."""
             assert err_message in error.message, error.message
         try:
             s3_obj1.put_object_with_acl(self.bucket_name,
-                                        "{}{}".format(
-                                            object_lst[0], str(time.time())),
+                                        "{}{}".format(object_lst[0], str(time.time())),
                                         self.file_path,
                                         grant_full_control="id={}".format(account4_cid))
         except CTException as error:
@@ -10629,8 +10588,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account2_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account2_id)
         bucket_policy["Statement"][0]["Condition"]["StringEquals"]["s3:x-amz-grant-full-control"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEquals"][
                 "s3:x-amz-grant-full-control"].format([account2_cid, account3_cid])
@@ -11790,8 +11748,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -11847,8 +11804,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -11909,8 +11865,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -11974,8 +11929,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -12048,8 +12002,7 @@ _date."""
             "Step 2: Create a policy json and Allow GetObjectAcl api on object in the policy"
             " to account2.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
             'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
@@ -12122,8 +12075,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
             'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
@@ -12192,8 +12144,7 @@ _date."""
         self.log.info(
             "Step 3: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 3: Created a policy json.- run from default account")
@@ -12257,8 +12208,7 @@ _date."""
         self.log.info(
             "Step 3: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 3: Created a policy json.- run from default account")
@@ -12317,8 +12267,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json.- run from default account")
@@ -12374,8 +12323,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json.- run from default account")
@@ -12444,8 +12392,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json.- run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json.- run from default account")
@@ -12517,8 +12464,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         bucket_policy['Statement'][0]['Resource'] = bucket_policy['Statement'][0][
             'Resource'].format(self.bucket_name, object_names[0])
         self.log.info(bucket_policy)
@@ -12683,8 +12629,7 @@ _date."""
         account_id = resp[6]
         self.log.info("Step 2: Creating a json for bucket policy")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info(bucket_policy)
         self.log.info("Step 2: Created a json for bucket policy")
         self.log.info("Step 3: Applying bucket policy on a bucket")
@@ -12725,8 +12670,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow PutObject for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -12765,8 +12709,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow PutObjectAcl for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -12812,8 +12755,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow PutObjectTagging for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -12863,8 +12805,7 @@ _date."""
         self.log.info(
             "Step 3: Creating a json to allow GetObjectTagging for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -12914,8 +12855,7 @@ _date."""
         self.log.info(
             "Step 3: Creating a json to allow ListMultipartUploadParts for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, "testobj_7015")
         self.log.info(
@@ -12960,8 +12900,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow AbortMultipartUpload for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, "testobj_7016")
         self.log.info(
@@ -13005,8 +12944,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow HeadBucket for account 2")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy_1["Statement"][0]["Resource"] = bucket_policy_1["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info(
@@ -13063,8 +13001,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow HeadObject for account 2")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy_1["Statement"][0]["Resource"] = bucket_policy_1["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -13109,8 +13046,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow DeleteBucketTagging for account 2")
         bucket_policy_1["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy_1["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy_1["Statement"][0]["Resource"] = bucket_policy_1["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info(
@@ -13167,8 +13103,7 @@ _date."""
         self.log.info(
             "Step 2: Creating a json to allow DeleteObjectTagging for account 2")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name, object_lst[0])
         self.log.info(
@@ -13216,8 +13151,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
@@ -13265,8 +13199,7 @@ _date."""
         self.log.info(
             "Step 2: Create a policy json - run from default account")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id_1)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id_1)
         self.log.info(bucket_policy)
         self.log.info(
             "Step 2: Created a policy json - run from default account")
