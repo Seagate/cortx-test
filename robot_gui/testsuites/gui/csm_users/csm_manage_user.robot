@@ -245,3 +245,68 @@ TEST-23872
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
     Should be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
+
+TEST-23886
+    [Documentation]  Test: CSM GUI: Test that manage user should NOT be able to change role of self to any other role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23886
+    [Tags]  Priority_High  TEST-23886
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Verify Change User Type Radio Button Disabled  ${new_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23843
+    [Documentation]  Test that csm user with Manage rights is able to reset passwords of users with manage and monitor roles from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23843
+    [Tags]  Priority_High  TEST-23843
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
+    Click on confirm button
+    wait for page or element to load
+    ${new_csm_user_password1}=  Generate New Password
+    ${new_csm_user_name1}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name1}  ${new_csm_user_password1}  monitor
+    Click on confirm button
+    wait for page or element to load
+    ${new_csm_password}=  Generate New Password        #for new manage user
+    Edit CSM User Password  ${new_csm_user_name}  ${new_csm_password}
+    ${new_csm_password1}=  Generate New Password       #for new monitor user
+    Edit CSM User Password  ${new_csm_user_name1}  ${new_csm_password1}
+    Re-login  ${new_csm_user_name}  ${new_csm_password}  ${page_name} #relogin using new manage user and changed password
+    Validate CSM Login Success  ${new_csm_user_name}
+    Re-login  ${new_csm_user_name1}  ${new_csm_password1}  ${page_name}  #relogin using new monitor user and changed password
+    Validate CSM Login Success  ${new_csm_user_name1}
+
+TEST-23837
+    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23837
+    [Tags]  Priority_High  TEST-23837
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    Verify Admin User Should Not Contain Delete Icon  admin
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  manage
+    Click on confirm button
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click on confirm button
+    Delete Logged In CSM User  ${new_user_name}
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${new_csm_user_name}  ${new_csm_user_password}
+    Verify Absence of Delete Button on CSM users
+    Re-login  ${username}  ${password}  ${page_name}
+    Verify Deleted User  {new_csm_user_name}
+    Verify Deleted User  {new_user_name}
+
+TEST-23859
+    [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23859
+    [Tags]  Priority_High  TEST-23859
+    Navigate To Page  ${page_name}
+    ${fetched_values}=  Read Pagination Options
+    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
+    Lists Should Be Equal  ${fetched_values}  ${actual_values}
