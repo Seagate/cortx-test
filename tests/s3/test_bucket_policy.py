@@ -22,7 +22,6 @@
 
 import os
 import json
-import shutil
 import uuid
 import time
 import logging
@@ -45,7 +44,8 @@ from libs.s3 import iam_test_lib
 from libs.s3 import s3_tagging_test_lib
 from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_acl_test_lib
-from libs.s3 import cortxcli_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+
 
 
 
@@ -88,7 +88,7 @@ class TestBucketPolicy:
         self.email_id_1 = "{}@seagate.com".format(self.account_name_1)
         self.account_name_2 = "accpolicy_two{}".format(time.perf_counter_ns())
         self.email_id_2 = "{}@seagate.com".format(self.account_name_2)
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.s3test_obj_1 = None
         self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketPolicy")
         if not system_utils.path_exists(self.folder_path):
@@ -121,7 +121,6 @@ class TestBucketPolicy:
         self.log.info("All the buckets/objects deleted successfully")
         self.log.debug(self.account_list)
         self.delete_accounts(self.account_list)
-        del self.cli_obj
         self.log.info("ENDED: teardown test suite operations.")
 
     def delete_accounts(self, accounts):
@@ -129,12 +128,9 @@ class TestBucketPolicy:
         self.log.debug(accounts)
         for acc in accounts:
             self.log.debug("Deleting %s account", acc)
-            self.cli_obj.login_cortx_cli(
-                username=acc, password=self.s3acc_passwd)
-            self.cli_obj.delete_all_iam_users()
-            self.cli_obj.logout_cortx_cli()
-            self.cli_obj.delete_account_cortxcli(
-                account_name=acc, password=self.s3acc_passwd)
+            if self.user_name:
+                IAM_OBJ.delete_user(self.user_name)
+            self.rest_obj.delete_s3_account(acc)
             self.log.info("Deleted %s account successfully", acc)
 
     def create_bucket_put_objects(
@@ -192,8 +188,8 @@ class TestBucketPolicy:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             account_name, email_id)
-        create_account = self.cli_obj.create_account_cortxcli(
-            account_name=account_name, account_email=email_id, password=password)
+        create_account = self.rest_obj.create_s3_account(
+            acc_name=account_name, email_id=email_id, passwd=password)
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
@@ -768,13 +764,14 @@ class TestBucketPolicy:
             "Creating another account with name %s and email %s",
             self.account_name,
             self.email_id)
-        resp = self.cli_obj.create_account_cortxcli(
-            account_name=self.account_name,
-            account_email=self.email_id,
-            password=self.s3acc_passwd)
+        resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name,
+            email_id=self.email_id,
+            passwd=self.s3acc_passwd)
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.account_list.append(self.account_name)
         s3_obj_2 = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             access_key=access_key,
             secret_key=secret_key)
@@ -1778,7 +1775,6 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test principal arn combination with invalid account-id")
         bucket_policy = BKT_POLICY_CONF["test_693"]["bucket_policy"]
-
         create_account = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
@@ -1805,6 +1801,7 @@ class TestBucketPolicy:
             self.bucket_name,
             bucket_policy,
             "Invalid principal in policy")
+
         self.log.info(
             "ENDED: Test principal arn combination with invalid account-id")
 
@@ -2453,13 +2450,13 @@ class TestBucketPolicy:
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_detail.append(resp)
+            self.account_list.append(acc_name)
         acc_id_1 = acc_detail[0][1]["account_id"]
         access_key_1 = acc_detail[0][1]["access_key"]
         secret_key_1 = acc_detail[0][1]["secret_key"]
-
         acc_id_2 = acc_detail[1][1]["account_id"]
         access_key_2 = acc_detail[1][1]["access_key"]
         secret_key_2 = acc_detail[1][1]["secret_key"]
@@ -4425,14 +4422,14 @@ class TestBucketPolicy:
         self.log.info(
             "Creating two account with name prefix as %s",
             self.account_name)
-
         acc_detail = []
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_detail.append(resp)
+            self.account_list.append(acc_name)
         canonical_id_user_1 = acc_detail[0][1]["canonical_id"]
         access_key_u1 = acc_detail[0][1]["access_key"]
         secret_key_u1 = acc_detail[0][1]["secret_key"]
@@ -4507,9 +4504,10 @@ class TestBucketPolicy:
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_detail.append(resp)
+            self.account_list.append(acc_name)
         canonical_id_user_1 = acc_detail[0][1]["canonical_id"]
         access_key_u1 = acc_detail[0][1]["access_key"]
         secret_key_u1 = acc_detail[0][1]["secret_key"]
@@ -5866,10 +5864,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
-
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -5930,9 +5928,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6002,9 +6001,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6066,9 +6066,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6131,9 +6132,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6196,9 +6198,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6262,9 +6265,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6326,9 +6330,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6391,9 +6396,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6455,9 +6461,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6521,9 +6528,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6585,9 +6593,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account1_id = acc_details[0][1]["account_id"]
         s3_obj1 = s3_test_lib.S3TestLib(
             access_key=acc_details[0][1]["access_key"],
@@ -6691,9 +6700,10 @@ _date."""
             2,
             obj_prefix,
             object_lst)
-        resp = self.cli_obj.create_account_cortxcli(
+        resp = self.rest_obj.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account1_id = resp[1]["account_id"]
+        self.account_list.append(self.account_name)
         s3_obj1 = s3_acl_test_lib.S3AclTestLib(
             access_key=resp[1]["access_key"],
             secret_key=resp[1]["secret_key"])
@@ -6776,12 +6786,13 @@ _date."""
             self.acc_name_prefix, int(
                 time.perf_counter_ns()))
         email2 = "{}{}".format(account_name2, "@seagate.com")
-        resp1 = self.cli_obj.create_account_cortxcli(
-            account_name=account_name2,
-            account_email=email2,
-            password=self.s3acc_passwd)
+        resp1 = self.rest_obj.create_s3_account(
+            acc_name=account_name2,
+            email_id=email2,
+            passwd=self.s3acc_passwd)
         account_id2 = resp1[1]["account_id"]
         canonical_id_2 = resp1[1]["canonical_id"]
+        self.account_list.append(account_name2)
         self.log.debug(
             "Account2 Id: %s, Cannonical_id_2: %s",
             account_id2,
@@ -6798,13 +6809,13 @@ _date."""
             self.acc_name_prefix, int(
                 time.perf_counter_ns()))
         email3 = "{}{}".format(account_name3, "@seagate.com")
-        resp2 = self.cli_obj.create_account_cortxcli(
-            account_name=account_name3,
-            account_email=email3,
-            password=self.s3acc_passwd)
+        resp2 = self.rest_obj.create_s3_account(
+            acc_name=account_name3,
+            email_id=email3,
+            passwd=self.s3acc_passwd)
         canonical_id_3 = resp2[1]["canonical_id"]
         self.log.debug("Cannonical_id_3: %s", canonical_id_3)
-
+        self.account_list.append(account_name3)
         self.log.info(
             "Step 2 : Create a json file for  a Bucket Policy having Single Condition with "
             "Multiple Keys and each Key having single Value")
@@ -7851,9 +7862,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         access_key_1 = acc_details[0][1]["access_key"]
         secret_key_1 = acc_details[0][1]["secret_key"]
         acc_id_1 = acc_details[0][1]["account_id"]
@@ -9927,9 +9939,10 @@ _date."""
             2,
             obj_prefix,
             object_lst)
-        resp = self.cli_obj.create_account_cortxcli(
+        resp = self.rest_obj.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account1_id = resp[1]["account_id"]
+        self.account_list.append(self.account_name)
         s3_obj1 = s3_acl_test_lib.S3AclTestLib(
             access_key=resp[1]["access_key"],
             secret_key=resp[1]["secret_key"])
@@ -10004,10 +10017,10 @@ _date."""
         for i in range(5):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
-
+            self.account_list.append(acc_name)
         account2_id = acc_details[0][1]["account_id"]
         account2_cid = acc_details[0][1]["canonical_id"]
         account3_cid = acc_details[1][1]["canonical_id"]
@@ -10247,9 +10260,10 @@ _date."""
         for i in range(8):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account2_id = acc_details[0][1]["account_id"]
         account2_cid = acc_details[0][1]["canonical_id"]
         account3_cid = acc_details[1][1]["canonical_id"]
@@ -10599,9 +10613,10 @@ _date."""
         for i in range(2):
             acc_name = "{0}{1}".format(self.account_name, i)
             email_id = "{0}{1}".format(acc_name, "@seagate.com")
-            resp = self.cli_obj.create_account_cortxcli(
+            resp = self.rest_obj.create_s3_account(
                 acc_name, email_id, self.s3acc_passwd)
             acc_details.append(resp)
+            self.account_list.append(acc_name)
         account2_id = acc_details[0][1]["account_id"]
         account2_cid = acc_details[0][1]["canonical_id"]
         account3_cid = acc_details[1][1]["canonical_id"]
