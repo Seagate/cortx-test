@@ -58,7 +58,7 @@ class TestBucketACL:
             endpoint_url=S3_CFG["s3_url"])
         self.test_file = "testfile{}.txt"
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.test_dir_path = os.path.join(TEST_DATA_PATH, "BucketACL")
+        self.test_dir_path = os.path.join(TEST_DATA_PATH, "TestBucketACL")
         if not system_utils.path_exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", resp)

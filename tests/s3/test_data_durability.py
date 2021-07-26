@@ -68,8 +68,7 @@ class TestDataDurability:
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestDataDurability")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDataDurability")
         self.file_path = os.path.join(self.test_dir_path, self.test_file)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)

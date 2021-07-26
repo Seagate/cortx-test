@@ -56,8 +56,7 @@ class TestBucketWorkflowOperations:
         self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.folder_path = os.path.join(
-            TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
         self.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, self.filename)
         if not system_utils.path_exists(self.folder_path):
