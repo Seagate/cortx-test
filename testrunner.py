@@ -422,7 +422,7 @@ def trigger_tests_from_te(args):
         trigger_unexecuted_tests(args, test_list)
 
         # Execute all tests having no parallel tag and which are mentioned in given tag.
-        #run_pytest_cmd(args, te_tag, False, env=_env)
+        run_pytest_cmd(args, te_tag, False, env=_env)
     else:
         # Sequentially execute all tests with parallel tag which are mentioned in given tag.
         run_pytest_cmd(args, te_tag, True, env=_env)
