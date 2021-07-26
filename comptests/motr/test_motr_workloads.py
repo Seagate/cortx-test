@@ -22,7 +22,6 @@ import pytest
 import logging
 from commons.ct_fail_on import CTFailOn
 from libs.motr import motr_test_lib
-from commons.utils import config_utils
 from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from config import CMN_CFG
@@ -39,21 +38,21 @@ class TestExecuteWorkload:
         self.host = CMN_CFG["nodes"][0]["hostname"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
-        workload_config = WORKLOAD_CFG[1]
+        self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
         LOGGER.info("ENDED: Setup Operation")
 
         yield
         #Perform the clean up for each test.
-           
+
         LOGGER.info("STARTED: Teardown Operation")
         LOGGER.info("Deleting temp files on node")
         self.motr_obj.delete_remote_files()
         LOGGER.info("ENDED: Teardown Operation")
 
-    def get_batches_runs(tc_num):
-        batch_list = workload_config["workloads"][tc_num]["batch"]
-        runs = workload_config["workloads"][tc_num]["runs"]
+    def get_batches_runs(self, tc_num):
+        batch_list = self.workload_config["workloads"][tc_num]["batch"]
+        runs = self.workload_config["workloads"][tc_num]["runs"]
         return batch_list, runs
 
     @CTFailOn(error_handler)
