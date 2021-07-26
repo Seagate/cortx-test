@@ -20,6 +20,8 @@
 #
 #
 
+from commons.utils import config_utils
+
 """Motr package initializer."""
 
 # dd tools commands.
@@ -34,4 +36,6 @@ TEMP_PATH = "/tmp/"
 WORKLOAD_FILES_DIR = "config/motr"
 TEMP_128M_FILE_PATH = "/tmp/128M"
 
+#Read test workload
+WORKLOAD_CFG = config_utils.read_yaml("config/motr/test_workload.yaml")
 

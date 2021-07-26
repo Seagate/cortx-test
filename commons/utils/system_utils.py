@@ -112,11 +112,7 @@ def run_remote_cmd_wo_decision(
     :return: stdout, stderr, status
     :Need this command because motr api send output on stderr
     """
-    LOGGER.info(
-        "Host: %s, User: %s, Password: %s",
-        hostname,
-        username,
-        password)
+    LOGGER.info("Host: %s, User: %s, Password: %s", hostname, username, password)
     read_lines = kwargs.get("read_lines", False)
     read_nbytes = kwargs.get("read_nbytes", -1)
     timeout_sec = kwargs.get("timeout_sec", 30)
