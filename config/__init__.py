@@ -86,6 +86,8 @@ else:
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
+JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
+                                                target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
