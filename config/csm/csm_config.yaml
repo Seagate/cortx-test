@@ -46,3 +46,8 @@ CliConfig:
     password: "cmTWHmhFPTRudB+GOaql0UVi8qMd1qKOzImFb0E0+g4="
     update_password: "LiNnmJz5veaPXEXC06Ghl9DtwaGnZX/909a99IkzREo="
   csm_conf_file: "/etc/csm/csm.conf"
+
+JMeterConfig:
+  jmeter_path: "/root/apache-jmeter-5.4/bin"
+  jmx_path: "scripts/jmx_files"
+  jtl_log_path: "log/jmeter/"
