@@ -25,7 +25,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from commons.exceptions import CTException
-from libs.s3.cortxcli_test_lib import _S3AccountOperations
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 
@@ -66,7 +66,7 @@ class S3AccountOperations(S3Interface):
 
     def __init__(self):
         """S3 account operations constructor."""
-        self.cli_obj = _S3AccountOperations()
+        self.cli_obj = CortxCliTestLib()
         self.rest_obj = S3AccountOperationsRestAPI()
 
     def create_s3_account(self, acc_name=None,
@@ -104,7 +104,8 @@ class S3AccountOperations(S3Interface):
                 raise RuntimeError(response) from RuntimeError
         except (RuntimeError, CTException) as err:
             LOGGER.error(err)
-            status, response = self.cli_obj.list_accounts_cortxcli()
+            response = self.cli_obj.list_accounts_cortxcli()
+            status = True if response else False
 
         return status, response
 
