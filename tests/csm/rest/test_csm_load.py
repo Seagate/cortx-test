@@ -18,18 +18,14 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests for performing load testing using Jmeter
-"""
+"""Tests for performing load testing using Jmeter"""
 import logging
 import pytest
-from commons import configmanager
 from commons import cortxlogging
 from libs.jmeter.jmeter_integration import JmeterInt
-import re
 
 class TestCsmLoad():
-    """Test cases for performing CSM REST API load testing using jmeter
-    """
+    """Test cases for performing CSM REST API load testing using jmeter"""
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
@@ -43,8 +39,7 @@ class TestCsmLoad():
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-')
     def test_poc(self):
-        """Sample test to run any jmeter script.
-        """
+        """Sample test to run any jmeter script."""
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         jmx_file = "CSM_Login.jmx"
