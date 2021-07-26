@@ -273,10 +273,13 @@ def pytest_sessionfinish(session, exitstatus):
         for handler in handlers:
             _logger.removeHandler(handler)
 
-    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
-    if resp[0]:
-        LOGGER.info("Successfully unmounted directory")
-    filter_report_session_finish(session)
+    try:
+        resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
+        if resp[0]:
+            print("Successfully unmounted directory")
+        filter_report_session_finish(session)
+    except Exception as fault:
+        print("Exception occurred while unmounting directory")
 
 
 def get_test_metadata_from_tp_meta(item):
@@ -419,7 +422,6 @@ def pytest_configure_node(node):
             LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
         else:
             Globals.JIRA_UPDATE = False
-
     node.workerinput['shared_dir'] = node.config.shared_directory
 
 
@@ -457,7 +459,6 @@ def reset_imported_module_log_level():
 def pytest_collection(session):
     """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    #LOGGER.info(dir(session.config))
     config = session.config
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
@@ -591,11 +592,13 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + report.when, report)
     try:
         attr = getattr(item, 'call_duration')
+        LOGGER.info('Setting attribute call_duration')
     except AttributeError as attr_error:
         LOGGER.warning('Exception %s occurred', str(attr_error))
         setattr(item, "call_duration", call.duration)
     else:
         setattr(item, "call_duration", call.duration + attr)
+
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
@@ -800,11 +803,11 @@ def pytest_runtest_logstart(nodeid, location):
             check_cluster_storage()
         except AssertionError as fault:
             LOGGER.error(f"Health check failed for setup with exception {fault}")
-            pytest.exit(f'Health check failed for cluster {target}', 1)
+            pytest.exit(f'Health check failed for cluster {target}', 3)
         except Exception as fault:
             # This could be permission issues as exception of anytype is handled.
             LOGGER.error(f"Health check script failed with exception {fault}")
-            pytest.exit(f'Cannot continue as Health check script failed for {target}', 2)
+            pytest.exit(f'Cannot continue as Health check script failed for {target}', 4)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
