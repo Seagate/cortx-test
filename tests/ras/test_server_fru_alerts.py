@@ -83,6 +83,11 @@ class TestServerFruAlerts:
         cls.s3obj = S3H_OBJ
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
+
+        # TODO: Add cluster health check
+        # LOGGER.info("Check cluster health")
+        # resp = cls.health_obj.check_node_health()
+
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
             cls.hostname.split('.')[0] in node_d.keys() else assert_true(
@@ -133,8 +138,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        services = [service["sspl_service"], service["kafka_service"],
-                    service["csm_web"], service["csm_agent"]]
+        services = [service["sspl_service"], service["kafka_service"]]
         self.node_obj.send_systemctl_cmd(command="restart",
                                          services=[service["sspl_service"]],
                                          decode=True)
@@ -143,7 +147,7 @@ class TestServerFruAlerts:
         for svc in services:
             LOGGER.info("Checking status of %s service", svc)
             resp = self.s3obj.get_s3server_service_status(service=svc,
-                                                          host=self.host,
+                                                          host=self.hostname,
                                                           user=self.uname,
                                                           pwd=self.passwd)
             assert resp[0], resp[1]
@@ -252,6 +256,8 @@ class TestServerFruAlerts:
         LOGGER.info("Step 2: Disconnecting OS drive %s", drive_name)
         resp = self.alert_api_obj.generate_alert(
             AlertType.OS_DISK_DISABLE,
+            host_details={"host": self.hostname, "host_user": self.uname,
+                          "host_password": self.passwd},
             input_parameters={"drive_name": drive_name.split("/")[-1],
                               "drive_count": drive_count})
         if not resp[0]:
@@ -267,7 +273,8 @@ class TestServerFruAlerts:
 
         if self.start_msg_bus:
             LOGGER.info("Step 3: Verifying alert logs for fault alert ")
-            alert_list = [test_cfg["resource_type"], self.alert_types["missing"]]
+            alert_list = [test_cfg["resource_type"], self.alert_types[
+                "missing"], f"srvnode-{self.test_node}.mgmt.public"]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
                 df['Iteration0']['Step3'] = 'Fail'
@@ -285,7 +292,7 @@ class TestServerFruAlerts:
                                                           test_cfg[
                                                               "resource_type"])
 
-        if not resp_csm[0]:
+        if not resp_csm:
             df['Iteration0']['Step4'] = 'Fail'
             LOGGER.error("Step 4: Expected alert not found. Error: %s",
                          test_cfg["csm_error_msg"])
@@ -297,6 +304,8 @@ class TestServerFruAlerts:
         LOGGER.info("Step 5: Connecting OS drive %s", drive_name)
         resp = self.alert_api_obj.generate_alert(
                 AlertType.OS_DISK_ENABLE,
+                host_details={"host": self.hostname, "host_user": self.uname,
+                              "host_password": self.passwd},
                 input_parameters={"host_num": host_num,
                                   "drive_count": drive_count})
 
@@ -334,7 +343,7 @@ class TestServerFruAlerts:
                                                           test_cfg[
                                                               "resource_type"])
 
-        if not resp_csm[0]:
+        if not resp_csm:
             df['Iteration0']['Step7'] = 'Fail'
             LOGGER.error("Step 7: Expected alert not found. Error: %s",
                          test_cfg["csm_error_msg"])
@@ -397,6 +406,8 @@ class TestServerFruAlerts:
                         key, drive_name)
             resp = self.alert_api_obj.generate_alert(
                 alert_enum,
+                host_details={"host": self.hostname, "host_user": self.uname,
+                              "host_password": self.passwd},
                 input_parameters={"drive_name": drive_name,
                                   "drive_count": drive_count})
             if not resp[0]:
@@ -440,11 +451,11 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 3: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
 
-            LOGGER.info("Step 4: Rebooting node %s ", self.host)
+            LOGGER.info("Step 4: Rebooting node %s ", self.hostname)
             resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
                                              read_lines=True, exc=False)
             LOGGER.info(
-                "Step 4: Rebooted node: %s, Response: %s", self.host, resp)
+                "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
             # TODO: Check cluster health
             # resp = f"srv{self.test_node}_hlt".check_node_health()
@@ -469,6 +480,8 @@ class TestServerFruAlerts:
             LOGGER.info("Step 6: Resolving fault")
             resp = self.alert_api_obj.generate_alert(
                 resolve_enum,
+                host_details={"host": self.hostname, "host_user": self.uname,
+                              "host_password": self.passwd},
                 input_parameters={"host_num": host_num,
                                   "drive_count": drive_count})
 
@@ -594,6 +607,8 @@ class TestServerFruAlerts:
                         key, drive_name)
             resp = self.alert_api_obj.generate_alert(
                 alert_enum,
+                host_details={"host": self.hostname, "host_user": self.uname,
+                              "host_password": self.passwd},
                 input_parameters={"drive_name": drive_name,
                                   "drive_count": drive_count})
             if not resp[0]:
@@ -681,6 +696,8 @@ class TestServerFruAlerts:
             LOGGER.info("Step 7: Resolving fault")
             resp = self.alert_api_obj.generate_alert(
                 resolve_enum,
+                host_details={"host": self.hostname, "host_user": self.uname,
+                              "host_password": self.passwd},
                 input_parameters={"host_num": host_num,
                                   "drive_count": drive_count})
 

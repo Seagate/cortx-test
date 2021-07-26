@@ -101,7 +101,7 @@ class GenerateAlertLib:
             h_user = host_details["host_user"]
             h_pwd = host_details["host_password"]
         else:
-            host = COMMON_CONF["nodes"][0]["host"]
+            host = COMMON_CONF["nodes"][0]["hostname"]
             h_user = COMMON_CONF["nodes"][0]["username"]
             h_pwd = COMMON_CONF["nodes"][0]["password"]
 

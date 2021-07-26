@@ -465,7 +465,7 @@ class RASTestLib(RASCoreLib):
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.list_alert_validation.__name__, error)
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
