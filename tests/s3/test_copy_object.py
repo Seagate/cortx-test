@@ -474,7 +474,7 @@ class TestCopyObjects:
         LOGGER.info(
             "Step 5: From Account2 on bucket2 grant Write ACL to Account1 and"
             " full control to account2.")
-        resp = s3_acl_obj2.put_bucket_multiple_grantee(
+        resp = s3_acl_obj2.put_bucket_multiple_permission(
             bucket_name=self.bucket_name2,
             grant_full_control="id={}".format(canonical_id2),
             grant_write="id={}".format(canonical_id1))
@@ -2078,7 +2078,7 @@ class TestCopyObjects:
                 err.message, err.message)
         LOGGER.info("Step 4: From Account2 on bucket2 grant Write ACL to Account1 and "
                     "full control to account2.")
-        resp = s3_acl_obj2.put_bucket_multiple_grantee(
+        resp = s3_acl_obj2.put_bucket_multiple_permission(
             bucket_name=self.bucket_name2,
             grant_full_control="id={}".format(canonical_id2),
             grant_write="id={}".format(canonical_id1))

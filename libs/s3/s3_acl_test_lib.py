@@ -453,7 +453,7 @@ class S3AclTestLib(Acl):
 
         return True, response
 
-    def put_bucket_multiple_grantee(
+    def put_bucket_multiple_permission(
             self,
             bucket_name: str = None,
             **kwargs) -> tuple:
@@ -478,13 +478,13 @@ class S3AclTestLib(Acl):
             kwargs["grant_write"] = kwargs.get("grant_write", None)
             kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
             LOGGER.info("Setting acl while creating object")
-            response = super().put_bucket_multiple_grantee(
+            response = super().put_bucket_multiple_permission(
                 bucket_name,
                 **kwargs)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
-                         S3AclTestLib.put_bucket_multiple_grantee.__name__,
+                         S3AclTestLib.put_bucket_multiple_permission.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 

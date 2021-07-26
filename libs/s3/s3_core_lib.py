@@ -1069,9 +1069,9 @@ class Acl(S3Lib):
 
         return response
 
-    def put_bucket_multiple_grantee(self,
-                                    bucket_name: str = None,
-                                    **kwargs) -> bool:
+    def put_bucket_multiple_permission(self,
+                                       bucket_name: str = None,
+                                       **kwargs) -> bool:
         """
         Set the permissions on a bucket using access control lists (ACL).
 
