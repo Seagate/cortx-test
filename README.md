@@ -21,7 +21,7 @@ git status
 git branch
 git checkout dev
 git remote -v
-git remote add upstream git@github.com:Seagate/cortx-test.git
+git remote add upstream https://github.com/Seagate/cortx-test.git
 git remote -v
 Issuing the above command again will return you output as shown below.
 > origin    https://github.com/YOUR_USERNAME/cortx-test.git (fetch)
@@ -47,8 +47,10 @@ Following steps helps to setup client side env, where test framework runs. These
     3. `cd /usr/src && wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz && tar xzf Python-3.7.9.tgz && rm Python-3.7.9.tgz`
     
     4. `cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations`
-    
+        
     5. `cd /usr/src/Python-3.7.9 && make altinstall`
+    5a. Right here at this point you can check python is installed correctly by going in interactive mode. You can issue command "pip3 install pysqlite3" and type "import sqlite3" to confirm that sqlite3 is installed. This will save a lot of your time if you run into issues later for python installation. In some linux flavours you need --enable-loadable-sqlite-extensions switch to be added while configuring python.   
+    cd /usr/src/Python-3.7.9 && ./configure --prefix=/usr --enable-optimizations --enable-loadable-sqlite-extensions
     
     6. Create a softlink to point to this installation. You can check the folder created and 
     improvise following command.
@@ -66,11 +68,20 @@ Following steps helps to setup client side env, where test framework runs. These
     
     10. Change dir to cortx-test project directory, make sure a requirement file is present in project dir. Use following command to install python packages.
     `pip install --ignore-installed -r requirements.txt`
+    You can issue virenv/bin/deactivate to deactivate pyenv.
     
     11. Install awscli with default python 3.6 pre installed with inhouse vm images and 
     configure aws and copy cert file.
     
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
+
+## Script to setup client environemnt (Alternate option to manual steps)
+Change dir to your local repository root folder.
+```
+cd cortx-test/ci_tools
+./client_setup.sh 
+```
+This script should handle client setup. However note that python configure does not have switch --enable-loadable-sqlite-extensions in script.
 
 ## Steps to setup s3 client
 To setup s3 client tools, make sure you have completed basic setup in `Set up dev environment`.  
@@ -111,8 +122,7 @@ make clean --makefile=scripts/s3_tools/Makefile
 ## MongoDB as Configuration Management Database
 Cortx-test uses MongoDB as backend to store Cortx setup details. These details, stored in MongoDB, are specific
 to the setup itself. The purpose of this setup is to do automatic config generation
-based on the setup. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
-
+based on the setup. Not all values are mandatory and only applicable values needs to be filled in vm environment. A sample template is as shown below. This template is feed to database and pulled when developer will run test automation with test runner. The pulled templates merges with static yaml files to build the CMN_CFG and other component level configs.
 
 ```json
 
