@@ -23,17 +23,14 @@ from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_style_profiles, dict_Style_Stats_input_options
-from Performance.global_functions import benchmark_config, get_dict_from_array
-from Performance.statistics.statistics_functions import fetch_configs_from_file
+    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_Style_Stats_input_options
+
 
 release = [
     {'label': 'LR-R1', 'value': '1'},
     {'label': 'LR-R2', 'value': '2'}
 ]
 
-bucketOps = get_dict_from_array(fetch_configs_from_file(
-    benchmark_config, 'Hsbench', 'object_size'), False)
 
 statistics_layout = Card(
     CardBody([
@@ -90,15 +87,11 @@ statistics_layout = Card(
                style=dict_style_table_caption),
         Row(
             Dropdown(
-                id="bucketops_dropdown",
-                options=bucketOps,
-                placeholder="Select object size from given dropdown to get the details.",
-                style={'width': '500px', 'verticalAlign': 'middle', "margin-right": "15px",
-                       "margin-top": "10px", 'align-items': 'center', 'justify-content': 'center'},
+                id="perf_bucketops_dropdown",
+                placeholder="Select Object Size",
+                style=dict_Style_Stats_input_options
             ), justify='center'),
-        html.P(id="statistics_bucketops_workload",
-               style=style_workload_captions),
-        html.Div(id="statistics_bucketops_table"),
+        html.Div(id="statistics_bucketops_table", style= {'margin-top': '20px'}),
 
         html.Br(),
         html.P("COS Bench", style=style_perf_captions),
@@ -121,15 +114,9 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
-        html.P(id="statistics_cosbench_workload_1",
+        html.P(id="statistics_cosbench_workload",
                style=style_workload_captions),
-        html.Div(id="statistics_cosbench_table_1"),
-        html.P(id="statistics_cosbench_workload_2",
-               style=style_workload_captions),
-        html.Div(id="statistics_cosbench_table_2"),
-        html.P(id="statistics_cosbench_workload_3",
-               style=style_workload_captions),
-        html.Div(id="statistics_cosbench_table_3"),
+        html.Div(id="statistics_cosbench_table"),
     ]
     ),
     className="flex-sm-fill nav-link"
