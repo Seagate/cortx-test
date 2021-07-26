@@ -206,6 +206,8 @@ class HALibs:
                 vm_info = system_utils.execute_cmd(
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
+                if not vm_info[0]:
+                    raise CTException(err.CLI_COMMAND_FAILURE, msg=f"Unable to get VM power status")
                 data = vm_info[1].split("\\n")
                 pw_state = ""
                 for lines in data:
@@ -296,7 +298,7 @@ class HALibs:
         :rtype: boolean from polling_host() response
         """
         if is_safe:
-            resp = node_obj.execute_cmd(cmd="shutdown now", exc=False)
+            resp = node_obj.execute_cmd(cmd="shutdown -P now", exc=False)
             LOGGER.debug("Response for shutdown: {}".format(resp))
         else:
             if self.setup_type == "VM":
