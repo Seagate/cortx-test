@@ -20,18 +20,19 @@
 
 """Bucket Location Test Module."""
 
-import time
 import logging
+import time
+
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import s3_test_lib
-from libs.s3 import s3_acl_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from config import S3_CFG
+from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_test_lib
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 S3_OBJ = s3_test_lib.S3TestLib()
 
@@ -243,9 +244,8 @@ class TestBucketLocation:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.account_list.append(self.account_name1)
-        s3_obj_2 = s3_test_lib.S3TestLib(
         s3_obj_2 = s3_test_lib.S3TestLib(endpoint_url=S3_CFG['s3_url'],
-            access_key=access_key, secret_key=secret_key)
+                                         access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2 : Created second account to retrieve bucket location")
         self.log.info(
