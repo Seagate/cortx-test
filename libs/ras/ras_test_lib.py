@@ -25,6 +25,8 @@ class
 import logging
 import os
 import time
+import re
+import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
@@ -463,7 +465,7 @@ class RASTestLib(RASCoreLib):
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.list_alert_validation.__name__, error)
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
@@ -1154,3 +1156,75 @@ class RASTestLib(RASCoreLib):
                     c_dict[f"srvnode-{n}"]["ctrl_obj"] = ctrl_obj
 
         return c_dict
+
+    def get_node_drive_details(self, check_drive_count: bool = False):
+        """
+        Function to get details of the drives connected to node
+        :return: True/False, drive_name, host_num, drive_count
+        :rtype: Boolean, str, int, int
+        """
+        try:
+            filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
+            tempfile = RAS_VAL["ras_sspl_alert"]["file"]["temp_txt_file"]
+
+            cmd = common_commands.LSSCSI_CMD.format(filepath)
+            LOGGER.info(f"Running command {cmd}")
+            response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
+                                                username=self.username,
+                                                password=self.pwd,
+                                                read_lines=True, shell=False)
+            if not response[0]:
+                return response
+
+            LOGGER.info(f"Copying file from remote to local")
+            resp = self.node_utils.copy_file_to_local(remote_path=filepath,
+                                                      local_path=localpath)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Getting drive information")
+            cmd = common_commands.LINUX_STRING_CMD.format("ATA", filepath, tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Checking OS drive count")
+            cmd = common_commands.LINE_COUNT_CMD.format(tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+
+            drive_count = int(re.findall(r'\d+', resp[1])[0])
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"{drive_count} number of drives are connected to node "
+                        f"{self.host}")
+
+            if check_drive_count:
+                return resp[0], drive_count
+            else:
+                line_num = random.randint(1, drive_count)
+                LOGGER.info(f"Getting LUN number of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+
+                numeric_filter = filter(str.isdigit, resp.split(':')[0])
+                host_num = "".join(numeric_filter)
+
+                LOGGER.info(f"Getting name of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+                drive_name = resp.strip()
+                return True, drive_name, host_num, drive_count
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_node_drive_details.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+        finally:
+            if os.path.exists(localpath):
+                os.remove(localpath)
+            if os.path.exists(tempfile):
+                os.remove(tempfile)
+            self.node_utils.remove_file(filename=filepath)
