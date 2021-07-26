@@ -402,11 +402,11 @@ class Health(Host):
                     if "active/enabled" not in line:
                         pcs_failed_data[daemon] = line
 
-        response = self.execute_cmd(cmd=commands.CMD_PCS_SERV, read_lines=False, exc=False)
-        response = str(response, 'UTF-8')
+        response = self.execute_cmd(cmd=commands.CMD_PCS_GET_XML, read_lines=False, exc=False)
+        if isinstance(response, bytes):
+            response = str(response, 'UTF-8')
         json_format = self.get_node_health_xml(pcs_response=response)
         crm_mon_res = json_format['crm_mon']['resources']
-
         no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
@@ -435,8 +435,7 @@ class Health(Host):
             node_health_failure['PCS_STATUS'] = pcs_failed_data
         if node_health_failure:
             return False, node_health_failure
-        else:
-            return True, "cluster {} up and running.".format(self.hostname)
+        return True, "cluster {} up and running.".format(self.hostname)
 
     @staticmethod
     def get_node_health_xml(pcs_response: str):
@@ -445,7 +444,6 @@ class Health(Host):
         param: pcs_response: pcs response from pcs status xml command
         return: dict conversion of pcs status xml response command
         """
-
         formatted_data = pcs_response.replace("\n  ", "").replace(
             "\n", ",").replace(",</", "</").split(",")[1:-1]
         temp_dict = json.dumps(xmltodict.parse(formatted_data[0]))
