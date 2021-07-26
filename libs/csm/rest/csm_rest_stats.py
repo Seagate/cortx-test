@@ -62,12 +62,6 @@ class SystemStats(RestTestLib):
             response = self.restapi.rest_call(request_type="get",
                                               endpoint=endpoint,
                                               headers=self.headers)
-            try:
-                self.log.info(
-                    "Response returned is:\n %s", response.json())
-            except AttributeError:
-                self.log.info(
-                    "Response returned is:\n %s", response.text)
             return response
 
         except BaseException as error:

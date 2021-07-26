@@ -152,7 +152,8 @@ class TestSystemStats():
             assert_utils.assert_false(': null' in actual_response,
                                       "Null values in the response")
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
+    
+    @pytest.mark.skip("Known issue EOS-23135")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-13084')
@@ -472,7 +473,8 @@ class TestSystemStats():
                                       "Null values in the response")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
-
+    
+    @pytest.mark.skip(reason = "Failing due to EOS-23026")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-16545')

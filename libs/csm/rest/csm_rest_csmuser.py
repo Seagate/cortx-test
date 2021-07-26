@@ -39,7 +39,7 @@ class RestCsmUser(RestTestLib):
         self.user_roles = ["manage", "monitor"]
         self.random_user = False
         self.random_num = 0
-        self.csm_user_list_params = ("offset", "limit", "sort_by", "sort_dir")
+        self.csm_user_list_params = ("offset", "limit", "sortby", "dir")
 
     def create_payload_for_new_csm_user(self, user_type, user_defined_role):
         """
@@ -59,7 +59,7 @@ class RestCsmUser(RestTestLib):
                 data = self.config[user]
                 return {"username": data["username"],
                         "password": data["password"],
-                        "roles": [user_defined_role],
+                        "role": user_defined_role,
                         "email": data["username"]+"@seagate.com",
                         "alert_notification": "true"}
 
@@ -67,10 +67,10 @@ class RestCsmUser(RestTestLib):
                 if self.random_user:
                     user_name = "test{}{}".format(
                         int(self.random_num), int(time.time()))
-                    user_role = [user_defined_role]
+                    user_role = user_defined_role
                 else:
                     user_name = "test{}".format(int(time.time()))
-                    user_role = [user_defined_role]
+                    user_role = user_defined_role
 
             if user_type == "duplicate":
                 # creating new user to make it as duplicate
@@ -78,19 +78,19 @@ class RestCsmUser(RestTestLib):
                 return self.recently_created_csm_user
 
             if user_type == "missing":
-                return {"username": "tests3user", "roles": [user_defined_role]}
+                return {"username": "tests3user", "role": user_defined_role}
 
             if user_type == "invalid":
-                return {"username": "xys",  "password": "password", "roles": ["xyz"]}
+                return {"username": "xys",  "password": "password", "role": "xyz"}
 
             if user_type == "invalid_for_ui":
-                return {"username": "*ask%^*&", "password": "password", "roles": ["xyz"]}
+                return {"username": "*ask%^*&", "password": "password", "role": "xyz"}
 
             user = "csm_user_manage" if user_defined_role == "manage" else "csm_user_monitor"
             data = self.config[user]
             user_data = {"username": user_name,
                          "password": self.config["test_csmuser_password"],
-                         "roles": user_role,
+                         "role": user_role,
                          "email": user_name + "@seagate.com",
                          "alert_notification": "true"
                          }
@@ -124,11 +124,11 @@ class RestCsmUser(RestTestLib):
             data = self.create_payload_for_new_csm_user(user_type, user_role)
             user_data = const.USER_DATA
             user_data = user_data.replace("testusername", data["username"]).replace(
-                "user_role", data["roles"][0])
+                "user_role", data["role"])
             if user_type == "missing":
                 user_data = const.MISSING_USER_DATA
                 user_data = user_data.replace("testusername", data["username"]).replace(
-                    "user_role", data["roles"][0])
+                    "user_role", data["role"])
             self.log.debug("Payload for CSM user is %s", user_data)
             self.recently_created_csm_user = json.loads(user_data)
             self.log.debug("Recently created CSM user is %s",
@@ -237,8 +237,8 @@ class RestCsmUser(RestTestLib):
             # Adding parameters(if any) to endpoint
             parameters = {"offset": [offset, "offset="],
                           "limit": [limit, "limit="],
-                          "sort_by": [sort_by, "sort_by="],
-                          "sort_dir": [sort_dir, "sort_dir="]}
+                          "sort_by": [sort_by, "sortby="],
+                          "sort_dir": [sort_dir, "dir="]}
             params_selected = [
                 value for key, value in parameters.items() if value[0] is not None]
             if len(params_selected):
