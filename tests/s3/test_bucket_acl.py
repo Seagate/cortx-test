@@ -20,22 +20,23 @@
 
 """This file contains test related to Bucket ACL (Access Control Lists)."""
 
-import os
 import copy
-import time
 import logging
+import os
+import time
+
 import pytest
 
-from commons.params import TEST_DATA_PATH
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_PATH
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import S3_CFG
-from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 
@@ -64,8 +65,7 @@ class TestBucketACL:
             self.log.info("Created path: %s", resp)
         self.log.info("Test data path: %s", self.test_dir_path)
         self.test_file_path = os.path.join(
-            self.test_dir_path, self.test_file.format(
-                time.perf_counter()))
+            self.test_dir_path, self.test_file.format(time.perf_counter()))
         self.bucket_name = "{}-{}".format("aclbucket", time.perf_counter_ns())
         self.account_prefix = "acltestaccn_{}"
         self.account_name = "{}{}".format(
