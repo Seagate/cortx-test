@@ -1966,6 +1966,7 @@ class TestCopyObjects:
             "ENDED: Copy object specifying bucket name and object using wildcard while"
             " S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22283")
     @CTFailOn(error_handler)
@@ -2039,6 +2040,7 @@ class TestCopyObjects:
                                   f"with copy etag: {copy_etag}")
         LOGGER.info("ENDED: Use bucket policy to allow copy object to another account.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22287")
     @CTFailOn(error_handler)
@@ -2131,6 +2133,7 @@ class TestCopyObjects:
         LOGGER.info("ENDED: Use bucket policy to deny copy object to another account and "
                     "allow through ACLs.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22292")
     @CTFailOn(error_handler)
@@ -2263,6 +2266,7 @@ class TestCopyObjects:
                                   f"with copy etag: {copy_etag}")
         LOGGER.info("ENDED: Use bucket policy to allow copy object with object contain tagging.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-22299")
     @CTFailOn(error_handler)
