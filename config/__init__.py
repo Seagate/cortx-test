@@ -51,6 +51,7 @@ def split_args(sys_cmd: List):
             eq_splitted.extend([item])
     return eq_splitted
 
+
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
@@ -59,7 +60,7 @@ if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_a
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
-    os.environ["TARGET"]=target
+    os.environ["TARGET"] = target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
@@ -82,9 +83,10 @@ elif proc_name in ["testrunner.py", "testrunner"]:
 else:
     target = None
 
-
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
+                                                target=target, target_key="csm")
+JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
                                                 target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)

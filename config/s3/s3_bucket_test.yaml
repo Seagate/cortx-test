@@ -2995,3 +2995,48 @@ test_6923:
           AWS: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
+
+# copy object bucket policy tests.
+test_22283:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22287:
+  bucket_policy:
+    Statement:
+      - Effect: "Deny"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22292:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action:
+          - "s3:PutObject"
+          - "s3:PutObjectTagging"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22299:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+         CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Deny"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
