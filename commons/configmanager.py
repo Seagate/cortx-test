@@ -20,7 +20,6 @@
 #
 """Module for handling the yaml config and DB config and combine them"""
 
-import os
 import logging
 from urllib.parse import quote_plus
 import yaml
@@ -30,6 +29,7 @@ from commons import pswdmanager
 from commons.params import SETUPS_FPATH, DB_HOSTNAME, DB_NAME, SYS_INFO_COLLECTION, SETUP_DEFAULTS
 
 LOG = logging.getLogger(__name__)
+
 
 def get_config_yaml(fpath: str) -> dict:
     """Reads the config and decrypts the passwords
@@ -45,10 +45,12 @@ def get_config_yaml(fpath: str) -> dict:
         pswdmanager.decrypt_all_passwd(data)
     return data
 
-def get_config_db(setup_query: dict, drop_id: bool=True):
+
+def get_config_db(setup_query: dict, drop_id: bool = True):
     """Reads the configuration from the database
 
     :param setup_query:collection which will be read eg: {"setupname":"automation"}
+    :param drop_id: IDs field from MongoDB will be dropped
     """
     sys_coll = _get_collection_obj()
     LOG.debug("Finding the setup details: %s", setup_query)
@@ -86,7 +88,8 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
     """update the setup details in the database
 
     :param setup_query: Query for setup eg: {"setupname":"automation"}
-    :return [type]:
+    :param data: Data to be updated in db
+    :return [type]: dict data
     """
     sys_coll = _get_collection_obj()
     LOG.debug("Setup query : %s", setup_query)
@@ -99,10 +102,10 @@ def update_config_db(setup_query: dict, data: dict) -> dict:
 def get_config_wrapper(**kwargs):
     """Get the configuration from the database as well as yaml and merge.
     It is expected that duplicate data should not be present between DB and yaml
-    :param target: if targetis given than it will append the target details to the config.
-    :param fpath: if fpath is given than it will fetch the details from yaml file
-    :param target_key : allows us to fetch smaller portion of the complete yaml file
-    :param config_key : allows us to fetch smaller portion of the complete target details
+    :keyword target: if targetis given than it will append the target details to the config.
+    :keyword fpath: if fpath is given than it will fetch the details from yaml file
+    :keyword target_key : allows us to fetch smaller portion of the complete yaml file
+    :keyword config_key : allows us to fetch smaller portion of the complete target details
     """
     flag = False
     data = {}
