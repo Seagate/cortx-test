@@ -516,7 +516,7 @@ TEST-23616
     Click On Confirm Button
     Select from filter  username
     Select from filter  role
-    TODO : revisit once EOS-23034 is fixed.
+#   TODO : revisit once EOS-23034 is fixed.
     
 TEST-23615
     [Documentation]  Test that user should able to see role and username filter options.
