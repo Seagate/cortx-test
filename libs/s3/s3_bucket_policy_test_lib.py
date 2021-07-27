@@ -84,7 +84,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
     def put_bucket_policy(
             self,
             bucket_name: str = None,
-            bucket_policy: dict = None) -> tuple:
+            bucket_policy: str = None) -> tuple:
         """
         Apply s3 bucket policy to specified s3 bucket.
 
