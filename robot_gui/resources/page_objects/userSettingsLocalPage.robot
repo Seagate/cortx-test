@@ -351,7 +351,6 @@ Select from filter
     Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
     wait for page or element to load  2s
     ${var}=  CATENATE  csm filter ${filter_entry} select xpath
-    #${var}=  CATENATE  csm filter ${filter_entry} select xpath
     Log To Console And Report  ${${var}}  
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
