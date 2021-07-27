@@ -38,6 +38,12 @@ GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 CMD_UPDATE_FILE = "echo {} > {}"
 CMD_TOUCH_FILE = "touch {}"
+LSSCSI_CMD = "lsscsi > {}"
+LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
+LINE_COUNT_CMD = "cat {} | wc -l"
+DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
+CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
+GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -222,7 +228,7 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
-CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
@@ -279,6 +285,7 @@ CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GET_XML = "pcs status xml"
 CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 # LDAP commands
@@ -328,7 +335,10 @@ CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
+              "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
 CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
+JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
