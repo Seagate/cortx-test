@@ -55,7 +55,7 @@ class TestFailureDomain:
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
-            bucket_name = bucket_prefix + workload
+            bucket_name = bucket_prefix + "-" + str(workload).lower()
             if "Kb" in workload:
                 samples = 2000
             elif "Mb" in workload:
@@ -81,7 +81,7 @@ class TestFailureDomain:
         read_loops = test_cfg["read_loops"]
         clients = test_cfg["clients"]
         size = test_cfg["object_size"]
-        bucket_name = "test_25016_bucket"
+        bucket_name = "test-bucket-25016"
         resp = s3bench.setup_s3bench()
         assert resp, "Could not setup s3bench."
 
@@ -98,12 +98,14 @@ class TestFailureDomain:
             self.log.info(
                 f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
                 f"clients.")
+            skip_cleanup = True
+            if loop == read_loops - 1:
+                skip_cleanup = False
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
                                    num_clients=clients, num_sample=samples,
-                                   obj_name_pref="test_bucket_read", obj_size=size, skip_write=True,
-                                   skip_cleanup=True, duration=None,
-                                   log_file_prefix="test_bucket_read")
-
+                                   obj_name_pref="test_25016", obj_size=size, skip_write=True,
+                                   skip_cleanup=skip_cleanup, duration=None,
+                                   log_file_prefix="test_25016")
             self.log.info(f"Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"

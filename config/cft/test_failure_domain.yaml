@@ -4,4 +4,4 @@ test_25016:
   clients: 16
   samples: 256
   read_loops: 100
-  object_size: 10Mb
+  object_size: 128Mb
