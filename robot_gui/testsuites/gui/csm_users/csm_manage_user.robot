@@ -238,14 +238,6 @@ TEST-23888
     Delete CSM User  ${new_user_name}
     Delete CSM User  ${new_csm_user_name}
 
-TEST-23872
-    [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
-    ...  Reference : https://jts.seagate.com/browse/TEST-23872
-    [Tags]  Priority_High  TEST-23872
-    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
-    Should be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
-
 TEST-23886
     [Documentation]  Test: CSM GUI: Test that manage user should NOT be able to change role of self to any other role from csm UI.
     ...  Reference : https://jts.seagate.com/browse/TEST-23886
@@ -278,29 +270,6 @@ TEST-23843
     Validate CSM Login Success  ${new_csm_user_name}
     Re-login  ${new_csm_user_name1}  ${new_csm_password1}  ${page_name}  #relogin using new monitor user and changed password
     Validate CSM Login Success  ${new_csm_user_name1}
-
-TEST-23837
-    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
-    ...  Reference : https://jts.seagate.com/browse/TEST-23837
-    [Tags]  Priority_High  TEST-23837
-    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    Navigate To Page  ${page_name}
-    wait for page or element to load
-    Verify Admin User Should Not Contain Delete Icon  admin
-    ${new_password}=  Generate New Password
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}  manage
-    Click on confirm button
-    ${new_csm_user_password}=  Generate New Password
-    ${new_csm_user_name}=  Generate New User Name
-    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
-    Click on confirm button
-    Delete Logged In CSM User  ${new_user_name}
-    CSM GUI Login  ${url}  ${browser}  ${headless}  ${new_csm_user_name}  ${new_csm_user_password}
-    Verify Absence of Delete Button on CSM users
-    Re-login  ${username}  ${password}  ${page_name}
-    Verify Deleted User  {new_csm_user_name}
-    Verify Deleted User  {new_user_name}
 
 TEST-23859
     [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page

@@ -494,3 +494,36 @@ TEST-23050
         Delete CSM User  ${user}
     END
     Verify Delete Action Disabled On The Table Element  ${username}
+
+TEST-23872
+    [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23872
+    [Tags]  Priority_High  TEST-23872
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
+    Should be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
+
+TEST-23837
+    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23837
+    [Tags]  Priority_High  TEST-23837
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    Verify Admin User Should Not Contain Delete Icon  admin
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  manage
+    Click on confirm button
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click on confirm button
+    Delete Logged In CSM User  ${new_user_name}
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${new_csm_user_name}  ${new_csm_user_password}
+    Verify Absence of Delete Button on CSM users
+    Re-login  ${username}  ${password}  ${page_name}
+    Verify Deleted User  {new_csm_user_name}
+    Verify Deleted User  {new_user_name}

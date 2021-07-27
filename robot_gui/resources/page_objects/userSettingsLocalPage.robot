@@ -223,7 +223,6 @@ Read Pagination Options
     Click Element  ${PAGINATION_LIST_ICON_XPATH}
     Sleep  3s
     @{elements}=  Get WebElements  ${PAGINATION_PAGE_OPTIONS_XPATH}
-    Log To Console And Report   ${elements}
     FOR  ${element}  IN  @{elements}
             ${text}=    Get Text    ${element}
             Append To List  ${data_list}  ${text}
