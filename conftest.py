@@ -800,7 +800,10 @@ def pytest_runtest_logstart(nodeid, location):
     if not Globals.LOCAL_RUN and not skip_health_check:
         try:
             check_cortx_cluster_health()
-            check_cluster_storage()
+            try:
+                check_cluster_storage()
+            except (AssertionError, Exception) as fault:
+                LOGGER.error(f"Cluster Storage {fault}")
         except AssertionError as fault:
             LOGGER.error(f"Health check failed for setup with exception {fault}")
             pytest.exit(f'Health check failed for cluster {target}', 3)
