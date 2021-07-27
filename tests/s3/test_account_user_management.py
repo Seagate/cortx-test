@@ -20,23 +20,24 @@
 
 """Account User Management test module."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, remove_file
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import S3H_OBJ
-from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.iam_test_lib import IamTestLib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
-from config import S3_USER_ACC_MGMT_CONFIG
+from commons.utils.system_utils import create_file, remove_file
 from config import S3_CFG
+from config import S3_USER_ACC_MGMT_CONFIG
+from libs.s3 import S3H_OBJ
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestAccountUserManagement:
@@ -96,7 +97,6 @@ class TestAccountUserManagement:
         all_usrs = [usr["UserName"]
                     for usr in usr_list if self.user_name in usr["UserName"]]
         if all_usrs:
-            # IAM_OBJ.delete_users_with_access_key(all_usrs)
             self.iam_obj.delete_users_with_access_key(all_usrs)
 
     def teardown_method(self):
