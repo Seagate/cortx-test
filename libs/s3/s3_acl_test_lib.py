@@ -453,6 +453,43 @@ class S3AclTestLib(Acl):
 
         return True, response
 
+    def put_bucket_multiple_permission(
+            self,
+            bucket_name: str = None,
+            **kwargs) -> tuple:
+        """
+        Set the permissions on a bucket using access control lists (ACL).
+
+        :param bucket_name: Name of the bucket.
+        :param grant_full_control: Allows grantee the read, write,
+        read ACP, and write ACP permissions on the bucket.
+        :param grant_read: Allows grantee to list the objects in the bucket.
+        :param grant_read_acp: Allows grantee to read the bucket ACL.
+        :param grant_write: Allows grantee to create,
+        overwrite, and delete any object in the bucket.
+        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        :return: bool, response
+        """
+        try:
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write"] = kwargs.get("grant_write", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
+            LOGGER.info("Setting acl while creating object")
+            response = super().put_bucket_multiple_permission(
+                bucket_name,
+                **kwargs)
+            LOGGER.info(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3AclTestLib.put_bucket_multiple_permission.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
     @staticmethod
     def get_bucket_acl_using_iam_credentials(
             access_key: str = None,
