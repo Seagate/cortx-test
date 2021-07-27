@@ -38,21 +38,24 @@ class TestFailureDomain:
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
         cls.setup_type = CMN_CFG["setup_type"]
 
+    @pytest.mark.data_durability
     @pytest.mark.tags("TEST-24673")
     def test_24673(self):
         """S3bench Workload test - Sanity check"""
-        bucket_name = "test-bucket-24673"
+        test_cfg = self.cft_test_cfg["test_24673"]
+        bucket_prefix = "test-bucket-24673"
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
-            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb"
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
         ]
-        clients = 16
+        clients = test_cfg["clients"]
         if self.setup_type == "HW":
             workloads.extend(["4Gb", "8Gb", "16Gb"])
             clients = clients * 5
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
+            bucket_name = bucket_prefix + workload
             if "Kb" in workload:
                 samples = 2000
             elif "Mb" in workload:
@@ -69,14 +72,16 @@ class TestFailureDomain:
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
 
-    @pytest.mark.tags("test_bucket_read")
-    def test_bucket_read(self):
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-25016")
+    def test_25016(self):
         """S3bench Workload test - Sanity check - Long running Read Operations"""
-        samples = 256
-        loops = 2
-        clients = 16
-        size = "128Mb"
-        bucket_name = "test-bucket-read"
+        test_cfg = self.cft_test_cfg["test_25016"]
+        samples = test_cfg["samples"]
+        read_loops = test_cfg["read_loops"]
+        clients = test_cfg["clients"]
+        size = test_cfg["object_size"]
+        bucket_name = "test_25016_bucket"
         resp = s3bench.setup_s3bench()
         assert resp, "Could not setup s3bench."
 
@@ -84,12 +89,12 @@ class TestFailureDomain:
         self.log.info(f"Workload: {samples} objects of {size} with {clients} parallel clients.")
         resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
                                num_clients=clients, num_sample=samples,
-                               obj_name_pref="test_bucket_read", obj_size=size,
+                               obj_name_pref="test_25016", obj_size=size,
                                skip_cleanup=True, duration=None,
-                               log_file_prefix="test_bucket_read")
+                               log_file_prefix="test_25016")
 
         self.log.info(f"Perform Read Operation in Loop on Bucket {bucket_name}:")
-        for loop in range(loops):
+        for loop in range(read_loops):
             self.log.info(
                 f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
                 f"clients.")
