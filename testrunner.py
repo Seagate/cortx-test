@@ -487,12 +487,16 @@ def check_kafka_msg_trigger_test(args):
     consumer = kafka_consumer.get_consumer()
     print(consumer)
     received_stop_signal = False
-
+    max_iteration = 0
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
             msg = consumer.poll(60)
             if msg is None:
+                max_iteration += 1
+                # break while in case consumer doesn't have any further messages
+                if max_iteration >= 4:
+                    received_stop_signal = True
                 continue
             kafka_msg = msg.value()
             print(kafka_msg)
@@ -514,9 +518,11 @@ def check_kafka_msg_trigger_test(args):
                 args.target = acquired_target
                 p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
                 p.start()
-
+                p.join()
         except KeyboardInterrupt:
             break
+        except BaseException:
+            received_stop_signal = True
     consumer.close()
 
 

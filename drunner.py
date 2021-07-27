@@ -192,7 +192,10 @@ def run(opts: dict) -> None:
                     test_map)
 
     develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
-
+    kafka_admin_conf = {"bootstrap.servers": params.BOOTSTRAP_SERVERS}
+    kafka_client = AdminClient(kafka_admin_conf)
+    delete_topic(client=kafka_client, topics=[params.TEST_EXEC_TOPIC])
+    create_topic(kafka_client)
     work_queue = worker.WorkQ(producer.produce, 1024)
     finish = False  # Use finish to exit loop
     # start kafka producer
@@ -385,7 +388,7 @@ def save_to_logdir(test_list: List) -> None:
 
 
 def create_topic(admin_client: AdminClient):
-    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 1, 1)]
+    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 2, 1)]
     admin_client.create_topics(topic_list)
 
 
