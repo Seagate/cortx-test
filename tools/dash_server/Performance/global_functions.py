@@ -134,8 +134,8 @@ def get_unique_object_sizes(input_list):
 
 
 def sort_object_sizes_list(obj_sizes):
-    #Remove any space in object size string, it should only have number and two letter unit without space
-    obj_sizes = [ s.replace(' ', '') for s in obj_sizes ]
+    # Remove any space in object size string, it should only have number and two letter unit without space
+    obj_sizes = [s.replace(' ', '') for s in obj_sizes]
 
     sizes_sorted = {
         'KB': [], 'MB': [], 'GB': [],

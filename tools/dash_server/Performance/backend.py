@@ -62,7 +62,6 @@ def get_data_from_database(data_needed_for_query):
     for obj in objects:
         get_benchmark_data(data_needed_for_query, results, obj)
 
-
     df = pd.DataFrame(results)
     df = df.T
     df.reset_index(inplace=True)

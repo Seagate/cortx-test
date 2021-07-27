@@ -22,13 +22,14 @@
 Schemas to be used in backend of the dashboard
 """
 
+
 def get_common_schema(data):
     entry = {
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
         'Percentage_full': data['pfull'],
         'Iteration': data['itrns'],
-        'Custom': data['custom'], 
+        'Custom': data['custom'],
         'Buckets': data['buckets'],
         'Sessions': data['sessions']
     }
@@ -51,7 +52,7 @@ def get_complete_schema(data):
     # entry['Count_of_Clients'] = data['clients'],
 
     return entry
-  
+
 
 statistics_column_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
                               'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
@@ -65,14 +66,15 @@ bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Ob
 
 def get_dropdown_labels(dropdown_type):
     mapping = {
-        'nodes' : ' Nodes',
-        'pfill' : '% Utilization',
-        'itrns' : ' Iteration',
-        'buckets' : ' Bucket(s)',
-        'sessions' : ' Session(s)'
+        'nodes': ' Nodes',
+        'pfill': '% Utilization',
+        'itrns': ' Iteration',
+        'buckets': ' Bucket(s)',
+        'sessions': ' Session(s)'
     }
 
     return mapping[dropdown_type]
+
 
 def get_bucketops_modes():
     modes = {
