@@ -164,9 +164,9 @@ class TestHAClusterHealth:
         and comes back up(one by one, safe shutdown)
         """
         LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
-        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info(f"Shutting down {node_name}")
             if self.setup_type == "HW":
@@ -263,9 +263,9 @@ class TestHAClusterHealth:
         """
         LOGGER.info(
             "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
-        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -561,7 +561,6 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status with safe "
             "shutdown of single node multiple times.")
-        self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
@@ -569,6 +568,7 @@ class TestHAClusterHealth:
             "Shutdown %s node multiple time and check cluster status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info("Shutting down node: %s, Loop: %s",
                         self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
@@ -679,7 +679,6 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status with unsafe "
             "shutdown of single node multiple times.")
-        self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
@@ -687,6 +686,7 @@ class TestHAClusterHealth:
             "Shutdown %s node multiple time and check cluster status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info("Shutting down node: %s, Loop: %s",
                         self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
@@ -798,7 +798,6 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status, when one by one all node's nw"
             " interface goes down and comes back up")
-        self.restored = False
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(
@@ -812,6 +811,7 @@ class TestHAClusterHealth:
             iface_list)
 
         for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info(
                 "Make the private data interface %s down for %s",
                 iface_list[node],
@@ -826,10 +826,12 @@ class TestHAClusterHealth:
             resp = nd_obj.execute_cmd(
                 common_cmds.CMD_PING.format(
                     private_ip_list[node]), read_lines=True, exc=False)
+            LOGGER.info(f"resp {resp}")
             assert_utils.assert_in(
-                "Name or service not known",
-                resp[1][0],
-                "Node interface still up.")
+                b"100% packet loss",
+                resp,
+                f"Node interface still up. {resp}")
+            time.sleep(120)
 
             LOGGER.info(
                 "Check resources health in CLI and REST after making network interface down for %s",
@@ -883,8 +885,8 @@ class TestHAClusterHealth:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                       "Node interface still down.")
+            assert_utils.assert_not_in(b"0% packet loss", resp,
+                                       f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
