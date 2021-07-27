@@ -25,7 +25,7 @@ from dash_core_components import Dropdown, Graph
 import dash_html_components as html
 import dash_daq as daq
 
-from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium, dict_dropdown_normal_Style
+from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium, dict_dropdown_normal_Style, dict_style_dropdown_large
 
 # Variable declarations
 Xfilter = [
@@ -83,13 +83,12 @@ first_input_set = Row([
         id="benchmark_dropdown_first",
         options=benchmarks,
         placeholder="Benchmark",
-        # value='S3bench',
         style=dict_style_dropdown_medium
     ),
     Dropdown(
         id='configs_dropdown_first',
         placeholder="Choose configurations",
-        style={'display': 'none'}
+        style=dict_style_dropdown_large
     ),
     Dropdown(
         id="operations_dropdown_first",
