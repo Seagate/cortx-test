@@ -6,9 +6,6 @@ Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_BUCKET_POLICY
 Test Setup  Login To S3 Account

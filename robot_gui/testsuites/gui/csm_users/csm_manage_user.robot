@@ -10,8 +10,6 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-#Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-#...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -26,20 +24,6 @@ ${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
-
-*** Keywords ***
-
-Create and login with CSM manage user
-    [Documentation]  This keyword is to create and login with csm manage user
-    ${new_user_name}=  Generate New User Name
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page_name}
-    wait for page or element to load
-    Create New CSM User  ${new_user_name}  ${new_password}  manage
-    Click On Confirm Button
-    Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page_name}
-    [Return]  ${new_user_name}  ${new_password}
 
 *** Test Cases ***
 
@@ -66,8 +50,10 @@ TEST-1216
     [Documentation]  Test manager user can not access IAM user and buckets tab.
     [Tags]  Priority_High  user_role  TEST-1216
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     Verify IAM User Section Not Present
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify bucket Section Not Present
     wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
@@ -165,15 +151,14 @@ TEST-21592
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
-    Re-login  ${new_csm_user_name}  ${new_password}  MANAGE_MENU_ID
+    Re-login  ${new_csm_user_name}  ${new_password}  DASHBOARD_MENU_ID
     wait for page or element to load
     Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
     wait for page or element to load
-    Re-login  ${S3_account_name}  ${S3_password}  S3_ACCOUNTS_TAB_ID
-    Navigate To Page  S3_BUCKET_TAB_ID
+    Re-login  ${S3_account_name}  ${S3_password}  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
     wait for page or element to load
@@ -196,18 +181,6 @@ TEST-23782
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${new_csm_user_name}
 
-TEST-23044
-    [Documentation]  Test that CSM user with role manage cannot create user with admin role.
-    [Tags]  Priority_High  user_role  TEST-23044
-    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    wait for page or element to load
-    Click On Add User Button
-    Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
-    Click On Cancel Button
-    Re-login  ${username}  ${password}  ${page_name}
-    wait for page or element to load
-    Delete CSM User  ${new_user_name}
-
 TEST-23052
     [Documentation]  Test that manage user should not able to reset other user password with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23052
@@ -222,3 +195,24 @@ TEST-23052
     END
     Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${manage_user_name}
+
+TEST-23044
+    [Documentation]  Test that CSM user with role manage cannot create user with admin role.
+    [Tags]  Priority_High  user_role  TEST-23044
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    Click On Add User Button
+    Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
+    Click On Cancel Button
+    Re-login  ${username}  ${password}  ${page_name}
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
+
+TEST-23609
+    [Documentation]  Test that User should able to clean the search operation properly 
+    ...  Reference : https://jts.seagate.com/browse/TEST-23609
+    [Tags]  Priority_High  Smoke_test  TEST-23609
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Verify Clean Search operation
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}

@@ -4,12 +4,11 @@ Resource    ${RESOURCES}/resources/page_objects/alertPage.robot
 Resource    ${RESOURCES}/resources/page_objects/bucket_page.robot
 Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource    ${RESOURCES}/resources/page_objects/lyvePilotPage.robot
 Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 
-#Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-#...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -24,20 +23,6 @@ ${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
-
-*** Keywords ***
-
-Create and login with CSM monitor user
-    [Documentation]  This keyword is to create and login with csm monitor user
-    ${new_user_name}=  Generate New User Name
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page_name}  ${Sub_tab}
-    wait for page or element to load
-    Create New CSM User  ${new_user_name}  ${new_password}  monitor
-    Click On Confirm Button 
-    Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page_name}
-    [Return]  ${new_user_name}  ${new_password}
 
 *** Test Cases ***
 
@@ -93,7 +78,9 @@ TEST-1838
     [Tags]  Priority_High  TEST-1838
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify Absence of Edit And Delete Button on S3account
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify Absence of Delete Button on CSM users
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -102,6 +89,8 @@ TEST-1234
     [Documentation]  Test that monitor user cannot create, update or delete s3 accounts.
     [Tags]  Priority_High  user_role  TEST-1234
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify Absence of Edit And Delete Button on S3account
     wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
@@ -146,7 +135,9 @@ TEST-1222
     [Tags]  Priority_High  user_role  TEST-1222
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify IAM User Section Not Present
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify bucket Section Not Present
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -156,6 +147,7 @@ TEST-1221
     [Tags]  Priority_High  user_role  TEST-1221
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify Absence of Edit And Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -166,6 +158,7 @@ TEST-18329
     [Tags]  Priority_High  user_role  TEST-18329
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Navigate To Page  DASHBOARD_MENU_ID
     Verify Absence of Reset Passwrod Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
@@ -179,13 +172,14 @@ TEST-22768
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    Navigate To Page  DASHBOARD_MENU_ID
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
     Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Absence of Delete Button on S3account
-    Re-login  ${username}  ${password}  ${page_name}
+    Re-login  ${username}  ${password}  DASHBOARD_MENU_ID
     wait for page or element to load
     Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load

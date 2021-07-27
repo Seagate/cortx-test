@@ -8,9 +8,6 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_BUCKET_CREATE
 Test Setup  Login To S3 Account
