@@ -85,4 +85,3 @@ Audit_log_days = ["One day", "Two days", "Three days",
 #CSM User Table
 CSM_ROLE_COLUMN = 2
 CSM_USERNAME_COLUMN = 3
-CSM_DROPDOWN_VALUE = "10 rows"
