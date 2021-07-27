@@ -29,6 +29,7 @@ from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
 from commons.utils.system_utils import check_ping
+from commons.utils.system_utils import run_remote_cmd
 
 LOG = logging.getLogger(__name__)
 
@@ -356,10 +357,15 @@ class Health(Host):
         LOG.info("Node %s is online.", self.hostname)
 
         LOG.info("Checking hctl status for %s node", self.hostname)
-        response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True, exc=False)
-        if "Cluster is not running" in ",".join(response[1]):
-            return False, f"Cluster is not running on {self.hostname}"
-        LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname, response)
+        status, result = run_remote_cmd(
+            cmd=commands.MOTR_STATUS_CMD,
+            hostname=self.hostname,
+            username=self.username,
+            password=self.password,
+            read_lines=True)
+        if not status:
+            return False, f"Failed to get HCTL status {result}"
+        LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname, result)
 
         resp = self.hctl_status_json()
         hctl_services_failed = {}
@@ -388,16 +394,21 @@ class Health(Host):
             time.sleep(10)
 
         LOG.info("Checking pcs status for %s node", self.hostname)
-        response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True, exc=False)
-        if "cluster is not currently running on this node" in ",".join(response[1]):
-            return False, f"PCS status cluster is not currently running on {self.hostname}"
-        LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname, response)
+        status, result = run_remote_cmd(
+            cmd=commands.PCS_STATUS_CMD,
+            hostname=self.hostname,
+            username=self.username,
+            password=self.password,
+            read_lines=True)
+        if not status:
+            return False, f"Failed to get PCS status {result}"
+        LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname, result)
 
         pcs_failed_data = {}
         daemons = ["corosync:", "pacemaker:", "pcsd:"]
         LOG.info("Checking status of Daemons: %s", daemons)
         for daemon in daemons:
-            for line in response:
+            for line in result:
                 if daemon in line:
                     if "active/enabled" not in line:
                         pcs_failed_data[daemon] = line

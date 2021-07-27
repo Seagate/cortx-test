@@ -50,7 +50,6 @@ class TestNodeHealthHelper:
         if not res[0]:
             res = self.restart_cluster()
             assert_utils.assert_true(res[0], res[1])
-        self.restored = True
         self.log.info("END: Test case setup completed.")
 
     def teardown_method(self):
@@ -124,6 +123,7 @@ class TestNodeHealthHelper:
         """Test hctl status not clean test"""
         self.log.info("START: Test hctl status not clean scenario.")
         self.log.info("Get s3server fids.")
+        self.restored = False
         _resp, get_s3server_fids = S3H_OBJ.get_s3server_fids()
         self.log.info("Get s3server fids. resp = {}".format(get_s3server_fids))
 
@@ -158,9 +158,10 @@ class TestNodeHealthHelper:
 
     def test_pcs_cluster_stoped(self) -> None:
         """Test pcs cluster stopped test"""
-        self.log.info("START: Test pcs cluster stopped scenario.")
+        self.log.info("START: Test pcs/hctl cluster stopped scenario.")
 
         node = "srvnode-1.data.private"
+        self.restored = False
         self.log.info("Executing pcs cluster stop on %s", node)
         self.node_list[0].execute_cmd(
             f"pcs cluster stop {node}",
@@ -173,8 +174,9 @@ class TestNodeHealthHelper:
             if index:
                 assert_utils.assert_false(res[0], res[1])
             else:
-                assert_utils.assert_equal(
-                    res[1], f"Cluster is not running on {self.host_list[index]}", res[1])
+                assert_utils.assert_in(
+                    "Failed to get", res[1], "Cluster response is not as expected.")
+
         self.log.info("Executing pcs cluster start on %s", node)
         self.node_list[0].execute_cmd(
             "pcs cluster start --all",
@@ -194,4 +196,4 @@ class TestNodeHealthHelper:
             res = self.restart_cluster()
             assert_utils.assert_true(res[0], res[1])
         self.restored = True
-        self.log.info("END: Tested pcs cluster stopped scenario.")
+        self.log.info("END: Tested pcs/hctl cluster stopped scenario.")
