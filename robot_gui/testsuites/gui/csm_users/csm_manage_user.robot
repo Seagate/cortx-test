@@ -271,15 +271,6 @@ TEST-23843
     Re-login  ${new_csm_user_name1}  ${new_csm_password1}  ${page_name}  #relogin using new monitor user and changed password
     Validate CSM Login Success  ${new_csm_user_name1}
 
-TEST-23859
-    [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
-    ...  Reference : https://jts.seagate.com/browse/TEST-23859
-    [Tags]  Priority_High  TEST-23859
-    Navigate To Page  ${page_name}
-    ${fetched_values}=  Read Pagination Options
-    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
-    Lists Should Be Equal  ${fetched_values}  ${actual_values}
-    
 TEST-23052
     [Documentation]  Test that manage user should not able to reset other user password with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23052
