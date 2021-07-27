@@ -34,7 +34,6 @@ from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import AWScliS3api
 
-S3_OBJ = S3TestLib()
 AWS_CLI_OBJ = AWScliS3api()
 
 
@@ -50,6 +49,7 @@ class TestListObjectV2:
         prerequisite test steps if any and cleanup.
         """
         self.log = logging.getLogger(__name__)
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("STARTED: setup test operations.")
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_utils.assert_true(
@@ -70,9 +70,9 @@ class TestListObjectV2:
         self.log.info("STARTED: setup teardown operations.")
         if system_utils.path_exists(self.folder_path):
             system_utils.remove_dirs(self.folder_path)
-        bktlist = S3_OBJ.bucket_list()[1]
+        bktlist = self.s3_obj.bucket_list()[1]
         if self.bucket_name in bktlist:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: setup teardown operations.")
 

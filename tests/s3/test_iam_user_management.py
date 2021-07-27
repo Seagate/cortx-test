@@ -39,8 +39,6 @@ from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
-S3_OBJ = s3_test_lib.S3TestLib()
-
 
 class TestIAMUserManagement:
     """IAM user Testsuite for CLI"""
@@ -48,6 +46,7 @@ class TestIAMUserManagement:
     @classmethod
     def setup_class(cls):
         cls.log = logging.getLogger(__name__)
+        cls.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.log.info("Setup s3 bench tool")
         cls.log.info("Check s3 bench tool installed.")
         res = system_utils.path_exists("/root/go/src/s3bench")
@@ -66,7 +65,6 @@ class TestIAMUserManagement:
         It is performing below operations as pre-requisites.
             - Login to CORTX CLI as s3account user.
         """
-        # self.log = logging.getLogger(__name__)
         self.log.info("STARTED : Setup operations for test function")
         self.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
@@ -121,9 +119,9 @@ class TestIAMUserManagement:
                 self.parallel_ios.join()
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bkt_list = S3_OBJ.bucket_list()[1]
+        bkt_list = self.s3_obj.bucket_list()[1]
         if self.io_bucket_name in bkt_list:
-            resp = S3_OBJ.delete_bucket(self.io_bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.io_bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step cleanup resources.")
         for resource in self.resources_dict:
@@ -183,7 +181,7 @@ class TestIAMUserManagement:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         self.log.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.s3_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -217,7 +215,7 @@ class TestIAMUserManagement:
                           self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
-                resp = S3_OBJ.object_list(self.io_bucket_name)
+                resp = self.s3_obj.object_list(self.io_bucket_name)
                 self.log.info(resp)
                 self.parallel_ios.join()
                 self.log.info(

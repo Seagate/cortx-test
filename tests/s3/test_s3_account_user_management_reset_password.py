@@ -20,28 +20,27 @@
 
 """Account user management reset password test module."""
 
+import logging
 import os
 import time
-from time import perf_counter_ns
 from multiprocessing import Process
+from time import perf_counter_ns
 
-import logging
 import pytest
-from commons.utils import assert_utils
-from commons.utils import system_utils
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import S3_CFG
-from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.cortxcli_test_lib import CSMAccountOperations
-
-S3_OBJ = s3_test_lib.S3TestLib()
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from scripts.s3_bench import s3bench
 
 
 class TestAccountUserManagementResetPassword:
@@ -57,6 +56,7 @@ class TestAccountUserManagementResetPassword:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: test setup.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.parallel_ios = None
         self.account_dict = dict()
         self.resources_dict = dict()
@@ -97,9 +97,9 @@ class TestAccountUserManagementResetPassword:
                 self.parallel_ios.join()
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bkt_list = S3_OBJ.bucket_list()[1]
+        bkt_list = self.s3_obj.bucket_list()[1]
         if self.io_bucket_name in bkt_list:
-            resp = S3_OBJ.delete_bucket(self.io_bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.io_bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step cleanup resources.")
         for resource in self.resources_dict:
@@ -158,7 +158,7 @@ class TestAccountUserManagementResetPassword:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         self.log.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.s3_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -192,7 +192,7 @@ class TestAccountUserManagementResetPassword:
                           self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
-                resp = S3_OBJ.object_list(self.io_bucket_name)
+                resp = self.s3_obj.object_list(self.io_bucket_name)
                 self.log.info(resp)
                 self.parallel_ios.join()
                 self.log.info(

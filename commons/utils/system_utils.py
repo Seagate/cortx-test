@@ -51,6 +51,7 @@ if sys.platform in ['linux', 'linux2']:
 
 LOGGER = logging.getLogger(__name__)
 
+dns_rr_counter = 0
 
 def run_remote_cmd(
         cmd: str,
@@ -993,6 +994,19 @@ def umount_dir(mnt_dir: str = None) -> tuple:
         remove_dir(dpath=mnt_dir)
 
     return True, "Directory is unmounted"
+
+
+def get_s3_url(cfg, node_index):
+    """
+    Function to format s3 url for individual vm
+    :param cfg: config object
+    :param node_index: node index for indexing s3_dns fqdn
+    :return: dict respo with s3_url and iam_url as key
+    """
+    final_urls = dict()
+    final_urls["s3_url"] = f"https://{cfg['s3_dns'][node_index]}"
+    final_urls["iam_url"] = f"https://{cfg['s3_dns'][node_index]}:9443"
+    return final_urls
 
 
 def configure_jclient_cloud(

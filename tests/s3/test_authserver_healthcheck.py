@@ -60,6 +60,7 @@ class TestAuthServerHealthCheckAPI:
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.log.info("Started: Performing setup operations")
+        self.head_url =  f"{S3_CFG['iam_url']}{S3_CFG['head_urls']}"
         resp = self.nobj.path_exists(self.remote_path)
         self.log.info(resp)
         assert_true(
@@ -131,7 +132,7 @@ class TestAuthServerHealthCheckAPI:
         resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
-            res = http_head_request(url=S3_CFG["head_urls"])
+            res = http_head_request(url=self.head_url)
             self.log.info(res)
             assert_equal("200", str(res.status_code))
         self.log.info(
@@ -153,7 +154,7 @@ class TestAuthServerHealthCheckAPI:
         resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
-            res = http_head_request(url=S3_CFG["head_urls"])
+            res = http_head_request(url=self.head_url)
             self.log.info(res)
             assert_equal("200", str(res.status_code))
         self.log.info(
