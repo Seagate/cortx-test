@@ -663,8 +663,6 @@ class RestAuditLogs(RestTestLib):
                     self.log.info(
                         "Ignoring the first 2 and that last 2 records from show"
                         " api response and verifying if the remaining ones match")
-                    import pdb 
-                    pdb.set_trace()
                     log_content = audit_log_show_response.json(
                     )['logs'][2:audit_log_show_response.json()['total_records']-3]
                     result=True
