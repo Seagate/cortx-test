@@ -51,6 +51,7 @@ if sys.platform in ['linux', 'linux2']:
 
 LOGGER = logging.getLogger(__name__)
 
+dns_rr_counter = 0
 
 def run_remote_cmd(
         cmd: str,
@@ -99,6 +100,43 @@ def run_remote_cmd(
         return False, error
 
     return True, output
+
+
+def run_remote_cmd_wo_decision(
+        cmd: str,
+        hostname: str,
+        username: str,
+        password: str,
+        **kwargs) -> tuple:
+    """
+    Execute command on remote machine.
+    :return: stdout, stderr, status
+    :Need this command because motr api send output on stderr
+    """
+    LOGGER.info("Host: %s, User: %s, Password: %s", hostname, username, password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
+    client = SSHClient()
+    client.set_missing_host_key_policy(AutoAddPolicy())
+    LOGGER.debug("Command: %s", str(cmd))
+    client.connect(hostname, username=username,
+                   password=password, timeout=timeout_sec)
+    _, stdout, stderr = client.exec_command(cmd)
+    exit_status = stdout.channel.recv_exit_status()
+    if read_lines:
+        output = stdout.readlines()
+        output = [r.strip().strip("\n").strip() for r in output]
+        LOGGER.debug("Result: %s", str(output))
+        error = stderr.readlines()
+        error = [r.strip().strip("\n").strip() for r in error]
+        LOGGER.debug("Error: %s", str(error))
+    else:
+        output = stdout.read(read_nbytes)
+        LOGGER.debug("Result: %s", str(output))
+        error = stderr.read()
+        LOGGER.debug("Error: %s", str(error))
+    return output, error, exit_status
 
 
 def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
@@ -956,6 +994,19 @@ def umount_dir(mnt_dir: str = None) -> tuple:
         remove_dir(dpath=mnt_dir)
 
     return True, "Directory is unmounted"
+
+
+def get_s3_url(cfg, node_index):
+    """
+    Function to format s3 url for individual vm
+    :param cfg: config object
+    :param node_index: node index for indexing s3_dns fqdn
+    :return: dict respo with s3_url and iam_url as key
+    """
+    final_urls = dict()
+    final_urls["s3_url"] = f"https://{cfg['s3_dns'][node_index]}"
+    final_urls["iam_url"] = f"https://{cfg['s3_dns'][node_index]}:9443"
+    return final_urls
 
 
 def configure_jclient_cloud(
