@@ -106,6 +106,7 @@ class TestHAClusterHealth:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.start_time = time.time()
+        self.nw_data = None
         LOGGER.info("Checking if all nodes are reachable and PCS clean.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -128,11 +129,25 @@ class TestHAClusterHealth:
             for node in range(self.num_nodes):
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
-                    resp = self.ha_obj.host_power_on(
-                        host=self.host_list[node],
-                        bmc_obj=self.bmc_list[node])
+                    resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
+                if self.nw_data:
+                    resp = self.node_list[node].execute_cmd(
+                        common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
+                    LOGGER.debug("%s interface status for %s = %s",
+                    self.nw_data[0][node], self.srvnode_list[node], resp[0])
+                    if "DOWN" in resp[0]:
+                        LOGGER.info(
+                            "Make the %s interface back up for %s", self.nw_data[0][node], self.srvnode_list[node])
+                        self.node_list[node].execute_cmd(
+                            common_cmds.IP_LINK_CMD.format(
+                                self.nw_data[0][node], "up"), read_lines=True)
+                        resp = self.node_list[node].execute_cmd(common_cmds.CMD_PING.format(
+                            self.nw_data[1][node]), read_lines=True, exc=False)
+                        assert_utils.assert_not_in("Name or service not known", resp[1][0],
+                                                "Node interface still down.")
+                    LOGGER.info("All network interfaces are up")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -149,9 +164,9 @@ class TestHAClusterHealth:
         and comes back up(one by one, safe shutdown)
         """
         LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
-        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info(f"Shutting down {node_name}")
             if self.setup_type == "HW":
@@ -193,7 +208,7 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["get"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             self.start_time = time.time()
@@ -219,6 +234,11 @@ class TestHAClusterHealth:
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
                                                        nd_obj)
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -243,9 +263,9 @@ class TestHAClusterHealth:
         """
         LOGGER.info(
             "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
-        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -290,7 +310,7 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["get"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             self.start_time = time.time()
@@ -315,6 +335,11 @@ class TestHAClusterHealth:
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
                                                        nd_obj)
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -372,7 +397,7 @@ class TestHAClusterHealth:
             if count == 0:
                 LOGGER.info("Check for the node down alert.")
                 resp = self.csm_alerts_obj.verify_csm_response(
-                    self.start_time, self.alert_type["fault"], False, "iem")
+                    self.start_time, self.alert_type["get"], False, "iem")
                 assert_utils.assert_true(resp, "Failed to get alert in CSM")
                 # TODO: If CSM REST getting changed, add alert check from msg bus
                 self.start_time = time.time()
@@ -409,6 +434,12 @@ class TestHAClusterHealth:
             LOGGER.info("Verify Cluster/Site/Rack status via REST")
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
+
+            LOGGER.info("Checking PCS clean for all nodes")
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -464,7 +495,7 @@ class TestHAClusterHealth:
             if count == 0:
                 LOGGER.info("Check for the node down alert.")
                 resp = self.csm_alerts_obj.verify_csm_response(
-                    self.start_time, self.alert_type["fault"], False, "iem")
+                    self.start_time, self.alert_type["get"], False, "iem")
                 assert_utils.assert_true(resp, "Failed to get alert in CSM")
                 # TODO: If CSM REST getting changed, add alert check from msg bus
                 self.start_time = time.time()
@@ -501,6 +532,12 @@ class TestHAClusterHealth:
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
 
+            LOGGER.info("Checking PCS clean for all nodes")
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.start_time, self.alert_type["resolved"], True, "iem")
@@ -524,7 +561,6 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status with safe "
             "shutdown of single node multiple times.")
-        self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
@@ -532,6 +568,7 @@ class TestHAClusterHealth:
             "Shutdown %s node multiple time and check cluster status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info("Shutting down node: %s, Loop: %s",
                         self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
@@ -581,7 +618,7 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["get"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -607,6 +644,12 @@ class TestHAClusterHealth:
                 self.srvnode_list[node_index])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
+
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -636,7 +679,6 @@ class TestHAClusterHealth:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status with unsafe "
             "shutdown of single node multiple times.")
-        self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
@@ -644,6 +686,7 @@ class TestHAClusterHealth:
             "Shutdown %s node multiple time and check cluster status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info("Shutting down node: %s, Loop: %s",
                         self.srvnode_list[node_index], loop)
             if self.setup_type == "HW":
@@ -693,7 +736,7 @@ class TestHAClusterHealth:
 
             LOGGER.info("Check for the node down alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["fault"], False, "iem")
+                self.start_time, self.alert_type["get"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
 
@@ -720,6 +763,12 @@ class TestHAClusterHealth:
                 self.srvnode_list[node_index])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
+
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -755,14 +804,17 @@ class TestHAClusterHealth:
             node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
+        self.nw_data = [iface_list, private_ip_list]
         LOGGER.debug(
             "List of private data IP : %s and interfaces on all nodes: %s",
             private_ip_list,
             iface_list)
 
         for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info(
-                "Make the private data interface down for %s",
+                "Make the private data interface %s down for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
@@ -774,10 +826,12 @@ class TestHAClusterHealth:
             resp = nd_obj.execute_cmd(
                 common_cmds.CMD_PING.format(
                     private_ip_list[node]), read_lines=True, exc=False)
+            LOGGER.info(f"resp {resp}")
             assert_utils.assert_in(
-                "Name or service not known",
-                resp[1][0],
-                "Node interface still up.")
+                b"100% packet loss",
+                resp,
+                f"Node interface still up. {resp}")
+            time.sleep(120)
 
             LOGGER.info(
                 "Check resources health in CLI and REST after making network interface down for %s",
@@ -820,7 +874,8 @@ class TestHAClusterHealth:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info(
-                "Make the private data interface back up for %s",
+                "Make the private data interface %s back up for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
@@ -830,15 +885,25 @@ class TestHAClusterHealth:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                       "Node interface still down.")
+            assert_utils.assert_not_in(b"0% packet loss", resp,
+                                       f"Node interface still down. {resp}")
+            self.restored = True
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info(
-                "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",
+                "Check all nodes, cluster, rack, site are back online in CLI and REST /"
+                "after making the private data interface %s up for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
+
+            LOGGER.info("Checking PCS clean after making the private data interface %s down for %s",
+                        iface_list[node], self.sys_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(

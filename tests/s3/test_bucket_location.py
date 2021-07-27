@@ -20,20 +20,19 @@
 
 """Bucket Location Test Module."""
 
-import time
 import logging
+import time
+
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import s3_test_lib
-from libs.s3 import s3_acl_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from config import S3_CFG
-
-S3_OBJ = s3_test_lib.S3TestLib()
+from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_test_lib
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 
 class TestBucketLocation:
@@ -48,6 +47,7 @@ class TestBucketLocation:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED : Setup test operations.")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.account_name1 = "location-acc1{}".format(time.perf_counter_ns())
         self.email_id1 = "{}@seagate.com".format(time.perf_counter_ns())
         self.account_name2 = "location-acc2{}".format(time.perf_counter_ns())
@@ -60,10 +60,10 @@ class TestBucketLocation:
         yield
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
-        resp = S3_OBJ.bucket_list()[1]
+        resp = self.s3_test_obj.bucket_list()[1]
         self.log.info("Bucket list: %s", resp)
         if self.bucket_name in resp:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
@@ -83,7 +83,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_obj.create_bucket(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -96,7 +96,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Retrieving bucket location on existing bucket %s",
             self.bucket_name)
-        resp = S3_OBJ.bucket_location(
+        resp = self.s3_obj.bucket_location(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -121,8 +121,7 @@ class TestBucketLocation:
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
         try:
-            resp = S3_OBJ.bucket_location(
-                self.bucket_name)
+            resp = self.s3_obj.bucket_location(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -157,6 +156,7 @@ class TestBucketLocation:
             password=self.s3acc_password)
         assert_utils.assert_true(acc1_resp[0], acc1_resp[1])
         s3_acl_obj_1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG['s3_url'],
             access_key=acc1_resp[1]["access_key"],
             secret_key=acc1_resp[1]["secret_key"])
         s3_obj_1 = s3_test_lib.S3TestLib(
@@ -225,7 +225,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
@@ -243,8 +243,8 @@ class TestBucketLocation:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.account_list.append(self.account_name1)
-        s3_obj_2 = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+        s3_obj_2 = s3_test_lib.S3TestLib(endpoint_url=S3_CFG['s3_url'],
+                                         access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2 : Created second account to retrieve bucket location")
         self.log.info(
