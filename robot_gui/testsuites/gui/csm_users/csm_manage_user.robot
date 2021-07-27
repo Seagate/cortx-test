@@ -279,3 +279,19 @@ TEST-23859
     ${fetched_values}=  Read Pagination Options
     ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
+    
+TEST-23052
+    [Documentation]  Test that manage user should not able to reset other user password with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23052
+    [Tags]  Priority_High  TEST-23052
+    Log To Console And Report  Create Account with role: manage
+    ${manage_user_name}  ${manage_user_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    FOR    ${user}    IN    @{admin_users}
+        Log To Console And Report  Verify Edit Action Disable for ${user}
+        Verify Edit Action Disabled On The Table Element  ${user}
+    END
+    Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
+    Delete CSM User  ${manage_user_name}
+
