@@ -167,9 +167,9 @@ ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID = "Username*"
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-editicon"]'
-CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]' #'//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
-CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td' #'//*[@id="localuser-tabledata"]//table//tbody//tr//td'
+CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
@@ -196,6 +196,7 @@ CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
+
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
@@ -275,7 +276,13 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
-
+CURRENT_DATE_IN_DATE_PICKER_XPATH = '//button[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
+AUDIT_LOG_SEARCH_BAR_XPATH = '//input[@placeholder="Search"]'
+AUDIT_LOG_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
+AUDIT_LOG_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "{0}")]'
+AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
+AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
