@@ -613,3 +613,24 @@ class SoftwareAlert(RASCoreLib):
                 cpus.append(int(i))
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
+
+    def enable_sspl(self):
+        """Enabling sspl service
+        """
+        LOGGER.info("Enabling sspl service")
+        resp = self.health_obj.enable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+
+        result = True
+
+        return result
+
+    def disable_sspl(self):
+        """Disable sspl service
+        """
+        LOGGER.info("Disabling sspl service")
+        resp = self.health_obj.disable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        LOGGER.info("sspl service is disabled successfully")
+        result = True
+
+        return result
