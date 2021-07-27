@@ -79,8 +79,7 @@ def test_max_lc(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-@pytest.mark.skip
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
@@ -97,10 +96,10 @@ def test_min(logger):
     logger.warning("min is %s" % val)
     logger.info("min is %s" % val)
     logger.error("min is %s" % val)
-    assert val == 5
+    assert val == 1
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
 def test_max(logger):
@@ -110,7 +109,7 @@ def test_max(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17498")
 def test_max2(logger):
@@ -122,7 +121,7 @@ def test_max2(logger):
     logger.info("xdist" + str(os.environ.get('PYTEST_XDIST_WORKER')))
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17497")
 def test_max4(logger):
@@ -130,7 +129,7 @@ def test_max4(logger):
     logger.info("test pass executed")
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):
