@@ -200,7 +200,7 @@ def s3bench(
     if skip_read:
         cmd = cmd + "-skipRead "
     if skip_cleanup:
-        cmd = cmd + "-skip_cleanup "
+        cmd = cmd + "-skipCleanup "
     if validate:
         cmd = cmd + "-validate "
     if verbose:

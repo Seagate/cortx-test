@@ -61,7 +61,7 @@ SCHEMA_REGISTRY = "http://cftic2.pun.seagate.com:8081"
 # cftic2.pun.seagate.com:9092 Bootstrap broker(s) (host[:port])
 BOOTSTRAP_SERVERS = "cftic2.pun.seagate.com:9092"
 # 'cortx-test-exec-topic'
-TEST_EXEC_TOPIC = 'TutorialTopic3'
+TEST_EXEC_TOPIC = 'cortx-test-execution-topic1'
 # Read by all semantics
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
