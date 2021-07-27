@@ -99,7 +99,7 @@ class TestIamUser():
             self.rest_iam_user.config["s3account_user"]["username"], response)
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
-    
+
     @pytest.mark.skip("Test invalid for R2")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
