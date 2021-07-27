@@ -41,14 +41,11 @@ from config import S3_BKT_TST as BKT_POLICY_CONF
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-from libs.s3 import iam_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
-IAM_OBJ = iam_test_lib.IamTestLib()
-S3_OBJ = s3_test_lib.S3TestLib()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -64,6 +61,7 @@ class TestCopyObjects:
         2. Check cluster status, all services are running.
         """
         LOGGER.info("STARTED: test setup.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.nodes = CMN_CFG["nodes"]
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
@@ -102,14 +100,14 @@ class TestCopyObjects:
         if self.parallel_ios:
             if self.parallel_ios.is_alive():
                 self.parallel_ios.join()
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         pref_list = [
             each_bucket for each_bucket in bucket_list if each_bucket in [
                 self.bucket_name1,
                 self.io_bucket_name,
                 self.bucket_name2]]
         if pref_list:
-            resp = S3_OBJ.delete_multiple_buckets(pref_list)
+            resp = self.s3_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(resp[0], resp[1])
         for fpath in [self.file_path, self.download_path]:
             if system_utils.path_exists(fpath):
@@ -165,7 +163,7 @@ class TestCopyObjects:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         LOGGER.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.s3_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -199,7 +197,7 @@ class TestCopyObjects:
                         self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
-                resp = S3_OBJ.object_list(self.io_bucket_name)
+                resp = self.s3_obj.object_list(self.io_bucket_name)
                 LOGGER.info(resp)
                 self.parallel_ios.join()
                 LOGGER.info(
@@ -544,10 +542,10 @@ class TestCopyObjects:
         resp = system_utils.create_file(
             fpath=self.file_path, count=9, b_size=object_size)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.create_bucket(self.bucket_name1)
+        resp = self.s3_obj.create_bucket(self.bucket_name1)
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp, bktlist = S3_OBJ.bucket_list()
+        resp, bktlist = self.s3_obj.bucket_list()
         LOGGER.info("Bucket list: %s", bktlist)
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
@@ -558,10 +556,10 @@ class TestCopyObjects:
                 self.bucket_name1,
                 self.object_name1))
         assert_utils.assert_true(resp[0], resp[1])
-        status, objlist = S3_OBJ.object_list(self.bucket_name1)
+        status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)
         assert_utils.assert_in(self.object_name1, objlist)
-        response = S3_OBJ.list_objects_details(self.bucket_name1)
+        response = self.s3_obj.list_objects_details(self.bucket_name1)
         put_etag = None
         for objl in response[1]["Contents"]:
             if objl["Key"] == self.object_name1:
@@ -569,9 +567,9 @@ class TestCopyObjects:
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info(
             "Step 4: Copy object to different bucket with different object.")
-        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        resp = self.s3_obj.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
-        status, response = S3_OBJ.copy_object(
+        status, response = self.s3_obj.copy_object(
             self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
         assert_utils.assert_true(status, response)
         copy_etag = response['CopyObjectResult']['ETag']
@@ -612,10 +610,10 @@ class TestCopyObjects:
             fpath=self.file_path, count=11, b_size="512M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.create_bucket(self.bucket_name1)
+        resp = self.s3_obj.create_bucket(self.bucket_name1)
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp, bktlist = S3_OBJ.bucket_list()
+        resp, bktlist = self.s3_obj.bucket_list()
         LOGGER.info("Bucket list: %s", bktlist)
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
@@ -626,17 +624,17 @@ class TestCopyObjects:
                 self.bucket_name1,
                 self.object_name1))
         assert_utils.assert_true(resp[0], resp[1])
-        status, objlist = S3_OBJ.object_list(self.bucket_name1)
+        status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)
         assert_utils.assert_in(self.object_name1, objlist)
         LOGGER.info(
             "Step 4: create second bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        resp = self.s3_obj.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info(
             "Step 5: Copy object from bucket1 to bucket2 .Check for error message.")
         try:
-            status, response = S3_OBJ.copy_object(
+            status, response = self.s3_obj.copy_object(
                 self.bucket_name1, self.object_name1, self.bucket_name2, self.object_name2)
             assert_utils.assert_false(
                 status, f"copied object greater than 5GB: {response}")
@@ -1767,11 +1765,11 @@ class TestCopyObjects:
         self.start_stop_validate_parallel_s3ios(
             ios="Start", log_prefix="TEST-19900_s3bench_ios", duration="0h4m")
         LOGGER.info("3. Create 2 buckets in same accounts .")
-        resp = S3_OBJ.create_bucket(self.bucket_name1)
+        resp = self.s3_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.create_bucket(self.bucket_name2)
+        resp = self.s3_obj.create_bucket(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_utils.assert_in(
             self.bucket_name1,
             resp[1],
@@ -1786,19 +1784,19 @@ class TestCopyObjects:
             fpath=self.file_path, count=10, b_size="1M")
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.put_object(
+        resp = self.s3_obj.put_object(
             self.bucket_name1,
             f"{dpath}{object_name}",
             self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]["ETag"]
         LOGGER.info("5. List object for the bucket1.")
-        resp = S3_OBJ.object_list(self.bucket_name1)
+        resp = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_true(any([object_name in obj for obj in resp[1]]),
                                  f"{object_name} not present in {resp[1]}")
         LOGGER.info("6. Copy object from bucket1 to bucket2.")
-        resp = S3_OBJ.copy_object(
+        resp = self.s3_obj.copy_object(
             self.bucket_name1,
             f"{dpath}{object_name}",
             self.bucket_name2,
@@ -1812,14 +1810,14 @@ class TestCopyObjects:
         LOGGER.info(
             "7. List Objects from bucket2, Check object is present and of same size as source"
             " object.")
-        resp = S3_OBJ.object_list(self.bucket_name2)
+        resp = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name2, resp[1],
                                f"{self.object_name2} not present in {resp[1]}")
         LOGGER.info(
             "8. Copy object from bucket1 to bucket2 specifying folder structure for destination"
             " object.")
-        resp = S3_OBJ.copy_object(
+        resp = self.s3_obj.copy_object(
             self.bucket_name1,
             f"{dpath}{object_name}",
             self.bucket_name2,
@@ -1833,7 +1831,7 @@ class TestCopyObjects:
         LOGGER.info(
             "9. List Objects from bucket2, Check object is present and of same size and folder"
             " structure as source object.")
-        resp = S3_OBJ.object_list(self.bucket_name2)
+        resp = self.s3_obj.object_list(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_true(any([self.object_name2 in obj for obj in resp[1]]),
                                  f"{self.object_name2} not present in {resp[1]}")
@@ -1871,13 +1869,13 @@ class TestCopyObjects:
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info(
             "Step 4: Copy object to same bucket with same name.")
         try:
-            status, response = S3_OBJ.copy_object(
+            status, response = self.s3_obj.copy_object(
                 self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -1921,13 +1919,13 @@ class TestCopyObjects:
         LOGGER.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         status, put_etag = self.create_bucket_put_object(
-            S3_OBJ, self.bucket_name1, self.object_name1, self.file_path)
+            self.s3_obj, self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(status, put_etag)
         LOGGER.info("Put object ETag: %s", put_etag)
         LOGGER.info(
             "Step 4: Copy object from bucket1 to bucket2 using wildcard * for source-object.")
         try:
-            status, response = S3_OBJ.copy_object(
+            status, response = self.s3_obj.copy_object(
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -1938,7 +1936,7 @@ class TestCopyObjects:
             "Step 5: Copy object from bucket1 to bucket2 using wildcard * for part of "
             "source-object name.")
         try:
-            status, response = S3_OBJ.copy_object(
+            status, response = self.s3_obj.copy_object(
                 self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
@@ -1949,7 +1947,7 @@ class TestCopyObjects:
             "Step 6: Copy object from bucket1 to bucket2 using wildcard ? for a character of "
             "source-object name.")
         try:
-            status, response = S3_OBJ.copy_object(
+            status, response = self.s3_obj.copy_object(
                 self.bucket_name1, f"{self.object_name1}?", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:

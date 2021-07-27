@@ -20,21 +20,19 @@
 #
 
 """ Destructive operations."""
-import os
-import sys
-import queue
-import threading
-import random
-import logging
 import csv
 import fcntl
 import hashlib
+import logging
 import multiprocessing as mp
-import boto3
-import re
-import json
+import os
+import random
 import time
 from multiprocessing import Manager
+
+import boto3
+
+from config import S3_CFG
 from libs.di import di_lib
 from libs.di import di_params
 
@@ -77,7 +75,7 @@ def destructive_step():
 
         try:
             s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                endpoint_url="https://s3.seagate.com")
+                                endpoint_url=S3_CFG["s3_url"])
         except Exception as e:
             logger.info(
                 f'could not create s3 object for user {user_name} with access key {access_key} secret key {secret_key} exception:{e}')

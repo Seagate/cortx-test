@@ -24,7 +24,6 @@ import sys
 import re
 import munch
 from typing import List
-from commons.utils import config_utils
 from commons import configmanager
 from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG

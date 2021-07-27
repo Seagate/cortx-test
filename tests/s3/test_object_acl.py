@@ -36,14 +36,8 @@ from commons.utils import system_utils
 from commons.utils import assert_utils
 from config import S3_OBJ_TST, S3_CFG
 from libs.s3 import s3_test_lib, s3_acl_test_lib, s3_tagging_test_lib
-from libs.s3 import iam_test_lib, s3_multipart_test_lib
+from libs.s3 import s3_multipart_test_lib
 from libs.s3 import cortxcli_test_lib
-
-S3_OBJ = s3_test_lib.S3TestLib()
-IAM_TEST_OBJ = iam_test_lib.IamTestLib()
-S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-S3_MUPART_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
-TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
 
 
 class TestObjectACL:
@@ -57,6 +51,13 @@ class TestObjectACL:
         It will perform all prerequisite test steps if any.
         """
         self.log = logging.getLogger(__name__)
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_acl_obj = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG["s3_url"])
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(
+            endpoint_url=S3_CFG["s3_url"])
+        self.tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
+            endpoint_url=S3_CFG["s3_url"])
         self.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
         self.test_dir_path = os.path.join(
             os.getcwd(), TEST_DATA_FOLDER, "TestObjectACL")
@@ -92,9 +93,9 @@ class TestObjectACL:
         self.log.info("STARTED: Teardown operation.")
         if os.path.exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         if self.bucket_name in bucket_list:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.delete_accounts(self.account_list)
         del self.cli_obj
@@ -117,7 +118,7 @@ class TestObjectACL:
         :param object s3_test_obj: Custom s3 test object
         :return: None
         """
-        s3_tobj = s3_test_obj if s3_test_obj else S3_OBJ
+        s3_tobj = s3_test_obj if s3_test_obj else self.s3_obj
         self.log.info("Step : Creating a bucket: %s", bucket)
         res = s3_tobj.create_bucket(bucket)
         assert res[0], res[1]
@@ -181,10 +182,10 @@ class TestObjectACL:
         json_policy["Grantee"]["DisplayName"] = account_name
         s3_obj_2 = result[1]
         self.log.info("Step: Put canned ACL for the Existing Object")
-        resp = S3_ACL_OBJ.get_object_acl(bkt_name, obj_name)
+        resp = self.s3_acl_obj.get_object_acl(bkt_name, obj_name)
         modified_acl = copy.deepcopy(resp[1])
         modified_acl["Grants"].append(json_policy)
-        resp = S3_ACL_OBJ.put_object_acp(bkt_name, obj_name, modified_acl)
+        resp = self.s3_acl_obj.put_object_acp(bkt_name, obj_name, modified_acl)
         assert resp[0], resp[1]
         self.log.info(
             "Step: Put object canned acl for the object was successful")
@@ -206,7 +207,7 @@ class TestObjectACL:
         obj_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 3: Getting the object ACL: %s", self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         self.log.info("Step 3: Object ACL resp is : %s", res)
         assert obj_acl == res[1]["Grants"][0]["Permission"], res[0]
         self.log.info(
@@ -221,14 +222,14 @@ class TestObjectACL:
         self.log.info(
             "verify that user able to get object ACL details for non existing object")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info(
             "Step 2: Getting the object ACL for object non-existing obj: %s",
             self.obj_name)
         try:
-            S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info(
@@ -245,13 +246,13 @@ class TestObjectACL:
         self.log.info(
             "verify that user able to download with empty key or not")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info(
             "Step 2: Getting the object ACL for object : %s", self.obj_name)
         try:
-            S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 2: Object ACL resp is : %s", res)
@@ -267,7 +268,7 @@ class TestObjectACL:
         self.log.info("User able to reupload object and get object acl")
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 1: Re-Uploading Object : %s", self.obj_name)
-        res = S3_OBJ.put_object(
+        res = self.s3_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
@@ -276,7 +277,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Getting the object ACL after delete for object : %s",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 3: Object ACL resp is : %s", res)
         self.log.info("User able to re-upload object and get object acl")
@@ -291,13 +292,13 @@ class TestObjectACL:
             "User should not get object acl when object was deleted")
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 3: Deleting object %s", self.obj_name)
-        res = S3_OBJ.delete_object(self.bucket_name, self.obj_name)
+        res = self.s3_obj.delete_object(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 3: Object Deleted %s", self.obj_name)
         self.log.info(
             "Step 4: Getting the object ACL for object : %s", self.obj_name)
         try:
-            S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 4: Object ACL resp is : %s", res)
@@ -316,22 +317,22 @@ class TestObjectACL:
         file_size = S3_OBJ_TST["test_get_obj_acl_mp"]["file_size"]
         total_parts = S3_OBJ_TST["test_get_obj_acl_mp"]["total_parts"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info(
             "Step 2: Creating multipart for object upload: %s", self.obj_name)
-        res = S3_MUPART_OBJ.create_multipart_upload(
+        res = self.s3_mp_obj.create_multipart_upload(
             self.bucket_name, self.obj_name)
         assert res[0], res[1]
-        res = S3_MUPART_OBJ.list_multipart_uploads(self.bucket_name)
+        res = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
         assert res[0], res[1]
         self.log.info(
             "Step 2: Listing of multipart object resp after multipart create: %s",
             res)
         self.log.info("Step 3: Uploading multi parts for object")
         upload_id = res[1]["Uploads"][0]["UploadId"]
-        res = S3_MUPART_OBJ.upload_parts(
+        res = self.s3_mp_obj.upload_parts(
             upload_id,
             self.bucket_name,
             self.obj_name,
@@ -341,17 +342,17 @@ class TestObjectACL:
         assert res[1], res[1]
         self.log.info("Step 3: Uploading parts for object in progress")
         upload_parts_list = res[1]
-        res = S3_MUPART_OBJ.list_parts(
+        res = self.s3_mp_obj.list_parts(
             upload_id, self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 4: Complete the multipart upload process")
-        res = S3_MUPART_OBJ.complete_multipart_upload(
+        res = self.s3_mp_obj.complete_multipart_upload(
             upload_id, upload_parts_list, self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 4: Multipart upload completed")
         self.log.info(
             "Step 5: Getting the object ACL for object :%s", self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 5: Object ACL resp is : %s", res)
         assert obj_acl == res[1]["Grants"][0]["Permission"], res[1]
@@ -377,22 +378,22 @@ class TestObjectACL:
         total_parts = S3_OBJ_TST["test_2879"]["total_parts"]
         object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info(
             "Step 2: Creating multipart for object upload:%s", self.obj_name)
-        res = S3_MUPART_OBJ.create_multipart_upload(
+        res = self.s3_mp_obj.create_multipart_upload(
             self.bucket_name, self.obj_name)
         assert res[0], res[1]
-        res = S3_MUPART_OBJ.list_multipart_uploads(self.bucket_name)
+        res = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
         self.log.info(
             "Step 2: Listing of multipart object resp after multipart create: %s",
             res)
         self.log.info("Step 3: Uploading multi parts for object")
         assert res[0], res[1]
         upload_id = res[1]["Uploads"][0]["UploadId"]
-        res = S3_MUPART_OBJ.upload_parts(
+        res = self.s3_mp_obj.upload_parts(
             upload_id,
             self.bucket_name,
             self.obj_name,
@@ -401,18 +402,18 @@ class TestObjectACL:
             multipart_obj_path=self.mupart_obj_path)
         assert res[0], res[1]
         upload_parts_list = res[1]
-        res = S3_MUPART_OBJ.list_parts(
+        res = self.s3_mp_obj.list_parts(
             upload_id, self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 3: Multipart upload list is : %s", res)
         self.log.info("Step 4: Complete the multipart upload")
-        res = S3_MUPART_OBJ.complete_multipart_upload(
+        res = self.s3_mp_obj.complete_multipart_upload(
             upload_id, upload_parts_list, self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 4: Completed multipart upload")
         self.log.info(
             "Step 5: Getting the object ACL for object :%s", self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 5: Object ACL resp is : %s", res)
         assert object_acl == res[1]["Grants"][0]["Permission"], res[1]
@@ -432,7 +433,7 @@ class TestObjectACL:
             "using default Multipart upload and verify Get object ACL")
         object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info("Step 2: Creating file locally for upload")
@@ -441,17 +442,17 @@ class TestObjectACL:
         assert res[0], res[1]
         self.log.info("Step 2: Completed creating files locally")
         self.log.info("Step 3: Uploading Object : %s", self.obj_name)
-        res = S3_OBJ.object_upload(
+        res = self.s3_obj.object_upload(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step 3: Completed Uploading for Object")
-        res = S3_OBJ.object_list(self.bucket_name)
+        res = self.s3_obj.object_list(self.bucket_name)
         assert res[0], res[1]
         self.log.info(
             "Step 5: Getting the object ACL for object: %s", self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert object_acl == res[1]["Grants"][0]["Permission"], res[1]
         self.log.info("Step 5: Object ACL resp is : %s", res)
@@ -477,7 +478,7 @@ class TestObjectACL:
         object_acl = S3_OBJ_TST["s3_object"]["full_ctrl"]
         system_utils.remove_file(S3_OBJ_TST["test_9898"]["run_cmd"])
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info("Step 2: Creating file locally for upload")
@@ -486,17 +487,17 @@ class TestObjectACL:
         assert res[0], res[1]
         self.log.info("Step 2: Completed creating files locally")
         self.log.info("Step 3: Uploading Object : %s", self.obj_name)
-        res = S3_OBJ.object_upload(
+        res = self.s3_obj.object_upload(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step 3: Completed uploading for Object")
-        res = S3_OBJ.object_list(self.bucket_name)
+        res = self.s3_obj.object_list(self.bucket_name)
         assert res[0], res[1]
         self.log.info(
             "Step 4: Getting the object ACL for object :%s", self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 4: Object ACL resp is : %s", res)
         assert object_acl == res[1]["Grants"][0]["Permission"], res[1]
@@ -519,19 +520,19 @@ class TestObjectACL:
         single_part_sz = S3_OBJ_TST["test_9899"]["single_part_sz"]
         total_parts = S3_OBJ_TST["test_9899"]["single_part_sz"]
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 1: Bucket is created: %s", self.bucket_name)
         self.log.info("Step 2: Creating file locally for upload")
-        res = S3_MUPART_OBJ.create_multipart_upload(
+        res = self.s3_mp_obj.create_multipart_upload(
             self.bucket_name, self.obj_name)
         assert res[0], res[1]
-        res = S3_MUPART_OBJ.list_multipart_uploads(self.bucket_name)
+        res = self.s3_mp_obj.list_multipart_uploads(self.bucket_name)
         self.log.info("Step 2: Completed creating files locally")
         assert res[0], res[1]
         upload_id = res[1]["Uploads"][0]["UploadId"]
         self.log.info("Step 3: Uploading Object :%s", self.obj_name)
-        res = S3_MUPART_OBJ.upload_parts(
+        res = self.s3_mp_obj.upload_parts(
             upload_id,
             self.bucket_name,
             self.obj_name,
@@ -539,19 +540,19 @@ class TestObjectACL:
             total_parts=total_parts,
             multipart_obj_path=self.mupart_obj_path)
         assert res[0], res[1]
-        res = S3_MUPART_OBJ.list_parts(
+        res = self.s3_mp_obj.list_parts(
             upload_id, self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 3: Uploading for Object in progress")
         self.log.info("Step 4: Aborting the multipart upload")
-        res = S3_MUPART_OBJ.abort_multipart_all(
+        res = self.s3_mp_obj.abort_multipart_all(
             self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 4: Aborted the multipart upload")
         self.log.info(
             "Step 5: Getting the object ACL for object :%s", self.obj_name)
         try:
-            S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         except CTException as error:
             assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info("Step 5: Object ACL resp is : %s", res)
@@ -575,7 +576,7 @@ class TestObjectACL:
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 4: Added grantee to the object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -585,7 +586,7 @@ class TestObjectACL:
         self.log.info(
             "Step 5: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[0]
         self.log.info("Step 5: Object ACL resp is : %s", res)
@@ -605,7 +606,7 @@ class TestObjectACL:
         canonical_id = result[0]
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 4: Added grantee to the object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -615,7 +616,7 @@ class TestObjectACL:
         self.log.info(
             "Step 5: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         self.log.info("Step 5: Object ACL resp is : %s", res)
@@ -636,7 +637,7 @@ class TestObjectACL:
             "Step 3: Put object acl of object %s with invalid canonical id",
             self.obj_name)
         try:
-            S3_ACL_OBJ.add_grantee(
+            self.s3_acl_obj.add_grantee(
                 self.bucket_name,
                 self.obj_name,
                 invalid_canonical_id,
@@ -663,7 +664,7 @@ class TestObjectACL:
         self.log.info("Step 1: Completed creating account")
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 2: Put read permission to object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -673,7 +674,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         assert permission in str(res[1]), res[1]
@@ -697,7 +698,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Set write permission to object%s",
             self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -709,7 +710,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         assert permission in str(res[1]), res[1]
@@ -732,7 +733,7 @@ class TestObjectACL:
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info(
             "Step 1: Put read_acp permission to object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -744,7 +745,7 @@ class TestObjectACL:
         self.log.info(
             "Step 1: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         assert permission in str(res[1]), res[1]
@@ -767,7 +768,7 @@ class TestObjectACL:
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info(
             "Step 2: Put write_acp permission to object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
@@ -779,7 +780,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         assert permission in str(res[1]), res[1]
@@ -802,7 +803,7 @@ class TestObjectACL:
         try:
             self.log.info(
                 "Step 1: Put invalid permission to object%s", self.obj_name)
-            S3_ACL_OBJ.add_grantee(
+            self.s3_acl_obj.add_grantee(
                 self.bucket_name,
                 self.obj_name,
                 canonical_id,
@@ -832,7 +833,8 @@ class TestObjectACL:
                                        "DisplayName": S3_OBJ_TST["test_10216"]["DisplayName"]},
                            "Permission": permission}]}
         try:
-            S3_ACL_OBJ.put_object_acp(self.bucket_name, self.obj_name, acl)
+            self.s3_acl_obj.put_object_acp(
+                self.bucket_name, self.obj_name, acl)
         except CTException as error:
             assert S3_OBJ_TST["test_10216"]["error_msg"] in error.message, error.message
         self.log.info(
@@ -862,7 +864,7 @@ class TestObjectACL:
         self.log.info(
             "Step 4: Put object acl of object %s for account 1 %s",
             self.obj_name, self.account_name_1)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id_1,
@@ -875,7 +877,7 @@ class TestObjectACL:
             "Step 5: Put object acl of object %s with canonical id for account 2%s",
             self.obj_name,
             canonical_id_2)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id_2,
@@ -888,7 +890,7 @@ class TestObjectACL:
         self.log.info(
             "Step 5: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id_1 in str(res[1]), res[1]
         assert canonical_id_2 in str(res[1]), res[1]
@@ -912,7 +914,7 @@ class TestObjectACL:
         canonical_id = result[0]
         self.log.info("Step 1: Completed creating account")
         self.log.info("Step 2: Creating bucket %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 2: Bucket created")
         self.log.info("Step 3: Put object acl with invalid object")
@@ -928,7 +930,8 @@ class TestObjectACL:
                         "DisplayName": S3_OBJ_TST["test_10225"]["DisplayName"]},
                     "Permission": permission}]}
         try:
-            S3_ACL_OBJ.put_object_acp(self.bucket_name, self.obj_name, acl)
+            self.s3_acl_obj.put_object_acp(
+                self.bucket_name, self.obj_name, acl)
         except CTException as error:
             assert S3_OBJ_TST["s3_object"]["key_err"] in error.message, error.message
         self.log.info(
@@ -957,10 +960,11 @@ class TestObjectACL:
             result = self.create_s3_acc_cortxcli(
                 account_name, email_id, self.s3acc_passwd)
             can_id = result[0]
-            op_val = S3_ACL_OBJ.add_grantee(
+            op_val = self.s3_acl_obj.add_grantee(
                 self.bucket_name, self.obj_name, can_id, permission)
             assert op_val[0], op_val[1]
-            res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            res = self.s3_acl_obj.get_object_acl(
+                self.bucket_name, self.obj_name)
             assert res[0], res[1]
         self.log.info(
             "Step 1: Completed adding n number of grantee for object : %s",
@@ -987,10 +991,11 @@ class TestObjectACL:
             result = self.create_s3_acc_cortxcli(
                 account_name, email_id, self.s3acc_passwd)
             can_id = result[0]
-            op_val = S3_ACL_OBJ.add_grantee(
+            op_val = self.s3_acl_obj.add_grantee(
                 self.bucket_name, self.obj_name, can_id, permission)
             assert op_val[0], op_val[1]
-            res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+            res = self.s3_acl_obj.get_object_acl(
+                self.bucket_name, self.obj_name)
             assert res[0], res[1]
         else:
             acc_name = name_initial.format(
@@ -1001,7 +1006,7 @@ class TestObjectACL:
                 acc_name, email, self.s3acc_passwd)
             canonical_id = result[0]
             try:
-                S3_ACL_OBJ.add_grantee(
+                self.s3_acl_obj.add_grantee(
                     self.bucket_name, self.obj_name, canonical_id, permission)
             except CTException as error:
                 assert S3_OBJ_TST["test_10228"]["error_msg"] in error.message, error.message
@@ -1018,14 +1023,15 @@ class TestObjectACL:
             "put object acl with invalid <owner> part id and Display name")
         self.log.info("put object acl with more than 100 grants")
         self.create_bucket_obj(self.bucket_name, self.obj_name)
-        acl = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)[1]
+        acl = self.s3_acl_obj.get_object_acl(
+            self.bucket_name, self.obj_name)[1]
         modified_acl = copy.deepcopy(acl)
         modified_acl["Owner"]["ID"] = S3_OBJ_TST["test_10229"]["modified_acl_id"]
         modified_acl["Owner"]["DisplayName"] = S3_OBJ_TST["test_10229"]["modified_acl_name"]
         self.log.info(
             "Step 1: Put object acl with invalid display name and invalid id")
         try:
-            S3_ACL_OBJ.put_object_acp(
+            self.s3_acl_obj.put_object_acp(
                 self.bucket_name, self.obj_name, modified_acl)
         except CTException as error:
             assert S3_OBJ_TST["test_10229"]["error_msg"] in error.message, error.message
@@ -1169,7 +1175,7 @@ class TestObjectACL:
         # Adding Write Permission for the 2nd User
         self.log.info(
             "Stpe 2 : Put write permission to object %s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name, self.obj_name, canonical_id, write_acp)
         assert res[0], res[1]
         self.log.info(
@@ -1178,7 +1184,7 @@ class TestObjectACL:
         self.log.info(
             "Step 3: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert canonical_id in str(res[1]), res[1]
         self.log.info("Step 4: Get object acl response is %s", res)
@@ -1196,7 +1202,8 @@ class TestObjectACL:
             "Step 4: Done changing the permission of object from 2nd account")
         self.log.info(
             "Step 5: After login to account1 and check with get-object-acl")
-        get_res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        get_res = self.s3_acl_obj.get_object_acl(
+            self.bucket_name, self.obj_name)
         self.log.info(
             "Step 5: Get object ACL resp from defaul account: %s", get_res)
         assert get_res[0], get_res[1]
@@ -1362,18 +1369,18 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Creating Bucket and putting object into it using Account 1")
         self.log.info("Creating bucket %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info(
             "Putting object %s to existing bucket %s",
             self.obj_name, self.bucket_name)
-        put_res = S3_OBJ.put_object(
+        put_res = self.s3_obj.put_object(
             self.bucket_name, self.obj_name, self.test_file_path)
         assert put_res[0]
         self.log.info(
             "Step 2: Successfully Created Bucket and uploaded object using Account 1")
         self.log.info("Step 3: Get Object ACL property")
-        get_obj_res = S3_ACL_OBJ.get_object_acl(
+        get_obj_res = self.s3_acl_obj.get_object_acl(
             self.bucket_name, self.obj_name)
         assert get_obj_res[0], get_obj_res[1]
         self.log.info("Step 4: Get Object ACL resp : %s", get_obj_res)
@@ -1381,7 +1388,7 @@ class TestObjectACL:
         self.log.info(
             "Step 5: Put write-acp permission to object for account 2 %s",
             self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name, self.obj_name, result[0], write_acp)
         assert res[0]
         self.log.info(
@@ -1390,7 +1397,7 @@ class TestObjectACL:
         self.log.info(
             "Step 6: Get object acl of object %s after put object acl",
             self.obj_name)
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert result[0] in str(res[1]), res[0]
         self.log.info(
@@ -2424,11 +2431,11 @@ class TestObjectACL:
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating bucket")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Successfully bucket was created")
         self.log.info("Step 2: Putting object with acl permission")
-        resp = S3_ACL_OBJ.put_object_with_acl(
+        resp = self.s3_acl_obj.put_object_with_acl(
             self.bucket_name,
             self.obj_name,
             self.test_file_path,
@@ -2437,7 +2444,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Object was successfully uploaded with bucket-owner-read permission")
         self.log.info("Step 3: Getting the object acl")
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert S3_OBJ_TST["s3_object"]["full_ctrl"] in str(
             res[1]), res[0]
@@ -2459,11 +2466,11 @@ class TestObjectACL:
             S3_OBJ_TST["s3_object"]["file_size"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Creating bucket")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info("Step 1: Successfully bucket was created")
         self.log.info("Step 2: Putting object with acl permission")
-        resp = S3_ACL_OBJ.put_object_with_acl(
+        resp = self.s3_acl_obj.put_object_with_acl(
             self.bucket_name,
             self.obj_name,
             self.test_file_path,
@@ -2472,7 +2479,7 @@ class TestObjectACL:
         self.log.info(
             "Step 2: Object was successfully uploaded with acl permission")
         self.log.info("Step 3: Getting the object acl")
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         assert S3_OBJ_TST["s3_object"]["full_ctrl"] in str(
             res[1]), res[0]
@@ -3314,27 +3321,27 @@ class TestObjectACL:
         canonical_id = result[0]
         self.log.info("Step 1: Account was created")
         self.log.info("Step 2: Creating bucket %s", self.bucket_name)
-        res = S3_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_obj.create_bucket(self.bucket_name)
         assert res[0], res[1]
         self.log.info("Step 2: Bucket was created")
         self.log.info(
             "Step 3: Putting object %s to existing bucket %s",
             self.obj_name, self.bucket_name)
-        res = S3_OBJ.put_object(
+        res = self.s3_obj.put_object(
             self.bucket_name,
             self.obj_name,
             self.test_file_path)
         assert res[0], res[1]
         self.log.info("Step 3: Object was uploaded")
         self.log.info("Step 4: Put full control and private ACL to object")
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
             S3_OBJ_TST["s3_object"]["full_ctrl"])
         assert res[0], res[1]
         try:
-            S3_ACL_OBJ.add_grantee(
+            self.s3_acl_obj.add_grantee(
                 self.bucket_name,
                 self.obj_name,
                 canonical_id,
@@ -4012,25 +4019,25 @@ class TestObjectACL:
         self.log.info(
             "Creating a bucket, uploading an object and setting tag for object")
         self.log.info("Creating a bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         system_utils.create_file(self.test_file_path,
                                  S3_OBJ_TST["s3_object"]["file_size"])
         self.log.info(
             "Uploading an object %s to bucket %s",
             self.obj_name, self.bucket_name)
-        resp = S3_OBJ.put_object(self.bucket_name, self.obj_name,
-                                 self.test_file_path)
+        resp = self.s3_obj.put_object(self.bucket_name, self.obj_name,
+                                      self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("Setting tag to an object %s", self.obj_name)
-        resp = TAG_OBJ.set_object_tag(
+        resp = self.tag_obj.set_object_tag(
             self.bucket_name, self.obj_name, S3_OBJ_TST["test_410"]["key"],
             S3_OBJ_TST["test_410"]["value"])
         assert resp[0], resp[1]
         self.log.info("Step 1: Done Create tags on existing object")
         self.log.info("Step 2: verify the object tags created")
         self.log.info("Retrieving tag of an object %s", self.obj_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.obj_name)
         assert resp[0], resp[1]
@@ -4242,14 +4249,14 @@ class TestObjectACL:
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info(
             "Step 1: Put read_acp permission to object%s", self.obj_name)
-        res = S3_ACL_OBJ.add_grantee(
+        res = self.s3_acl_obj.add_grantee(
             self.bucket_name,
             self.obj_name,
             canonical_id,
             permission)
         assert res[0], res[1]
         self.log.info("Step 2: Get object acl")
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info("Step 3: Get object acl from account 2")
         res = acl_obj_2.get_object_acl(self.bucket_name, self.obj_name)
@@ -4274,7 +4281,7 @@ class TestObjectACL:
             "Step 1: Put object%s", self.obj_name)
         self.create_bucket_obj(self.bucket_name, self.obj_name)
         self.log.info("Step 2: Get object acl")
-        res = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        res = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         assert res[0], res[1]
         self.log.info(
             "ENDED:put object in account1 and get-object-acl details for that object")
@@ -5112,7 +5119,7 @@ class TestObjectACL:
         test_3541_cfg = S3_OBJ_TST["test_3541"]
         self.log.info(
             "Step 1: Creating a bucket with name %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created a bucket with name %s", self.bucket_name)
@@ -5123,7 +5130,7 @@ class TestObjectACL:
             self.test_file_path,
             S3_OBJ_TST["s3_object"]["file_size"])
         try:
-            S3_ACL_OBJ.put_object_with_acl(
+            self.s3_acl_obj.put_object_with_acl(
                 self.bucket_name,
                 self.obj_name,
                 self.test_file_path,
@@ -5156,7 +5163,7 @@ class TestObjectACL:
         obj_acl_json = S3_OBJ_TST["test_3228"]["policy"]
         try:
             self.log.info("Step 1: Put invalid JSON")
-            S3_ACL_OBJ.put_object_canned_acl(
+            self.s3_acl_obj.put_object_canned_acl(
                 self.bucket_name,
                 self.obj_name,
                 access_control_policy=obj_acl_json)
@@ -5220,9 +5227,9 @@ class TestObjectACL:
         """Put object with account1 and get object with same account1."""
         self.log.info(
             "STARTED: put object with account1 and get object with same account1")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         self.log.info("Step 2: Get object using account 1")
-        resp = S3_OBJ.get_object(self.bucket_name, self.obj_name)
+        resp = self.s3_obj.get_object(self.bucket_name, self.obj_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Get object resp is : %s", resp)
         self.log.info(
@@ -5241,7 +5248,7 @@ class TestObjectACL:
         result = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         self.log.info("Step 2: Get object using account 2")
         try:
             s3_obj_2.get_object(self.bucket_name, self.obj_name)
@@ -5263,7 +5270,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant WRITE access to"
             " Account 2 and Get object with Account 2")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3254"]
         s3_obj_2 = self.create_acc_and_put_obj_acp(
             self.bucket_name, self.obj_name, test_cfg)
@@ -5290,7 +5297,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant read access to"
             " Account 2 and Get object with Account 2")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3255"]
         s3_obj_2 = self.create_acc_and_put_obj_acp(
             self.bucket_name, self.obj_name, test_cfg)
@@ -5310,7 +5317,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant read-acp access to"
             " Account 2 and Get object with Account2")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3256"]
         s3_obj_2 = self.create_acc_and_put_obj_acp(
             self.bucket_name, self.obj_name, test_cfg)
@@ -5336,7 +5343,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: Put object ACL with Account 1, grant "
             "write-acp access to Account 2 and Get object with Account2")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3257"]
         s3_obj_2 = self.create_acc_and_put_obj_acp(
             self.bucket_name, self.obj_name, test_cfg)
@@ -5362,7 +5369,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object acl in account1 and get object from "
             "account2 by using acl xml")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3451"]
         self.log.info(
             "Creating account with name %s and email_id %s",
@@ -5372,9 +5379,9 @@ class TestObjectACL:
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_obj_2 = result[1]
         self.log.info("Step 1: Put canned ACL for the Existing Object")
-        resp = S3_ACL_OBJ.get_object_acl(self.bucket_name, self.obj_name)
+        resp = self.s3_acl_obj.get_object_acl(self.bucket_name, self.obj_name)
         modified_acl = copy.deepcopy(resp[1])
-        resp = S3_ACL_OBJ.put_object_acp(
+        resp = self.s3_acl_obj.put_object_acp(
             self.bucket_name, self.obj_name, modified_acl)
         assert resp[0], resp[1]
         self.log.info(
@@ -5405,7 +5412,7 @@ class TestObjectACL:
         self.log.info(
             "STARTED: put object in account1 and give full control permissions to "
             "account2 and get object from account2 by using acl xml")
-        self.create_bucket_obj(self.bucket_name, self.obj_name, S3_OBJ)
+        self.create_bucket_obj(self.bucket_name, self.obj_name, self.s3_obj)
         test_cfg = S3_OBJ_TST["test_3452"]
         s3_obj_2 = self.create_acc_and_put_obj_acp(
             self.bucket_name, self.obj_name, test_cfg)

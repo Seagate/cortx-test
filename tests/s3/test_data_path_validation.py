@@ -32,11 +32,7 @@ from commons.helpers.health_helper import Health
 from libs.s3 import CM_CFG
 from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_acl_test_lib import S3AclTestLib
 from scripts.s3_bench import s3bench as s3bench_obj
-
-ACL_OBJ = S3AclTestLib()
-S3_OBJ = S3TestLib()
 
 
 class TestDataPathValidation:
@@ -53,6 +49,7 @@ class TestDataPathValidation:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.obj_prefix = "dpv-obj"
         self.bkt_name_prefix = "dpv-bkt"
         self.bucket_name = "dpv-bkt{}".format(perf_counter_ns())
@@ -86,9 +83,9 @@ class TestDataPathValidation:
                 system_utils.remove_file(file)
         self.log.info("Created files deleted")
         self.log.info("Delete bucket and it's resources.")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         if self.bucket_name in resp[1]:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted bucket and it's resources.")
         self.log.info("ENDED: Teardown operations")
@@ -102,7 +99,7 @@ class TestDataPathValidation:
         """
         self.log.info("Step 1: Prepare fresh setup with EES/EOS stack")
         self.log.info("Step 2: Creating a bucket with name : %s", bkt_name)
-        res = S3_OBJ.create_bucket(bkt_name)
+        res = self.s3_obj.create_bucket(bkt_name)
         assert_utils.assert_true(res[0], res)
         assert_utils.assert_in(bkt_name, res[1], res)
 
@@ -123,11 +120,11 @@ class TestDataPathValidation:
         resp = system_utils.run_local_cmd(cmd_create_file)
         self.log.info(resp)
         assert_utils.assert_true(os.path.exists(self.file_path), resp)
-        res = S3_OBJ.object_upload(bucket_name,
-                                   object_name,
-                                   self.file_path)
+        res = self.s3_obj.object_upload(bucket_name,
+                                        object_name,
+                                        self.file_path)
         assert_utils.assert_true(res[0], res[1])
-        resp = S3_OBJ.object_list(bucket_name)
+        resp = self.s3_obj.object_list(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             object_name,
@@ -315,9 +312,9 @@ class TestDataPathValidation:
             " with single client on single bucket")
         self.log.info("obj_size: %s, requests: %s", obj_size, requests)
         self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -374,9 +371,9 @@ class TestDataPathValidation:
             requests,
             num_clients)
         self.log.info("Step 1: Create bucket with name %s.", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info("Step 1: Successfully created bucket.")
         self.log.info(
@@ -438,10 +435,10 @@ class TestDataPathValidation:
         for bkt in range(5):
             bucket_name = "{}{}".format(
                 self.bkt_name_prefix, perf_counter_ns())
-            resp = S3_OBJ.create_bucket(bucket_name)
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         for bkt in bkt_list:
             assert_utils.assert_in(
                 bkt, resp[1], f"Failed to create bucket: {bkt} in {resp[1]}")
@@ -480,7 +477,7 @@ class TestDataPathValidation:
                 assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         if bkt_list:
-            resp = S3_OBJ.delete_multiple_buckets(bkt_list)
+            resp = self.s3_obj.delete_multiple_buckets(bkt_list)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"
@@ -505,10 +502,10 @@ class TestDataPathValidation:
         for bkt in range(2):
             bucket_name = "{}{}".format(
                 self.bkt_name_prefix, perf_counter_ns())
-            resp = S3_OBJ.create_bucket(bucket_name)
+            resp = self.s3_obj.create_bucket(bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             bkt_list.append(bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         for bkt in bkt_list:
             assert_utils.assert_in(
                 bkt, resp[1], f"Failed to create bucket: {bkt} in {resp[1]}")
@@ -545,7 +542,7 @@ class TestDataPathValidation:
                 assert_utils.assert_not_in(self.cmd_msg, res_cmd, res_cmd)
         self.log.info("Step 3: checked system stability")
         if bkt_list:
-            resp = S3_OBJ.delete_multiple_buckets(bkt_list)
+            resp = self.s3_obj.delete_multiple_buckets(bkt_list)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Test gradual increase of concurrent client sessions"

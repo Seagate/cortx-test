@@ -20,28 +20,27 @@
 
 """S3 Concurrency test module."""
 
+import logging
 import os
 import time
 from multiprocessing import Process, Manager
 
-import logging
 import pytest
+
 from commons.constants import const
-from commons.utils import assert_utils
-from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from commons.utils.config_utils import get_config
 from config import S3CMD_CNF
 from config import S3_CFG
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
-from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
+from libs.s3.s3_test_lib import S3TestLib
 
 MANAGER = Manager()
-S3T_OBJ = S3TestLib()
-S3CMDT_OBJ = S3CmdTestLib()
 
 
 class TestS3Concurrency:
@@ -55,6 +54,8 @@ class TestS3Concurrency:
         It will perform prerequisite test steps if any.
         """
         self.log = logging.getLogger(__name__)
+        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3cmdt_obj = S3CmdTestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "concurrency-{}".format(time.perf_counter_ns())
         self.bucket_url = "s3://{}".format(self.bucket_name)
@@ -73,9 +74,9 @@ class TestS3Concurrency:
         self.log.info("STARTED: Teardown operations")
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bucket_list = S3T_OBJ.bucket_list()[1]
+        bucket_list = self.s3t_obj.bucket_list()[1]
         if self.bucket_name in bucket_list:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting the directory created locally for object")
@@ -91,7 +92,9 @@ class TestS3Concurrency:
         resp = system_utils.is_rpm_installed(const.S3CMD)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
-        assert_utils.assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
+        assert_utils.assert_true(
+            resp, "config path not exists: {}".format(
+                S3_CFG["s3cfg_path"]))
         s3cmd_access = get_config(
             S3_CFG["s3cfg_path"], "default", "access_key")
         s3cmd_secret = get_config(
@@ -109,7 +112,7 @@ class TestS3Concurrency:
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
-        resp = S3T_OBJ.create_bucket(bkt_name)
+        resp = self.s3t_obj.create_bucket(bkt_name)
         self.log.info(resp)
         resp_lst.append(resp)
 
@@ -123,7 +126,7 @@ class TestS3Concurrency:
         """
         cmd_arguments = [bucket_url]
 
-        command = S3CMDT_OBJ.command_formatter(
+        command = self.s3cmdt_obj.command_formatter(
             S3CMD_CNF,
             S3CMD_CNF["s3cmd_cfg"]["make_bucket"],
             cmd_arguments)
@@ -141,7 +144,7 @@ class TestS3Concurrency:
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
-        resp = S3T_OBJ.put_object(bkt_name, obj_name, file_path)
+        resp = self.s3t_obj.put_object(bkt_name, obj_name, file_path)
         self.log.info(resp)
         resp_lst.append(resp)
 
@@ -155,7 +158,7 @@ class TestS3Concurrency:
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
-        resp = S3T_OBJ.object_upload(bkt_name, obj_name, file_path)
+        resp = self.s3t_obj.object_upload(bkt_name, obj_name, file_path)
         self.log.info(resp)
         resp_lst.append(resp)
 
@@ -173,7 +176,7 @@ class TestS3Concurrency:
         :return: None
         """
         cmd_arguments = [file_path, bucket_url]
-        command = S3CMDT_OBJ.command_formatter(
+        command = self.s3cmdt_obj.command_formatter(
             S3CMD_CNF,
             S3CMD_CNF["s3cmd_cfg"]["put_bucket"],
             cmd_arguments)
@@ -190,7 +193,7 @@ class TestS3Concurrency:
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
-        resp = S3T_OBJ.delete_object(bkt_name, obj_name)
+        resp = self.s3t_obj.delete_object(bkt_name, obj_name)
         self.log.info(resp)
         resp_lst.append(resp)
 
@@ -203,7 +206,7 @@ class TestS3Concurrency:
         :param list resp_lst: shared object for maintaining operation response
         :return: None
         """
-        resp = S3T_OBJ.delete_bucket(bkt_name, force=True)
+        resp = self.s3t_obj.delete_bucket(bkt_name, force=True)
         self.log.info(resp)
         resp_lst.append(resp)
 
@@ -218,7 +221,7 @@ class TestS3Concurrency:
         """
         cmd_arguments = ["/".join([bucket_url, filename]),
                          S3CMD_CNF["s3cmd_cfg"]["force"]]
-        command = S3CMDT_OBJ.command_formatter(
+        command = self.s3cmdt_obj.command_formatter(
             S3CMD_CNF, S3CMD_CNF["s3cmd_cfg"]["get"], cmd_arguments)
         self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
@@ -240,7 +243,7 @@ class TestS3Concurrency:
         :return: None
         """
         cmd_arguments = ["/".join([bucket_url, filename])]
-        command = S3CMDT_OBJ.command_formatter(
+        command = self.s3cmdt_obj.command_formatter(
             S3CMD_CNF, del_cmd, cmd_arguments)
         self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
@@ -260,7 +263,7 @@ class TestS3Concurrency:
         :return: None
         """
         cmd_arguments = [bucket_url]
-        command = S3CMDT_OBJ.command_formatter(
+        command = self.s3cmdt_obj.command_formatter(
             S3CMD_CNF, rem_cmd, cmd_arguments)
         self.log.info("Command is : %s", command)
         resp = system_utils.run_local_cmd(command)
@@ -300,15 +303,15 @@ class TestS3Concurrency:
         :param obj_size: Size of an object
         :return:
         """
-        resp = S3T_OBJ.create_bucket(bucket)
+        resp = self.s3t_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         system_utils.create_file(file_path, obj_size)
         assert_utils.assert_true(
             system_utils.path_exists(file_path),
             f"failed to create {file_path}")
-        resp = S3T_OBJ.object_upload(bucket, obj_name, file_path)
+        resp = self.s3t_obj.object_upload(bucket, obj_name, file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.object_list(bucket)
+        resp = self.s3t_obj.object_list(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(obj_name, resp[1])
         self.log.info("Step 1: All the objects listed")
@@ -495,7 +498,7 @@ class TestS3Concurrency:
             "try to delete the same bucket from other s3 client")
         system_utils.create_file(self.file_path, 100)
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3t_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
         self.log.info(
@@ -557,7 +560,7 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Put object through one s3 client and try deleting it from other s3 client")
         self.log.info("Step 1: Creating a bucket%s", self.bucket_name)
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3t_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Bucket was created")
         self.log.info(
@@ -595,7 +598,7 @@ class TestS3Concurrency:
         self.log.info(
             "STARTED: Download an already existing object from one client and in parallel "
             "overwrite the same object from other s3 client")
-        resp = S3T_OBJ.create_bucket_put_object(
+        resp = self.s3t_obj.create_bucket_put_object(
             self.bucket_name, self.obj_name, self.file_path, 10)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
