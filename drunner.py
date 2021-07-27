@@ -388,7 +388,7 @@ def save_to_logdir(test_list: List) -> None:
 
 
 def create_topic(admin_client: AdminClient):
-    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 1, 1)]
+    topic_list = [NewTopic(params.TEST_EXEC_TOPIC, 2, 1)]
     admin_client.create_topics(topic_list)
 
 
