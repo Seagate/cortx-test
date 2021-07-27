@@ -48,7 +48,6 @@ def update_options_dropdown(xfilter, release, branch):
 
 @app.callback(
     Output('configs_dropdown_first', 'options'),
-    Output('configs_dropdown_first', 'style'),
     Input('filter_dropdown', 'value'),
     Input('release_dropdown_first', 'value'),
     Input('branch_dropdown_first', 'value'),
@@ -58,7 +57,6 @@ def update_options_dropdown(xfilter, release, branch):
 )
 def update_configs_first(xfilter, release, branch, option1, bench):
     results = []
-    style = {'display': 'none'}
     if xfilter is None or release is None or branch is None or option1 is None or bench is None:
         raise PreventUpdate
 
@@ -72,11 +70,13 @@ def update_configs_first(xfilter, release, branch, option1, bench):
         cursor = find_documents(query, uri, db_name, db_collection)
 
         for doc in cursor:
-            pattern = {'Buckets': int(
-                doc['Buckets']), 'Sessions': int(doc['Sessions'])}
+            try:
+                pattern = {'Buckets': int(doc['Buckets']), 'Sessions': int(doc['Sessions'])}
 
-            if pattern not in configs:
-                configs.append(pattern)
+                if pattern not in configs:
+                    configs.append(pattern)
+            except KeyError:
+                continue
 
         for config in configs:
             results.append(
@@ -84,11 +84,8 @@ def update_configs_first(xfilter, release, branch, option1, bench):
                     'label': "{0} buckets, {1} sessions".format(config['Buckets'], config['Sessions']),
                     'value': "{0}_{1}".format(config['Buckets'], config['Sessions'])
                 })
-        style = {'display': 'block', 'width': '250px', 'verticalAlign': 'middle',
-                 "margin-right": "10px", "margin-top": "10px"}
 
-
-    return results, style
+    return results
 
 
 @app.callback(

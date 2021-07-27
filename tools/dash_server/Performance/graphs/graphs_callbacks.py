@@ -11,20 +11,42 @@ from Performance.graphs.graphs_functions import get_data_for_graphs, get_metrics
 
 def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
                   branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param):
+    yet_to_plot_traces = True
 
     for op in operations:
-        [x_axis, y_data] = get_data_for_graphs(xfilter, release1, branch1, option1, profile1, bench,
-                                               config, op, metric, param)
-        trace = get_structure_trace(
-            go.Scatter, op, metric, option1, x_axis, y_data)
-        fig.add_trace(trace)
-        fig_all.add_trace(trace)
+        [x_axis_first, y_data_first] = get_data_for_graphs(xfilter, release1, branch1, option1, profile1, bench,
+                                                           config, op, metric, param)
 
         if flag and release2 and branch2 and option2:
-            [x_axis, y_data] = get_data_for_graphs(xfilter, release2, branch2, option2, profile2, bench,
-                                                   config, op, metric, param)
+            [x_axis_second, y_data_second] = get_data_for_graphs(xfilter, release2, branch2, option2, profile2, bench,
+                                                                 config, op, metric, param)
+
+            if len(x_axis_first) > len(x_axis_second):
+                trace = get_structure_trace(
+                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
+                fig.add_trace(trace)
+                fig_all.add_trace(trace)
+
+                trace = get_structure_trace(
+                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
+                fig.add_trace(trace)
+                fig_all.add_trace(trace)
+            else:
+                trace = get_structure_trace(
+                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
+                fig.add_trace(trace)
+                fig_all.add_trace(trace)
+
+                trace = get_structure_trace(
+                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
+                fig.add_trace(trace)
+                fig_all.add_trace(trace)
+
+            yet_to_plot_traces = False
+
+        if yet_to_plot_traces:
             trace = get_structure_trace(
-                go.Scatter, op, metric, option2, x_axis, y_data)
+                        go.Scatter, op, metric, option1, x_axis_first, y_data_first)
             fig.add_trace(trace)
             fig_all.add_trace(trace)
 
