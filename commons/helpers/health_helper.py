@@ -694,4 +694,3 @@ class Health(Host):
         time.sleep(wait_time)
 
         return True
-        
