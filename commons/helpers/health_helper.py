@@ -358,26 +358,27 @@ class Health(Host):
         LOG.info("Checking hctl status for %s node", self.hostname)
         response = self.execute_cmd(cmd=commands.MOTR_STATUS_CMD, read_lines=True, exc=False)
         if "Cluster is not running" in ",".join(response[1]):
-            LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n",
-                      self.hostname, response)
             return False, f"Cluster is not running on {self.hostname}"
+        LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname, response)
 
         resp = self.hctl_status_json()
         hctl_services_failed = {}
         svcs_elem = {'service': None, 'status': None}
         for node_data in resp['nodes']:
-            hctl_services_failed[node_data['name']] = []
+            hctl_services_failed[node_data['name']] = list()
             for svcs in node_data['svcs']:
+                temp_svc = svcs_elem.copy()
+                is_data = False
                 if svcs['name'] != "m0_client" and svcs['status'] != 'started':
-                    temp_svc = svcs_elem.copy()
                     temp_svc['service'] = svcs['name']
                     temp_svc['status'] = svcs['status']
+                    is_data = True
+                if is_data:
                     hctl_services_failed[node_data['name']].append(temp_svc)
-
-        node_health_failure = {}
+        node_hctl_failure = {}
         for key, val in hctl_services_failed.items():
             if val:
-                node_health_failure['HCTL_STATUS'] = {key: val}
+                node_hctl_failure[key] = val
 
         if resource_cleanup:
             LOG.info("cleanup pcs resources for %s node", self.hostname)
@@ -389,9 +390,8 @@ class Health(Host):
         LOG.info("Checking pcs status for %s node", self.hostname)
         response = self.execute_cmd(cmd=commands.PCS_STATUS_CMD, read_lines=True, exc=False)
         if "cluster is not currently running on this node" in ",".join(response[1]):
-            LOG.debug(" ********* PCS status Response for %s ********* \n %s \n",
-                      self.hostname, response)
-            return False, f"cluster is not currently running on {self.hostname}"
+            return False, f"PCS status cluster is not currently running on {self.hostname}"
+        LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname, response)
 
         pcs_failed_data = {}
         daemons = ["corosync:", "pacemaker:", "pcsd:"]
@@ -401,6 +401,7 @@ class Health(Host):
                 if daemon in line:
                     if "active/enabled" not in line:
                         pcs_failed_data[daemon] = line
+                        LOG.debug("Daemon %s status: %s", daemon, line)
 
         response = self.execute_cmd(cmd=commands.CMD_PCS_GET_XML, read_lines=False, exc=False)
         if isinstance(response, bytes):
@@ -430,12 +431,14 @@ class Health(Host):
         for group, value in group_dict.items():
             if value['status'] != 'Started':
                 pcs_failed_data[group] = value
-
+        node_health_failure = {}
         if pcs_failed_data:
             node_health_failure['PCS_STATUS'] = pcs_failed_data
+        if node_hctl_failure:
+            node_health_failure['HCTL_STATUS'] = node_hctl_failure
         if node_health_failure:
             return False, node_health_failure
-        return True, "cluster {} up and running.".format(self.hostname)
+        return True, "cluster on {} up and running.".format(self.hostname)
 
     @staticmethod
     def get_node_health_xml(pcs_response: str):
@@ -467,7 +470,6 @@ class Health(Host):
                     for val in clone_elem_resp['group']:
                         resource.append(val['resource'])
                 else:
-                    resource = {}
                     resource = clone_elem_resp['group']['resource']
             else:
                 resource = clone_elem_resp['resource']
