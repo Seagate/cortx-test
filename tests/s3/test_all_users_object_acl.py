@@ -19,22 +19,18 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """All Users Object Acl Test Module."""
+import logging
 import os
 import time
-import logging
+
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import make_dirs, remove_file, path_exists
-from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 from config import S3_CFG
-
-# S3_TEST_OBJ = s3_test_lib.S3TestLib()
-# ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
-# NO_AUTH_OBJ = s3_test_lib.S3LibNoAuth()
-# IAM_TEST_OBJ = iam_test_lib.IamTestLib()
+from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
 
 
 class TestAllUsers:
