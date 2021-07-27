@@ -207,9 +207,14 @@ UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
-PAGINATION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
-PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
+CSM_TABLE_DROPDOWN_XPATH ='//*[@class="cortx-dropdown-title"]'
+CSM_TABLE_DROPDOWN_MENU_XPATH ='//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu"]'
+PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
+PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
+PAGE_FIRST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-left theme--light']"
+PAGE_LAST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-right theme--light']"
+PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"
 
 #  IAM Users
 ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"

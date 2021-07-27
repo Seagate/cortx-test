@@ -403,3 +403,71 @@ Create account with input Role and Change Role from Admin account
         ...  AND  Edit CSM User Type  ${new_user_name}  ${new_role}
         ...  AND  Delete CSM User  ${new_user_name}
     END
+
+Select The Number of Rows To Display
+    [Documentation]  This Keyword is for selecting the no. of rows to display in table
+    [Arguments]  ${row_number}
+    @{x_elements}=    Create List
+    Click Element  ${PAGINATION_LIST_ICON_XPATH}
+    Sleep  3s
+    @{x_elements}=  Get WebElements   ${PAGINATION_PAGE_OPTIONS_XPATH}
+    Log To Console And Report   ${x_elements}
+    sleep  2s
+    FOR  ${element}  IN  @{x_elements}
+            ${text}=    Get Text    ${element}
+        Run Keyword If   "${text}" == "${row_number}"    Click Element   ${element}
+    END
+
+Create Multiple CSM User
+     [Documentation]    This Keyword is used to create multiple CSM USers.
+     [Arguments]    ${user_count}
+     Reload Page
+     wait for page or element to load  10s
+     FOR    ${i}    IN RANGE    ${user_count}
+         ${new_password}=  Generate New Password
+         ${new_user_name}=  Generate New User Name
+         Log To Console And Report  Create Account with role: manage
+         Create New CSM User  ${new_user_name}  ${new_password}  manage
+         Click On Confirm Button
+         Verify New User  ${new_user_name}
+     END
+
+Navigate To First Page On Administrative Users Page
+    [Documentation]  This Keyword is for navigating to Last page
+    Navigate To Page  MANAGE_MENU_ID
+    wait for page or element to load  10s
+    Select The Number of Rows To Display  ${ROW_VALUE}
+    ${User_list}=    Get CSM table row count
+    ${count}=    Evaluate    ${User_list} - ${DEFAULT_COUNT}
+    Log To Console And Report    ${count}
+    Run Keyword If   "${User_list}" < "${DEFAULT_COUNT}"    Create Multiple CSM User    ${count}
+    Select The Number of Rows To Display   ${ROW_FIVE}
+    Click Element    ${PAGE_LAST}
+    sleep  3s
+    Click Element    ${PAGE_FIRST}
+
+Navigate To Last Page On Administrative Users Page
+    [Documentation]  This Keyword is for navigating to Last page
+    Navigate To Page  MANAGE_MENU_ID
+    wait for page or element to load  10s
+    Select The Number of Rows To Display  ${ROW_VALUE}
+    ${User_list}=    Get CSM table row count
+    Log To Console And Report    ${User_list}
+    ${count}=    Evaluate    ${User_list} - ${DEFAULT_COUNT}
+    Log To Console And Report    ${count}
+    Run Keyword If   "${User_list}" < "${DEFAULT_COUNT}"    Create Multiple CSM User    ${count}
+    Select The Number of Rows To Display   ${ROW_FIVE}
+    Click Element    ${PAGE_LAST}
+
+Navigate To The Desired Page
+    [Documentation]   This Keyword is used to Navigate to the Desired Page on User Administrative Page
+    [Arguments]    ${page_element}    ${page_Number}
+    @{page_data}=    Create List
+    @{page_elements}=  Get WebElements  ${page_element}
+    Log To Console And Report  ${page_elements}
+    Log To Console And Report  ${page_number}
+    sleep  2s
+    FOR  ${elements}  IN  @{page_elements}
+         ${text}=    Get Text    ${elements}
+         Run Keyword If   "${text}" == "${page_number}"    Click Element   ${elements}
+    END
