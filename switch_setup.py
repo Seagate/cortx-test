@@ -161,8 +161,8 @@ def get_vm_creds():
 
 def setup_client(host, clstr_ip):
     uname, usr_passwd = get_vm_creds()
-    remote_cert_path= "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
-    local_cert_path= "/etc/ssl/stx-s3-clients/s3/ca.crt"
+    remote_cert_path = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
+    local_cert_path = "/etc/ssl/stx-s3-clients/s3/ca.crt"
     if os.path.exists(local_cert_path):
         system_utils.run_local_cmd(cmd="rm -f {}".format(local_cert_path), flg=True)
     nd_obj_host = Node(hostname=host, username=uname, password=usr_passwd)
