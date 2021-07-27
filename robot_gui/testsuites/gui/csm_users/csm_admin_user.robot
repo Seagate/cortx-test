@@ -505,6 +505,9 @@ TEST-23837
     Delete Logged In CSM User  ${new_user_name1}
     Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}
     Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_csm_user_name}
+    Verify Deleted User  {new_csm_user_name}
     Verify Deleted User  {new_user_name1}
     Verify Deleted User  {new_user_name}
 
