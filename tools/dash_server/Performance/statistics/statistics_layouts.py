@@ -91,7 +91,8 @@ statistics_layout = Card(
                 placeholder="Select Object Size",
                 style=dict_Style_Stats_input_options
             ), justify='center'),
-        html.Div(id="statistics_bucketops_table", style= {'margin-top': '20px'}),
+        html.Div(id="statistics_bucketops_table",
+                 style={'margin-top': '20px'}),
 
         html.Br(),
         html.P("COS Bench", style=style_perf_captions),

@@ -25,23 +25,13 @@ from urllib.parse import quote_plus
 from Performance.mongodb_api import find_distinct_values
 from Performance.schemas import get_dropdown_labels
 
-config_path = 'Performance/configs/configs.yml'
-benchmark_config = 'Performance/configs/benchmark.yml'
+config_path = 'Performance/configs.yml'
 
 
 def makeconfig(name):  # function for connecting with configuration file
     with open(name) as config_file:
         configs = yaml.safe_load(config_file)
     return configs
-
-
-def get_chain(version):
-    from Performance.mongodb_api import find_documents
-    uri, db, col = get_db_details()
-    cursor = find_documents({'Title': 'Main Chain'}, uri, db, col)
-    chain = cursor[0][version]
-
-    return chain
 
 
 def get_db_details(release=1):
@@ -117,11 +107,6 @@ def get_dict_from_array(options, makeReverse, extension=None):
             {'label': f"{option}", 'value': option} for option in options
         ]
         return versions
-
-
-def fetch_configs_from_file(benchmark_config, bench, prop):
-    config = makeconfig(benchmark_config)
-    return config[bench][prop]
 
 
 def sort_builds_list(builds):

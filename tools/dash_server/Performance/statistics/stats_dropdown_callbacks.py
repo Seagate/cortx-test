@@ -151,9 +151,9 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
-                        'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'S3bench'
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'S3bench'
+        })
         options = get_dict_from_array(sessions, False, 'sessions')
         value = options[0]['value']
 
@@ -179,9 +179,9 @@ def update_hs_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
-                        'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
+        })
         options = get_dict_from_array(sessions, False, 'sessions')
         value = options[0]['value']
 
@@ -207,13 +207,14 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
-                        'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
+        })
         options = get_dict_from_array(buckets, False, 'buckets')
         value = options[0]['value']
 
     return options, value
+
 
 @app.callback(
     Output('perf_bucketops_dropdown', 'options'),
@@ -236,9 +237,9 @@ def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custo
         raise PreventUpdate
     else:
         objsizes = get_distinct_keys(release, 'Object_Size', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull,
-                        'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench', 'Buckets': buckets, 'Sessions' : sessions
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull,
+            'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench', 'Buckets': buckets, 'Sessions': sessions
+        })
         objsizes = sort_object_sizes_list(objsizes)
         options = get_dict_from_array(objsizes, False)
         value = options[0]['value']
@@ -265,9 +266,9 @@ def update_cos_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cu
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
-                        'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
+        })
         options = get_dict_from_array(sessions, False, 'sessions')
         value = options[0]['value']
 
@@ -293,9 +294,9 @@ def update_cos_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cus
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
-                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
-                        'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
-                    })
+            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
+        })
         options = get_dict_from_array(buckets, False, 'buckets')
         value = options[0]['value']
 
