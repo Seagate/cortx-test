@@ -167,10 +167,10 @@ class TestHANodeHealth:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with safe shutdown.")
-        self.restored = False
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
@@ -261,10 +261,10 @@ class TestHANodeHealth:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
-        self.restored = False
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -354,7 +354,6 @@ class TestHANodeHealth:
         LOGGER.info(
             "Started: Test to check node status one by one on all nodes when nw interface on node goes"
             "down and comes back up")
-        self.restored = False
 
         LOGGER.info("Get the list of private data interfaces for all nodes.")
         response = self.ha_obj.get_iface_ip_list(
@@ -367,6 +366,7 @@ class TestHANodeHealth:
                 private_ip_list, iface_list))
 
         for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info(
                 "Make the private data interface %s down for %s", iface_list[node], node_name)
@@ -383,11 +383,12 @@ class TestHANodeHealth:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
+            LOGGER.info(f"resp {resp}")
             assert_utils.assert_in(
-                "Name or service not known",
-                resp[1][0],
-                "Node interface still up.")
-
+                b"100% packet loss",
+                resp,
+                f"Node interface still up. {resp}")
+            time.sleep(120)
             LOGGER.info(
                 "Check in cortxcli and REST that the status is changed for {} to Failed".format(node_name))
             resp = self.ha_obj.check_csm_service(
@@ -426,8 +427,8 @@ class TestHANodeHealth:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                       "Node interface still down.")
+            assert_utils.assert_not_in(b"0% packet loss", resp,
+                                       f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
@@ -469,7 +470,6 @@ class TestHANodeHealth:
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple safe shutdown.")
-        self.restored = False
         LOGGER.info("Get the node for multiple safe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
@@ -477,6 +477,7 @@ class TestHANodeHealth:
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info(
                 "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
@@ -573,7 +574,6 @@ class TestHANodeHealth:
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple unsafe shutdown.")
-        self.restored = False
 
         LOGGER.info("Get the node for multiple unsafe shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
@@ -582,6 +582,7 @@ class TestHANodeHealth:
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info(
                 "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
