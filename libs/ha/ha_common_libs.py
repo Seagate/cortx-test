@@ -207,7 +207,8 @@ class HALibs:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE, msg=f"Unable to get VM power status")
+                    raise CTException(err.CLI_COMMAND_FAILURE,
+                                      msg=f"Unable to get VM power status for {vm_name}")
                 data = vm_info[1].split("\\n")
                 pw_state = ""
                 for lines in data:

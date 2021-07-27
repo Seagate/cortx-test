@@ -471,7 +471,7 @@ class TestHANodeHealthGUI:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
-            LOGGER.info("Checking PCS clean after making the private data interface %s down for %s",
+            LOGGER.info("Checking PCS clean after making the private data interface %s up for %s",
             iface_list[node], node_name)
             for hlt_obj in self.hlt_list:
                 res = hlt_obj.check_node_health()
