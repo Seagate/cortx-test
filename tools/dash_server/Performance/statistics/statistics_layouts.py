@@ -150,7 +150,7 @@ stats_input_options = Row(
         ),
         Dropdown(
             id='perf_pfull_dropdown',
-            placeholder="Select cluster utilization",
+            placeholder="Select Cluster Fill",
             style=dict_Style_Stats_input_options
         ),
         Dropdown(

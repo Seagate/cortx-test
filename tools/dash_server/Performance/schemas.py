@@ -67,7 +67,7 @@ bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Ob
 def get_dropdown_labels(dropdown_type):
     mapping = {
         'nodes': ' Nodes',
-        'pfill': '% Utilization',
+        'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
         'sessions': ' Session(s)'
