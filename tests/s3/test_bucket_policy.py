@@ -63,7 +63,7 @@ class TestBucketPolicy:
         teardown for cleanup.
         """
         self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup operations.")
+        self.log.info("STARTED: Test setup operations.")
         self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
         self.acl_obj = s3_acl_test_lib.S3AclTestLib(
@@ -102,9 +102,9 @@ class TestBucketPolicy:
         self.file_path_2 = os.path.join(
             self.folder_path, "bkt2_policy{}.txt".format(time.perf_counter_ns()))
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.log.info("ENDED: Setup operations.")
+        self.log.info("ENDED: Test setup operations.")
         yield
-        self.log.info("STARTED: teardown test operations.")
+        self.log.info("STARTED: Test teardown operations.")
         for fpath in [self.file_path, self.file_path_1, self.file_path_2]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
@@ -120,24 +120,27 @@ class TestBucketPolicy:
             resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
-        self.log.debug(self.account_list)
         self.delete_accounts(self.account_list)
-        self.log.info("ENDED: teardown test suite operations.")
+        self.log.info("ENDED: Test teardown operations.")
 
     def delete_accounts(self, accounts):
         """It will clean up resources which are getting created during test suite setup."""
-        self.log.debug(accounts)
+        for iam in self.iam_obj_list:
+            iam_users = [user["UserName"] for user in iam.list_users()[1]]
+            self.log.info("Deleting iam users '%s' and access keys", iam_users)
+            resp = iam.delete_users_with_access_key(iam_users)
+            assert_utils.assert_true(resp, f"Failed to delete iam useres: {iam_users}")
+        iam_users = [user["UserName"] for user in self.iam_obj.list_users(
+        )[1] if self.user_name in user["UserName"]]
+        if iam_users:
+            self.log.info("Deleting iam users %s", iam_users)
+            resp = self.iam_obj.delete_users_with_access_key(iam_users)
+            assert_utils.assert_true(resp, f"Failed to delete iam useres: {iam_users}")
+        self.log.debug("S3 account lists: %s", accounts)
         for acc in accounts:
-            for iam in self.iam_obj_list:
-                iam_users = iam.list_users()[1]
-                self.log.info("Deleting iam users '%s' and access keys", iam_users)
-                iam.delete_users_with_access_key(iam_users)
-            for user in self.iam_obj.list_users()[1]:
-                if self.user_name in user:
-                    self.log.info("Deleting iam user %s", user)
-                    self.iam_obj.delete_user(user)
             self.log.debug("Deleting %s account", acc)
-            self.rest_obj.delete_s3_account(acc)
+            resp = self.rest_obj.delete_s3_account(acc)
+            assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
 
     def create_bucket_put_objects(
@@ -792,7 +795,6 @@ class TestBucketPolicy:
             assert "AccessDenied" in error.message, error.message
         self.log.info(
             "Step 3 : Get bucket policy with another account is failed")
-        self.account_list.append(self.account_name)
         self.log.info(
             "ENDED: verify get-bucket-policy for the bucket from account2."
             "Do not apply any ACL permissions or "
@@ -1786,10 +1788,11 @@ class TestBucketPolicy:
         access_key = create_account[4]
         secret_key = create_account[5]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -1806,7 +1809,6 @@ class TestBucketPolicy:
             self.bucket_name,
             bucket_policy,
             "Invalid principal in policy")
-
         self.log.info(
             "ENDED: Test principal arn combination with invalid account-id")
 
@@ -1923,8 +1925,7 @@ class TestBucketPolicy:
         self.log.info(
             "Performing put bucket policy on a bucket %s", self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
                                 "Invalid principal in policy")
@@ -1953,8 +1954,7 @@ class TestBucketPolicy:
             "objkey720_2")
         self.log.info("Performing put bucket policy")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.put_invalid_policy(self.bucket_name,
                                 bucket_policy,
                                 "Invalid principal in policy")
@@ -1980,10 +1980,11 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -2018,10 +2019,11 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -2056,10 +2058,11 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -2094,10 +2097,11 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -2132,10 +2136,11 @@ class TestBucketPolicy:
         secret_key = create_account[5]
         account_id = create_account[6]
         self.log.info("Creating a user with name %s", self.user_name)
-        self.iam_obj = iam_test_lib.IamTestLib(
+        iam_new_obj = iam_test_lib.IamTestLib(
             access_key=access_key, secret_key=secret_key)
-        resp = self.iam_obj.create_user(self.user_name)
+        resp = iam_new_obj.create_user(self.user_name)
         assert resp[0], resp[1]
+        self.iam_obj_list.append(iam_new_obj)
         self.log.info("User is created with name %s", self.user_name)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
@@ -2631,8 +2636,7 @@ class TestBucketPolicy:
             self.user_name)
         self.log.info("Step 3: Creating a json with combination of account id")
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         self.log.info("Step 3: json is created with combination of account id")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
         self.log.info("Step 4: Retrieving object using account 2")
@@ -3413,7 +3417,7 @@ class TestBucketPolicy:
                 "Resource"].format(self.bucket_name)
         resp = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
-        s3_obj = resp[1]
+        self.s3test_obj_1 = resp[1]
         s3_policy_obj = resp[3]
         access_key = resp[4]
         secret_key = resp[5]
@@ -3422,7 +3426,7 @@ class TestBucketPolicy:
             access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 1 : Creating a bucket with name %s", self.bucket_name)
-        resp = s3_obj.create_bucket(self.bucket_name)
+        resp = self.s3test_obj_1.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         assert_utils.assert_equals(resp[1], self.bucket_name, resp[1])
         self.log.info(
@@ -3478,8 +3482,6 @@ class TestBucketPolicy:
             self.log.info(
                 "Step 6: Deleting policy of a bucket is failed with error %s",
                 error.message)
-        self.log.info("Cleanup activity")
-        iam_new_obj.delete_access_key(self.user_name, usr_access_key)
         self.log.info(
             "ENDED: Test bucket policy with Effect Allow and Deny using user id")
 
@@ -4039,11 +4041,9 @@ class TestBucketPolicy:
         account_id = resp[6]
         self.create_bucket_validate(self.bucket_name)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account_id)
         bucket_policy["Statement"][1]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][1]["Principal"]["AWS"].format(
-                account_id)
+            bucket_policy["Statement"][1]["Principal"]["AWS"].format(account_id)
         self.put_get_bkt_policy(
             self.bucket_name,
             bucket_policy)
@@ -5890,8 +5890,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -5954,8 +5953,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(
@@ -6027,8 +6025,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6092,8 +6089,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6158,8 +6154,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6224,8 +6219,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6291,8 +6285,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6356,8 +6349,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(bucket_policy)
         self.log.info("Created a json for bucket policy")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6423,8 +6415,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"]["s3:prefix"] = \
             bucket_policy["Statement"][0]["Condition"]["StringEqualsIfExists"][
                 "s3:prefix"].format(self.obj_name_prefix)
@@ -6489,8 +6480,7 @@ _date."""
             bucket_policy["Statement"][0][
                 "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6555,8 +6545,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0][
             "Sid"].format(policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6620,8 +6609,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(
             "Created a json with StringEqualsIfExists condition")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
@@ -6727,8 +6715,7 @@ _date."""
         bucket_policy["Statement"][0]["Sid"] = bucket_policy["Statement"][0]["Sid"].format(
             policy_sid)
         bucket_policy["Statement"][0]["Principal"]["AWS"] = \
-            bucket_policy["Statement"][0]["Principal"]["AWS"].format(
-                account1_id)
+            bucket_policy["Statement"][0]["Principal"]["AWS"].format(account1_id)
         self.log.info(
             "Step 3:Put the bucket policy on the bucket and Get Bucket Policy.")
         self.put_get_bkt_policy(self.bucket_name, bucket_policy)
