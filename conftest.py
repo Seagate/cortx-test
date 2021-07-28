@@ -20,46 +20,43 @@
 #
 """This file is core of the framework and it contains Pytest fixtures and hooks."""
 import ast
-import random
-import string
-import os
+import csv
+import datetime
 import glob
-import pathlib
 import json
 import logging
-import csv
-import time
-import datetime
-import pytest
-import requests
+import os
+import pathlib
+import random
+import string
 import tempfile
+import time
 import uuid
 import xml.etree.ElementTree as ET
-from datetime import date
-from _pytest.nodes import Item
-from _pytest.runner import CallInfo
-from _pytest.main import Session
-from testfixtures import LogCapture
-from strip_ansi import strip_ansi
-from typing import List
-from filelock import FileLock
 from threading import Thread
+from typing import List
+
+import pytest
+import requests
+from _pytest.main import Session
+from filelock import FileLock
+from strip_ansi import strip_ansi
+
+from commons import Globals, s3_dns
+from commons import cortxlogging
+from commons import params
+from commons import report_client
+from commons.helpers.health_helper import Health
+from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons.utils import jira_utils
 from commons.utils import system_utils
-from commons import Globals
-from commons import cortxlogging
-from commons import constants
-from commons import report_client
-from core.runner import LRUCache
-from core.runner import get_jira_credential
-from core.runner import get_db_credential
-from commons import params
-from commons.helpers.health_helper import Health
-from commons.utils import assert_utils
 from config import CMN_CFG
-from libs.di.di_run_man import RunDataCheckManager
+from core.runner import LRUCache
+from core.runner import get_db_credential
+from core.runner import get_jira_credential
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di.di_run_man import RunDataCheckManager
 
 FAILURES_FILE = "failures.txt"
 LOG_DIR = 'log'
@@ -70,7 +67,6 @@ DT_PATTERN = '%Y-%m-%d_%H:%M:%S'
 
 LOGGER = logging.getLogger(__name__)
 
-
 SKIP_MARKS = ("dataprovider", "test", "run", "skip", "usefixtures",
               "filterwarnings", "skipif", "xfail", "parametrize",
               "tags")
@@ -78,6 +74,7 @@ BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinationa
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 Globals.ALL_RESULT = None
+
 
 def _get_items_from_cache():
     """Intended for internal use after modifying collected items."""
@@ -273,10 +270,13 @@ def pytest_sessionfinish(session, exitstatus):
         for handler in handlers:
             _logger.removeHandler(handler)
 
-    resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
-    if resp[0]:
-        LOGGER.info("Successfully unmounted directory")
-    filter_report_session_finish(session)
+    try:
+        resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
+        if resp[0]:
+            print("Successfully unmounted directory")
+        filter_report_session_finish(session)
+    except Exception as fault:
+        print("Exception occurred while unmounting directory")
 
 
 def get_test_metadata_from_tp_meta(item):
@@ -372,7 +372,7 @@ def create_report_payload(item, call, final_result, d_u, d_pass):
                        test_id=_item_dict['test_id'],
                        test_id_labels=_item_dict['labels'],
                        test_plan_id=item.config.option.tp_ticket,
-                       test_result=final_result, # call start needs correction
+                       test_result=final_result,  # call start needs correction
                        start_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(call.start)),
                        tags=marks,  # in mem te_meta
                        test_team=_item_dict['te_component'],  # TE te.fields.components[0].name
@@ -404,7 +404,6 @@ def pytest_configure(config):
             LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
         else:
             Globals.JIRA_UPDATE = False
-
     # Handle parallel execution.
     if not hasattr(config, 'workerinput'):
         config.shared_directory = tempfile.mkdtemp()
@@ -419,8 +418,8 @@ def pytest_configure_node(node):
             LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
         else:
             Globals.JIRA_UPDATE = False
-
     node.workerinput['shared_dir'] = node.config.shared_directory
+    pytest.dns_rr_counter = 0
 
 
 def pytest_sessionstart(session: Session) -> None:
@@ -457,7 +456,6 @@ def reset_imported_module_log_level():
 def pytest_collection(session):
     """Collect tests in master and filter out test from TE ticket."""
     items = session.perform_collect()
-    #LOGGER.info(dir(session.config))
     config = session.config
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
@@ -591,11 +589,13 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + report.when, report)
     try:
         attr = getattr(item, 'call_duration')
+        LOGGER.info('Setting attribute call_duration')
     except AttributeError as attr_error:
         LOGGER.warning('Exception %s occurred', str(attr_error))
         setattr(item, "call_duration", call.duration)
     else:
         setattr(item, "call_duration", call.duration + attr)
+
     _local = bool(item.config.option.local)
     Globals.LOCAL_RUN = _local
     fail_file = 'failed_tests.log'
@@ -732,8 +732,8 @@ def check_cortx_cluster_health():
     for node in nodes:
         hostname = node['hostname']
         health = Health(hostname=hostname,
-                            username=node['username'],
-                            password=node['password'])
+                        username=node['username'],
+                        password=node['password'])
         result = health.check_node_health()
         assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
         health.disconnect()
@@ -772,7 +772,7 @@ def pytest_runtest_logstart(nodeid, location):
             break
     path = "file://" + os.path.realpath(location[0])
     if location[1]:
-        path += ":" +str(location[1] + 1)
+        path += ":" + str(location[1] + 1)
     current_file = nodeid.split("::")[0]
     file_suite = current_file.split("/")[-1]
     if location[2].find(".") != -1:
@@ -788,7 +788,7 @@ def pytest_runtest_logstart(nodeid, location):
                 ind = splitted.index(name)
             except ValueError:
                 ind = 0
-        if splitted[ind-1] == current_file:
+        if splitted[ind - 1] == current_file:
             suite = None
         else:
             suite = current_suite
@@ -797,14 +797,17 @@ def pytest_runtest_logstart(nodeid, location):
     if not Globals.LOCAL_RUN and not skip_health_check:
         try:
             check_cortx_cluster_health()
-            check_cluster_storage()
+            try:
+                check_cluster_storage()
+            except (AssertionError, Exception) as fault:
+                LOGGER.error(f"Cluster Storage {fault}")
         except AssertionError as fault:
             LOGGER.error(f"Health check failed for setup with exception {fault}")
-            pytest.exit(f'Health check failed for cluster {target}', 1)
+            pytest.exit(f'Health check failed for cluster {target}', 3)
         except Exception as fault:
             # This could be permission issues as exception of anytype is handled.
             LOGGER.error(f"Health check script failed with exception {fault}")
-            pytest.exit(f'Cannot continue as Health check script failed for {target}', 2)
+            pytest.exit(f'Cannot continue as Health check script failed for {target}', 4)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
@@ -873,8 +876,8 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                         Globals.tp_meta['test_meta']) if d['test_id'] ==
                                        test_id)
                     resp = task.update_execution_details(
-                                    test_run_id=test_run_id, test_id=test_id,
-                                    comment=comment)
+                        test_run_id=test_run_id, test_id=test_id,
+                        comment=comment)
                     if resp:
                         LOGGER.info("Added execution details comment in: %s",
                                     test_id)
@@ -965,3 +968,24 @@ def filter_report_session_finish(session):
                     "classname"].split(".")[-1]
 
             logfile.write(ET.tostring(root[0], encoding="unicode"))
+
+
+@pytest.fixture(autouse=True)
+def get_db_cfg(request):
+    from config import S3_CFG
+    if request.config.getoption('--target'):
+        setup_query = {"setupname": request.config.getoption('--target')}
+        from commons.configmanager import get_config_db
+        setup_details = get_config_db(
+            setup_query=setup_query)[request.config.getoption("--target")]
+        if "lb" in setup_details.keys() and setup_details.get(
+                'lb') not in [None, '', "FQDN without protocol(http/s)"]:
+            if "s3_url" in S3_CFG.keys():
+                S3_CFG["s3_url"] = f"https://{setup_details.get('lb')}"
+                S3_CFG["iam_url"] = f"https://{setup_details.get('lb')}:9443"
+        if "s3_dns" in setup_details.keys() and setup_details.get('s3_dns'):
+            if request.config.getoption("--nodes"):
+                node_count = len(request.config.getoption("--nodes"))
+            else:
+                node_count = len(setup_details["nodes"])
+            s3_dns.dns_rr(S3_CFG, node_count, setup_details)
