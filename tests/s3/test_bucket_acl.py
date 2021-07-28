@@ -90,10 +90,9 @@ class TestBucketACL:
         self.log.info(resp)
         pref_list = [each_bucket for each_bucket in resp[1]
                      if each_bucket == self.bucket_name]
-        for bucket in pref_list:
-            self.acl_obj.put_bucket_acl(
-                bucket, acl="private")
         if pref_list:
+            for bucket in pref_list:
+                self.acl_obj.put_bucket_acl(bucket, acl="private")
             resp = self.s3_obj.delete_multiple_buckets(pref_list)
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
@@ -107,7 +106,8 @@ class TestBucketACL:
         self.log.debug(accounts)
         for acc in accounts:
             self.log.debug("Deleting %s account", acc)
-            self.rest_obj.delete_s3_account(acc)
+            resp = self.rest_obj.delete_s3_account(acc)
+            assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
 
     def helper_method(self, bucket_name, acl, error_msg):
@@ -288,6 +288,9 @@ class TestBucketACL:
             resp[1][1][0]["Permission"],
             "FULL_CONTROL",
             resp[1])
+        # Cleanup
+        resp = s3_obj_acl.delete_bucket(self.bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "verify Get Bucket ACL of existing Bucket with associated Account credentials")
 
@@ -384,7 +387,8 @@ class TestBucketACL:
         resp = s3_obj_acl.delete_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        iam_obj_acl.delete_user(user_name)
+        resp = iam_obj_acl.delete_users_with_access_key([user_name])
+        assert_utils.assert_true(resp, f"Failed to delete iam user: {user_name}")
         self.log.info(
             "verify Get Bucket ACL of existing Bucket with IAM User credentials")
 
