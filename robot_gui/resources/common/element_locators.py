@@ -195,11 +195,10 @@ OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH =  "//div[@class='v-data-footer']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 CSM_PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
-CSM_PAGINATION_BAR_XPATH = "//div[@class='container']" # "//div[@class='v-data-footer']"
+CSM_PAGINATION_BAR_XPATH = "//div[@class='container']"
 CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
-PAGE_FIRST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-left theme--light']"
-PAGE_LAST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-right theme--light']"
-PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"
+CSM_PAGINATION_PAGE_FIRST_LAST = "//*[@class='v-pagination__navigation v-pagination__navigation--disabled']"
+CSM_PAGINATION_PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"
 
 #  IAM Users
 ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"

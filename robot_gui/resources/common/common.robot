@@ -171,25 +171,3 @@ Check element is not visiable
     [Documentation]  This kaeyword is to verify that provided web element is not visiable on screen
     [Arguments]  ${element_locator}
     Element Should Not Be Visible  ${${element_locator}}
-
-Get CSM table row count
-    [Documentation]  Return number of rows present on CSM user table
-    ${users_list}=  Read Table Data  ${CSM_TABLE_ROW_XPATH}
-    ${users_list_length}=  Get Length  ${users_list}
-    Capture Page Screenshot
-    [Return]  ${users_list_length}
-
-Get List of Page
-    [Documentation]  This Keyword is for Fetching the list of Pages avaialble on Administrative User Page.
-    [Arguments]  ${page_element}
-    @{page_data}=    Create List
-    @{page_elements}=  Get WebElements  ${page_element}
-    Log To Console And Report  ${page_elements}
-    sleep  2s
-    FOR  ${elements}  IN  @{page_elements}
-         ${text}=    Get Text    ${elements}
-         Append To List  ${page_data}  ${text}
-    END
-    Log To Console And Report   ${page_data}
-    ${page_list_length}=  Get Length  ${page_data}
-    [Return]   @{page_data}    ${page_list_length}
