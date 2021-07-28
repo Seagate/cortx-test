@@ -36,7 +36,6 @@ Read Table Data
     [Arguments]  ${table_element}
     @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
-    Log To Console And Report  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
             ${text}=    Get Text    ${elements}
@@ -44,6 +43,30 @@ Read Table Data
     END
     Log To Console And Report   ${table_data}
     [Return]   @{table_data}
+
+Read Selective Table Data
+    [Documentation]   Return list of target column values if reference column has reference value
+    [Arguments]  ${table_column_xpath}  ${reference_value}  ${reference_column}  ${target_column}
+    @{output}=    Create List
+    @{reference_list}=  Get Column Data  ${table_column_xpath}  ${reference_column}
+    @{target_list}=  Get Column Data  ${table_column_xpath}  ${target_column}
+    FOR  ${reference}  ${target}  IN ZIP  ${reference_list}  ${target_list}
+        Run Keyword If  "${reference}" == "${reference_value}"  Append To List  ${output}  ${target}
+    END
+    [Return]   @{output}
+
+Get Column Data
+    [Documentation]  Returns column data from given table data
+    [Arguments]  ${column_element}  ${column_no}
+    @{column_data}=    Create List
+    ${column_xpath}=  Format String  ${column_element}  ${column_no}
+    @{table_elements}=  Get WebElements  ${column_xpath}
+    sleep  2s
+    FOR  ${elements}  IN  @{table_elements}
+            ${text}=    Get Text    ${elements}
+            Append To List  ${column_data}  ${text}
+    END
+    [Return]   @{column_data}
 
 Action On The Table Element
     [Documentation]  This Keyword is for performing actions like edit/delete on particular user/element in html table.
@@ -56,6 +79,24 @@ Action On The Table Element
     sleep  2s
     click element   ${table_elements}
     sleep  2s
+
+Verify Action Disabled On The Table Element
+    [Documentation]  This Keyword is for verifying actions e.g. edit/delete on particular user/element in html table are not present.
+    [Arguments]  ${Element_for_action}  ${USER_NAME}
+    sleep  2s
+    Log To Console And Report   ${Element_for_action}
+    ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
+    Log To Console And Report   ${Action_element}
+    Element Should Not Be Visible  ${Action_element}
+
+Verify Action Enabled On The Table Element
+    [Documentation]  This Keyword is for verifying actions e.g. edit/delete on particular user/element in html table is present.
+    [Arguments]  ${Element_for_action}  ${USER_NAME}
+    sleep  2s
+    Log To Console And Report   ${Element_for_action}
+    ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
+    Log To Console And Report   ${Action_element}
+    Element Should Be Visible  ${Action_element}
 
 Generate New User Name
     [Documentation]  Functionality to generate new user name

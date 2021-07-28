@@ -33,10 +33,16 @@ S3_BUCKET_TAB_ID   = 'tab-3'
 DASHBOARD_MENU_ID = "Dashboard"
 MAINTENANCE_MENU_ID = 'Maintenance'
 AUDIT_LOG_TAB_ID = "goToAuditLog"
-HEALTH_TAB_ID = "Health"
+HEALTH_MENU_ID = 'Health'
 SW_UPDATE_TAB_ID = "goToSoftware"
 FW_UPDATE_TAB_ID = "goToFirmware"
 LYVE_PILOT_MENU_ID= "Lyve Pilot"
+
+# Health
+GRAPHICAL_TAB_ID = 'tab-1'
+TABULAR_TAB_ID = 'tab-2'
+RESOURCE_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
+RESOURCE_STATUS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[{0}]//td[{1}]//div'
 
 # Settings
 SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
@@ -140,32 +146,19 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
-ADMIN_USER_FIELD_ID = 'adminUsername'
-ADMIN_USER_EMAIL_ID_FIELD_ID = 'adminEmail'
-ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
-ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
-APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
-ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
 EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
-ADMIN_USER_MISSMATCH_PASSWORD_MSG_ID = "admin-confirmpass-notmatch"
-ADMIN_USER_INVALID_PASSWORD_MSG_ID = "admin-password-invalid"
-ADMIN_USER_INVALID_USERNAME_MSG_ID = "admin-username-invalid"
-ADMIN_USER_USERNAME_LABEL_ID = "lblAdminUsername"
-ADMIN_USER_PASSWORD_LABEL_ID = "lblAdminPassword"
-ADMIN_USER_CONFIRM_PASSWORD_LABEL_ID = "lblConfirmAdminPassword"
-ADMIN_USER_PAGE_TOOLTIP_ID = "tooltip-msg"
-ADMIN_USER_TOOLTIP_ICON_ID = "Username*"
-ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID = "Username*"
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-editicon"]'
-CSM_USER_DELETE_XAPTH = '//*[@id="localuser-tabledata"]//table//td[contains(text(), "{0}")]//following-sibling::td//img[@id="localuser-deleteicon"]'
-CSM_TABLE_ELEMENTS_XPATH = '//*[@id="localuser-tabledata"]//table//tbody//tr//td'
+CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
+CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
+CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
-ADD_USER_USER_NAME_INPUT_BOX_ID = "txtLocalHostname"
+ADD_USER_USER_NAME_INPUT_BOX_ID = 'txtUsername'
 ADD_USER_PASSWORD_INPUT_ID = "txtLocalPass"
 ADD_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmPass"
 ADD_USER_EMAIL_ID_INPUT_ID = "useremail"
@@ -182,6 +175,14 @@ UPDATE_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 DELETE_ICON_MANAGE_USER_ID = "localuser-deleteadmin"
 DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-sibling::td//img[@id='s3-delete-account']"
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
+ADD_ADMIN_USER_RADIO_BUTTON_ID = "lblLocalAdmin"
+CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
+CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
+CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
+CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
+CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
+
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
@@ -191,10 +192,11 @@ CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
-PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
-PAGINATION_PAGE_OPTIONS_XPATH = "//*[@role='option']"
+PAGINATION_BAR_XPATH =  "//div[@class='v-data-footer']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
-PAGINATION_LIST_ICON_XPATH = "//*[@class='v-select__selection v-select__selection--comma']"
+CSM_PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
+CSM_PAGINATION_BAR_XPATH = "//div[@class='container']" # "//div[@class='v-data-footer']"
+CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
 
 #  IAM Users
 ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"
@@ -261,7 +263,13 @@ AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
 CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
-
+CURRENT_DATE_IN_DATE_PICKER_XPATH = '//button[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
+AUDIT_LOG_SEARCH_BAR_XPATH = '//input[@placeholder="Search"]'
+AUDIT_LOG_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
+AUDIT_LOG_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "{0}")]'
+AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
+AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
@@ -309,3 +317,4 @@ SYSTEM_MAINTENANCE_BUTTON_ID = "goToSystemMaintenance"
 START_SERVICE_BUTTON_ID = "btnStartResource"
 STOP_SERVICE_BUTTON_ID = "btnStopResource"
 SHUTDOWN_SERVICE_BUTTON_ID = "btnShutdownResource"
+

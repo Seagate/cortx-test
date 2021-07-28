@@ -49,7 +49,7 @@ def parse_args():
                         default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
                         help="log level value")
-    parser.add_argument("-p", "--prc_cnt", type=int, default=4,
+    parser.add_argument("-p", "--prc_cnt", type=int, default=2,
                         help="number of parallel processes")
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
                         default=False, nargs='?', const=True,
@@ -165,10 +165,10 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
-    if prc.returncode == 1:
+    if prc.returncode == 3:
         print('Exiting test runner due to bad health of deployment')
         sys.exit(1)
-    if prc.returncode == 2:
+    if prc.returncode == 4:
         print('Exiting test runner due to health check script error')
         sys.exit(2)
 
@@ -487,12 +487,16 @@ def check_kafka_msg_trigger_test(args):
     consumer = kafka_consumer.get_consumer()
     print(consumer)
     received_stop_signal = False
-
+    max_iteration = 0
     while not received_stop_signal:
         try:
             # SIGINT can't be handled when polling, limit timeout to 60 seconds.
             msg = consumer.poll(60)
             if msg is None:
+                max_iteration += 1
+                # break while in case consumer doesn't have any further messages
+                if max_iteration >= 4:
+                    received_stop_signal = True
                 continue
             kafka_msg = msg.value()
             print(kafka_msg)
@@ -514,9 +518,11 @@ def check_kafka_msg_trigger_test(args):
                 args.target = acquired_target
                 p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
                 p.start()
-
+                p.join()
         except KeyboardInterrupt:
             break
+        except BaseException:
+            received_stop_signal = True
     consumer.close()
 
 
@@ -528,7 +534,6 @@ def get_setup_details(args):
     try:
         LOGGER.info("Fetching setups details from database...")
         setups = configmanager.get_config_db(setup_query={})
-        LOGGER.debug(setups)
         if os.path.exists(params.SETUPS_FPATH):
             os.remove(params.SETUPS_FPATH)
             LOGGER.info("Removed the stale setups.json file...")

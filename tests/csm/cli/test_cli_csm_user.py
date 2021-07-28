@@ -76,8 +76,7 @@ class TestCliCSMUser:
         self.CSM_ALERT = CortxCliAlerts(session_obj=self.CSM_USER.session_obj)
         self.IAM_USER = CortxCliIamUser(session_obj=self.CSM_USER.session_obj)
         self.bkt_ops = CortxCliS3BucketOperations(session_obj=self.CSM_USER.session_obj)
-        self.S3_ACC = CortxCliS3AccountOperations(
-            session_obj=self.CSM_USER.session_obj)
+        self.S3_ACC = CortxCliS3AccountOperations(session_obj=self.CSM_USER.session_obj)
         self.logger.info("Login to CORTX CLI using s3 account")
         self.update_password = False
         self.new_pwd = CSM_CFG["CliConfig"]["csm_user"]["update_password"]
@@ -195,6 +194,7 @@ class TestCliCSMUser:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-10816")
     def test_1266(self):
         """
@@ -217,6 +217,7 @@ class TestCliCSMUser:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-10817")
     def test_1267(self):
         """
@@ -521,6 +522,7 @@ class TestCliCSMUser:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-10831")
     def test_1261(self):
         """
@@ -1953,7 +1955,8 @@ class TestCliCSMUser:
             current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
         self.logger.debug(resp)
         assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], "Cannot change roles for admin user")
+        assert_utils.assert_exact_string(
+            resp[1], "Cannot change roles for admin user")
         self.logger.info(
             "Verified admin user should not able to change roles for root user")
         self.logger.info(
@@ -1969,10 +1972,679 @@ class TestCliCSMUser:
                 current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
             self.logger.debug(resp)
             assert_utils.assert_false(resp[0], resp[1])
-            assert_utils.assert_exact_string(resp[1], "Non admin user cannot change other user")
+            assert_utils.assert_exact_string(
+                resp[1], "Non admin user cannot change other user")
             self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
             "Verified csm user is not able to change roles for root user")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23772")
+    def test_23772(self):
+        """
+        Test that admin user should be able to create users with admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23775")
+    def test_23775(self):
+        """
+        Test that manage user should NOT be able to create users with admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Verify manage user should NOT be able to create users with admin role")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name="admin_user",
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info(
+            "Verified manage user should NOT be able to create users with admin role")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23779")
+    def test_23779(self):
+        """
+        Test that admin user should be able to delete users with admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Deleting csm user with admin role %s",
+            self.user_name)
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.delete_csm_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Deleted csm user with admin role %s", self.user_name)
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23780")
+    def test_23780(self):
+        """
+        Test that manage user should NOT be able to delete users with admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info(
+            "Creating csm user with manage role : %s",
+            self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info(
+            "Created csm user with manage role %s",
+            self.user_name)
+        self.logger.info("Creating csm user with admin role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with admin role %s", username)
+        self.logger.info(
+            "Deleting csm user with manage role %s",
+            self.user_name)
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.delete_csm_user(user_name=username)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.logger.info(
+            "Deleting csm user with manage role is failed with error %s", resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23790")
+    def test_23790(self):
+        """
+        Test that manage user should be able to delete users with monitor role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info(
+            "Creating csm user with manage role : %s",
+            self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info(
+            "Created csm user with manage role %s",
+            self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info(
+            "Deleting csm user with manage role %s",
+            self.user_name)
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.delete_csm_user(user_name=username)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Deleted csm user with manage role")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23792")
+    def test_23792(self):
+        """
+        Test that admin user should be able to reset password of users with admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info(
+            "Creating csm user with admin role : %s",
+            self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with admin role %s", self.user_name)
+        self.logger.info(
+            "Performing reset password operation on csm user with admin role %s",
+            self.user_name)
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=self.user_name,
+            current_password=self.csm_user_pwd,
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info(
+            "Password has been changed for CSM user with admin role")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23808")
+    def test_23808(self):
+        """
+        Test that manage user should be able to reset password of users with monitor role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info(
+            "Creating csm user with manage role : %s",
+            self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info(
+            "Created csm user with manage role %s",
+            self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info(
+            "Verifying password change of monitor user using manage user")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_equals(
+            True, resp[0], resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=username,
+            current_password=self.csm_user_pwd,
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23810")
+    def test_23810(self):
+        """
+        Test that monitor user should NOT be able to reset password of any user with any role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info(
+            "Creating csm user with manage role : %s",
+            self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info(
+            "Created csm user with manage role %s",
+            self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info(
+            "Verifying password change of monitor user using manage user")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=username,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.reset_root_user_password(
+            user_name=self.user_name,
+            current_password=self.csm_user_pwd,
+            new_password=self.new_pwd,
+            confirm_password=self.new_pwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23811")
+    def test_23811(self):
+        """
+        Test that admin user should be able to change
+        role of other admin user from admin role to manage role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Change role of other admin user from admin role to manage role")
+        resp = self.CSM_USER.update_role(
+            user_name=self.user_name,
+            role="manage",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info(
+            "Changed role of other admin user from admin role to manage role")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23812")
+    def test_23812(self):
+        """
+        Test that admin user should be able to change
+        role of other admin user from admin role to monitor role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admn user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Change role of other admin user from admin role to monitor role")
+        resp = self.CSM_USER.update_role(
+            user_name=self.user_name,
+            role="monitor",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info(
+            "Changed role of other admin user from admin role to monitor role")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23813")
+    def test_23813(self):
+        """
+        Test that admin user should be able to change
+        role of manage user from manage role to admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with manage role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with manage role %s", username)
+        self.logger.info("Change role of manage user to admin")
+        resp = self.CSM_USER.update_role(
+            user_name=username,
+            role="admin",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Changed role of manage user to admin")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23814")
+    def test_23814(self):
+        """
+        Test that admin user should be able to
+        change role of monitor user from monitor role to admin role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info("Change role of monitor user to admin")
+        resp = self.CSM_USER.update_role(
+            user_name=username,
+            role="admin",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Changed role of monitor user to admin")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23815")
+    def test_23815(self):
+        """
+        Test that admin user should be able to
+        change role of monitor user from monitor role to manage role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info("Change role of monitor user to manage")
+        resp = self.CSM_USER.update_role(
+            user_name=username,
+            role="manage",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Changed role of monitor user to manage")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23816")
+    def test_23816(self):
+        """
+        Test that monitor user should NOT be able to
+        change role of any user with any role including self role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{self.user_name}', Error : '{resp[1]}'"
+                                         )
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Verify monitor user should NOT be able to change role of any user")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.update_role(
+            user_name=self.user_name,
+            role="manage",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "invalid choice")
+        self.logger.info(
+            "Verified monitor user should NOT be able to change role of any user")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23817")
+    def test_23817(self):
+        """
+        Test that manage user should NOT be able to change role of self to any other role
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="manage",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM manage user '{self.user_name}', Error : '{resp[1]}'"
+                                         )
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info(
+            "Verify manage user should NOT be able to change role of self to any other role")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.update_role(
+            user_name=self.user_name,
+            role="monitor",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.logger.info(
+            "Verified manage user should NOT be able to change role of self to any other role")
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.csm_cli
+    @pytest.mark.tags("TEST-23818")
+    def test_23818(self):
+        """
+        Test that manage user should NOT be able to change role of user with any role to admin
+        """
+        self.logger.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        username = "auto_csm_user{0}".format(
+            random.randint(0, 10))
+        email_id = "{0}{1}".format(username, "@seagate.com")
+        self.logger.info("Creating csm user with name %s", self.user_name)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=self.user_name,
+            email_id=self.email_id,
+            role="admin",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM admin user '{self.user_name}',Error : '{resp[1]}'"
+                                         )
+        self.logger.info("Created csm user with name %s", self.user_name)
+        self.logger.info("Creating csm user with monitor role %s", username)
+        resp = self.CSM_USER.create_csm_user_cli(
+            csm_user_name=username,
+            email_id=email_id,
+            role="monitor",
+            password=self.csm_user_pwd,
+            confirm_password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_exact_string(resp[1], "User created",
+                                         f"Failed to create CSM monitor user '{username}', Error : '{resp[1]}'")
+        self.logger.info("Created csm user with monitor role %s", username)
+        self.logger.info(
+            "Verify manage user should NOT be able to change role of user with any role to admin")
+        self.CSM_USER.logout_cortx_cli()
+        resp = self.CSM_USER.login_cortx_cli(
+            username=self.user_name,
+            password=self.csm_user_pwd)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.CSM_USER.update_role(
+            user_name=username,
+            role="admin",
+            current_password=self.csm_user_pwd)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.CSM_USER.logout_cortx_cli()
+        self.CSM_USER.login_cortx_cli()
+        self.logger.info(
+            "Verified manage user should NOT be able to change role of user with any role to admin")
+        self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
