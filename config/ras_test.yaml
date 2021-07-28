@@ -278,14 +278,8 @@ TEST-23606:
 
 test_23715:
   md_device: "/dev/md2"
-  alert_fault: "fault"
-  alert_fault_resolved: "fault_resolved"
   resource_type: "node:os:raid_data"
   csm_error_msg: "Failed to get alerts using CSM REST API"
 
 test_23723:
-  alert_fault: "fault"
   resource_type: "node:os:raid_data"
-  alert_missing: "missing"
-  alert_insertion: "insertion"
-  alert_fault_resolved: "fault_resolved"

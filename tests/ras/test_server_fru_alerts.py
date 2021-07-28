@@ -188,7 +188,7 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["remove_operation"],
                     "md_device": self.md_device,
                     "disk": self.failed_disk})
-            assert resp[0], resp[1]
+            assert_true(resp[0], resp[1])
             self.removed_disk = self.failed_disk
 
         if self.removed_disk:
@@ -198,7 +198,16 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["add_operation"],
                     "md_device": self.md_device,
                     "disk": self.removed_disk})
-            assert resp[0], resp[1]
+            assert_true(resp[0], resp[1])
+
+        if self.raid_stopped:
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
+                input_parameters={
+                    "operation": RAS_VAL["raid_param"]["assemble_operation"],
+                    "md_device": self.raid_stopped,
+                    "disk": None})
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -810,6 +819,105 @@ class TestServerFruAlerts:
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23715")
+    @CTFailOn(error_handler)
+    def test_assemble_dissemble_raid_array_23715(self):
+        """
+        TEST-23715: Test alerts for assembling and dissembling RAID array
+        """
+        LOGGER.info(
+            "STARTED: TEST-23715: Test alerts for assembling and dissembling RAID array")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_23715"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
+
+        LOGGER.info(
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "stopping array")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_STOP_DEVICE_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["stop_operation"],
+                "md_device": test_cfg["md_device"],
+                "disk": None})
+        assert_true(resp[0], resp[1])
+        self.raid_stopped = test_cfg["md_device"]
+        LOGGER.info("Step 1: Ran ALERT API for generating RAID fault alert by "
+                    "stopping array")
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 2: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["fault"]]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 2: Verified the RAID fault alert on RMQ channel logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID fault alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["fault"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 3: Successfully verified RAID fault alert using CSM REST API")
+
+        LOGGER.info("Performing health check after fault creation")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        LOGGER.info(
+            "Step 4: Running ALERT API for generating RAID fault_resolved "
+            "alert by assembling array")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["assemble_operation"],
+                "md_device": self.md_device,
+                "disk": None})
+        assert_true(resp[0], resp[1])
+        self.raid_stopped = False
+        LOGGER.info("Step 4: Ran ALERT API for generating RAID fault_resolved "
+                    "alerts by assembling array")
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 5: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["resolved"]]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 5: Verified the RAID fault alert on RMQ channel logs")
+
+        LOGGER.info(
+            "Step 6: Checking CSM REST API for RAID fault_resolved alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["resolved"],
+            True,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 6: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
+
+        LOGGER.info("Performing health check after fault resolved")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
+
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23723")
     @CTFailOn(error_handler)
     def test_fail_remove_add_drive_raid_array_23723(self):
@@ -823,6 +931,7 @@ class TestServerFruAlerts:
         raid_cmn_cfg = RAS_VAL["raid_param"]
         test_cfg = RAS_TEST_CFG["test_23723"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating RAID fault alert by "
@@ -844,7 +953,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 2: Checking the generated RAID fault alert on message bus")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_fault"], resource_id]
+                          alert_types["fault"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
             assert_true(resp[0], resp[1])
@@ -855,7 +964,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_fault"],
+            alert_types["fault"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -884,7 +993,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 5: Checking the generated RAID missing alert on message bus")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_missing"], resource_id]
+                          alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
             assert_true(resp[0], resp[1])
@@ -895,13 +1004,17 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_missing"],
+            alert_types["missing"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 6: Successfully verified RAID missing alert using CSM"
             " REST API")
+
+        LOGGER.info("Performing health check after fault creation")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
 
         LOGGER.info(
             "Step 7: Running ALERT API for generating RAID fault_resolved alert"
@@ -925,7 +1038,7 @@ class TestServerFruAlerts:
                 "Step 8: Checking the generated RAID insertion alert on"
                 " message bus logs")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_insertion"], resource_id]
+                          alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
             assert_true(resp[0], resp[1])
@@ -936,7 +1049,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_insertion"],
+            alert_types["insertion"],
             True,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -953,7 +1066,7 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 10: Checking the generated RAID "
                             "fault_resolved alert on message bus logs")
                 alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_fault_resolved"], resource_id]
+                              alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
                 assert_true(resp[0], resp[1])
@@ -966,13 +1079,18 @@ class TestServerFruAlerts:
             time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
             resp = self.csm_alert_obj.verify_csm_response(
                 self.starttime,
-                test_cfg["alert_fault_resolved"],
+                alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
             assert_true(resp, csm_error_msg)
         self.removed_disk = False
         LOGGER.info("Step 11: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
+
+        LOGGER.info("Performing health check after fault resolved")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
         LOGGER.info(
             "ENDED: Test alerts for failing drive, removing drive"
             "from RAID array and adding drive in RAID array")
@@ -990,6 +1108,7 @@ class TestServerFruAlerts:
         raid_cmn_cfg = RAS_VAL["raid_param"]
         test_cfg = RAS_TEST_CFG["test_23723"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
 
         LOGGER.info(
             "Step 1: Running ALERT API for generating RAID fault alert by "
@@ -1011,7 +1130,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 2: Checking the generated RAID fault alert on message bus")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_fault"], resource_id]
+                          alert_types["fault"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
             assert_true(resp[0], resp[1])
@@ -1022,7 +1141,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_fault"],
+            alert_types["fault"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1051,7 +1170,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 5: Checking the generated RAID missing alert on message bus")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_missing"], resource_id]
+                          alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
             assert_true(resp[0], resp[1])
@@ -1062,7 +1181,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_missing"],
+            alert_types["missing"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1077,11 +1196,15 @@ class TestServerFruAlerts:
             "Step 7: Rebooted node: %s, Response: %s", self.hostname, resp)
         time.sleep(self.cm_cfg["reboot_delay"])
 
+        LOGGER.info("Performing health check after node reboot")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
         LOGGER.info("Step 8: Checking if fault alert is persistent "
                     "in CSM across node reboot")
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_missing"],
+            alert_types["missing"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1110,7 +1233,7 @@ class TestServerFruAlerts:
                 "Step 10: Checking the generated RAID insertion alert on"
                 " message bus logs")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_insertion"], resource_id]
+                          alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
             assert_true(resp[0], resp[1])
@@ -1121,7 +1244,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_insertion"],
+            alert_types["insertion"],
             True,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1138,7 +1261,7 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 12: Checking the generated RAID "
                             "fault_resolved alert on message bus logs")
                 alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_fault_resolved"], resource_id]
+                              alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
                 assert_true(resp[0], resp[1])
@@ -1151,7 +1274,7 @@ class TestServerFruAlerts:
             time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
             resp = self.csm_alert_obj.verify_csm_response(
                 self.starttime,
-                test_cfg["alert_fault_resolved"],
+                alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
             assert_true(resp, csm_error_msg)
@@ -1175,6 +1298,7 @@ class TestServerFruAlerts:
         test_cfg = RAS_TEST_CFG["test_23723"]
         csm_error_msg = raid_cmn_cfg["csm_error_msg"]
         service = self.cm_cfg["service"]
+        alert_types = RAS_TEST_CFG["alert_types"]
 
         LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                     self.sspl_resource_id)
@@ -1244,11 +1368,15 @@ class TestServerFruAlerts:
         assert_exact_string("active", resp[0], "sspl service is not active")
         LOGGER.info("Step 4: Successfully started SSPL service")
 
+        LOGGER.info("Performing health check after SSPL start")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
         if self.start_msg_bus:
             LOGGER.info(
                 "Step 5: Checking the generated RAID missing alert on message bus")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_missing"], resource_id]
+                          alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
             assert_true(resp[0], resp[1])
@@ -1259,7 +1387,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_missing"],
+            alert_types["missing"],
             False,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1317,13 +1445,17 @@ class TestServerFruAlerts:
         assert_exact_string("active", resp[0], "sspl service is not active")
         LOGGER.info("Step 9: Successfully started SSPL service")
 
+        LOGGER.info("Performing health check after SSPL start")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
         md_stat = resp[1]
         if self.start_msg_bus:
             LOGGER.info(
                 "Step 10: Checking the generated RAID insertion alert on"
                 " message bus logs")
             alert_list = [test_cfg["resource_type"],
-                          test_cfg["alert_insertion"], resource_id]
+                          alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
             assert_true(resp[0], resp[1])
@@ -1334,7 +1466,7 @@ class TestServerFruAlerts:
         time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
         resp = self.csm_alert_obj.verify_csm_response(
             self.starttime,
-            test_cfg["alert_insertion"],
+            alert_types["insertion"],
             True,
             test_cfg["resource_type"])
         assert_true(resp, csm_error_msg)
@@ -1351,7 +1483,7 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 12: Checking the generated RAID "
                             "fault_resolved alert on message bus logs")
                 alert_list = [test_cfg["resource_type"],
-                              test_cfg["alert_fault_resolved"], resource_id]
+                              alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
                 assert_true(resp[0], resp[1])
@@ -1364,7 +1496,7 @@ class TestServerFruAlerts:
             time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
             resp = self.csm_alert_obj.verify_csm_response(
                 self.starttime,
-                test_cfg["alert_fault_resolved"],
+                alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
             assert_true(resp, csm_error_msg)
