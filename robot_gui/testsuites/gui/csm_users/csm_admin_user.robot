@@ -24,6 +24,8 @@ ${username}
 ${password}
 ${Download_File_Path}  /root/Downloads
 ${server_file_name}  s3server.pem
+${count}  0
+
 
 *** Test Cases ***
 
@@ -538,6 +540,44 @@ TEST-23500
     [Tags]  Priority_High  TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
+
+TEST-23884
+    [Documentation]  Test that user is able to navigate to last page of Administrator User Page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23884
+    [Tags]  TEST-23884
+    Navigate To Last Page On Administrative Users Page
+
+TEST-23882
+     [Documentation]  Test that user is able to navigate to First page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23882
+     [Tags]   TEST-23882
+     Navigate To First Page On Administrative Users Page
+
+TEST-23873
+     [Documentation]  Test that user is able to navigate to Every page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23873
+     [Tags]   TEST-23873
+     Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display    ${ROW_FIVE}
+     @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
+     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
+     FOR    ${Page}    IN    ${New_Page_list}
+          Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
+          Capture Page Screenshot
+     END
+
+TEST-23874
+     [Documentation]  Test that user is able to navigate to Random page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23874
+     [Tags]   TEST-23874
+     Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display   ${ROW_FIVE}
+     @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
+     ${New_Page_list}=    Get Slice From List	${Page_list}	1
+     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
+     ${Page}=   Evaluate  random.choice($New_Page_list)  random
+     Log To Console And Report    ${Page}
+     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
 
 TEST-23611
     [Documentation]  Test that pagination should be present for search result 
