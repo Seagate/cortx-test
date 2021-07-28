@@ -28,8 +28,6 @@ Login To S3 Account
     [Documentation]  This key word is for test case setup which create s3 account and login to it
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
     wait for page or element to load
     Re-login  ${S3_account_name}  ${s3password}  S3_BUCKET_TAB_ID

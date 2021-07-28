@@ -64,7 +64,7 @@ TEST-1215
     [Tags]  Priority_High  user_role  TEST-1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${s3_password} =  Create S3 account
     wait for page or element to load  3s
@@ -105,7 +105,8 @@ TEST-18327
     [Tags]  Priority_High  TEST-18327  S3_test  Smoke_test
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  DASHBOARD_MENU_ID
+    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -123,7 +124,7 @@ TEST-21591
     [Tags]  Priority_High  TEST-21591  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -140,7 +141,7 @@ TEST-21592
     [Tags]  Priority_High  TEST-21592  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load

@@ -187,14 +187,14 @@ TEST-5327
     ...  Reference : https://jts.seagate.com/browse/TEST-1865
     [Tags]  Priority_High  TEST-5327
     Navigate To Page  ${page_name}
-    Verify Presence of Pagination
+    Verify Presence of Pagination on Administrative Page
 
 TEST-5328
     [Documentation]  Test that pagination bar must have 5/10/15/All rows per page option
     ...  Reference : https://jts.seagate.com/browse/TEST-5328
     [Tags]  Priority_High  TEST-5328
     Navigate To Page  ${page_name}
-    ${fetched_values}=  Read Pagination Options
+    ${fetched_values}=  Read Pagination Options on Administrative Page
     ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
 
@@ -258,8 +258,6 @@ TEST-18326
     [Documentation]  Test that csm Admin user is able to reset the s3 account users password through CSM GUI
     ...  Reference : https://jts.seagate.com/browse/TEST-18326
     [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -315,8 +313,6 @@ TEST-18330
     [Documentation]  Test that reset password for s3 account does not accept invalid password
     ...  Reference : https://jts.seagate.com/browse/TEST-18330
     [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -332,8 +328,6 @@ TEST-18332
     ...  disabled for password and confirm password does not match.
     ...  Reference : https://jts.seagate.com/browse/TEST-18332
     [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -348,8 +342,6 @@ TEST-21589
     [Documentation]  Test that CSM Admin user can delete empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21589
     [Tags]  Priority_High  TEST-21589  S3_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -359,8 +351,6 @@ TEST-21590
     [Documentation]  Test that CSM Admin user cannot delete non-empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21590
     [Tags]  Priority_High  TEST-21590  S3_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -474,7 +464,7 @@ TEST-23872
     [Tags]  Priority_High  TEST-23872
     Navigate To Page  ${page_name}
     wait for page or element to load
-    ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
+    ${text}=  get text  ${CSM_PAGINATION_LIST_ICON_XPATH}
     Should Be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
 
 TEST-23837
@@ -512,7 +502,7 @@ TEST-23859
     ...  Reference : https://jts.seagate.com/browse/TEST-23859
     [Tags]  Priority_High  TEST-23859
     Navigate To Page  ${page_name}
-    ${fetched_values}=  Read Pagination Options
+    ${fetched_values}=  Read Pagination Options on Administrative Page
     ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
 
@@ -554,7 +544,7 @@ TEST-23611
     ...  Reference : https://jts.seagate.com/browse/TEST-23611
     [Tags]  Priority_High  TEST-23611
     Navigate To Page  ${page_name}
-    Verify Pagination present on Search results
+    Verify Pagination Present on Administrative Page Search results
 
 TEST-23610
     [Documentation]  Test that user would get blank table for unavailable search

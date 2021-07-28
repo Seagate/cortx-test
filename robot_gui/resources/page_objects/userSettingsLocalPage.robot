@@ -216,17 +216,17 @@ Verify Deleted User
     ${user_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Not Contain Value  ${user_list}  ${user_name}
 
-Verify Presence of Pagination
+Verify Presence of Pagination on Administrative Page
     [Documentation]  Functionality to validate correc user name
     wait for page or element to load  2s
-    Page Should Contain Element  ${PAGINATION_BAR_XPATH}
+    Page Should Contain Element  ${CSM_PAGINATION_BAR_XPATH}
 
-Read Pagination Options
+Read Pagination Options on Administrative Page
     [Documentation]  This Keyword is for reading all available function for pagination
     @{data_list}=    Create List
-    Click Element  ${PAGINATION_LIST_ICON_XPATH}
+    Click Element  ${CSM_PAGINATION_LIST_ICON_XPATH}
     Sleep  3s
-    @{elements}=  Get WebElements  ${PAGINATION_PAGE_OPTIONS_XPATH}
+    @{elements}=  Get WebElements  ${CSM_PAGINATION_PAGE_OPTIONS_XPATH}
     FOR  ${element}  IN  @{elements}
             ${text}=    Get Text    ${element}
             Append To List  ${data_list}  ${text}
@@ -379,12 +379,12 @@ Verify Filter and Search option present
         Element Should Be Enabled  ${${var}}
     END
 
-Verify Pagination present on Search results
-    [Documentation]  Verify Pagination present on Search results for user
+Verify Pagination Present on Administrative Page Search results
+    [Documentation]  Verify Pagination present on Search results for CSM user
     input text  ${CSM_USER_SEARCH_BOX_XPATH}  admin
     Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
     wait for page or element to load
-    ${fetched_values}=  Read Pagination Options
+    ${fetched_values}=  Read Pagination Options on Administrative Page
     ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
 
