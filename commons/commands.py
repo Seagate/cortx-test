@@ -332,3 +332,8 @@ CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
 CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
+
+CMD_AVAIL_MEMORY = "python3 -c 'import psutil; print(psutil.virtual_memory().available)'"
+CMD_INSTALL_TOOL = "yum install {0}"
+CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
+CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
