@@ -181,6 +181,81 @@ TEST-23782
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${new_csm_user_name}
 
+TEST-23044
+    [Documentation]  Test that CSM user with role manage cannot create user with admin role.
+    [Tags]  Priority_High  user_role  TEST-23044
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    Click On Add User Button
+    Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
+    Click On Cancel Button
+    Re-login  ${username}  ${password}  ${page_name}
+    wait for page or element to load
+    Delete CSM User  ${new_user_name}
+
+TEST-23889
+    [Documentation]  Test that manager user is able to change role of other manage role user (NOT self) from manage role to monitor role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23889
+    [Tags]  Priority_High  TEST-23889
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
+    Click On Confirm Button
+    Edit CSM User Type  ${new_csm_user_name}  monitor
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+    Delete CSM User  ${new_csm_user_name}
+
+TEST-23888
+    [Documentation]  Test: CSM GUI: Test that manage user should be able to change role of user with monitor role to manage role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23888
+    [Tags]  Priority_High  TEST-23888
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    wait for page or element to load
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click On Confirm Button
+    Edit CSM User Type  ${new_csm_user_name}  manage
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+    Delete CSM User  ${new_csm_user_name}
+
+TEST-23886
+    [Documentation]  Test: CSM GUI: Test that manage user should NOT be able to change role of self to any other role from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23886
+    [Tags]  Priority_High  TEST-23886
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Verify Change User Type Radio Button Disabled  ${new_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23843
+    [Documentation]  Test that csm user with Manage rights is able to reset passwords of users with manage and monitor roles from csm UI.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23843
+    [Tags]  Priority_High  TEST-23843
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  manage
+    Click on confirm button
+    wait for page or element to load
+    ${new_csm_user_password1}=  Generate New Password
+    ${new_csm_user_name1}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name1}  ${new_csm_user_password1}  monitor
+    Click on confirm button
+    wait for page or element to load
+    ${new_csm_password}=  Generate New Password        #for new manage user
+    Edit CSM User Password  ${new_csm_user_name}  ${new_csm_password}
+    ${new_csm_password1}=  Generate New Password       #for new monitor user
+    Edit CSM User Password  ${new_csm_user_name1}  ${new_csm_password1}
+    Re-login  ${new_csm_user_name}  ${new_csm_password}  ${page_name} #relogin using new manage user and changed password
+    Validate CSM Login Success  ${new_csm_user_name}
+    Re-login  ${new_csm_user_name1}  ${new_csm_password1}  ${page_name}  #relogin using new monitor user and changed password
+    Validate CSM Login Success  ${new_csm_user_name1}
+
 TEST-23052
     [Documentation]  Test that manage user should not able to reset other user password with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23052
