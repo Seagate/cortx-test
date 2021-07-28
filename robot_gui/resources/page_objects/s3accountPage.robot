@@ -83,6 +83,7 @@ Add data to create new S3 account
 
 Create S3 account
     [Documentation]  This keyword is to create new s3 account.
+    Reload Page
     Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     sleep  2s
     Click on add new s3 account button
