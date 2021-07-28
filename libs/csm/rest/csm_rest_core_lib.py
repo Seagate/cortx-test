@@ -64,14 +64,21 @@ class RestClient:
         # Building final endpoint request url
         set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
         request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
-        self.log.debug("fetching data from : %s", request_url)
-
+        self.log.debug("Request URL : %s", request_url)
+        self.log.debug("Request type : %s", request_type.upper())
+        self.log.debug("Header : %s",headers)
+        self.log.debug("Data : %s",data)
+        self.log.debug("Parameters : %s",params)
+        self.log.debug("json_dict: %s",json_dict)
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,
             data=data, params=params, verify=False, json=json_dict)
-        self.log.debug("result of request is: %s", response_object)
-
+        self.log.debug("Response Object: %s", response_object)
+        try:
+            self.log.debug("Response JSON: %s", response_object.json())
+        except:
+            self.log.debug("Response Text: %s", response_object.text)
         # Can be used in case of larger response
         if save_json:
             with open(self._json_file_path, 'w+') as json_file:
