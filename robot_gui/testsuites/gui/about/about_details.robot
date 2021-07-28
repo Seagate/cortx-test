@@ -6,9 +6,6 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Variables   ${RESOURCES}/resources/common/element_locators.py
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown   CSM GUI Logout
 Suite Teardown  Close All Browsers

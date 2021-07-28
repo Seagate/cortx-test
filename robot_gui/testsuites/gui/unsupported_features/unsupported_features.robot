@@ -13,10 +13,6 @@ Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/common/common.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
