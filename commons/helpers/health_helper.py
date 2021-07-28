@@ -658,7 +658,7 @@ class Health(Host):
 
         d_node = dict(zip(node, h_list))
         return d_node
-    
+
     def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
             -> Tuple[bool, str]:
         """
