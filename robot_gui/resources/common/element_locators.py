@@ -146,22 +146,7 @@ LICENSE_CANCLE_BUTTON_ID = 'license-cancelagreementbtn'
 LICENSE_CANCLE_IMAGE_ID = 'license-cancelagreementicon'
 LICENSE_TITLE_ID = 'agreement-title'
 LICENSE_DATA_ID = 'agreement-data'
-ADMIN_USER_FIELD_ID = 'adminUsername'
-ADMIN_USER_EMAIL_ID_FIELD_ID = 'adminEmail'
-ADMIN_PASSWORD_FIELD_ID = 'adminPassword'
-ADMIN_CONFIRM_PASSWORD_FIELD_ID = 'confirmAdminPassword'
-APPLY_AND_CONTINUE_BUTTON_ID = 'admin-createadminuser'
-ADMIN_USER_ALREADY_EXISTS_ID = 'admin-invalidmsg'
 EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
-ADMIN_USER_MISSMATCH_PASSWORD_MSG_ID = "admin-confirmpass-notmatch"
-ADMIN_USER_INVALID_PASSWORD_MSG_ID = "admin-password-invalid"
-ADMIN_USER_INVALID_USERNAME_MSG_ID = "admin-username-invalid"
-ADMIN_USER_USERNAME_LABEL_ID = "lblAdminUsername"
-ADMIN_USER_PASSWORD_LABEL_ID = "lblAdminPassword"
-ADMIN_USER_CONFIRM_PASSWORD_LABEL_ID = "lblConfirmAdminPassword"
-ADMIN_USER_PAGE_TOOLTIP_ID = "tooltip-msg"
-ADMIN_USER_TOOLTIP_ICON_ID = "Username*"
-ADMIN_USER_PASSWORD_TOOLTIP_ICON_ID = "Username*"
 
 #  CSM User section
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
@@ -172,12 +157,8 @@ CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent:
 CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
-CSM_TABLE_DROPDOWN_XPATH ='//*[@class="cortx-dropdown-title"]'
-CSM_TABLE_DROPDOWN_MENU_XPATH ='//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu"]'
-PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
-PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
 ADD_USER_BUTTON_ID = "btnLocalAddNewUser"
-ADD_USER_USER_NAME_INPUT_BOX_ID = "txtUsername" #"txtLocalHostname"
+ADD_USER_USER_NAME_INPUT_BOX_ID = 'txtUsername'
 ADD_USER_PASSWORD_INPUT_ID = "txtLocalPass"
 ADD_USER_CONFIRM_PASSWORD_INPUT_ID = "txtLocalConfirmPass"
 ADD_USER_EMAIL_ID_INPUT_ID = "useremail"
@@ -196,7 +177,8 @@ DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH = "//td[contains(text(), '{0}')]//following-
 CONFIRM_S3_ACCOUNT_DELETE_ID = "confirmation-dialogbox-btn"
 ADD_ADMIN_USER_RADIO_BUTTON_ID = "lblLocalAdmin"
 CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
-CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
+CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
+CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
@@ -210,12 +192,11 @@ CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
 CONFIRM_NEW_PASSWORD_INPUT_ID = "txtLocalConfirmNewPass"
 OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
-PAGINATION_BAR_XPATH = "//div[@class='v-data-footer']"
+PAGINATION_BAR_XPATH =  "//div[@class='v-data-footer']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
-CSM_TABLE_DROPDOWN_XPATH ='//*[@class="cortx-dropdown-title"]'
-CSM_TABLE_DROPDOWN_MENU_XPATH ='//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu"]'
-PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
-PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
+CSM_PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
+CSM_PAGINATION_BAR_XPATH = "//div[@class='container']" # "//div[@class='v-data-footer']"
+CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
 PAGE_FIRST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-left theme--light']"
 PAGE_LAST = "//*[@class='v-icon notranslate mdi mdi-chevron-double-right theme--light']"
 PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"

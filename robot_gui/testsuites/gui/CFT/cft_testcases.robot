@@ -14,9 +14,6 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/common/common.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -147,8 +144,6 @@ TEST-1037
     ...  Reference : https://jts.seagate.com/browse/TEST-1037
     [Tags]  Priority_High  CFT_Test  TEST-1037
     ${test_id}    Set Variable    TEST-1037
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     wait for page or element to load
     Capture Page Screenshot  ${test_id}_s3_user.png

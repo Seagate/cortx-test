@@ -98,6 +98,7 @@ Verify Only Valid User Allowed For Username
 
 Verify Create Button Must Remain disabled
     [Documentation]  Functionality to verify create button status at different scenario
+    [Arguments]  ${user_type}
     ${password}=  Generate New Password
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
     ${value}=  Generate New User Name
@@ -113,6 +114,9 @@ Verify Create Button Must Remain disabled
     Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
     Log To Console And Report  Insrting confirm password
     Input Text  ${ADD_USER_CONFIRM_PASSWORD_INPUT_ID}  ${password}
+    Element Should Be Disabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
+    ${var}=  CATENATE  add  ${user_type}  user  radio  button  id
+    Click Element  ${${var}}
     Element Should Be Enabled  ${CREATE_NEW_CSM_USER_BUTTON_ID}
 
 Verify Passwords Remain Hidden
@@ -138,14 +142,14 @@ Verify Mismatch Password Error
 
 Verify Absence of Edit And Delete Button on S3account
     [Documentation]  Verify Absence of Edit And Delete Button on S3account
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
     Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
 
 Verify Absence of Reset Passwrod Button on S3account
     [Documentation]  Verify Absence of Reset Passwrod Button Button on S3account
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
+    Navigate To Page  MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Page Should Not Contain Element  ${EDIT_S3_ACCOUNT_OPTION_ID}
 
@@ -212,17 +216,17 @@ Verify Deleted User
     ${user_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Not Contain Value  ${user_list}  ${user_name}
 
-Verify Presence of Pagination
+Verify Presence of Pagination on Administrative Page
     [Documentation]  Functionality to validate correc user name
     wait for page or element to load  2s
-    Page Should Contain Element  ${PAGINATION_BAR_XPATH}
+    Page Should Contain Element  ${CSM_PAGINATION_BAR_XPATH}
 
-Read Pagination Options
+Read Pagination Options on Administrative Page
     [Documentation]  This Keyword is for reading all available function for pagination
     @{data_list}=    Create List
-    Click Element  ${PAGINATION_LIST_ICON_XPATH}
+    Click Element  ${CSM_PAGINATION_LIST_ICON_XPATH}
     Sleep  3s
-    @{elements}=  Get WebElements  ${PAGINATION_PAGE_OPTIONS_XPATH}
+    @{elements}=  Get WebElements  ${CSM_PAGINATION_PAGE_OPTIONS_XPATH}
     FOR  ${element}  IN  @{elements}
             ${text}=    Get Text    ${element}
             Append To List  ${data_list}  ${text}
@@ -252,9 +256,10 @@ Verify Admin User Should Not Contain Delete Icon
 
 Verify IAM User Section Not Present
     [Documentation]  Functionality to verify IAM User Section Not Present
-    Navigate To Page  MANAGE_MENU_ID
+    Navigate To Page  MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load  3s
-    Page Should Not Contain Element  ${S3_IAM_USER_TAB_ID}
+    ${s3_iam_tab_text}=  get text  ${S3_IAM_USER_TAB_ID}
+    Should Not Contain  ${s3_iam_tab_text}  IAM user
 
 Edit CSM User Details
     [Documentation]  Functionality to Edit given user email id
@@ -341,7 +346,7 @@ Search username and role
     [Arguments]  ${search_entry}
     wait for page or element to load
     input text  ${CSM_USER_SEARCH_BOX_XPATH}  ${search_entry}
-    Click Element  ${CSM_USER_SEARCH_ICON_XPATH}
+    Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
     wait for page or element to load
 
 Select from filter
@@ -355,6 +360,65 @@ Select from filter
     Element Should Be Enabled  ${${var}}
     Click Element  ${${var}}
     wait for page or element to load
+
+Verify Filter and Search option present
+    [Documentation]  Verify Filter and Search option present for users.
+    wait for page or element to load
+    Page Should Contain Element   ${CSM_USER_SEARCH_ICON_XPATH}
+    Page Should Contain Element   ${CSM_USER_SEARCH_BOX_XPATH}
+    Page Should Contain Element   ${CSM_USER_SEARCH_ICON_XPATH}
+    input text  ${CSM_USER_SEARCH_BOX_XPATH}  test
+    Page Should Contain Element   ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
+    Page Should Contain Element   ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  2s
+    ${filters}=  Create List  role  username
+    FOR    ${filter_entry}    IN    @{filters}
+        ${var}=  CATENATE  csm filter ${filter_entry} select xpath
+        Log To Console And Report  ${${var}}
+        Element Should Be Enabled  ${${var}}
+    END
+
+Verify Pagination Present on Administrative Page Search results
+    [Documentation]  Verify Pagination present on Search results for CSM user
+    input text  ${CSM_USER_SEARCH_BOX_XPATH}  admin
+    Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
+    wait for page or element to load
+    ${fetched_values}=  Read Pagination Options on Administrative Page
+    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
+    Lists Should Be Equal  ${fetched_values}  ${actual_values}
+
+Get CSM table row count
+    [Documentation]  Return number of rows present on CSM user table
+    ${users_list}=  Read Table Data  ${CSM_TABLE_ROW_XPATH}
+    ${users_list_length}=  Get Length  ${users_list}
+    Capture Page Screenshot
+    [Return]  ${users_list_length}
+
+Verify Blank Table on Search operation
+    [Documentation]  Verify user will get blank table for unavailable search
+    ${random_search}=  Generate New Password
+    input text  ${CSM_USER_SEARCH_BOX_XPATH}  ${random_search}
+    Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
+    wait for page or element to load
+    Capture Page Screenshot
+    ${search_result}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
+    Should Contain  ${search_result}  No data available
+
+Verify Clean Search operation
+    [Documentation]  Verify Clean Search operation working
+    ${length1}=  Get CSM table row count
+    input text  ${CSM_USER_SEARCH_BOX_XPATH}  test
+    Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
+    wait for page or element to load
+    ${length2}=  Get CSM table row count
+    Press Keys  ${CSM_USER_SEARCH_BOX_XPATH}  CTRL+a+BACKSPACE
+    Page Should Contain Element      ${CSM_USER_SEARCH_ICON_XPATH}
+    Page Should Not Contain Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
+    Press Keys  None  TAB+TAB
+    ${length3}=  Get CSM table row count
+    Should Not Be Equal As Integers  ${length1}  ${length2}
+    Should Be Equal As Integers  ${length1}  ${length3}
 
 Verify Delete Action Disabled On The Table Element
     [Documentation]  Verify delete action disbled on the table element for given user.
@@ -471,3 +535,31 @@ Navigate To The Desired Page
          ${text}=    Get Text    ${elements}
          Run Keyword If   "${text}" == "${page_number}"    Click Element   ${elements}
     END
+
+Create and login with CSM manage user
+    [Documentation]  This keyword is to create and login with csm manage user
+    ${new_user_name}=  Generate New User Name
+    ${new_password}=  Generate New Password
+    Reload Page
+    wait for page or element to load
+    Navigate To Page  MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
+    wait for page or element to load
+    Create New CSM User  ${new_user_name}  ${new_password}  manage
+    Click On Confirm Button
+    Verify New User  ${new_user_name}
+    Re-login  ${new_user_name}  ${new_password}  MANAGE_MENU_ID
+    [Return]  ${new_user_name}  ${new_password}
+
+Create and login with CSM monitor user
+    [Documentation]  This keyword is to create and login with csm monitor user
+    ${new_user_name}=  Generate New User Name
+    ${new_password}=  Generate New Password
+    Reload Page
+    wait for page or element to load
+    Navigate To Page  MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
+    wait for page or element to load
+    Create New CSM User  ${new_user_name}  ${new_password}  monitor
+    Click On Confirm Button 
+    Verify New User  ${new_user_name}
+    Re-login  ${new_user_name}  ${new_password}  MANAGE_MENU_ID
+    [Return]  ${new_user_name}  ${new_password}
