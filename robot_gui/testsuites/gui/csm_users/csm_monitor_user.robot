@@ -175,7 +175,7 @@ TEST-22768
     Navigate To Page  DASHBOARD_MENU_ID
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page   CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Absence of Delete Button on S3account
@@ -184,7 +184,7 @@ TEST-22768
     Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete s3 account using csm user  ${S3_account_name}
-    Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
+    Navigate To Page  ADMINISTRATIVE_USER_TAB_ID
     Delete CSM User  ${new_user_name}
 
 TEST-23046

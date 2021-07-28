@@ -412,7 +412,6 @@ Delete s3 account using csm user
 
 Verify Absence of Delete Button on S3account
     [Documentation]  Verify Absence of Delete Button on S3account
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Page Should Not Contain Element  ${DELETE_S3_ACCOUNT_ID}
 

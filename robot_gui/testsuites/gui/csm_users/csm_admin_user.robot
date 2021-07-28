@@ -504,21 +504,21 @@ TEST-23500
 TEST-23611
     [Documentation]  Test that pagination should be present for search result 
     ...  Reference : https://jts.seagate.com/browse/TEST-23611
-    [Tags]  Priority_High  Smoke_test  TEST-23611
+    [Tags]  Priority_High  TEST-23611
     Navigate To Page  ${page_name}
     Verify Pagination present on Search results
 
 TEST-23610
     [Documentation]  Test that user would get blank table for unavailable search
     ...  Reference : https://jts.seagate.com/browse/TEST-23610
-    [Tags]  Priority_High  Smoke_test  TEST-23610
+    [Tags]  Priority_High  TEST-23610
     Navigate To Page  ${page_name}
     Verify Blank Table on Search operation
 
 TEST-23618
     [Documentation]  Test that all csm users should have filter and search option in csm users page
     ...  Reference : https://jts.seagate.com/browse/TEST-23618
-    [Tags]  Priority_High  Smoke_test  TEST-23618
+    [Tags]  Priority_High  TEST-23618
     ${new_password}=  Generate New Password
     ${users_type}=  Create List  manage  monitor  admin
     Navigate To Page  ${page_name}

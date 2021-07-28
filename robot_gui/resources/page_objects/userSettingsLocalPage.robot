@@ -396,7 +396,7 @@ Get CSM table row count
     [Return]  ${users_list_length}
 
 Verify Blank Table on Search operation
-    [Documentation]  Verify Clean Search operation working
+    [Documentation]  Verify user will get blank table for unavailable search
     ${random_search}=  Generate New Password
     input text  ${CSM_USER_SEARCH_BOX_XPATH}  ${random_search}
     Click Element  ${CSM_USER_SEARCH_ICON_ACTIVE_XPATH}
@@ -472,6 +472,8 @@ Create and login with CSM manage user
     [Documentation]  This keyword is to create and login with csm manage user
     ${new_user_name}=  Generate New User Name
     ${new_password}=  Generate New Password
+    Reload Page
+    wait for page or element to load
     Navigate To Page  MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
     wait for page or element to load
     Create New CSM User  ${new_user_name}  ${new_password}  manage
@@ -484,6 +486,8 @@ Create and login with CSM monitor user
     [Documentation]  This keyword is to create and login with csm monitor user
     ${new_user_name}=  Generate New User Name
     ${new_password}=  Generate New Password
+    Reload Page
+    wait for page or element to load
     Navigate To Page  MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
     wait for page or element to load
     Create New CSM User  ${new_user_name}  ${new_password}  monitor

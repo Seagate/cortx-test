@@ -211,7 +211,7 @@ TEST-23044
 TEST-23609
     [Documentation]  Test that User should able to clean the search operation properly 
     ...  Reference : https://jts.seagate.com/browse/TEST-23609
-    [Tags]  Priority_High  Smoke_test  TEST-23609
+    [Tags]  Priority_High  TEST-23609
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     Verify Clean Search operation
     Re-login  ${username}  ${password}  ${page_name}
