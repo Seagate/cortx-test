@@ -59,7 +59,7 @@ class TestDosScalability:
         cls.hobj = Health(hostname=cls.host,
                           username=cls.username,
                           password=cls.password)
-        cls.s3_obj = S3TestLib()
+        cls.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.log.info("Step: Install and setup s3bench on client.")
         res = s3b_obj.setup_s3bench()
         assert_true(res, res)
