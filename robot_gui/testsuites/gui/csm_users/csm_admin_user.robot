@@ -473,6 +473,54 @@ TEST-23050
     END
     Verify Delete Action Disabled On The Table Element  ${username}
 
+TEST-23872
+    [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23872
+    [Tags]  Priority_High  TEST-23872
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    ${text}=  get text  ${CSM_TABLE_DROPDOWN_XPATH}
+    Should Be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
+
+TEST-23837
+    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23837
+    [Tags]  Priority_High  TEST-23837
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click on confirm button
+    ${new_password1}=  Generate New Password
+    ${new_user_name1}=  Generate New User Name
+    Create New CSM User  ${new_user_name1}  ${new_password1}  manage
+    Click on confirm button
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click on confirm button
+    Re-login  ${new_user_name}  ${new_password}  ${page_name}
+    Delete Logged In CSM User  ${new_user_name}
+    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}
+    Delete Logged In CSM User  ${new_user_name1}
+    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}
+    Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_csm_user_name}
+    Verify Deleted User  {new_csm_user_name}
+    Verify Deleted User  {new_user_name1}
+    Verify Deleted User  {new_user_name}
+
+TEST-23859
+    [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23859
+    [Tags]  Priority_High  TEST-23859
+    Navigate To Page  ${page_name}
+    ${fetched_values}=  Read Pagination Options
+    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
+    Lists Should Be Equal  ${fetched_values}  ${actual_values}
+
 TEST-23502
     [Documentation]  Test that admin user should able to reset other users role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23502
