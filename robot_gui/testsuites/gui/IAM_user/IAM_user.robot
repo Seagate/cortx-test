@@ -196,7 +196,6 @@ TEST-18333
     wait for page or element to load
     Delete IAMuser  ${username}
 
-
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page
     ...  Reference : https://jts.seagate.com/browse/TEST-13109
