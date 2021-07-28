@@ -11,8 +11,6 @@ Resource   ${RESOURCES}/resources/common/common.robot
 Variables  ${RESOURCES}/resources/common/common_variables.py
 Variables  ${RESOURCES}/resources/common/element_locators.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_login
 Test Setup  run keywords  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}  AND

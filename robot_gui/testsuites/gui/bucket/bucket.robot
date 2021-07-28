@@ -8,9 +8,6 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Suite Teardown  Close All Browsers
 Force Tags  CSM_GUI  CSM_BUCKET_CREATE
 Test Setup  Login To S3 Account
@@ -33,8 +30,6 @@ Login To S3 Account
     [Documentation]  This key word is for test case setup which create s3 account and login to it
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     wait for page or element to load
     Re-login  ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID

@@ -84,7 +84,6 @@ Verify Setting menu navigating items
 
 Verify Setting menu navigating
     [Documentation]  Functionality to verify settings menu items on pages
-    Navigate To Page  SETTINGS_ID
     Verify Setting menu navigating items  ${SETTINGS_NOTIFICATION_BUTTON_ID}
     Verify Setting menu navigating items  ${SETTINGS_DNS_BUTTON_ID}
     Verify Setting menu navigating items  ${SETTINGS_NTP_BUTTON_ID}
