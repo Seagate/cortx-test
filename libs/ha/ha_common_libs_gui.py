@@ -64,18 +64,18 @@ class HAGUILibs:
         assert_true( gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_cluster_state")
 
-    def verify_node_state(self, status, node_id = 0):
+    def verify_node_state(self, node_id, status):
         """
         This function will verify if node state failed / online
         """
         LOGGER.info("Start : verify_node_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ node_id
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ str(node_id)
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
-                                "node_id:" + node_id]
+                                "node_id:" + str(node_id)]
         if status == "failed":
             gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_FAILED'
         else:
@@ -89,10 +89,11 @@ class HAGUILibs:
         This function will verify the node lost alert
         """
         LOGGER.info("Start : verify_node_down_alert")
-        alert_description = 'The cluster has lost srvnode-' # +node_id+1 # TODO : VERIFY AND ADD node_id
+        alert_description = f'The cluster has lost srvnode-{node_id+1}'
+        LOGGER.info(alert_description)
         # TODO: If alert add hostname, update alert_description
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_down_alert'+ node_id
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_down_alert'+ str(node_id)
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -108,10 +109,10 @@ class HAGUILibs:
         This function will verify the node joined back alert
         """
         LOGGER.info("Start : verify_node_back_up_alert")
-        alert_description = 'has joined back the cluster. System is restored. Extra Info: host=srvnode-' # +node_id+1 # TODO : VERIFY AND ADD node_id
+        alert_description = f'has joined back the cluster. System is restored. Extra Info: host=srvnode-{node_id+1}'
         # TODO: If alert add hostname, update alert_description
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_back_up_alert'+ node_id
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_back_up_alert'+ str(node_id)
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -233,7 +234,7 @@ class HAGUILibs:
                                 self.browser_type, 'username:' + self.csm_user,
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
                                 "description:" + alert_description]
-        gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS_AND_FAIL'
+        gui_dict['test'] = 'CHECK_IN_NEW_ALERTS_AND_FAIL'
         gui_response = trigger_robot(gui_dict)
         assert_true( gui_response, 'GUI FAILED')
         LOGGER.info("End : assert_if_network_interface_down_alert_present")
