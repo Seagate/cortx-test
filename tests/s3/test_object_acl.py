@@ -106,7 +106,8 @@ class TestObjectACL:
         """It will clean up resources which are getting created during test suite setup."""
         self.log.debug(accounts)
         for acc in accounts:
-            self.rest_obj.delete_s3_account(acc)
+            resp = self.rest_obj.delete_s3_account(acc)
+            assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
 
     def create_bucket_obj(self, bucket, obj_name, s3_test_obj=None):
@@ -3560,6 +3561,10 @@ class TestObjectACL:
         self.log.info(
             "Step 7: Get object ACL was handled with error message : %s",
             S3_OBJ_TST["s3_object"]["error_msg"])
+        # Cleanup
+        resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
+        assert_utils.assert_true(resp[0], resp[1])
+        acl_obj.delete_bucket(self.bucket_name, force=True)
         self.log.info("Test put-object-acl from cross account on the object"
                       "with bucket-owner-read canned-acl permission")
 
@@ -3651,6 +3656,10 @@ class TestObjectACL:
         self.log.info(
             "Step 7: Get Object ACL was handled with error message : %s",
             S3_OBJ_TST["s3_object"]["error_msg"])
+        # Cleanup
+        resp = acl_obj.put_bucket_acl(self.bucket_name, acl="private")
+        assert_utils.assert_true(resp[0], resp[1])
+        acl_obj.delete_bucket(self.bucket_name, force=True)
         self.log.info(
             "Test put-object-acl from cross account on the object "
             "with bucket-owner-full-control canned-acl permission")

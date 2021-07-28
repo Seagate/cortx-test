@@ -47,9 +47,6 @@ from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
-
-
-
 class TestBucketPolicy:
     """Bucket Policy test suite."""
 
@@ -66,14 +63,10 @@ class TestBucketPolicy:
         self.log.info("STARTED: Test setup operations.")
         self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.iam_obj = iam_test_lib.IamTestLib(endpoint_url=S3_CFG["iam_url"])
-        self.acl_obj = s3_acl_test_lib.S3AclTestLib(
-            endpoint_url=S3_CFG["s3_url"])
-        self.no_auth_obj = s3_test_lib.S3LibNoAuth(
-            endpoint_url=S3_CFG["s3_url"])
-        self.s3_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
-            endpoint_url=S3_CFG["s3_url"])
-        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(
-            endpoint_url=S3_CFG["s3_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = s3_test_lib.S3LibNoAuth(endpoint_url=S3_CFG["s3_url"])
+        self.s3_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         self.s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
             endpoint_url=S3_CFG["s3_url"])
         self.account_list = []
@@ -108,8 +101,7 @@ class TestBucketPolicy:
         for fpath in [self.file_path, self.file_path_1, self.file_path_2]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
-        self.log.info(
-            "Deleting all buckets/objects created during TC execution")
+        self.log.info("Deleting all buckets/objects created during TC execution.")
         if self.s3test_obj_1:
             res_bkt = self.s3test_obj_1.bucket_list()
             for bkt in res_bkt[1]:
