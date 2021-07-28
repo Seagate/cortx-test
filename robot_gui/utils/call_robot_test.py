@@ -68,6 +68,9 @@ def form_run_cli_cmd(arg_dict):
         elif k == 'tag':
             cmd.append('-i')
             cmd.append(v)
+        elif k == 'test':
+            cmd.append('-t')
+            cmd.append(v)
         elif k == 'test_path':
             test_path = v
     cmd.append(test_path)

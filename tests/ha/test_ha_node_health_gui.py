@@ -109,6 +109,7 @@ class TestHANodeHealthGUI:
         """
         LOGGER.info("STARTED: Setup Operations")
         self.starttime = time.time()
+        self.nw_data = None
         LOGGER.info(
             "Checking in cortxcli and REST that all nodes are shown online and PCS clean.")
         for hlt_obj in self.hlt_list:
@@ -131,21 +132,27 @@ class TestHANodeHealthGUI:
         LOGGER.info("Checking if all nodes online and PCS clean after test.")
         if not self.restored:
             for node in range(self.num_nodes):
-                resp = self.node_list[node].execute_cmd(common_cmds.GET_IFCS_STATUS, read_lines=True)
-                LOGGER.debug("All eth status for %s = %s", self.srvnode_list[node], resp)
-                for eth_data in resp:
-                    if "DOWN" in eth_data:
-                        LOGGER.info(
-                            "Make the %s interface back up for %s", eth_data[0:4], self.srvnode_list[node])
-                        self.node_list[node].execute_cmd(
-                            common_cmds.IP_LINK_CMD.format(
-                                eth_data[0:4], "up"), read_lines=True)
-
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
                     resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
+                if self.nw_data:
+                    resp = self.node_list[node].execute_cmd(
+                        common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
+                    LOGGER.debug("%s interface status for %s = %s",
+                    self.nw_data[0][node], self.srvnode_list[node], resp[0])
+                    if "DOWN" in resp[0]:
+                        LOGGER.info(
+                            "Make the %s interface back up for %s", self.nw_data[0][node], self.srvnode_list[node])
+                        self.node_list[node].execute_cmd(
+                            common_cmds.IP_LINK_CMD.format(
+                                self.nw_data[0][node], "up"), read_lines=True)
+                        resp = self.node_list[node].execute_cmd(common_cmds.CMD_PING.format(
+                                self.nw_data[1][node]), read_lines=True, exc=False)
+                        assert_utils.assert_not_in("Name or service not known", resp[1][0],
+                                                "Node interface still down.")
+                    LOGGER.info("All network interfaces are up")
 
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -164,7 +171,6 @@ class TestHANodeHealthGUI:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with safe shutdown.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -172,12 +178,11 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online")
             LOGGER.info("Shutting down {}".format(node_name))
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -210,9 +215,9 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"failed")
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -237,10 +242,16 @@ class TestHANodeHealthGUI:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
+            LOGGER.info("Checking PCS clean after powered on %s", node_name)
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online")
 
             self.starttime = time.time()
 
@@ -261,7 +272,6 @@ class TestHANodeHealthGUI:
         """
         LOGGER.info(
             "Started: Test to check node status one by one for all nodes with unsafe shutdown.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -269,11 +279,10 @@ class TestHANodeHealthGUI:
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
+            self.restored = False
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online")
             LOGGER.info("Shutting down %s", self.srvnode_list[node])
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -308,9 +317,9 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"failed")
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -332,12 +341,17 @@ class TestHANodeHealthGUI:
                 srvnode_list=self.srvnode_list,
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
-            LOGGER.info("All nodes are online in CLI and REST.")
+
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node) # TODO: update argument if required in TE
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online") # TODO: update argument if required in TE
 
             self.starttime = time.time()
 
@@ -374,21 +388,23 @@ class TestHANodeHealthGUI:
             node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
+        self.nw_data = [iface_list, private_ip_list]
         LOGGER.debug(
             "List of private data IP : {} and interfaces on all nodes: {}" .format(
                 private_ip_list, iface_list))
 
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
+            self.restored = False
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online")
             LOGGER.info(
-                "Make the private data interface down for {}".format(node_name))
+                "Make the private data interface %s down for %s", iface_list[node], node_name)
+            LOGGER.info(f"node_list {self.node_list} node {node}")
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "down"), read_lines=True)
+
             if node_name == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -398,11 +414,12 @@ class TestHANodeHealthGUI:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
+            LOGGER.info(f"resp {resp}")
             assert_utils.assert_in(
-                "Name or service not known",
-                resp[1][0],
-                "Node interface still up.")
-
+                b"100% packet loss",
+                resp,
+                f"Node interface still up. {resp}")
+            time.sleep(120)
             LOGGER.info(
                 "Check in cortxcli and REST that the status is changed for {} to Failed".format(node_name))
             resp = self.ha_obj.check_csm_service(
@@ -419,11 +436,11 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"failed")
             LOGGER.info("Verify Network interface down alert")
-            self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node])
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -433,7 +450,7 @@ class TestHANodeHealthGUI:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info(
-                "Make the private data interface back up for {}".format(node_name))
+                "Make the private data interface %s back up for %s", iface_list[node], node_name)
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "up"), read_lines=True)
@@ -442,8 +459,8 @@ class TestHANodeHealthGUI:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                       "Node interface still down.")
+            assert_utils.assert_not_in(b"0% packet loss", resp,
+                                       f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
@@ -454,10 +471,17 @@ class TestHANodeHealthGUI:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
+            LOGGER.info("Checking PCS clean after making the private data interface %s up for %s",
+            iface_list[node], node_name)
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node,"online")
             LOGGER.info("Verify Network interface up alert")
             self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node]) # TODO: update argument if required in TE
 
@@ -481,7 +505,6 @@ class TestHANodeHealthGUI:
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple safe shutdown.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -492,12 +515,13 @@ class TestHANodeHealthGUI:
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info("Verify if node state online")
-        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
+        self.ha_gui_obj.verify_node_state(node_index,"online")
 
         LOGGER.info(
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info(
                 "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
@@ -535,10 +559,10 @@ class TestHANodeHealthGUI:
             resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
             assert_utils.assert_true(resp[0], resp[1])
 
-            LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
-            LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
+            LOGGER.info(f"Check for the node {node_index} down alert.")
+            self.ha_gui_obj.verify_node_down_alert(node_index)
+            LOGGER.info(f"Verify if node {node_index} state failed")
+            self.ha_gui_obj.verify_node_state(node_index,"failed")
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -562,10 +586,16 @@ class TestHANodeHealthGUI:
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
 
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node_index)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index,"online")
 
             self.starttime = time.time()
 
@@ -587,7 +617,6 @@ class TestHANodeHealthGUI:
         """
         LOGGER.info(
             "Started: Test to check single node status with multiple unsafe shutdown.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -604,6 +633,7 @@ class TestHANodeHealthGUI:
             "Shutdown %s node multiple time and check status.",
             self.srvnode_list[node_index])
         for loop in range(self.loop_count):
+            self.restored = False
             LOGGER.info(
                 "Shutting down node: %s, Loop: %s",
                 self.srvnode_list[node_index],
@@ -640,9 +670,9 @@ class TestHANodeHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node_index)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index,"failed")
 
             LOGGER.info(
                 "Check that cortx services on other nodes are not affected.")
@@ -665,12 +695,16 @@ class TestHANodeHealthGUI:
                 srvnode_list=self.srvnode_list,
                 sys_list=self.sys_list,
                 no_nodes=self.num_nodes)
-            LOGGER.info("Checked All nodes are online in CLI and REST.")
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node_index)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index,"online")
 
             self.starttime = time.time()
 

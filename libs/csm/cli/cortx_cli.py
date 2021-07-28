@@ -230,13 +230,13 @@ class CortxCli(CortxCliClient):
         self.log.info(response)
         return response
 
-    def close_connection(self):
+    def close_connection(self, set_session_obj_none: bool = False):
         """
         This function will close the ssh connection created in init
         :return: None
         """
         try:
-            super().close_connection()
+            super().close_connection(set_session_obj_none)
         except Exception as error:
             self.log.error(
                 "An error in %s: %s:",
