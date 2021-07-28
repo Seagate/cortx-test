@@ -113,11 +113,11 @@ class TestServerOSAlerts:
             assert resp[0], resp[1]
 
 
-    @pytest.mark.tags("TEST-24031")
+    @pytest.mark.tags("TEST-25090")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24031_cpu_usage_threshold(self):
-        """Test to validate OS server alert generation and check for fault resolved (CPU Usage)
+    def test_25090_cpu_usage_threshold(self):
+        """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -126,7 +126,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24031_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25090_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -185,11 +185,11 @@ class TestServerOSAlerts:
         LOGGER.info("Step 11: Successfully verified CPU usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-24349")
+    @pytest.mark.tags("TEST-25091")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24349_memory_usage_threshold(self):
-        """Test to validate OS server alert generation and check for fault resolved (Memory Usage)
+    def test_25091_memory_usage_threshold(self):
+        """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (Memory Usage)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -198,7 +198,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24349_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25091_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -260,10 +260,10 @@ class TestServerOSAlerts:
         LOGGER.info("Step 13: Successfully verified Memory usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-24350")
+    @pytest.mark.tags("TEST-25092")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24350_disk_usage_threshold(self):
+    def test_25092_disk_usage_threshold(self):
         """Test to validate OS server alert generation and check for fault resolved (Disk Usage)
         """
         test_case_name = cortxlogging.get_frame()
@@ -273,7 +273,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24350_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25092_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -337,12 +337,12 @@ class TestServerOSAlerts:
         LOGGER.info("Step 13: Successfully verified Memory usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-24351")
+    @pytest.mark.tags("TEST-25093")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24351_disk_usage_thres_with_persistence_cache(self):
-        """Test to validate OS server alert generation and check for fault resolved (Disk Usage)
-            with persistence cache (service disable/enable)
+    def test_25093_disk_usage_thres_with_persistence_cache(self):
+        """CSM-GUI: Test to validate OS server alert generation and check for fault resolved (Disk Usage)
+           with persistence cache (service disable/enable)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -351,7 +351,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24351_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25093_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -415,10 +415,10 @@ class TestServerOSAlerts:
         LOGGER.info("Step 13: Successfully verified Disk usage alert with persistent cache on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-24352")
+    @pytest.mark.tags("TEST-25094")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24352_cpu_usage_thresh_with_persistence_cache(self):
+    def test_25094_cpu_usage_thresh_with_persistence_cache(self):
         """Test to validate OS server alert generation and check for fault resolved (CPU Usage)
            with persistence cache (service disable/enable)
         """
@@ -429,7 +429,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24352_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25094_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -488,10 +488,10 @@ class TestServerOSAlerts:
         LOGGER.info("Step 11: Successfully verified CPU usage alert with persistence cache on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-24353")
+    @pytest.mark.tags("TEST-25095")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_24353_memory_usage_thresh_with_persistence_cache(self):
+    def test_25095_memory_usage_thresh_with_persistence_cache(self):
         """Test to validate OS server alert generation and check for fault resolved (Memory Usage)
            with persistence cache (service disable/enable)
         """
@@ -502,7 +502,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-24353_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25095_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
