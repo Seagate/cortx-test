@@ -9,7 +9,7 @@ Variables  ${RESOURCES}/resources/common/element_locators.py
 
 Click AlertPage Image
     [Documentation]  click on bell icon to open Alert page
-    Click Element    ${ALERT_IMAGE_2_ID}
+    Click Element    ${ALERT_IMAGE_XPATH}
 
 Click AlertPageDashboard Image
     [Documentation]  On Dashboard page, click on '+' image from Alert section to open Alert page

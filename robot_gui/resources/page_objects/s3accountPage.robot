@@ -348,7 +348,7 @@ Check Create CSM User Option Not Exists
 
 Check Alert Icon Not Exists
     [Documentation]   This keyword is to check that s3 user does not have access to Alert page
-    Page Should Not Contain Element  ${ALERT_IMAGE_2_ID}
+    Page Should Not Contain Element  ${ALERT_IMAGE_XPATH}
 
 Check Associated S3 Account Exists
     [Documentation]   This keyword is to check that s3 user does associated s3 account 

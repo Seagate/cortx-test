@@ -62,7 +62,6 @@ SSL_PEM_FILE_STATUS_XPATH= '//*[@id="app"]//div[@class ="container mt-0 ml-0"]/d
 
 # Alerts
 ALERT_IMAGE_1_ID = 'alert-zoom'  # from Dashbard
-ALERT_IMAGE_2_ID = 'alert-dotwhite'  # from All pages
 ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
 ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
@@ -72,6 +71,7 @@ ALERT_TABLE_ID = 'tblAlertLarge'
 NEW_ALERT_ID     = 'tab-1'
 ACTIVE_ALERT_ID  = 'tab-2'
 ALERT_HISTORY_ID = 'tab-3'
+ALERT_IMAGE_XPATH = '//*[@class="cortx-logout-icon-container pr-9"]//div[1]//img'  # from All pages
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
