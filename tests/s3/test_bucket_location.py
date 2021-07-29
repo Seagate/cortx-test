@@ -46,7 +46,7 @@ class TestBucketLocation:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED : Setup test operations.")
-        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.account_name1 = "location-acc1{}".format(time.perf_counter_ns())
         self.email_id1 = "{}@seagate.com".format(time.perf_counter_ns())
         self.account_name2 = "location-acc2{}".format(time.perf_counter_ns())
@@ -59,10 +59,10 @@ class TestBucketLocation:
         yield
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
-        resp = self.s3_obj.bucket_list()[1]
+        resp = self.s3_test_obj.bucket_list()[1]
         self.log.info("Bucket list: %s", resp)
         if self.bucket_name in resp:
-            resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:

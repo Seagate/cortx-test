@@ -192,6 +192,7 @@ class TestBucketPolicy:
             account_name, email_id)
         create_account = self.rest_obj.create_s3_account(
             acc_name=account_name, email_id=email_id, passwd=password)
+        assert_utils.assert_true(create_account[0], create_account[1])
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
@@ -10134,7 +10135,7 @@ _date."""
         resp = self.s3test_obj_1.object_download(
             self.bucket_name,
             object_names[0],
-            "test1_d{}.txt")
+            "test1_d.txt")
         assert resp[0], resp[1]
         self.log.info(
             "Step 5 & 6: Account switch"
@@ -10164,7 +10165,7 @@ _date."""
         resp = self.s3test_obj_1.object_download(
             self.bucket_name,
             object_names[0],
-            "test1_d{}.txt")
+            "test1_d.txt")
         assert resp[0], resp[1]
         self.log.info(
             "Step 10 & 11: Account switch"
@@ -11386,7 +11387,7 @@ _date."""
         acl_obj_1 = result_1[2]
         self.s3test_obj_1 = result_1[1]
         s3_bkt_policy_obj_1 = result_1[3]
-        self.log.info("New account created with %s ", s3_bkt_policy_obj_1 )
+        self.log.info("New account created with %s ", s3_bkt_policy_obj_1)
         self.log.info(
             "Step 1: Create a bucket and upload object in the bucket. - run from default account")
         self.create_bucket_put_objects(
