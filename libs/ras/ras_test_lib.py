@@ -1228,3 +1228,138 @@ class RASTestLib(RASCoreLib):
             if os.path.exists(tempfile):
                 os.remove(tempfile)
             self.node_utils.remove_file(filename=filepath)
+
+    def get_raid_arrays(self):
+        """
+
+        Returns: ['md2', 'md0', 'md1']
+
+        """
+        try:
+            cmd = common_commands.GET_RAID_ARRAYS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            resp = resp.decode("utf-8").split('\n')
+            arrays = list(filter(None, resp))
+            LOGGER.debug("Response: %s", resp)
+            return True, arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_arrays.__name__, error))
+            return False, error
+
+    def get_raid_array_details(self):
+        """
+
+        Returns:
+
+        """
+        try:
+            import pdb
+            pdb.set_trace()
+            LOGGER.info("Checking state of arrays")
+            resp = self.check_raid_array_state()
+            if not resp[0]:
+                return resp
+            md_arrays = resp[1]
+            cmd = common_commands.GET_RAID_ARRAY_DETAILS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd, read_lines=True)
+            for key, value in md_arrays.items():
+                for i in resp:
+                    x = i.replace("\n", "")
+                    k = (x.split(":")[0]).strip()
+                    if key == k:
+                        v_lst = ((x.split(":")[1]).strip()).split()
+                        lst = []
+                        for v in v_lst:
+                            if (re.match("^sd[a-z0-9]*", v)) is not None:
+                                lst.append(re.match("^sd[a-z0-9]*", v).group())
+                        md_arrays[k]["drives"] = lst
+                    else:
+                        continue
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_array_details.__name__, error))
+            return False, error
+
+    def check_raid_array_state(self):
+        """
+
+        Returns:
+
+        """
+        try:
+            import pdb
+            pdb.set_trace()
+            md_arrays = {}
+            LOGGER.info("Getting raid array names")
+            resp = self.get_raid_arrays()
+            if not resp[0]:
+                return resp
+            arrays = resp[1]
+            for ar in arrays:
+                md_arrays[ar] = {}
+                cmd = common_commands.RAID_ARRAY_STATE_CMD.format(ar)
+                resp = self.node_utils.execute_cmd(cmd=cmd)
+                state = resp.decode('utf-8').split('\n')[0]
+                if state != '0':
+                    LOGGER.info("Array %s is in degraded state", ar)
+                    md_arrays[ar]["state"] = "Degraded"
+                else:
+                    md_arrays[ar]["state"] = "Active"
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.check_raid_array_state.__name__, error))
+            return False, error
+
+    def get_drive_partition_details(self, filepath, drive):
+        """
+
+        Args:
+            drive:
+
+        Returns:
+
+        """
+        try:
+            local_path = filepath
+            cmd = common_commands.FDISK_PARTITION_CMD.format(drive, drive,
+                                                             filepath)
+            LOGGER.info("Running command %s", cmd)
+            self.node_utils.execute_cmd(cmd=cmd)
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.copy_file_to_local(filepath, local_path)
+            LOGGER.info("Extract Linux RAID partitions of drive %s", drive)
+            cmd = "awk '{if ($NF == \"autodetect\") print $1}' " + local_path
+            LOGGER.info("Running command %s", cmd)
+            resp = (os.popen(cmd).read()).split("\n")
+            LOGGER.debug("Response: %s", resp)
+            raid_parts = list(filter(None, resp))
+            return True, raid_parts
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_partition_details.__name__, error))
+            return False, error
+
+    def get_drive_by_hostnum(self, hostnum):
+        """
+
+        Returns:
+
+        """
+        try:
+            cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            drive_name = resp.decode('utf-8').replace('\n', '')
+            return True, drive_name
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_by_hostnum.__name__, error))
+            return False, error

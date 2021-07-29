@@ -44,6 +44,13 @@ LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
 GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
+GET_RAID_ARRAYS_CMD = "grep -oP '\\bmd[0-9]\\b' /proc/mdstat"
+RAID_ARRAY_STATE_CMD = "cat /sys/block/{}/md/degraded"
+GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
+FDISK_PARTITION_CMD = "fdisk -l {} | grep '{}[0-9]' | awk '{print $1, $NF}' > {}"
+GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {} | awk '{print $NF}'"
+FILE_COMPARE_CMD = "diff {} {}"
+
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"

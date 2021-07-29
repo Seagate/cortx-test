@@ -39,6 +39,7 @@ from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
+from commons.utils.system_utils import file_comparison
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -237,6 +238,20 @@ class TestServerFruAlerts:
                           columns='Iteration0'.split())
         df = df.assign(Iteration0='Pass')
 
+        LOGGER.info("Getting RAID array details of node %s", self.hostname)
+        resp = self.ras_test_obj.get_raid_array_details()
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+        md_arrays = resp[1] if resp[0] else assert_true(resp[0], "Failed to "
+                                                                 "get raid "
+                                                                 "array details")
+
+        LOGGER.info("MDRAID arrays: %s", md_arrays)
+        for k, v in md_arrays.items():
+            if v["state"] != "Active":
+                df['Iteration0']['Step1'] = 'Fail'
+                assert_true(False, f"Array {k} is in degraded state")
+
         LOGGER.info("Step 1: Getting details of drive to be removed")
         resp = self.ras_test_obj.get_node_drive_details()
         if not resp[0]:
@@ -311,10 +326,45 @@ class TestServerFruAlerts:
 
         if not resp[0]:
             df['Iteration0']['Step5'] = 'Fail'
-            LOGGER.error("Step 5: Failed to resolve fault. Error: %s", resp[1])
+            LOGGER.error("Step 5: Failed to resolve fault.")
         else:
             LOGGER.info("Step 5: Successfully connected disk %s\n Response: %s",
-                        drive_name, resp)
+                        resp[1], resp)
+
+        new_drive = resp[1]
+        LOGGER.info("Getting raid partitions of drive %s", new_drive)
+        resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['file']['fdisk_file'], drive=new_drive)
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+        raid_parts = resp[1] if resp[0] else assert_true(resp[0],
+                                                         f"Failed to get "
+                                                         f"partition "
+                                                         f"details of "
+                                                         f"{new_drive}")
+
+        LOGGER.info("Adding raid partitions of drive %s in raid array",
+                    new_drive)
+        for part in raid_parts:
+            for k, v in md_arrays.items():
+                if part.split("/")[-1] in v["drives"]:
+                    resp = self.alert_api_obj.generate_alert(
+                        AlertType.RAID_ADD_DISK_ALERT,
+                        input_parameters={
+                            "operation": "add_disk",
+                            "md_device": k,
+                            "disk": part})
+                    assert_true(resp[0], resp[1])
+                else:
+                    for drv in v["drives"]:
+                        if re.search("[0-9]*$", drv).group() == re.search("[0-9]*$", part.split("/")[-1]).group():
+                            resp = self.alert_api_obj.generate_alert(
+                                AlertType.RAID_ADD_DISK_ALERT,
+                                input_parameters={
+                                    "operation": "add_disk",
+                                    "md_device": k,
+                                    "disk": part})
+                            assert_true(resp[0], resp[1])
 
         time.sleep(self.cm_cfg["sleep_val"])
         # TODO: Check cluster health
