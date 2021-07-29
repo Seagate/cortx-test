@@ -22,7 +22,7 @@ AVAILABLE_CAPACITY_VALUE_XPATH = "//*[@id='capacity-available']/td[3]"
 TOTAL_CAPACITY_VALUE_XPATH = "//*[@id='capacity-total']/td[3]"
 
 # Menus
-MANAGE_MENU_ID = 'Manage'
+MANAGE_MENU_ID = '//*[@class="v-application--wrap"]//*[contains(@id,"Manage")]'
 ADMINISTRATIVE_USER_TAB_ID = "tab-1"
 CSM_S3_ACCOUNTS_TAB_ID = 'tab-2'
 SETTINGS_ID = 'Settings'
@@ -62,7 +62,6 @@ SSL_PEM_FILE_STATUS_XPATH= '//*[@id="app"]//div[@class ="container mt-0 ml-0"]/d
 
 # Alerts
 ALERT_IMAGE_1_ID = 'alert-zoom'  # from Dashbard
-ALERT_IMAGE_2_ID = 'alert-dotwhite'  # from All pages
 ALERT_COMMENT_SAVE_BUTTON_ID = 'alert-save-commnetbtn'
 ALERT_COMMENT_CLOSE_BUTTON_ID = 'alert-close-comment-dialogbtn'
 ALERT_COMMENT_CLOSE_IMAGE_ID = 'alert-closeadd-comment-dialog'
@@ -72,6 +71,7 @@ ALERT_TABLE_ID = 'tblAlertLarge'
 NEW_ALERT_ID     = 'tab-1'
 ACTIVE_ALERT_ID  = 'tab-2'
 ALERT_HISTORY_ID = 'tab-3'
+ALERT_IMAGE_XPATH = '//*[@class="cortx-logout-icon-container pr-9"]//div[1]//img'  # from All pages
 ALERT_TABLE_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr//td'
 ALERT_TABLE_ROW_XPATH = '//*[@id="tblAlertLarge"]//table//tbody//tr'
 ALERT_DETAILS_PAGE_ICON_XPATH = '//*[@id="tblAlertLarge"]/div/table/tbody/tr[1]/td[5]/img'
@@ -195,8 +195,10 @@ OLD_PASSWORD_INPUT_ID = "txtLocalOldPass"
 PAGINATION_BAR_XPATH =  "//div[@class='v-data-footer']"
 RADIO_BTN_VALUE_XPATH = "//*[@type='radio']"
 CSM_PAGINATION_LIST_ICON_XPATH = '//*[@class="cortx-dropdown-title"]'
-CSM_PAGINATION_BAR_XPATH = "//div[@class='container']" # "//div[@class='v-data-footer']"
+CSM_PAGINATION_BAR_XPATH = "//div[@class='container']"
 CSM_PAGINATION_PAGE_OPTIONS_XPATH = '//*[@class="cortx-dropdown-container menu-on-top"]//div[@class="cortx-dropdown-menu-item"]'
+CSM_PAGINATION_PAGE_FIRST_LAST = "//*[@class='v-pagination__navigation v-pagination__navigation--disabled']"
+CSM_PAGINATION_PAGE_XPATH = "//*[@class='my-1 font-weight-bold v-pagination theme--light']//following::button"
 
 #  IAM Users
 ADD_IAM_USER_BUTTON_ID = "iam-user-create-formbtn"
