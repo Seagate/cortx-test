@@ -57,10 +57,10 @@ test_5019:
     password: 'RyG8qZZccLkU7VQHimSNGBWm5kur98DznEn/y62J1j0='
 test_7422:
   payload_manage:
-    roles: ["monitor"]
+    role: "monitor"
     old_password: ""
   payload_monitor:
-    roles: ["manage"]
+    role: "manage"
     old_password: ""
   response_manage:
     error_code: "4101"
@@ -69,9 +69,9 @@ test_7422:
     error_format_args: ""
 test_7412:
   payload:
-    roles: ["monitor"]
+    role: "monitor"
   payload_admin:
-    roles: ["monitor"]
+    role: "monitor"
     old_password: ""
   response_admin:
     error_code: "4101"
@@ -107,8 +107,8 @@ test_5021:
 test_5005:
   response_msg:
     error_code: "4099"
-    message_id: "{'sort_dir': ['Must be one of: desc, asc.']}"
-    message: "Invalid Parameter for user"
+    message_id: "{'dir': ['Must be one of: desc, asc.']}"
+    message: "Invalid parameter for user"
 test_5002:
   response_msg:
     error_code: "4099" 
@@ -118,11 +118,11 @@ test_5020:
   response_msg:
     error_code: "4099"
     message_id: "invalid request parameter"
-    message: "Request effective body is empty"
+    message: "Insufficient information in request body"
 test_5017:
   invalid_user_id: "invaliduser123"
   payload:
-    roles: ["manage"]
+    role: "manage"
     password: '6CJC8Fy705Jm/KgS7XWgTdGOmn6GtAkAwGoPRS4bLVM='
   response_msg:
     error_code: "4101"
@@ -144,28 +144,28 @@ test_5018:
   payload_invalid_password_3:
     password: 'YSkJh8yANAnRF4vOgeFODMx6CmVTuuLLMu1kdL2uONA='
   payload_invalid_role:
-    roles: ["abc"]
+    role: "abc"
   payload_invalid_password_role:
-    roles: ["abc"]
+    role: "abc"
     password: 'UJC4S6AjJFIr4RkqLuER6O+cK4fxLny8WyTUcxaVrtQ='
   invalid_password_resp_1:
     error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Lowercase Alphabet.\\nMust contain at least one Numeric value.\\nMust include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
   invalid_password_resp_2:
     error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Lowercase Alphabet.\\nMust include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
   invalid_password_resp_3:
     error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Numeric value.\\nMust include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
   invalid_role_resp:
     error_code: "4099"
-    message: "Invalid request body: {'roles': {0: ['Must be one of: manage, monitor.']}}"
+    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
   invalid_password_role_resp_1:
     error_code: "4099"
-    message: "Invalid request body: {'roles': {0: ['Must be one of: manage, monitor.']}, 'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Lowercase Alphabet.\\nMust include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
   invalid_password_role_resp_2:
     error_code: "4099"
-    message: "Invalid request body: {'password': [\"Password Policy Not Met.\\nMust be more than 8 characters.\\nMust contain at least one Uppercase Alphabet.\\nMust contain at least one Lowercase Alphabet.\\nMust include !@#$%^&*()_+-=[]{}|'.\"], 'roles': {0: ['Must be one of: manage, monitor.']}}"
+    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
 test_1173:
   data: 
     - "Testuser@12345"

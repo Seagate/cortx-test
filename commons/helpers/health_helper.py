@@ -658,3 +658,39 @@ class Health(Host):
 
         d_node = dict(zip(node, h_list))
         return d_node
+
+    def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
+            -> Tuple[bool, str]:
+        """
+        Disable given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :param wait_time: Wait time in sec after restart
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        LOG.info("Disabling resource : %s", resource)
+        cmd = commands.PCS_RESOURCE_DISABLE_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        time.sleep(wait_time)
+
+        return True
+
+    def enable_pcs_resource(self, resource: str, wait_time: int = 30) \
+            -> Tuple[bool, str]:
+        """
+        Enable given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :param wait_time: Wait time in sec after restart
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        LOG.info("Enabling resource : %s", resource)
+        cmd = commands.PCS_RESOURCE_ENABLE_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        time.sleep(wait_time)
+
+        return True
