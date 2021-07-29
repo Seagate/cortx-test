@@ -75,3 +75,23 @@ Validate EULA Data
     ${data}=  get text  ${EULA_CONTENT_MSG_XPATH}
     Log To Console And Report  ${data}
     Should Not Be Empty  ${data}
+
+admin user preboarding
+   [Documentation]  This keyword will change the password for admin user for first time login.
+   [Arguments]  ${username}  ${password}  ${new_password}=${password}
+   Click Accept Button
+   Click License Button
+   Enter Username And Password  ${username}  ${password}
+   Click Sigin Button
+   wait for page or element to load  2s
+   ${check_first_time_login} =  Run Keyword And Return Status    Element Should Be Visible   ${CHANGE_PASSWORD_ID}
+   Log To Console And Report  ${new_password}
+   Run Keyword If  '${check_first_time_login}'=='True'
+   ...  Run Keywords
+   ...  Change password on login   ${new_password}     ${new_password}
+   ...  AND  Click on reset password
+   Log To Console And Report  Waiting for receiving GUI response...
+   Page Should Contain Element  ${SYSTEM_NAME_TEXT_ID}
+   Re-login   ${username}  ${new_password}  DASHBOARD_MENU_ID
+
+

@@ -430,3 +430,21 @@ TEST-4026
     CSM GUI Login with Incorrect Credentials  ${url}  ${browser}  ${headless}
     Validate CSM Login Failure
     Close Browser
+
+TEST-22579
+    [Documentation]  Test that s3account user's session expired when user delete s3account from admin
+    [Tags]  full  TEST-22579
+    wait for page or element to load  2s
+    ${S3_account_name}  ${email}  ${password} =  Create S3 account
+    wait for page or element to load
+    Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
+    wait for page or element to load  3s
+    CSM GUI Login  ${url}  ${browser}  ${headless}  ${S3_account_name}  ${password}
+    wait for page or element to load  3s
+    Switch Browser  1
+    Delete s3 account using csm user  ${S3_account_name}
+    Switch Browser  2
+    Reload Page
+    wait for page or element to load  2s
+    wait until element is visible  ${csm username id}  timeout=30
+    log to console and report  S3 account Deleted and Session logged out.
