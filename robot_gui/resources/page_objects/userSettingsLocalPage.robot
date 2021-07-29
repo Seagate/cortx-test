@@ -513,13 +513,7 @@ Create Multiple CSM User
 
 Navigate To First Page On Administrative Users Page
     [Documentation]  This Keyword is for navigating to Last page
-    Navigate To Page  MANAGE_MENU_ID
-    wait for page or element to load  10s
-    Select The Number of Rows To Display  ${ROW_VALUE}
-    ${User_list}=    Get CSM table row count
-    ${count}=    Evaluate    ${User_list} - ${DEFAULT_COUNT}
-    Log To Console And Report    ${count}
-    Run Keyword If   "${User_list}" < "${DEFAULT_COUNT}"    Create Multiple CSM User    ${count}
+    Check List Of CSM User And Create New Users
     Select The Number of Rows To Display   ${ROW_FIVE}
     @{Page_list}    ${Page_count}    Get List of Page    ${CSM_PAGINATION_PAGE_XPATH}
     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
@@ -528,26 +522,17 @@ Navigate To First Page On Administrative Users Page
     ${Page}=    Get From List   ${New_Page_list}   0
     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
     Capture Page Screenshot
-#    Element Should Be Disabled    ${CSM_PAGINATION_PAGE_FIRST_LAST}
 #    TODO DELETE CSM USERS
 
 Navigate To Last Page On Administrative Users Page
     [Documentation]  This Keyword is for navigating to Last page
-    Navigate To Page  MANAGE_MENU_ID
-    wait for page or element to load  10s
-    Select The Number of Rows To Display  ${ROW_VALUE}
-    ${User_list}=    Get CSM table row count
-    Log To Console And Report    ${User_list}
-    ${count}=    Evaluate    ${User_list} - ${DEFAULT_COUNT}
-    Log To Console And Report    ${count}
-    Run Keyword If   "${User_list}" < "${DEFAULT_COUNT}"    Create Multiple CSM User    ${count}
+    Check List Of CSM User And Create New Users
     Select The Number of Rows To Display   ${ROW_FIVE}
     @{Page_list}    ${Page_count}    Get List of Page    ${CSM_PAGINATION_PAGE_XPATH}
     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
     ${Page}=    Get From List   ${New_Page_list}   -1
     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
     Capture Page Screenshot
-#    Element Should Be Disabled    ${CSM_PAGINATION_PAGE_FIRST_LAST}
 #    TODO DELETE CSM USERS
 
 Navigate To The Desired Page
@@ -571,7 +556,7 @@ Check List Of CSM User And Create New Users
     Run Keyword If    ${User_list} < ${DEFAULT_COUNT}    Evaluate    ${DEFAULT_COUNT} - ${User_list}
     ${count}=    Evaluate    ${DEFAULT_COUNT} - ${User_list}
     Log To Console And Report    ${count}
-    Run Keyword If   "${User_list}" < "${DEFAULT_COUNT}"    Create Multiple CSM User    ${count}
+    Run Keyword If   ${User_list} < ${DEFAULT_COUNT}    Create Multiple CSM User    ${count}
 
 Create and login with CSM manage user
     [Documentation]  This keyword is to create and login with csm manage user
