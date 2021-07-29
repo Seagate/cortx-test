@@ -8,13 +8,12 @@ SIGNIN_BUTTON_ID = 'login-userbtn'
 CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
 CHANGE_PASSWORD_ID = 'user-password'
 CONFIRM_PASSWORD_ID = 'confirm-password'
-PASSWORD_CHANGE_CONFIRM_ID = ''
 PASSWORD_RESET_BUTTON_ID = 'reset-password-button'
 PASSWORD_CHANGE_SUCESS_BUTTON_ID= 'confirmation-dialogbox-btn'
 
 # CSM Dashboard Locators
 LOGGED_IN_USER_NAME_ID = 'header-username'
-USER_DROPDOWN_ID = "//*[@class='cortx-dropdown-container']"
+USER_DROPDOWN_XPATH = "//*[@class='cortx-dropdown-container']"
 LOG_OUT_ID = 'logout-link'
 CAPACITY_TOTAL_LABEL_ID = 'capacity-total-text'
 CAPACITY_AVAILABLE_LABEL_ID = 'capacity-available-text'

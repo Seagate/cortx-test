@@ -39,7 +39,7 @@ TEST-4907
     [Documentation]  Test that user stays on EULA page after canceling the agreement
     ...  Reference : https://jts.seagate.com/browse/TEST-4907
     [Tags]  TEST-4907
-    Verify User Has Not Naviagted to Admin User Create Page
+    Validate ELUA page after canceling the agreement
 
 TEST-24993
    [Documentation]  Test that user should be able to login as cortxadmin user should be able to login and
