@@ -25,6 +25,7 @@ Click LicenseCancle Button
 
 Click LicenseCancle Image
     [Documentation]  On EULA Pop Up, click on 'X' icon to close
+    wait until element is visible  ${license_cancle_image_id}  timeout=20
     click image    ${license_cancle_image_id}
 
 Verify Presence of Elements on EULA Page
@@ -37,7 +38,7 @@ Verify Presence of Elements on EULA Page
     Capture Element Screenshot  ${license_data_id}  eula_data.png
 
 Validate ELUA Success
-    [Documentation]  This keyword is used to validate that Preboarding page is accessible.
+    [Documentation]  This keyword is used to validate that Under Preboarding, ELUA page is accessible.
     sleep  1s
     Capture Page Screenshot  preboarding.png
     Click Accept Button
@@ -47,13 +48,24 @@ Validate ELUA Success
     Click LicenseCancle Button
     Click Accept Button
     Verify Presence of Elements on EULA Page
-    #Click LicenseCancle Image
-    Click LicenseCancle Button
+    Click LicenseCancle Image
     Click Accept Button
     sleep  1s
     Click License Button
+
+Validate ELUA page after canceling the agreement
+    [Documentation]  This keyword is used to validate that user stays on EULA page after canceling the agreement
     sleep  1s
-    Capture Page Screenshot  admin_config.png
+    Capture Page Screenshot  preboarding.png
+    Click Accept Button
+    sleep  1s
+    Capture Page Screenshot  eula.png
+    Verify Presence of Elements on EULA Page
+    Click LicenseCancle Button
+    Click Accept Button
+    Verify Presence of Elements on EULA Page
+    Click LicenseCancle Image
+    wait until element is visible  ${elua_button_id}  timeout=20
 
 Preboarding
     [Documentation]  This keyword is used to login to CSM GUI.

@@ -155,7 +155,8 @@ Verify Absence of Reset Passwrod Button on S3account
 
 Verify Absence of Admin User Section
     [Documentation]  Verify Absence of Admin User Section
-    Page Should Not Contain Element  ${ADMINISTRATIVE_USER_TAB_ID}
+    ${csm_tab_text}=  get text  ${ADMINISTRATIVE_USER_TAB_ID}
+    Should Not Contain  ${csm_tab_text}  Administrative user
     Page Should Not Contain Button  ${ADD_USER_BUTTON_ID}
 
 Verify Absence of Delete Button on CSM users
