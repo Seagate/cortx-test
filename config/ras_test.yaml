@@ -275,3 +275,11 @@ test_23045:
 TEST-23606:
   resource_type: "node:os:disk"
   csm_error_msg: "Failed to get OS disk alerts using CSM REST API"
+
+test_23715:
+  md_device: "/dev/md2"
+  resource_type: "node:os:raid_data"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+test_23723:
+  resource_type: "node:os:raid_data"
