@@ -22,7 +22,7 @@ AVAILABLE_CAPACITY_VALUE_XPATH = "//*[@id='capacity-available']/td[3]"
 TOTAL_CAPACITY_VALUE_XPATH = "//*[@id='capacity-total']/td[3]"
 
 # Menus
-MANAGE_MENU_ID = 'Manage'
+MANAGE_MENU_ID = '//*[@class="v-application--wrap"]//*[contains(@id,"Manage")]'
 ADMINISTRATIVE_USER_TAB_ID = "tab-1"
 CSM_S3_ACCOUNTS_TAB_ID = 'tab-2'
 SETTINGS_ID = 'Settings'
