@@ -271,7 +271,7 @@ TEST-18326
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
-    [Tags]  Priority_High  CFT_Test  TEST-4871
+    [Tags]  CFT_Test  TEST-4871
     ${test_id}    Set Variable    TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
@@ -283,7 +283,7 @@ TEST-4871
 TEST-9045
     [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
-    [Tags]  Priority_High  CFT_Test  TEST-9045
+    [Tags]  CFT_Test  TEST-9045
     ${test_id}    Set Variable    TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
@@ -305,7 +305,7 @@ TEST-9045
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
     ...  Reference : https://jts.seagate.com/browse/TEST-11152
-    [Tags]  Priority_High  CFT_Test  TEST-11152
+    [Tags]  CFT_Test  TEST-11152
     SSL certificate expiration alert Verification  0
     SSL certificate expiration alert Verification  1
     SSL certificate expiration alert Verification  5
@@ -362,9 +362,9 @@ TEST-21590
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
-    Re-login  ${username}  ${password}  DASHBOARD_MENU_ID
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
@@ -436,13 +436,13 @@ TEST-23612
 TEST-11153
     [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
     ...  Reference : https://jts.seagate.com/browse/TEST-11153
-    [Tags]  full    TEST-11153
+    [Tags]  TEST-11153
     SSL certificate expiration alert Verification  0
 
 TEST-23050
     [Documentation]  Test that admin user should not able to delete all users with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23050
-    [Tags]  full    TEST-23050
+    [Tags]  Priority_High  TEST-23050
     Navigate To Page  ${page_name}
     FOR  ${index}  IN RANGE  3
         ${new_password}=  Generate New Password
