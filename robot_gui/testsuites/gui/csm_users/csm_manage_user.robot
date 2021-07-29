@@ -50,10 +50,7 @@ TEST-1216
     [Documentation]  Test manager user can not access IAM user and buckets tab.
     [Tags]  Priority_High  user_role  TEST-1216
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     Verify IAM User Section Not Present
-    Navigate To Page  DASHBOARD_MENU_ID
     Verify bucket Section Not Present
     wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
@@ -63,8 +60,6 @@ TEST-1215
     [Documentation]  Test that CSM user with role manager can view and create s3 accounts.
     [Tags]  Priority_High  user_role  TEST-1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${s3_password} =  Create S3 account
     wait for page or element to load  3s
@@ -105,8 +100,6 @@ TEST-18327
     [Tags]  Priority_High  TEST-18327  S3_test  Smoke_test
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -124,8 +117,6 @@ TEST-21591
     [Tags]  Priority_High  TEST-21591  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -141,8 +132,6 @@ TEST-21592
     [Tags]  Priority_High  TEST-21592  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -152,9 +141,9 @@ TEST-21592
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
-    Re-login  ${new_csm_user_name}  ${new_password}  DASHBOARD_MENU_ID
+    Re-login  ${new_csm_user_name}  ${new_password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
