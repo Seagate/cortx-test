@@ -47,8 +47,8 @@ GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
 GET_RAID_ARRAYS_CMD = "grep -oP '\\bmd[0-9]\\b' /proc/mdstat"
 RAID_ARRAY_STATE_CMD = "cat /sys/block/{}/md/degraded"
 GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
-FDISK_PARTITION_CMD = "fdisk -l {} | grep '{}[0-9]' | awk '{print $1, $NF}' > {}"
-GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {} | awk '{print $NF}'"
+FDISK_RAID_PARTITION_CMD = "fdisk -l {} | grep -i raid | awk '{{print $1}}' > {}"
+GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {} | awk '{{print $NF}}'"
 FILE_COMPARE_CMD = "diff {} {}"
 
 

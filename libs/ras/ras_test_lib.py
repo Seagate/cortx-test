@@ -30,6 +30,8 @@ import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
+from commons.alerts_simulator.generate_alert_lib import \
+     GenerateAlertLib, AlertType
 from commons.utils.config_utils import get_config, update_cfg_based_on_separator
 from commons.utils import system_utils as sys_utils
 from commons import constants as cmn_cons
@@ -63,6 +65,7 @@ class RASTestLib(RASCoreLib):
         self.host = host if host else nd_cfg[0]["host"] if nd_cfg else None
         self.pwd = password if password else nd_cfg[0]["password"] if nd_cfg else None
         self.username = username if username else nd_cfg[0]["username"] if nd_cfg else None
+        self.alert_api_obj = GenerateAlertLib()
         self.sspl_pass = ldap_cfg["sspl_pass"] if ldap_cfg else None
 
         super().__init__(host, username, password)
@@ -1161,7 +1164,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to get details of the drives connected to node
         :return: True/False, drive_name, host_num, drive_count
-        :rtype: Boolean, str, int, int
+        :rtype: Boolean, str, int, int ('/dev/sda', 2, 4)
         """
         try:
             filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
@@ -1229,11 +1232,11 @@ class RASTestLib(RASCoreLib):
                 os.remove(tempfile)
             self.node_utils.remove_file(filename=filepath)
 
-    def get_raid_arrays(self):
+    def get_raid_arrays(self) -> Tuple[bool, list]:
         """
-
+        Function to get names of the raid arrays of node
         Returns: ['md2', 'md0', 'md1']
-
+        rtype: list
         """
         try:
             cmd = common_commands.GET_RAID_ARRAYS_CMD
@@ -1248,15 +1251,15 @@ class RASTestLib(RASCoreLib):
                 RASTestLib.get_raid_arrays.__name__, error))
             return False, error
 
-    def get_raid_array_details(self):
+    def get_raid_array_details(self) -> Tuple[bool, dict]:
         """
-
-        Returns:
-
+        Function to get details of the raid arrays of node
+        Returns: {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}}
+        rtype: dict
         """
         try:
-            import pdb
-            pdb.set_trace()
             LOGGER.info("Checking state of arrays")
             resp = self.check_raid_array_state()
             if not resp[0]:
@@ -1284,15 +1287,14 @@ class RASTestLib(RASCoreLib):
                 RASTestLib.get_raid_array_details.__name__, error))
             return False, error
 
-    def check_raid_array_state(self):
+    def check_raid_array_state(self) -> Tuple[bool, dict]:
         """
-
-        Returns:
-
+        Function to get states of the raid arrays of node
+        Returns: {'md0': {'state': 'Active'}, 'md1': {'state': 'Active'},
+        'md2': {'state': 'Degraded'}}
+        rtype: dict
         """
         try:
-            import pdb
-            pdb.set_trace()
             md_arrays = {}
             LOGGER.info("Getting raid array names")
             resp = self.get_raid_arrays()
@@ -1316,42 +1318,52 @@ class RASTestLib(RASCoreLib):
                 RASTestLib.check_raid_array_state.__name__, error))
             return False, error
 
-    def get_drive_partition_details(self, filepath, drive):
+    def get_drive_partition_details(self, filepath: str, drive: str) -> \
+            Tuple[bool, list]:
         """
-
-        Args:
-            drive:
-
-        Returns:
-
+        Function to get raid drive partitions of drive
+        Returns: ['/dev/sda1', '/dev/sda3']
+        rtype: list
         """
         try:
             local_path = filepath
-            cmd = common_commands.FDISK_PARTITION_CMD.format(drive, drive,
-                                                             filepath)
+            cmd = common_commands.FDISK_RAID_PARTITION_CMD.format(drive,
+                                                                  filepath)
             LOGGER.info("Running command %s", cmd)
             self.node_utils.execute_cmd(cmd=cmd)
             if os.path.exists(local_path):
                 os.remove(local_path)
             self.node_utils.copy_file_to_local(filepath, local_path)
             LOGGER.info("Extract Linux RAID partitions of drive %s", drive)
-            cmd = "awk '{if ($NF == \"autodetect\") print $1}' " + local_path
-            LOGGER.info("Running command %s", cmd)
-            resp = (os.popen(cmd).read()).split("\n")
-            LOGGER.debug("Response: %s", resp)
-            raid_parts = list(filter(None, resp))
+            f = open(local_path, 'r')
+            resp = (f.read()).split('\n')
+            resp = list(filter(None, resp))
+            raid_parts = []
+            for i in resp:
+                if re.search("^[0-9]", i) is not None:
+                    d_name = drive + i
+                    raid_parts.append(d_name)
+                else:
+                    raid_parts = resp
+                    break
+
+            LOGGER.debug("Response: %s", raid_parts)
             return True, raid_parts
         except Exception as error:
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_drive_partition_details.__name__, error))
             return False, error
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.remove_file(filename=filepath)
 
-    def get_drive_by_hostnum(self, hostnum):
+    def get_drive_by_hostnum(self, hostnum: str) -> Tuple[bool, str]:
         """
-
-        Returns:
-
+        Function to get drive name by its host number
+        Returns: '/dev/sda1'
+        rtype: str
         """
         try:
             cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
@@ -1362,4 +1374,44 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_drive_by_hostnum.__name__, error))
+            return False, error
+
+    def add_raid_prtitions(self, raid_parts: list, md_arrays: dict) -> Tuple[
+                           bool, dict]:
+        """
+        Function to add partitions of drive in raid array
+        Returns: {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}}
+        rtype: dict
+        """
+        try:
+            for part in raid_parts:
+                for k, v in md_arrays.items():
+                    if part.split("/")[-1] in v["drives"]:
+                        resp = self.alert_api_obj.generate_alert(
+                            AlertType.RAID_ADD_DISK_ALERT,
+                            input_parameters={
+                                "operation": "add_disk",
+                                "md_device": k,
+                                "disk": part})
+                    else:
+                        for drv in v["drives"]:
+                            if re.search("[0-9]*$", drv).group() == \
+                                    re.search("[0-9]*$", part.split("/")[-1]).group():
+                                resp = self.alert_api_obj.generate_alert(
+                                    AlertType.RAID_ADD_DISK_ALERT,
+                                    input_parameters={
+                                        "operation": "add_disk",
+                                        "md_device": k,
+                                        "disk": part})
+            LOGGER.info("Getting new RAID array details of node %s",
+                        self.host)
+            resp = self.get_raid_array_details()
+            new_md_arrays = resp[1]
+            return True, new_md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.add_raid_prtitions.__name__, error))
             return False, error
