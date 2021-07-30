@@ -81,15 +81,19 @@ def run_remote_cmd(
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
@@ -127,15 +131,19 @@ def run_remote_cmd_wo_decision(
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     return output, error, exit_status
 
 
