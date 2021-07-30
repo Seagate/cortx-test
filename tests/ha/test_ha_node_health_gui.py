@@ -459,7 +459,7 @@ class TestHANodeHealthGUI:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in(b"0% packet loss", resp,
+            assert_utils.assert_not_in(b"100% packet loss", resp,
                                        f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
