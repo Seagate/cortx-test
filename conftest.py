@@ -735,7 +735,8 @@ def check_cortx_cluster_health():
                         username=node['username'],
                         password=node['password'])
         result = health.check_node_health()
-        assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
+        assert_utils.assert_true(result[0],
+                                 f'Cluster Node {hostname} failed in health check. Reason: {result}')
         health.disconnect()
     LOGGER.info("Cluster status is healthy.")
 
