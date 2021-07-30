@@ -158,12 +158,12 @@ class TestHAClusterHealth:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22893")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe_shutdown(self):
+    def test_nodes_one_by_one_os_shutdown(self):
         """
         Test to Check that correct cluster status is shown in Cortx CLI and REST when node goes down
-        and comes back up(one by one, safe shutdown)
+        and comes back up(one by one, os shutdown)
         """
-        LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
+        LOGGER.info("Started: Test to check cluster status, with os shutdown nodes one by one.")
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
             self.restored = False
@@ -250,7 +250,7 @@ class TestHAClusterHealth:
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
         LOGGER.info(
-            "Complete: Test to check cluster status one by one for all nodes with safe shutdown.")
+            "Complete: Test to check cluster status one by one for all nodes with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -357,14 +357,14 @@ class TestHAClusterHealth:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22872")
     @CTFailOn(error_handler)
-    def test_two_nodes_down_safe_shutdown(self):
+    def test_two_nodes_down_os_shutdown(self):
         """
         Test to check that correct cluster status is shown in Cortx CLI when two nodes goes
-        offline and comes back online(safe shutdown)
+        offline and comes back online(os shutdown)
         """
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
-            "with safe shutdown.")
+            "with os shutdown.")
         self.restored = False
 
         LOGGER.info("Shutdown two nodes randomly.")
@@ -450,7 +450,7 @@ class TestHAClusterHealth:
 
         self.restored = True
         LOGGER.info(
-            "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
+            "Complete: Test to check cluster status two nodes off & on with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -553,15 +553,15 @@ class TestHAClusterHealth:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22897")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_safe_shutdown(self):
+    def test_single_node_multiple_os_shutdown(self):
         """
         Check that correct cluster/site/rack and node status is shown in Cortx CLI and REST when node
-        goes down and comes back up (single node multiple times, safe shutdown)
+        goes down and comes back up (single node multiple times, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check cluster/site/rack and node status with safe "
+            "Started: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
-        LOGGER.info("Get the node for multiple safe shutdown.")
+        LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
@@ -664,7 +664,7 @@ class TestHAClusterHealth:
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check cluster/site/rack and node status with safe "
+            "Completed: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
 
     # pylint: disable=R0201
@@ -885,7 +885,7 @@ class TestHAClusterHealth:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in(b"0% packet loss", resp,
+            assert_utils.assert_not_in(b"100% packet loss", resp,
                                        f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
