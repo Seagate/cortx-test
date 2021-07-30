@@ -140,9 +140,9 @@ class TestServerFruAlerts:
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"]]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]],
-                                         decode=True)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                        self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         for svc in services:
@@ -256,9 +256,9 @@ class TestServerFruAlerts:
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]],
-                                         decode=True)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                        self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
