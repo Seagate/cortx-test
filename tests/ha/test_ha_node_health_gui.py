@@ -164,13 +164,13 @@ class TestHANodeHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22573")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe_gui(self):
+    def test_nodes_one_by_one_os_shutdown_gui(self):
         """
         Test to Check that correct node status is shown in Cortx GUI when node goes down
-        and comes back up(one by one, safe shutdown)
+        and comes back up(one by one, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check node status one by one for all nodes with safe shutdown.")
+            "Started: Test to check node status one by one for all nodes with os shutdown.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -259,13 +259,13 @@ class TestHANodeHealthGUI:
                 "Node down/up worked fine for node: {}".format(node_name))
 
         LOGGER.info(
-            "Completed: Test to check node status one by one for all nodes with safe shutdown.")
+            "Completed: Test to check node status one by one for all nodes with os shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22575")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_unsafe_gui(self):
+    def test_nodes_one_by_one_unsafe_shutdown_gui(self):
         """
         Test to Check that correct node status is shown in Cortx GUI when node goes down
         and comes back up(one by one, unsafe shutdown)
@@ -459,7 +459,7 @@ class TestHANodeHealthGUI:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in(b"0% packet loss", resp,
+            assert_utils.assert_not_in(b"100% packet loss", resp,
                                        f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
@@ -498,20 +498,20 @@ class TestHANodeHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22624")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_safe_gui(self):
+    def test_single_node_multiple_times_os_shutdown_gui(self):
         """
         Test to Check that correct node status is shown in Cortx GUI, when node
-        goes down and comes back up(single node multiple times, safe shutdown)
+        goes down and comes back up(single node multiple times, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check single node status with multiple safe shutdown.")
+            "Started: Test to check single node status with multiple os shutdown.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
         LOGGER.info("Acknowledge node alerts if present in active alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_active_alerts()
 
-        LOGGER.info("Get the node for multiple safe shutdown.")
+        LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info("Verify if node state online")
@@ -604,13 +604,13 @@ class TestHANodeHealthGUI:
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check single node status with multiple safe shutdown.")
+            "Completed: Test to check single node status with multiple os shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22625")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_unsafe_gui(self):
+    def test_single_node_multiple_times_unsafe_shutdown_gui(self):
         """
         Test to Check that correct node status is shown in Cortx GUI, when node
         goes down and comes back up(single node multiple times, unsafe shutdown)
