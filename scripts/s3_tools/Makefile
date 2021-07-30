@@ -159,7 +159,17 @@ configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
 	@echo "### All tools are configured. ###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install
+apache-jmeter-install:
+	@echo "###Installing apache-jmeter in current machine###"
+	yum install -y java-1.8.0-openjdk
+	wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
+	tar -zxf apache-jmeter-5.4.1.tgz -C /root/
+	mv /root/apache-jmeter-5.4.1 /root/apache-jmeter
+	rm -rf apache-jmeter-5.4.1.tgz
+	@echo "###Installed apache jmeter in current machine###"
+
+
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -188,3 +198,4 @@ help :
 	@echo "jcloud-client-install: Setup jcloud-client. Eg: make jcloud-client --makefile=<makefile_path>"
 	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
+	@echo "apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
