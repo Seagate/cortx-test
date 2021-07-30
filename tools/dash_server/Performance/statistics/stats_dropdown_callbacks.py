@@ -133,8 +133,8 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
 
 
 @app.callback(
-    Output('perf_sessions_s3_dropdown', 'options'),
-    Output('perf_sessions_s3_dropdown', 'value'),
+    Output('perf_sessions_dropdown', 'options'),
+    Output('perf_sessions_dropdown', 'value'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -152,7 +152,7 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'S3bench'
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
         options = get_dict_from_array(sessions, False, 'sessions')
         value = options[0]['value']
@@ -161,36 +161,8 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
 
 
 @app.callback(
-    Output('perf_sessions_hs_dropdown', 'options'),
-    Output('perf_sessions_hs_dropdown', 'value'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    prevent_initial_call=True
-)
-def update_hs_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
-    options = None
-    value = None
-    if not all([branch, build, nodes, itrns]) and pfull is None:
-        raise PreventUpdate
-    else:
-        sessions = get_distinct_keys(release, 'Sessions', {
-            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
-        })
-        options = get_dict_from_array(sessions, False, 'sessions')
-        value = options[0]['value']
-
-    return options, value
-
-
-@app.callback(
-    Output('perf_buckets_hs_dropdown', 'options'),
-    Output('perf_buckets_hs_dropdown', 'value'),
+    Output('perf_buckets_dropdown', 'options'),
+    Output('perf_buckets_dropdown', 'value'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -208,7 +180,7 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench'
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
         options = get_dict_from_array(buckets, False, 'buckets')
         value = options[0]['value']
@@ -226,8 +198,8 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
     Input('perf_pfull_dropdown', 'value'),
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
-    Input('perf_sessions_hs_dropdown', 'value'),
-    Input('perf_buckets_hs_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
+    Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custom, sessions, buckets):
@@ -242,62 +214,6 @@ def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custo
         })
         objsizes = sort_object_sizes_list(objsizes)
         options = get_dict_from_array(objsizes, False)
-        value = options[0]['value']
-
-    return options, value
-
-
-@app.callback(
-    Output('perf_sessions_cos_dropdown', 'options'),
-    Output('perf_sessions_cos_dropdown', 'value'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    prevent_initial_call=True
-)
-def update_cos_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
-    options = None
-    value = None
-    if not all([branch, build, nodes, itrns]) and pfull is None:
-        raise PreventUpdate
-    else:
-        sessions = get_distinct_keys(release, 'Sessions', {
-            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
-        })
-        options = get_dict_from_array(sessions, False, 'sessions')
-        value = options[0]['value']
-
-    return options, value
-
-
-@app.callback(
-    Output('perf_buckets_cos_dropdown', 'options'),
-    Output('perf_buckets_cos_dropdown', 'value'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    prevent_initial_call=True
-)
-def update_cos_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom):
-    options = None
-    value = None
-    if not all([branch, build, nodes, itrns]) and pfull is None:
-        raise PreventUpdate
-    else:
-        buckets = get_distinct_keys(release, 'Buckets', {
-            'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Cosbench'
-        })
-        options = get_dict_from_array(buckets, False, 'buckets')
         value = options[0]['value']
 
     return options, value

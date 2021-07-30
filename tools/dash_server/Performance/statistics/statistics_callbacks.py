@@ -15,7 +15,7 @@ from Performance.backend import *
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_s3_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_s3bench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions):
@@ -47,7 +47,7 @@ def update_s3bench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_s3_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions):
@@ -78,8 +78,8 @@ def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_click
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_hs_dropdown', 'value'),
-    Input('perf_buckets_hs_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
+    Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
@@ -111,8 +111,8 @@ def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_hs_dropdown', 'value'),
-    Input('perf_buckets_hs_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
+    Input('perf_buckets_dropdown', 'value'),
     Input('perf_bucketops_dropdown', 'value'),
     prevent_initial_call=True
 )
@@ -144,8 +144,8 @@ def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clic
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_cos_dropdown', 'value'),
-    Input('perf_buckets_cos_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
+    Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):

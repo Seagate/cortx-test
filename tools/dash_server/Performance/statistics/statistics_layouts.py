@@ -42,12 +42,6 @@ statistics_layout = Card(
         Markdown('''
             ___
             '''),
-        Row(
-            Dropdown(
-                id='perf_sessions_s3_dropdown',
-                placeholder="Select Sessions",
-                style=dict_Style_Stats_input_options
-            ), justify='center'),
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
@@ -64,18 +58,6 @@ statistics_layout = Card(
         Markdown('''
             ___
             '''),
-        Row([
-            Dropdown(
-                id='perf_sessions_hs_dropdown',
-                placeholder="Select Sessions",
-                style=dict_Style_Stats_input_options
-            ),
-            Dropdown(
-                id='perf_buckets_hs_dropdown',
-                placeholder="Select Buckets",
-                style=dict_Style_Stats_input_options
-            )
-        ], justify='center'),
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
@@ -99,19 +81,6 @@ statistics_layout = Card(
         Markdown('''
             ___
             '''),
-        Row([
-            Dropdown(
-                id='perf_sessions_cos_dropdown',
-                placeholder="Select Sessions",
-                style=dict_Style_Stats_input_options
-            ),
-            Dropdown(
-                id='perf_buckets_cos_dropdown',
-                placeholder="Select Buckets",
-                style=dict_Style_Stats_input_options
-            )],
-            justify='center'
-            ),
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
@@ -161,6 +130,16 @@ stats_input_options = Row(
         Dropdown(
             id='perf_custom_dropdown',
             placeholder="Select Profile",
+            style=dict_Style_Stats_input_options
+        ),
+        Dropdown(
+            id='perf_sessions_dropdown',
+            placeholder="Select Sessions",
+            style=dict_Style_Stats_input_options
+        ),
+        Dropdown(
+            id='perf_buckets_dropdown',
+            placeholder="Select Sessions",
             style=dict_Style_Stats_input_options
         ),
 
