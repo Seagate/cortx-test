@@ -84,9 +84,9 @@ class TestServerFruAlerts:
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
-        # TODO: Add cluster health check
-        # LOGGER.info("Check cluster health")
-        # resp = cls.health_obj.check_node_health()
+        LOGGER.info("Check cluster health")
+        resp = cls.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
 
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
