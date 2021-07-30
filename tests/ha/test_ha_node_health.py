@@ -160,13 +160,13 @@ class TestHANodeHealth:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22544")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe(self):
+    def test_nodes_one_by_one_os_shutdown(self):
         """
         Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
-        and comes back up(one by one, safe shutdown)
+        and comes back up(one by one, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check node status one by one for all nodes with safe shutdown.")
+            "Started: Test to check node status one by one for all nodes with os shutdown.")
 
         LOGGER.info("Shutdown nodes one by one and check status.")
         for node in range(self.num_nodes):
@@ -249,12 +249,12 @@ class TestHANodeHealth:
                 "Node down/up worked fine for node: {}".format(node_name))
 
         LOGGER.info(
-            "Completed: Test to check node status one by one for all nodes with safe shutdown.")
+            "Completed: Test to check node status one by one for all nodes with os shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22574")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_unsafe(self):
+    def test_nodes_one_by_one_unsafe_shutdown(self):
         """
         Test to Check that correct node status is shown in Cortx CLI and REST when node goes down
         and comes back up(one by one, unsafe shutdown)
@@ -463,14 +463,14 @@ class TestHANodeHealth:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22623")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_safe(self):
+    def test_single_node_multiple_times_os_shutdown(self):
         """
         Test to Check that correct node status is shown in Cortx CLI and REST, when node
-        goes down and comes back up(single node multiple times, safe shutdown)
+        goes down and comes back up(single node multiple times, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check single node status with multiple safe shutdown.")
-        LOGGER.info("Get the node for multiple safe shutdown.")
+            "Started: Test to check single node status with multiple os shutdown.")
+        LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
@@ -562,12 +562,12 @@ class TestHANodeHealth:
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check single node status with multiple safe shutdown.")
+            "Completed: Test to check single node status with multiple os shutdown.")
 
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22626")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_times_unsafe(self):
+    def test_single_node_multiple_times_unsafe_shutdown(self):
         """
         Test to Check that correct node status is shown in Cortx CLI and REST, when node
         goes down and comes back up(single node multiple times, unsafe shutdown)

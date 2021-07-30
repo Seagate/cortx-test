@@ -163,12 +163,12 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22894")
     @CTFailOn(error_handler)
-    def test_cluster_one_by_one_safe_shutdown_gui(self):
+    def test_cluster_one_by_one_os_shutdown_gui(self):
         """
         Test to Check that correct cluster status is shown in Cortx GUI when node goes down
-        and comes back up(one by one, safe shutdown)
+        and comes back up(one by one, os shutdown)
         """
-        LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
+        LOGGER.info("Started: Test to check cluster status, with os shutdown nodes one by one.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -265,7 +265,7 @@ class TestHAClusterHealthGUI:
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
         LOGGER.info(
-            "Complete: Test to check cluster status one by one for all nodes with safe shutdown.")
+            "Complete: Test to check cluster status one by one for all nodes with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -384,14 +384,14 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22903")
     @CTFailOn(error_handler)
-    def test_two_nodes_down_safe_shutdown_gui(self):
+    def test_two_nodes_down_os_shutdown_gui(self):
         """
         Test to check that correct cluster status is shown in Cortx GUI when two nodes goes
-        offline and comes back online(safe shutdown)
+        offline and comes back online(os shutdown)
         """
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
-            "with safe shutdown.")
+            "with os shutdown.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -455,7 +455,7 @@ class TestHAClusterHealthGUI:
 
         self.restored = True
         LOGGER.info(
-            "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
+            "Complete: Test to check cluster status two nodes off & on with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -537,13 +537,13 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22898")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_safe_shutdown_gui(self):
+    def test_single_node_multiple_os_shutdown_gui(self):
         """
         Check that correct cluster/site/rack and node status is shown in Cortx GUI when node
-        goes down and comes back up (single node multiple times, safe shutdown)
+        goes down and comes back up (single node multiple times, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check cluster/site/rack and node status with safe "
+            "Started: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
@@ -553,7 +553,7 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Verify Cluster is in healthy state")
         self.ha_gui_obj.verify_cluster_state("online")
 
-        LOGGER.info("Get the node for multiple safe shutdown.")
+        LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
@@ -661,7 +661,7 @@ class TestHAClusterHealthGUI:
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check cluster/site/rack and node status with safe "
+            "Completed: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
 
     # pylint: disable=R0201
