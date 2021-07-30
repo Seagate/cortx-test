@@ -448,7 +448,9 @@ class Health(Host):
         if node_hctl_failure:
             node_health_failure['HCTL_STATUS'] = node_hctl_failure
         if node_health_failure:
+            LOG.error("Node health failure: %s", node_health_failure)
             return False, node_health_failure
+
         return True, "cluster on {} up and running.".format(self.hostname)
 
     @staticmethod
