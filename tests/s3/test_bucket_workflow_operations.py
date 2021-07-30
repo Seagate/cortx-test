@@ -34,13 +34,8 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import S3_CFG
 from libs.s3 import s3_test_lib
-from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
-
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
-IAM_OBJ = iam_test_lib.IamTestLib()
-ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
 
 
 class TestBucketWorkflowOperations:
@@ -55,6 +50,8 @@ class TestBucketWorkflowOperations:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup test operations.")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.acl_obj = s3_acl_test_lib.S3AclTestLib(endpoint_url=S3_CFG["s3_url"])
         self.bucket_name = "bktwrkflow1-{}".format(time.perf_counter_ns())
         self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -71,11 +68,11 @@ class TestBucketWorkflowOperations:
         self.log.info("ENDED: Setup test operations")
         yield
         self.log.info("STARTED: Setup test operations.")
-        bucket_list = S3_TEST_OBJ.bucket_list()[1]
+        bucket_list = self.s3_test_obj.bucket_list()[1]
         for bucket_name in self.bucket_list:
             if bucket_name in bucket_list:
-                ACL_OBJ.put_bucket_acl(bucket_name, acl="private")
-                resp = S3_TEST_OBJ.delete_bucket(bucket_name, force=True)
+                self.acl_obj.put_bucket_acl(bucket_name, acl="private")
+                resp = self.s3_test_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
@@ -97,7 +94,7 @@ class TestBucketWorkflowOperations:
             self.log.info(
                 "Creating a bucket with lowercase letter or starts with number  is %s",
                 bkt_name)
-            resp = S3_TEST_OBJ.create_bucket(
+            resp = self.s3_test_obj.create_bucket(
                 bkt_name)
             assert resp[0], resp[1]
             assert resp[1] == bkt_name, resp[1]
@@ -119,7 +116,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with lower case, number, periods, dashes")
         bkt_name = "bktworkflow-8536.bkt"
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             bkt_name)
         assert resp[0], resp[1]
         assert resp[1] == bkt_name, resp[1]
@@ -144,7 +141,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with at least 3 characters is : %s",
             bkt_name3)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             bkt_name3)
         assert resp[0], resp[1]
         assert resp[1] == bkt_name3, resp[1]
@@ -154,7 +151,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name  63 chars long is : %s",
             bkt_name63)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             bkt_name63)
         assert resp[0], resp[1]
         assert resp[1] == bkt_name63, resp[1]
@@ -183,7 +180,7 @@ class TestBucketWorkflowOperations:
             "-seagateeosbucket"]
         for each_bucket in bkt_name2_64:
             try:
-                resp = S3_TEST_OBJ.create_bucket(each_bucket)
+                resp = self.s3_test_obj.create_bucket(each_bucket)
                 assert_utils.assert_false(resp[0], resp[1])
                 self.bucket_list.append(each_bucket)
             except CTException as error:
@@ -207,7 +204,7 @@ class TestBucketWorkflowOperations:
             "Creating a bucket with name : %s",
             bkt_upper)
         try:
-            resp = S3_TEST_OBJ.create_bucket(bkt_upper)
+            resp = self.s3_test_obj.create_bucket(bkt_upper)
             assert_utils.assert_false(resp[0], resp[1])
             self.bucket_list.append(bkt_upper)
         except CTException as error:
@@ -229,7 +226,7 @@ class TestBucketWorkflowOperations:
             "Creating a bucket with underscore is : %s",
             bkt_name)
         try:
-            resp = S3_TEST_OBJ.create_bucket(bkt_name)
+            resp = self.s3_test_obj.create_bucket(bkt_name)
             assert_utils.assert_false(resp[0], resp[1])
             self.account_list.append(bkt_name)
         except CTException as error:
@@ -262,7 +259,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with special chars is : %s", bucket_name)
         try:
-            resp = S3_TEST_OBJ.create_bucket(bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
             self.account_list.append(bucket_name)
         except CTException as error:
@@ -283,7 +280,7 @@ class TestBucketWorkflowOperations:
         self.log.info("Creating a bucket with name : %s",
                       bkt_name_ip)
         try:
-            resp = S3_TEST_OBJ.create_bucket(bkt_name_ip)
+            resp = self.s3_test_obj.create_bucket(bkt_name_ip)
             assert_utils.assert_false(resp[0], resp[1])
             self.account_list.append(bkt_name_ip)
         except CTException as error:
@@ -306,7 +303,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating single Bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -314,7 +311,7 @@ class TestBucketWorkflowOperations:
             "Bucket is created with name %s",
             self.bucket_name)
         self.log.info("Verifying that bucket is created")
-        resp = S3_TEST_OBJ.bucket_list()
+        resp = self.s3_test_obj.bucket_list()
         assert resp[0], resp[1]
         assert self.bucket_name in resp[1]
         self.bucket_list.append(self.bucket_name)
@@ -333,13 +330,13 @@ class TestBucketWorkflowOperations:
         for each in range(10):
             bucket_name = "{0}{1}".format(
                 "bktworkflow-8639", each)
-            resp = S3_TEST_OBJ.create_bucket(bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name)
             assert resp[0], resp[1]
             assert resp[1] == bucket_name, resp[1]
             bucket_list.append(bucket_name)
         self.log.info("Created multiple buckets")
         self.log.info("Verifying that buckets are created")
-        resp = S3_TEST_OBJ.bucket_list()
+        resp = self.s3_test_obj.bucket_list()
         for each_bucket in bucket_list:
             assert each_bucket in resp[1], resp[1]
             self.bucket_list.append(each_bucket)
@@ -356,7 +353,7 @@ class TestBucketWorkflowOperations:
             "STARTED: Create bucket with same bucket name already present")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -365,7 +362,7 @@ class TestBucketWorkflowOperations:
             self.bucket_name)
         self.log.info("Creating a bucket with existing bucket name")
         try:
-            resp = S3_TEST_OBJ.create_bucket(self.bucket_name)
+            resp = self.s3_test_obj.create_bucket(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
@@ -385,22 +382,22 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "STARTED: Verification of max. 100 no. of buckets user can create")
         self.log.info("Creating 100 max buckets")
-        resp1 = S3_TEST_OBJ.bucket_count()
+        resp1 = self.s3_test_obj.bucket_count()
         self.log.info(resp1)
         bkt_list = []
         for each in range(100):
             bucket_name = "{0}{1}".format("bktworkflow-8643-", each)
-            resp = S3_TEST_OBJ.create_bucket(bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name)
             assert resp[0], resp[1]
             bkt_list.append(bucket_name)
         self.log.info("Created 100 buckets")
         self.log.info("Verifying that bucket is created")
-        resp = S3_TEST_OBJ.bucket_count()
+        resp = self.s3_test_obj.bucket_count()
         self.log.info(resp)
         assert resp[0], resp[1]
         assert_utils.assert_equal(
             len(bkt_list), 100, "failed to create 100 buckets")
-        resp = S3_TEST_OBJ.delete_multiple_buckets(bkt_list)
+        resp = self.s3_test_obj.delete_multiple_buckets(bkt_list)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp1[1])
         self.log.info("Verified that buckets are created")
@@ -419,7 +416,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a Bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -433,7 +430,7 @@ class TestBucketWorkflowOperations:
         for i in range(5):
             objname = "{0}{1}".format(
                 "object", i)
-            resp = S3_TEST_OBJ.object_upload(
+            resp = self.s3_test_obj.object_upload(
                 self.bucket_name,
                 objname,
                 self.file_path)
@@ -441,7 +438,7 @@ class TestBucketWorkflowOperations:
         self.log.info("Objects are uploaded to a bucket")
         self.log.info("Deleting a bucket having objects")
         try:
-            resp = S3_TEST_OBJ.delete_bucket(self.bucket_name)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error.message)
@@ -459,7 +456,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -469,14 +466,14 @@ class TestBucketWorkflowOperations:
         self.log.info("Uploading multiple objects to a bucket")
         for obj_cnt in range(5):
             objname = "obj{}".format(obj_cnt)
-            resp = S3_TEST_OBJ.object_upload(
+            resp = self.s3_test_obj.object_upload(
                 self.bucket_name,
                 objname,
                 self.file_path)
             assert resp[0], resp[1]
         self.log.info("Multiple objects are uploaded to a bucket")
         self.log.info("Forcefully deleting bucket having object")
-        resp = S3_TEST_OBJ.delete_bucket(
+        resp = self.s3_test_obj.delete_bucket(
             self.bucket_name, force=True)
         assert resp[0], resp[1]
         self.log.info("Forcefully deleted a bucket")
@@ -494,7 +491,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -502,7 +499,7 @@ class TestBucketWorkflowOperations:
             "Bucket is created with name %s",
             self.bucket_name)
         self.log.info("Deleting a bucket")
-        retv = S3_TEST_OBJ.delete_bucket(
+        retv = self.s3_test_obj.delete_bucket(
             self.bucket_name)
         assert retv[0], retv[1]
         self.log.info("Bucket is deleted")
@@ -520,7 +517,7 @@ class TestBucketWorkflowOperations:
         for count in range(10):
             bucket_name = "{0}{1}".format(
                 "bktworkflow-8647-", str(count))
-            resp = S3_TEST_OBJ.create_bucket(bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name)
             assert resp[0], resp[1]
             assert resp[1] == bucket_name, resp[1]
             bucket_list.append(bucket_name)
@@ -530,7 +527,7 @@ class TestBucketWorkflowOperations:
             "Failed to create 10 bucket: {}".format(bucket_list))
         self.log.info("Multiple buckets are created")
         self.log.info("Deleting multiple buckets")
-        resp = S3_TEST_OBJ.delete_multiple_buckets(bucket_list)
+        resp = self.s3_test_obj.delete_multiple_buckets(bucket_list)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Multiple buckets are deleted")
@@ -546,7 +543,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Deleting bucket which does not exists on s3 server")
         try:
-            resp = S3_TEST_OBJ.delete_bucket(self.bucket_name)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
@@ -568,7 +565,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -582,7 +579,7 @@ class TestBucketWorkflowOperations:
         object_list = []
         for count in range(5):
             objname = "obj2050{}".format(count)
-            resp = S3_TEST_OBJ.object_upload(
+            resp = self.s3_test_obj.object_upload(
                 self.bucket_name,
                 objname,
                 self.file_path)
@@ -590,7 +587,7 @@ class TestBucketWorkflowOperations:
             object_list.append(objname)
         self.log.info("Multiple objects are uploaded")
         self.log.info("Listing all objects")
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             self.bucket_name)
         assert resp[0], resp[1]
         for each_obj in object_list:
@@ -609,7 +606,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -622,14 +619,14 @@ class TestBucketWorkflowOperations:
         self.log.info("Uploading multiple objects to a bucket")
         for count in range(5):
             objname = "obj2051{}".format(count)
-            retv = S3_TEST_OBJ.object_upload(
+            retv = self.s3_test_obj.object_upload(
                 self.bucket_name,
                 objname,
                 self.file_path)
             assert retv[0], retv[1]
         self.log.info("Multiple objects are uploaded")
         self.log.info("Retrieving bucket size")
-        resp = S3_TEST_OBJ.get_bucket_size(
+        resp = self.s3_test_obj.get_bucket_size(
             self.bucket_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved bucket size")
@@ -645,7 +642,7 @@ class TestBucketWorkflowOperations:
         self.log.info("STARTED: HEAD bucket when Bucket does not exists")
         self.log.info("Performing head bucket on non existing bucket")
         try:
-            resp = S3_TEST_OBJ.head_bucket(self.bucket_name)
+            resp = self.s3_test_obj.head_bucket(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
             self.bucket_list.append(self.bucket_name)
         except CTException as error:
@@ -664,7 +661,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -674,7 +671,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Performing head bucket on a bucket %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.head_bucket(
+        resp = self.s3_test_obj.head_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1]["BucketName"] == self.bucket_name, resp
@@ -696,18 +693,18 @@ class TestBucketWorkflowOperations:
         for count in range(10):
             bucket_name = "{0}{1}".format(
                 "bktworkflow-8656", str(count))
-            resp = S3_TEST_OBJ.create_bucket(bucket_name)
+            resp = self.s3_test_obj.create_bucket(bucket_name)
             assert resp[0], resp[1]
             assert resp[1] == bucket_name, resp[1]
             bucket_list.append(bucket_name)
         self.log.info("Multiple buckets are created")
         self.log.info("Listing buckets")
-        resp = S3_TEST_OBJ.bucket_list()
+        resp = self.s3_test_obj.bucket_list()
         assert resp[0], resp[1]
         for each_bucket in bucket_list:
             assert each_bucket in resp[1], resp[1]
         self.log.info("Buckets are listed")
-        resp = S3_TEST_OBJ.delete_multiple_buckets(bucket_list)
+        resp = self.s3_test_obj.delete_multiple_buckets(bucket_list)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify 'LIST buckets' command")
 
@@ -721,11 +718,11 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
-        resp = S3_TEST_OBJ.bucket_location(
+        resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1]["LocationConstraint"] == "us-west-2", resp[1]
@@ -741,31 +738,31 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "STARTED: Delete multiobjects which are present in bucket")
         self.log.info("Step 1: Creating a bucket and putting object")
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert res[1] == self.bucket_name, res[1]
         system_utils.create_file(self.file_path,
                                  10)
         obj_lst = []
         for i in range(10):
             obj = "{}{}".format("testobj432", str(i))
-            res = S3_TEST_OBJ.put_object(
+            res = self.s3_test_obj.put_object(
                 self.bucket_name, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.log.info("Step 1: Created bucket and object uploaded")
         self.log.info("Step 2: Listing all the objects")
-        resp = S3_TEST_OBJ.object_list(self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         resp[1].sort()
         obj_lst.sort()
         assert resp[1] == obj_lst, resp
         self.log.info("Step 2: All the objects listed")
         self.log.info("Step 3: Deleting all the object")
-        resp = S3_TEST_OBJ.delete_multiple_objects(self.bucket_name, obj_lst)
+        resp = self.s3_test_obj.delete_multiple_objects(self.bucket_name, obj_lst)
         assert resp[0], resp[1]
         self.log.info("Step 3: All the objects deleted")
         self.log.info("Step 4: Check bucket is empty")
-        resp = S3_TEST_OBJ.object_list(self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         resp_bkt_lst = None if not resp[1] else resp[1]
         # For checking the object list should be none
@@ -787,7 +784,7 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Step 1: Deleting the objects for non-existing bucket")
         try:
-            resp = S3_TEST_OBJ.delete_multiple_objects(
+            resp = self.s3_test_obj.delete_multiple_objects(
                 self.bucket_name, obj_lst)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -798,7 +795,7 @@ class TestBucketWorkflowOperations:
                 "NoSuchBucket")
         self.log.info("Step 2: List objects for non-existing bucket")
         try:
-            resp = S3_TEST_OBJ.object_list(self.bucket_name)
+            resp = self.s3_test_obj.object_list(self.bucket_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
@@ -837,21 +834,21 @@ class TestBucketWorkflowOperations:
             access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 1: Creating a bucket and putting object using acccount 1")
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert res[1] == self.bucket_name, res[1]
         system_utils.create_file(self.file_path,
                                  10)
         obj_lst = []
         for i in range(10):
             obj = "{}{}".format("testobj434", str(i))
-            res = S3_TEST_OBJ.put_object(
+            res = self.s3_test_obj.put_object(
                 self.bucket_name, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.log.info(
             "Step 1: Created bucket and object uploaded in account 1")
         self.log.info("Step 2: Listing all the objects using account 1")
-        resp = S3_TEST_OBJ.object_list(self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         resp[1].sort()
         obj_lst.sort()
@@ -902,21 +899,21 @@ class TestBucketWorkflowOperations:
             access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 1: Creating a bucket and putting object using acccount 1")
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert res[1] == self.bucket_name, res[1]
         system_utils.create_file(self.file_path,
                                  10)
         obj_lst = []
         for i in range(10):
             obj = "{}{}".format("testobj435", str(i))
-            res = S3_TEST_OBJ.put_object(
+            res = self.s3_test_obj.put_object(
                 self.bucket_name, obj, self.file_path)
             assert res[0], res[1]
             obj_lst.append(obj)
         self.log.info(
             "Step 1: Created bucket and object uploaded in account 1")
         self.log.info("Step 2: Listing all the objects using account 1")
-        resp = S3_TEST_OBJ.object_list(self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         resp[1].sort()
         obj_lst.sort()
@@ -924,7 +921,7 @@ class TestBucketWorkflowOperations:
         self.log.info("Step 2: All the objects listed using account 1")
         self.log.info(
             "Step 3: give full-control permissions for account2 for the bucket")
-        resp = ACL_OBJ.put_bucket_acl(
+        resp = self.acl_obj.put_bucket_acl(
             self.bucket_name, grant_full_control="id={}".format(
                 create_account[1]["canonical_id"]))
         assert resp[0], resp[1]
@@ -935,15 +932,15 @@ class TestBucketWorkflowOperations:
         assert resp[0], resp[1]
         self.log.info("Step 4: All the objects deleted")
         self.log.info("Step 5: Check bucket is empty")
-        ACL_OBJ.put_bucket_acl(
+        self.acl_obj.put_bucket_acl(
             self.bucket_name, acl="private")
-        resp = S3_TEST_OBJ.object_list(self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         resp_bkt_lst = None if not resp[1] else resp[1]
         # For checking the object list should be none
         assert resp_bkt_lst is None, resp
         self.log.info("Step 5: Verified that bucket was empty")
-        resp = S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
+        resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
         assert resp[0], resp[1]
         self.account_list.append(self.account_name)
         self.log.info(
