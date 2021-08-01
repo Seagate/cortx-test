@@ -335,3 +335,6 @@ CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
 CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=30))'"
+CMD_GREP_PID = " ps | grep {0}"

@@ -599,7 +599,7 @@ class SoftwareAlert(RASCoreLib):
         :return [list]: List of core ID which are online.
         """
         resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
-        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        LOGGER.debug("%s response : %s", commands.CPU_COUNT, resp)
         if "," in resp:
             resp = resp.split(",")
         else:
@@ -613,3 +613,39 @@ class SoftwareAlert(RASCoreLib):
                 cpus.append(int(i))
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self):
+        """Get CPU utilization
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
+        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
