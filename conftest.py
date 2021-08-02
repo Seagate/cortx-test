@@ -274,9 +274,9 @@ def pytest_sessionfinish(session, exitstatus):
         resp = system_utils.umount_dir(mnt_dir=params.MOUNT_DIR)
         if resp[0]:
             print("Successfully unmounted directory")
-        filter_report_session_finish(session)
     except Exception as fault:
         print("Exception occurred while unmounting directory")
+    filter_report_session_finish(session)
 
 
 def get_test_metadata_from_tp_meta(item):
@@ -735,7 +735,8 @@ def check_cortx_cluster_health():
                         username=node['username'],
                         password=node['password'])
         result = health.check_node_health()
-        assert_utils.assert_true(result[0], f'Cluster Node {hostname} failed in health check.')
+        assert_utils.assert_true(result[0],
+                                 f'Cluster Node {hostname} failed in health check. Reason: {result}')
         health.disconnect()
     LOGGER.info("Cluster status is healthy.")
 

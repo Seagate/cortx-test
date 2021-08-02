@@ -109,6 +109,7 @@ class TestHAClusterHealthGUI:
         """
         LOGGER.info("STARTED: Setup Operations")
         LOGGER.info("Checking if all nodes are reachable and PCS clean.")
+        self.nw_data = None
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -128,22 +129,29 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Checking if all nodes online and PCS clean after test.")
         if not self.restored:
             for node in range(self.num_nodes):
-                resp = self.node_list[node].execute_cmd(common_cmds.GET_IFCS_STATUS, read_lines=True)
-                LOGGER.debug("All eth status for %s = %s", self.srvnode_list[node], resp)
-                for eth_data in resp:
-                    if "DOWN" in eth_data:
-                        LOGGER.info(
-                            "Make the %s interface back up for %s", eth_data[0:4], self.srvnode_list[node])
-                        self.node_list[node].execute_cmd(
-                            common_cmds.IP_LINK_CMD.format(
-                                eth_data[0:4], "up"), read_lines=True)
                 resp = system_utils.check_ping(self.host_list[node])
                 if not resp:
-                    resp = self.ha_obj.host_power_on(
-                        host=self.host_list[node],
-                        bmc_obj=self.bmc_list[node])
+                    resp = self.ha_obj.host_power_on(host=self.host_list[node],
+                                                     bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
+                if self.nw_data:
+                    resp = self.node_list[node].execute_cmd(
+                        common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
+                    LOGGER.debug("%s interface status for %s = %s",
+                                 self.nw_data[0][node], self.srvnode_list[node], resp[0])
+                    if "DOWN" in resp[0]:
+                        LOGGER.info(
+                            "Make the %s interface back up for %s", self.nw_data[0][node],
+                            self.srvnode_list[node])
+                        self.node_list[node].execute_cmd(
+                            common_cmds.IP_LINK_CMD.format(
+                                self.nw_data[0][node], "up"), read_lines=True)
+                        resp = self.node_list[node].execute_cmd(common_cmds.CMD_PING.format(
+                            self.nw_data[1][node]), read_lines=True, exc=False)
+                        assert_utils.assert_not_in("Name or service not known", resp[1][0],
+                                                   "Node interface still down.")
+                    LOGGER.info("All network interfaces are up")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -155,12 +163,12 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22894")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_safe_shutdown_gui(self):
+    def test_cluster_one_by_one_os_shutdown_gui(self):
         """
         Test to Check that correct cluster status is shown in Cortx GUI when node goes down
-        and comes back up(one by one, safe shutdown)
+        and comes back up(one by one, os shutdown)
         """
-        LOGGER.info("Started: Test to check cluster status, with safe shutdown nodes one by one.")
+        LOGGER.info("Started: Test to check cluster status, with os shutdown nodes one by one.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -169,14 +177,11 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Verify Cluster is in healthy state")
         self.ha_gui_obj.verify_cluster_state("online")
 
-        self.restored = False
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             node_name = self.srvnode_list[node]
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info(f"Shutting down {node_name}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -186,6 +191,7 @@ class TestHAClusterHealthGUI:
                                                           node_obj=self.node_list[node],
                                                           is_safe=True)
             assert_utils.assert_true(resp, "Host has not shutdown yet.")
+            self.restored = False
 
             LOGGER.info(
                 f"Check in cortxcli and REST that the status is changed for {node_name} to Failed")
@@ -216,9 +222,9 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(node_name,"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "failed")
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -243,32 +249,36 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
                                                        nd_obj)
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(node_name) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(node_name,"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
             LOGGER.info(f"Node down/up worked fine for node: {node_name}")
 
         LOGGER.info(
-            "Complete: Test to check cluster status one by one for all nodes with safe shutdown.")
+            "Complete: Test to check cluster status one by one for all nodes with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22896")
     @CTFailOn(error_handler)
-    def test_nodes_one_by_one_unsafe_shutdown_gui(self):
+    def test_cluster_one_by_one_unsafe_shutdown_gui(self):
         """
         Test to check that correct cluster status is shown in Cortx GUI when nodes goes
         offline and comes back online(one by one, unsafe shutdown)
         """
         LOGGER.info(
             "Started: Test to check cluster status, with unsafe shutdown nodes one by one")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -278,11 +288,9 @@ class TestHAClusterHealthGUI:
         self.ha_gui_obj.verify_cluster_state("online")
 
         LOGGER.info("Shutdown nodes one by one and check status.")
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
             if self.setup_type == "HW":
                 LOGGER.debug(
@@ -295,6 +303,7 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(f"{self.host_list[node]} is powered off.")
+            self.restored = False
 
             LOGGER.info(
                 f"Check in cortxcli and REST that the status is changed for "
@@ -326,9 +335,9 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "failed")
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -352,11 +361,16 @@ class TestHAClusterHealthGUI:
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
                                                        nd_obj)
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
 
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
@@ -370,15 +384,14 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22903")
     @CTFailOn(error_handler)
-    def test_two_nodes_down_safe_shutdown_gui(self):
+    def test_two_nodes_down_os_shutdown_gui(self):
         """
         Test to check that correct cluster status is shown in Cortx GUI when two nodes goes
-        offline and comes back online(safe shutdown)
+        offline and comes back online(os shutdown)
         """
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
-            "with safe shutdown.")
-        self.restored = False
+            "with os shutdown.")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -389,14 +402,6 @@ class TestHAClusterHealthGUI:
 
         LOGGER.info("Shutdown two nodes randomly.")
         off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
-        check_rem_node = []
-        for index in range(len(self.srvnode_list)):
-            if index in off_nodes:
-                check_rem_node.append("failed")
-            else:
-                check_rem_node.append("online")
-
-        cluster_status = ["degraded", "online"]
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
@@ -413,12 +418,14 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(f"{self.host_list[node]} is powered off.")
+            time.sleep(40)
+            self.restored = False
 
             if count == 0:
                 LOGGER.info("Check for the node down alert.")
-                self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+                self.ha_gui_obj.verify_node_down_alert(node)
                 LOGGER.info("Verify if node state failed")
-                self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+                self.ha_gui_obj.verify_node_state(node, "failed")
                 LOGGER.info("Verify Cluster is in degraded state ")
                 self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -430,41 +437,25 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info(f"{self.host_list[node]} is powered on.")
-
-            # Get the system object on which csm is running
-            sys_obj = self.ha_obj.check_csm_service(
-                self.node_list[node], self.srvnode_list, self.sys_list)
-            assert_utils.assert_true(
-                sys_obj[0], f"{sys_obj[1]} Could not get server which has CSM service running.")
-
-            check_rem_node[node] = "online"
-
-            LOGGER.info("Verify node status via CortxCLI")
-            resp = self.ha_obj.verify_node_health_status(
-                sys_obj[1],
-                status=check_rem_node)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
-            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], cluster_status[count])
-            assert_utils.assert_true(resp[0], resp[1])
-
-            LOGGER.info("Verify node status via REST")
-            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Verify Cluster/Site/Rack status via REST")
-            resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
-            assert_utils.assert_true(resp[0], resp[1])
+            time.sleep(120)
 
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.host_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.host_list[node],"online") # TODO: update argument if required in TE
-            LOGGER.info("Verify Cluster is in healthy state")
-            self.ha_gui_obj.verify_cluster_state("online")
+            self.ha_gui_obj.verify_node_state(node, "online")
+
+        LOGGER.info("Verify Cluster is in healthy state")
+        self.ha_gui_obj.verify_cluster_state("online")
+
+        LOGGER.info("Checking PCS clean for all nodes")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
 
         self.restored = True
         LOGGER.info(
-            "Complete: Test to check cluster status two nodes off & on with safe shutdown.")
+            "Complete: Test to check cluster status two nodes off & on with os shutdown.")
 
     # pylint: disable=R0201
     @pytest.mark.ha
@@ -479,7 +470,6 @@ class TestHAClusterHealthGUI:
         LOGGER.info(
             "Started: Test to check cluster status by making two nodes down and up, "
             "with unsafe shutdown.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -490,14 +480,6 @@ class TestHAClusterHealthGUI:
 
         LOGGER.info("Shutdown two nodes randomly.")
         off_nodes = self.system_random.sample(range(len(self.srvnode_list)), 2)
-        check_rem_node = []
-        for index in range(len(self.srvnode_list)):
-            if index in off_nodes:
-                check_rem_node.append("failed")
-            else:
-                check_rem_node.append("online")
-
-        cluster_status = ["degraded", "online"]
 
         for count, node in enumerate(off_nodes):
             LOGGER.info(f"Shutting down {self.srvnode_list[node]}")
@@ -514,11 +496,13 @@ class TestHAClusterHealthGUI:
                 resp, f"{self.host_list[node]} has not shutdown yet.")
             LOGGER.info(f"{self.host_list[node]} is powered off.")
 
+            self.restored = False
+
             if count == 0:
                 LOGGER.info("Check for the node down alert.")
-                self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+                self.ha_gui_obj.verify_node_down_alert(node)
                 LOGGER.info("Verify if node state failed")
-                self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+                self.ha_gui_obj.verify_node_state(node, "failed")
                 LOGGER.info("Verify Cluster is in degraded state ")
                 self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -531,35 +515,18 @@ class TestHAClusterHealthGUI:
                 resp, f"{self.host_list[node]} has not powered on yet.")
             LOGGER.info(f"{self.host_list[node]} is powered on.")
 
-            check_rem_node[node] = "online"
-
-            # Get the system object on which csm is running
-            sys_obj = self.ha_obj.check_csm_service(
-                self.node_list[node], self.srvnode_list, self.sys_list)
-            assert_utils.assert_true(
-                sys_obj[0], f"{sys_obj[1]} Could not get server which has CSM service running.")
-
-            LOGGER.info("Verify node status via CortxCLI")
-            resp = self.ha_obj.verify_node_health_status(
-                sys_obj[1], status=check_rem_node)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Verify Cluster/Site/Rack status via CortxCLI")
-            resp = self.ha_obj.verify_csr_health_status(sys_obj[1], cluster_status[count])
-            assert_utils.assert_true(resp[0], resp[1])
-
-            LOGGER.info("Verify node status via REST")
-            resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Verify Cluster/Site/Rack status via REST")
-            resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
-            assert_utils.assert_true(resp[0], resp[1])
-
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.host_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.host_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
+
+        LOGGER.info("Checking PCS clean for all nodes")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
 
         self.restored = True
         LOGGER.info(
@@ -570,15 +537,14 @@ class TestHAClusterHealthGUI:
     @pytest.mark.csm_gui
     @pytest.mark.tags("TEST-22898")
     @CTFailOn(error_handler)
-    def test_single_node_multiple_safe_shutdown_gui(self):
+    def test_single_node_multiple_os_shutdown_gui(self):
         """
         Check that correct cluster/site/rack and node status is shown in Cortx GUI when node
-        goes down and comes back up (single node multiple times, safe shutdown)
+        goes down and comes back up (single node multiple times, os shutdown)
         """
         LOGGER.info(
-            "Started: Test to check cluster/site/rack and node status with safe "
+            "Started: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -587,7 +553,7 @@ class TestHAClusterHealthGUI:
         LOGGER.info("Verify Cluster is in healthy state")
         self.ha_gui_obj.verify_cluster_state("online")
 
-        LOGGER.info("Get the node for multiple safe shutdown.")
+        LOGGER.info("Get the node for multiple os shutdown.")
         node_index = self.system_random.choice(range(self.num_nodes))
 
         LOGGER.info(
@@ -595,7 +561,7 @@ class TestHAClusterHealthGUI:
             self.srvnode_list[node_index])
 
         LOGGER.info("Verify if node state online")
-        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
+        self.ha_gui_obj.verify_node_state(node_index, "online")
 
         for loop in range(self.loop_count):
             LOGGER.info("Shutting down node: %s, Loop: %s",
@@ -612,6 +578,7 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
+            self.restored = False
 
             LOGGER.info("Get the new node on which CSM service failover.")
             if self.srvnode_list[node_index] == self.srvnode_list[-1]:
@@ -646,9 +613,9 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node_index)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index, "failed")
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -670,15 +637,21 @@ class TestHAClusterHealthGUI:
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info(
-                "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",
-                self.srvnode_list[node_index])
+                "Check all nodes, cluster, rack, site are back online in "
+                "CLI and REST after power on %s", self.srvnode_list[node_index])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
 
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.host_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node_index)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.host_list[node_index],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index, "online")
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
@@ -688,7 +661,7 @@ class TestHAClusterHealthGUI:
                 self.srvnode_list[node_index],
                 loop)
         LOGGER.info(
-            "Completed: Test to check cluster/site/rack and node status with safe "
+            "Completed: Test to check cluster/site/rack and node status with os "
             "shutdown of single node multiple times.")
 
     # pylint: disable=R0201
@@ -704,7 +677,6 @@ class TestHAClusterHealthGUI:
         LOGGER.info(
             "Started: Test to check cluster/site/rack and node status with unsafe "
             "shutdown of single node multiple times.")
-        self.restored = False
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -721,7 +693,7 @@ class TestHAClusterHealthGUI:
             self.srvnode_list[node_index])
 
         LOGGER.info("Verify if node state online")
-        self.ha_gui_obj.verify_node_state(node_index,"online") # TODO: update argument if required in TE
+        self.ha_gui_obj.verify_node_state(node_index, "online")
 
         for loop in range(self.loop_count):
             LOGGER.info("Shutting down node: %s, Loop: %s",
@@ -738,6 +710,7 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
             LOGGER.info("%s is powered off.", self.host_list[node_index])
+            self.restored = False
 
             LOGGER.info("Get the new node on which CSM service failover.")
             if self.srvnode_list[node_index] == self.srvnode_list[-1]:
@@ -772,9 +745,9 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node_index)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node_index],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index, "failed")
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -797,15 +770,21 @@ class TestHAClusterHealthGUI:
             time.sleep(40)
 
             LOGGER.info(
-                "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",
-                self.srvnode_list[node_index])
+                "Check all nodes, cluster, rack, site are back online in CLI and "
+                "REST after power on %s", self.srvnode_list[node_index])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
 
+            LOGGER.info("Checking PCS clean after powered on %s", self.host_list[node_index])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node_index]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node_index)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.host_list[node_index],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node_index, "online")
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
@@ -829,9 +808,8 @@ class TestHAClusterHealthGUI:
         when nw interface on node goes down and comes back up (one by one)
         """
         LOGGER.info(
-            "Started: Test to check cluster/site/rack and node status, when one by one all node's nw"
-            " interface goes down and comes back up")
-        self.restored = False
+            "Started: Test to check cluster/site/rack and node status, "
+            "when one by one all node's nw interface goes down and comes back up")
 
         LOGGER.info("Acknowledge node alerts if present in new alert table already")
         self.ha_gui_obj.acknowledge_node_alerts_in_new_alerts()
@@ -849,20 +827,22 @@ class TestHAClusterHealthGUI:
             node_list=self.node_list, num_nodes=self.num_nodes)
         iface_list = response[0]
         private_ip_list = response[1]
+        self.nw_data = [iface_list, private_ip_list]
         LOGGER.debug(
             "List of private data IP : %s and interfaces on all nodes: %s",
             private_ip_list,
             iface_list)
 
-        node_list = list(range(self.num_nodes))
-        self.system_random.shuffle(node_list)
-        for node in node_list:
+        for node in range(self.num_nodes):
             LOGGER.info(
-                "Make the private data interface down for %s",
+                "Make the private data interface %s down for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
                     iface_list[node], "down"), read_lines=True)
+            self.restored = False
+
             if self.srvnode_list[node] == self.srvnode_list[-1]:
                 nd_obj = self.node_list[0]
             else:
@@ -871,10 +851,10 @@ class TestHAClusterHealthGUI:
                 common_cmds.CMD_PING.format(
                     private_ip_list[node]), read_lines=True, exc=False)
             assert_utils.assert_in(
-                "Name or service not known",
-                resp[1][0],
-                "Node interface still up.")
-
+                b"100% packet loss",
+                resp,
+                f"Node interface still up. {resp}")
+            time.sleep(60)
             LOGGER.info(
                 "Check resources health in CLI and REST after making network interface down for %s",
                 self.srvnode_list[node])
@@ -882,7 +862,6 @@ class TestHAClusterHealthGUI:
                 nd_obj, self.srvnode_list, self.sys_list)
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj = resp[1]
-
             check_rem_node = [
                 "failed" if num == node else "online" for num in range(
                     self.num_nodes)]
@@ -903,11 +882,11 @@ class TestHAClusterHealthGUI:
             assert_utils.assert_true(resp[0], resp[1])
 
             LOGGER.info("Check for the node down alert.")
-            self.ha_gui_obj.verify_node_down_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_down_alert(node)
             LOGGER.info("Verify if node state failed")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"failed") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "failed")
             LOGGER.info("Verify Network interface down alert")
-            self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_network_interface_down_alert(iface_list[node])
             LOGGER.info("Verify Cluster is in degraded state ")
             self.ha_gui_obj.verify_cluster_state("degraded")
 
@@ -919,7 +898,8 @@ class TestHAClusterHealthGUI:
                 resp, "Some services are down for other nodes.")
 
             LOGGER.info(
-                "Make the private data interface back up for %s",
+                "Make the private data interface %s back up for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.node_list[node].execute_cmd(
                 common_cmds.IP_LINK_CMD.format(
@@ -929,23 +909,32 @@ class TestHAClusterHealthGUI:
                     private_ip_list[node]),
                 read_lines=True,
                 exc=False)
-            assert_utils.assert_not_in("Name or service not known", resp[1][0],
-                                       "Node interface still down.")
+            assert_utils.assert_not_in(b"100% packet loss", resp,
+                                       f"Node interface still down. {resp}")
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
             LOGGER.info(
-                "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",
+                "Check all nodes, cluster, rack, site are back online in CLI and REST /"
+                "after making the private data interface %s up for %s",
+                iface_list[node],
                 self.srvnode_list[node])
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
 
+            LOGGER.info("Checking PCS clean after making the private data interface %s down for %s",
+                        iface_list[node], self.sys_list[node])
+            for hlt_obj in self.hlt_list:
+                res = hlt_obj.check_node_health()
+                assert_utils.assert_true(res[0], res[1])
+            LOGGER.info("All nodes are online and PCS looks clean.")
+
             LOGGER.info("Check for the node back up alert.")
-            self.ha_gui_obj.verify_node_back_up_alert(self.srvnode_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_back_up_alert(node)
             LOGGER.info("Verify if node state online")
-            self.ha_gui_obj.verify_node_state(self.srvnode_list[node],"online") # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_node_state(node, "online")
             LOGGER.info("Verify Network interface up alert")
-            self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node]) # TODO: update argument if required in TE
+            self.ha_gui_obj.verify_network_interface_back_up_alert(iface_list[node])
             LOGGER.info("Verify Cluster is in healthy state")
             self.ha_gui_obj.verify_cluster_state("online")
 
@@ -955,5 +944,5 @@ class TestHAClusterHealthGUI:
                 self.srvnode_list[node])
 
         LOGGER.info(
-            "Completed: Test to check cluster/site/rack and node status, when one by one all node's nw"
-            " interface goes down and comes back up")
+            "Completed: Test to check cluster/site/rack and node status, "
+            "when one by one all node's nw interface goes down and comes back up")
