@@ -7,27 +7,36 @@ from Performance.global_functions import get_dict_from_array, get_distinct_keys,
 
 @app.callback(
     Output('perf_branch_dropdown', 'options'),
+    Output('perf_branch_dropdown', 'value'),
     Input('perf_release_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_branches_dropdown(release):
     options = None
+    value = None
     if release is None:
         raise PreventUpdate
     else:
         branches = get_distinct_keys(release, 'Branch', {})
-        options = get_dict_from_array(branches, False)
-    return options
+        if branches:
+            options = get_dict_from_array(branches, False)
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
+
+    return options, value
 
 
 @app.callback(
     Output('perf_build_dropdown', 'options'),
+    Output('perf_build_dropdown', 'value'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_builds_dropdown(release, branch):
     versions = None
+    value = None
     if not all([branch, release]):
         raise PreventUpdate
     else:
@@ -35,11 +44,11 @@ def update_builds_dropdown(release, branch):
         if builds:
             builds = sort_builds_list(builds)
             versions = get_dict_from_array(builds, True)
+            value = versions[0]['value']
         else:
             raise PreventUpdate
 
-    return versions
-
+    return versions, value
 
 @app.callback(
     Output('perf_nodes_dropdown', 'options'),
