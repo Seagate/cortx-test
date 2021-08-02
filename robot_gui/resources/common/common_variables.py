@@ -56,6 +56,7 @@ IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
 SECRET_KEY_VALUE = "XXXX"
 IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'Action']
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
+IAM_USER_LIMIT_ERROR_MSG = "The request was rejected because maximum limit(i.e 1000) of user creation has exceeded."
 
 # Alerts
 TEST_COMMENT = "Test Comment"
