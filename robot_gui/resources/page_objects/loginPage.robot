@@ -93,23 +93,47 @@ CSM GUI Login
     ...  ELSE  Open URL  ${url}  ${browser}
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
-    sleep  5s
+    wait for page or element to load  2s
+    ${check_first_time_login} =  Run Keyword And Return Status    Element Should Be Visible   ${CHANGE_PASSWORD_ID}
+    Run Keyword If  '${check_first_time_login}'=='True'
+    ...  Run Keywords
+    ...  Change password on login   ${password}     ${password}
+    ...  AND  Click on reset password
     Log To Console And Report  Waiting for receiving GUI response...
 
 CSM GUI Logout
     [Documentation]  This keyword is used to logout of CSM GUI.
-    click element  ${USER_DROPDOWN_ID}
+    click element  ${USER_DROPDOWN_XPATH}
     wait until element is visible  ${LOG_OUT_ID}  timeout=20
     click element  ${LOG_OUT_ID}
     wait until element is visible  ${CSM_USERNAME_ID}  timeout=30
 
 Re-login
     [Documentation]  Functionality to Logout and login again
-    [Arguments]  ${user_name}  ${password}  ${page}  ${Logout}=${True}
+    [Arguments]  ${user_name}  ${password}  ${page}   ${Logout}=${True}
     Run Keyword If  '${Logout}' == 'True'  CSM GUI Logout
     wait for page or element to load
     Wait Until Element Is Visible  ${csm username id}  timeout=60
     Enter Username And Password  ${username}  ${password}
     Click Sigin Button
     wait for page or element to load
+    ${check_first_time_login} =  Run Keyword And Return Status    Element Should Be Visible   ${CHANGE_PASSWORD_ID}
+    Run Keyword If  ${check_first_time_login} == True
+    ...  Run Keywords
+    ...  Change password on login   ${password}     ${password}
+    ...  AND  Click on reset password
     Navigate To Page  ${page}
+
+Change password on login
+    [Documentation]  Functionality to change password of cortx users for the first time login
+    [Arguments]  ${password}  ${confirm_password}
+    input password  ${CHANGE_PASSWORD_ID}  ${password}
+    input password  ${CONFIRM_PASSWORD_ID}  ${confirm_password}
+
+Click on reset password
+    [Documentation]  This keyword is for click on reset password button.
+    Wait Until Element Is Visible  ${PASSWORD_RESET_BUTTON_ID}  timeout=30
+    click button    ${PASSWORD_RESET_BUTTON_ID}
+    wait for page or element to load  2s
+    click button  ${PASSWORD_CHANGE_SUCESS_BUTTON_ID}
+    wait for page or element to load  #  Sigin take some initial time

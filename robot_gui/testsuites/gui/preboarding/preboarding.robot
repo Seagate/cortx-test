@@ -15,6 +15,7 @@ ${url}
 ${browser}  chrome
 ${headless}  True
 ${Sub_tab}  None
+${new_password}  ${password}
 
 *** Test Cases ***
 
@@ -39,3 +40,11 @@ TEST-4907
     ...  Reference : https://jts.seagate.com/browse/TEST-4907
     [Tags]  TEST-4907
     Validate ELUA page after canceling the agreement
+
+TEST-24993
+   [Documentation]  Test that user should be able to login as cortxadmin user should be able to login and
+    ...  change password and navigate to onboarding.
+    ...  Reference : https://jts.seagate.com/browse/TEST-24993
+    [Tags]  TEST-24993
+    wait for page or element to load  2s
+    admin user preboarding  ${username}  ${password}  new_password=${new_password}
