@@ -342,3 +342,7 @@ CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
 CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=30))'"
+CMD_GREP_PID = " ps | grep {0}"
+

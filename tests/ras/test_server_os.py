@@ -56,6 +56,12 @@ class TestServerOS:
         cls.default_disk_usage = False
         cls.default_cpu_fault = False
         cls.starttime = time.time()
+        cls.sw_alert_objs = []
+        for i in range(len(CMN_CFG["nodes"])):
+            host = CMN_CFG["nodes"][i]["hostname"]
+            uname = CMN_CFG["nodes"][i]["username"]
+            passwd = CMN_CFG["nodes"][i]["password"]
+            cls.sw_alert_objs.append(SoftwareAlert(host, uname, passwd))
         LOGGER.info("Completed setup_class.")
 
     def setup_method(self):
@@ -419,4 +425,92 @@ class TestServerOS:
         assert resp[0], resp[1]
 
         LOGGER.info("Step 6: Successfully verified CPU fault resolved alert on CSM REST API")
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.tags("TEST-22844")
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.sw_alert
+    def test_22844_cpu_usage_parallel(self):
+        """
+        TEST cpu usage fault and fault resolved alert with gradual
+        increase in CPU usage on each node of the cluster sequentially.TEST cpu usage fault and fault
+        resolved alert with gradual increase in CPU usage on each node of the cluster parallelly.
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        start_time = time.time()
+        test_cfg = RAS_TEST_CFG["test_22787"]
+        for obj in self.sw_alert_objs:
+            LOGGER.info("Step 1: Getting CPU count")
+            cpu_cnt = obj.get_available_cpus()
+            LOGGER.info("Available CPU count : %s", cpu_cnt)
+            LOGGER.info("Step 1: Calculated available CPU count")
+            LOGGER.info("Initiating blocking process on each cpu")
+            for i in range(len(cpu_cnt)):
+                flag = False
+                while not flag:
+                    LOGGER.info("Step 2: Initiating blocking process parallelly")
+                    obj.start_cpu_increase_parallel()
+                    LOGGER.info("Step 2: Initiated blocking process parallelly")
+                    LOGGER.info("Step 3: Calculate CPU utilization")
+                    resp = obj.get_cpu_utilization()
+                    if float(resp.decode('utf-8').strip()) >= 100:
+                        flag = True
+                        break
+                    LOGGER.info("Step 3: Calculated CPU utilization")
+
+            if self.start_msg_bus:
+                LOGGER.info("Step 4: Checking the generated alert on SSPL")
+                alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
+                resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+                assert resp[0], resp[1]
+                LOGGER.info("Step 4: Verified the generated alert on the SSPL")
+
+            LOGGER.info("Step 5: Checking CPU usage fault alerts on CSM REST API")
+            resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
+                                                     start_time, const.AlertType.FAULT, False,
+                                                     test_cfg["resource_type"])
+            assert resp[0], resp[1]
+            LOGGER.info("Step 5: Successfully verified CPU usage fault alert on CSM REST API")
+
+            LOGGER.info("Fetching PID's for yes command")
+            resp = obj.get_command_pid("yes")
+            id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
+            LOGGER.info("Collected PID's for yes command")
+            LOGGER.info("Step 6: Killing the process one by one")
+            for i in id:
+                resp = obj.kill_process(i)
+            LOGGER.info("Step 6: Processes are killed by one by one")
+            LOGGER.info("Step 7: Verify memory utilization is decreasing")
+            resp = obj.get_cpu_utilization()
+            assert resp < 100
+            LOGGER.info("Step 7: Verified memory utilization is decreasing")
+            starttime = time.time()
+            LOGGER.info("Resolving CPU fault.")
+            resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+            assert resp[0], resp[1]
+            LOGGER.info("CPU fault is resolved.")
+            self.default_cpu_fault = False
+            if self.start_msg_bus:
+                LOGGER.info("Step 8: Checking the generated alert on SSPL")
+                alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert resp[0], resp[1]
+                LOGGER.info("Step 8: Verified the generated alert on the SSPL")
+
+            LOGGER.info(
+                "Step 9: Checking CPU fault resolved alerts on CSM REST API")
+
+            resp = self.csm_alert_obj.wait_for_alert(
+                self.cfg["csm_alert_gen_delay"],
+                starttime,
+                const.AlertType.RESOLVED,
+                True,
+                test_cfg["resource_type"])
+            assert resp[0], resp[1]
+
+            LOGGER.info(
+                "Step 9: Successfully verified CPU fault resolved alert on CSM REST API")
+
         LOGGER.info("##### Test completed -  %s #####", test_case_name)

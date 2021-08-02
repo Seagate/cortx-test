@@ -24,6 +24,7 @@ import logging
 import re
 import os
 import time
+import multiprocessing as mp
 from collections import OrderedDict
 from commons import commands
 from libs.ras.ras_core_lib import RASCoreLib
@@ -752,3 +753,51 @@ class SoftwareAlert(RASCoreLib):
         result = True
 
         return result
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self):
+        """Get CPU utilization
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
+        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def start_cpu_increase_parallel(self):
+        """
+        Start blocking process parallely
+        """
+        LOGGER.info("Start increasing in CPU usage")
+        p = mp.Process(target=self.initiate_blocking_process())
+        p.start()
+        if p.is_alive():
+            LOGGER.info("started joining")
+            p.join()
+        LOGGER.info("Started increasing in CPU usage")
