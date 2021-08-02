@@ -224,6 +224,10 @@ def pytest_addoption(parser):
         "--jira_update", action="store", default=True,
         help="Decide whether to update Jira."
     )
+    parser.addoption(
+        "--health_check", action="store", default=True,
+        help="Decide whether to update Jira."
+    )
 
 
 def read_test_list_csv() -> List:
@@ -460,10 +464,12 @@ def pytest_collection(session):
     _local = ast.literal_eval(str(config.option.local))
     _distributed = ast.literal_eval(str(config.option.distributed))
     is_parallel = ast.literal_eval(str(config.option.is_parallel))
+    health_check = ast.literal_eval(str(config.option.health_check))
     required_tests = list()
     global CACHE
     CACHE = LRUCache(1024 * 10)
     Globals.LOCAL_RUN = _local
+    Globals.HEALTH_CHK = health_check
     Globals.TP_TKT = config.option.tp_ticket
     Globals.BUILD = config.option.build
     Globals.TARGET = config.option.target
@@ -765,7 +771,7 @@ def pytest_runtest_logstart(nodeid, location):
     :return:
     """
     current_suite = None
-    skip_health_check = False
+    skip_health_check = False  # Skip health check for provisioner.
     breadcrumbs = os.path.split(location[0])
     for prefix in params.PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX:
         if breadcrumbs[-1].startswith(prefix):
@@ -796,19 +802,25 @@ def pytest_runtest_logstart(nodeid, location):
     # Check health status of target
     target = Globals.TARGET
     if not Globals.LOCAL_RUN and not skip_health_check:
+        check_health(target)
+    elif Globals.LOCAL_RUN and Globals.HEALTH_CHK and not skip_health_check:
+        check_health(target)
+
+
+def check_health(target):
+    try:
+        check_cortx_cluster_health()
         try:
-            check_cortx_cluster_health()
-            try:
-                check_cluster_storage()
-            except (AssertionError, Exception) as fault:
-                LOGGER.error(f"Cluster Storage {fault}")
-        except AssertionError as fault:
-            LOGGER.error(f"Health check failed for setup with exception {fault}")
-            pytest.exit(f'Health check failed for cluster {target}', 3)
-        except Exception as fault:
-            # This could be permission issues as exception of anytype is handled.
-            LOGGER.error(f"Health check script failed with exception {fault}")
-            pytest.exit(f'Cannot continue as Health check script failed for {target}', 4)
+            check_cluster_storage()
+        except (AssertionError, Exception) as fault:
+            LOGGER.error(f"Cluster Storage {fault}")
+    except AssertionError as fault:
+        LOGGER.error(f"Health check failed for setup with exception {fault}")
+        pytest.exit(f'Health check failed for cluster {target}', 3)
+    except Exception as fault:
+        # This could be permission issues as exception of anytype is handled.
+        LOGGER.error(f"Health check script failed with exception {fault}")
+        pytest.exit(f'Cannot continue as Health check script failed for {target}', 4)
 
 
 def pytest_runtest_logreport(report: "TestReport") -> None:
