@@ -223,6 +223,8 @@ def get_bucktops(data_needed_for_query):
                 data[bucket_operation] = temp_data
     except IndexError:
         return pd.DataFrame()
+    except KeyError:
+        return pd.DataFrame()
 
     if len(data) > 1:
         return pd.DataFrame(data)
