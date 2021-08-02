@@ -2,7 +2,7 @@ import os
 import subprocess
 import argparse
 import logging
-import datetime 
+import datetime
 from commons.utils.jira_utils import JiraTask
 from commons.utils import system_utils
 from commons import params
@@ -125,7 +125,7 @@ def run_robot_cmd(args,te_tag=None, logFile='main.log'):
     prc.communicate()
 
     report_path =  str(cwd) + "/robot_gui/" + reports
- 
+
     return report_path
 
 def getTestStatusAndParseLog(logFile = 'main.log'):
@@ -200,7 +200,7 @@ def trigger_tests_from_te(args):
 
         # move all log files to nfs share
         log_dir =glob.glob(log_dir + "/*")
-        for log_file in log_dir: 
+        for log_file in log_dir:
             print("Uploading test log file to NFS server ", log_file)
             remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
                                        args.te_ticket, test_id)
