@@ -326,3 +326,4 @@ SHUTDOWN_SERVICE_BUTTON_ID = "btnShutdownResource"
 
 # onboarding
 SYSTEM_NAME_TEXT_ID = 'txtappliancename'
+
