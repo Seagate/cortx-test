@@ -458,7 +458,6 @@ class TestServerOS:
                         flag = True
                         break
                     LOGGER.info("Step 3: Calculated CPU utilization")
-
             if self.start_msg_bus:
                 LOGGER.info("Step 4: Checking the generated alert on SSPL")
                 alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
@@ -476,7 +475,7 @@ class TestServerOS:
             LOGGER.info("Fetching PID's for yes command")
             resp = obj.get_command_pid("yes")
             id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
-            LOGGER.info("COllected PID's for yes command")
+            LOGGER.info("Collected PID's for yes command")
             LOGGER.info("Step 6: Killing the process one by one")
             for i in id:
                 resp = obj.kill_process(i)
@@ -485,6 +484,12 @@ class TestServerOS:
             resp = obj.get_cpu_utilization()
             assert resp < 100
             LOGGER.info("Step 7: Verified memory utilization is decreasing")
+            starttime = time.time()
+            LOGGER.info("Step 4: Resolving CPU fault.")
+            resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+            assert resp[0], resp[1]
+            LOGGER.info("Step 4: CPU fault is resolved.")
+            self.default_cpu_fault = False
             if self.start_msg_bus:
                 LOGGER.info("Step 8: Checking the generated alert on SSPL")
                 alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
@@ -498,7 +503,7 @@ class TestServerOS:
 
             resp = self.csm_alert_obj.wait_for_alert(
                 self.cfg["csm_alert_gen_delay"],
-                start_time,
+                starttime,
                 const.AlertType.RESOLVED,
                 True,
                 test_cfg["resource_type"])

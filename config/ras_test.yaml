@@ -274,3 +274,6 @@ test_23045:
 
 test_22787:
   resource_type: "node:os:cpu_usage"
+  faulty_cpu_id:
+    - 0
+    - 1
