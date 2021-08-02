@@ -133,7 +133,7 @@ def getTestStatusAndParseLog(logFile = 'main.log'):
     Parse main.log file to get
     a) TestStatus: Pass/Fail
     """
-    
+ 
     TestStatus = 'PASS'
 
     with open(logFile, 'r') as file:
