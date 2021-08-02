@@ -119,7 +119,7 @@ stats_input_options = Row(
         ),
         Dropdown(
             id='perf_pfull_dropdown',
-            placeholder="Select Cluster Fill",
+            placeholder="Select Cluster % Fill",
             style=dict_Style_Stats_input_options
         ),
         Dropdown(
@@ -129,7 +129,7 @@ stats_input_options = Row(
         ),
         Dropdown(
             id='perf_custom_dropdown',
-            placeholder="Select Profile",
+            placeholder="Select Tag",
             style=dict_Style_Stats_input_options
         ),
         Dropdown(
@@ -139,7 +139,7 @@ stats_input_options = Row(
         ),
         Dropdown(
             id='perf_buckets_dropdown',
-            placeholder="Select Sessions",
+            placeholder="Select Buckets",
             style=dict_Style_Stats_input_options
         ),
 

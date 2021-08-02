@@ -32,8 +32,11 @@ def update_builds_dropdown(release, branch):
         raise PreventUpdate
     else:
         builds = get_distinct_keys(release, 'Build', {'Branch': branch})
-        builds = sort_builds_list(builds)
-        versions = get_dict_from_array(builds, True)
+        if builds:
+            builds = sort_builds_list(builds)
+            versions = get_dict_from_array(builds, True)
+        else:
+            raise PreventUpdate
 
     return versions
 
@@ -54,8 +57,11 @@ def update_nodes_dropdown(release, branch, build):
     else:
         nodes = get_distinct_keys(release, 'Count_of_Servers', {
                                   'Branch': branch, 'Build': build})
-        options = get_dict_from_array(nodes, False, 'nodes')
-        value = options[0]['value']
+        if nodes:
+            options = get_dict_from_array(nodes, False, 'nodes')
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -77,8 +83,11 @@ def update_percentfill_dropdown(release, branch, build, nodes):
     else:
         pfulls = get_distinct_keys(release, 'Percentage_full', {
                                    'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
-        options = get_dict_from_array(pfulls, False, 'pfill')
-        value = options[0]['value']
+        if pfulls:
+            options = get_dict_from_array(pfulls, False, 'pfill')
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -101,8 +110,11 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull):
     else:
         iterations = get_distinct_keys(release, 'Iteration', {
                                        'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
-        options = get_dict_from_array(iterations, False, 'itrns')
-        value = options[0]['value']
+        if iterations:
+            options = get_dict_from_array(iterations, False, 'itrns')
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -126,8 +138,11 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
     else:
         custom = get_distinct_keys(release, 'Custom', {
                                    'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull, 'Iteration': itrns})
-        options = get_dict_from_array(custom, False)
-        value = options[0]['value']
+        if custom:
+            options = get_dict_from_array(custom, False)
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -154,8 +169,11 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
-        options = get_dict_from_array(sessions, False, 'sessions')
-        value = options[0]['value']
+        if sessions:
+            options = get_dict_from_array(sessions, False, 'sessions')
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -182,8 +200,11 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
-        options = get_dict_from_array(buckets, False, 'buckets')
-        value = options[0]['value']
+        if buckets:
+            options = get_dict_from_array(buckets, False, 'buckets')
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
 
@@ -212,8 +233,11 @@ def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custo
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull,
             'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench', 'Buckets': buckets, 'Sessions': sessions
         })
-        objsizes = sort_object_sizes_list(objsizes)
-        options = get_dict_from_array(objsizes, False)
-        value = options[0]['value']
+        if objsizes:
+            objsizes = sort_object_sizes_list(objsizes)
+            options = get_dict_from_array(objsizes, False)
+            value = options[0]['value']
+        else:
+            raise PreventUpdate
 
     return options, value
