@@ -44,7 +44,7 @@ statistics_layout = Card(
             '''),
         html.P(id="statistics_workload",
                style=style_workload_captions),
-        html.P("S3 Bench", style=style_perf_captions),
+        html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
             '''),
@@ -58,7 +58,7 @@ statistics_layout = Card(
         html.Div(id="statistics_metadata_table"),
 
         html.Br(),
-        html.P("HS Bench", style=style_perf_captions),
+        html.P("HSBench", style=style_perf_captions),
         Markdown('''
             ___
             '''),
@@ -79,7 +79,7 @@ statistics_layout = Card(
                  style={'margin-top': '20px'}),
 
         html.Br(),
-        html.P("COS Bench", style=style_perf_captions),
+        html.P("COSBench", style=style_perf_captions),
         Markdown('''
             ___
             '''),
