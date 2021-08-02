@@ -278,3 +278,6 @@ test_22786:
   memory_size: "5G"
   timespan: "10m"
   buffer: 10
+  faulty_cpu_id:
+    - 0
+    - 1

@@ -559,6 +559,12 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info(
             "Step 6: Successfully verified Memory usage fault alert on CSM REST API")
+        starttime = time.time()
+        LOGGER.info("Resolving CPU fault.")
+        resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+        assert resp[0], resp[1]
+        LOGGER.info("CPU fault is resolved.")
+        self.default_cpu_fault = False
         if self.start_msg_bus:
             LOGGER.info("Step 7: Checking the generated alert on SSPL")
             alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
@@ -572,7 +578,7 @@ class TestServerOS:
 
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
-            self.starttime,
+            starttime,
             const.AlertType.RESOLVED,
             True,
             test_cfg["resource_type"])
