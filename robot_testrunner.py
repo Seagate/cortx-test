@@ -2,13 +2,14 @@ import os
 import subprocess
 import argparse
 import logging
-import datetime
+import datetime 
 from commons.utils.jira_utils import JiraTask
 from commons.utils import system_utils
 from commons import params
 from typing import Tuple
 from typing import Optional
 import getpass
+import glob
 
 LOGGER = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ def collect_test_info(jira_obj, test):
         test_label = test_details.fields.labels[0]
     return test_name, test_label
 
-def run_robot_cmd(args, te_tag=None, logFile='main.log'):
+def run_robot_cmd(args,te_tag=None, logFile='main.log'):
     """Form a robot command for execution."""
 
     cwd = os.getcwd()
@@ -113,27 +114,28 @@ def run_robot_cmd(args, te_tag=None, logFile='main.log'):
     tag = ' -i ' + te_tag
     directory = " . "
     resource= " -v RESOURCES:" + str(cwd) + "/robot_gui/"
+    timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+    reports = "reports_" + str(args.test_plan) + "_" + te_tag + str(timestamp)
     cmd_line = ""
-
-    cmd_line = "cd robot_gui; robot --timestampoutputs -d reports"+url+resource+browser+ \
+    cmd_line = "cd robot_gui; robot --timestampoutputs -d "+ reports+url+resource+browser+ \
                username+headless+password+tag+directory+";cd .."
     log = open(logFile, 'a')
     print(cmd_line)
     prc = subprocess.Popen(cmd_line,shell=True,stdout=log,stderr=log)
     prc.communicate()
 
+    report_path =  str(cwd) + "/robot_gui/" + reports
+ 
+    return report_path
+
 def getTestStatusAndParseLog(logFile = 'main.log'):
     """
     Parse main.log file to get
     a) TestStatus: Pass/Fail
-    b) Output filepath: XML
-    c) Log filepath: xml/html
-    d) Report filepath: xml/html
     """
+    
     TestStatus = 'PASS'
-    outputfilepath = ''
-    logfilepath = ''
-    reportfilepath = ''
+
     with open(logFile, 'r') as file:
 
         for line in file:
@@ -143,14 +145,7 @@ def getTestStatusAndParseLog(logFile = 'main.log'):
             elif 'PASS' in line:
                 TestStatus = 'PASS'
 
-            if "Output: " in line:
-                outputfilepath = line.split()[-1]
-            if "Log: " in line:
-                logfilepath = line.split()[-1]
-            if "Report:" in line:
-                reportfilepath = line.split()[-1]
-
-    return TestStatus, outputfilepath, logfilepath, reportfilepath
+    return TestStatus
 
 def trigger_tests_from_te(args):
     """
@@ -193,46 +188,30 @@ def trigger_tests_from_te(args):
         test_status = 'EXECUTING'
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status)
 
-        run_robot_cmd(args, test_id, logFile='main.log')
+        log_dir = run_robot_cmd(args, test_id, logFile='main.log')
         end_time = datetime.datetime.now()
         
-        # parse result json/xml to get test status and duration
         test_status = ''
-        test_output = ''
-        test_log = ''
-        test_report = ''
        
         #parse log
-        test_status, test_output, test_log, test_report = getTestStatusAndParseLog(logFile='main.log')
+        test_status = getTestStatusAndParseLog(logFile='main.log')
                 
         duration = (end_time - start_time)
 
         # move all log files to nfs share
-        print(test_output)
-        print("Uploading test log file to NFS server ", test_output)
-        remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
-                                   args.te_ticket, test_id)
-        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
-                                                   mnt_dir=params.MOUNT_DIR,
-                                                   remote_path=remote_path,
-                                                   local_path=test_output)
-        if resp[0]:
-            print("Output file is uploaded at location : %s", resp[1])
-
-        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
-                                                   mnt_dir=params.MOUNT_DIR,
-                                                   remote_path=remote_path,
-                                                   local_path=test_log)
-        if resp[0]:
-            print("Log file is uploaded at location : %s", resp[1])
-
-        resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
-                                                   mnt_dir=params.MOUNT_DIR,
-                                                   remote_path=remote_path,
-                                                   local_path=test_report)
-        if resp[0]:
-            print("Report file is uploaded at location : %s", resp[1])
-
+        log_dir =glob.glob(log_dir + "/*")
+        for log_file in log_dir: 
+            print("Uploading test log file to NFS server ", log_file)
+            remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
+                                       args.te_ticket, test_id)
+            resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
+                                                       mnt_dir=params.MOUNT_DIR,
+                                                       remote_path=remote_path,
+                                                       local_path=log_file)
+            if resp[0]:
+                print("Output file is uploaded at location : %s", resp[1])
+            else:
+                print("Failed to upload log file at location : %s", resp[1])
         #upload main.log file to NFS share
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
