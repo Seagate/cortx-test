@@ -114,6 +114,8 @@ dict_style_sub_tab = {'margin-left': 10,
 dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
                         'border-style': 'solid', 'margin-top': '20px'}
 
+dict_active_tab_labels = {'background-color': '#43bc17', 'color': '#000000'}
+
 
 @app.callback(
     Output('exec_report_content', 'children'),
@@ -189,16 +191,16 @@ query_page = html.Div(query_tabs)
 main_tabs = dbc.Tabs(
     [
         dbc.Tab(qa_page, label="QA  Reports", style=dict_style_tab, label_style=dict_style_label,
-                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
+                active_label_style=dict_active_tab_labels),
         dbc.Tab(query_page, label="Query  QA  Data ", style=dict_style_tab,
                 label_style=dict_style_label,
-                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
+                active_label_style=dict_active_tab_labels),
         dbc.Tab(perf_stats_page, label="Performance Statistics", style=dict_style_tab,
                 label_style=dict_style_label,
-                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
+                active_label_style=dict_active_tab_labels),
         dbc.Tab(perf_graphs_page, label="Performance Trends", style=dict_style_tab,
                 label_style=dict_style_label,
-                active_label_style={'background-color': '#13ECB4', 'color': '#000000'}),
+                active_label_style=dict_active_tab_labels),
     ],
     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row",
     id="main_tabs",
@@ -241,6 +243,21 @@ app.layout = html.Div([
     navbar,
     main_tabs,
     dcc.Location(id='url', refresh=False),
+    dbc.Alert(
+            "Looks good at 80% page zoom level!",
+            id="alert-auto",
+            is_open=True,
+            dismissable=True,
+            color="info",
+            style= {
+                'width' : '350px',
+                'position': 'absolute',
+                'bottom': 0,
+                'right': 0,
+                'margin-bottom': '10px',
+                'height': '40px'
+            }
+        ),
     html.Link(
         rel='stylesheet',
         href='/static/topography.css'
