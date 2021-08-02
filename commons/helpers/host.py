@@ -161,6 +161,7 @@ class Host:
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
+        LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)

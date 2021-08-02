@@ -7,9 +7,6 @@ Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-...  AND  Close Browser
-Suite Teardown  Close All Browsers
 Test Setup  Login To S3 Account
 Test Teardown  Delete S3 Account And Close Browser
 Force Tags  CSM_GUI  CSM_IAM_USER
@@ -31,8 +28,6 @@ Login To S3 Account
     [Documentation]  This key word is for test case setup which create s3 account and login to it
     [Tags]  Priority_High  S3_test
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load  2s
     ${S3_account_name}  ${email}  ${s3password} =  Create S3 account
     wait for page or element to load  3s
     Re-login  ${S3_account_name}  ${s3password}  S3_ACCOUNTS_TAB_ID
@@ -200,7 +195,6 @@ TEST-18333
     Verify Reset Password IAMuser button remains disabled  ${username}
     wait for page or element to load
     Delete IAMuser  ${username}
-
 
 TEST-13109
     [Documentation]  Verify that two empty tables are shown on IAM users page
