@@ -34,6 +34,13 @@ style_workload_captions = {
     'text-align': 'left'
 }
 
+style_filters_captions = {
+    'font-size': '20px',
+    'color': '#FFFFFF',
+    'margin-top': '25px',
+    'margin-right': '15px'
+}
+
 style_perf_captions = {
     'font-size': '27px',
     'font-weight': 'bold',

@@ -23,7 +23,7 @@ from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_Style_Stats_input_options
+    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_Style_Stats_input_options, style_filters_captions
 
 
 release = [
@@ -92,62 +92,75 @@ statistics_layout = Card(
     className="flex-sm-fill nav-link"
 )
 
-stats_input_options = Row(
-    [
-        Dropdown(
-            id="perf_release_dropdown",
-            options=release,
-            placeholder="Select Release",
-            style=dict_Style_Stats_input_options,
-        ),
+stats_input_options = [
+    Row(
+        [
+            html.P("Setup Filters: ", style=style_filters_captions),
+            Dropdown(
+                id="perf_release_dropdown",
+                options=release,
+                placeholder="Select Release",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id="perf_branch_dropdown",
+                placeholder="Select Branch",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id='perf_build_dropdown',
+                placeholder="Select Build",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id='perf_nodes_dropdown',
+                placeholder="Select Nodes",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_pfull_dropdown',
+                placeholder="Select Cluster % Fill",
+                style=dict_Style_Stats_input_options
+            )
+        ],
+        justify='center'
+    ),
+    Row(
+        [
+            html.P("User Filters: ", style=style_filters_captions),
+            Dropdown(
+                id='perf_iteration_dropdown',
+                placeholder="Select Iterations",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_custom_dropdown',
+                placeholder="Select Tag",
+                style=dict_Style_Stats_input_options
+            )
+        ],
+        justify='center'
+    ),
+    Row(
+        [
+            html.P("Benchmark Filters: ", style=style_filters_captions),
+            Dropdown(
+                id='perf_sessions_dropdown',
+                placeholder="Select Sessions",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_buckets_dropdown',
+                placeholder="Select Buckets",
+                style=dict_Style_Stats_input_options
+            ),
 
-        Dropdown(
-            id="perf_branch_dropdown",
-            placeholder="Select Branch",
-            style=dict_Style_Stats_input_options,
-        ),
-
-        Dropdown(
-            id='perf_build_dropdown',
-            placeholder="Select Build",
-            style=dict_Style_Stats_input_options,
-        ),
-        Dropdown(
-            id='perf_nodes_dropdown',
-            placeholder="Select Nodes",
-            style=dict_Style_Stats_input_options
-        ),
-        Dropdown(
-            id='perf_pfull_dropdown',
-            placeholder="Select Cluster % Fill",
-            style=dict_Style_Stats_input_options
-        ),
-        Dropdown(
-            id='perf_iteration_dropdown',
-            placeholder="Select Iterations",
-            style=dict_Style_Stats_input_options
-        ),
-        Dropdown(
-            id='perf_custom_dropdown',
-            placeholder="Select Tag",
-            style=dict_Style_Stats_input_options
-        ),
-        Dropdown(
-            id='perf_sessions_dropdown',
-            placeholder="Select Sessions",
-            style=dict_Style_Stats_input_options
-        ),
-        Dropdown(
-            id='perf_buckets_dropdown',
-            placeholder="Select Buckets",
-            style=dict_Style_Stats_input_options
-        ),
-
-        Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
-               style={'height': '35px', 'margin-top': '20px'}),
-    ],
-    justify='center', style={'margin-bottom': '20px'}
-)
+            Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
+                style={'height': '35px', 'margin-top': '20px'}),
+        ],
+        justify='center', style={'margin-bottom': '20px'}
+    )
+]
 
 statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
