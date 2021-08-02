@@ -38,6 +38,12 @@ statistics_layout = Card(
                style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
         html.P("Note: Each data point represents PER CLUSTER data.",  style={
             "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+        html.P("Run Details", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+        html.P(id="statistics_workload",
+               style=style_workload_captions),
         html.P("S3 Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -45,8 +51,6 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
-        html.P(id="statistics_s3bench_workload",
-               style=style_workload_captions),
         html.Div(id="statistics_s3bench_table"),
 
         html.P("Metadata Operations Latency (captured with 1KB object)",
@@ -61,8 +65,6 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
-        html.P(id="statistics_hsbench_workload",
-               style=style_workload_captions),
         html.Div(id="statistics_hsbench_table"),
 
         html.P("Bucket Operations Statistics",
@@ -84,8 +86,6 @@ statistics_layout = Card(
 
         html.P("IOPath Performance Statistics",
                style=dict_style_table_caption),
-        html.P(id="statistics_cosbench_workload",
-               style=style_workload_captions),
         html.Div(id="statistics_cosbench_table"),
     ]
     ),

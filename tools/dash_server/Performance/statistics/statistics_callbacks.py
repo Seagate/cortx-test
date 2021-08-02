@@ -5,7 +5,7 @@ from Performance.backend import *
 
 
 @app.callback(
-    Output('statistics_s3bench_workload', 'children'),
+    Output('statistics_workload', 'children'),
     Output('statistics_s3bench_table', 'children'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
@@ -69,7 +69,6 @@ def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_click
 
 
 @app.callback(
-    Output('statistics_hsbench_workload', 'children'),
     Output('statistics_hsbench_table', 'children'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
@@ -84,7 +83,6 @@ def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_click
     prevent_initial_call=True
 )
 def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
-    workload = None
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
@@ -97,9 +95,8 @@ def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
         dataframe = get_data_from_database(data)
         table = get_dash_table_from_dataframe(
             dataframe, 'hsbench', 'Object Sizes')
-        workload = get_workload_headings(data)
 
-    return workload, table
+    return table
 
 
 @app.callback(
@@ -135,7 +132,6 @@ def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clic
 
 
 @app.callback(
-    Output('statistics_cosbench_workload', 'children'),
     Output('statistics_cosbench_table', 'children'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
@@ -150,7 +146,6 @@ def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clic
     prevent_initial_call=True
 )
 def update_cosbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
-    workload = None
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
@@ -163,6 +158,5 @@ def update_cosbench(release, branch, build, nodes, pfull, itrns, custom, n_click
         dataframe = get_data_from_database(data)
         table = get_dash_table_from_dataframe(
             dataframe, 'cosbench', 'Object Sizes')
-        workload = get_workload_headings(data)
 
-    return workload, table
+    return table

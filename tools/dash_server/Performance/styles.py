@@ -31,7 +31,8 @@ style_workload_captions = {
     'color': '#000000',
     'margin-top': '15px',
     'margin-bottom': '8px',
-    'text-align': 'left'
+    'text-align': 'left',
+    'font-size': '20px',
 }
 
 style_filters_captions = {
