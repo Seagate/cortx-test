@@ -252,7 +252,7 @@ app.layout = html.Div([
             style= {
                 'width' : '350px',
                 'position': 'absolute',
-                'bottom': 0,
+                'top': 10,
                 'right': 0,
                 'margin-bottom': '10px',
                 'height': '40px'
