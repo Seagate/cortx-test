@@ -68,11 +68,11 @@ class TestNetworkFault:
         cls.private_data_device = cls.nw_interfaces["PRIVATE_DATA"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
-        cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname,
+        cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
-        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+        cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
                             password=cls.passwd)
-        cls.health_obj = Health(hostname=cls.host, username=cls.uname,
+        cls.health_obj = Health(hostname=cls.hostname, username=cls.uname,
                                 password=cls.passwd)
         cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
@@ -834,6 +834,16 @@ class TestNetworkFault:
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
 
+        LOGGER.info("Reverting sysfs_base_path value in sspl.conf file to "
+                    "/sys/")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL,
+            encl_vals={'CONF_SYSFS_BASE_PATH': "/sys/"})
+
+        res = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                    field=cons.CONF_SYSFS_BASE_PATH)
+        LOGGER.debug("Response: %s", res)
+
         # TODO: Check status of CRUD operations
         # TODO: Check status of IOs
         # TODO: Check status of random alert generation
@@ -951,6 +961,16 @@ class TestNetworkFault:
         LOGGER.info(
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
+
+        LOGGER.info("Reverting sysfs_base_path value in sspl.conf file to "
+                    "/sys/")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL,
+            encl_vals={'CONF_SYSFS_BASE_PATH': "/sys/"})
+
+        res = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                    field=cons.CONF_SYSFS_BASE_PATH)
+        LOGGER.debug("Response: %s", res)
 
         # TODO: Check status of CRUD operations
         # TODO: Check status of IOs
