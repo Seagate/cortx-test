@@ -864,7 +864,7 @@ class TestS3IOSystemLimits:
 
     @pytest.mark.csm_gui
     @pytest.mark.scalability
-    @pytest.mark.tags("TEST")
+    @pytest.mark.tags("TEST-25351")
     @CTFailOn(error_handler)
     def test_csm_iam_limit(self):
         test = "test_16009"
