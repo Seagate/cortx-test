@@ -61,11 +61,7 @@ DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to
 TEST_COMMENT = "Test Comment"
 
 # Pre-boarding
-ADMIN_USER_ALREADY_EXISTS_MESSAGE = "Admin user already exists"
 EMAIL_DOMAIN = "@seagate.com"
-ADMIN_USER_TOOLTIP_MSG_ID = "The username must be of minimum 4 characters and maximum 56 characters." \
-    " The username must be alphanumeric and can contain underscore (_) and dash (-)."\
-    " The username must not be 'root' or 'Root'."
 
 # Buckets
 BUCKET_NAME_POLICY_TEXT = "The bucket name must be of minimum 4 characters and maximum 56 characters."\
@@ -89,3 +85,7 @@ Audit_log_days = ["One day", "Two days", "Three days",
 #CSM User Table
 CSM_ROLE_COLUMN = 2
 CSM_USERNAME_COLUMN = 3
+ROW_VALUE = "20 rows"
+DEFAULT_COUNT = "10"
+ROW_FIVE = "5 rows"
+CSM_DROPDOWN_VALUE = "10 rows"

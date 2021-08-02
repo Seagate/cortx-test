@@ -151,14 +151,6 @@ def sort_builds(data_dict):
     return data_sorted
 
 
-def remove_nones(data_dict):
-    for k, v in dict(data_dict).items():
-        if v is None or v is 'NA':
-            del data_dict[k]
-
-    return data_dict
-
-
 def get_data_for_graphs(xfilter, release, branch, option, profile, bench, configs, operation, metric, param):
     uri, db_name, db_collection = get_db_details(release)
     xaxis_list = get_xaxis(xfilter, release, branch, option, bench)
@@ -207,7 +199,6 @@ def get_data_for_graphs(xfilter, release, branch, option, profile, bench, config
 
     data_dict = dict(zip(xaxis_list, yaxis_list))
 
-    # remove_nones(data_dict)
     if xfilter == 'Build':
         data_dict = sort_objectsizes(data_dict)
     else:
