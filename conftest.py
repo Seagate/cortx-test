@@ -226,7 +226,7 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--health_check", action="store", default=True,
-        help="Decide whether to update Jira."
+        help="Decide whether to do health check in local mode."
     )
 
 
@@ -801,9 +801,10 @@ def pytest_runtest_logstart(nodeid, location):
             suite = current_suite
     # Check health status of target
     target = Globals.TARGET
+    h_chk = Globals.HEALTH_CHK
     if not Globals.LOCAL_RUN and not skip_health_check:
         check_health(target)
-    elif Globals.LOCAL_RUN and Globals.HEALTH_CHK and not skip_health_check:
+    elif Globals.LOCAL_RUN and h_chk and not skip_health_check:
         check_health(target)
 
 
