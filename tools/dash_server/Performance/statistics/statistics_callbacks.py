@@ -29,6 +29,7 @@ def update_s3bench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
             'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
             'itrns': itrns, 'custom': custom, 'buckets': 1, 'sessions': sessions, 'name': 'S3bench'
         }
+
         dataframe = get_data_from_database(data)
         table = get_dash_table_from_dataframe(
             dataframe, 's3bench', 'Object Sizes')
@@ -148,7 +149,7 @@ def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clic
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_cosbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
     workload = None
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:

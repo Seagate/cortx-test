@@ -199,3 +199,18 @@ def get_profiles(release, branch, build):
             options.append(option)
 
     return options
+
+
+def check_empty_list(array):
+    isEmpty = False
+    elements = list(set(array))
+    if not array:
+        isEmpty = True
+    elif "NA" == elements[0] and len(elements) == 1:
+        isEmpty = True
+    elif elements[0] is None and len(elements) == 1:
+        isEmpty = True
+    else:
+        isEmpty = False
+    
+    return isEmpty
