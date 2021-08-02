@@ -30,8 +30,6 @@ import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
-from commons.alerts_simulator.generate_alert_lib import \
-     GenerateAlertLib, AlertType
 from commons.utils.config_utils import get_config, update_cfg_based_on_separator
 from commons.utils import system_utils as sys_utils
 from commons import constants as cmn_cons
@@ -65,7 +63,6 @@ class RASTestLib(RASCoreLib):
         self.host = host if host else nd_cfg[0]["host"] if nd_cfg else None
         self.pwd = password if password else nd_cfg[0]["password"] if nd_cfg else None
         self.username = username if username else nd_cfg[0]["username"] if nd_cfg else None
-        self.alert_api_obj = GenerateAlertLib()
         self.sspl_pass = ldap_cfg["sspl_pass"] if ldap_cfg else None
 
         super().__init__(host, username, password)
@@ -1376,8 +1373,8 @@ class RASTestLib(RASCoreLib):
                 RASTestLib.get_drive_by_hostnum.__name__, error))
             return False, error
 
-    def add_raid_prtitions(self, raid_parts: list, md_arrays: dict) -> Tuple[
-                           bool, dict]:
+    def add_raid_prtitions(self, alert_lib_obj, alert_type, raid_parts: list,
+                           md_arrays: dict) -> Tuple[bool, dict]:
         """
         Function to add partitions of drive in raid array
         Returns: {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
@@ -1389,21 +1386,21 @@ class RASTestLib(RASCoreLib):
             for part in raid_parts:
                 for k, v in md_arrays.items():
                     if part.split("/")[-1] in v["drives"]:
-                        resp = self.alert_api_obj.generate_alert(
-                            AlertType.RAID_ADD_DISK_ALERT,
+                        resp = alert_lib_obj.generate_alert(
+                            alert_type.RAID_ADD_DISK_ALERT,
                             input_parameters={
                                 "operation": "add_disk",
-                                "md_device": k,
+                                "md_device": f"/dev/{k}",
                                 "disk": part})
                     else:
                         for drv in v["drives"]:
                             if re.search("[0-9]*$", drv).group() == \
                                     re.search("[0-9]*$", part.split("/")[-1]).group():
-                                resp = self.alert_api_obj.generate_alert(
-                                    AlertType.RAID_ADD_DISK_ALERT,
+                                resp = alert_lib_obj.generate_alert(
+                                    alert_type.RAID_ADD_DISK_ALERT,
                                     input_parameters={
                                         "operation": "add_disk",
-                                        "md_device": k,
+                                        "md_device": f"/dev/{k}",
                                         "disk": part})
             LOGGER.info("Getting new RAID array details of node %s",
                         self.host)
