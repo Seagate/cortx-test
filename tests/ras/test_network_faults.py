@@ -175,8 +175,8 @@ class TestNetworkFault:
             LOGGER.info("Resolving Mgmt Network port Fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_PORT_FAULT_RESOLVED,
-                host_details={'host': self.public_data_ip, 'h_user': self.uname,
-                              'h_pwd': self.passwd},
+                host_details={'host': self.public_data_ip, 'host_user': self.uname,
+                              'host_password': self.passwd},
                 input_parameters={'device': self.mgmt_device})
 
             LOGGER.info("Response: %s", resp)
@@ -186,8 +186,8 @@ class TestNetworkFault:
             LOGGER.info("Resolving Public data Network port Fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_PORT_FAULT_RESOLVED,
-                host_details={'host': self.mgmt_ip, 'h_user': self.uname,
-                              'h_pwd': self.passwd},
+                host_details={'host': self.mgmt_ip, 'host_user': self.uname,
+                              'host_password': self.passwd},
                 input_parameters={'device': self.public_data_device})
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0],
@@ -198,6 +198,8 @@ class TestNetworkFault:
             LOGGER.info("Resolving Public data Network port Fault")
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_CABLE_FAULT_RESOLVED,
+                host_details={'host': self.hostname, 'host_user': self.uname,
+                              'host_password': self.passwd},
                 input_parameters={'device': self.mgmt_device,
                                   'action': network_cable_fault["connect"]})
             LOGGER.info("Response: %s", resp)
@@ -210,6 +212,8 @@ class TestNetworkFault:
             network_cable_fault = RAS_TEST_CFG["nw_cable_fault"]
             resp = self.alert_api_obj.generate_alert(
                 AlertType.NW_CABLE_FAULT_RESOLVED,
+                host_details={'host': self.hostname, 'host_user': self.uname,
+                              'host_password': self.passwd},
                 input_parameters={'device': self.public_data_device,
                                   'action': network_cable_fault["connect"]})
             LOGGER.info("Response: %s", resp)
@@ -290,8 +294,8 @@ class TestNetworkFault:
         LOGGER.info("Step 1.1: Creating fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_PORT_FAULT,
-            host_details={'host': self.public_data_ip, 'h_user': self.uname,
-                          'h_pwd': self.passwd},
+            host_details={'host': self.public_data_ip, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} down".format(network_fault_params["error_msg"]))
@@ -337,8 +341,8 @@ class TestNetworkFault:
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_PORT_FAULT_RESOLVED,
-            host_details={'host': self.public_data_ip, 'h_user': self.uname,
-                          'h_pwd': self.passwd},
+            host_details={'host': self.public_data_ip, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.mgmt_device})
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0], "{} up".format(network_fault_params["error_msg"]))
