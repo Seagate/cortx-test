@@ -2,7 +2,7 @@ pipeline {
 	agent {
         node {
 			label "${Client_Node}"
- 			customWorkspace "/root/workspace/${JOB_BASE_NAME}"
+ 			customWorkspace "/root/workspace/${JOB_BASE_NAME}/cortx-test"
 		}
     }
     stages {
@@ -15,14 +15,29 @@ pipeline {
 		stage('ENV_SETUP') {
 			steps{
 			    echo "${WORKSPACE}"
-			    sh label: '', script: '''sh scripts/jenkins_job/virt_env_setup.sh . venv
-source venv/bin/activate
-python --version
-deactivate
-'''
-			}
+			    writeFile file: 'prov_config.ini', text: params.Provisioner_Config
+			    echo "Copy Provisioner Config file"
+			    sh label: '', script: '''
+			    if [ -s prov_config.ini ]
+			    then echo 'prov_config.ini created with entered details'
+			    else
+			    echo 'No details entered, Deployment will be done with default configurations'
+			    fi
+			    '''
+			    sh label: '',script: '''
+			    sh scripts/jenkins_job/virt_env_setup.sh . venv
+                source venv/bin/activate
+                python --version
+                deactivate
+                '''
+			    script {
+			    withCredentials([file(credentialsId: 'qa_secrets_json_new', variable: 'secrets_json_path')]) {
+                sh "cp /$secrets_json_path $WORKSPACE/secrets.json"
+				        }
+				      }
+            }
 		}
-        stage('Deployment')
+        stage('DEPLOYMENT')
         {
             steps{
             sh label: '', script: ''' source venv/bin/activate
@@ -35,7 +50,7 @@ deactivate
 '''
             }
         }
-		stage('CSM_Boarding') {
+		stage('CSM_BOARDING') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
 export ADMIN_USR="${ADMIN_USR}"
