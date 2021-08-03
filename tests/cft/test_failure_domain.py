@@ -22,12 +22,12 @@
 import logging
 
 import pytest
-
-from commons import configmanager
+import os
+from commons import configmanager,constants
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 from scripts.s3_bench import s3bench
 from config import CMN_CFG
-
+from libs.prov.provisioner import Provisioner
 
 class TestFailureDomain:
     @classmethod
@@ -109,3 +109,38 @@ class TestFailureDomain:
             self.log.info(f"Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
+
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-23540")
+    def test_23540(self):
+        test_cfg = self.cft_test_cfg["test_25016"]
+        self.log.info("Adding data required for the jenkins job execution")
+        parameters = dict()
+        #need to confirm with swapnil on below  3 points
+        parameters['Client_Node'] = '5753_priyanka'
+        parameters['Git_Repo'] = 'https://github.com/priyankaborawake/cortx-test.git'
+        parameters['Git_Branch'] = 'EOS-22563'
+        parameters['Target_Node'] = CMN_CFG["setupname"]
+        parameters['Node1_Hostname'] = CMN_CFG["nodes"][0]["hostname"]
+        parameters['Node2_Hostname'] = CMN_CFG["nodes"][1]["hostname"]
+        parameters['Node3_Hostname'] = CMN_CFG["nodes"][2]["hostname"]
+        parameters['HOST_PASS'] = CMN_CFG["nodes"][0]["password"]
+        parameters['MGMT_VIP'] = CMN_CFG["csm"]["mgmt_vip"]
+        parameters['ADMIN_USR'] = CMN_CFG["csm"]["csm_admin_user"]["username"]
+        parameters['ADMIN_PWD'] = CMN_CFG["csm"]["csm_admin_user"]["password"]
+        parameters['Cortx_Build'] = os.getenv("Build", None)
+        parameters['Cortx_Build_Branch'] = os.getenv("Build_Branch", "stable")
+
+        self.log.info(f"Parameters for jenkins job :{parameters}")
+
+        if os.path.exists(test_cfg["config_path_local"]):
+            self.log.info("Retrieving the config details for deployment from provided config file")
+            with open(test_cfg["config_path_local"],'r') as file:
+                parameters['Provisioner_Config'] = file.read()
+        else:
+            self.log.info("Config file not provided, Deployment to be proceeded with defaults values")
+            parameters['Provisioner_Config'] = ''
+
+        output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters, constants.TOKEN_NAME, test_cfg["jenkins_job_url"])
+        self.log.info("Jenkins Build URL: {}".format(output['url']))
+        self.assert_utils.assert_equal(output['result'],"SUCCESS","Job is not successful, please check the url.")

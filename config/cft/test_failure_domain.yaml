@@ -5,3 +5,7 @@ test_25016:
   samples: 256
   read_loops: 100
   object_size: 128Mb
+test_23540:
+  config_path_local: 'prov_config.ini'
+  jenkins_job_name: 'QA-testing-EC-deployment'
+  jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA/job/QA-testing-EC-deployment'
