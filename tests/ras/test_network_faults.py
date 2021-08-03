@@ -798,6 +798,8 @@ class TestNetworkFault:
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_CABLE_FAULT_RESOLVED,
+            host_details={'host': self.hostname, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.mgmt_device,
                               'action': network_fault_params["connect"]})
         LOGGER.info("Response: %s", resp)
@@ -873,7 +875,7 @@ class TestNetworkFault:
         # TODO: Start IOs in one thread
         # TODO: Start random alert generation in one thread
 
-        LOGGER.info("Step 1: Generating management cable faults")
+        LOGGER.info("Step 1: Generating public data cable faults")
         LOGGER.info("Step 1.1: Creating fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_CABLE_FAULT,
@@ -885,8 +887,8 @@ class TestNetworkFault:
         assert_true(resp[0],
                     network_fault_params["error_msg"].format("disconnect"))
         self.public_data_cable_fault = True
-        LOGGER.info("Step 1.1: Successfully created management network "
-                    "port fault on %s", self.hostname)
+        LOGGER.info("Step 1.1: Successfully created public data cable "
+                    "fault on %s", self.hostname)
 
         wait_time = random.randint(common_params["min_wait_time"],
                                    common_params["max_wait_time"])
@@ -925,14 +927,16 @@ class TestNetworkFault:
         LOGGER.info("Step 2: Resolving fault")
         resp = self.alert_api_obj.generate_alert(
             AlertType.NW_CABLE_FAULT_RESOLVED,
+            host_details={'host': self.hostname, 'host_user': self.uname,
+                          'host_password': self.passwd},
             input_parameters={'device': self.public_data_device,
                               'action': network_fault_params["connect"]})
         LOGGER.info("Response: %s", resp)
         assert_true(resp[0],
                     network_fault_params["error_msg"].format("connect"))
         self.public_data_cable_fault = False
-        LOGGER.info("Step 2: Successfully resolved management network "
-                    "port fault on %s", self.hostname)
+        LOGGER.info("Step 2: Successfully resolved public data cable "
+                    "fault on %s", self.hostname)
 
         wait_time = common_params["min_wait_time"]
 
