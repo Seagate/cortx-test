@@ -541,57 +541,6 @@ TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
 
-TEST-23616
-    [Documentation]  Test that user should able to select multiple options form the drop down.
-    ...  Reference : https://jts.seagate.com/browse/TEST-23616
-    [Tags]  Priority_High  TEST-23616
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page_name}
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}   admin
-    Click On Confirm Button
-    Select from filter  username
-    Select from filter  role
-#   TODO : revisit once EOS-23034 is fixed.
-    
-TEST-23615
-    [Documentation]  Test that user should able to see role and username filter options.
-    ...  Reference : https://jts.seagate.com/browse/TEST-23615
-    [Tags]  Priority_High  TEST-23615
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page_name}
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}  admin
-    Click On Confirm Button
-    Select from filter  role
-    Search username and role  admin
-    Verify New User  ${new_user_name}
-    Reload Page
-    wait for page or element to load
-    Select from filter  username
-    Search username and role  ${new_user_name}
-    Verify New User  ${new_user_name}
-    Reload Page
-    Delete CSM User  ${new_user_name}
-
-TEST-23614
-    [Documentation]  Test that drop down would be appear when user click on the filter option.
-    ...  Reference : https://jts.seagate.com/browse/TEST-23614
-    [Tags]  Priority_High  TEST-23614
-    Navigate To Page  ${page_name}
-    Select from filter  role
-    wait for page or element to load
-    Reload Page
-
-TEST-23617
-    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
-    ...  Reference : https://jts.seagate.com/browse/TEST-23617
-    [Tags]  Priority_High  TEST-23617
-    Navigate To Page  ${page_name}
-    Select from filter  username
-    wait for page or element to load
-    Reload Page
-
 TEST-23884
     [Documentation]  Test that user is able to navigate to last page of Administrator User Page
     ...  Reference : https://jts.seagate.com/browse/TEST-23884
@@ -665,7 +614,7 @@ TEST-23618
         Delete CSM User  ${new_user_name}
     END
 
-T-23616
+TEST-23616
     [Documentation]  Test that user should able to select multiple options form the drop down.
     ...  Reference : https://jts.seagate.com/browse/TEST-23616
     [Tags]  Priority_High  TEST-23616
@@ -689,6 +638,7 @@ TEST-23615
     Click On Confirm Button
     Select from filter  role
     Search username and role  admin
+    Verify New User  ${new_user_name}
     Reload Page
     wait for page or element to load
     Select from filter  username
