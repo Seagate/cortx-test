@@ -541,7 +541,6 @@ TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
 
-<<<<<<< HEAD
 TEST-23616
     [Documentation]  Test that user should able to select multiple options form the drop down.
     ...  Reference : https://jts.seagate.com/browse/TEST-23616
@@ -593,8 +592,6 @@ TEST-23617
     wait for page or element to load
     Reload Page
 
-
-=======
 TEST-23884
     [Documentation]  Test that user is able to navigate to last page of Administrator User Page
     ...  Reference : https://jts.seagate.com/browse/TEST-23884
