@@ -401,6 +401,7 @@ class HALibs:
         Check cluster/rack/site are shown degraded and node offline in Cortx CLI/REST
         :param sys_obj: System object
         :param node_id: Node to check for offline
+        :return: bool/response
         """
         check_rem_node = [
             "offline" if num == node_id else "online" for num in range(
@@ -416,7 +417,6 @@ class HALibs:
         resp = self.verify_csr_health_status(sys_obj, "degraded")
         if not resp[0]:
             raise CTException(err.HA_HEALTH_VALIDATION_ERROR, resp[1])
-
         LOGGER.info("Checking %s status is failed via REST", node_id + 1)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_node)
@@ -432,6 +432,11 @@ class HALibs:
     def get_csm_failover_node(self, srvnode_list: list, node_list: list, sys_list: list, node: int):
         """
         This function will get new node on which CSM is failover
+        :param srvnode_list: list of srvnode names
+        :param node_list: list of srvnode names
+        :param sys_list: List of system objects
+        :param node: Node ID from which CSM failover
+        :return: bool, check_csm_service response, node_object
         """
         LOGGER.info("Get the new node on which CSM service failover.")
         if srvnode_list[node] == srvnode_list[-1]:
@@ -459,7 +464,7 @@ class HALibs:
         :param f_start: If true, enables force start on node
         :param user: Manage user name
         :param pswd: Manage user password
-        return: Command Response
+        return: bool/Command Response
         """
         try:
             sys_obj.open_connection()
@@ -486,7 +491,7 @@ class HALibs:
         :param node_obj: Node object
         :param hlt_obj: Health class object
         :param checknode: Node info required to check node health
-        :return: Bool/response
+        :return: bool/response
         """
         hostname = CMN_CFG["nodes"][node]["hostname"]
         username = CMN_CFG["nodes"][node]["username"]
