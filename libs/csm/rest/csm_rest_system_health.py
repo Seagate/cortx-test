@@ -426,14 +426,15 @@ class SystemHealth(RestTestLib):
             raise CTException(
                 err.CSM_REST_GET_REQUEST_FAILED, error) from error
 
-    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None):
+    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None, single_node: bool = False):
         """
         This method will get and verify health status of node
         :param exp_status: List of expected node health status
         :param node_id: To get and verify node health status for node_id
+        :param single_node: To get for single node status
         :return: bool, Response Message
         """
-        if node_id:
+        if single_node:
             param = dict()
             param["resource_id"] = node_id
             node_resp = self.get_health_status(resource="node", parameters=param)

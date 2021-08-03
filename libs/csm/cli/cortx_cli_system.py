@@ -124,3 +124,24 @@ class CortxCliSystemtOperations(CortxCli):
             return False, output
 
         return True, output
+
+    def node_operation(self, operation, resource_id, force_op: bool = False, storage_off: bool = False):
+        """
+        This function is used to perform node operation (stop/poweroff/start)
+        :param operation: Operation to be performed on node
+        :param resource_id: Resource ID for the operation
+        :param force_op: Specifying this enables force operation.
+        :param storage_off: The poweroff operation will be performed along with powering off the storage.
+        Valid only with poweroff operation on node.
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Performing %s on node ID %s", operation, resource_id)
+        cmd = 'node {} {}'.format(operation, resource_id)
+        if force_op:
+            cmd = cmd + " -f"
+        if storage_off:
+            cmd = cmd + " -s"
+        output = self.execute_cli_commands(cmd=cmd)[1]
+        if "invalid" in output.lower() or "exception" in output.lower():
+            return False, output
+        return True, output

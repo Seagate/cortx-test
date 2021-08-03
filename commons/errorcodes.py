@@ -217,3 +217,12 @@ RAS_ERROR = CTError(6007, "RAS Error")
 # HA
 HA_BAD_CLUSTER_HEALTH = CTError(7001, "Cluster Health is not good")
 HA_BAD_NODE_HEALTH = CTError(7002, "Node Health is not good")
+HA_HEALTH_VALIDATION_ERROR = CTError(7003, "Cluster Health Validation Failed")
+
+# S3 IO OPERATION
+S3_START_IO_FAILED = CTError(9001, "S3-CLI IO Start Operation Failed")
+S3_STOP_IO_FAILED = CTError(9002, "S3-CLI IO Stop Operation Failed")
+S3_DELETE_ACC_REQUEST_FAILED = CTError(9003, "S3-CLI Delete Account Request Failed")
+S3_DELETE_BUCKET_REQUEST_FAILED = CTError(9004, "S3-CLI Delete Bucket Request Failed")
+S3_LOGGING_FAILED = CTError(9005, "S3-CLI Account Logging Failed")
+S3_LOGOUT_FAILED = CTError(9006, "S3-CLI Account Logout Failed")
