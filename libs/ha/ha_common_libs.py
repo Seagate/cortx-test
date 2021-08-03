@@ -401,7 +401,7 @@ class HALibs:
         Check cluster/rack/site are shown degraded and node offline in Cortx CLI/REST
         :param sys_obj: System object
         :param node_id: Node to check for offline
-        :return: bool/response
+        :return: (bool, response)
         """
         check_rem_node = [
             "offline" if num == node_id else "online" for num in range(
@@ -436,7 +436,7 @@ class HALibs:
         :param node_list: list of srvnode names
         :param sys_list: List of system objects
         :param node: Node ID from which CSM failover
-        :return: bool, check_csm_service response, node_object
+        :return: (bool, check_csm_service response, node_object)
         """
         LOGGER.info("Get the new node on which CSM service failover.")
         if srvnode_list[node] == srvnode_list[-1]:
@@ -464,7 +464,7 @@ class HALibs:
         :param f_start: If true, enables force start on node
         :param user: Manage user name
         :param pswd: Manage user password
-        return: bool/Command Response
+        return: (bool, Command Response)
         """
         try:
             sys_obj.open_connection()
@@ -491,7 +491,7 @@ class HALibs:
         :param node_obj: Node object
         :param hlt_obj: Health class object
         :param checknode: Node info required to check node health
-        :return: bool/response
+        :return: (bool, response)
         """
         hostname = CMN_CFG["nodes"][node]["hostname"]
         username = CMN_CFG["nodes"][node]["username"]
@@ -598,7 +598,7 @@ class HALibs:
         """
         This function deletes s3 buckets, s3 account
         :param s3_data: Dictionary for s3 operation info
-        :return: Bool/response
+        :return: (bool, response)
         """
         try:
             for account, details in s3_data.items():
@@ -643,7 +643,7 @@ class HALibs:
         :param prefix_data: Prefix data for IO Operation
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
-        :return: Bool/response
+        :return: (bool, response)
         """
         try:
             if not is_di:

@@ -44,9 +44,9 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 LOGGER = logging.getLogger(__name__)
 
 
-class TestHANodeHealth:
+class TestHANodeStartStop:
     """
-    Test suite for node status tests of HA.
+    Test suite for node start stop operation tests of HA.
     """
 
     @classmethod
