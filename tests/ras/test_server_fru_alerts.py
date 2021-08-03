@@ -280,6 +280,10 @@ class TestServerFruAlerts:
                           columns='Iteration0'.split())
         df = df.assign(Iteration0='Pass')
 
+        # TODO: Start CRUD operations in one thread
+        # TODO: Start IOs in one thread
+        # TODO: Start random alert generation in one thread
+
         LOGGER.info("Step 1: Getting RAID array details of node %s",
                     self.hostname)
         resp = self.ras_test_obj.get_raid_array_details()
@@ -438,6 +442,10 @@ class TestServerFruAlerts:
             LOGGER.info("Step 9: Successfully checked CSM REST API for "
                         "fault alert. Response: %s", resp_csm)
 
+        # TODO: Check status of CRUD operations
+        # TODO: Check status of IOs
+        # TODO: Check status of random alert generation
+
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
         assert_true(result, "Test failed. Please check summary for failed "
@@ -489,6 +497,24 @@ class TestServerFruAlerts:
             resolve_enum = value['resolve_enum']
             fault_alert = value['fault_alert']
             resolved_alert = value['resolved_alert']
+
+            LOGGER.info("Step 1: Getting RAID array details of node %s",
+                        self.hostname)
+            resp = self.ras_test_obj.get_raid_array_details()
+            if not resp[0]:
+                df['Iteration0']['Step1'] = 'Fail'
+            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
+                                                            "Step 1: Failed"
+                                                            " to get raid "
+                                                            "array details")
+
+            LOGGER.info("MDRAID arrays: %s", md_arrays)
+            for k, v in md_arrays.items():
+                if v["state"] != "Active":
+                    df['Iteration0']['Step1'] = 'Fail'
+                    assert_true(False,
+                                f"Step 1: Array {k} is in degraded state")
+
             LOGGER.info("Step 1: Generating %s os disk fault on drive %s",
                         key, drive_name)
             resp = self.alert_api_obj.generate_alert(
@@ -506,8 +532,10 @@ class TestServerFruAlerts:
                             "Response: %s", drive_name, resp)
 
             time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = f"srv{self.test_node}_hlt".check_node_health()
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
 
             if self.start_msg_bus:
                 LOGGER.info("Step 2: Verifying alert logs for fault alert ")
@@ -544,8 +572,10 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = f"srv{self.test_node}_hlt".check_node_health()
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
 
             LOGGER.info("Step 5: Checking if fault alert is persistent "
                         "in CSM across node reboot")
@@ -574,16 +604,42 @@ class TestServerFruAlerts:
 
             if not resp[0]:
                 df[key]['Step6'] = 'Fail'
-                LOGGER.error("Step 6: Failed to resolve fault. Error: %s",
+                LOGGER.error("Step 6: Failed to resolve fault on %s",
                              resp[1])
             else:
                 LOGGER.info("Step 6: Successfully resolved fault for disk %s\n "
                             "Response: %s", drive_name, resp)
 
-            time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            new_drive = resp[1]
+            LOGGER.info("Starting RAID recovery...")
+            LOGGER.info("Step 6: Getting raid partitions of drive %s",
+                        new_drive)
+            resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
+                drive=new_drive)
+            if not resp[0]:
+                df['Iteration0']['Step6'] = 'Fail'
+            raid_parts = resp[1] if resp[0] else assert_true(resp[0],
+                                                             f"Step 6: Failed to "
+                                                             f"get partition "
+                                                             f"details of "
+                                                             f"{new_drive}")
 
+            LOGGER.info(
+                "Step 7: Adding raid partitions of drive %s in raid array",
+                new_drive)
+            resp = self.ras_test_obj.add_raid_prtitions(
+                alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
+                raid_parts=raid_parts, md_arrays=md_arrays)
+            if not resp[0]:
+                df['Iteration0']['Step7'] = 'Fail'
+            new_array = resp[1] if resp[0] else assert_true(resp[0],
+                                                            f"Step 7: Failed to "
+                                                            f"add drive in raid "
+                                                            f"array")
+            LOGGER.info("New MDARRAY: %s", new_array)
+
+            time.sleep(self.cm_cfg["sleep_val"])
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the generated alert logs")
                 alert_list = [test_cfg["resource_type"],
@@ -613,6 +669,10 @@ class TestServerFruAlerts:
             else:
                 LOGGER.info("Step 8: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = f"srv{self.test_node}_hlt".check_node_health()
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
@@ -668,6 +728,23 @@ class TestServerFruAlerts:
             resolve_enum = value['resolve_enum']
             fault_alert = value['fault_alert']
             resolved_alert = value['resolved_alert']
+
+            LOGGER.info("Step 1: Getting RAID array details of node %s",
+                        self.hostname)
+            resp = self.ras_test_obj.get_raid_array_details()
+            if not resp[0]:
+                df['Iteration0']['Step1'] = 'Fail'
+            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
+                                                            "Step 1: Failed"
+                                                            " to get raid "
+                                                            "array details")
+
+            LOGGER.info("MDRAID arrays: %s", md_arrays)
+            for k, v in md_arrays.items():
+                if v["state"] != "Active":
+                    df['Iteration0']['Step1'] = 'Fail'
+                    assert_true(False,
+                                f"Step 1: Array {k} is in degraded state")
 
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -759,6 +836,11 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 5: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
 
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = f"srv{self.test_node}_hlt".check_node_health()
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
+
             LOGGER.info("Step 6: Again stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
             resp = self.health_obj.pcs_resource_ops_cmd(
@@ -790,11 +872,40 @@ class TestServerFruAlerts:
 
             if not resp[0]:
                 df[key]['Step7'] = 'Fail'
-                LOGGER.error("Step 7: Failed to resolve fault. Error: %s",
+                LOGGER.error("Step 7: Failed to resolve fault on %s",
                              resp[1])
             else:
                 LOGGER.info("Step 7: Successfully resolved fault for disk %s\n "
                             "Response: %s", drive_name, resp)
+
+            new_drive = resp[1]
+            LOGGER.info("Starting RAID recovery...")
+            LOGGER.info("Step 6: Getting raid partitions of drive %s",
+                        new_drive)
+            resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
+                drive=new_drive)
+            if not resp[0]:
+                df['Iteration0']['Step6'] = 'Fail'
+            raid_parts = resp[1] if resp[0] else assert_true(resp[0],
+                                                             f"Step 6: Failed to "
+                                                             f"get partition "
+                                                             f"details of "
+                                                             f"{new_drive}")
+
+            LOGGER.info(
+                "Step 7: Adding raid partitions of drive %s in raid array",
+                new_drive)
+            resp = self.ras_test_obj.add_raid_prtitions(
+                alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
+                raid_parts=raid_parts, md_arrays=md_arrays)
+            if not resp[0]:
+                df['Iteration0']['Step7'] = 'Fail'
+            new_array = resp[1] if resp[0] else assert_true(resp[0],
+                                                            f"Step 7: Failed to "
+                                                            f"add drive in raid "
+                                                            f"array")
+            LOGGER.info("New MDARRAY: %s", new_array)
 
             LOGGER.info("Step 8: Starting SSPL service")
             resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
@@ -820,9 +931,6 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
             time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
-
             if self.start_msg_bus:
                 LOGGER.info("Step 9: Checking the generated alert logs")
                 alert_list = [test_cfg["resource_type"],
@@ -852,6 +960,10 @@ class TestServerFruAlerts:
             else:
                 LOGGER.info("Step 10: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = f"srv{self.test_node}_hlt".check_node_health()
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
