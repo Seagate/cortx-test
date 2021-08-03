@@ -324,7 +324,7 @@ class TestNetworkFault:
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
                               resource_id),
-                          network_fault_params["host_id"].format(self.test_node)]
+                          self.hostname]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -338,7 +338,7 @@ class TestNetworkFault:
                             self.starttime, self.alert_type["fault"],
                             False, network_fault_params["resource_type"],
                             network_fault_params["resource_id_csm"].format(
-                                          resource_id))
+                                          resource_id), self.hostname)
             LOGGER.info("Response: %s", resp)
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
@@ -370,7 +370,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id), self.hostname]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -386,7 +386,7 @@ class TestNetworkFault:
                             self.alert_type["resolved"],
                             True, network_fault_params["resource_type"],
                             network_fault_params["resource_id_csm"].format(
-                                          resource_id))
+                                          resource_id), self.hostname)
             LOGGER.info("Response: %s", resp)
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info(
@@ -444,7 +444,8 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id),
+                          network_fault_params["host_id"].format(self.test_node)]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -457,7 +458,9 @@ class TestNetworkFault:
                             self.starttime, self.alert_type["fault"],
                             False, network_fault_params["resource_type"],
                             network_fault_params["resource_id_csm"].format(
-                                          resource_id))
+                                          resource_id),
+                            network_fault_params["host_id"].format(
+                              self.test_node))
             LOGGER.info("Response: %s", resp)
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
@@ -489,7 +492,8 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id),
+                          network_fault_params["host_id"].format(self.test_node)]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -504,7 +508,8 @@ class TestNetworkFault:
                         self.alert_type["resolved"],
                         True, network_fault_params["resource_type"],
                         network_fault_params["resource_id_csm"].format(
-                                      resource_id))
+                                      resource_id),
+                        network_fault_params["host_id"].format(self.test_node))
         LOGGER.info("Response: %s", resp)
         assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
@@ -538,12 +543,16 @@ class TestNetworkFault:
                                          'host_user': self.uname,
                                          'host_password': self.passwd,
                                          'resource_id': self.mgmt_device,
-                                         'flag': self.mgmt_fault_flag},
+                                         'flag': self.mgmt_fault_flag,
+                                         'hostname': self.hostname},
                           'public_data_fault': {'host': self.mgmt_ip,
                                                 'host_user': self.uname,
                                                 'host_password': self.passwd,
                                                 'resource_id': self.public_data_device,
-                                                'flag': self.public_data_fault_flag}
+                                                'flag':
+                                                    self.public_data_fault_flag,
+                                                'hostname':
+                                                    network_fault_params["host_id"].format(self.test_node)}
                           }
         df = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
                                   f"{list(nw_port_faults.keys())[1]}".split(),
@@ -554,6 +563,7 @@ class TestNetworkFault:
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
+            host_id = value['hostname']
 
             ras_test_obj = RASTestLib(host=host, username=host_user,
                                       password=host_password)
@@ -625,7 +635,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["fault"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -640,7 +651,8 @@ class TestNetworkFault:
                 resp = self.csm_alerts_obj.verify_csm_response(
                     self.starttime, self.alert_type["fault"],
                     False, network_fault_params["resource_type"],
-                    network_fault_params["resource_id_csm"].format(resource_id))
+                    network_fault_params["resource_id_csm"].format(
+                        resource_id), host_id)
                 LOGGER.info("Response: %s", resp)
                 if not resp:
                     df[key]['Step5'] = 'Fail'
@@ -711,7 +723,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -729,7 +742,8 @@ class TestNetworkFault:
                     self.starttime,
                     self.alert_type["resolved"],
                     True, network_fault_params["resource_type"],
-                    network_fault_params["resource_id_csm"].format(resource_id))
+                    network_fault_params["resource_id_csm"].format(
+                        resource_id), host_id)
                 LOGGER.info("Response: %s", resp)
                 if not resp:
                     df[key]['Step10'] = 'Fail'
@@ -759,6 +773,7 @@ class TestNetworkFault:
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_cable_fault"]
         resource_id = self.mgmt_device
+        host_id = network_fault_params["host_id"].format(self.test_node)
 
         # TODO: Start CRUD operations in one thread
         # TODO: Start IOs in one thread
@@ -789,7 +804,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id), host_id]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -802,7 +817,7 @@ class TestNetworkFault:
             self.starttime, self.alert_type["fault"],
             False, network_fault_params["resource_type"],
             network_fault_params["resource_id_csm"].format(
-                resource_id))
+                resource_id), host_id)
         LOGGER.info("Response: %s", resp)
         assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info("Step 1.3: Successfully Validated csm alert response")
@@ -835,7 +850,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
-                          resource_id)]
+                          resource_id), host_id]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -850,7 +865,7 @@ class TestNetworkFault:
             self.alert_type["resolved"],
             True, network_fault_params["resource_type"],
             network_fault_params["resource_id_csm"].format(
-                resource_id))
+                resource_id), host_id)
         LOGGER.info("Response: %s", resp)
         assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
@@ -887,6 +902,7 @@ class TestNetworkFault:
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_cable_fault"]
         resource_id = self.public_data_device
+        host_id = network_fault_params["host_id"].format(self.test_node)
 
         # TODO: Start CRUD operations in one thread
         # TODO: Start IOs in one thread
@@ -918,7 +934,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id), host_id]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -931,7 +947,7 @@ class TestNetworkFault:
             self.starttime, self.alert_type["fault"],
             False, network_fault_params["resource_type"],
             network_fault_params["resource_id_csm"].format(
-                resource_id))
+                resource_id), host_id)
         LOGGER.info("Response: %s", resp)
         assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info("Step 1.3: Successfully Validated csm alert response")
@@ -965,7 +981,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["resolved"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id), host_id]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -980,7 +996,7 @@ class TestNetworkFault:
             self.alert_type["resolved"],
             True, network_fault_params["resource_type"],
             network_fault_params["resource_id_csm"].format(
-                resource_id))
+                resource_id), host_id)
         LOGGER.info("Response: %s", resp)
         assert_true(resp, "Failed to get alert in CSM REST")
         LOGGER.info(
@@ -1020,12 +1036,16 @@ class TestNetworkFault:
                                          'host_user': self.uname,
                                          'host_password': self.passwd,
                                          'resource_id': self.mgmt_device,
-                                         'flag': self.mgmt_fault_flag},
+                                         'flag': self.mgmt_fault_flag,
+                                         'host_id': self.hostname},
                           'public_data_fault': {'host': self.mgmt_ip,
                                                 'host_user': self.uname,
                                                 'host_password': self.passwd,
                                                 'resource_id': self.public_data_device,
-                                                'flag': self.public_data_fault_flag}
+                                                'flag':
+                                                    self.public_data_fault_flag,
+                                                'host_id':
+                                                    network_fault_params["host_id"].format(self.test_node)}
                           }
         df = pd.DataFrame(columns=f"{list(nw_port_faults.keys())[0]} "
                                   f"{list(nw_port_faults.keys())[1]}".split(),
@@ -1035,6 +1055,7 @@ class TestNetworkFault:
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
+            host_id = value['host_id']
 
             ras_test_obj = RASTestLib(host=host, username=host_user,
                                       password=host_password)
@@ -1073,7 +1094,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["fault"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1088,7 +1110,8 @@ class TestNetworkFault:
                 resp = self.csm_alerts_obj.verify_csm_response(
                     self.starttime, self.alert_type["fault"],
                     False, network_fault_params["resource_type"],
-                    network_fault_params["resource_id_csm"].format(resource_id))
+                    network_fault_params["resource_id_csm"].format(
+                        resource_id), host_id)
                 LOGGER.info("Response: %s", resp)
                 if not resp:
                     df[key]['Step3'] = 'Fail'
@@ -1135,7 +1158,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1153,7 +1177,8 @@ class TestNetworkFault:
                     self.starttime,
                     self.alert_type["resolved"],
                     True, network_fault_params["resource_type"],
-                    network_fault_params["resource_id_csm"].format(resource_id))
+                    network_fault_params["resource_id_csm"].format(
+                        resource_id), host_id)
                 LOGGER.info("Response: %s", resp)
                 if not resp:
                     df[key]['Step7'] = 'Fail'
@@ -1186,6 +1211,7 @@ class TestNetworkFault:
                         'host_password': self.passwd}
         create_fault = network_fault_params["disconnect"]
         resolve_fault = network_fault_params["connect"]
+        host_id = network_fault_params["host_id"].format(self.test_node)
         nw_cable_faults = {'mgmt_cable_fault': {'device': self.mgmt_device,
                                                 'flag': self.mgmt_cable_fault},
                            'public_data_cable_fault': {
@@ -1228,7 +1254,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["fault"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1243,7 +1270,8 @@ class TestNetworkFault:
             resp = self.csm_alerts_obj.verify_csm_response(
                    self.starttime, self.alert_type["fault"],
                    False, network_fault_params["resource_type"],
-                   network_fault_params["resource_id_csm"].format(resource_id))
+                   network_fault_params["resource_id_csm"].format(
+                       resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
                 df[key]['Step3'] = 'Fail'
@@ -1290,7 +1318,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1308,7 +1337,8 @@ class TestNetworkFault:
                 self.starttime,
                 self.alert_type["resolved"],
                 True, network_fault_params["resource_type"],
-                network_fault_params["resource_id_csm"].format(resource_id))
+                network_fault_params["resource_id_csm"].format(resource_id),
+                host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
                 df[key]['Step7'] = 'Fail'
@@ -1342,6 +1372,7 @@ class TestNetworkFault:
                         'host_password': self.passwd}
         create_fault = network_fault_params["disconnect"]
         resolve_fault = network_fault_params["connect"]
+        host_id = network_fault_params["host_id"].format(self.test_node)
         nw_cable_faults = {'mgmt_cable_fault': {'device': self.mgmt_device,
                                                 'flag': self.mgmt_cable_fault},
                            'public_data_cable_fault': {
@@ -1420,7 +1451,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["fault"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1435,7 +1467,8 @@ class TestNetworkFault:
             resp = self.csm_alerts_obj.verify_csm_response(
                    self.starttime, self.alert_type["fault"],
                    False, network_fault_params["resource_type"],
-                   network_fault_params["resource_id_csm"].format(resource_id))
+                   network_fault_params["resource_id_csm"].format(
+                       resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
                 df[key]['Step5'] = 'Fail'
@@ -1507,7 +1540,8 @@ class TestNetworkFault:
                 alert_list = [network_fault_params["resource_type"],
                               self.alert_type["resolved"],
                               network_fault_params[
-                                  "resource_id_monitor"].format(resource_id)]
+                                  "resource_id_monitor"].format(resource_id),
+                              host_id]
                 LOGGER.info("RAS checks: %s", alert_list)
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
@@ -1525,7 +1559,8 @@ class TestNetworkFault:
                    self.starttime,
                    self.alert_type["resolved"],
                    True, network_fault_params["resource_type"],
-                   network_fault_params["resource_id_csm"].format(resource_id))
+                   network_fault_params["resource_id_csm"].format(
+                       resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             if not resp:
                 df[key]['Step10'] = 'Fail'
