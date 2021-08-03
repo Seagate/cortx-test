@@ -28,10 +28,13 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.assert_utils import *
+from commons import commands
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 from robot_gui.utils.call_robot_test import trigger_robot
+from commons.helpers.node_helper import Node
+from commons.helpers.health_helper import Health
 LOGGER = logging.getLogger(__name__)
 
 
@@ -57,6 +60,8 @@ class TestServerOSAlerts:
         cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname, password=cls.passwd)
+        cls.node_obj = Node(host=cls.host, username=cls.uname, password=cls.passwd)
+        cls.health_obj = Health(host=cls.host, username=cls.uname, password=cls.passwd)
         cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.default_cpu_usage = False
         cls.default_mem_usage = False
@@ -562,4 +567,77 @@ class TestServerOSAlerts:
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
 
         LOGGER.info("Step 13: Successfully verified Memory usage alert with persistent cache on CSM GUI")
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.tags("TEST-22719")
+    @pytest.mark.csm_gui
+    @pytest.mark.sw_alert
+    def test_22719_memory_usage_threshold(self):
+        """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (Memory Usage)
+        """
+        test_case_name = cortxlogging.get_frame()
+        LOGGER.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = RAS_TEST_CFG["test_21588"]
+        LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
+        alert_description = 'Host memory usage increased to'
+        gui_dict = dict()
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22719_Gui_Logs'
+        gui_dict['test_path'] = self.robot_test_path
+        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
+                                self.browser_type, 'username:' + self.csm_user,
+                                'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
+                                "description:" + alert_description]
+        gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
+        gui_response = trigger_robot(gui_dict)
+        assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in new alert')
+
+        LOGGER.info("Acknowledge alert from active alert table if any")
+        gui_dict['tag'] = 'ACKNOWLEDGE_ACTIVE_ALERT'
+        gui_response = trigger_robot(gui_dict)
+        assert_equals(True, gui_response, 'GUI FAILED: error is acknowledging active alert')
+
+        self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
+            url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+        LOGGER.info("Step 2: Generate memory usage fault.")
+        resp = self.sw_alert_obj.gen_mem_usage_fault(test_cfg["delta_mem_usage"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 3: Memory usage fault is created successfully.")
+        LOGGER.info("Step 4: Keep the Memory usage above threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 5: Memory usage was above threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 6: Checking if memory fault is present in new alerts")
+        gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
+        time.sleep(10)
+        gui_response = trigger_robot(gui_dict)
+        assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in new alert')
+        gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
+        gui_response = trigger_robot(gui_dict)
+        assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
+        LOGGER.info("Step 7: Successfully verified Memory usage fault alert on CSM GUI")
+        LOGGER.info("Step 8: Resolving Memory usage fault.")
+        LOGGER.info("Step 9: Rebooting node %s ", self.host)
+        resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
+                                         read_lines=True, exc=False)
+        LOGGER.info(
+            "Step 10: Rebooted node: %s, Response: %s", self.host, resp)
+        time.sleep(self.cm_cfg["reboot_delay"])
+
+        LOGGER.info("Performing health check after node reboot")
+        resp = self.health_obj.check_node_health()
+        assert resp[0], resp[1]
+        LOGGER.info("Memory usage fault is resolved.")
+        self.default_mem_usage = False
+        LOGGER.info("Step 11: Keep the memory usage below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 12: Memory usage was below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 13: Checking Memory usage resolved alerts on CSM GUI")
+        time.sleep(10)
+        gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
+        gui_response = trigger_robot(gui_dict)
+        assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
+        LOGGER.info("Step 14: Successfully verified Memory usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
