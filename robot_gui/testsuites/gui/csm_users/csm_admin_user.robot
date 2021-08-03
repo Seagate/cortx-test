@@ -689,7 +689,6 @@ TEST-23615
     Click On Confirm Button
     Select from filter  role
     Search username and role  admin
-    Verify New User  ${new_user_name}
     Reload Page
     wait for page or element to load
     Select from filter  username
