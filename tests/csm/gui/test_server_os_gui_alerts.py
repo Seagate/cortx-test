@@ -623,7 +623,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 7: Rebooted node: %s, Response: %s", self.host, resp)
         time.sleep(self.cm_cfg["reboot_delay"])
 
-        LOGGER.info("Step 8: Checking node health", self.host)
+        LOGGER.info("Step 8: Checking node health after reboot")
         resp = self.health_obj.check_node_health()
         assert_equals(True, resp[0], resp[1])
         LOGGER.info("Step 8: Node health response: %s, Response: %s", self.host, resp)
