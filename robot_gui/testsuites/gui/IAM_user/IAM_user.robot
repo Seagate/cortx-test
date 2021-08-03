@@ -47,20 +47,6 @@ Delete S3 Account And Close Browser
 
 *** Test Cases ***
 
-CREATE_LAST_IAM_USER_VERIFY_POPUP
-    [Documentation]  This key word is for verifying error popup after creating more than limit of IAM users
-    [Tags]  PYTEST CREATE_LAST_IAM_USER_VERIFY_POPUP
-    ${username}=  Generate New User Name
-    ${password}=  Generate New Password
-    Click Create IAM User Button
-    sleep  1s
-    Create IAMuser  ${username}  ${password}
-    wait until element is visible  ${IAM_USER_LIMIT_MSG_ID}  timeout=30
-    Capture Page Screenshot
-    ${err_msg}=  get text  ${IAM_USER_LIMIT_MSG_ID}
-    Log To Console And Report  ${err_msg}
-    Should be Equal  ${IAM_USER_LIMIT_ERROR_MSG}  ${err_msg}
-
 TEST-951
     [Documentation]  Test a form appears on clicking "create user" button on IAM user page
     ...  Reference : https://jts.seagate.com/browse/TEST-951
