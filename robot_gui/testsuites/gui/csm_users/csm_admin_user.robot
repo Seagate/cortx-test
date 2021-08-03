@@ -673,5 +673,5 @@ TEST-23617
     Log To Console And Report  ${${Y1}}
     Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
     ...  ELSE
-    ...  Log to console And Report {Fail Test Case}
+    ...  Fail
     Click Element  ${CSM_FILTER_USERNAME_SELECT_XPATH}
