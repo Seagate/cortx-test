@@ -49,9 +49,8 @@ deactivate
 		}
 		stage('CLIENT_CONFIG') {
 			steps{
-			    sh label: '', '''script: source venv/bin/activate
+			    sh label: '', script: '''source venv/bin/activate
 python3.7 scripts/jenkins_job/deploy_3_node_vm_ec/client_setup.py "${Node1_Hostname}" "${Node2_Hostname}" "${Node3_Hostname}" --node_count 3 --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
-#!/bin/sh
 set +x
 echo 'Creating s3 account and configuring awscli on client'
 pytest scripts/jenkins_job/aws_configure.py --local True --target ${Target_Node}
@@ -65,7 +64,7 @@ deactivate
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/latest/results.xml, log/latest/results.html', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/latest/results.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'nitesh.mahajan@seagate.com, dhananjay.dandapat@seagate.com, sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'priyanka.borawake@seagate.com'
 			}
 		}
 	}
