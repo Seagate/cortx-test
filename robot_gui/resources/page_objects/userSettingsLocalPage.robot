@@ -289,7 +289,7 @@ Edit S3 User Password
     update s3 account password  ${password}  ${confirm_password}
     Click on update s3 account button
     wait for page or element to load
-    wait until element is visible  ${USER_DROPDOWN_ID}  timeout=20
+    wait until element is visible  ${USER_DROPDOWN_XPATH}  timeout=20
     CSM GUI Logout
     Reload Page
     wait for page or element to load  3s
