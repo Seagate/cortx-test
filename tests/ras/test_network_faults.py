@@ -285,6 +285,15 @@ class TestNetworkFault:
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_port_fault"]
         resource_id = self.mgmt_device
+        host_details = {'host': self.public_data_ip, 'host_user': self.uname,
+                        'host_password': self.passwd}
+
+        ras_test_obj = RASTestLib(host=host_details["host"],
+                                  username=host_details["host_user"],
+                                  password=host_details["host_password"])
+        health_obj = Health(hostname=host_details["host"],
+                            username=host_details["host_user"],
+                            password=host_details["host_password"])
 
         # TODO: Start CRUD operations in one thread
         # TODO: Start IOs in one thread
@@ -314,9 +323,10 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id)]
+                              resource_id),
+                          network_fault_params["host_id"].format(self.test_node)]
             LOGGER.info("RAS checks: %s", alert_list)
-            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
 
             assert_true(resp[0], resp[1])
@@ -334,7 +344,7 @@ class TestNetworkFault:
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
 
         LOGGER.info("Checking health of cluster")
-        resp = self.health_obj.check_node_health()
+        resp = health_obj.check_node_health()
         LOGGER.info("Response: %s", resp)
         # TODO: Revisit when information of expected response is available
 
@@ -362,7 +372,7 @@ class TestNetworkFault:
                           network_fault_params["resource_id_monitor"].format(
                               resource_id)]
             LOGGER.info("RAS checks: %s", alert_list)
-            resp = self.ras_test_obj.list_alert_validation(alert_list)
+            resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
             assert_true(resp[0], resp[1])
             LOGGER.info("Step 2.1: Successfully checked generated alerts")
@@ -523,6 +533,7 @@ class TestNetworkFault:
         service = self.cm_cfg["service"]
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_port_fault"]
+
         nw_port_faults = {'mgmt_fault': {'host': self.public_data_ip,
                                          'host_user': self.uname,
                                          'host_password': self.passwd,
@@ -543,22 +554,29 @@ class TestNetworkFault:
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
+
+            ras_test_obj = RASTestLib(host=host, username=host_user,
+                                      password=host_password)
+            health_obj = Health(hostname=host, username=host_user,
+                                password=host_password)
+            node_obj = Node(hostname=host, username=host_user,
+                            password=host_password)
+
             resource_id = value['resource_id']
             LOGGER.info("Generating %s port fault", key)
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
-            resp = self.health_obj.pcs_resource_ops_cmd(command="ban",
-                                                        resources=[
-                                                            self.sspl_resource_id],
-                                                        srvnode=self.current_srvnode)
+            resp = health_obj.pcs_resource_ops_cmd(command="ban",
+                                                   resources=[
+                                                         self.sspl_resource_id],
+                                                   srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
                               f"on node {self.current_srvnode}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 1: Checking if SSPL is in stopped state.")
-            resp = self.node_obj.send_systemctl_cmd(command="is-active",
-                                                    services=[service[
-                                                                  "sspl_service"]],
-                                                    decode=True, exc=False)
+            resp = node_obj.send_systemctl_cmd(command="is-active",
+                                               services=[service["sspl_service"]],
+                                               decode=True, exc=False)
             if resp[0] != "inactive":
                 df[key]['Step1'] = 'Fail'
                 compare(resp[0], "inactive")
@@ -582,15 +600,14 @@ class TestNetworkFault:
                             "port fault on %s", key, host)
 
             LOGGER.info("Step 3: Starting SSPL service")
-            resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
-                                                        resources=[
-                                                            self.sspl_resource_id],
-                                                        srvnode=self.current_srvnode)
+            resp = health_obj.pcs_resource_ops_cmd(command="clear",
+                                                   resources=[
+                                                         self.sspl_resource_id],
+                                                   srvnode=self.current_srvnode)
             LOGGER.info("Step 3: Checking if SSPL is in running state.")
-            resp = self.node_obj.send_systemctl_cmd(command="is-active",
-                                                    services=[service[
-                                                                  "sspl_service"]],
-                                                    decode=True, exc=False)
+            resp = node_obj.send_systemctl_cmd(command="is-active",
+                                               services=[service["sspl_service"]],
+                                               decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step3'] = 'Fail'
                 compare(resp[0], "active")
@@ -610,7 +627,7 @@ class TestNetworkFault:
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
                 LOGGER.info("RAS checks: %s", alert_list)
-                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step4'] = 'Fail'
@@ -634,18 +651,18 @@ class TestNetworkFault:
 
             LOGGER.info("Step 6: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
-            resp = self.health_obj.pcs_resource_ops_cmd(command="ban",
-                                                        resources=[
+            resp = health_obj.pcs_resource_ops_cmd(command="ban",
+                                                   resources=[
                                                          self.sspl_resource_id],
-                                                        srvnode=self.current_srvnode)
+                                                   srvnode=self.current_srvnode)
             assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
                               f"on node {self.current_srvnode}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 6: Checking if SSPL is in stopped state.")
-            resp = self.node_obj.send_systemctl_cmd(command="is-active",
-                                                    services=[service[
-                                                            "sspl_service"]],
-                                                    decode=True, exc=False)
+            resp = node_obj.send_systemctl_cmd(command="is-active",
+                                               services=[service[
+                                                         "sspl_service"]],
+                                               decode=True, exc=False)
             if resp[0] != "inactive":
                 df[key]['Step6'] = 'Fail'
                 compare(resp[0], "inactive")
@@ -674,15 +691,15 @@ class TestNetworkFault:
             time.sleep(wait_time)
 
             LOGGER.info("Step 8: Starting SSPL service")
-            resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
-                                                        resources=[
+            resp = health_obj.pcs_resource_ops_cmd(command="clear",
+                                                   resources=[
                                                          self.sspl_resource_id],
-                                                        srvnode=self.current_srvnode)
+                                                   srvnode=self.current_srvnode)
             LOGGER.info("Step 8: Checking if SSPL is in running state.")
-            resp = self.node_obj.send_systemctl_cmd(command="is-active",
-                                                    services=[service[
-                                                                  "sspl_service"]],
-                                                    decode=True, exc=False)
+            resp = node_obj.send_systemctl_cmd(command="is-active",
+                                               services=[service[
+                                                               "sspl_service"]],
+                                               decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step8'] = 'Fail'
                 compare(resp[0], "active")
@@ -696,7 +713,7 @@ class TestNetworkFault:
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
                 LOGGER.info("RAS checks: %s", alert_list)
-                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step9'] = 'Fail'
@@ -1018,6 +1035,14 @@ class TestNetworkFault:
             host = value['host']
             host_user = value['host_user']
             host_password = value['host_password']
+
+            ras_test_obj = RASTestLib(host=host, username=host_user,
+                                      password=host_password)
+            health_obj = Health(hostname=host, username=host_user,
+                                password=host_password)
+            node_obj = Node(hostname=host, username=host_user,
+                            password=host_password)
+
             resource_id = value['resource_id']
             LOGGER.info("Generating %s port fault", key)
             LOGGER.info("Step 1: Creating fault")
@@ -1050,7 +1075,7 @@ class TestNetworkFault:
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
                 LOGGER.info("RAS checks: %s", alert_list)
-                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step2'] = 'Fail'
@@ -1073,14 +1098,14 @@ class TestNetworkFault:
                                 "response")
 
             LOGGER.info("Step 4: Rebooting node %s ", self.hostname)
-            resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
-                                             read_lines=True, exc=False)
+            resp = node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
+                                        read_lines=True, exc=False)
             LOGGER.info(
                 "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
 
             LOGGER.info("Step 4: Performing health check after node reboot")
-            resp = self.health_obj.check_node_health()
+            resp = health_obj.check_node_health()
             LOGGER.info("Step 4: Response: %s", resp)
 
             LOGGER.info("Step 5: Resolving fault")
@@ -1112,7 +1137,7 @@ class TestNetworkFault:
                               network_fault_params[
                                   "resource_id_monitor"].format(resource_id)]
                 LOGGER.info("RAS checks: %s", alert_list)
-                resp = self.ras_test_obj.list_alert_validation(alert_list)
+                resp = ras_test_obj.list_alert_validation(alert_list)
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step6'] = 'Fail'

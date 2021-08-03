@@ -244,6 +244,7 @@ nw_port_fault:
   resource_id_monitor : '"resource_id": "{}"'
   resource_id_csm : '"resource_id":"{}"'
   resource_type: "node:interface:nw"
+  host_id: "srvnode-{}.mgmt.public"
   error_msg: "Failed to put management network port in"
 
 nw_cable_fault:
@@ -252,6 +253,7 @@ nw_cable_fault:
   resource_id_monitor : '"resource_id": "{}"'
   resource_id_csm : '"resource_id":"{}"'
   resource_type: "node:interface:nw:cable"
+  host_id: "srvnode-{}.mgmt.public"
   error_msg: "Failed to {} management network cable"
 
 test_21587:
