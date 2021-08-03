@@ -114,7 +114,7 @@ dict_style_sub_tab = {'margin-left': 10,
 dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
                         'border-style': 'solid', 'margin-top': '20px'}
 
-dict_active_tab_labels = {'background-color': '#43bc17', 'color': '#000000'}
+dict_active_tab_labels = {'background-color': '#53F01A', 'color': '#000000'} #43bc17
 
 
 @app.callback(

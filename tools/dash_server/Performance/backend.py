@@ -74,7 +74,10 @@ def get_data_from_database(data):
 
 def get_benchmark_data(data_needed_for_query, results, obj):
     temp_data = []
+    addedObjects = False
     operations = ["Write", "Read"]
+    data_needed_for_query['objsize'] = obj
+
     if data_needed_for_query["name"] == 'S3bench':
         stats = ["Throughput", "IOPS", "Latency", "TTFB"]
     else:
@@ -85,13 +88,24 @@ def get_benchmark_data(data_needed_for_query, results, obj):
 
     for operation in operations:
         data_needed_for_query['operation'] = operation
-        data_needed_for_query['objsize'] = obj
+
         query = get_complete_schema(data_needed_for_query)
         count = count_documents(query=query, uri=uri, db_name=db_name,
                                 collection=db_collection)
         db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                  collection=db_collection)
 
+        if not addedObjects:
+            try:
+                num_objects = int(db_data[0]['Objects'])
+            except IndexError:
+                num_objects = "NA"
+            except KeyError:
+                num_objects = "NA"
+
+            temp_data.append(num_objects)
+            addedObjects = True
+    
         for stat in stats:
             if data_needed_for_query["name"] == 'S3bench':
                 if stat in ["Latency", "TTFB"]:
