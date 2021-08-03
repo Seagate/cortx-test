@@ -1265,7 +1265,6 @@ class TestNetworkFault:
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
 
-            # if key != 'mgmt_fault' and self.setup_type != 'VM':
             LOGGER.info("Step 3: Validating csm alert response")
             resp = self.csm_alerts_obj.verify_csm_response(
                    self.starttime, self.alert_type["fault"],
@@ -1332,7 +1331,6 @@ class TestNetworkFault:
             LOGGER.info(
                 "Step 7: Validating csm alert response after resolving fault")
 
-            # if key != 'mgmt_fault' and self.setup_type != 'VM':
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime,
                 self.alert_type["resolved"],
@@ -1462,7 +1460,6 @@ class TestNetworkFault:
                 else:
                     LOGGER.info("Step 4: Successfully checked generated alerts")
 
-            # if key != 'mgmt_fault' and self.setup_type != 'VM':
             LOGGER.info("Step 5: Validating csm alert response")
             resp = self.csm_alerts_obj.verify_csm_response(
                    self.starttime, self.alert_type["fault"],
@@ -1554,7 +1551,6 @@ class TestNetworkFault:
             LOGGER.info(
                 "Step 10: Validating csm alert response after resolving fault")
 
-            # if key != 'mgmt_fault' and self.setup_type != 'VM':
             resp = self.csm_alerts_obj.verify_csm_response(
                    self.starttime,
                    self.alert_type["resolved"],
