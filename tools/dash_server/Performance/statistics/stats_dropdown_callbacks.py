@@ -8,12 +8,14 @@ from Performance.global_functions import get_dict_from_array, get_distinct_keys,
 @app.callback(
     Output('perf_branch_dropdown', 'options'),
     Output('perf_branch_dropdown', 'value'),
+    Output('perf_branch_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_branches_dropdown(release):
     options = None
     value = None
+    disabled = False
     if release is None:
         raise PreventUpdate
     else:
@@ -21,15 +23,19 @@ def update_branches_dropdown(release):
         if branches:
             options = get_dict_from_array(branches, False)
             value = options[0]['value']
+            if len(options) == 1:
+                disabled = True
+
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_build_dropdown', 'options'),
     Output('perf_build_dropdown', 'value'),
+    Output('perf_build_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     prevent_initial_call=True
@@ -37,6 +43,7 @@ def update_branches_dropdown(release):
 def update_builds_dropdown(release, branch):
     versions = None
     value = None
+    disabled = False
     if not all([branch, release]):
         raise PreventUpdate
     else:
@@ -45,14 +52,17 @@ def update_builds_dropdown(release, branch):
             builds = sort_builds_list(builds)
             versions = get_dict_from_array(builds, True)
             value = versions[0]['value']
+            if len(builds) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return versions, value
+    return versions, value, disabled
 
 @app.callback(
     Output('perf_nodes_dropdown', 'options'),
     Output('perf_nodes_dropdown', 'value'),
+    Output('perf_nodes_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -61,6 +71,7 @@ def update_builds_dropdown(release, branch):
 def update_nodes_dropdown(release, branch, build):
     options = None
     value = None
+    disabled = False
     if not all([branch, build]):
         raise PreventUpdate
     else:
@@ -70,15 +81,18 @@ def update_nodes_dropdown(release, branch, build):
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
             value = options[0]['value']
+            if len(options) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_pfull_dropdown', 'options'),
     Output('perf_pfull_dropdown', 'value'),
+    Output('perf_pfull_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -88,6 +102,7 @@ def update_nodes_dropdown(release, branch, build):
 def update_percentfill_dropdown(release, branch, build, nodes):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes]):
         raise PreventUpdate
     else:
@@ -96,15 +111,18 @@ def update_percentfill_dropdown(release, branch, build, nodes):
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
             value = options[0]['value']
+            if len(pfulls) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_iteration_dropdown', 'options'),
     Output('perf_iteration_dropdown', 'value'),
+    Output('perf_iteration_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -115,6 +133,7 @@ def update_percentfill_dropdown(release, branch, build, nodes):
 def update_iteration_dropdown(release, branch, build, nodes, pfull):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes]) and pfull is None:
         raise PreventUpdate
     else:
@@ -123,15 +142,18 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull):
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
             value = options[0]['value']
+            if len(iterations) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_custom_dropdown', 'options'),
     Output('perf_custom_dropdown', 'value'),
+    Output('perf_custom_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -143,6 +165,7 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull):
 def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes, itrns]) and pfull is None:
         raise PreventUpdate
     else:
@@ -151,15 +174,18 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
+            if len(custom) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_sessions_dropdown', 'options'),
     Output('perf_sessions_dropdown', 'value'),
+    Output('perf_sessions_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -172,6 +198,7 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
 def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes, itrns]) and pfull is None:
         raise PreventUpdate
     else:
@@ -182,15 +209,18 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
+            if len(sessions) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_buckets_dropdown', 'options'),
     Output('perf_buckets_dropdown', 'value'),
+    Output('perf_buckets_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -203,6 +233,7 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
 def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes, itrns]) and pfull is None:
         raise PreventUpdate
     else:
@@ -213,15 +244,18 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
+            if len(buckets) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
 
 
 @app.callback(
     Output('perf_bucketops_dropdown', 'options'),
     Output('perf_bucketops_dropdown', 'value'),
+    Output('perf_bucketops_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
@@ -236,6 +270,7 @@ def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, cust
 def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custom, sessions, buckets):
     options = None
     value = None
+    disabled = False
     if not all([branch, build, nodes, itrns, sessions, buckets]) and pfull is None:
         raise PreventUpdate
     else:
@@ -247,7 +282,9 @@ def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custo
             objsizes = sort_object_sizes_list(objsizes)
             options = get_dict_from_array(objsizes, False)
             value = options[0]['value']
+            if len(objsizes) == 1:
+                disabled = True
         else:
             raise PreventUpdate
 
-    return options, value
+    return options, value, disabled
