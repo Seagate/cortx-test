@@ -70,12 +70,12 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_node_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ str(node_id)
+        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ str(node_id + 1)
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
                                 'password:' + self.csm_passwd, 'RESOURCES:' + self.robot_gui_path,
-                                "node_id:" + str(node_id)]
+                                "node_id:" + str(node_id + 1)]
         if status == "failed":
             gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_FAILED'
         else:

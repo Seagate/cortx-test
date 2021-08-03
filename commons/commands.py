@@ -158,6 +158,8 @@ MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
 
 # BMC commands.
+CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
+INSTALL_IPMITOOL = "yum install ipmitool -y"
 CMD_LAN_INFO = "ipmitool lan print"
 CMD_SET_LAN_IP_ADDR = "ipmitool lan set 1 ipaddr {}"  # parameter: IP address.
 MSG_SET_LAN_IP_ADDR = "Setting LAN IP Address to {}"  # parameter: IP address.
