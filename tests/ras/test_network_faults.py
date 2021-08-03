@@ -124,7 +124,10 @@ class TestNetworkFault:
                 "Successfully started read_message_bus.py script on node")
 
         LOGGER.info("Check status of all network interfaces")
-        status = self.health_obj.check_nw_interface_status()
+        nw_infcs = [self.nw_interfaces["MGMT"],
+                    self.nw_interfaces["PUBLIC_DATA"],
+                    self.nw_interfaces["PRIVATE_DATA"]]
+        status = self.health_obj.check_nw_interface_status(nw_infcs=nw_infcs)
         for k, v in status.items():
             if "DOWN" in v:
                 LOGGER.info("%s is down. Please check network connections and "
@@ -223,6 +226,16 @@ class TestNetworkFault:
             LOGGER.info("Step 2: Successfully resolved management network "
                         "port fault on %s", self.hostname)
 
+        LOGGER.info("Reverting sysfs_base_path value in sspl.conf file to "
+                    "/sys/")
+        self.ras_test_obj.set_conf_store_vals(
+            url=cons.SSPL_CFG_URL,
+            encl_vals={'CONF_SYSFS_BASE_PATH': "/sys/"})
+
+        res = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                    field=cons.CONF_SYSFS_BASE_PATH)
+        LOGGER.debug("Response: %s", res)
+
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
             url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
@@ -287,6 +300,7 @@ class TestNetworkFault:
         resource_id = self.mgmt_device
         host_details = {'host': self.public_data_ip, 'host_user': self.uname,
                         'host_password': self.passwd}
+        host_id = self.hostname if self.setup_type == 'VM' else network_fault_params["host_id"].format(self.test_node)
 
         ras_test_obj = RASTestLib(host=host_details["host"],
                                   username=host_details["host_user"],
@@ -323,8 +337,7 @@ class TestNetworkFault:
             alert_list = [network_fault_params["resource_type"],
                           self.alert_type["fault"],
                           network_fault_params["resource_id_monitor"].format(
-                              resource_id),
-                          self.hostname]
+                              resource_id), host_id]
             LOGGER.info("RAS checks: %s", alert_list)
             resp = ras_test_obj.list_alert_validation(alert_list)
             LOGGER.info("Response: %s", resp)
@@ -338,7 +351,7 @@ class TestNetworkFault:
                             self.starttime, self.alert_type["fault"],
                             False, network_fault_params["resource_type"],
                             network_fault_params["resource_id_csm"].format(
-                                          resource_id), self.hostname)
+                                          resource_id), host_id)
             LOGGER.info("Response: %s", resp)
             assert_true(resp, "Failed to get alert in CSM REST")
             LOGGER.info("Step 1.3: Successfully Validated csm alert response")
@@ -538,13 +551,15 @@ class TestNetworkFault:
         service = self.cm_cfg["service"]
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_port_fault"]
+        mgmt_host_id = self.hostname if self.setup_type == 'VM' else \
+            network_fault_params["host_id"].format(self.test_node)
 
         nw_port_faults = {'mgmt_fault': {'host': self.public_data_ip,
                                          'host_user': self.uname,
                                          'host_password': self.passwd,
                                          'resource_id': self.mgmt_device,
                                          'flag': self.mgmt_fault_flag,
-                                         'hostname': self.hostname},
+                                         'hostname': mgmt_host_id},
                           'public_data_fault': {'host': self.mgmt_ip,
                                                 'host_user': self.uname,
                                                 'host_password': self.passwd,
@@ -697,11 +712,6 @@ class TestNetworkFault:
                 LOGGER.info("Step 7: Successfully resolved %s "
                             "port fault on %s", key, host)
 
-            wait_time = common_params["min_wait_time"]
-
-            LOGGER.info("Waiting for %s seconds", wait_time)
-            time.sleep(wait_time)
-
             LOGGER.info("Step 8: Starting SSPL service")
             resp = health_obj.pcs_resource_ops_cmd(command="clear",
                                                    resources=[
@@ -717,6 +727,11 @@ class TestNetworkFault:
                 compare(resp[0], "active")
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
+
+            wait_time = common_params["min_wait_time"]
+
+            LOGGER.info("Waiting for %s seconds", wait_time)
+            time.sleep(wait_time)
 
             if self.start_msg_bus:
                 LOGGER.info("Step 9: Checking the generated alert logs")
@@ -872,16 +887,6 @@ class TestNetworkFault:
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
 
-        LOGGER.info("Reverting sysfs_base_path value in sspl.conf file to "
-                    "/sys/")
-        self.ras_test_obj.set_conf_store_vals(
-            url=cons.SSPL_CFG_URL,
-            encl_vals={'CONF_SYSFS_BASE_PATH': "/sys/"})
-
-        res = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
-                                                    field=cons.CONF_SYSFS_BASE_PATH)
-        LOGGER.debug("Response: %s", res)
-
         # TODO: Check status of CRUD operations
         # TODO: Check status of IOs
         # TODO: Check status of random alert generation
@@ -1003,16 +1008,6 @@ class TestNetworkFault:
             "Step 2.2: Successfully validated csm alert response after "
             "resolving fault")
 
-        LOGGER.info("Reverting sysfs_base_path value in sspl.conf file to "
-                    "/sys/")
-        self.ras_test_obj.set_conf_store_vals(
-            url=cons.SSPL_CFG_URL,
-            encl_vals={'CONF_SYSFS_BASE_PATH': "/sys/"})
-
-        res = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
-                                                    field=cons.CONF_SYSFS_BASE_PATH)
-        LOGGER.debug("Response: %s", res)
-
         # TODO: Check status of CRUD operations
         # TODO: Check status of IOs
         # TODO: Check status of random alert generation
@@ -1032,12 +1027,14 @@ class TestNetworkFault:
                     "faults across node reboot")
         common_params = RAS_VAL["nw_fault_params"]
         network_fault_params = RAS_TEST_CFG["nw_port_fault"]
+        mgmt_host_id = self.hostname if self.setup_type == 'VM' else \
+            network_fault_params["host_id"].format(self.test_node)
         nw_port_faults = {'mgmt_fault': {'host': self.public_data_ip,
                                          'host_user': self.uname,
                                          'host_password': self.passwd,
                                          'resource_id': self.mgmt_device,
                                          'flag': self.mgmt_fault_flag,
-                                         'host_id': self.hostname},
+                                         'host_id': mgmt_host_id},
                           'public_data_fault': {'host': self.mgmt_ip,
                                                 'host_user': self.uname,
                                                 'host_password': self.passwd,
@@ -1511,11 +1508,6 @@ class TestNetworkFault:
                 LOGGER.info("Step 7: Successfully resolved %s "
                             "port fault on %s", key, self.hostname)
 
-            wait_time = common_params["min_wait_time"]
-
-            LOGGER.info("Waiting for %s seconds", wait_time)
-            time.sleep(wait_time)
-
             LOGGER.info("Step 8: Starting SSPL service")
             resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
                                                         resources=[
@@ -1531,6 +1523,11 @@ class TestNetworkFault:
                 compare(resp[0], "active")
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
+
+            wait_time = common_params["min_wait_time"]
+
+            LOGGER.info("Waiting for %s seconds", wait_time)
+            time.sleep(wait_time)
 
             if self.start_msg_bus:
                 LOGGER.info("Step 9: Checking the generated alert logs")
