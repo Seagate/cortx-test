@@ -184,6 +184,7 @@ CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
 CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
 CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+CSM_FILTER_LIST_BUTTON_XPATH = '//*[@class="v-select-list v-card theme--light"]/div'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
 

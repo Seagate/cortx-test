@@ -541,6 +541,60 @@ TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
 
+<<<<<<< HEAD
+TEST-23616
+    [Documentation]  Test that user should able to select multiple options form the drop down.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23616
+    [Tags]  Priority_High  TEST-23616
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}   admin
+    Click On Confirm Button
+    Select from filter  username
+    Select from filter  role
+#   TODO : revisit once EOS-23034 is fixed.
+    
+TEST-23615
+    [Documentation]  Test that user should able to see role and username filter options.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23615
+    [Tags]  Priority_High  TEST-23615
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Select from filter  role
+    Search username and role  admin
+    Verify New User  ${new_user_name}
+    Reload Page
+    wait for page or element to load
+    Select from filter  username
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name}
+    Reload Page
+    Delete CSM User  ${new_user_name}
+
+TEST-23614
+    [Documentation]  Test that drop down would be appear when user click on the filter option.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23614
+    [Tags]  Priority_High  TEST-23614
+    Navigate To Page  ${page_name}
+    Select from filter  role
+    wait for page or element to load
+    Reload Page
+
+TEST-23617
+    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23617
+    [Tags]  Priority_High  TEST-23617
+    Navigate To Page  ${page_name}
+    Select from filter  username
+    wait for page or element to load
+    Reload Page
+
+
+=======
 TEST-23884
     [Documentation]  Test that user is able to navigate to last page of Administrator User Page
     ...  Reference : https://jts.seagate.com/browse/TEST-23884
@@ -613,3 +667,65 @@ TEST-23618
         Re-login  ${username}  ${password}  ${page_name}
         Delete CSM User  ${new_user_name}
     END
+
+T-23616
+    [Documentation]  Test that user should able to select multiple options form the drop down.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23616
+    [Tags]  Priority_High  TEST-23616
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}   admin
+    Click On Confirm Button
+    Select from filter  username
+    Select from filter  role
+#   TODO : revisit once EOS-23034 is fixed.
+
+TEST-23615
+    [Documentation]  Test that user should able to see role and username filter options.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23615
+    [Tags]  Priority_High  TEST-23615
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click On Confirm Button
+    Select from filter  role
+    Search username and role  admin
+    Verify New User  ${new_user_name}
+    Reload Page
+    wait for page or element to load
+    Select from filter  username
+    Search username and role  ${new_user_name}
+    Verify New User  ${new_user_name}
+    Reload Page
+    Delete CSM User  ${new_user_name}
+
+TEST-23614
+    [Documentation]  Test that drop down would be appear when user click on the filter option.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23614
+    [Tags]  Priority_High  TEST-23614
+    Navigate To Page  ${page_name}
+    Select from filter  role
+    wait for page or element to load
+    Reload Page
+
+TEST-23617
+    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23617
+    [Tags]  Priority_High  TEST-23617
+    Navigate To Page  ${page_name}
+    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${X}}
+    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${Y}}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${X1}}
+    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${Y1}}
+    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    ...  ELSE
+    ...  Log to console And Report {Fail Test Case}
+    Click Element  ${CSM_FILTER_USERNAME_SELECT_XPATH}
