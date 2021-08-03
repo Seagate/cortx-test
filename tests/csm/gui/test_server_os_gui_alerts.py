@@ -31,6 +31,7 @@ from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons import cortxlogging
 from commons.utils.assert_utils import *
+from commons.utils import assert_utils
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
@@ -569,6 +570,9 @@ class TestServerOSAlerts:
         LOGGER.info("Step 13: Successfully verified Memory usage alert with persistent cache on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.tags("TEST-22718")
+    @pytest.mark.csm_gui
+    @pytest.mark.sw_alert
     def test_22718_cpu_usage_threshold(self):
         """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
@@ -598,7 +602,7 @@ class TestServerOSAlerts:
             url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         LOGGER.info("Step 2: Generate CPU usage fault.")
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
-        assert resp[0], resp[1]
+        assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Step 3: CPU usage fault is created successfully.")
 
         LOGGER.info("Step 4: Keep the CPU usage above threshold for %s seconds",
@@ -625,7 +629,7 @@ class TestServerOSAlerts:
 
         LOGGER.info("Step 8: Checking node health after reboot")
         resp = self.health_obj.check_node_health()
-        assert_equals(True, resp[0], resp[1])
+        assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Step 8: Node health response: %s, Response: %s", self.host, resp)
 
         LOGGER.info("Step 9:CPU usage fault is resolved.")
