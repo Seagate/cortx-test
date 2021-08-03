@@ -60,8 +60,8 @@ class TestServerOSAlerts:
         cls.csm_passwd = CMN_CFG["csm"]["csm_admin_user"]["password"]
         cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
         cls.ras_test_obj = RASTestLib(host=cls.host, username=cls.uname, password=cls.passwd)
-        cls.node_obj = Node(host=cls.host, username=cls.uname, password=cls.passwd)
-        cls.health_obj = Health(host=cls.host, username=cls.uname, password=cls.passwd)
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
+        cls.health_obj = Health(hostname=cls.host, username=cls.uname, password=cls.passwd)
         cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
         cls.default_cpu_usage = False
         cls.default_mem_usage = False
