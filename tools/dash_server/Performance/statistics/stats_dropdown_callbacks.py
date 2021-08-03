@@ -66,6 +66,7 @@ def update_nodes_dropdown(release, branch, build):
     else:
         nodes = get_distinct_keys(release, 'Count_of_Servers', {
                                   'Branch': branch, 'Build': build})
+        nodes = list(map(int, nodes))
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
             value = options[0]['value']
