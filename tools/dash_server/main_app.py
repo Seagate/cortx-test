@@ -114,7 +114,7 @@ dict_style_sub_tab = {'margin-left': 10,
 dict_style_sub_label = {'font-size': '18px', 'color': '#44cc00', 'background-color': '#343a40',
                         'border-style': 'solid', 'margin-top': '20px'}
 
-dict_active_tab_labels = {'background-color': '#53F01A', 'color': '#000000'} #43bc17
+dict_active_tab_labels = {'background-color': '#81DD59', 'color': '#000000'}
 
 
 @app.callback(
@@ -244,20 +244,20 @@ app.layout = html.Div([
     main_tabs,
     dcc.Location(id='url', refresh=False),
     dbc.Alert(
-            "Looks good at 80% page zoom level!",
-            id="alert-auto",
-            is_open=True,
-            dismissable=True,
-            color="info",
-            style= {
-                'width' : '350px',
-                'position': 'absolute',
-                'top': 10,
-                'right': 0,
-                'margin-bottom': '10px',
-                'height': '40px'
-            }
-        ),
+        "Looks good at 80% page zoom level!",
+        id="alert-auto",
+        is_open=True,
+        dismissable=True,
+        color="info",
+        style={
+            'width': '350px',
+            'position': 'absolute',
+            'top': 10,
+            'right': 0,
+            'margin-bottom': '10px',
+            'height': '40px'
+        }
+    ),
     html.Link(
         rel='stylesheet',
         href='/static/topography.css'

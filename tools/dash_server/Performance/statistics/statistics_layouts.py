@@ -95,7 +95,7 @@ statistics_layout = Card(
 stats_input_options = [
     Row(
         [
-            html.P("Setup Filters: ", style=style_filters_captions),
+            html.P("Setup Configuration » ", style=style_filters_captions),
             Dropdown(
                 id="perf_release_dropdown",
                 options=release,
@@ -127,7 +127,7 @@ stats_input_options = [
     ),
     Row(
         [
-            html.P("User Filters: ", style=style_filters_captions),
+            html.P("User Configuration » ", style=style_filters_captions),
             Dropdown(
                 id='perf_iteration_dropdown',
                 placeholder="Select Iterations",
@@ -143,7 +143,7 @@ stats_input_options = [
     ),
     Row(
         [
-            html.P("Benchmark Filters: ", style=style_filters_captions),
+            html.P("Benchmark Configuration » ", style=style_filters_captions),
             Dropdown(
                 id='perf_sessions_dropdown',
                 placeholder="Select Sessions",
@@ -155,8 +155,8 @@ stats_input_options = [
                 style=dict_Style_Stats_input_options
             ),
 
-            Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
-                style={'height': '35px', 'margin-top': '20px'}),
+            Button("Show", id="perf_submit_button", n_clicks=0, color="success",
+                   style={'height': '35px', 'margin-top': '20px', 'background-color': "#81DD59", 'color': '#000000'}),
         ],
         justify='center', style={'margin-bottom': '20px'}
     )

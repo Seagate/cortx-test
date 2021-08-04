@@ -105,7 +105,7 @@ def get_benchmark_data(data_needed_for_query, results, obj):
 
             temp_data.append(num_objects)
             addedObjects = True
-    
+
         for stat in stats:
             if data_needed_for_query["name"] == 'S3bench':
                 if stat in ["Latency", "TTFB"]:
@@ -220,7 +220,7 @@ def get_bucktops(data_needed_for_query):
     count = count_documents(query=query, uri=uri, db_name=db_name,
                             collection=db_collection)
     db_data = find_documents(query=query, uri=uri, db_name=db_name,
-                                collection=db_collection)
+                             collection=db_collection)
     try:
         results = db_data[0]["Bucket_Ops"]
 

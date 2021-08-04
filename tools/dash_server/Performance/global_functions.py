@@ -212,5 +212,5 @@ def check_empty_list(array):
         isEmpty = True
     else:
         isEmpty = False
-    
+
     return isEmpty

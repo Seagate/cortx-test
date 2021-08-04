@@ -59,6 +59,7 @@ def update_builds_dropdown(release, branch):
 
     return versions, value, disabled
 
+
 @app.callback(
     Output('perf_nodes_dropdown', 'options'),
     Output('perf_nodes_dropdown', 'value'),
