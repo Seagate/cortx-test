@@ -22,7 +22,9 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
-from Performance.styles import *
+from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
+    dict_style_sub_label, style_perf_captions, style_workload_captions,\
+    dict_Style_Stats_input_options, style_filters_captions, dict_button_style
 
 
 release = [

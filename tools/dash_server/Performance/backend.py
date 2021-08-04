@@ -199,11 +199,11 @@ def get_metadata_latencies(data_needed_for_query):
             results[obj] = temp_data
 
     if len(results) > 1:
-        df = pd.DataFrame(results)
+        data_frame = pd.DataFrame(results)
     else:
-        df = pd.DataFrame()
+        data_frame = pd.DataFrame()
 
-    return df
+    return data_frame
 
 
 def get_bucktops(data_needed_for_query):
@@ -244,8 +244,8 @@ def get_bucktops(data_needed_for_query):
         return pd.DataFrame()
 
     if len(data) > 1:
-        df = pd.DataFrame(data)
+        data_frame = pd.DataFrame(data)
     else:
-        df = pd.DataFrame()
+        data_frame = pd.DataFrame()
 
-    return df
+    return data_frame
