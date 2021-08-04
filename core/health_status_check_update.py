@@ -68,7 +68,7 @@ class HealthCheck:
                     nodes.append(node)
                 target_dict[target] = nodes
             else:
-                LOGGER.error(f"Target {target} details are not found in database")
+                LOGGER.error("Target %s details are not found in database", target)
         return target_dict
 
     def update_health_status(self,target_status_dict):
@@ -88,9 +88,9 @@ class HealthCheck:
                 setup_details = collection_obj.find_one(setup_query)
                 setup_details["is_setup_healthy"] = target_status_dict[setupname]
                 collection_obj.update_one(setup_query, {'$set': setup_details})
-                LOGGER.info("Updated health status for target %s", {setupname})
+                LOGGER.info("Updated health status for target %s", setupname)
 
-    @staticmetod
+    @staticmethod
     def check_cortx_cluster_health(node):
         """
             check target node health status
@@ -109,7 +109,7 @@ class HealthCheck:
             health.disconnect()
         return result
 
-    @staticmetod
+    @staticmethod
     def check_cluster_storage(node):
         """
             check target storage status
@@ -148,6 +148,6 @@ class HealthCheck:
                     target_status_dict[setupname] = True
                 else:
                     target_status_dict[setupname] = False
-                    LOGGER.info("Health check failed for %s of target %s", {node['host']}, {setupname})
+                    LOGGER.info("Health check failed for %s of target %s", node['host'], setupname)
                     break
         self.update_health_status(target_status_dict)
