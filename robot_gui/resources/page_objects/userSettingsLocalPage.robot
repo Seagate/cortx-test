@@ -6,9 +6,8 @@ Resource   ${RESOURCES}/resources/common/common.robot
 
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
-    Scroll Element Into View  ${ADD_USER_BUTTON_ID}
-    wait until element is visible    ${ADD_USER_BUTTON_ID}     timeout=10
-    Set Focus To Element  ${ADD_USER_BUTTON_ID}
+    Press Keys  None  HOME
+    wait for page or element to load
     Click button    ${ADD_USER_BUTTON_ID}
 
 Click On Cancel Button
