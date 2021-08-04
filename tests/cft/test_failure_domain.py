@@ -31,7 +31,6 @@ from libs.prov.provisioner import Provisioner
 from commons.utils import assert_utils
 
 
-
 class TestFailureDomain:
     @classmethod
     def setup_class(cls):
@@ -68,7 +67,8 @@ class TestFailureDomain:
             if self.setup_type == "HW":
                 samples = samples * 2
             resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=clients,
-                                   num_sample=samples, obj_name_pref="test-object-", obj_size=workload,
+                                   num_sample=samples, obj_name_pref="test-object-",
+                                   obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix="TEST-24673")
             self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
             assert not s3bench.check_log_file_error(resp[1]), \
@@ -117,7 +117,7 @@ class TestFailureDomain:
     @pytest.mark.tags("TEST-23540")
     def test_23540(self):
         """Perform deployment,preboarding, onboarding with 4+2+0 config"""
-        test_cfg = self.cft_test_cfg["test_25016"]
+        test_cfg = self.cft_test_cfg["test_23540"]
         self.log.info("Adding data required for the jenkins job execution")
         parameters = dict()
 
@@ -143,10 +143,13 @@ class TestFailureDomain:
             with open(test_cfg["config_path_local"], 'r') as file:
                 parameters['Provisioner_Config'] = file.read()
         else:
-            self.log.info("Config file not provided, Deployment to be proceeded with defaults values")
+            self.log.info(
+                "Config file not provided, Deployment to be proceeded with defaults values")
             parameters['Provisioner_Config'] = ''
 
-        output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters, test_cfg["jenkins_token"],
+        output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters,
+                                       test_cfg["jenkins_token"],
                                        test_cfg["jenkins_job_url"])
         self.log.info(f"Jenkins Build URL: {output['url']}")
-        assert_utils.assert_equal(output['result'], "SUCCESS", "Job is not successful, please check the url.")
+        assert_utils.assert_equal(output['result'], "SUCCESS",
+                                  "Job is not successful, please check the url.")
