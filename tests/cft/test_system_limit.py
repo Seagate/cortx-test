@@ -22,10 +22,11 @@ import logging
 import os
 import random
 import time
+from datetime import datetime
 
 import pytest
 
-from commons import configmanager
+from commons import configmanager, Globals
 from commons.constants import Rest as Const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -873,7 +874,8 @@ class TestS3IOSystemLimits:
 
         # Create one extra IAM user and verify limit response is 403
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/create_last_iam_user_verify_popup'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'create_last_iam_user_verify_popup_' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + str(s3_account),
