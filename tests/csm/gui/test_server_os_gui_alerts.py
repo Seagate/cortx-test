@@ -29,6 +29,7 @@ from commons import commands
 from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.assert_utils import *
+from commons import commands
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -617,7 +618,7 @@ class TestServerOSAlerts:
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
         LOGGER.info("Step 7: Successfully verified Memory usage fault alert on CSM GUI")
         LOGGER.info("Step 8: Resolving Memory usage fault.")
-        LOGGER.info("Step 9: Rebooting node ", self.host)
+        LOGGER.info("Step 9: Rebooting node %s ", self.host)
         resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
                                          read_lines=True, exc=False)
         LOGGER.info(
