@@ -26,7 +26,7 @@ import logging
 import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons import constants as cons
-from commons import commands as common_cmd
+from commons import commands
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons import cortxlogging
@@ -579,7 +579,6 @@ class TestServerOSAlerts:
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         test_cfg = RAS_TEST_CFG["test_21587"]
-
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
@@ -592,61 +591,49 @@ class TestServerOSAlerts:
         gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in new alert')
-
         LOGGER.info("Acknowledge alert from active alert table if any")
         gui_dict['tag'] = 'ACKNOWLEDGE_ACTIVE_ALERT'
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: error is acknowledging active alert')
-
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         LOGGER.info("Step 2: Generate CPU usage fault.")
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Step 3: CPU usage fault is created successfully.")
-
         LOGGER.info("Step 4: Keep the CPU usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("Step 5: CPU usage was above threshold for %s seconds",
                  self.cfg["alert_wait_threshold"])
-
         LOGGER.info("Step 6: Checking if cpu fault is present in new alerts")
         time.sleep(10)
         gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in new alert')
-
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
-
         LOGGER.info("Step 7: Rebooting node %s ", self.host)
-        resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
+        resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
                                          read_lines=True, exc=False)
         LOGGER.info("Step 7: Rebooted node: %s, Response: %s", self.host, resp)
         time.sleep(self.cm_cfg["reboot_delay"])
-
         LOGGER.info("Step 8: Checking node health after reboot")
         resp = self.health_obj.check_node_health()
         assert_utils.assert_equals(True, resp[0], resp[1])
         LOGGER.info("Step 8: Node health response: %s, Response: %s", self.host, resp)
-
         LOGGER.info("Step 9:CPU usage fault is resolved.")
         self.default_mem_usage = False
-
         LOGGER.info("Step 10: Keep the cpu usage below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("Step 10: cpu usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
-
         LOGGER.info("Step 11: Checking if cpu fault is present in new alerts")
         time.sleep(10)
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
-        time.sleep(10)
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
-
         LOGGER.info("Step 12: Successfully verified CPU usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
