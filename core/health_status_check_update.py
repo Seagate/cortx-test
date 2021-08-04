@@ -121,8 +121,8 @@ class HealthCheck:
                         username=node['username'],
                         password=node['password'])
         try:
-            ha_total, ha_avail, ha_used = health.get_sys_capacity()
-            ha_used_percent = round((ha_used / ha_total) * 100, 1)
+            ha_result = health.get_sys_capacity()
+            ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
             result = ha_used_percent < 98.0
         except:
             result = False
