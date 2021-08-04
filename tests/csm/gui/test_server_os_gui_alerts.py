@@ -614,7 +614,7 @@ class TestServerOSAlerts:
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
-        LOGGER.info("Step 7: Rebooting node %s ", self.host)
+        LOGGER.info("Step 7: Rebooting node", self.host)
         resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
                                          read_lines=True, exc=False)
         LOGGER.info("Step 7: Rebooted node: %s, Response: %s", self.host, resp)
