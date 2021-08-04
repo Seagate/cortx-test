@@ -130,3 +130,10 @@ dict_Style_Stats_input_options = {
     "margin-right": "15px",
     "margin-top": "10px"
 }
+
+dict_button_style = {
+    'height': '35px',
+    'margin-top': '20px',
+    'background-color': "#81DD59",
+    'color': '#000000'
+}

@@ -22,8 +22,7 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
-from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_Style_Stats_input_options, style_filters_captions
+from Performance.styles import *
 
 
 release = [
@@ -156,7 +155,7 @@ stats_input_options = [
             ),
 
             Button("Show", id="perf_submit_button", n_clicks=0, color="success",
-                   style={'height': '35px', 'margin-top': '20px', 'background-color': "#81DD59", 'color': '#000000'}),
+                   style=dict_button_style),
         ],
         justify='center', style={'margin-bottom': '20px'}
     )

@@ -17,15 +17,17 @@ from Performance.backend import *
     Input('perf_sessions_dropdown', 'value'),
     Input('perf_buckets_dropdown', 'value'),
 )
-def update_workload(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_workload(release, branch, build, nodes,
+                    pfull, itrns, custom, n_clicks, sessions, buckets):
     workload = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
-            'itrns': itrns, 'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
+            'release': release, 'build': build, 'branch': branch,
+            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
         workload = get_workload_headings(data)
@@ -47,15 +49,17 @@ def update_workload(release, branch, build, nodes, pfull, itrns, custom, n_click
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_s3bench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_s3bench(release, branch, build, nodes, pfull, itrns,
+                   custom, n_clicks, sessions, buckets):
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
-            'itrns': itrns, 'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
+            'release': release, 'build': build, 'branch': branch,
+            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
         dataframe = get_data_from_database(data)
@@ -79,15 +83,17 @@ def update_s3bench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_metadata(release, branch, build, nodes,
+                    pfull, itrns, custom, n_clicks, sessions, buckets):
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
-            'itrns': itrns, 'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
+            'release': release, 'build': build, 'branch': branch,
+            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
         }
         dataframe = get_metadata_latencies(data)
         table = get_dash_table_from_dataframe(
@@ -110,15 +116,17 @@ def update_metadata(release, branch, build, nodes, pfull, itrns, custom, n_click
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_hsbench(release, branch, build, nodes,
+                   pfull, itrns, custom, n_clicks, sessions, buckets):
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
-            'itrns': itrns, 'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
+            'release': release, 'build': build, 'branch': branch,
+            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
         dataframe = get_data_from_database(data)
         table = get_dash_table_from_dataframe(
@@ -142,15 +150,17 @@ def update_hsbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks
     Input('perf_bucketops_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets, objsize):
+def update_bucketops(release, branch, build, nodes,
+                     pfull, itrns, custom, n_clicks, sessions, buckets, objsize):
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull, 'itrns': itrns,
-            'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
+            'release': release, 'build': build, 'branch': branch, 'nodes': nodes,
+            'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
+            'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
         dataframe = get_bucktops(data)
         table = get_dash_table_from_dataframe(
@@ -173,15 +183,17 @@ def update_bucketops(release, branch, build, nodes, pfull, itrns, custom, n_clic
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_cosbench(release, branch, build, nodes, pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_cosbench(release, branch, build, nodes,
+                    pfull, itrns, custom, n_clicks, sessions, buckets):
     table = None
     if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         data = {
-            'release': release, 'build': build, 'branch': branch, 'nodes': nodes, 'pfull': pfull,
-            'itrns': itrns, 'custom': custom, 'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
+            'release': release, 'build': build, 'branch': branch,
+            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+            'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }
         dataframe = get_data_from_database(data)
         table = get_dash_table_from_dataframe(

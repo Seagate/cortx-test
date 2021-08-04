@@ -74,7 +74,7 @@ def get_data_from_database(data):
 
 def get_benchmark_data(data_needed_for_query, results, obj):
     temp_data = []
-    addedObjects = False
+    added_objects = False
     operations = ["Write", "Read"]
     data_needed_for_query['objsize'] = obj
 
@@ -95,7 +95,7 @@ def get_benchmark_data(data_needed_for_query, results, obj):
         db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                  collection=db_collection)
 
-        if not addedObjects:
+        if not added_objects:
             try:
                 num_objects = int(db_data[0]['Objects'])
             except IndexError:
@@ -104,7 +104,7 @@ def get_benchmark_data(data_needed_for_query, results, obj):
                 num_objects = "NA"
 
             temp_data.append(num_objects)
-            addedObjects = True
+            added_objects = True
 
         for stat in stats:
             if data_needed_for_query["name"] == 'S3bench':
@@ -126,7 +126,7 @@ def get_benchmark_data(data_needed_for_query, results, obj):
 
 def get_dash_table_from_dataframe(df, bench, column_id):
     if len(df) < 2:
-        return html.P("Data is not Available.")
+        benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
             headings = [{'name': 'Operations', 'id': 'Statistics'},
@@ -161,7 +161,8 @@ def get_dash_table_from_dataframe(df, bench, column_id):
             ],
             style_cell=dict_style_cell
         )
-        return benchmark
+
+    return benchmark
 
 
 def get_workload_headings(data):
@@ -198,9 +199,11 @@ def get_metadata_latencies(data_needed_for_query):
             results[obj] = temp_data
 
     if len(results) > 1:
-        return pd.DataFrame(results)
+        df = pd.DataFrame(results)
     else:
-        return pd.DataFrame()
+        df = pd.DataFrame()
+
+    return df
 
 
 def get_bucktops(data_needed_for_query):
@@ -241,6 +244,8 @@ def get_bucktops(data_needed_for_query):
         return pd.DataFrame()
 
     if len(data) > 1:
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
     else:
-        return pd.DataFrame()
+        df = pd.DataFrame()
+
+    return df
