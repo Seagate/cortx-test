@@ -27,14 +27,15 @@ import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons import constants as cons
 from commons import cortxlogging
-from commons.utils.assert_utils import *
 from commons import commands
+from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
+from commons.utils.assert_utils import *
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 from robot_gui.utils.call_robot_test import trigger_robot
-from commons.helpers.node_helper import Node
-from commons.helpers.health_helper import Health
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -617,7 +618,7 @@ class TestServerOSAlerts:
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
         LOGGER.info("Step 7: Successfully verified Memory usage fault alert on CSM GUI")
         LOGGER.info("Step 8: Resolving Memory usage fault.")
-        LOGGER.info("Step 9: Rebooting node %s ", self.host)
+        LOGGER.info("Step 9: Rebooting node ", self.host)
         resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
                                          read_lines=True, exc=False)
         LOGGER.info(
