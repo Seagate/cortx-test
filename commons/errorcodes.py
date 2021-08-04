@@ -217,7 +217,7 @@ RAS_ERROR = CTError(6007, "RAS Error")
 # HA
 HA_BAD_CLUSTER_HEALTH = CTError(7001, "Cluster Health is not good")
 HA_BAD_NODE_HEALTH = CTError(7002, "Node Health is not good")
-HA_HEALTH_VALIDATION_ERROR = CTError(7003, "Cluster Health Validation Failed")
+HA_BAD_CLUSTER_HEALTH = CTError(7003, "Cluster Health Validation Failed")
 
 # S3 IO OPERATION
 S3_START_IO_FAILED = CTError(9001, "S3-CLI IO Start Operation Failed")

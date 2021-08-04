@@ -23,8 +23,8 @@ This library contains methods for system node operations using CORTX CLI
 
 import logging
 from commons import commands
-from config import CMN_CFG
 from libs.csm.cli.cortx_cli import CortxCli
+from commons.constants import Rest as Const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ class CortxCliSystemtOperations(CortxCli):
 
         return True, output
 
-    def node_operation(self, operation, resource_id, force_op: bool = False, storage_off: bool = False):
+    def node_operation(self, operation: str, resource_id: int, force_op: bool = False, storage_off: bool = False):
         """
         This function is used to perform node operation (stop/poweroff/start)
         :param operation: Operation to be performed on node
@@ -135,13 +135,20 @@ class CortxCliSystemtOperations(CortxCli):
         Valid only with poweroff operation on node.
         :return: (Boolean, response)
         """
-        LOGGER.info("Performing %s on node ID %s", operation, resource_id)
-        cmd = 'node {} {}'.format(operation, resource_id)
-        if force_op:
-            cmd = cmd + " -f"
-        if storage_off:
-            cmd = cmd + " -s"
-        output = self.execute_cli_commands(cmd=cmd)[1]
-        if "invalid" in output.lower() or "exception" in output.lower():
-            return False, output
-        return True, output
+        try:
+            LOGGER.info("Performing %s on node ID %s", operation, resource_id)
+            cmd = 'node {} {}'.format(operation, resource_id)
+            if force_op:
+                cmd = cmd + " -f"
+            if storage_off:
+                cmd = cmd + " -s"
+            output = self.execute_cli_commands(cmd=cmd)[1]
+            if "invalid" in output.lower() or "exception" in output.lower():
+                return False, output
+            return True, output
+        except Exception as error:
+            LOGGER.error("%s %s: %s",
+                         Const.EXCEPTION_ERROR,
+                         CortxCliSystemtOperations.node_operation.__name__,
+                         error)
+            return False, error

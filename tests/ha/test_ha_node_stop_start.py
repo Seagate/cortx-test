@@ -23,8 +23,8 @@ HA test suite for node start stop operations.
 """
 
 import logging
-from random import SystemRandom
 import time
+from random import SystemRandom
 import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
@@ -44,6 +44,7 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 LOGGER = logging.getLogger(__name__)
 
 
+# pylint: disable=R0902
 class TestHANodeStartStop:
     """
     Test suite for node start stop operation tests of HA.
@@ -73,6 +74,8 @@ class TestHANodeStartStop:
         cls.srvnode_list = []
         cls.hostname = []
         cls.restored = True
+        cls.starttime = None
+        cls.csm_failover = cls.user_data = cls.manage_user = cls.email_id = cls.s3_data = None
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -98,7 +101,10 @@ class TestHANodeStartStop:
         self.starttime = time.time()
         self.csm_failover = None
         self.s3_data = None
-        LOGGER.info("Precondition: Check PCS is up and running without any failures.")
+        self.user_data = None
+        self.manage_user = None
+        LOGGER.info(
+            "Precondition: Check PCS is up and running without any failures.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -109,7 +115,8 @@ class TestHANodeStartStop:
             srvnode_list=self.srvnode_list,
             sys_list=self.sys_list,
             no_nodes=self.num_nodes)
-        LOGGER.info("Precondition: Health status shows all components as online and PCS looks clean.")
+        LOGGER.info(
+            "Precondition: Health status shows all components as online & PCS looks clean.")
 
         LOGGER.info("Precondition: Create csm user having manage privileges.")
         self.manage_user = "csm-user-{}".format(time.perf_counter_ns())
@@ -130,18 +137,19 @@ class TestHANodeStartStop:
         resp = self.csm_obj.csm_user_delete(user_name=self.manage_user)
         assert_utils.assert_true(resp[0], resp[1])
         if not self.restored:
-            LOGGER.info("Cleanup: Health status shows all components as online in cortx REST.")
+            LOGGER.info(
+                "Cleanup: Health status shows all components as online in cortx REST.")
             for node in range(self.num_nodes):
                 resp = self.ha_rest.verify_node_health_status_rest(
                     exp_status=['online'], node_id=node, single_node=True)
                 if not resp[0]:
-                    resp = self.ha_obj.perf_node_operation(
-                        sys_obj=self.csm_failover, op='start',
+                    resp = self.ha_obj.perform_node_operation(
+                        sys_obj=self.csm_failover, operation='start',
                         resource_id=node, user=self.user_data[0], pswd=self.csm_passwd)
                     assert_utils.assert_true(resp[0], resp[1])
             if self.s3_data:
                 LOGGER.info("Cleanup: Delete s3 accounts and buckets.")
-                self.ha_obj.delete_s3_acc_buckets(self.s3_data)
+                self.ha_obj.delete_s3_acc_buckets_objects(self.s3_data)
         LOGGER.info("Cleanup: All nodes are pinging and PCS shows no failures.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -149,6 +157,7 @@ class TestHANodeStartStop:
         LOGGER.info("All nodes are online and PCS looks clean.")
         LOGGER.info("ENDED: Teardown Operations.")
 
+    # pylint: disable=R0915
     @pytest.mark.ha
     @pytest.mark.tags("TEST-22486")
     @CTFailOn(error_handler)
@@ -162,71 +171,97 @@ class TestHANodeStartStop:
         for node in range(self.num_nodes):
             self.restored = False
             opt_user = self.system_random.choice(self.user_data)
-            LOGGER.info("Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+            LOGGER.info(
+                "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
             resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-22486')
             assert_utils.assert_true(resp[0], resp[1])
             di_check_data = (resp[1], resp[2])
             self.s3_data = resp[2]
             LOGGER.info("Step 1: IOs are started successfully.")
-            LOGGER.info("Step 2: Stop %s from cortx CLI with %s user", self.srvnode_list[node], opt_user)
+            LOGGER.info("Step 2: Stop %s from cortx CLI with %s user",
+                        self.srvnode_list[node], opt_user)
             resp = self.ha_obj.check_csm_service(
                 self.node_list[0], self.srvnode_list, self.sys_list)
             assert_utils.assert_true(resp[0], resp[1])
             sys_obj = resp[1]
-            resp = self.ha_obj.perf_node_operation(
-                sys_obj=sys_obj, op='stop', resource_id=node, user=opt_user, pswd=self.csm_passwd)
+            resp = self.ha_obj.perform_node_operation(
+                sys_obj=sys_obj,
+                operation='stop',
+                resource_id=node,
+                user=opt_user,
+                pswd=self.csm_passwd)
             assert_utils.assert_true(resp[0], resp[1])
             resp = system_utils.check_ping(host=self.host_list[node])
-            assert_utils.assert_true(resp, f"{self.host_list[node]} is failed to ping")
+            assert_utils.assert_true(
+                resp, f"{self.host_list[node]} is failed to ping")
             LOGGER.info("Step 3: Check health status from cortx CLI/REST)")
             resp = self.ha_obj.get_csm_failover_node(
-                srvnode_list=self.srvnode_list, node_list=self.node_list, sys_list=self.sys_list, node=node)
+                srvnode_list=self.srvnode_list,
+                node_list=self.node_list,
+                sys_list=self.sys_list,
+                node=node)
             assert_utils.assert_true(resp[0], resp[1])
             self.csm_failover = sys_obj = resp[1]
             nd_obj = resp[2]
-            resp = self.ha_obj.check_csr_deg_node_offline_status(sys_obj=sys_obj, node_id=node)
+            resp = self.ha_obj.check_csrn_status(
+                sys_obj=sys_obj,
+                csr_sts="degraded",
+                node_sts="offline",
+                node_id=node)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 3: Verified status for %s show offline and cluster/rack/site as degraded",
-                        self.srvnode_list[node])
-            LOGGER.info("Step 4: Check for the %s down alert", self.srvnode_list[node])
+            LOGGER.info(
+                "Step 3: Verified status for %s show offline and cluster/rack/site as degraded",
+                self.srvnode_list[node])
+            LOGGER.info(
+                "Step 4: Check for the %s down alert",
+                self.srvnode_list[node])
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["get"], False, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            LOGGER.info("Step 4: Verified the %s down alert", self.srvnode_list[node])
+            LOGGER.info(
+                "Step 4: Verified the %s down alert",
+                self.srvnode_list[node])
             # TODO: If CSM REST getting changed, add alert check from msg bus
             LOGGER.info("Step 5: Check PCS status")
             resp = self.hlt_list[0].check_node_health()
             assert_utils.assert_true(resp[0], resp[1])
             resp = self.ha_obj.check_pcs_status_resp(
-                node,
-                self.node_list[node],
-                self.hlt_list[node],
-                checknode=[f'{self.srvnode_list[node]}.data.private', self.hostname[node]])
-            LOGGER.info(resp)
-            LOGGER.info("Step 5: PCS shows services stopped for %s, services on other nodes are online",
-                        self.srvnode_list[node])
-            LOGGER.info("Step 6: Start the node from CLI/REST (either admin/manage user)")
-            resp = self.ha_obj.perf_node_operation(
-                sys_obj=sys_obj, op='start', resource_id=node, user=opt_user, pswd=self.csm_passwd)
+                node, self.node_list, self.hlt_list)
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 6: Started the node from CLI/REST (either admin/manage user)")
-            LOGGER.info("Step 7: Check health status online from cortx CLI/REST and PCS status clean")
+            LOGGER.info(
+                "Step 5: PCS shows services stopped for %s, services on other nodes are online",
+                self.srvnode_list[node])
+            LOGGER.info(
+                "Step 6: Start the node from CLI/REST (either admin/manage user)")
+            resp = self.ha_obj.perform_node_operation(
+                sys_obj=sys_obj,
+                operation='start',
+                resource_id=node,
+                user=opt_user,
+                pswd=self.csm_passwd)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 6: Started the node from CLI/REST (either admin/manage user)")
+            LOGGER.info(
+                "Step 7: Check health status online from cortx CLI/REST and PCS status clean")
             self.ha_obj.status_cluster_resource_online(
                 self.srvnode_list, self.sys_list, nd_obj)
             LOGGER.info("Checking PCS clean")
             for hlt_obj in self.hlt_list:
                 resp = hlt_obj.check_node_health()
                 assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 7: Verified health status from cortx CLI/REST and PCS status is clean")
+            LOGGER.info(
+                "Step 7: Verified health status from cortx CLI/REST and PCS status is clean")
             LOGGER.info("Step 8: Check the alert for node up")
             resp = self.csm_alerts_obj.verify_csm_response(
-                self.start_time, self.alert_type["resolved"], True, "iem")
+                self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
-            self.start_time = time.time()
+            self.starttime = time.time()
             LOGGER.info("Step 8: Verified the alert for node up")
             LOGGER.info("Step 9: Check DI for IOs run.")
-            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            resp = self.ha_obj.perform_ios_ops(
+                di_data=di_check_data, is_di=True)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 9: Verified DI for IOs run.")
             self.restored = True

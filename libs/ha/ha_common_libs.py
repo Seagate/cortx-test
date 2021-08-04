@@ -33,9 +33,8 @@ from commons.constants import Rest as Const
 from config import CMN_CFG, HA_CFG, S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.s3 import s3_test_lib
-from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
-from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
+from libs.s3.s3_test_lib import S3TestLib
+
 from libs.di.di_run_man import RunDataCheckManager
 LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +59,6 @@ class HALibs:
         self.t_power_off = HA_CFG["common_params"]["power_off_time"]
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
-        self.s3bkt_obj = CortxCliS3BucketOperations()
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -370,64 +368,48 @@ class HALibs:
         """
         LOGGER.info("Check the node which is running CSM service and login to CSM on that node.")
         sys_obj = self.check_csm_service(node_obj, srvnode_list, sys_list)
-
-        LOGGER.info("Check cluster, site and rack health status is online in CLI")
-        resp = self.verify_csr_health_status(sys_obj[1], status="online")
+        if not sys_obj[0]:
+            raise CTException(err.CLI_COMMAND_FAILURE, sys_obj[1])
+        resp = self.check_csrn_status(sys_obj[1], csr_sts="online", node_sts="online", node_id=0)
         if not resp[0]:
             raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
+        LOGGER.info("cluster/rack/site/nodes health status is online in CLI and REST")
 
-        LOGGER.info("Check cluster, site and rack health status is online in REST")
-        resp = self.system_health.check_csr_health_status_rest(exp_status='online')
-        if resp[0]:
-            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
-
-        LOGGER.info("Cluster, site and rack health status is online in CLI and REST")
-
-        LOGGER.info("Check all nodes health status is online in CLI")
-        check_rem_node = ["online" for _ in range(len(srvnode_list))]
-        resp = self.verify_node_health_status(sys_obj[1], status=check_rem_node)
-        if resp[0]:
-            raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
-
-        LOGGER.info("Check all nodes health status is online in REST")
-        resp = self.system_health.verify_node_health_status_rest(check_rem_node)
-        if resp[0]:
-            raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
-
-        LOGGER.info("Node health status is online in CLI and REST")
-
-    def check_csr_deg_node_offline_status(self, sys_obj, node_id: int):
+    def check_csrn_status(self, sys_obj, csr_sts: str, node_sts: str, node_id: int):
         """
-        Check cluster/rack/site are shown degraded and node offline in Cortx CLI/REST
+        Check cluster/rack/site/node status with expected status using CLI/REST
         :param sys_obj: System object
-        :param node_id: Node to check for offline
+        :param csr_sts: cluster/rack/site's expected status
+        :param node_sts: Node's expected status
+        :param node_id: Node ID to check for expected status
         :return: (bool, response)
         """
         check_rem_node = [
-            "offline" if num == node_id else "online" for num in range(
+            node_sts if num == node_id else "online" for num in range(
                 self.num_nodes)]
         LOGGER.info(
-            "Checking srvnode-%s status is offline via CortxCLI",
-            node_id + 1)
+            "Checking srvnode-%s status is %s via CortxCLI",
+            node_id+1, node_sts)
         resp = self.verify_node_health_status(sys_obj, status=check_rem_node)
         if not resp[0]:
-            raise CTException(err.HA_HEALTH_VALIDATION_ERROR, resp[1])
+            return resp
         LOGGER.info(
-            "Checking Cluster/Site/Rack status is degraded via CortxCLI")
-        resp = self.verify_csr_health_status(sys_obj, "degraded")
+            "Checking Cluster/Site/Rack status is %s via CortxCLI", csr_sts)
+        resp = self.verify_csr_health_status(sys_obj, csr_sts)
         if not resp[0]:
-            raise CTException(err.HA_HEALTH_VALIDATION_ERROR, resp[1])
-        LOGGER.info("Checking %s status is failed via REST", node_id + 1)
+            return resp
+        LOGGER.info("Checking srvnode-%s status is %s via REST", node_id+1, node_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_node)
         if not resp[0]:
-            raise CTException(err.HA_HEALTH_VALIDATION_ERROR, resp[1])
-        LOGGER.info("Checking Cluster/Site/Rack status is degraded via REST")
-        resp = self.system_health.check_csr_health_status_rest("degraded")
+            return resp
+        LOGGER.info("Checking Cluster/Site/Rack status is %s via REST", csr_sts)
+        resp = self.system_health.check_csr_health_status_rest(csr_sts)
         if not resp[0]:
-            raise CTException(err.HA_HEALTH_VALIDATION_ERROR, resp[1])
+            return resp
 
-        return True, "cluster/rack/site are shown degraded and node offline in Cortx CLI/REST"
+        return True, f"cluster/rack/site status is {csr_sts} and \
+        srvnode-{node_id+1} is {node_sts} in Cortx CLI/REST"
 
     def get_csm_failover_node(self, srvnode_list: list, node_list: list, sys_list: list, node: int):
         """
@@ -449,18 +431,18 @@ class HALibs:
         return resp[0], resp[1], nd_obj
 
     @staticmethod
-    def perf_node_operation(
+    def perform_node_operation(
             sys_obj,
-            op: str,
-            resource_id,
+            operation: str,
+            resource_id: int,
             f_start: bool = False,
             user: str = None,
             pswd: str = None):
         """
         This function will perform node start/stop/poweroff operation on resource_id
-        :param op: Operation to be performed (stop/poweroff/start).
+        :param operation: Operation to be performed (stop/poweroff/start).
         :param sys_obj: System object
-        :param resource_id: Email id of csm user
+        :param resource_id: Resource ID for the operation
         :param f_start: If true, enables force start on node
         :param user: Manage user name
         :param pswd: Manage user password
@@ -470,177 +452,164 @@ class HALibs:
             sys_obj.open_connection()
             sys_obj.login_cortx_cli(username=user, password=pswd)
             resp = sys_obj.node_operation(
-                operation=op, resource_id=resource_id, force_op=f_start)
+                operation=operation, resource_id=resource_id, force_op=f_start)
             return resp
         except Exception as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibs.perf_node_operation.__name__,
+                         HALibs.perform_node_operation.__name__,
                          error)
             return False, error
         finally:
             sys_obj.logout_cortx_cli()
             sys_obj.close_connection(set_session_obj_none=True)
 
-    @staticmethod
-    def check_pcs_status_resp(node, node_obj, hlt_obj, checknode: list):
+    # pylint: disable=R0915
+    # pylint: disable=R0912
+    def check_pcs_status_resp(self, node, node_obj, hlt_obj):
         """
-        This will get pcs status xml and hctl status json response and
-        check node health status after performing node stop operation.
+        This will get pcs status xml and hctl status response and
+        check all nodes health status after performing node stop operation on one node.
         :param node: Node ID for which health check is required
-        :param node_obj: Node object
-        :param hlt_obj: Health class object
-        :param checknode: Node info required to check node health
-        :return: (bool, response)
+        :param node_obj: Node object List
+        :param hlt_obj: Health class object List
+        :return: (bool, response/Dictionary for all the service which are not in expected state)
         """
+        # Get the next node to check pcs and hctl status
+        checknode = f'srvnode-{(node+1)}.data.private'
+        if node == self.num_nodes:
+            up_node = 0
+        else:
+            up_node = node + 1
         hostname = CMN_CFG["nodes"][node]["hostname"]
         username = CMN_CFG["nodes"][node]["username"]
         password = CMN_CFG["nodes"][node]["password"]
-        # Get the pcs status
-        status, result = system_utils.run_remote_cmd(
+        # Get the pcs status for stopped node (Cluster not running)
+        resp = system_utils.run_remote_cmd(
             cmd=common_cmd.PCS_STATUS_CMD,
             hostname=hostname,
             username=username,
             password=password,
             read_lines=True)
-        if not status:
-            return False, f"Failed to get PCS status {result}"
-        # Get the pcs status xml
-        response = node_obj.execute_cmd(
+        if resp[0]:
+            return False, f"PCS status is {resp[1]} for srvnode-{node+1}"
+        # Get the pcs status xml to check service status for all nodes
+        response = node_obj[up_node].execute_cmd(
             cmd=common_cmd.CMD_PCS_GET_XML,
             read_lines=False,
             exc=False)
         if isinstance(response, bytes):
             response = str(response, 'UTF-8')
-        json_format = hlt_obj.get_node_health_xml(pcs_response=response)
+        json_format = hlt_obj[up_node].get_node_health_xml(pcs_response=response)
         crm_mon_res = json_format['crm_mon']['resources']
         no_node = int(json_format['crm_mon']['summary']
                       ['nodes_configured']['@number'])
         hctl_services_failed = {}
-        clone_set_dict = hlt_obj.get_clone_set_status(crm_mon_res, no_node)
+        # Get the clone set resource state from PCS status
+        clone_set_dict = hlt_obj[up_node].get_clone_set_status(crm_mon_res, no_node)
         svcs_elem = {'node': None, 'status': None}
         for pcs_key, pcs_value in clone_set_dict.items():
-            hctl_services_failed['{}'.format(pcs_key)] = list()
+            hctl_services_failed[f'{pcs_key}'] = list()
             for srvnode, status in pcs_value.items():
                 temp_svc = svcs_elem.copy()
-                LOGGER.info(
-                    " pcs_key = {} pcs_value = {}".format(
-                        pcs_key, pcs_value))
-                if srvnode == checknode[0]:
+                # For stopped node, service should be in stopped state
+                if srvnode == checknode:
                     if status != 'Stopped':
                         temp_svc['node'] = srvnode
                         temp_svc['status'] = status
-                        hctl_services_failed['{}'.format(
-                            pcs_key)].append(temp_svc)
+                        hctl_services_failed[f'{pcs_key}'].append(temp_svc)
                 else:
                     if status != 'Started':
                         temp_svc['node'] = srvnode
                         temp_svc['status'] = status
-                        hctl_services_failed['{}'.format(
-                            pcs_key)].append(temp_svc)
+                        hctl_services_failed[f'{pcs_key}'].append(temp_svc)
         # Extract data for PCS resource group elements
-        resource_dict = hlt_obj.get_resource_status(crm_mon_res)
+        resource_dict = hlt_obj[up_node].get_resource_status(crm_mon_res)
         for pcs_key, pcs_value in resource_dict.items():
-            hctl_services_failed['{}'.format(pcs_key)] = list()
+            hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
-                temp_svc = svcs_elem.copy()
-                temp_svc['status'] = pcs_value['status']
-                hctl_services_failed['{}'.format(pcs_key)].append(temp_svc)
+                hctl_services_failed[f'{pcs_key}'].append(pcs_value)
         # Extract data for PCS group elements
-        group_dict = hlt_obj.get_group_status(crm_mon_res)
+        group_dict = hlt_obj[up_node].get_group_status(crm_mon_res)
         for pcs_key, pcs_value in group_dict.items():
-            hctl_services_failed['{}'.format(pcs_key)] = list()
+            hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
-                temp_svc = svcs_elem.copy()
-                temp_svc['status'] = pcs_value['status']
-                hctl_services_failed['{}'.format(pcs_key)].append(temp_svc)
-        # Get hctl status response
-        status, result = system_utils.run_remote_cmd(
+                hctl_services_failed[f'{pcs_key}'].append(pcs_value)
+
+        # Get hctl status response for stopped node (Cluster not running)
+        checknode = hostname
+        resp = system_utils.run_remote_cmd(
             cmd=common_cmd.MOTR_STATUS_CMD,
             hostname=hostname,
             username=username,
             password=password,
             read_lines=True)
-        if not status:
-            return False, f"Failed to get HCTL status {result}"
-        # Get hctl status --json response
-        resp = hlt_obj.hctl_status_json()
-        hctl_services_failed = {}
-        svcs_elem = {'service': None, 'status': None}
+        if resp[0]:
+            return False, f"HCTL status: {resp[1]} for srvnode-{node+1}"
+        # Get hctl status --json response for all node hctl services
+        resp = hlt_obj[up_node].hctl_status_json()
         for node_data in resp['nodes']:
             hctl_services_failed[node_data['name']] = list()
-            if node_data['name'] == checknode[1]:
+            # For stopped node, service should be in stopped state
+            if node_data['name'] == checknode:
                 for svcs in node_data['svcs']:
-                    temp_svc = svcs_elem.copy()
                     if svcs['name'] != "m0_client" and svcs['status'] == 'started':
-                        temp_svc['service'] = svcs['name']
-                        temp_svc['status'] = svcs['status']
-                        hctl_services_failed[node_data['name']].append(
-                            temp_svc)
+                        hctl_services_failed[node_data['name']].append(svcs)
             else:
                 for svcs in node_data['svcs']:
-                    temp_svc = svcs_elem.copy()
                     if svcs['name'] != "m0_client" and svcs['status'] != 'started':
-                        temp_svc['service'] = svcs['name']
-                        temp_svc['status'] = svcs['status']
-                        hctl_services_failed[node_data['name']].append(
-                            temp_svc)
-        # Extract node health data which is not as expected
+                        hctl_services_failed[node_data['name']].append(svcs)
+        # if hctl_services_failed list value is not empty get the details of not expected status
         node_hctl_failure = {}
         for key, val in hctl_services_failed.items():
             if val:
                 node_hctl_failure[key] = val
         if node_hctl_failure:
             return False, node_hctl_failure
-        return True, f"Check node health status is as expected for {checknode[1]}"
 
-    def delete_s3_acc_buckets(self, s3_data: dict):
+        return True, f"Check node health status is as expected for {checknode}"
+
+    @staticmethod
+    def delete_s3_acc_buckets_objects(s3_data: dict):
         """
-        This function deletes s3 buckets, s3 account
+        This function deletes s3 all buckets objects for all the s3 account
         :param s3_data: Dictionary for s3 operation info
         :return: (bool, response)
         """
         try:
-            for account, details in s3_data.items():
-                self.s3bkt_obj.open_connection()
-                s3acc_obj = CortxCliS3AccountOperations(
-                    session_obj=self.s3bkt_obj.session_obj)
-                login = s3acc_obj.login_cortx_cli(
-                    username=details['user_name'], password=details['password'])
-                if not login[0]:
-                    raise CTException(err.S3_LOGGING_FAILED, login[1])
-                s3_del = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"],
-                                               access_key=details['accesskey'],
-                                               secret_key=details['secretkey'])
-                response = s3_del.delete_all_buckets()
+            for details in s3_data.values():
+                s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
+                                   access_key=details['accesskey'],
+                                   secret_key=details['secretkey'])
+                s3_data = {'user_name': details['user_name'], 'password': details['password']}
+                response = s3_del.delete_s3_acc_buckets(s3_data)
                 if not response[0]:
-                    raise CTException(
-                        err.S3_DELETE_BUCKET_REQUEST_FAILED, response[1])
-                response = s3acc_obj.delete_s3account_cortx_cli(
-                    account_name=details['user_name'])
-                if not response[0]:
-                    raise CTException(
-                        err.S3_DELETE_ACC_REQUEST_FAILED, response[1])
-                response = s3acc_obj.logout_cortx_cli()
-                if not response[0]:
-                    raise CTException(err.S3_LOGOUT_FAILED, response[1])
-                self.s3bkt_obj.close_connection(set_session_obj_none=True)
-                return True, "Successfully performed S3 operation clean up"
+                    return response
+
+            return True, "Successfully performed S3 operation clean up"
         except (Exception, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibs.delete_s3_acc_buckets.__name__,
+                         HALibs.delete_s3_acc_buckets_objects.__name__,
                          error)
             return False, error
 
     def perform_ios_ops(
             self,
             prefix_data: str = None,
+            nusers: int = 2,
+            nbuckets: int = 2,
+            files_count: int = 10,
             di_data: tuple = None,
             is_di: bool = False):
         """
-        This function creates s3 acc, buckets and performs IO and DI check.
+        This function creates s3 acc, buckets and performs IO.
+        This will perform DI check if is_di True and once done,
+        deletes all the buckets and s3 accounts created.
         :param prefix_data: Prefix data for IO Operation
+        :param nusers: Number of s3 user
+        :param nbuckets: Number of buckets per s3 user
+        :param files_count: NUmber of files to be uploaded per bucket
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
         :return: (bool, response)
@@ -648,26 +617,25 @@ class HALibs:
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
-                users = self.mgnt_ops.create_account_users(
-                    nusers=1, use_cortx_cli=False)
+                users = self.mgnt_ops.create_account_users(nusers=nusers)
                 io_data = self.mgnt_ops.create_buckets(
-                    nbuckets=1, users=users, use_cortxcli=True)
+                    nbuckets=nbuckets, users=users)
                 run_data_chk_obj = RunDataCheckManager(users=io_data)
                 pref_dir = {"prefix_dir": prefix_data}
                 star_res = run_data_chk_obj.start_io(
-                    users=io_data, buckets=None, files_count=8, prefs=pref_dir)
+                    users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
                 if not star_res:
                     raise CTException(err.S3_START_IO_FAILED, star_res)
                 return True, run_data_chk_obj, io_data
-            else:
-                LOGGER.info("Checking DI for IOs run.")
-                stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
-                if not stop_res[0]:
-                    raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
-                del_resp = self.delete_s3_acc_buckets(di_data[1])
-                if not del_resp[0]:
-                    raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
-                return True, "Di check for IOs passed successfully"
+
+            LOGGER.info("Checking DI for IOs run.")
+            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
+            if not stop_res[0]:
+                raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
+            del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
+            if not del_resp[0]:
+                raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
+            return True, "Di check for IOs passed successfully"
         except (Exception, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,

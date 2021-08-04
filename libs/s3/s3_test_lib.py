@@ -37,7 +37,8 @@ from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
-
+from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
+from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 LOGGER = logging.getLogger(__name__)
 
 
@@ -69,6 +70,7 @@ class S3TestLib(S3Lib):
                          endpoint_url,
                          s3_cert_path,
                          **kwargs)
+        self.s3bkt_obj = CortxCliS3BucketOperations()
 
     def create_bucket(self, bucket_name: str = None) -> tuple:
         """
@@ -738,6 +740,40 @@ class S3TestLib(S3Lib):
             return True, response
 
         return False, response
+
+    def delete_s3_acc_buckets(self, s3_user_pass: dict):
+        """
+        This function first deletes all s3 bucket objects for s3 account and then s3 account
+        :param s3_user_pass: Dictionary for s3 account details {'user_name':,'password':}
+        :return: (bool, response)
+        """
+        try:
+            self.s3bkt_obj.open_connection()
+            s3acc_obj = CortxCliS3AccountOperations(
+                session_obj=self.s3bkt_obj.session_obj)
+            login = s3acc_obj.login_cortx_cli(
+                username=s3_user_pass['user_name'], password=s3_user_pass['password'])
+            if not login[0]:
+                raise CTException(err.S3_LOGGING_FAILED, login[1])
+            response = self.delete_all_buckets()
+            if not response[0]:
+                raise CTException(
+                    err.S3_DELETE_BUCKET_REQUEST_FAILED, response[1])
+            response = s3acc_obj.delete_s3account_cortx_cli(
+                account_name=s3_user_pass['user_name'])
+            if not response[0]:
+                raise CTException(
+                    err.S3_DELETE_ACC_REQUEST_FAILED, response[1])
+            response = s3acc_obj.logout_cortx_cli()
+            if not response[0]:
+                raise CTException(err.S3_LOGOUT_FAILED, response[1])
+            self.s3bkt_obj.close_connection(set_session_obj_none=True)
+            return True, f"Successfully deleted all s3 bucket objects and s3 account {s3_user_pass['user_name']}"
+        except (Exception, CTException) as error:
+            LOGGER.error("Error in %s: %s",
+                         S3TestLib.delete_s3_acc_buckets.__name__,
+                         error)
+            return False, error
 
 
 class AWScliS3api:
