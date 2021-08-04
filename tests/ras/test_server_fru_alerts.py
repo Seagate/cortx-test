@@ -331,7 +331,7 @@ class TestServerFruAlerts:
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = f"srv{self.test_node}_hlt".check_node_health()
+        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
         assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -348,7 +348,6 @@ class TestServerFruAlerts:
                             "%s", resp)
 
         LOGGER.info("Step 4: Checking CSM REST API for alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                           self.alert_types["missing"],
                                                           False,
@@ -408,7 +407,7 @@ class TestServerFruAlerts:
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
-        resp = f"srv{self.test_node}_hlt".check_node_health()
+        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
         assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
@@ -426,7 +425,6 @@ class TestServerFruAlerts:
                 LOGGER.info("Step 8: Checked generated alert logs")
 
         LOGGER.info("Step 9: Checking CSM REST API for alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                           self.alert_types[
                                                               "insertion"],
@@ -533,7 +531,7 @@ class TestServerFruAlerts:
 
             time.sleep(self.cm_cfg["sleep_val"])
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = f"srv{self.test_node}_hlt".check_node_health()
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -573,7 +571,7 @@ class TestServerFruAlerts:
                 "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = f"srv{self.test_node}_hlt".check_node_health()
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -585,7 +583,7 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
@@ -619,11 +617,11 @@ class TestServerFruAlerts:
                 drive=new_drive)
             if not resp[0]:
                 df['Iteration0']['Step6'] = 'Fail'
-            raid_parts = resp[1] if resp[0] else assert_true(resp[0],
-                                                             f"Step 6: Failed to "
-                                                             f"get partition "
-                                                             f"details of "
-                                                             f"{new_drive}")
+            raid_parts = resp[1] if resp[0] else LOGGER.error(
+                                                             "Step 6: Failed to "
+                                                             "get partition "
+                                                             "details of "
+                                                             "%s", new_drive)
 
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
@@ -633,10 +631,10 @@ class TestServerFruAlerts:
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
                 df['Iteration0']['Step7'] = 'Fail'
-            new_array = resp[1] if resp[0] else assert_true(resp[0],
-                                                            f"Step 7: Failed to "
-                                                            f"add drive in raid "
-                                                            f"array")
+            new_array = resp[1] if resp[0] else LOGGER.error(
+                                                            "Step 7: Failed to "
+                                                            "add drive in raid "
+                                                            "array")
             LOGGER.info("New MDARRAY: %s", new_array)
 
             time.sleep(self.cm_cfg["sleep_val"])
@@ -662,7 +660,7 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step8'] = 'Fail'
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
@@ -671,7 +669,7 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = f"srv{self.test_node}_hlt".check_node_health()
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
             assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
@@ -791,9 +789,8 @@ class TestServerFruAlerts:
                                                         self.current_srvnode)
             if not resp:
                 df[key]['Step3'] = 'Fail'
-                assert_true(resp, f"Failed to clear/start "
-                                  f" {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to clear/start %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
             LOGGER.info("Step 3: Checking if SSPL is in running state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -802,7 +799,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step3'] = 'Fail'
-                compare(resp[0], "active")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 3: Successfully started SSPL service")
 
@@ -828,7 +825,7 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
@@ -837,7 +834,7 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = f"srv{self.test_node}_hlt".check_node_health()
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
             # Revisit when health state information is available
             LOGGER.info("Response: %s", resp)
 
@@ -848,8 +845,8 @@ class TestServerFruAlerts:
                 srvnode=self.current_srvnode)
             if not resp:
                 df[key]['Step6'] = 'Fail'
-                assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to ban/stop %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 6: Checking if SSPL is in stopped state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -858,7 +855,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
                 df[key]['Step6'] = 'Fail'
-                compare(resp[0], "inactive")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 6: Successfully stopped SSPL service")
 
@@ -887,11 +884,11 @@ class TestServerFruAlerts:
                 drive=new_drive)
             if not resp[0]:
                 df['Iteration0']['Step6'] = 'Fail'
-            raid_parts = resp[1] if resp[0] else assert_true(resp[0],
+            raid_parts = resp[1] if resp[0] else LOGGER.error(
                                                              f"Step 6: Failed to "
                                                              f"get partition "
                                                              f"details of "
-                                                             f"{new_drive}")
+                                                             f"%s", new_drive)
 
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
@@ -901,10 +898,10 @@ class TestServerFruAlerts:
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
                 df['Iteration0']['Step7'] = 'Fail'
-            new_array = resp[1] if resp[0] else assert_true(resp[0],
-                                                            f"Step 7: Failed to "
-                                                            f"add drive in raid "
-                                                            f"array")
+            new_array = resp[1] if resp[0] else LOGGER.error(
+                                                            "Step 7: Failed to "
+                                                            "add drive in raid "
+                                                            "array")
             LOGGER.info("New MDARRAY: %s", new_array)
 
             LOGGER.info("Step 8: Starting SSPL service")
@@ -915,9 +912,8 @@ class TestServerFruAlerts:
                                                         self.current_srvnode)
             if not resp:
                 df[key]['Step8'] = 'Fail'
-                assert_true(resp, f"Failed to clear/start "
-                                  f" {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to clear/start %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
             LOGGER.info("Step 8: Checking if SSPL is in running state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -926,7 +922,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step8'] = 'Fail'
-                compare(resp[0], "active")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
@@ -953,7 +949,7 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step10'] = 'Fail'
                 LOGGER.error("Step 10: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
@@ -962,7 +958,7 @@ class TestServerFruAlerts:
                             "fault alert. Response: %s", resp_csm)
 
             LOGGER.info("Check health of node %s", self.test_node)
-            resp = f"srv{self.test_node}_hlt".check_node_health()
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
             assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
