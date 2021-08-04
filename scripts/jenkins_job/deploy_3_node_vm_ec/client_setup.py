@@ -21,23 +21,18 @@
 """
 Setup file client configuration for executing the Failure domain testcases
 """
-import os
-import configparser
-import json
-import logging
 import argparse
-from scripts.jenkins_job import client_conf
+import configparser
+import logging
+import os
+
 from commons.helpers.node_helper import Node
+from scripts.jenkins_job import client_conf
 
-config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
-config.read(config_file)
+config.read('scripts/jenkins_job/config.ini')
 LOGGER = logging.getLogger(__name__)
 
-config_file = 'scripts/jenkins_job/config.ini'
-config = configparser.ConfigParser()
-config.read(config_file)
-LOGGER = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -67,6 +62,7 @@ def main():
         local_path=local_crt_path)
     client_conf.setup_chrome()
     print("Client Setup Done!!")
+
 
 if __name__ == "__main__":
     main()
