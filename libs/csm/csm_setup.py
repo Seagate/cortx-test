@@ -95,3 +95,22 @@ class CSMConfigsCheck:
             # CTP Exception handling shall get complicated
             self._log.error("Error occurred during setup : %s", error)
         return result
+
+    def delete_csm_users(self):
+        """Function will delete all the stray csm user appart from predefined ones.
+        """
+        responses = self._csm_user.list_csm_users(
+                const.SUCCESS_STATUS, return_actual_response=True).json()["users"]
+        for resp in responses:
+            if (resp["username"] != self._csm_user.config["csm_user_manage"]["username"] and
+                resp["username"] != self._csm_user.config["csm_user_monitor"]["username"] and
+                resp["username"] != self._csm_user.config["csm_admin_user"]["username"]):
+                self._csm_user.delete_csm_user(resp["username"])
+
+    def delete_s3_users(self):
+        """Function will delete all the stray s3 user appart from predefined ones.
+        """
+        responses = self._s3account.list_all_created_s3account().json()["s3_accounts"]
+        for resp in responses:
+            if resp["account_name"] != self._s3account.config["s3account_user"]["username"]:
+                self._s3account.delete_s3_account_user(resp["account_name"])
