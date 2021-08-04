@@ -646,7 +646,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step4'] = 'Fail'
-                    LOGGER.error("Step 4:" + resp[1])
+                    LOGGER.error("Step 4: %s", resp[1])
                 else:
                     LOGGER.info("Step 4: Successfully checked generated alerts")
 
@@ -733,7 +733,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step9'] = 'Fail'
-                    LOGGER.error("Step 9:" + resp[1])
+                    LOGGER.error("Step 9: %s", resp[1])
                 else:
                     LOGGER.info("Step 9: Successfully checked generated alerts")
 
@@ -1079,7 +1079,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step2'] = 'Fail'
-                    LOGGER.error("Step 2:" + resp[1])
+                    LOGGER.error("Step 2: %s", resp[1])
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
 
@@ -1142,7 +1142,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step6'] = 'Fail'
-                    LOGGER.error("Step 6:" + resp[1])
+                    LOGGER.error("Step 6: %s", resp[1])
                 else:
                     LOGGER.info("Step 6: Successfully checked generated alerts")
 
@@ -1237,7 +1237,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step2'] = 'Fail'
-                    LOGGER.error("Step 2:" + resp[1])
+                    LOGGER.error("Step 2: %s", resp[1])
                 else:
                     LOGGER.info("Step 2: Successfully checked generated alerts")
 
@@ -1300,7 +1300,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step6'] = 'Fail'
-                    LOGGER.error("Step 6:" + resp[1])
+                    LOGGER.error("Step 6: %s", resp[1])
                 else:
                     LOGGER.info("Step 6: Successfully checked generated alerts")
 
@@ -1432,7 +1432,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step4'] = 'Fail'
-                    LOGGER.error("Step 4:" + resp[1])
+                    LOGGER.error("Step 4: %s", resp[1])
                 else:
                     LOGGER.info("Step 4: Successfully checked generated alerts")
 
@@ -1520,7 +1520,7 @@ class TestNetworkFault:
                 LOGGER.info("Response: %s", resp)
                 if not resp[0]:
                     df[key]['Step9'] = 'Fail'
-                    LOGGER.error("Step 9:" + resp[1])
+                    LOGGER.error("Step 9: %s", resp[1])
                 else:
                     LOGGER.info("Step 9: Successfully checked generated alerts")
 
