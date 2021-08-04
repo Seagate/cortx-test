@@ -634,7 +634,7 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
         return resp
 
-    def increate_memory(self, vm_count: int, memory_size: str, timespan: str):
+    def increase_memory(self, vm_count: int, memory_size: str, timespan: str):
         """Increasing memory
         :param vm_count: Count of the VM
         :param memory_size: Malloc per vm worker(e.g. : 128MB, 1GB)

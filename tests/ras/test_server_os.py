@@ -537,7 +537,7 @@ class TestServerOS:
                 LOGGER.info(
                     "Step 3: Increased the memory utilization in the factor of GB")
                 LOGGER.info("Step 4: Checking memory utilization on each node")
-                if obj.check_memory_utilization().strip() > cpu_usage:
+                if obj.check_memory_utilization().strip() >= cpu_usage:
                     flag = True
                     break
                 LOGGER.info("Step 4: Verified memory utilization on each node")
