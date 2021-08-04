@@ -22,7 +22,15 @@ def update_branches_dropdown(release):
         branches = get_distinct_keys(release, 'Branch', {})
         if branches:
             options = get_dict_from_array(branches, False)
-            value = options[0]['value']
+            if 'Release' in branches:
+                value = 'Release'
+                print("here")
+            elif 'stable' in branches:
+                value = 'stable'
+            elif 'custom' in branches:
+                value = 'custom'
+            else:
+                value = options[0]['value']
             if len(options) == 1:
                 disabled = True
 
