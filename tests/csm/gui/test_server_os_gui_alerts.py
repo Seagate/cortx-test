@@ -624,7 +624,6 @@ class TestServerOSAlerts:
         LOGGER.info(
             "Step 10: Rebooted node: %s, Response: %s", self.host, resp)
         time.sleep(self.cm_cfg["reboot_delay"])
-
         LOGGER.info("Performing health check after node reboot")
         resp = self.health_obj.check_node_health()
         assert resp[0], resp[1]
