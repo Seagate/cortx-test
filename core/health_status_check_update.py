@@ -21,11 +21,10 @@ Utility Class for target locking using DB
 #
 # -*- coding: utf-8 -*-
 
-from core import runner
-from commons import params
 import logging
 from pymongo import MongoClient
 from urllib.parse import quote_plus
+from core import runner
 from commons.helpers.health_helper import Health
 
 LOGGER = logging.getLogger(__name__)
@@ -45,12 +44,16 @@ class HealthCheck:
     """
 
     def __init__(self):
-        self.db_username, self.db_password = runner.get_db_credential()
+        self.db_user, self.db_password = runner.get_db_credential()
 
     def get_setup_details(self, targets):
+        """
+            Fetch target details from database
+            :return: target_dict {setupname : nodes[]}
+        """
         target_dict = {}
         mongodburi = "mongodb://{0}:{1}@{2}"
-        uri = mongodburi.format(quote_plus(self.db_username), quote_plus(self.db_password), DB_HOSTNAME)
+        uri = mongodburi.format(quote_plus(self.db_user), quote_plus(self.db_password), DB_HOSTNAME)
         client = MongoClient(uri)
         setup_db = client[DB_NAME]
         collection_obj = setup_db[SYS_INFO_COLLECTION]
@@ -69,8 +72,12 @@ class HealthCheck:
         return target_dict
 
     def update_health_status(self,target_status_dict):
+        """
+            Update target health status True/False
+            "is_setup_healthy" : True/False
+        """
         mongodburi = "mongodb://{0}:{1}@{2}"
-        uri = mongodburi.format(quote_plus(self.db_username), quote_plus(self.db_password), DB_HOSTNAME)
+        uri = mongodburi.format(quote_plus(self.db_user), quote_plus(self.db_password), DB_HOSTNAME)
         client = MongoClient(uri)
         setup_db = client[DB_NAME]
         collection_obj = setup_db[SYS_INFO_COLLECTION]
@@ -81,9 +88,13 @@ class HealthCheck:
                 setup_details = collection_obj.find_one(setup_query)
                 setup_details["is_setup_healthy"] = target_status_dict[setupname]
                 collection_obj.update_one(setup_query, {'$set': setup_details})
-                LOGGER.info(f"Updated health status for target {setupname} as {target_status_dict[setupname]}")
+                LOGGER.info(f"Updated health status for target {setupname}")
 
     def check_cortx_cluster_health(self, node):
+        """
+            check target node health status
+            :return True/False
+        """
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -98,6 +109,11 @@ class HealthCheck:
         return result
 
     def check_cluster_storage(self, node):
+        """
+            check target storage status
+            :return True/False
+        """
+
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
@@ -124,6 +140,6 @@ class HealthCheck:
                     target_status_dict[setupname] = True
                 else:
                     target_status_dict[setupname] = False
-                    LOGGER.info(f"Health check failed for node {node['host']} of target {setupname}")
+                    LOGGER.info(f"Health check failed for {node['host']} of target {setupname}")
                     break
         self.update_health_status(target_status_dict)
