@@ -28,6 +28,7 @@ import logging
 import os
 import pathlib
 import random
+import shutil
 import string
 import tempfile
 import time
@@ -74,6 +75,7 @@ BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinationa
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 Globals.ALL_RESULT = None
+Globals.CSM_LOGS = None
 
 
 def _get_items_from_cache():
@@ -609,6 +611,12 @@ def pytest_runtest_makereport(item, call):
     current_file = 'other_test_calls.log'
     jira_update = ast.literal_eval(str(item.config.option.jira_update))
     db_update = ast.literal_eval(str(item.config.option.db_update))
+    if report.when == 'setup':
+        test_id = item.own_markers[0].args[0]
+        Globals.CSM_LOGS = f"{LOG_DIR}/latest/{test_id}_Gui_Logs/"
+        if os.path.exists(Globals.CSM_LOGS):
+            shutil.rmtree(Globals.CSM_LOGS)
+        os.mkdir(Globals.CSM_LOGS)
     if not _local:
         test_id = CACHE.lookup(report.nodeid)
         if report.when == 'setup' and item.rep_setup.failed:
