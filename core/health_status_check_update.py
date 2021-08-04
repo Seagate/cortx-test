@@ -22,8 +22,8 @@ Utility Class for target locking using DB
 # -*- coding: utf-8 -*-
 
 import logging
-from pymongo import MongoClient
 from urllib.parse import quote_plus
+from pymongo import MongoClient
 from core import runner
 from commons.helpers.health_helper import Health
 
@@ -88,9 +88,10 @@ class HealthCheck:
                 setup_details = collection_obj.find_one(setup_query)
                 setup_details["is_setup_healthy"] = target_status_dict[setupname]
                 collection_obj.update_one(setup_query, {'$set': setup_details})
-                LOGGER.info(f"Updated health status for target {setupname}")
+                LOGGER.info("Updated health status for target %s", {setupname})
 
-    def check_cortx_cluster_health(self, node):
+    @staticmetod
+    def check_cortx_cluster_health(node):
         """
             check target node health status
             :return True/False
@@ -108,7 +109,8 @@ class HealthCheck:
             health.disconnect()
         return result
 
-    def check_cluster_storage(self, node):
+    @staticmetod
+    def check_cluster_storage(node):
         """
             check target storage status
             :return True/False
@@ -129,6 +131,12 @@ class HealthCheck:
         return result
 
     def health_check(self, targets):
+        """
+            accept targets
+            trigger health functions
+            pass on health status to update function
+            :return target_dict {setupname : True/False}
+        """
         target_dict = self.get_setup_details(targets)
         target_status_dict = {}
         for setupname in target_dict:
@@ -140,6 +148,6 @@ class HealthCheck:
                     target_status_dict[setupname] = True
                 else:
                     target_status_dict[setupname] = False
-                    LOGGER.info(f"Health check failed for {node['host']} of target {setupname}")
+                    LOGGER.info("Health check failed for %s of target %s", {node['host']}, {setupname})
                     break
         self.update_health_status(target_status_dict)
