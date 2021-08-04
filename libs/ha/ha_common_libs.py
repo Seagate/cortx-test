@@ -220,11 +220,11 @@ class HALibs:
                 else:
                     exp_state = pw_state == 'down'
             else:
-                resp = bmc_obj.bmc_node_power_status(self.bmc_user, self.bmc_pwd)
+                out = bmc_obj.bmc_node_power_status(self.bmc_user, self.bmc_pwd)
                 if exp_resp:
-                    exp_state = "on" in resp[0]
+                    exp_state = b"on" in out[0]
                 else:
-                    exp_state = "off" in resp[0]
+                    exp_state = b"off" in out[0]
 
             if resp == exp_resp and exp_state:
                 return True
@@ -285,7 +285,8 @@ class HALibs:
 
         LOGGER.info("Check if %s is powered on.", host)
         # SSC cloud is taking time to on VM host hence timeout
-        resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True, bmc_obj=bmc_obj)
+        resp = self.polling_host(max_timeout=self.t_power_on, host=host,
+                                 exp_resp=True, bmc_obj=bmc_obj)
         return resp
 
     def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
