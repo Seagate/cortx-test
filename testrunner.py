@@ -11,6 +11,7 @@ from multiprocessing import Process
 from jira import JIRA
 from core import runner
 from core import kafka_consumer
+from core.health_status_check_update import HealthCheck
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
@@ -458,6 +459,7 @@ def get_available_target(kafka_msg, client):
     """
     lock_task = LockingServer()
     acquired_target = ""
+    HealthCheck().health_check(kafka_msg.target_list)
 
     while acquired_target == "":
         if kafka_msg.parallel:
