@@ -529,7 +529,7 @@ class TestServerOS:
             while not flag:
                 LOGGER.info(
                     "Step 3: Increasing the memory utilization in the factor of GB")
-                resp = obj.increate_memory(
+                resp = obj.increase_memory(
                     vm_count=test_cfg["vm_count"],
                     memory_size=test_cfg["memory_size"],
                     timespan=test_cfg["timespan"])
