@@ -465,8 +465,10 @@ class HALibs:
             sys_obj.logout_cortx_cli()
             sys_obj.close_connection(set_session_obj_none=True)
 
-    # pylint: disable=R0915
-    # pylint: disable=R0912
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-nested-blocks
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
     def check_pcs_status_resp(self, node, node_obj, hlt_obj):
         """
         This will get pcs status xml and hctl status response and

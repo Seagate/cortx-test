@@ -23,8 +23,8 @@ This library contains methods for system node operations using CORTX CLI
 
 import logging
 from commons import commands
-from libs.csm.cli.cortx_cli import CortxCli
 from commons.constants import Rest as Const
+from libs.csm.cli.cortx_cli import CortxCli
 
 LOGGER = logging.getLogger(__name__)
 
@@ -125,13 +125,19 @@ class CortxCliSystemtOperations(CortxCli):
 
         return True, output
 
-    def node_operation(self, operation: str, resource_id: int, force_op: bool = False, storage_off: bool = False):
+    def node_operation(
+            self,
+            operation: str,
+            resource_id: int,
+            force_op: bool = False,
+            storage_off: bool = False):
         """
         This function is used to perform node operation (stop/poweroff/start)
         :param operation: Operation to be performed on node
         :param resource_id: Resource ID for the operation
         :param force_op: Specifying this enables force operation.
-        :param storage_off: The poweroff operation will be performed along with powering off the storage.
+        :param storage_off: The poweroff operation will be performed along
+        with powering off the storage.
         Valid only with poweroff operation on node.
         :return: (Boolean, response)
         """

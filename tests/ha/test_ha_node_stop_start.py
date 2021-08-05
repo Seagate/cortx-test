@@ -22,9 +22,9 @@
 HA test suite for node start stop operations.
 """
 
-import logging
 import time
 from random import SystemRandom
+import logging
 import pytest
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
@@ -196,7 +196,8 @@ class TestHANodeStartStop:
             LOGGER.info("Step 2: %s is stopped and still is pinging",
                         self.srvnode_list[node])
             LOGGER.info(
-                "Step 3: Check health status for %s is offline & cluster/rack/site is degraded with CLI/REST",
+                "Step 3: Check health status for %s is offline and "
+                "cluster/rack/site is degraded with CLI/REST",
                 self.srvnode_list[node])
             resp = self.ha_obj.get_csm_failover_node(
                 srvnode_list=self.srvnode_list,

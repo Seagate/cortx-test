@@ -752,7 +752,8 @@ class S3TestLib(S3Lib):
             s3acc_obj = CortxCliS3AccountOperations(
                 session_obj=self.s3bkt_obj.session_obj)
             login = s3acc_obj.login_cortx_cli(
-                username=s3_user_pass['user_name'], password=s3_user_pass['password'])
+                username=s3_user_pass['user_name'],
+                password=s3_user_pass['password'])
             if not login[0]:
                 raise CTException(err.S3_LOGGING_FAILED, login[1])
             response = self.delete_all_buckets()
@@ -768,8 +769,8 @@ class S3TestLib(S3Lib):
             if not response[0]:
                 raise CTException(err.S3_LOGOUT_FAILED, response[1])
             self.s3bkt_obj.close_connection(set_session_obj_none=True)
-            return True, f"Successfully deleted all s3 bucket objects and s3 account {s3_user_pass['user_name']}"
-        except (Exception, CTException) as error:
+            return True, f"Deleted all s3 bucket objects & s3 account {s3_user_pass['user_name']}"
+        except CTException as error:
             LOGGER.error("Error in %s: %s",
                          S3TestLib.delete_s3_acc_buckets.__name__,
                          error)
