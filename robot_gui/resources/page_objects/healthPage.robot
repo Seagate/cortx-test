@@ -31,8 +31,8 @@ Check if Node status
     [Documentation]  Find and mark Fail if alert description already exist
     [Arguments]  ${ID}  ${status}
     ${found}=  Set Variable  False
-    ${row}=  Evaluate  ${ID} + 4
-    ${column}=  Set Variable  3
+    ${row}=  Evaluate  ${ID} + ${HEALTH_NODE_OFFSET}
+    ${column}=  Set Variable  ${HEALTH_STATUS_COLUMN}
     Log To Console And Report  id = ${ID} state = ${status} row = ${row} column = ${column}
     Navigate To Page  HEALTH_MENU_ID  TABULAR_TAB_ID
     wait for page or element to load  3s  # Took time to load status
@@ -57,8 +57,8 @@ Check if Cluster status
     [Documentation]  Find and mark Fail if alert description already exist
     [Arguments]  ${status}
     ${found}=  Set Variable  False
-    ${row}=  Set Variable  1
-    ${column}=  Set Variable  3
+    ${row}=  Set Variable  ${HEALTH_CLUSTER_OFFSET}
+    ${column}=  Set Variable  ${HEALTH_STATUS_COLUMN}
     Log To Console And Report  state = ${status} row = ${row} column = ${column}
     Navigate To Page  HEALTH_MENU_ID  TABULAR_TAB_ID
     wait for page or element to load  3s  # Took time to load status

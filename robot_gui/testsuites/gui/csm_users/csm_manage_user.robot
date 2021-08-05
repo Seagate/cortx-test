@@ -85,11 +85,7 @@ TEST-1217
     Edit CSM User Details  ${new_user_name}  ${updated_password}  ${updated_email}  ${new_password}
     Re-login  ${new_user_name}  ${updated_password}  ${page_name}
     Delete Logged In CSM User  ${new_user_name}
-    wait for page or element to load
-    Enter Username And Password  ${new_user_name}  ${updated_password}
-    Click Sigin Button
-    Validate CSM Login Failure
-    Close Browser
+    Verify CSM GUI Login Fail with Incorrect Credentials  ${url}  ${browser}  ${headless}  ${new_user_name}  ${updated_password}
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Navigate To Page  ${page_name}
     Delete CSM User  ${new_csm_user_name}
@@ -166,6 +162,8 @@ TEST-23782
     Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
     Click On Confirm Button
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
     wait for page or element to load
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
@@ -253,6 +251,8 @@ TEST-23052
     Log To Console And Report  Create Account with role: manage
     ${manage_user_name}  ${manage_user_password}=  Create and login with CSM manage user
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{admin_users}
         Log To Console And Report  Verify Edit Action Disable for ${user}

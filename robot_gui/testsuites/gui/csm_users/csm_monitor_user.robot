@@ -59,7 +59,9 @@ TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
     Verify that monitor user is not able to create delete csm user
-    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  3
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
+    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  &{CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{users_list}
         Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
         ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}
@@ -193,6 +195,8 @@ TEST-23053
     Log To Console And Report  Create Account with role: monitor
     ${monitor_user_name}  ${monitor_user_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{admin_users}
         Log To Console And Report  Verify Edit Action Disable for ${user}

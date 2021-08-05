@@ -58,9 +58,7 @@ TEST-535
     [Documentation]  Test Only valid user request get authenticated and able to login
     ...  Reference : https://jts.seagate.com/browse/TEST-535
     [Tags]  Priority_High  TEST-535
-    CSM GUI Login with Incorrect Credentials  ${url}  ${browser}  ${headless}
-    Validate CSM Login Failure
-    Close Browser
+    Verify CSM GUI Login Fail with Incorrect Credentials  ${url}  ${browser}  ${headless}
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Validate CSM Login Success  ${username}
     CSM GUI Logout
