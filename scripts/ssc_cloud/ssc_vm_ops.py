@@ -23,6 +23,7 @@ import argparse
 import json
 import sys
 import time
+import logging
 import random
 import string
 
@@ -30,6 +31,8 @@ from requests.packages import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from requests.auth import HTTPBasicAuth
+
+LOGGER = logging.getLogger(__name__)
 
 # Disable insecure-certificate-warning message
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -102,7 +105,7 @@ def get_args():
     parser.add_argument('--snap_id', '-n', help="Snap ID of the VM")
     parser.add_argument('--user', '-u', help="GID of the user for SSC Auth")
     parser.add_argument('--password', '-p', help="Password of the user for SSC Auth")
-
+    parser.add_argument('--vm_service_id', '-r', help="Service ID of the VM")
     # Execute the parse_args() method and return
     return parser.parse_args()
 
@@ -183,7 +186,7 @@ class VMOperations:
         self.payload = ""
         self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
         self.url = "https://%s/api/service_templates/%s" % (
-        self.args.fqdn, self.args.service_template)
+            self.args.fqdn, self.args.service_template)
         # Process the request
         return self.execute_request()
 
@@ -198,7 +201,7 @@ class VMOperations:
             "action": "order",
             "resource": {
                 "href": "https://%s/api/service_templates/%s" % (
-                self.args.fqdn, self.args.service_template),
+                    self.args.fqdn, self.args.service_template),
                 "dialog_check_box_1": "t",
                 "extra_disk_count": self.args.extra_disk_count,
                 "extra_disk_size": self.args.extra_disk_size,
@@ -231,12 +234,44 @@ class VMOperations:
                 else:
                     print("Expected VM state is finished, but current state is %s..." % _vm_state)
                     if _count == ITER_COUNT:
-                        print('VM has ordered successfully, but VM state is not matched with expectation..')
+                        print(
+                            'VM has ordered successfully, but VM state is not matched with expectation..')
                         sys.exit()
         else:
             print("Failed to process the VM request..%s" % _response)
         return _response
 
+    def get_vms(self):
+        self.payload = ""
+        self.method = "GET"
+        self.url = f"https://{self.args.fqdn}/api/services?expand=resources"
+        self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
+        res = self.execute_request()
+        with open(os.path.join(os.getcwd(), VM_INFO_CSV), 'w', newline='') as vm_info_csv:
+            writer = csv.writer(vm_info_csv)
+            writer.writerow(['service_id', 'service_name', 'name', 'power_state', 'created_on',
+                             'cores', 'memory', 'disks', 'disk_size', 'retire_status',
+                             'retires_on'])
+            res_info = res['resources']
+            for i in range(len(res['resources'])):
+                ser_id = res_info[i]['id']
+                ser_name = res_info[i]['name']
+                ser_cores = res_info[i]['options']['dialog']['dialog_option_0_cores_per_socket']
+                ser_memory = res_info[i]['options']['dialog']['dialog_option_0_vm_memory']
+                ser_disks = res_info[i]['options']['dialog']['dialog_extra_disk_count']
+                ser_disk_size = res_info[i]['options']['dialog']['dialog_extra_disk_size']
+                self.url = f"https://{self.args.fqdn}/api/services/{ser_id}/vms?expand=resources"
+                vm_res = self.execute_request()
+                name = vm_res['resources'][0]['name']
+                power_state = vm_res['resources'][0]['power_state']
+                created_on = vm_res['resources'][0]['created_on']
+                ret_status = vm_res['resources'][0]['retired']
+                retires_on = vm_res['resources'][0]['retires_on']
+                writer.writerow(
+                    [ser_id, ser_name, name, power_state, created_on, ser_cores, ser_memory,
+                     ser_disks, ser_disk_size, ret_status, retires_on])
+        return res
+    '''
     def get_vms(self):
         self.payload = ""
         self.method = "GET"
@@ -259,6 +294,7 @@ class VMOperations:
                 else:
                     writer.writerow([vm[0], vm[1]])
         return vm_names
+    '''
 
     def get_vm_info(self):
         self.payload = ""
@@ -274,9 +310,10 @@ class VMOperations:
         if _get_vm_info['resources'][0]['retirement_state'] != "retired":
             _vm_id = _get_vm_info['resources'][0]['id']
             self.method = "POST"
-            self.url = "https://%s/api/vms/%s" % (self.args.fqdn, _vm_id)
+            #self.url = "https://%s/api/vms/%s" % (self.args.fqdn, _vm_id)
+            self.url = f"https://{self.args.fqdn}/api/services/{self.args.vm_service_id}"
             self.payload = {
-                "action": "retire"
+                "action": "request_retire"
             }
             self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
             # Process the request
@@ -399,6 +436,26 @@ class VMOperations:
         return _response
 
     def revert_vm_snap(self, _response=''):
+        LOGGER.debug('Running revert vm snap')
+        if not self.args.snap_id:
+            self.payload = ""
+            self.method = "GET"
+            self.url = "https://%s/api/vms?expand=resources&attributes=name,vendor,snapshots&filter[]=name='%s'" \
+                       % (self.args.fqdn, self.args.host)
+            self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
+            res = self.execute_request()
+            if res:
+                snapshots = res['resources'][0]['snapshots']
+                for i in range(len(snapshots)):
+                    name = snapshots[i]['name']
+                    if name != 'Active VM':
+                        print(name)
+                        LOGGER.debug('vm name %s', name)
+                        snap_id = snapshots[i]['id']
+                        print(snap_id)
+                        LOGGER.debug('snap_id %s', snap_id)
+                        self.args.snap_id = snap_id
+                        break
         _vm_info = self.get_vm_info()
         _vm_state = _vm_info['resources'][0]['power_state']
         _vm_id = _vm_info['resources'][0]['id']
@@ -412,15 +469,20 @@ class VMOperations:
                 _vm_info = self.get_vm_info()
                 _vm_state = _vm_info['resources'][0]['power_state']
                 print("VM has been stopped successfully. VM status is %s.." % _vm_state)
+                LOGGER.debug("VM has been stopped successfully. VM status is %s.." % _vm_state)
         else:
             print("VM is already stopped...")
+            LOGGER.debug("VM is already stopped...")
+
+        time.sleep(120)  # add wait for VM to get stopped
 
         if _stop_res or _vm_state == "off":
             print("Revert the VM snapshots...")
+            LOGGER.debug("Revert the VM snapshots...")
             self.method = "POST"
             self.payload = {"action": "revert"}
             self.url = "https://%s/api/vms/%s/snapshots/%s" % (
-            self.args.fqdn, _vm_id, self.args.snap_id)
+                self.args.fqdn, _vm_id, self.args.snap_id)
             self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
             # Process the request
             _response = self.execute_request()
@@ -428,20 +490,37 @@ class VMOperations:
                 _revert_res = self.check_status(_response)
                 if _revert_res['state'] == "Finished":
                     print("Revert message: %s" % _revert_res['message'])
+                    LOGGER.debug("Revert message: %s" % _revert_res['message'])
                     print(json.dumps(_revert_res, indent=4, sort_keys=True))
+                    LOGGER.debug(json.dumps(_revert_res, indent=4, sort_keys=True))
                     # Start the VM after snapshot revert
                     _start_res = self.start_vm(_vm_id)
                     if _start_res:
+                        time.sleep(240)  # wait to get VM started
                         print("Started the VM after snapshot revert")
                         print(json.dumps(_start_res, indent=4, sort_keys=True))
+                        LOGGER.debug("Started the VM after snapshot revert")
+                        LOGGER.debug(json.dumps(_start_res, indent=4, sort_keys=True))
                     else:
                         print("Failed to start the VM after revert...")
+                        LOGGER.debug("Failed to start the VM after revert...")
+                        sys.exit(1)
                 else:
                     print("Failed to revert the VM...")
                     print("Response: %s" % _revert_res)
+                    LOGGER.debug("Failed to revert the VM...")
+                    LOGGER.debug("Response: %s" % _revert_res)
+                    sys.exit(1)
             else:
                 print("Failed to process the revert API request...")
-                sys.exit()
+                LOGGER.debug("Failed to process the revert API request...")
+               
+                sys.exit(1)
+        else:
+            print("Could not stop VM")
+            LOGGER.debug("Could not stop VM")
+       
+            sys.exit(1)
         return _response
 
 
@@ -460,7 +539,7 @@ def main():
         if args.service_template:
             result = vm_object.create_vm()
     elif args.action == "retire_vm":
-        if args.host:
+        if args.host and args.vm_service_id:
             result = vm_object.retire_vm()
     elif args.action == "get_vm_info":
         if args.host:
@@ -471,7 +550,7 @@ def main():
         if args.host:
             result = vm_object.list_vm_snaps()
     elif args.action == "revert_vm_snap":
-        if args.snap_id and args.host:
+        if args.host:
             result = vm_object.revert_vm_snap()
     elif args.action == "create_vm_snap":
         if args.host:

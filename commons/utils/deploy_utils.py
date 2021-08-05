@@ -43,17 +43,17 @@ class CreateSetupJson:
         self.hosts = hosts
         self.repr_object = dict()
 
-        self.nd_obj_host = Node(hostname=hosts[0]['hostname'], username=hosts[0]['username'],
-                                password=hosts[0]['password'])
+        self.nd_obj_host = Node(hostname=hosts[0], username='root',
+                                password='seagate')
         remote_path = "/opt/seagate/cortx_configs/provisioner_cluster.json"
         local_path = os.path.join(os.getcwd() + "/provisioner_cluster.json")
         self.nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
         with open('provisioner_cluster.json') as json_file:
             self.data = json.load(json_file)
-        self.m_ip = self.data["cluster"][list(data["cluster"].keys())[0]]['network']['management'][
+        self.m_ip = self.data["cluster"][list(self.data["cluster"].keys())[0]]['network']['management'][
             'virtual_host']
 
-    def create_setup_entry(self, target_name, setup_type='VM'):
+    def create_setup_entry(self, target_name, setup_type , csm_user, csm_pass):
         target_setup = dict()
         enc = dict()
         pdu = dict()
@@ -78,7 +78,7 @@ class CreateSetupJson:
         target_setup.update({'gem_controller': self.add_gem_controller_details(gc)})
         target_setup.update({'ldap': self.add_ldap_details(ldap)})
         target_setup.update({'bmc': self.add_bmc_details(bmc)})
-        target_setup.update({'csm': self.add_csm_details(csm)})
+        target_setup.update({'csm': self.add_csm_details(csm, csm_user, csm_pass)})
         target_setup.update({'s3': self.add_s3_details(s3)})
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
@@ -87,10 +87,10 @@ class CreateSetupJson:
     def add_nodes_details(host_number, node):
         return dict(
             host="srvnode-" + str(host_number),
-            hostname=node["hostname"],
+            hostname=node,
             ip="node_ip",
-            username=node["username"],
-            password=node["password"]
+            username='root',
+            password='seagate'
         )
 
     def add_enclosure_details(self, enc):
@@ -136,20 +136,24 @@ class CreateSetupJson:
                     password=ldap_pass,
                     sspl_pass=ldap_pass)
 
-    def add_csm_details(self, csm):
+    def add_csm_details(self, csm, csm_user, csm_pass):
         return dict(mgmt_vip=self.m_ip,
-                    csm_admin_user=dict(username="",
-                                        password="")
+                    csm_admin_user=dict(username=csm_user,
+                                        password=csm_pass)
                     )
 
     def add_s3_details(self, s3):
         return dict(s3_server_ip=self.m_ip,
-                    s3_server_user=dict(username=self.hosts[0]['username'],
-                                        password=self.hosts[0]['password']))
+                    s3_server_user=dict(username='root',
+                                        password='seagate'))
 
 
-def register_setup_entry(hosts: List, new_entry=True):
-    setup_json = CreateSetupJson(hosts)
+def register_setup_entry(hosts: List, setupname, csm_user, csm_pass):
+    """
+    Add setup entry in db
+    """
+    setup_json_obj = CreateSetupJson(hosts)
+    setup_json = setup_json_obj.create_setup_entry(setupname, 'VM', csm_user, csm_pass)
     DBUSER = os.environ.get('DB_USER')
     DBPSWD = os.environ.get('DB_PASSWORD')
     setupname = setup_json['setupname']
@@ -162,13 +166,11 @@ def register_setup_entry(hosts: List, new_entry=True):
     LOGGER.debug("Collection obj for DB interaction %s", collection_obj)
     LOGGER.debug("Setup query : %s", setup_query)
     entry_exist = collection_obj.find(setup_query).count()
-    if new_entry and entry_exist:
-        LOGGER.error("%s already exists", setup_query)
-    elif new_entry and not entry_exist:
-        rdata = collection_obj.insert_one(setup_json)
+    if not entry_exist:
+        collection_obj.insert_one(setup_json)
         LOGGER.info("Setup Data is inserted successfully")
     else:
-        rdata = collection_obj.update_one(setup_query, {'$set': setup_json})
+        collection_obj.update_one(setup_query, {'$set': setup_json})
         LOGGER.debug("Setup Data is updated successfully")
     setup_details = collection_obj.find_one(setup_query)
     return setup_details
