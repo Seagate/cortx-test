@@ -49,6 +49,7 @@ python-dateutil==2.8.0
 python-jenkins~=1.7.0
 pyyaml==5.1.2
 pyzmq==18.0.2
+pyOpenSSL==20.0.1
 requests==2.22.0
 redexpect
 robotframework==3.2.2
