@@ -38,7 +38,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.di.di_run_man import RunDataCheckManager
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=R0902
 class HALibs:
     """
     This class contains common utility methods for HA related operations.
@@ -430,6 +430,7 @@ class HALibs:
             return False, "Failed to get CSM failover node"
         return resp[0], resp[1], nd_obj
 
+    # pylint: disable=too-many-arguments
     @staticmethod
     def perform_node_operation(
             sys_obj,
@@ -594,6 +595,7 @@ class HALibs:
                          error)
             return False, error
 
+    # pylint: disable=too-many-arguments
     def perform_ios_ops(
             self,
             prefix_data: str = None,
