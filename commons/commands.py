@@ -326,6 +326,10 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
               "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
 
+#cortx_setup commands
+CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
+CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"
+
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'

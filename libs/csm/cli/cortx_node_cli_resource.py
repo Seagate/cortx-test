@@ -1,5 +1,5 @@
 import logging
-
+from commons import commands
 from config import CMN_CFG
 from libs.csm.cli.cortx_node_cli import CortxNodeCli
 
@@ -44,7 +44,7 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "exception",
             "usage:",
             "command not found"]
-        res = super().execute_cli_commands(cmd="resource discover",
+        res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_DISCOVER,
                                            patterns=default_patterns, time_out=timeout)
         return res[1]
 
@@ -55,7 +55,7 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "exception",
             "usage:",
             "command not found"]
-        res = super().execute_cli_commands(cmd="resource health --show",
+        res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_SHOW_HEALTH,
                                            patterns=default_patterns, time_out=timeout)
         return res[1]
 
