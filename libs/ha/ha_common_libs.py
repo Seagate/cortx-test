@@ -38,6 +38,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.di.di_run_man import RunDataCheckManager
 LOGGER = logging.getLogger(__name__)
 
+
 # pylint: disable=R0902
 class HALibs:
     """
@@ -465,10 +466,52 @@ class HALibs:
             sys_obj.logout_cortx_cli()
             sys_obj.close_connection(set_session_obj_none=True)
 
+    @staticmethod
+    def check_hctl_status_resp(
+            hlt_obj,
+            host_data: dict,
+            hctl_srvs: dict,
+            node: int):
+        """
+        This function will check hctl status and if cluster is clean
+        it will get the json data and check for the service's not expected status
+        :param hlt_obj: Health class object
+        :param host_data: Dictionary of host data info
+        :param hctl_srvs: Dictionary of not expected status service state
+        :param node: Node ID which has been stopped
+        """
+        # Get hctl status response for stopped node (Cluster not running)
+        checknode = host_data["hostname"]
+        resp = system_utils.run_remote_cmd(
+            cmd=common_cmd.MOTR_STATUS_CMD,
+            hostname=host_data["hostname"],
+            username=host_data["username"],
+            password=host_data["password"],
+            read_lines=True)
+        if resp[0]:
+            return False, f"HCTL status: {resp[1]} for srvnode-{node + 1}"
+        # Get hctl status --json response for all node hctl services
+        resp = hlt_obj.hctl_status_json()
+        svcs_elem = {'service': None, 'status': None}
+        for node_data in resp['nodes']:
+            hctl_srvs[node_data['name']] = list()
+            temp_svc = svcs_elem.copy()
+            # For stopped node, service should be in stopped state
+            if node_data['name'] == checknode:
+                for svcs in node_data['svcs']:
+                    if svcs['name'] != "m0_client" and svcs['status'] == 'started':
+                        temp_svc['service'] = svcs['name']
+                        temp_svc['status'] = svcs['status']
+                        hctl_srvs[node_data['name']].append(temp_svc)
+            else:
+                for svcs in node_data['svcs']:
+                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                        temp_svc['service'] = svcs['name']
+                        temp_svc['status'] = svcs['status']
+                        hctl_srvs[node_data['name']].append(temp_svc)
+        return True
+
     # pylint: disable-msg=too-many-locals
-    # pylint: disable-msg=too-many-nested-blocks
-    # pylint: disable-msg=too-many-statements
-    # pylint: disable-msg=too-many-branches
     def check_pcs_status_resp(self, node, node_obj, hlt_obj):
         """
         This will get pcs status xml and hctl status response and
@@ -480,22 +523,19 @@ class HALibs:
         """
         # Get the next node to check pcs and hctl status
         checknode = f'srvnode-{(node+1)}.data.private'
-        if node == self.num_nodes:
-            up_node = 0
-        else:
-            up_node = node + 1
-        hostname = CMN_CFG["nodes"][node]["hostname"]
-        username = CMN_CFG["nodes"][node]["username"]
-        password = CMN_CFG["nodes"][node]["password"]
+        up_node = 0 if node == self.num_nodes else node + 1
+        host_details = {"hostname": CMN_CFG["nodes"][node]["hostname"],
+                        "username": CMN_CFG["nodes"][node]["username"],
+                        "password": CMN_CFG["nodes"][node]["password"]}
         # Get the pcs status for stopped node (Cluster not running)
         resp = system_utils.run_remote_cmd(
             cmd=common_cmd.PCS_STATUS_CMD,
-            hostname=hostname,
-            username=username,
-            password=password,
+            hostname=host_details["hostname"],
+            username=host_details["username"],
+            password=host_details["password"],
             read_lines=True)
         if resp[0]:
-            return False, f"PCS status is {resp[1]} for srvnode-{node+1}"
+            return False, f"PCS status is {resp[1]} for srvnode-{node + 1}"
         # Get the pcs status xml to check service status for all nodes
         response = node_obj[up_node].execute_cmd(
             cmd=common_cmd.CMD_PCS_GET_XML,
@@ -503,29 +543,27 @@ class HALibs:
             exc=False)
         if isinstance(response, bytes):
             response = str(response, 'UTF-8')
-        json_format = hlt_obj[up_node].get_node_health_xml(pcs_response=response)
+        json_format = hlt_obj[up_node].get_node_health_xml(
+            pcs_response=response)
         crm_mon_res = json_format['crm_mon']['resources']
-        no_node = int(json_format['crm_mon']['summary']
-                      ['nodes_configured']['@number'])
         hctl_services_failed = {}
         # Get the clone set resource state from PCS status
-        clone_set_dict = hlt_obj[up_node].get_clone_set_status(crm_mon_res, no_node)
+        clone_set_dict = hlt_obj[up_node].get_clone_set_status(
+            crm_mon_res, self.num_nodes)
         svcs_elem = {'node': None, 'status': None}
         for pcs_key, pcs_value in clone_set_dict.items():
             hctl_services_failed[f'{pcs_key}'] = list()
             for srvnode, status in pcs_value.items():
                 temp_svc = svcs_elem.copy()
                 # For stopped node, service should be in stopped state
-                if srvnode == checknode:
-                    if status != 'Stopped':
-                        temp_svc['node'] = srvnode
-                        temp_svc['status'] = status
-                        hctl_services_failed[f'{pcs_key}'].append(temp_svc)
-                else:
-                    if status != 'Started':
-                        temp_svc['node'] = srvnode
-                        temp_svc['status'] = status
-                        hctl_services_failed[f'{pcs_key}'].append(temp_svc)
+                if srvnode == checknode and status != 'Stopped':
+                    temp_svc['node'] = srvnode
+                    temp_svc['status'] = status
+                    hctl_services_failed[f'{pcs_key}'].append(temp_svc)
+                elif srvnode != checknode and status != 'Started':
+                    temp_svc['node'] = srvnode
+                    temp_svc['status'] = status
+                    hctl_services_failed[f'{pcs_key}'].append(temp_svc)
         # Extract data for PCS resource group elements
         resource_dict = hlt_obj[up_node].get_resource_status(crm_mon_res)
         for pcs_key, pcs_value in resource_dict.items():
@@ -539,34 +577,16 @@ class HALibs:
             if pcs_value['status'] == 'Stopped':
                 hctl_services_failed[f'{pcs_key}'].append(pcs_value)
 
-        # Get hctl status response for stopped node (Cluster not running)
-        checknode = hostname
-        resp = system_utils.run_remote_cmd(
-            cmd=common_cmd.MOTR_STATUS_CMD,
-            hostname=hostname,
-            username=username,
-            password=password,
-            read_lines=True)
-        if resp[0]:
-            return False, f"HCTL status: {resp[1]} for srvnode-{node+1}"
-        # Get hctl status --json response for all node hctl services
-        resp = hlt_obj[up_node].hctl_status_json()
-        for node_data in resp['nodes']:
-            hctl_services_failed[node_data['name']] = list()
-            # For stopped node, service should be in stopped state
-            if node_data['name'] == checknode:
-                for svcs in node_data['svcs']:
-                    if svcs['name'] != "m0_client" and svcs['status'] == 'started':
-                        hctl_services_failed[node_data['name']].append(svcs)
-            else:
-                for svcs in node_data['svcs']:
-                    if svcs['name'] != "m0_client" and svcs['status'] != 'started':
-                        hctl_services_failed[node_data['name']].append(svcs)
-        # if hctl_services_failed list value is not empty get the details of not expected status
-        node_hctl_failure = {}
-        for key, val in hctl_services_failed.items():
-            if val:
-                node_hctl_failure[key] = val
+        resp = self.check_hctl_status_resp(
+            hlt_obj[up_node],
+            host_data=host_details,
+            hctl_srvs=hctl_services_failed,
+            node=node)
+        if not resp:
+            return resp
+        # if hctl_services_failed list value is not empty get the details of
+        # not expected status
+        node_hctl_failure = {key: val for (key, val) in hctl_services_failed.items() if val}
         if node_hctl_failure:
             return False, node_hctl_failure
 

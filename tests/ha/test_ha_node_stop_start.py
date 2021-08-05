@@ -23,9 +23,9 @@ HA test suite for node start stop operations.
 """
 
 import time
-from random import SystemRandom
 import logging
 import pytest
+from random import SystemRandom
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
