@@ -28,6 +28,7 @@ SECRET=None
 ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
+APACHE_J_METER=apache-jmeter-5.4.1.tgz
 
 
 aws-install:
@@ -162,10 +163,10 @@ configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
 apache-jmeter-install:
 	@echo "###Installing apache-jmeter in current machine###"
 	yum install -y java-1.8.0-openjdk
-	wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.4.1.tgz
-	tar -zxf apache-jmeter-5.4.1.tgz -C /root/
-	mv /root/apache-jmeter-5.4.1 /root/apache-jmeter
-	rm -rf apache-jmeter-5.4.1.tgz
+	wget https://downloads.apache.org//jmeter/binaries/$(APACHE_J_METER)
+	tar -zxf $(APACHE_J_METER) -C /usr/
+	mv /usr/apache-jmeter-5.4.1 /usr/apachejmeter
+	rm -rf $(APACHE_J_METER)
 	@echo "###Installed apache jmeter in current machine###"
 
 
@@ -183,6 +184,7 @@ clean:
 	rm -rf mc
 	rm -rf /root/jclientCloud/
 	rm -rf /root/go/src/s3bench
+	rm -rf /usr/apachejmeter
 	@echo "cleanup-tools completed."
 
 
