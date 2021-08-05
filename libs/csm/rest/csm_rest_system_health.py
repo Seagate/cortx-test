@@ -461,7 +461,7 @@ class SystemHealth(RestTestLib):
                         node_dict['status'],
                         exp_status[index])
                     return False, f'Node-"{index + 1}" health status is {node_dict["status"]}'
-        return True, f"Node health status is as expected"
+        return True, "Node health status is as expected"
 
     def check_resource_health_status_rest(self, resource: str, exp_status: str):
         """
