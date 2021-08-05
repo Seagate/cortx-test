@@ -28,6 +28,7 @@ SECRET=None
 ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
+APACHE_J_METER=apache-jmeter-5.4.1.tgz
 
 
 aws-install:
@@ -159,7 +160,17 @@ configure-tools: aws-configure s3fs-configure s3cmd-configure minio-configure
 	@echo "### All tools are configured. ###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install
+apache-jmeter-install:
+	@echo "###Installing apache-jmeter in current machine###"
+	yum install -y java-1.8.0-openjdk
+	wget https://downloads.apache.org//jmeter/binaries/$(APACHE_J_METER)
+	tar -zxf $(APACHE_J_METER) -C /usr/
+	mv /usr/apache-jmeter-5.4.1 /usr/apachejmeter
+	rm -rf $(APACHE_J_METER)
+	@echo "###Installed apache jmeter in current machine###"
+
+
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -173,6 +184,7 @@ clean:
 	rm -rf mc
 	rm -rf /root/jclientCloud/
 	rm -rf /root/go/src/s3bench
+	rm -rf /usr/apachejmeter
 	@echo "cleanup-tools completed."
 
 
@@ -188,3 +200,4 @@ help :
 	@echo "jcloud-client-install: Setup jcloud-client. Eg: make jcloud-client --makefile=<makefile_path>"
 	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
+	@echo "apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
