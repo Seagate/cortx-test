@@ -1,19 +1,43 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+
+""Test Runner for robot test-cases"""
 import os
 import subprocess
 import argparse
 import logging
 import datetime
 import glob
-from commons.utils.jira_utils import JiraTask
-from commons.utils import system_utils
-from commons import params
+import getpass
 from typing import Tuple
 from typing import Optional
-import getpass
+from commons import params
+from commons.utils.jira_utils import JiraTask
+from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
 
 def parse_args():
+    """Parse arguments function
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-du", "--db_update", type=str, default='no',
                         help="db update required: yes/no")
@@ -56,6 +80,7 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
 def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
+    :return: Test List
     """
     test_list, tag = jira_obj.get_test_ids_from_te(str(args.te_ticket), test_type)
     if len(test_list) == 0:
@@ -64,6 +89,10 @@ def get_tests_from_te(jira_obj, args, test_type='ALL'):
 
 
 def collect_te_info(jira_obj, te):
+    """
+    Collect Test Execution
+    :return: Test Label, Test Component
+    """
     te_details = jira_obj.get_issue_details(te)
     te_label = ''
     te_comp = ''
@@ -75,6 +104,10 @@ def collect_te_info(jira_obj, te):
 
 
 def collect_tp_info(jira_obj, tp):
+    """
+    Collect Test Plan information
+    :return: build, build_type, test_plan_label
+    """
     tp_details = jira_obj.get_issue_details(tp)
     build = ''
     build_type = "stable"
@@ -95,6 +128,11 @@ def collect_tp_info(jira_obj, tp):
 
 
 def collect_test_info(jira_obj, test):
+    """
+    Collect Test information
+    :return: test_name, test_label
+    """
+
     test_details = jira_obj.get_issue_details(test)
     test_name = test_details.fields.summary
     test_label = ''
@@ -153,11 +191,10 @@ def trigger_tests_from_te(args):
     jira_id, jira_pwd = get_jira_credential()
     jira_obj = JiraTask(jira_id, jira_pwd)
     test_list = get_tests_from_te(jira_obj, args, args.test_type)
- 
+
     if os.path.exists("main.log"):
         os.remove("main.log")
-        #with open('main.log', 'w') as file:
-        #   pass
+
     logFile = 'main.log'
     test_info = dict()
 
@@ -188,12 +225,11 @@ def trigger_tests_from_te(args):
 
         log_dir = run_robot_cmd(args, test_id, logFile='main.log')
         end_time = datetime.datetime.now()
-        
         test_status = ''
-       
+
         #parse log
         test_status = getTestStatusAndParseLog(logFile='main.log')
-                
+ 
         duration = (end_time - start_time)
 
         # move all log files to nfs share
