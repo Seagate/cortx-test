@@ -3,13 +3,13 @@ import subprocess
 import argparse
 import logging
 import datetime
+import glob
 from commons.utils.jira_utils import JiraTask
 from commons.utils import system_utils
 from commons import params
 from typing import Tuple
 from typing import Optional
 import getpass
-import glob
 
 LOGGER = logging.getLogger(__name__)
 
@@ -142,8 +142,6 @@ def getTestStatusAndParseLog(logFile = 'main.log'):
             # For each line, check if line contains the string
             if 'FAIL' in line:
                 TestStatus = 'FAIL'
-            elif 'PASS' in line:
-                TestStatus = 'PASS'
 
     return TestStatus
 
