@@ -693,8 +693,7 @@ class TestNetworkFault:
             LOGGER.info("Response: %s", resp)
             if not resp[0]:
                 df[key]['Step7'] = 'Fail'
-                LOGGER.error("Step 7: {} up".format(network_fault_params[
-                                                    "error_msg"]))
+                LOGGER.error("Step 7: %s up", network_fault_params["error_msg"])
             else:
                 value['flag'] = False
                 LOGGER.info("Step 7: Successfully resolved %s "
@@ -1055,8 +1054,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step1'] = 'Fail'
                 LOGGER.error(
-                            "Step 1: {} down".format(network_fault_params[
-                                                         "error_msg"]))
+                            "Step 1: %s down", network_fault_params["error_msg"])
             else:
                 value['flag'] = True
                 LOGGER.info("Step 1: Successfully created %s "
@@ -1119,8 +1117,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error(
-                            "Step 5: {} up".format(network_fault_params[
-                                                       "error_msg"]))
+                            "Step 5: %s up", network_fault_params["error_msg"])
             else:
                 value['flag'] = False
                 LOGGER.info("Step 5: Successfully resolved %s "
@@ -1212,8 +1209,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step1'] = 'Fail'
                 LOGGER.error(
-                            "Step 1: {} down".format(network_fault_params[
-                                                         "error_msg"]))
+                            "Step 1: %s down", network_fault_params["error_msg"])
             else:
                 value['flag'] = True
                 LOGGER.info("Step 1: Successfully created %s "
@@ -1276,8 +1272,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error(
-                            "Step 5: {} up".format(network_fault_params[
-                                                       "error_msg"]))
+                            "Step 5: %s up", network_fault_params["error_msg"])
             else:
                 value['flag'] = False
                 LOGGER.info("Step 5: Successfully resolved %s "
@@ -1390,8 +1385,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step2'] = 'Fail'
                 LOGGER.error(
-                            "Step 2: {} down".format(network_fault_params[
-                                                         "error_msg"]))
+                            "Step 2: %s down", network_fault_params["error_msg"])
             else:
                 value['flag'] = True
                 LOGGER.info("Step 2: Successfully created %s "
@@ -1479,8 +1473,7 @@ class TestNetworkFault:
             if not resp[0]:
                 df[key]['Step7'] = 'Fail'
                 LOGGER.error(
-                            "Step 7: {} up".format(network_fault_params[
-                                                       "error_msg"]))
+                            "Step 7: %s up", network_fault_params["error_msg"])
             else:
                 value['flag'] = False
                 LOGGER.info("Step 7: Successfully resolved %s "
