@@ -15,6 +15,7 @@ ${url}
 ${browser}  chrome
 ${headless}  True
 ${Sub_tab}  None
+${new_password}  ${password}
 
 *** Test Cases ***
 
@@ -34,70 +35,16 @@ TEST-4909
     [Tags]  TEST-4909
     Validate EULA Data
 
-TEST-4908
-    [Documentation]  TTest that user navigates to admin user creation page after EULA page
-    ...  Reference : https://jts.seagate.com/browse/TEST-4908
-    [Tags]  TEST-4908
-    Verify User has Naviagted to Admin User Create Page
-
 TEST-4907
-    [Documentation]  TTest that user stays on EULA page after canceling the agreement
+    [Documentation]  Test that user stays on EULA page after canceling the agreement
     ...  Reference : https://jts.seagate.com/browse/TEST-4907
     [Tags]  TEST-4907
-    Verify User Has Not Naviagted to Admin User Create Page
+    Validate ELUA page after canceling the agreement
 
-TEST-3600
-    [Documentation]  Test Verify whether UI have four fields visible
-    ...  i.e. "Admin username","Password" , "email-id", "Confirm password", "apply and continue" button
-    ...  Reference : https://jts.seagate.com/browse/TEST-3600
-    [Tags]  TEST-3600
-    Verify User has Naviagted to Admin User Create Page
-
-TEST-3602
-    [Documentation]  Test that miss-match ‏password error msg. should be shown for Admin user
-    ...  Reference : https://jts.seagate.com/browse/TEST-3602
-    [Tags]  TEST-3602
-    Validate ELUA Success
-    Verify Miss-Match Password Error Message
-
-TEST-3603
-    [Documentation]  Test incorrect password shows error message
-    ...  Reference : https://jts.seagate.com/browse/TEST-3603
-    [Tags]  TEST-3603
-    Validate ELUA Success
-    Validate Password for Admin User
-
-TEST-3604
-    [Documentation]  Test incorrect username shows error message
-    ...  Reference : https://jts.seagate.com/browse/TEST-3604
-    [Tags]  TEST-3604
-    Validate ELUA Success
-    Validate Usernames for Admin User
-
-TEST-3605
-    [Documentation]  Test admin user crate Form have correct elemets
-    ...  Reference : https://jts.seagate.com/browse/TEST-3605
-    [Tags]  TEST-3605
-    Validate ELUA Success
-    Verify fields for Admin User creation
-
-TEST-3606
-    [Documentation]  Test admin user crate Form all mandatory fields have astreak(*) mark
-    ...  Reference : https://jts.seagate.com/browse/TEST-3606
-    [Tags]  TEST-3606
-    Validate ELUA Success
-    Verify mandatory fields for Admin User
-
-TEST-11425
-    [Documentation]  Test that Admin page should have tooltips
-    ...  Reference : https://jts.seagate.com/browse/TEST-11425
-    [Tags]  TEST-11425
-    Validate ELUA Success
-    Verify Admin User Creation Page Should have tooltip
-
-TEST-11426
-    [Documentation]  Test that Admin page should have proper msg. for tooltips
-    ...  Reference : https://jts.seagate.com/browse/TEST-11426
-    [Tags]  TEST-11426
-    Validate ELUA Success
-    Validate Admin User Tooltip
+TEST-24993
+   [Documentation]  Test that user should be able to login as cortxadmin user should be able to login and
+    ...  change password and navigate to onboarding.
+    ...  Reference : https://jts.seagate.com/browse/TEST-24993
+    [Tags]  TEST-24993
+    wait for page or element to load  2s
+    admin user preboarding  ${username}  ${password}  new_password=${new_password}

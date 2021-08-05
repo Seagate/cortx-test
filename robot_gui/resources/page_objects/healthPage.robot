@@ -49,7 +49,7 @@ Check if Node status
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
-    ...  AND  Log To Console And Report  node ${ID} not found, failing
+    ...  Log To Console And Report  node ${ID} not found, failing
     ...  AND  Capture Page Screenshot
     ...  AND  Fail  # node not found, failing
 
@@ -75,6 +75,6 @@ Check if Cluster status
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
-    ...  AND  Log To Console And Report  cluster not found, failing
+    ...  Log To Console And Report  cluster not found, failing
     ...  AND  Capture Page Screenshot
     ...  AND  Fail  # cluster not found, failing

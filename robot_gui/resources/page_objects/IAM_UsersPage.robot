@@ -302,7 +302,6 @@ Verify Access Key Table Headers
     Log To Console And Report  Headers are ${headers}
     Lists Should Be Equal  ${headers}  ${IAMUSER_ACCESS_KEY_HEADERS}
 
-
 Verify the S3 url present on IAM user creation popup
     [Documentation]  Verify the S3 url present on IAM user creation popup
     Log To Console And Report  verifying s3 uer present
@@ -327,5 +326,3 @@ Verify s3 urls on access keys popup
     ${IAM_ACCESS_KEY_TABLE_DATA}=  Read Table Data  ${IAM_USER_ACCESS_KEY_TABLE_XPATH}
     Should Contain  ${IAM_ACCESS_KEY_TABLE_DATA}  S3 URL
     click element    ${DOWNLOAD_IAM_USER_ACCESS_KEY_BUTTON_ID}
-
-
