@@ -633,21 +633,10 @@ TEST-23615
     [Documentation]  Test that user should able to see role and username filter options.
     ...  Reference : https://jts.seagate.com/browse/TEST-23615
     [Tags]  Priority_High  TEST-23615
-    ${new_password}=  Generate New Password
     Navigate To Page  ${page_name}
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}  admin
-    Click On Confirm Button
-    Select from filter  role
-    Search username and role  admin
-    Verify New User  ${new_user_name}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
     Reload Page
-    wait for page or element to load
-    Select from filter  username
-    Search username and role  ${new_user_name}
-    Verify New User  ${new_user_name}
-    Reload Page
-    Delete CSM User  ${new_user_name}
 
 TEST-23614
     [Documentation]  Test that drop down would be appear when user click on the filter option.
