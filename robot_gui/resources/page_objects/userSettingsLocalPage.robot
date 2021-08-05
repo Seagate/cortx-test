@@ -6,6 +6,8 @@ Resource   ${RESOURCES}/resources/common/common.robot
 
 Click On Add User Button
     [Documentation]  Perform click operation on add user button
+    Press Keys  None  HOME
+    wait for page or element to load
     Click button    ${ADD_USER_BUTTON_ID}
 
 Click On Cancel Button
@@ -60,13 +62,16 @@ Create New CSM User
 Verify New User
     [Documentation]  Functionality to validate correc user name
     [Arguments]  ${user_name}
-    wait for page or element to load  6s  #  Reloading take some initial time
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     ${users_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Contain Value  ${users_list}  ${user_name}
 
 Delete CSM User
     [Documentation]  Functionality to Delete CSM user
     [Arguments]  ${user_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
     wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=60
     Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
@@ -75,6 +80,8 @@ Delete CSM User
 Delete Logged In CSM User
     [Documentation]  Functionality to Delete the logged in csm user
     [Arguments]  ${user_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${user_name}
     wait until element is visible  ${CONFIRM_DELETE_BOX_BUTTON_ID}  timeout=30
     Click Button  ${CONFIRM_DELETE_BOX_BUTTON_ID}
@@ -185,6 +192,8 @@ Verify Only Valid Password Get Added
 Edit CSM User Password
     [Documentation]  Functionality to Edit given user password
     [Arguments]  ${user_name}  ${password}  ${old_password}=${False}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Sleep  1s
     Click Button  ${CHANGE_PASSWORD_BUTTON_ID}
@@ -200,6 +209,8 @@ Edit CSM User Password
 Edit CSM User Type
     [Documentation]  Functionality to Edit given user type
     [Arguments]  ${user_name}  ${user_type}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Sleep  1s
     ${var}=  CATENATE  add  ${user_type}  user  radio  button  id
@@ -214,6 +225,8 @@ Verify Deleted User
     [Documentation]  Functionality to check user get deleted successfully
     [Arguments]  ${user_name}
     Sleep  2s
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     ${user_list}=  Read Table Data  ${CSM_TABLE_ELEMENTS_XPATH}
     List Should Not Contain Value  ${user_list}  ${user_name}
 
@@ -235,22 +248,19 @@ Read Pagination Options on Administrative Page
     Log To Console And Report   ${data_list}
     [Return]   @{data_list}
 
-Fetch Radio Button Value
-    [Documentation]  This Keyword is to fetch radio button value
-    Click On Add User Button
-    ${value}=  Get Element Attribute  ${RADIO_BTN_VALUE_XPATH}  value
-    Log To Console And Report  Fetched value is ${value}
-    [Return]  ${value}
-
 Verify Change User Type Radio Button Disabled
     [Documentation]  Functionality to verify Change User Type Radio Button Disabled
     [Arguments]  ${user_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Element Should Be Disabled  ${RADIO_BTN_VALUE_XPATH}
 
 Verify Admin User Should Not Contain Delete Icon
     [Documentation]  Functionality to verify Admin User Should Not Contain Delete Icon
     [Arguments]  ${user_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     ${Delete_icon} =  Format String  ${CSM_USER_DELETE_XAPTH}  ${user_name}
     Log To Console And Report  ${delete_icon}
     Page Should Not Contain Button  ${delete_icon}
@@ -265,6 +275,8 @@ Verify IAM User Section Not Present
 Edit CSM User Details
     [Documentation]  Functionality to Edit given user email id
     [Arguments]  ${user_name}  ${new_password}  ${new_email}  ${old_password}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Action On The Table Element  ${CSM_USER_EDIT_XPATH}  ${user_name}
     Sleep  1s
     Click Button  ${CHANGE_PASSWORD_BUTTON_ID}
@@ -391,6 +403,8 @@ Verify Pagination Present on Administrative Page Search results
 
 Get CSM table row count
     [Documentation]  Return number of rows present on CSM user table
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     ${users_list}=  Read Table Data  ${CSM_TABLE_ROW_XPATH}
     ${users_list_length}=  Get Length  ${users_list}
     Capture Page Screenshot
@@ -498,11 +512,17 @@ Select The Number of Rows To Display
         Run Keyword If   "${text}" == "${row_number}"    Click Element   ${element}
     END
 
+Delete Multiple CSM User
+     [Documentation]    This Keyword is used to delete multiple CSM USers.
+     [Arguments]    ${new_user_list}
+     FOR  ${user_name}  IN  @{new_user_list}
+            Delete CSM User  ${user_name}
+     END
+
 Create Multiple CSM User
      [Documentation]    This Keyword is used to create multiple CSM USers.
      [Arguments]    ${user_count}
-     Reload Page
-     wait for page or element to load  10s
+     @{new_user_list}=    Create List
      FOR    ${i}    IN RANGE    ${user_count}
          ${new_password}=  Generate New Password
          ${new_user_name}=  Generate New User Name
@@ -510,12 +530,15 @@ Create Multiple CSM User
          Create New CSM User  ${new_user_name}  ${new_password}  manage
          Click On Confirm Button
          Verify New User  ${new_user_name}
+         Append To List  ${new_user_list}  ${new_user_name}
      END
+     [Return]   @{new_user_list}
 
 Navigate To First Page On Administrative Users Page
     [Documentation]  This Keyword is for navigating to Last page
-    Check List Of CSM User And Create New Users
-    Select The Number of Rows To Display   ${ROW_FIVE}
+    ${new_user_list}=  Check List Of CSM User And Create New Users
+    Select The Number of Rows To Display   ${CSM_TEST_ROW_FIVE}
+    wait for page or element to load  10s
     @{Page_list}    ${Page_count}    Get List of Page    ${CSM_PAGINATION_PAGE_XPATH}
     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
     ${Page}=    Get From List   ${New_Page_list}   1
@@ -523,18 +546,19 @@ Navigate To First Page On Administrative Users Page
     ${Page}=    Get From List   ${New_Page_list}   0
     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
     Capture Page Screenshot
-#    TODO DELETE CSM USERS
+    Delete Multiple CSM User  ${new_user_list}
 
 Navigate To Last Page On Administrative Users Page
     [Documentation]  This Keyword is for navigating to Last page
-    Check List Of CSM User And Create New Users
-    Select The Number of Rows To Display   ${ROW_FIVE}
+    ${new_user_list}=  Check List Of CSM User And Create New Users
+    Select The Number of Rows To Display   ${CSM_TEST_ROW_FIVE}
+    wait for page or element to load  10s
     @{Page_list}    ${Page_count}    Get List of Page    ${CSM_PAGINATION_PAGE_XPATH}
     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
     ${Page}=    Get From List   ${New_Page_list}   -1
     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
     Capture Page Screenshot
-#    TODO DELETE CSM USERS
+    Delete Multiple CSM User  ${new_user_list}
 
 Navigate To The Desired Page
     [Documentation]   This Keyword is used to Navigate to the Desired Page on User Administrative Page
@@ -552,12 +576,14 @@ Navigate To The Desired Page
 Check List Of CSM User And Create New Users
     [Documentation]   This Keyword is to verfiry the no. of CSM users
     Navigate To Page  ${page_name}
-    Select The Number of Rows To Display  ${ROW_VALUE}
+    Select The Number of Rows To Display  ${CSM_TEST_ROW_VALUE}
+    wait for page or element to load  10s
     ${User_list}=   Get CSM table row count
-    Run Keyword If    ${User_list} < ${DEFAULT_COUNT}    Evaluate    ${DEFAULT_COUNT} - ${User_list}
-    ${count}=    Evaluate    ${DEFAULT_COUNT} - ${User_list}
+    Run Keyword If    ${User_list} < ${CSM_TEST_DEFAULT_COUNT}    Evaluate    ${CSM_TEST_DEFAULT_COUNT} - ${User_list}
+    ${count}=    Evaluate    ${CSM_TEST_DEFAULT_COUNT} - ${User_list}
     Log To Console And Report    ${count}
-    Run Keyword If   ${User_list} < ${DEFAULT_COUNT}    Create Multiple CSM User    ${count}
+    ${new_user_list}=  Create Multiple CSM User  ${count}
+    [Return]   @{new_user_list}
 
 Create and login with CSM manage user
     [Documentation]  This keyword is to create and login with csm manage user
