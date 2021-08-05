@@ -453,7 +453,7 @@ class TestServerOS:
                     obj.initiate_blocking_process()
                     LOGGER.info("Step 2: Initiated blocking process")
                     LOGGER.info("Step 3: Calculate CPU utilization")
-                    resp = obj.get_cpu_utilization()
+                    resp = obj.get_cpu_utilization(interval=test_cfg["interval"])
                     if float(resp.decode('utf-8').strip()) >= 100:
                         flag = True
                         break
@@ -481,8 +481,8 @@ class TestServerOS:
                 resp = obj.kill_process(i)
             LOGGER.info("Step 6: Processes are killed by one by one")
             LOGGER.info("Step 7: Verify memory utilization is decreasing")
-            resp = obj.get_cpu_utilization()
-            assert resp < 100
+            resp = obj.get_cpu_utilization(interval=test_cfg["interval"])
+            assert float(resp.decode('utf-8').strip()) < 100
             LOGGER.info("Step 7: Verified memory utilization is decreasing")
             starttime = time.time()
             LOGGER.info("Step 4: Resolving CPU fault.")

@@ -277,3 +277,4 @@ test_22787:
   faulty_cpu_id:
     - 0
     - 1
+  interval: 30
