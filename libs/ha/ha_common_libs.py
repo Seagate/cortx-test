@@ -222,9 +222,9 @@ class HALibs:
             else:
                 out = bmc_obj.bmc_node_power_status(self.bmc_user, self.bmc_pwd)
                 if exp_resp:
-                    exp_state = b"on" in out[0]
+                    exp_state = "on" in out
                 else:
-                    exp_state = b"off" in out[0]
+                    exp_state = "off" in out
 
             if resp == exp_resp and exp_state:
                 return True
