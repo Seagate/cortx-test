@@ -4,6 +4,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from commons.constants import Rest as const
 from commons.utils import config_utils
+from libs.csm.rest.csm_rest_test_lib import RestTestLib
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
@@ -95,3 +96,16 @@ class CSMConfigsCheck:
             # CTP Exception handling shall get complicated
             self._log.error("Error occurred during setup : %s", error)
         return result
+
+    def preboarding(self, username, old_password, new_password):
+        """Perform preboarding step
+        """            
+        self._log.info("Starting the preboarding for user : %s", username)
+        rest_test_obj = RestTestLib()
+        response = rest_test_obj.rest_login({"username": username, "password": old_password})
+        headers = {'Authorization': response.headers['Authorization']}
+        patch_payload = {"confirmPassword": new_password, "password": new_password, "reset_password": True}
+        endpoint = "{}/{}".format(rest_test_obj.config["csmuser_endpoint"], username)
+        response = rest_test_obj.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
+                                              headers=headers)
+        self._log.info("Preboarding completed")
