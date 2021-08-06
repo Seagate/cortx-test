@@ -127,7 +127,7 @@ TEST-1034
 TEST-1036
     [Documentation]  Test that S3 account user have access to create IAM users and buckets
     [Tags]  Priority_High  Smoke_test  user_role  TEST-1036
-    ${testname}=  generate new User Name
+    ${testname}=  Generate New User Name
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     wait for page or element to load
     Re-login   ${S3_account_name}  ${password}  S3_ACCOUNTS_TAB_ID
@@ -427,9 +427,7 @@ TEST-4026
     [Documentation]  Test User should not able to login using invalid s3 credentials on CSM UI
     ...  Reference : https://jts.seagate.com/browse/TEST-4026
     [Tags]  Priority_High  TEST-4026
-    CSM GUI Login with Incorrect Credentials  ${url}  ${browser}  ${headless}
-    Validate CSM Login Failure
-    Close Browser
+    Verify CSM GUI Login Fail with Incorrect Credentials  ${url}  ${browser}  ${headless}
 
 TEST-22579
     [Documentation]  Test that s3account user's session expired when user delete s3account from admin
