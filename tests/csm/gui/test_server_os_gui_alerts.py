@@ -637,7 +637,7 @@ class TestServerOSAlerts:
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
         LOGGER.info("Step 12: Successfully verified CPU usage alert on CSM GUI")
-        LOGGER.info("##### Test completed -  %s #####", test_case_name
+        LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-22719")
     @pytest.mark.csm_gui
