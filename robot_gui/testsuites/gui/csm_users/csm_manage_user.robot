@@ -50,10 +50,7 @@ TEST-1216
     [Documentation]  Test manager user can not access IAM user and buckets tab.
     [Tags]  Priority_High  user_role  TEST-1216
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     Verify IAM User Section Not Present
-    Navigate To Page  DASHBOARD_MENU_ID
     Verify bucket Section Not Present
     wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
@@ -63,8 +60,6 @@ TEST-1215
     [Documentation]  Test that CSM user with role manager can view and create s3 accounts.
     [Tags]  Priority_High  user_role  TEST-1215
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${s3_password} =  Create S3 account
     wait for page or element to load  3s
@@ -90,11 +85,7 @@ TEST-1217
     Edit CSM User Details  ${new_user_name}  ${updated_password}  ${updated_email}  ${new_password}
     Re-login  ${new_user_name}  ${updated_password}  ${page_name}
     Delete Logged In CSM User  ${new_user_name}
-    wait for page or element to load
-    Enter Username And Password  ${new_user_name}  ${updated_password}
-    Click Sigin Button
-    Validate CSM Login Failure
-    Close Browser
+    Verify CSM GUI Login Fail with Incorrect Credentials  ${url}  ${browser}  ${headless}  ${new_user_name}  ${updated_password}
     CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
     Navigate To Page  ${page_name}
     Delete CSM User  ${new_csm_user_name}
@@ -104,8 +95,6 @@ TEST-18327
     ...  Reference : https://jts.seagate.com/browse/TEST-18327
     [Tags]  Priority_High  TEST-18327  S3_test  Smoke_test
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
     wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
@@ -124,8 +113,6 @@ TEST-21591
     [Tags]  Priority_High  TEST-21591  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -141,8 +128,6 @@ TEST-21592
     [Tags]  Priority_High  TEST-21592  S3_test
     ${new_csm_user_name}  ${new_password}=  Create and login with CSM manage user
     wait for page or element to load
-    Navigate To Page  DASHBOARD_MENU_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -152,9 +137,9 @@ TEST-21592
     ${bucketname}=  Generate New User Name
     Create Bucket  ${bucketname}
     wait for page or element to load
-    Re-login  ${new_csm_user_name}  ${new_password}  DASHBOARD_MENU_ID
+    Re-login  ${new_csm_user_name}  ${new_password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
@@ -177,6 +162,8 @@ TEST-23782
     Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
     Click On Confirm Button
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
     wait for page or element to load
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
@@ -264,6 +251,8 @@ TEST-23052
     Log To Console And Report  Create Account with role: manage
     ${manage_user_name}  ${manage_user_password}=  Create and login with CSM manage user
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{admin_users}
         Log To Console And Report  Verify Edit Action Disable for ${user}
