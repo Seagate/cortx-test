@@ -204,13 +204,29 @@ def revert_vms(args, vm_list):
         return rc
 
 
+def run_cmd(cmd):
+    """
+    Execute bash commands on the host
+    :param str cmd: command to be executed
+    :return: command output
+    :rtype: string
+    """
+    print("Executing command: {}".format(cmd))
+    proc = subprocess.Popen(cmd, shell=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+
+    result = str(proc.communicate())
+    return result
+
+
 def trigger_deployment(args, cluster_ip, retries=3):
     """
     Trigger Jenkins N Node job.
     """
 
     while retries > 0:
-        vm_machines = [item for item in args.hosts.split(',')]
+        vm_machines = args.hosts.split(',')
         rc = revert_vms(args, vm_machines)
         if not rc:
             return False
@@ -238,10 +254,10 @@ def trigger_deployment(args, cluster_ip, retries=3):
                                        token=token_str,
                                        jen_url=JEN_DEPLOY_URL)
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        retries = retries - 1
         if output['result'] == 'SUCCESS':
             return True
-        else:
-            retries = retries - 1
+
 
 
 def set_s3_endpoints(cluster_ip):
@@ -273,10 +289,10 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
     :param str password: password of nodes
     :return: None
     """
+    server_haproxy_cfg = config['default']['haproxy_config']
+    local_haproxy_cfg = config['default']['tmp_haproxy_config']
     if len(hostname) > 1:
         instance_per_node = 1
-        server_haproxy_cfg = config['default']['haproxy_config']
-        local_haproxy_cfg = config['default']['tmp_haproxy_config']
         s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:{2} check maxconn 110\n"
         authinstance = "    server s3authserver-instance{0} srvnode-{1}.data.private:28050\n"
         total_s3_instances = list()
@@ -290,55 +306,46 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
             total_auth_instances.append(authinstance.format(node+1, node+1))
         LOGGER.debug(total_s3_instances)
         LOGGER.debug(total_auth_instances)
-
         for host in hostname:
             LOGGER.info("Updating s3 instances in haproxy.cfg on node: %s", host)
             nd_obj = Node(hostname=host, username=username, password=password)
             nd_obj.copy_file_to_local(server_haproxy_cfg, local_haproxy_cfg)
-            with open(local_haproxy_cfg, "r") as f:
-                data = f.readlines()
-            with open(local_haproxy_cfg, "w") as f:
+            with open(local_haproxy_cfg, "r") as local_haproxy:
+                data = local_haproxy.readlines()
+            with open(local_haproxy_cfg, "w") as local_haproxy:
                 for line in data:
                     if "server s3-instance-" in line:
                         line = "".join(["#", line] + total_s3_instances)
                     elif "server s3authserver-instance" in line:
                         line = "".join(["#", line] + total_auth_instances)
-                    f.write(line)
+                    local_haproxy.write(line)
             nd_obj.copy_file_to_remote(local_haproxy_cfg, server_haproxy_cfg)
-            cmd = "systemctl restart haproxy"
-            nd_obj.execute_cmd(cmd, read_lines=True)
+            nd_obj.execute_cmd("systemctl restart haproxy", read_lines=True)
             LOGGER.info("Restarted haproxy service")
         LOGGER.info("Configured s3 instances in haproxy.cfg on all the nodes")
     else:
         obj = Node(hostname=hostname[0], username=username, password=password)
         # Stopping/disabling firewalld service on node for tests
         print("Doing server side settings for firewalld and haproxy.")
-        cmd = "systemctl stop firewalld"
-        obj.execute_cmd(cmd, read_lines=True)
-        cmd = "systemctl disable firewalld"
-        obj.execute_cmd(cmd, read_lines=True)
+        obj.execute_cmd("systemctl stop firewalld", read_lines=True)
+        obj.execute_cmd("systemctl disable firewalld", read_lines=True)
         # Doing changes in haproxy file and restarting it
-        remote_path = "/etc/haproxy/haproxy.cfg"
-        local_path = "/tmp/haproxy.cfg"
-        if os.path.exists(local_path):
-            run_cmd("rm -f {}".format(local_path))
-        obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
-        line_src = "option forwardfor"
-        with open(local_path) as file:
+        if os.path.exists(local_haproxy_cfg):
+            run_cmd("rm -f {}".format(local_haproxy_cfg))
+        obj.copy_file_to_local(remote_path=server_haproxy_cfg, local_path=local_haproxy_cfg)
+        with open(local_haproxy_cfg) as file:
             for num, line in enumerate(file, 1):
-                if line_src in line:
+                if "option forwardfor" in line:
                     indx = num
-        with open(local_path, 'r') as file:
+        with open(local_haproxy_cfg, 'r') as file:
             read_file = file.readlines()
         read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
         read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
-
-        with open(local_path, 'w') as file:
+        with open(local_haproxy_cfg, 'w') as file:
             read_file = "".join(read_file)
             file.write(read_file)
-        obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
-        cmd = "systemctl restart haproxy"
-        obj.execute_cmd(cmd, read_lines=True)
+        obj.copy_file_to_remote(local_path=local_haproxy_cfg, remote_path=server_haproxy_cfg)
+        obj.execute_cmd("systemctl restart haproxy", read_lines=True)
 
 def setup_client(args, hosts, cluster_ip):
     """
@@ -410,19 +417,19 @@ def main(args):
     os.environ["DB_PASSWORD"] = args.db_pass
     os.environ["JIRA_ID"] = args.jira_user
     os.environ["JIRA_PASSWORD"] = args.jira_pass
-    hosts_list = [item for item in args.hosts.split(',')]
+    hosts_list = args.hosts.split(',')
     # Get setup details
     setup_details = deploy_utils.register_setup_entry(hosts_list, args.setupname, args.csm_user,
-                                                      args.csm_pass)
+                                                      args.csm_pass, args.node_pass)
     hosts = hosts_list
     cluster_ip = setup_details['csm']['mgmt_vip']
     setup_client(args, hosts, cluster_ip)
     te_list = args.te_tickets
-    for te in te_list:
+    for te_num in te_list:
         te_completed = False
         attempts = 1
         while not te_completed:
-            args.te_ticket = te
+            args.te_ticket = te_num
             if attempts >= 5:
                 raise EnvironmentError('More than 5 attempts of executing tests crossed.')
 

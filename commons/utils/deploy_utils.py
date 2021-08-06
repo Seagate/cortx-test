@@ -39,26 +39,23 @@ LOGGER = logging.getLogger(__name__)
 
 class CreateSetupJson:
 
-    def __init__(self, hosts: List):
+    def __init__(self, hosts, node_pass):
         self.hosts = hosts
         self.repr_object = dict()
-
+        self.node_pass = node_pass
         self.nd_obj_host = Node(hostname=hosts[0], username='root',
-                                password='seagate')
+                                password=node_pass)
         remote_path = "/opt/seagate/cortx_configs/provisioner_cluster.json"
         local_path = os.path.join(os.getcwd() + "/provisioner_cluster.json")
         self.nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
         with open('provisioner_cluster.json') as json_file:
             self.data = json.load(json_file)
-        self.m_ip = self.data["cluster"][list(self.data["cluster"].keys())[0]]['network']['management'][
-            'virtual_host']
+        self.m_ip = self.data["cluster"][list(self.data["cluster"].keys())[0]]['network']
+        ['management']['virtual_host']
 
     def create_setup_entry(self, target_name, setup_type , csm_user, csm_pass):
         target_setup = dict()
-        enc = dict()
-        pdu = dict()
         nodes = list()
-        gc = dict()
         ldap = dict()
         bmc = list()
         csm = list()
@@ -73,9 +70,9 @@ class CreateSetupJson:
             node_details = self.add_nodes_details(host_number, host)
             nodes.append(node_details)
         target_setup.update({'nodes': nodes})
-        target_setup.update({'enclosure': self.add_enclosure_details(enc)})
-        target_setup.update({'pdu': self.add_pdu_details(pdu)})
-        target_setup.update({'gem_controller': self.add_gem_controller_details(gc)})
+        target_setup.update({'enclosure': self.add_enclosure_details()})
+        target_setup.update({'pdu': self.add_pdu_details()})
+        target_setup.update({'gem_controller': self.add_gem_controller_details()})
         target_setup.update({'ldap': self.add_ldap_details(ldap)})
         target_setup.update({'bmc': self.add_bmc_details(bmc)})
         target_setup.update({'csm': self.add_csm_details(csm, csm_user, csm_pass)})
@@ -83,24 +80,23 @@ class CreateSetupJson:
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
-    @staticmethod
-    def add_nodes_details(host_number, node):
+    def add_nodes_details(self, host_number, node):
         return dict(
             host="srvnode-" + str(host_number),
             hostname=node,
             ip="node_ip",
             username='root',
-            password='seagate'
+            password=self.node_pass
         )
 
-    def add_enclosure_details(self, enc):
+    def add_enclosure_details(self):
         return dict(primary_enclosure_ip="10.0.0.2",
                     secondary_enclosure_ip="10.0.0.3",
                     enclosure_user="",
                     enclosure_pwd=""
                     )
 
-    def add_pdu_details(self, pdu):
+    def add_pdu_details(self):
         return dict(
             ip="",
             username="",
@@ -110,7 +106,7 @@ class CreateSetupJson:
             sleep_time=120
         )
 
-    def add_gem_controller_details(self, con):
+    def add_gem_controller_details(self):
         return dict(
             ip="",
             username="",
@@ -145,19 +141,18 @@ class CreateSetupJson:
     def add_s3_details(self, s3):
         return dict(s3_server_ip=self.m_ip,
                     s3_server_user=dict(username='root',
-                                        password='seagate'))
+                                        password=self.node_pass))
 
 
-def register_setup_entry(hosts: List, setupname, csm_user, csm_pass):
+def register_setup_entry(hosts: List, setupname, csm_user, csm_pass, node_pass):
     """
     Add setup entry in db
     """
-    setup_json_obj = CreateSetupJson(hosts)
+    setup_json_obj = CreateSetupJson(hosts, node_pass)
     setup_json = setup_json_obj.create_setup_entry(setupname, 'VM', csm_user, csm_pass)
     DBUSER = os.environ.get('DB_USER')
     DBPSWD = os.environ.get('DB_PASSWORD')
-    setupname = setup_json['setupname']
-    setup_query = {"setupname": setupname}
+    setup_query = {"setupname": setup_json['setupname']}
     mongodburi = "mongodb://{0}:{1}@{2}"
     uri = mongodburi.format(quote_plus(DBUSER), quote_plus(DBPSWD), DB_HOSTNAME)
     client = MongoClient(uri)

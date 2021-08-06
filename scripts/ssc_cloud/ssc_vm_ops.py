@@ -234,8 +234,7 @@ class VMOperations:
                 else:
                     print("Expected VM state is finished, but current state is %s..." % _vm_state)
                     if _count == ITER_COUNT:
-                        print(
-                            'VM has ordered successfully, but VM state is not matched with expectation..')
+                        print('VM has ordered successfully, but VM state is not matched')
                         sys.exit()
         else:
             print("Failed to process the VM request..%s" % _response)
@@ -255,11 +254,6 @@ class VMOperations:
             res_info = res['resources']
             for i in range(len(res['resources'])):
                 ser_id = res_info[i]['id']
-                ser_name = res_info[i]['name']
-                ser_cores = res_info[i]['options']['dialog']['dialog_option_0_cores_per_socket']
-                ser_memory = res_info[i]['options']['dialog']['dialog_option_0_vm_memory']
-                ser_disks = res_info[i]['options']['dialog']['dialog_extra_disk_count']
-                ser_disk_size = res_info[i]['options']['dialog']['dialog_extra_disk_size']
                 self.url = f"https://{self.args.fqdn}/api/services/{ser_id}/vms?expand=resources"
                 vm_res = self.execute_request()
                 name = vm_res['resources'][0]['name']
@@ -268,33 +262,13 @@ class VMOperations:
                 ret_status = vm_res['resources'][0]['retired']
                 retires_on = vm_res['resources'][0]['retires_on']
                 writer.writerow(
-                    [ser_id, ser_name, name, power_state, created_on, ser_cores, ser_memory,
-                     ser_disks, ser_disk_size, ret_status, retires_on])
+                    [ser_id, res_info[i]['name'], name, power_state, created_on,
+                     res_info[i]['options']['dialog']['dialog_option_0_cores_per_socket'],
+                     res_info[i]['options']['dialog']['dialog_option_0_vm_memory'],
+                     res_info[i]['options']['dialog']['dialog_extra_disk_count'],
+                     res_info[i]['options']['dialog']['dialog_extra_disk_size'],
+                     ret_status, retires_on])
         return res
-    '''
-    def get_vms(self):
-        self.payload = ""
-        self.method = "GET"
-        self.url = f"https://{self.args.fqdn}/api/vms?expand=resources&&filter%%5B%%5D"
-        self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
-        res = self.execute_request()
-        vm_names = []
-        for i in range(len(res['resources'])):
-            vm_name = res['resources'][i]['name']
-            pwr = res['resources'][i]["power_state"]
-            retired = res['resources'][i]["retired"]
-            print(vm_name, pwr, retired)
-            vm_names.append([vm_name, pwr, retired])
-        with open(os.path.join(os.getcwd(), VM_INFO_CSV), 'w', newline='') as vm_info_csv:
-            writer = csv.writer(vm_info_csv)
-            writer.writerow(['VM Name', 'Power State'])
-            for vm in vm_names:
-                if vm[2]:  # retired vm
-                    pass
-                else:
-                    writer.writerow([vm[0], vm[1]])
-        return vm_names
-    '''
 
     def get_vm_info(self):
         self.payload = ""
@@ -440,18 +414,19 @@ class VMOperations:
         if not self.args.snap_id:
             self.payload = ""
             self.method = "GET"
-            self.url = "https://%s/api/vms?expand=resources&attributes=name,vendor,snapshots&filter[]=name='%s'" \
+            self.url = "https://%s/api/vms?expand=resources&attributes=" \
+                       "name,vendor,snapshots&filter[]=name='%s'" \
                        % (self.args.fqdn, self.args.host)
             self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
             res = self.execute_request()
             if res:
                 snapshots = res['resources'][0]['snapshots']
-                for i in range(len(snapshots)):
-                    name = snapshots[i]['name']
+                for i, snap in enumerate(snapshots):
+                    name = snap['name']
                     if name != 'Active VM':
                         print(name)
                         LOGGER.debug('vm name %s', name)
-                        snap_id = snapshots[i]['id']
+                        snap_id = snap['id']
                         print(snap_id)
                         LOGGER.debug('snap_id %s', snap_id)
                         self.args.snap_id = snap_id
@@ -469,7 +444,7 @@ class VMOperations:
                 _vm_info = self.get_vm_info()
                 _vm_state = _vm_info['resources'][0]['power_state']
                 print("VM has been stopped successfully. VM status is %s.." % _vm_state)
-                LOGGER.debug("VM has been stopped successfully. VM status is %s.." % _vm_state)
+                LOGGER.debug("VM has been stopped successfully. VM status is %s", _vm_state)
         else:
             print("VM is already stopped...")
             LOGGER.debug("VM is already stopped...")
@@ -490,7 +465,7 @@ class VMOperations:
                 _revert_res = self.check_status(_response)
                 if _revert_res['state'] == "Finished":
                     print("Revert message: %s" % _revert_res['message'])
-                    LOGGER.debug("Revert message: %s" % _revert_res['message'])
+                    LOGGER.debug("Revert message: %s", _revert_res['message'])
                     print(json.dumps(_revert_res, indent=4, sort_keys=True))
                     LOGGER.debug(json.dumps(_revert_res, indent=4, sort_keys=True))
                     # Start the VM after snapshot revert
@@ -509,17 +484,15 @@ class VMOperations:
                     print("Failed to revert the VM...")
                     print("Response: %s" % _revert_res)
                     LOGGER.debug("Failed to revert the VM...")
-                    LOGGER.debug("Response: %s" % _revert_res)
+                    LOGGER.debug("Response: %s", _revert_res)
                     sys.exit(1)
             else:
                 print("Failed to process the revert API request...")
                 LOGGER.debug("Failed to process the revert API request...")
-               
                 sys.exit(1)
         else:
             print("Could not stop VM")
             LOGGER.debug("Could not stop VM")
-       
             sys.exit(1)
         return _response
 
