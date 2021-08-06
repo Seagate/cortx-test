@@ -24,7 +24,6 @@ def update_branches_dropdown(release):
             options = get_dict_from_array(branches, False)
             if 'Release' in branches:
                 value = 'Release'
-                print("here")
             elif 'stable' in branches:
                 value = 'stable'
             elif 'custom' in branches:
@@ -204,7 +203,7 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
     Input('perf_custom_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
+def update_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
     options = None
     value = None
     disabled = False
@@ -237,18 +236,19 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
     Input('perf_pfull_dropdown', 'value'),
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom):
+def update_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom, sessions):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:
+    if not all([branch, build, nodes, itrns, sessions]) and pfull is None:
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
         })
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
