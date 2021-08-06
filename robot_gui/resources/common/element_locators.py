@@ -6,10 +6,14 @@ CSM_USERNAME_ID = 'username'
 CSM_PASSWORD_ID = 'password'
 SIGNIN_BUTTON_ID = 'login-userbtn'
 CSM_LOGIN_FAIL_MSG_ID = 'login-failsmsg'
+CHANGE_PASSWORD_ID = 'user-password'
+CONFIRM_PASSWORD_ID = 'confirm-password'
+PASSWORD_RESET_BUTTON_ID = 'reset-password-button'
+PASSWORD_CHANGE_SUCESS_BUTTON_ID= 'confirmation-dialogbox-btn'
 
 # CSM Dashboard Locators
 LOGGED_IN_USER_NAME_ID = 'header-username'
-USER_DROPDOWN_ID = 'logout-icon'
+USER_DROPDOWN_XPATH = "//*[@class='cortx-dropdown-container']"
 LOG_OUT_ID = 'logout-link'
 CAPACITY_TOTAL_LABEL_ID = 'capacity-total-text'
 CAPACITY_AVAILABLE_LABEL_ID = 'capacity-available-text'
@@ -152,8 +156,8 @@ EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
-CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_USER_EDIT_XPATH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
 CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
@@ -246,8 +250,8 @@ IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/t
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
-ISSUER_DETAILS_TAB_ID = 'Issuertab'
-SUBJECT_DETAILS_TAB_ID = 'Subjecttab'
+ISSUER_DETAILS_TAB_ID = 'tab-2'
+SUBJECT_DETAILS_TAB_ID = 'tab-3'
 ISSUER_COMMON_NAME_VALUE_ID = 'issuer_common_name_value'
 ISSUER_COUNTRY_NAME_VALUE_ID = 'issuer_country_name_value'
 ISSUER_LOCALITY_NAME_VALUE_ID = 'issuer_locality_name_value'
@@ -319,4 +323,7 @@ SYSTEM_MAINTENANCE_BUTTON_ID = "goToSystemMaintenance"
 START_SERVICE_BUTTON_ID = "btnStartResource"
 STOP_SERVICE_BUTTON_ID = "btnStopResource"
 SHUTDOWN_SERVICE_BUTTON_ID = "btnShutdownResource"
+
+# onboarding
+SYSTEM_NAME_TEXT_ID = 'txtappliancename'
 
