@@ -247,6 +247,7 @@ IAM_USER_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
 IAM_USER_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
 IAM_USER_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
 IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/td"
+IAM_USER_LIMIT_MSG_ID = "dialog-message-label"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
