@@ -44,8 +44,8 @@ pipeline {
 			when { expression { !params.Skip_Deployment } }
             steps {
             sh label: '', script: ''' source venv/bin/activate
-export Build="${Cortx_Build}"
-export Build_Branch="${Cortx_Build_Branch}"
+export Build=${Cortx_Build}
+export Build_Branch=${Cortx_Build_Branch}
 pytest tests/prov/test_prov_three_node.py::TestProvThreeNode::test_deployment_three_node_vm --local True --target "${Target_Node}"
 deactivate
 '''
