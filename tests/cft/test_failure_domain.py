@@ -20,15 +20,16 @@
 
 """Failure Domain Test Suite."""
 import logging
+import os
 
 import pytest
-import os
+
 from commons import configmanager
-from libs.s3 import ACCESS_KEY, SECRET_KEY
-from scripts.s3_bench import s3bench
+from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.prov.provisioner import Provisioner
-from commons.utils import assert_utils
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from scripts.s3_bench import s3bench
 
 
 class TestFailureDomain:
@@ -40,6 +41,7 @@ class TestFailureDomain:
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
         cls.setup_type = CMN_CFG["setup_type"]
 
+    @pytest.mark.run(order=2)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-24673")
     def test_24673(self):
@@ -75,6 +77,7 @@ class TestFailureDomain:
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
 
+    @pytest.mark.run(order=3)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-25016")
     def test_25016(self):
@@ -113,6 +116,7 @@ class TestFailureDomain:
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
 
+    @pytest.mark.run(order=1)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-23540")
     def test_23540(self):
@@ -135,6 +139,10 @@ class TestFailureDomain:
         parameters['MGMT_VIP'] = CMN_CFG["csm"]["mgmt_vip"]
         parameters['ADMIN_USR'] = CMN_CFG["csm"]["csm_admin_user"]["username"]
         parameters['ADMIN_PWD'] = CMN_CFG["csm"]["csm_admin_user"]["password"]
+        parameters['Skip_Deployment'] = test_cfg["skip_deployment"]
+        parameters['Skip_Preboarding'] = test_cfg["skip_preboarding"]
+        parameters['Skip_Onboarding'] = test_cfg["skip_onboarding"]
+        parameters['Skip_S3_Configuration'] = test_cfg["skip_s3_configure"]
 
         self.log.info(f"Parameters for jenkins job :{parameters}")
 
