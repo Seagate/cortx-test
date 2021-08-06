@@ -471,6 +471,41 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Actual Threshold value %s", resp)
         return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
 
+    def gen_cpu_usage_fault_thres_restart_node(self, delta_cpu_usage):
+        """Creates CPU faults
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_thresh_restart_node(self, cpu_usage_thresh):
+        """Resolves CPU faults
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
     def gen_mem_usage_fault(self, delta_mem_usage):
         """Creates memory faults
 
@@ -560,6 +595,20 @@ class SoftwareAlert(RASCoreLib):
         else:
             LOGGER.error("Failed to restart sspl-ll")
             result = False
+        return result
+
+    def restart_node(self):
+        """Restart node
+        """
+        LOGGER.info("Restarting Node")
+        resp = self.health_obj.reboot_node()
+        if resp:
+           resp = self.health_obj.check_node_health()
+           LOGGER.info("response: %s", resp)
+           result = resp[0]
+        else:
+           result = False
+           LOGGER.info("Node is not Up and healthy")
         return result
 
     def gen_cpu_fault(self, faulty_cpu_id: list):

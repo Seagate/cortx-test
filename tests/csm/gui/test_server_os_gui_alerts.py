@@ -599,8 +599,8 @@ class TestServerOSAlerts:
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         LOGGER.info("Step 2: Generate CPU usage fault.")
-        resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
-        assert resp[0], resp[1])
+        resp = self.sw_alert_obj.gen_cpu_usage_fault_thres_restart_node(test_cfg["delta_cpu_usage"])
+        assert resp[0], resp[1]
         LOGGER.info("Step 3: CPU usage fault is created successfully.")
         LOGGER.info("Step 4: Keep the CPU usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
@@ -615,15 +615,15 @@ class TestServerOSAlerts:
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
-        LOGGER.info("Step 7: Rebooting node %s", self.host)
-        resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
-                                         read_lines=True, exc=False)
-        LOGGER.info("Step 7: Rebooted node: %s, Response: %s", self.host, resp)
-        time.sleep(self.cm_cfg["reboot_delay"])
-        LOGGER.info("Step 8: Checking node health after reboot")
-        resp = self.health_obj.check_node_health()
-        assert resp[0], resp[1])
-        LOGGER.info("Step 8: Node health response: %s, Response: %s", self.host, resp)
+        LOGGER.info("Step 7: Resolving CPU usage fault.")
+        LOGGER.info("Updating default CPU usage threshold value")
+        resp = self.sw_alert_obj.resolv_cpu_usage_fault_thresh_restart_node(self.default_cpu_usage)
+        assert resp[0], resp[1]
+        LOGGER.info("Step 8: Keep the CPU usage below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
+        time.sleep(self.cfg["alert_wait_threshold"])
+        LOGGER.info("Step 8: CPU usage was below threshold for %s seconds",
+                    self.cfg["alert_wait_threshold"])
         LOGGER.info("Step 9:CPU usage fault is resolved.")
         self.default_mem_usage = False
         LOGGER.info("Step 10: Keep the cpu usage below threshold for %s seconds",
