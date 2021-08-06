@@ -619,24 +619,18 @@ class TestServerOSAlerts:
         LOGGER.info("Updating default CPU usage threshold value")
         resp = self.sw_alert_obj.resolv_cpu_usage_fault_thresh_restart_node(self.default_cpu_usage)
         assert resp[0], resp[1]
-        LOGGER.info("Step 8: Keep the CPU usage below threshold for %s seconds",
-                    self.cfg["alert_wait_threshold"])
-        time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 8: CPU usage was below threshold for %s seconds",
-                    self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 9:CPU usage fault is resolved.")
+        LOGGER.info("Step 8:CPU usage fault is resolved.")
         self.default_mem_usage = False
-        LOGGER.info("Step 10: Keep the cpu usage below threshold for %s seconds",
+        LOGGER.info("Step 9: Keep the cpu usage below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("Step 10: cpu usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 11: Checking if cpu fault is present in new alerts")
-        time.sleep(10)
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
+        time.sleep(10)
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
-        LOGGER.info("Step 12: Successfully verified CPU usage alert on CSM GUI")
+        LOGGER.info("Step 11: Successfully verified CPU usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-22719")
