@@ -707,5 +707,4 @@ class TestServerOSAlerts:
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
         LOGGER.info("Step 14: Successfully verified Memory usage alert on CSM GUI")
-        LOGGER.info("##### Test completed -  %s #####", test_case_name)
-     
+        LOGGER.info("##### Test completed -  %s #####", test_case_name) 
