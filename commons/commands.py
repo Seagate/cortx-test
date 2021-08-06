@@ -156,6 +156,8 @@ MDADM_MANAGE = "--manage"
 MDADM_FAIL = "--fail"
 MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
+IPMI_SDR_TYPE_CMD = "ipmitool sdr type"
+IPMI_EVENT_CMD = "ipmi event"
 
 # BMC commands.
 CMD_LAN_INFO = "ipmitool lan print"

@@ -283,3 +283,18 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+test_23682:
+  sensor_type: "Power Supply"
+  sensor_state: "Presence detected"
+  resource_type: "node:hw:psu"
+
+test_23683:
+  sensor_type: "Power Supply"
+  sensor_state: "Failure detected"
+  resource_type: "node:hw:psu"
+
+test_23684:
+  sensor_type: "Power Supply"
+  sensor_state: "Power Supply AC lost"
+  resource_type: "node:hw:psu"

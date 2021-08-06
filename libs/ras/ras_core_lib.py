@@ -873,3 +873,47 @@ class RASCoreLib:
         val = (val[1].split()[-1]).decode("utf-8")
         val = (repr(val)[2:-1]).replace('\'', '')
         return True, val
+
+    def get_ipmi_sensor_list(self, sensor_type: str = None) -> list:
+        """
+        Function returns the list of sensors connected to infrastructure system.
+        :param sensor_type: Type of sensor e.g., Power Supply, FAN
+        :return: List of sensors of given sensor_type if provided else all available sensors
+        """
+        ipmi_sdr_type_cmd = common_commands.IPMI_SDR_TYPE_CMD
+        if sensor_type:
+            ipmi_sdr_type_cmd = " ".join([ipmi_sdr_type_cmd, sensor_type])
+
+        output = self.node_utils.execute_cmd(ipmi_sdr_type_cmd, read_lines=True)
+
+        return output
+
+    def get_ipmi_sensor_states(self, sensor_name: str) -> list:
+        """
+        Function returns the list of states available for a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :return: List of states for given sensor
+        """
+        sensor_states_cmd = " ".join([common_commands.IPMI_EVENT_CMD, sensor_name])
+        output = self.node_utils.execute_cmd(sensor_states_cmd, read_lines=True)
+
+        return output
+
+    def assert_deassert_sensor_state(self, sensor_name: str, sensor_state: str, deassert: bool = False) -> list:
+        """
+        Function to assert or deassert the given state of a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :param sensor_state: state of sensor to assert or deassert
+        :param deassert: deasserts the state if set True
+        :return: response of assert or deassert sensor state
+        """
+        event_cmd = " ".join([common_commands.IPMI_EVENT_CMD, sensor_name, sensor_state])
+        if deassert:
+            event_cmd = " ".join([event_cmd, "deassert"])
+        output = self.node_utils.execute_cmd(event_cmd, read_lines=True)
+
+        return output
+
+
+
+

@@ -1228,3 +1228,78 @@ class RASTestLib(RASCoreLib):
             if os.path.exists(tempfile):
                 os.remove(tempfile)
             self.node_utils.remove_file(filename=filepath)
+
+    def get_ipmi_sensor_list(self, sensor_type: str = None) -> tuple:
+        """
+        Function returns the list of sensors connected to infrastructure system.
+        :param sensor_type: Type of sensor e.g., Power Supply, FAN
+        :return: List of sensors of given sensor_type if provided else all available sensors
+        """
+        try:
+            LOGGER.info("Fetching all sensor types")
+            output = super().get_ipmi_sensor_list()
+            all_types = list()
+            for line in output:
+                if "(0x" in line:
+                    all_types.append(re.split('[()]', line)[0].strip().lower())
+                    all_types.append(re.split('[()]', line)[2].strip().lower())
+
+            if sensor_type:
+                if sensor_type.lower() in all_types:
+                    sensor_type = f"'{sensor_type}'"
+                    LOGGER.info("Fetching all sensors for sensor type %s", sensor_type)
+                    output = super().get_ipmi_sensor_list(sensor_type)
+                    sensor_list = [line.split("|")[0].strip() for line in output]
+
+                    return True, sensor_list
+                else:
+                    return False, "Invalid Sensor Type"
+
+            return True, all_types
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_ipmi_sensor_list.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+    def get_ipmi_sensor_states(self, sensor_name: str) -> list:
+        """
+        Function returns the list of states available for a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :return: List of states for given sensor
+        """
+        try:
+            LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
+            output = super().get_ipmi_sensor_states(sensor_name)
+            sensor_states = [state.strip().lower() for state in output[2:]]
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_ipmi_sensor_states.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return sensor_states
+
+    def assert_deassert_sensor_state(self, sensor_name: str, sensor_state: str, deassert: bool = False) -> tuple:
+        """
+        Function to assert or deassert the given state of a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :param sensor_state: state of sensor to assert or deassert
+        :param deassert: deasserts the state if set True
+        :return: response of assert or deassert sensor state
+        """
+        try:
+            LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
+            output = super().assert_deassert_sensor_state(sensor_name, sensor_state, deassert)
+            event_details = [val.strip() for val in output[-1].split("|")]
+            if not deassert and "Asserted" in event_details:
+                return True, event_details
+            elif deassert and "Deasserted" in event_details:
+                return True, event_details
+            else:
+                return False, output
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.assert_deassert_sensor_state.__name__, error))
+            raise CTException(err.RAS_ERROR, error.args[0])
