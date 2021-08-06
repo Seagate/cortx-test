@@ -41,9 +41,9 @@ from libs.prov.provisioner import Provisioner
 from scripts.ssc_cloud.vm_management import VmStateManagement
 
 # Global Constants
-config_file = 'scripts/jenkins_job/config.ini'
-config = configparser.ConfigParser()
-config.read(config_file)
+CONFIG_FILE = 'scripts/jenkins_job/config.ini'
+CONFIG = configparser.ConfigParser()
+CONFIG.read(CONFIG_FILE)
 
 JOB_DEPLOY_3N = "Partition Main Deploy 3N"
 JOB_DEPLOY_1N = 'Partition Main Deploy 1N'
@@ -212,10 +212,7 @@ def run_cmd(cmd):
     :rtype: string
     """
     print("Executing command: {}".format(cmd))
-    proc = subprocess.Popen(cmd, shell=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = str(proc.communicate())
     return result
 
@@ -227,8 +224,8 @@ def trigger_deployment(args, cluster_ip, retries=3):
 
     while retries > 0:
         vm_machines = args.hosts.split(',')
-        rc = revert_vms(args, vm_machines)
-        if not rc:
+        res_status = revert_vms(args, vm_machines)
+        if not res_status:
             return False
 
         parameters = dict()
@@ -259,7 +256,6 @@ def trigger_deployment(args, cluster_ip, retries=3):
             return True
 
 
-
 def set_s3_endpoints(cluster_ip):
     """
     Set s3 endpoints to cluster ip in /etc/hosts
@@ -281,6 +277,37 @@ def get_vm_creds(args):
     """Placeholder function to get generic vm credentials."""
     return 'root', args.node_pass
 
+
+def single_node_server_changes(hostname, username, password, mg_ip):
+    """
+    Server side changes for single node
+    """
+    server_haproxy_cfg = CONFIG['default']['haproxy_config']
+    local_haproxy_cfg = CONFIG['default']['tmp_haproxy_config']
+    obj = Node(hostname=hostname[0], username=username, password=password)
+    # Stopping/disabling firewalld service on node for tests
+    print("Doing server side settings for firewalld and haproxy.")
+    obj.execute_cmd("systemctl stop firewalld", read_lines=True)
+    obj.execute_cmd("systemctl disable firewalld", read_lines=True)
+    # Doing changes in haproxy file and restarting it
+    if os.path.exists(local_haproxy_cfg):
+        run_cmd("rm -f {}".format(local_haproxy_cfg))
+    obj.copy_file_to_local(remote_path=server_haproxy_cfg, local_path=local_haproxy_cfg)
+    with open(local_haproxy_cfg) as file:
+        for num, line in enumerate(file, 1):
+            if "option forwardfor" in line:
+                indx = num
+    with open(local_haproxy_cfg, 'r') as file:
+        read_file = file.readlines()
+    read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
+    read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+    with open(local_haproxy_cfg, 'w') as file:
+        read_file = "".join(read_file)
+        file.write(read_file)
+    obj.copy_file_to_remote(local_path=local_haproxy_cfg, remote_path=server_haproxy_cfg)
+    obj.execute_cmd("systemctl restart haproxy", read_lines=True)
+
+
 def configure_haproxy_lb(hostname, username, password, mg_ip):
     """
     Configure haproxy as Load Balancer on server
@@ -289,8 +316,8 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
     :param str password: password of nodes
     :return: None
     """
-    server_haproxy_cfg = config['default']['haproxy_config']
-    local_haproxy_cfg = config['default']['tmp_haproxy_config']
+    server_haproxy_cfg = CONFIG['default']['haproxy_config']
+    local_haproxy_cfg = CONFIG['default']['tmp_haproxy_config']
     if len(hostname) > 1:
         instance_per_node = 1
         s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:{2} check maxconn 110\n"
@@ -301,9 +328,9 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
             start_inst = (node * instance_per_node)
             end_inst = ((node + 1) * instance_per_node)
             for i in range(start_inst, end_inst):
-                port = "2807{}".format((i%instance_per_node)+1)
-                total_s3_instances.append(s3instance.format(i+1, node+1, port))
-            total_auth_instances.append(authinstance.format(node+1, node+1))
+                port = "2807{}".format((i % instance_per_node) + 1)
+                total_s3_instances.append(s3instance.format(i + 1, node + 1, port))
+            total_auth_instances.append(authinstance.format(node + 1, node + 1))
         LOGGER.debug(total_s3_instances)
         LOGGER.debug(total_auth_instances)
         for host in hostname:
@@ -324,28 +351,8 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
             LOGGER.info("Restarted haproxy service")
         LOGGER.info("Configured s3 instances in haproxy.cfg on all the nodes")
     else:
-        obj = Node(hostname=hostname[0], username=username, password=password)
-        # Stopping/disabling firewalld service on node for tests
-        print("Doing server side settings for firewalld and haproxy.")
-        obj.execute_cmd("systemctl stop firewalld", read_lines=True)
-        obj.execute_cmd("systemctl disable firewalld", read_lines=True)
-        # Doing changes in haproxy file and restarting it
-        if os.path.exists(local_haproxy_cfg):
-            run_cmd("rm -f {}".format(local_haproxy_cfg))
-        obj.copy_file_to_local(remote_path=server_haproxy_cfg, local_path=local_haproxy_cfg)
-        with open(local_haproxy_cfg) as file:
-            for num, line in enumerate(file, 1):
-                if "option forwardfor" in line:
-                    indx = num
-        with open(local_haproxy_cfg, 'r') as file:
-            read_file = file.readlines()
-        read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
-        read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
-        with open(local_haproxy_cfg, 'w') as file:
-            read_file = "".join(read_file)
-            file.write(read_file)
-        obj.copy_file_to_remote(local_path=local_haproxy_cfg, remote_path=server_haproxy_cfg)
-        obj.execute_cmd("systemctl restart haproxy", read_lines=True)
+        single_node_server_changes(hostname, username, password, mg_ip)
+
 
 def setup_client(args, hosts, cluster_ip):
     """

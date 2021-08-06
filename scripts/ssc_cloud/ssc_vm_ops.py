@@ -18,12 +18,12 @@
 #
 import os
 import csv
+import logging
 import requests
 import argparse
 import json
 import sys
 import time
-import logging
 import random
 import string
 
@@ -421,7 +421,7 @@ class VMOperations:
             res = self.execute_request()
             if res:
                 snapshots = res['resources'][0]['snapshots']
-                for i, snap in enumerate(snapshots):
+                for _, snap in enumerate(snapshots):
                     name = snap['name']
                     if name != 'Active VM':
                         print(name)
