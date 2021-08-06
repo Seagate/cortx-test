@@ -29,6 +29,7 @@ import pandas as pd
 from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
+from commons.helpers.bmc_helper import Bmc
 from commons.helpers.controller_helper import ControllerLib
 from libs.s3 import S3H_OBJ
 from commons.ct_fail_on import CTFailOn
@@ -1505,3 +1506,33 @@ class TestServerFruAlerts:
                     "using CSM REST API")
         LOGGER.info(
             "ENDED: Test alert persistence of RAID array alerts across sspl stop and start")
+
+    def test_node_power_failure_alert_23679(self):
+        """
+        TEST-23679: Test alert when one of the node's power cable is
+        disconnected and connected
+        """
+        LOGGER.info(
+            "STARTED: Test alert when one of the node's power cable is "
+            "disconnected and connected")
+        test_cfg = RAS_TEST_CFG["power_failure"]
+        csm_error_msg = test_cfg["csm_error_msg"]
+        service = self.cm_cfg["service"]
+
+        LOGGER.info(f"Step 2: Shutting down node {target_node}")
+        try:
+            # res = UTILS.shutdown_node(host=target_node, options=power_failure_params["shutdown_option"])
+            status = test_cfg["power_off"]
+            if test_cfg["bmc_shutdown"]:
+                res = UTILS.bmc_node_power_on_off(self.bmc_ip, self.bmc_user,
+                                                  self.bmc_pwd, status)
+            else:
+                res = UTILS.toggle_apc_node_power(pdu_details["ip"],
+                                                  pdu_details["user"],
+                                                  pdu_details["pwd"],
+                                                  node_slot=node, status=status)
+            self.log.debug(res)
+            self.assertTrue(res[0], res)
+            self.power_failure_flag = True
+            self.log.info(
+                "Step 2.1: Powered off node using APC/BMC.")

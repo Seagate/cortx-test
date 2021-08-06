@@ -283,3 +283,14 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+power_failure:
+  shutdown_option: "-r now"
+  power_on: "on"
+  power_off: "off"
+  sleep_time: 120 # in case we are dong reboot off then on n same call
+  min_wait_time: 420
+  max_wait_time: 660
+  wait_10_min: 600
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  bmc_shutdown: True
