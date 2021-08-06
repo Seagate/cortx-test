@@ -1161,7 +1161,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to get details of the drives connected to node
         :return: True/False, drive_name, host_num, drive_count
-        :rtype: Boolean, str, int, int (e.g. '/dev/sda', 2, 4)
+        (e.g. '/dev/sda', 2, 4)
         """
         try:
             filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
@@ -1233,7 +1233,6 @@ class RASTestLib(RASCoreLib):
         """
         Function to get names of the raid arrays of node
         Returns: status, list (e.g. ['md2', 'md0', 'md1'])
-        rtype: list
         """
         try:
             cmd = common_commands.GET_RAID_ARRAYS_CMD
@@ -1255,7 +1254,6 @@ class RASTestLib(RASCoreLib):
         'sdbo']},
         'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
         'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
-        rtype: dict
         """
         try:
             LOGGER.info("Checking state of arrays")
@@ -1291,7 +1289,6 @@ class RASTestLib(RASCoreLib):
         Returns: status, dict
         (e.g. {'md0': {'state': 'Active'}, 'md1': {'state':
         'Active'}, 'md2': {'state': 'Degraded'}})
-        rtype: dict
         """
         try:
             md_arrays = {}
@@ -1322,7 +1319,6 @@ class RASTestLib(RASCoreLib):
         """
         Function to get raid drive partitions of drive
         Returns: status, list (e.g. ['/dev/sda1', '/dev/sda3'])
-        rtype: list
         """
         try:
             local_path = filepath
@@ -1362,7 +1358,6 @@ class RASTestLib(RASCoreLib):
         """
         Function to get drive name by its host number
         Returns: status, str (e.g. '/dev/sda1')
-        rtype: bool, str
         """
         try:
             cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
@@ -1383,7 +1378,6 @@ class RASTestLib(RASCoreLib):
         {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
         'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
         'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
-        rtype: dict
         """
         try:
             for part in raid_parts:
@@ -1413,5 +1407,5 @@ class RASTestLib(RASCoreLib):
         except Exception as error:
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
-                RASTestLib.add_raid_prtitions.__name__, error))
+                RASTestLib.add_raid_partitions.__name__, error))
             return False, error
