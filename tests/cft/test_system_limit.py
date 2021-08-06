@@ -22,10 +22,11 @@ import logging
 import os
 import random
 import time
+from datetime import datetime
 
 import pytest
 
-from commons import configmanager
+from commons import configmanager, Globals
 from commons.constants import Rest as Const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -33,7 +34,7 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CSM_CFG
+from config import CSM_CFG, CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
@@ -43,6 +44,7 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
+from robot_gui.utils.call_robot_test import trigger_robot
 
 S3_TEST_OBJ = S3TestLib()
 S3_MP_TEST_OBJ = S3MultipartTestLib()
@@ -80,6 +82,13 @@ class TestS3IOSystemLimits:
         cls.cms_rest_test_obj = RestTestLib()
         cls.test_dir_path = os.path.join(TEST_DATA_PATH, "LimitTest")
         cls.test_file = "testfile{}.txt"
+
+        cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
+        cls.csm_url = "https://" + cls.mgmt_vip + "/#"
+        cls.cwd = os.getcwd()
+        cls.robot_gui_path = os.path.join(cls.cwd + '/robot_gui/')
+        cls.robot_test_path = cls.robot_gui_path + 'testsuites/gui/.'
+        cls.browser_type = 'chrome'
 
     def setup_method(self):
         """Create test data directory"""
@@ -445,7 +454,7 @@ class TestS3IOSystemLimits:
         assert response.status_code == Const.SUCCESS_STATUS, f"List account Response is " \
                                                              f"{response.status_code}. Expected " \
                                                              f"it to be {Const.SUCCESS_STATUS}"
-        s3_accounts = response.json()
+        s3_accounts = response.json()['s3_accounts']
         assert len(s3_accounts) == 0, f"The system already has s3 accounts present: {s3_accounts}"
 
         self.create(test)
@@ -853,3 +862,28 @@ class TestS3IOSystemLimits:
         self.log.info(f"Deleting bucket {bucket_name}")
         res = S3_TEST_OBJ.delete_bucket(bucket_name, True)
         assert_utils.assert_true(res[0], res[1])
+
+    @pytest.mark.csm_gui
+    @pytest.mark.scalability
+    @pytest.mark.tags("TEST-25351")
+    @CTFailOn(error_handler)
+    def test_csm_iam_limit(self):
+        test = "test_16009"
+        self.create(test)
+        s3_account = self.created_s3_users[0]["account_name"]
+
+        # Create one extra IAM user and verify limit response is 403
+        gui_dict = dict()
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'create_last_iam_user_verify_popup_' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
+        gui_dict['test_path'] = self.robot_test_path
+        gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
+                                self.browser_type, 'username:' + str(s3_account),
+                                'password:' + str(self.s3_original_password),
+                                'RESOURCES:' + self.robot_gui_path]
+        gui_dict['test'] = 'CREATE_LAST_IAM_USER_VERIFY_POPUP'
+        gui_response = trigger_robot(gui_dict)
+        assert_utils.assert_true(gui_response, 'GUI FAILED')
+
+        # Delete everything
+        self.destroy(s3_password=self.s3_original_password)
