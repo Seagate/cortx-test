@@ -1161,7 +1161,7 @@ class RASTestLib(RASCoreLib):
         """
         Function to get details of the drives connected to node
         :return: True/False, drive_name, host_num, drive_count
-        :rtype: Boolean, str, int, int ('/dev/sda', 2, 4)
+        :rtype: Boolean, str, int, int (e.g. '/dev/sda', 2, 4)
         """
         try:
             filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
@@ -1232,7 +1232,7 @@ class RASTestLib(RASCoreLib):
     def get_raid_arrays(self) -> Tuple[bool, list]:
         """
         Function to get names of the raid arrays of node
-        Returns: ['md2', 'md0', 'md1']
+        Returns: status, list (e.g. ['md2', 'md0', 'md1'])
         rtype: list
         """
         try:
@@ -1251,9 +1251,10 @@ class RASTestLib(RASCoreLib):
     def get_raid_array_details(self) -> Tuple[bool, dict]:
         """
         Function to get details of the raid arrays of node
-        Returns: {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        Returns: status, dict (e.g. {'md2': {'state': 'Degraded', 'drives': [
+        'sdbo']},
         'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
-        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}}
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
         rtype: dict
         """
         try:
@@ -1287,8 +1288,9 @@ class RASTestLib(RASCoreLib):
     def check_raid_array_state(self) -> Tuple[bool, dict]:
         """
         Function to get states of the raid arrays of node
-        Returns: {'md0': {'state': 'Active'}, 'md1': {'state': 'Active'},
-        'md2': {'state': 'Degraded'}}
+        Returns: status, dict
+        (e.g. {'md0': {'state': 'Active'}, 'md1': {'state':
+        'Active'}, 'md2': {'state': 'Degraded'}})
         rtype: dict
         """
         try:
@@ -1319,7 +1321,7 @@ class RASTestLib(RASCoreLib):
             Tuple[bool, list]:
         """
         Function to get raid drive partitions of drive
-        Returns: ['/dev/sda1', '/dev/sda3']
+        Returns: status, list (e.g. ['/dev/sda1', '/dev/sda3'])
         rtype: list
         """
         try:
@@ -1359,8 +1361,8 @@ class RASTestLib(RASCoreLib):
     def get_drive_by_hostnum(self, hostnum: str) -> Tuple[bool, str]:
         """
         Function to get drive name by its host number
-        Returns: '/dev/sda1'
-        rtype: str
+        Returns: status, str (e.g. '/dev/sda1')
+        rtype: bool, str
         """
         try:
             cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
@@ -1373,13 +1375,14 @@ class RASTestLib(RASCoreLib):
                 RASTestLib.get_drive_by_hostnum.__name__, error))
             return False, error
 
-    def add_raid_prtitions(self, alert_lib_obj, alert_type, raid_parts: list,
-                           md_arrays: dict) -> Tuple[bool, dict]:
+    def add_raid_partitions(self, alert_lib_obj, alert_type, raid_parts: list,
+                            md_arrays: dict) -> Tuple[bool, dict]:
         """
         Function to add partitions of drive in raid array
-        Returns: {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        Returns: status, dict (e.g.
+        {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
         'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
-        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}}
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
         rtype: dict
         """
         try:

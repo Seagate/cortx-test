@@ -394,7 +394,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Step 7: Adding raid partitions of drive %s in raid array",
                     new_drive)
-        resp = self.ras_test_obj.add_raid_prtitions(
+        resp = self.ras_test_obj.add_raid_partitions(
             alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
             raid_parts=raid_parts, md_arrays=md_arrays)
         if not resp[0]:
@@ -626,7 +626,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
                 new_drive)
-            resp = self.ras_test_obj.add_raid_prtitions(
+            resp = self.ras_test_obj.add_raid_partitions(
                 alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
@@ -893,7 +893,7 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
                 new_drive)
-            resp = self.ras_test_obj.add_raid_prtitions(
+            resp = self.ras_test_obj.add_raid_partitions(
                 alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
