@@ -367,7 +367,7 @@ def setup_client(args, hosts, cluster_ip):
     nd_obj_host = Node(hostname=host, username=uname, password=upasswd)
     nd_obj_host.copy_file_to_local(remote_path=remote_cert_path, local_path=local_cert_path)
     set_s3_endpoints(cluster_ip)
-    configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
+    #configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
 
 
 def update_vm_db(args):
