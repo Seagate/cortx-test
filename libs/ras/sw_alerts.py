@@ -603,12 +603,12 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Restarting Node")
         resp = self.health_obj.reboot_node()
         if resp:
-           resp = self.health_obj.check_node_health()
-           LOGGER.info("response: %s", resp)
-           result = resp[0]
+            resp = self.health_obj.check_node_health()
+            LOGGER.info("response: %s", resp)
+            result = resp[0]
         else:
-           result = False
-           LOGGER.info("Node is not Up and healthy")
+            result = False
+            LOGGER.info("Node is not Up and healthy")
         return result
 
     def gen_cpu_fault(self, faulty_cpu_id: list):

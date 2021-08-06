@@ -462,7 +462,7 @@ class Health(Host):
         LOG.info("Restarting Node")
         cmd = commands.REBOOT_NODE_CMD
         resp = self.execute_cmd(cmd, read_lines=True, exc=False)
-        LOG.info("Waiting for Node to Come UP")
+        LOG.info("Waiting for Node to Come UP %s", resp)
         time.sleep(RAS_VAL["ras_sspl_alert"]["reboot_delay"])
         return True
 
