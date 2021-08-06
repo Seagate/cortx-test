@@ -115,7 +115,7 @@ class CSMConfigsCheck:
                 "password": new_password,
                 "reset_password": True}
             endpoint = "{}/{}".format(rest_test_obj.config["csmuser_endpoint"], username)
-            response = rest_test_obj.restapi.rest_call("patch", data=patch_payload, 
+            response = rest_test_obj.restapi.rest_call("patch", data=patch_payload,
                                                         endpoint=endpoint, headers=headers)
             if response.status_code == const.SUCCESS_STATUS:
                 self._log.info("Successfully reset password of the admin user.")
