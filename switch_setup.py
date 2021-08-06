@@ -26,7 +26,6 @@ import os
 import configparser
 import subprocess
 import argparse
-import csv
 import logging
 from core import runner
 from commons import params
@@ -308,6 +307,7 @@ def single_node_server_changes(hostname, username, password, mg_ip):
     obj.execute_cmd("systemctl restart haproxy", read_lines=True)
 
 
+# pylint: disable-msg=too-many-locals
 def configure_haproxy_lb(hostname, username, password, mg_ip):
     """
     Configure haproxy as Load Balancer on server
