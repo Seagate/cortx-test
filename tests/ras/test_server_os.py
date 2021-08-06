@@ -506,8 +506,19 @@ class TestServerOS:
     @pytest.mark.sw_alert
     def test_22786_memory_usage(self):
         """
-        Test memory usage fault and fault resolved alerts with gradual
-        increase in memory usage on each node of the cluster sequentially.
+        Test Scenario :
+        1. Increasing memory usage gradually on each node
+        (used stress tool for increasing memory usage)
+        2. Verify memory usage should be greater than threshold value
+        (Verify threshold value from /etc/sspl.conf file)
+        3. Verify memory usage fault alert after increasing memory usage
+        (verify alert using CSM rest and SSPL)
+        4. Wait for timespan and check memory usage alerts are resolved on SSPl and CSM rest
+        (consider timespan (-t parameter) from CMD_INCREASE_MEMORY command)
+
+        Test objective:
+        Verify memory usage fault and fault resolved alert should be present
+        after increasing and decreasing memory usage
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)

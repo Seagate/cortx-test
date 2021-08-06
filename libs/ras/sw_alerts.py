@@ -26,9 +26,9 @@ import os
 import time
 from collections import OrderedDict
 from commons import commands
+from commons import constants as const
 from libs.ras.ras_core_lib import RASCoreLib
 from config import RAS_VAL
-from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -630,7 +630,8 @@ class SoftwareAlert(RASCoreLib):
 
         :return [str]: Response from tool
         """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_INSTALL_TOOL.format(tool_name)).decode('utf-8')
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name)).decode('utf-8')
         LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
         return resp
 
@@ -650,6 +651,7 @@ class SoftwareAlert(RASCoreLib):
         """Check memory utilization
         :return [str]: Response from command
         """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
         LOGGER.debug("%s response : %s", commands.CMD_MEMORY_UTILIZATION, resp)
         return resp
