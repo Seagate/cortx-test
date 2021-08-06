@@ -7,13 +7,11 @@ pipeline {
     }
     stages {
 		stage('CODE_CHECKOUT') {
-			steps{
+			steps {
 			    cleanWs()
 			    checkout([$class: 'GitSCM', branches: [[name: "*/${Git_Branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'rel_sanity_github_auto', url: "${Git_Repo}"]]])
-			    script {
 			    withCredentials([file(credentialsId: 'qa_secrets_json_new', variable: 'secrets_json_path')]) {
                 sh "cp /$secrets_json_path $WORKSPACE/secrets.json"
-			        }
 		        }
 		    }
 		}
@@ -44,7 +42,7 @@ pipeline {
         }
         stage('DEPLOYMENT') {
 			when { expression { !params.Skip_Deployment } }
-            steps{
+            steps {
             sh label: '', script: ''' source venv/bin/activate
 export Build="${Cortx_Build}"
 export Build_Branch="${Cortx_Build_Branch}"
@@ -55,7 +53,7 @@ deactivate
         }
         stage('CSM_PREBOARDING') {
 			when { expression { !params.Skip_Preboarding } }
-			steps{
+			steps {
 			    sh label: '', script: '''source venv/bin/activate
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
 deactivate
@@ -64,7 +62,7 @@ deactivate
 		}
 		stage('CSM_ONBOARDING') {
 			when { expression { !params.Skip_Onboarding  } }
-			steps{
+			steps {
 			    sh label: '', script: '''source venv/bin/activate
 python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
 deactivate
@@ -73,7 +71,7 @@ deactivate
 		}
 		stage('CLIENT_CONFIG') {
 		    when { expression { !params.Skip_S3_Configuration } }
-			steps{
+			steps {
 			    sh label: '', script: '''source venv/bin/activate
 echo 'Creating s3 account and configuring awscli on client'
 pytest scripts/jenkins_job/aws_configure.py --local True --target ${Target_Node}

@@ -144,7 +144,7 @@ class TestFailureDomain:
         parameters['Skip_Onboarding'] = test_cfg["skip_onboarding"]
         parameters['Skip_S3_Configuration'] = test_cfg["skip_s3_configure"]
 
-        self.log.info(f"Parameters for jenkins job :{parameters}")
+        self.log.info("Parameters for jenkins job : %s", parameters)
 
         if os.path.exists(test_cfg["config_path_local"]):
             self.log.info("Retrieving the config details for deployment from provided config file")
@@ -158,6 +158,6 @@ class TestFailureDomain:
         output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters,
                                        test_cfg["jenkins_token"],
                                        test_cfg["jenkins_job_url"])
-        self.log.info(f"Jenkins Build URL: {output['url']}")
+        self.log.info("Jenkins Build URL: %s", output['url'])
         assert_utils.assert_equal(output['result'], "SUCCESS",
                                   "Job is not successful, please check the url.")
