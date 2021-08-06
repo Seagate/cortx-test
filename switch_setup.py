@@ -23,6 +23,7 @@
 Script to perform test execution and deployment
 """
 import os
+import configparser
 import subprocess
 import argparse
 import csv
@@ -38,6 +39,11 @@ from commons.constants import LOCAL_S3_CERT_PATH
 from testrunner import get_setup_details
 from libs.prov.provisioner import Provisioner
 from scripts.ssc_cloud.vm_management import VmStateManagement
+
+# Global Constants
+config_file = 'scripts/jenkins_job/config.ini'
+config = configparser.ConfigParser()
+config.read(config_file)
 
 JOB_DEPLOY_3N = "Partition Main Deploy 3N"
 JOB_DEPLOY_1N = 'Partition Main Deploy 1N'
@@ -259,11 +265,86 @@ def get_vm_creds(args):
     """Placeholder function to get generic vm credentials."""
     return 'root', args.node_pass
 
+def configure_haproxy_lb(hostname, username, password, mg_ip):
+    """
+    Configure haproxy as Load Balancer on server
+    :param list hostname: hostnames of all the nodes
+    :param str username: username of nodes
+    :param str password: password of nodes
+    :return: None
+    """
+    if len(hostname) > 1:
+        instance_per_node = 1
+        server_haproxy_cfg = config['default']['haproxy_config']
+        local_haproxy_cfg = config['default']['tmp_haproxy_config']
+        s3instance = "    server s3-instance-{0} srvnode-{1}.data.private:{2} check maxconn 110\n"
+        authinstance = "    server s3authserver-instance{0} srvnode-{1}.data.private:28050\n"
+        total_s3_instances = list()
+        total_auth_instances = list()
+        for node in range(len(hostname)):
+            start_inst = (node * instance_per_node)
+            end_inst = ((node + 1) * instance_per_node)
+            for i in range(start_inst, end_inst):
+                port = "2807{}".format((i%instance_per_node)+1)
+                total_s3_instances.append(s3instance.format(i+1, node+1, port))
+            total_auth_instances.append(authinstance.format(node+1, node+1))
+        LOGGER.debug(total_s3_instances)
+        LOGGER.debug(total_auth_instances)
 
-def setup_client(args, host, cluster_ip):
+        for host in hostname:
+            LOGGER.info("Updating s3 instances in haproxy.cfg on node: %s", host)
+            nd_obj = Node(hostname=host, username=username, password=password)
+            nd_obj.copy_file_to_local(server_haproxy_cfg, local_haproxy_cfg)
+            with open(local_haproxy_cfg, "r") as f:
+                data = f.readlines()
+            with open(local_haproxy_cfg, "w") as f:
+                for line in data:
+                    if "server s3-instance-" in line:
+                        line = "".join(["#", line] + total_s3_instances)
+                    elif "server s3authserver-instance" in line:
+                        line = "".join(["#", line] + total_auth_instances)
+                    f.write(line)
+            nd_obj.copy_file_to_remote(local_haproxy_cfg, server_haproxy_cfg)
+            cmd = "systemctl restart haproxy"
+            nd_obj.execute_cmd(cmd, read_lines=True)
+            LOGGER.info("Restarted haproxy service")
+        LOGGER.info("Configured s3 instances in haproxy.cfg on all the nodes")
+    else:
+        obj = Node(hostname=hostname[0], username=username, password=password)
+        # Stopping/disabling firewalld service on node for tests
+        print("Doing server side settings for firewalld and haproxy.")
+        cmd = "systemctl stop firewalld"
+        obj.execute_cmd(cmd, read_lines=True)
+        cmd = "systemctl disable firewalld"
+        obj.execute_cmd(cmd, read_lines=True)
+        # Doing changes in haproxy file and restarting it
+        remote_path = "/etc/haproxy/haproxy.cfg"
+        local_path = "/tmp/haproxy.cfg"
+        if os.path.exists(local_path):
+            run_cmd("rm -f {}".format(local_path))
+        obj.copy_file_to_local(remote_path=remote_path, local_path=local_path)
+        line_src = "option forwardfor"
+        with open(local_path) as file:
+            for num, line in enumerate(file, 1):
+                if line_src in line:
+                    indx = num
+        with open(local_path, 'r') as file:
+            read_file = file.readlines()
+        read_file.insert(indx - 2, "    bind {}:80\n".format(mg_ip))
+        read_file.insert(indx - 1, "    bind {}:443 ssl crt /etc/ssl/stx/stx.pem\n".format(mg_ip))
+
+        with open(local_path, 'w') as file:
+            read_file = "".join(read_file)
+            file.write(read_file)
+        obj.copy_file_to_remote(local_path=local_path, remote_path=remote_path)
+        cmd = "systemctl restart haproxy"
+        obj.execute_cmd(cmd, read_lines=True)
+
+def setup_client(args, hosts, cluster_ip):
     """
     Perform client settings
     """
+    host = hosts[0]
     uname, upasswd = get_vm_creds(args)
     remote_cert_path = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
     local_cert_path = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -272,6 +353,7 @@ def setup_client(args, host, cluster_ip):
     nd_obj_host = Node(hostname=host, username=uname, password=upasswd)
     nd_obj_host.copy_file_to_local(remote_path=remote_cert_path, local_path=local_cert_path)
     set_s3_endpoints(cluster_ip)
+    configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
 
 
 def update_vm_db(args):
@@ -334,7 +416,7 @@ def main(args):
                                                       args.csm_pass)
     hosts = hosts_list
     cluster_ip = setup_details['csm']['mgmt_vip']
-    setup_client(args, hosts[0], cluster_ip)
+    setup_client(args, hosts, cluster_ip)
     te_list = args.te_tickets
     for te in te_list:
         te_completed = False
