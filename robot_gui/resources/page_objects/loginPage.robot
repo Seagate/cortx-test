@@ -50,17 +50,21 @@ Validate CSM Login Success
     should be equal  ${csm_dashboard_text}  ${username}
     [Return]  ${csm_dashboard_text}
 
-CSM GUI Login with Incorrect Credentials
-    [Documentation]  This keyword is used in Test-535 & Test-4026 to test incorrect credentials.
-    [Arguments]  ${url}  ${browser}  ${headless}
+Verify CSM GUI Login Fail with Incorrect Credentials
+    [Documentation]  This keyword is used to verify login fail for incorrect credentials.
+    [Arguments]  ${url}  ${browser}  ${headless}  ${username}=${None}  ${password}=${None}
     Run Keyword If  ${headless} == True  Open URL In Headless  ${url}  ${browser}
     ...  ELSE  Open URL  ${url}  ${browser}
-    ${username}=  Generate New User Name
-    ${password}=  Generate New Password
-    Enter Username And Password  ${username}  ${password}
+    ${new_username}=  Generate New User Name
+    ${new_password}=  Generate New Password
+    Run Keyword If  "${username}" == "${None}" and "${password}" == "${None}"
+    ...  Enter Username And Password  ${new_username}  ${new_password}
+    ...  ELSE  Enter Username And Password  ${username}  ${password}
     Element Should Be Enabled  ${signin_button_id}
     Click Sigin Button
     Wait Until Element Is Enabled  ${signin_button_id}
+    Validate CSM Login Failure
+    Close Browser
 
 CSM GUI Login and Verify Button Enabled Disabled with Incorrect Credentials
     [Documentation]  This keyword is used in Test-6373 for login button validation.

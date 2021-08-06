@@ -54,7 +54,7 @@ IAM_USER_USERNAME_TOOLTIP_MSG = "The username must be of minimum 1 characters an
 IAM_USER_PASSWD_TOOLTIP_MSG = "Password must contain: Minimum 8 characters"
 IAM_USER_PASSWD_MISSMATCH_MSG = "Passwords do not match"
 SECRET_KEY_VALUE = "XXXX"
-IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'Action']
+IAMUSER_ACCESS_KEY_HEADERS = ['Access key', 'Secret key', 'Key Status', 'Action']
 DUPLICATE_IAM_USER_ERROR_MSG = "The request was rejected because it attempted to create or update a resource that already exists."
 IAM_USER_LIMIT_ERROR_MSG = "The request was rejected because maximum limit(i.e 1000) of user creation has exceeded."
 
@@ -83,10 +83,16 @@ CAPACITY_WIDGET_LABEL_VALUE = "Capacity"
 Audit_log_days = ["One day", "Two days", "Three days",
                   "Four days", "Five days", "Six days", "Seven days"]
 
+#Health Table
+HEALTH_STATUS_COLUMN = 3
+HEALTH_CLUSTER_OFFSET = 1
+HEALTH_NODE_OFFSET = 4
+
 #CSM User Table
 CSM_ROLE_COLUMN = 2
 CSM_USERNAME_COLUMN = 3
-ROW_VALUE = "20 rows"
-DEFAULT_COUNT = "10"
-ROW_FIVE = "5 rows"
-CSM_DROPDOWN_VALUE = "10 rows"
+CSM_TEST_ROW_VALUE = "20 rows"
+CSM_TEST_DEFAULT_COUNT = "11"
+CSM_TEST_ROW_FIVE = "5 rows"
+CSM_TEST_DEFAULT_DROPDOWN_VALUE = "10 rows"
+CSM_MAX_ROW_VALUE = "200 rows"
