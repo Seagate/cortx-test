@@ -54,14 +54,17 @@ def get_complete_schema(data):
     return entry
 
 
-statistics_column_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
-                              'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
+statistics_column_headings = [
+    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
+    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
 
-multiple_buckets_headings = ['Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
-                             'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
+multiple_buckets_headings = [
+    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
+    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
 
-bucketops_headings = ['Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
-                      'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
+bucketops_headings = [
+    'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',
+    'Delete Objects (DEL)', 'Clear Buckets (BCLR)', 'Delete Buckets (BDEL)']
 
 
 def get_dropdown_labels(dropdown_type):

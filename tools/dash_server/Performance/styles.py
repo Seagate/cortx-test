@@ -31,7 +31,15 @@ style_workload_captions = {
     'color': '#000000',
     'margin-top': '15px',
     'margin-bottom': '8px',
-    'text-align': 'left'
+    'text-align': 'left',
+    'font-size': '20px',
+}
+
+style_filters_captions = {
+    'font-size': '20px',
+    'color': '#FFFFFF',
+    'margin-top': '25px',
+    'margin-right': '15px'
 }
 
 style_perf_captions = {
@@ -121,4 +129,11 @@ dict_Style_Stats_input_options = {
     'verticalAlign': 'middle',
     "margin-right": "15px",
     "margin-top": "10px"
+}
+
+dict_button_style = {
+    'height': '35px',
+    'margin-top': '20px',
+    'background-color': "#81DD59",
+    'color': '#000000'
 }
