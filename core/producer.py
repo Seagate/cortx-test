@@ -206,6 +206,7 @@ def server(*args: Any) -> None:
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
             work_item.task_done()
+            work_queue.task_done()
         except ValueError:
             print("Invalid input ticket, discarding record...")
             LOGGER.info("Invalid input ticket, skipping record %s", ticket)
@@ -214,7 +215,8 @@ def server(*args: Any) -> None:
             print("Invalid input ticket, discarding record...")
             LOGGER.exception("Serialization error %s for ticket %s", fault, ticket)
 
-    producer.flush()
+    ret = producer.flush()
+    LOGGER.exception("Pending items in queue are %s", ret)
 
 
 if __name__ == '__main__':
