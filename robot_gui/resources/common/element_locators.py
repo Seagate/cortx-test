@@ -156,8 +156,8 @@ EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
-CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_USER_EDIT_XPATH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
 CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
@@ -247,6 +247,7 @@ IAM_USER_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
 IAM_USER_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
 IAM_USER_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
 IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/td"
+IAM_USER_LIMIT_MSG_ID = "dialog-message-label"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
