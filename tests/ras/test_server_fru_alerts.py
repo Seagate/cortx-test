@@ -64,11 +64,14 @@ class TestServerFruAlerts:
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
         cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
         cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
+        cls.pdu_details = CMN_CFG["nodes"][cls.test_node-1]["pdu"]
 
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
         cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
                             password=cls.passwd)
+        cls.bmc_obj = Bmc(hostname=cls.hostname, username=cls.uname,
+                          password=cls.passwd)
         cls.health_obj = Health(hostname=cls.hostname, username=cls.uname,
                                 password=cls.passwd)
         cls.controller_obj = ControllerLib(
@@ -98,10 +101,12 @@ class TestServerFruAlerts:
         objs = cls.ras_test_obj.create_obj_for_nodes(ras_c=RASTestLib,
                                                      node_c=Node,
                                                      hlt_c=Health,
-                                                     ctrl_c=ControllerLib)
+                                                     ctrl_c=ControllerLib,
+                                                     bmc_c=Bmc)
 
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
+            globals()[f"srv{i+1}_ras"] = objs[key]['ras_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         LOGGER.info("Successfully ran setup_class")
@@ -1505,7 +1510,8 @@ class TestServerFruAlerts:
         LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
         LOGGER.info(
-            "ENDED: Test alert persistence of RAID array alerts across sspl stop and start")
+            "ENDED: Test alert persistence of RAID array alerts across sspl "
+            "stop and start")
 
     def test_node_power_failure_alert_23679(self):
         """
@@ -1515,24 +1521,118 @@ class TestServerFruAlerts:
         LOGGER.info(
             "STARTED: Test alert when one of the node's power cable is "
             "disconnected and connected")
+        common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["power_failure"]
         csm_error_msg = test_cfg["csm_error_msg"]
-        service = self.cm_cfg["service"]
+        fault_description = test_cfg["fault_description"].format(self.test_node)
+        fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
 
-        LOGGER.info(f"Step 2: Shutting down node {target_node}")
-        try:
-            # res = UTILS.shutdown_node(host=target_node, options=power_failure_params["shutdown_option"])
-            status = test_cfg["power_off"]
-            if test_cfg["bmc_shutdown"]:
-                res = UTILS.bmc_node_power_on_off(self.bmc_ip, self.bmc_user,
-                                                  self.bmc_pwd, status)
-            else:
-                res = UTILS.toggle_apc_node_power(pdu_details["ip"],
-                                                  pdu_details["user"],
-                                                  pdu_details["pwd"],
-                                                  node_slot=node, status=status)
-            self.log.debug(res)
-            self.assertTrue(res[0], res)
-            self.power_failure_flag = True
-            self.log.info(
-                "Step 2.1: Powered off node using APC/BMC.")
+        LOGGER.info("Step 1: Shutting down node %s", self.hostname)
+        status = test_cfg["power_off"]
+        if test_cfg["bmc_shutdown"]:
+            LOGGER.info("Using BMC ip")
+            LOGGER.info("Get BMC ip of %s", self.hostname)
+            bmc_ip = self.bmc_obj.get_bmc_ip()
+            bmc_user = CMN_CFG["bmc"]["username"]
+            bmc_pwd = CMN_CFG["bmc"]["password"]
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
+                                                     bmc_pwd, status)
+        else:
+            LOGGER.info("Using PDU ip")
+            res = self.node_obj.toggle_apc_node_power(
+                pdu_ip=self.pdu_details["ip"],
+                pdu_user=self.pdu_details["username"],
+                pdu_pwd=self.pdu_details["password"],
+                node_slot=self.pdu_details["port"], status=status)
+        LOGGER.debug(res)
+        self.power_failure_flag = True
+        LOGGER.info("Step 1: Successfully powered off node using APC/BMC.")
+
+        other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+        if self.start_msg_bus:
+            time.sleep(self.cm_cfg["sleep_val"])
+            LOGGER.info("Step 2: Verifying alert logs for get alert ")
+            alert_list = [test_cfg["resource_type"], self.alert_types["get"],
+                          fault_description]
+            resp = eval("srv{}_ras.list_alert_validation({})".format(
+                other_node, alert_list))
+            assert_true(resp[0], f"Step 2: Expected alert not found. Error: "
+                                 f"{resp[1]}")
+
+            LOGGER.info("Step 2: Successfully checked generated alert logs. "
+                        "Response: %s", resp)
+
+        LOGGER.info("Step 3: Checking CSM REST API for alert")
+        time.sleep(common_cfg["csm_alert_gen_delay"])
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                          self.alert_types[
+                                                              "get"],
+                                                          False,
+                                                          test_cfg[
+                                                              "resource_type"],
+                                                          fault_description)
+
+        assert_true(resp_csm, f"Step 3: Expected alert not found. Error: "
+                              f"{csm_error_msg}")
+
+        LOGGER.info("Step 3: Successfully checked CSM REST API for "
+                    "fault alert. Response: %s", resp_csm)
+
+        LOGGER.info("Step 4: Powering on node %s", self.hostname)
+        status = test_cfg["power_on"]
+        if test_cfg["bmc_shutdown"]:
+            LOGGER.info("Using BMC ip")
+            LOGGER.info("Get BMC ip of %s", self.hostname)
+            bmc_ip = self.bmc_obj.get_bmc_ip()
+            bmc_user = CMN_CFG["bmc"]["username"]
+            bmc_pwd = CMN_CFG["bmc"]["password"]
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
+                                                     bmc_pwd, status)
+        else:
+            LOGGER.info("Using PDU ip")
+            res = self.node_obj.toggle_apc_node_power(
+                pdu_ip=self.pdu_details["ip"],
+                pdu_user=self.pdu_details["username"],
+                pdu_pwd=self.pdu_details["password"],
+                node_slot=self.pdu_details["port"], status=status)
+        LOGGER.debug(res)
+        self.power_failure_flag = True
+        LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
+
+        time.sleep(test_cfg["wait_10_min"])
+        LOGGER.info("Step 5: Check cluster health")
+        resp = eval("srv{}_hlt.check_node_health()".format(other_node))
+        assert_true(resp[0], "Step 5: Cluster health is not good. \nResponse: "
+                             f"{resp}")
+        LOGGER.info("Step 5: Cluster health is good. \nResponse: %s", resp)
+
+        if self.start_msg_bus:
+            time.sleep(self.cm_cfg["sleep_val"])
+            LOGGER.info("Step 6: Verifying alert logs for get alert ")
+            alert_list = [test_cfg["resource_type"],
+                          self.alert_types["fault_resolved"], fault_res_desc]
+            resp = eval("srv{}_ras.list_alert_validation({})".format(
+                other_node, alert_list))
+            assert_true(resp[0], f"Step 6: Expected alert not found. Error: "
+                                 f"{resp[1]}")
+
+            LOGGER.info("Step 6: Successfully checked generated alert logs. "
+                        "Response: %s", resp)
+
+        LOGGER.info("Step 7: Checking CSM REST API for alert")
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                          self.alert_types[
+                                                              "fault_resolved"],
+                                                          True,
+                                                          test_cfg[
+                                                              "resource_type"],
+                                                          fault_res_desc)
+
+        assert_true(resp_csm, f"Step 7: Expected alert not found. Error: "
+                              f"{csm_error_msg}")
+
+        LOGGER.info("Step 7: Successfully checked CSM REST API for "
+                    "fault resolved alert. Response: %s", resp_csm)
+
+        LOGGER.info("ENDED: Test alert when one of the node's power cable is "
+                    "disconnected and connected")
