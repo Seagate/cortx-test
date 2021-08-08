@@ -1527,6 +1527,10 @@ class TestServerFruAlerts:
         fault_description = test_cfg["fault_description"].format(self.test_node)
         fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
 
+        # TODO: Start CRUD operations in one thread
+        # TODO: Start IOs in one thread
+        # TODO: Start random alert generation in one thread
+
         LOGGER.info("Step 1: Shutting down node %s", self.hostname)
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
@@ -1633,6 +1637,10 @@ class TestServerFruAlerts:
 
         LOGGER.info("Step 7: Successfully checked CSM REST API for "
                     "fault resolved alert. Response: %s", resp_csm)
+
+        # TODO: Check status of CRUD operations
+        # TODO: Check status of IOs
+        # TODO: Check status of random alert generation
 
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
