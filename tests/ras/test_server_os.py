@@ -22,6 +22,7 @@
 
 import time
 import logging
+import re
 import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons.constants import SwAlerts as const
