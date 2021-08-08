@@ -283,3 +283,16 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+test_22891:
+  resource_disk_space: "node:os:disk_space"
+  resource_cpu_usage: "node:os:cpu_usagee"
+  resource_memory_usage: "node:os:memory_usage"
+  resource_cpu_fault: "node:os:cpu:core"
+  faulty_cpu_id:
+    - 0
+    - 1
+  vm_count: 1
+  memory_size: "5G"
+  timespan: "10m"
+  interval: 30
