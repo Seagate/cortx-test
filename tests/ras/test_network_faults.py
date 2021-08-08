@@ -62,10 +62,6 @@ class TestNetworkFault:
         cls.public_data_ip = CMN_CFG["nodes"][cls.test_node - 1]["public_data_ip"]
         cls.mgmt_ip = CMN_CFG["nodes"][cls.test_node - 1]["ip"]
         cls.setup_type = CMN_CFG['setup_type']
-        cls.nw_interfaces = RAS_TEST_CFG["network_interfaces"][cls.setup_type]
-        cls.mgmt_device = cls.nw_interfaces["MGMT"]
-        cls.public_data_device = cls.nw_interfaces["PUBLIC_DATA"]
-        cls.private_data_device = cls.nw_interfaces["PRIVATE_DATA"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
@@ -76,6 +72,16 @@ class TestNetworkFault:
                                 password=cls.passwd)
         cls.alert_api_obj = GenerateAlertLib()
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
+
+        resp = cls.ras_test_obj.get_nw_infc_names(node_num=cls.test_node-1)
+        cls.nw_interfaces = resp[1] if resp[0] else assert_true(resp[0],
+                                                                "Failed to "
+                                                                "get network "
+                                                                "interface "
+                                                                "names")
+        cls.mgmt_device = cls.nw_interfaces["MGMT"]
+        cls.public_data_device = cls.nw_interfaces["PUBLIC_DATA"]
+        cls.private_data_device = cls.nw_interfaces["PRIVATE_DATA"]
 
         # Enable this flag for starting message_bus
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]

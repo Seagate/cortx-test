@@ -44,6 +44,7 @@ LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
 GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
+GET_INFCS_NAME_CMD = "ip a s | grep {} | awk '{{print $NF}}'"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"

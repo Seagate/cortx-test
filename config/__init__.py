@@ -82,7 +82,8 @@ elif proc_name in ["testrunner.py", "testrunner"]:
 else:
     target = None
 
-CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
+CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG,
+                                           target='6131_32_33_ssc_vm')
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
 JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
