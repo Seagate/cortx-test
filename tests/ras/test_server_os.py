@@ -474,10 +474,10 @@ class TestServerOS:
 
             LOGGER.info("Fetching PID's for yes command")
             resp = obj.get_command_pid("yes")
-            id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
+            process_id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
             LOGGER.info("Collected PID's for yes command")
             LOGGER.info("Step 6: Killing the process one by one")
-            for i in id:
+            for i in process_id:
                 resp = obj.kill_process(i)
             LOGGER.info("Step 6: Processes are killed by one by one")
             LOGGER.info("Step 7: Verify memory utilization is decreasing")
@@ -485,21 +485,21 @@ class TestServerOS:
             assert float(resp.decode('utf-8').strip()) < 100
             LOGGER.info("Step 7: Verified memory utilization is decreasing")
             starttime = time.time()
-            LOGGER.info("Step 4: Resolving CPU fault.")
+            LOGGER.info("Step 8: Resolving CPU fault.")
             resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
             assert resp[0], resp[1]
-            LOGGER.info("Step 4: CPU fault is resolved.")
+            LOGGER.info("Step 8: CPU fault is resolved.")
             self.default_cpu_fault = False
             if self.start_msg_bus:
-                LOGGER.info("Step 8: Checking the generated alert on SSPL")
+                LOGGER.info("Step 9: Checking the generated alert on SSPL")
                 alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
                 assert resp[0], resp[1]
-                LOGGER.info("Step 8: Verified the generated alert on the SSPL")
+                LOGGER.info("Step 9: Verified the generated alert on the SSPL")
 
             LOGGER.info(
-                "Step 9: Checking CPU fault resolved alerts on CSM REST API")
+                "Step 10: Checking CPU fault resolved alerts on CSM REST API")
 
             resp = self.csm_alert_obj.wait_for_alert(
                 self.cfg["csm_alert_gen_delay"],
@@ -510,6 +510,6 @@ class TestServerOS:
             assert resp[0], resp[1]
 
             LOGGER.info(
-                "Step 9: Successfully verified CPU fault resolved alert on CSM REST API")
+                "Step 10: Successfully verified CPU fault resolved alert on CSM REST API")
 
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
