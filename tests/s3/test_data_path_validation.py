@@ -61,8 +61,7 @@ class TestDataPathValidation:
                                  username=self.nodes[0]["username"],
                                  password=self.nodes[0]["password"])
         self.test_file = "bkt-dp{}.txt".format(perf_counter_ns())
-        self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestDataPathValidation")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDataPathValidation")
         self.file_path = os.path.join(self.test_dir_path, self.test_file)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)

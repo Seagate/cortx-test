@@ -44,7 +44,7 @@ from libs.s3 import s3_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 LOGGER = logging.getLogger(__name__)
 
@@ -71,7 +71,8 @@ class TestCopyObjects:
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             LOGGER.info("Created path: %s", self.test_dir_path)
-        self.cortx_test_obj = CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
+        self.account_list = []
         self.account_name1 = "acc1-copyobject-{}".format(perf_counter_ns())
         self.account_name2 = "acc2-copyobject-{}".format(perf_counter_ns())
         self.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
@@ -95,8 +96,7 @@ class TestCopyObjects:
         LOGGER.info("ENDED: test setup.")
         yield
         LOGGER.info("STARTED: test teardown.")
-        LOGGER.info(
-            "Deleting all buckets/objects created during TC execution")
+        LOGGER.info("Deleting all buckets/objects created during TC execution")
         if self.parallel_ios:
             if self.parallel_ios.is_alive():
                 self.parallel_ios.join()
@@ -118,15 +118,10 @@ class TestCopyObjects:
                 if bucket_list:
                     resp = response[1].delete_multiple_buckets(bucket_list)
                     assert_utils.assert_true(resp[0], resp[1])
-        accounts = self.cortx_test_obj.list_accounts_cortxcli()
-        all_accounts = [acc["account_name"] for acc in accounts]
-        LOGGER.info("setup %s", all_accounts)
-        for acc in [self.account_name1, self.account_name2]:
-            if acc in all_accounts:
-                self.cortx_test_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.s3acc_passwd)
-                LOGGER.info("Deleted %s account successfully", acc)
-        del self.cortx_test_obj
+        LOGGER.info("Account list: %s", self.account_list)
+        for acc in self.account_list:
+            self.rest_obj.delete_s3_account(acc)
+            LOGGER.info("Deleted %s account successfully", acc)
         LOGGER.info("ENDED: test teardown.")
 
     def check_cluster_health(self):
@@ -257,9 +252,10 @@ class TestCopyObjects:
             "Step : Creating account with name %s and email_id %s",
             account_name,
             email_id)
-        create_account = self.cortx_test_obj.create_account_cortxcli(
+        create_account = self.rest_obj.create_s3_account(
             account_name, email_id, password)
         assert_utils.assert_true(create_account[0], create_account[1])
+        self.account_list.append(account_name)
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
