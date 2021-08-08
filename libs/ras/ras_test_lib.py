@@ -1221,7 +1221,7 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_node_drive_details.__name__, error))
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
         finally:
             if os.path.exists(localpath):
                 os.remove(localpath)

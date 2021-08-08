@@ -420,9 +420,8 @@ class TestServerFruAlerts:
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 8: Checked generated alert logs\n "
+                LOGGER.info("Step 8: Successfully checked generated alert logs\n "
                             "Response: %s", resp)
-                LOGGER.info("Step 8: Checked generated alert logs")
 
         LOGGER.info("Step 9: Checking CSM REST API for alert")
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
@@ -648,9 +647,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 7: Checked generated alert logs\n "
-                                "Response: %s", resp)
-                    LOGGER.info("Step 7: Checked generated alert logs")
+                    LOGGER.info("Step 7: Successfully checked generated alert "
+                                "logs\n Response: %s", resp)
 
             LOGGER.info("Step 8: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
@@ -814,8 +812,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 4: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 4: Checked generated alert logs. "
-                                "Response: %s", resp)
+                    LOGGER.info("Step 4: Successfully checked generated alert "
+                                "logs. Response: %s", resp)
 
             LOGGER.info("Step 5: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
@@ -937,9 +935,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 9: Checked generated alert logs\n "
-                                "Response: %s", resp)
-                    LOGGER.info("Step 9: Checked generated alert logs")
+                    LOGGER.info("Step 9: Successfully checked generated alert "
+                                "logs\n Response: %s", resp)
 
             LOGGER.info("Step 10: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
