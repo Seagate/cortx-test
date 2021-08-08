@@ -348,7 +348,7 @@ UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_ob
 CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
-                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+    "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
@@ -365,3 +365,10 @@ CMD_INSTALL_TOOL = "yum install {0}"
 CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+
+# Ldap commands to fetch user, password.
+LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserver.properties " \
+            "getkey --key ldapLoginDN"
+LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cortx/auth/resources/" \
+           "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
+           " --const_key cortx)"
