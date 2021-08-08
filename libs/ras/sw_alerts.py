@@ -795,9 +795,9 @@ class SoftwareAlert(RASCoreLib):
         Start blocking process parallely
         """
         LOGGER.info("Start increasing in CPU usage")
-        p = mp.Process(target=self.initiate_blocking_process())
-        p.start()
-        if p.is_alive():
+        process = mp.Process(target=self.initiate_blocking_process())
+        process.start()
+        if process.is_alive():
             LOGGER.info("started joining")
-            p.join()
+            process.join()
         LOGGER.info("Started increasing in CPU usage")

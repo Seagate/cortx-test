@@ -345,7 +345,6 @@ class TestServerOS:
                             self.starttime, const.AlertType.FAULT, False, test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully verified Memory usage fault alert on CSM REST API")
-
         self.starttime = time.time()
         LOGGER.info("Step 4: Resolving Memory usage fault.")
         LOGGER.info("Updating default Memory usage threshold value")
@@ -353,26 +352,21 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info("Step 4: Memory usage fault is resolved.")
         self.default_mem_usage = False
-
         LOGGER.info("Step 5: Keep the memory usage below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("Step 5: Memory usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
-
         if self.start_msg_bus:
             LOGGER.info("Checking the generated alert on SSPL")
             alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
-
         LOGGER.info("Step 6: Checking Memory usage resolved alerts on CSM REST API")
-
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
                     self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
-
         LOGGER.info("Step 6: Successfully verified Memory usage alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
@@ -433,8 +427,9 @@ class TestServerOS:
     def test_22844_cpu_usage_parallel(self):
         """
         TEST cpu usage fault and fault resolved alert with gradual
-        increase in CPU usage on each node of the cluster sequentially.TEST cpu usage fault and fault
-        resolved alert with gradual increase in CPU usage on each node of the cluster parallelly.
+        increase in CPU usage on each node of the cluster sequentially.
+        TEST cpu usage fault and fault resolved alert with gradual
+        increase in CPU usage on each node of the cluster parallelly.
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
@@ -475,10 +470,10 @@ class TestServerOS:
 
             LOGGER.info("Fetching PID's for yes command")
             resp = obj.get_command_pid("yes")
-            id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
+            process_id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
             LOGGER.info("Collected PID's for yes command")
             LOGGER.info("Step 6: Killing the process one by one")
-            for i in id:
+            for i in process_id:
                 resp = obj.kill_process(i)
             LOGGER.info("Step 6: Processes are killed by one by one")
             LOGGER.info("Step 7: Verify memory utilization is decreasing")
@@ -498,10 +493,8 @@ class TestServerOS:
                     string_list=alert_list, restart=False)
                 assert resp[0], resp[1]
                 LOGGER.info("Step 8: Verified the generated alert on the SSPL")
-
             LOGGER.info(
                 "Step 9: Checking CPU fault resolved alerts on CSM REST API")
-
             resp = self.csm_alert_obj.wait_for_alert(
                 self.cfg["csm_alert_gen_delay"],
                 starttime,
@@ -509,8 +502,6 @@ class TestServerOS:
                 True,
                 test_cfg["resource_type"])
             assert resp[0], resp[1]
-
             LOGGER.info(
                 "Step 9: Successfully verified CPU fault resolved alert on CSM REST API")
-
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
