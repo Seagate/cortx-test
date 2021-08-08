@@ -255,7 +255,6 @@ class TestServerFruAlerts:
                 self.node_obj.remove_file(filename=file)
 
         LOGGER.info("Restarting SSPL service")
-        service = self.cm_cfg["service"]
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
                                                     resources=[
                                                         self.sspl_resource_id])
@@ -274,7 +273,6 @@ class TestServerFruAlerts:
         """
         LOGGER.info("STARTED: Test alerts for OS disk removal and insertion")
 
-        common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["TEST-23606"]
         df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
                           columns='Iteration0'.split())
@@ -400,9 +398,9 @@ class TestServerFruAlerts:
         if not resp[0]:
             df['Iteration0']['Step7'] = 'Fail'
         new_array = resp[1] if resp[0] else assert_true(resp[0],
-                                                        f"Step 7: Failed to "
-                                                        f"add drive in raid "
-                                                        f"array")
+                                                        "Step 7: Failed to "
+                                                        "add drive in raid "
+                                                        "array")
         LOGGER.info("New MDARRAY: %s", new_array)
 
         time.sleep(self.cm_cfg["sleep_val"])
@@ -882,11 +880,10 @@ class TestServerFruAlerts:
                 drive=new_drive)
             if not resp[0]:
                 df['Iteration0']['Step6'] = 'Fail'
-            raid_parts = resp[1] if resp[0] else LOGGER.error(
-                                                             f"Step 6: Failed to "
-                                                             f"get partition "
-                                                             f"details of "
-                                                             f"%s", new_drive)
+            raid_parts = resp[1] if resp[0] else LOGGER.error("Step 6: Failed "
+                                                              "to get partition"
+                                                              " details of "
+                                                              f"{new_drive}")
 
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
