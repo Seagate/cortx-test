@@ -1402,6 +1402,8 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Getting new RAID array details of node %s",
                         self.host)
             resp = self.get_raid_array_details()
+            if not resp[0]:
+                return resp
             new_md_arrays = resp[1]
             return True, new_md_arrays
         except Exception as error:
