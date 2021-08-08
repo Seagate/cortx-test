@@ -599,7 +599,7 @@ class SoftwareAlert(RASCoreLib):
         :return [list]: List of core ID which are online.
         """
         resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
-        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        LOGGER.debug("%s response : %s", commands.CPU_COUNT, resp)
         if "," in resp:
             resp = resp.split(",")
         else:
@@ -631,7 +631,7 @@ class SoftwareAlert(RASCoreLib):
         :return [str]: Response from tool
         """
         resp = self.node_utils.execute_cmd\
-            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name)).decode('utf-8')
+            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name), inputs="yes").decode('utf-8')
         LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
         return resp
 

@@ -538,6 +538,7 @@ class TestServerOS:
             LOGGER.info("Step 2: Installed stress tool on the system")
             flag = False
             while not flag:
+
                 LOGGER.info(
                     "Step 3: Increasing the memory utilization in the factor of GB")
                 resp = obj.increase_memory(
@@ -547,11 +548,11 @@ class TestServerOS:
                 LOGGER.info(resp)
                 LOGGER.info(
                     "Step 3: Increased the memory utilization in the factor of GB")
-                LOGGER.info("Step 4: Checking memory utilization on each node")
-                if obj.check_memory_utilization().strip() >= cpu_usage:
+                LOGGER.info("Step 4: Checking memory utilization on %s node",obj.host)
+                if obj.check_memory_utilization().strip() >= int(cpu_usage):
                     flag = True
                     break
-                LOGGER.info("Step 4: Verified memory utilization on each node")
+                LOGGER.info("Step 4: Verified memory utilization on %s node", obj.host)
         if self.start_msg_bus:
             LOGGER.info("Step 5: Checking the generated alert on SSPL")
             alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
