@@ -107,6 +107,7 @@ class TestServerFruAlerts:
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
             globals()[f"srv{i+1}_ras"] = objs[key]['ras_obj']
+            globals()[f"srv{i + 1}_nd"] = objs[key]['nd_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         LOGGER.info("Successfully ran setup_class")
@@ -1526,6 +1527,16 @@ class TestServerFruAlerts:
         csm_error_msg = test_cfg["csm_error_msg"]
         fault_description = test_cfg["fault_description"].format(self.test_node)
         fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
+        other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+
+        if self.start_msg_bus:
+            LOGGER.info("Running read_message_bus.py script on node %s",
+                        other_node)
+            resp = eval("srv{}_ras.start_message_bus_reader_cmd()".format(
+                other_node))
+            assert_true(resp, "Failed to start message bus channel")
+            LOGGER.info(
+                "Successfully started read_message_bus.py script on node")
 
         # TODO: Start CRUD operations in one thread
         # TODO: Start IOs in one thread
@@ -1552,7 +1563,6 @@ class TestServerFruAlerts:
         self.power_failure_flag = True
         LOGGER.info("Step 1: Successfully powered off node using APC/BMC.")
 
-        other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
         if self.start_msg_bus:
             time.sleep(self.cm_cfg["sleep_val"])
             LOGGER.info("Step 2: Verifying alert logs for get alert ")
@@ -1641,6 +1651,18 @@ class TestServerFruAlerts:
         # TODO: Check status of CRUD operations
         # TODO: Check status of IOs
         # TODO: Check status of random alert generation
+
+        if self.start_msg_bus:
+            LOGGER.info("Terminating the process read_message_bus.py")
+            eval("srv{}_ras.kill_remote_process('read_message_bus.py')".format(
+                other_node))
+            files = [self.cm_cfg["file"]["alert_log_file"],
+                     self.cm_cfg["file"]["extracted_alert_file"],
+                     self.cm_cfg["file"]["screen_log"]]
+            for file in files:
+                LOGGER.info("Removing log file %s from the Node", file)
+                eval("srv{}_nd.remove_file(filename={})".format(
+                        other_node, file))
 
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
