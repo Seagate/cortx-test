@@ -30,6 +30,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.params import TEST_DATA_FOLDER
 from config import S3_OBJ_TST
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 from libs.s3 import s3_test_lib, S3_CFG
@@ -48,7 +49,7 @@ class TestObjectMetadataOperations:
         self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.bkt_name_prefix = "obj-metadata"
         self.file_name = "{}{}".format("metadata", time.perf_counter_ns())
-        self.folder_path = os.path.join(os.getcwd(), "metadata")
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectMetadataOperations")
         self.file_path = os.path.join(self.folder_path, self.file_name)
         self.new_file_path = "{}{}".format(
             "new_objmetadata", time.perf_counter_ns())

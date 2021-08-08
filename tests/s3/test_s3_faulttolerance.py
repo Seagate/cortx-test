@@ -39,7 +39,7 @@ S3_OBJ = s3_test_lib.S3TestLib()
 S3_M_Obj = s3_multipart_test_lib.S3MultipartTestLib()
 
 
-class TestS3Faulttoelrance:
+class TestS3FaultTolerance:
     """S3 FaultTolerance test class."""
 
     @pytest.fixture(autouse=True)
@@ -49,8 +49,7 @@ class TestS3Faulttoelrance:
         self.fault_flg = False
         self.bucket_name = "bkt-faulttolerance-{}".format(perf_counter_ns())
         self.object_name = "obj-faulttolerance-{}".format(perf_counter_ns())
-        self.test_directory = os.path.join(
-            TEST_DATA_FOLDER, "TestS3Faulttoelrance")
+        self.test_directory = os.path.join(TEST_DATA_FOLDER, "TestS3FaultTolerance")
         if not system_utils.path_exists(self.test_directory):
             system_utils.make_dirs(self.test_directory)
         self.test_file_path = os.path.join(
