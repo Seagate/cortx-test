@@ -548,7 +548,7 @@ class TestServerOS:
                 LOGGER.info(resp)
                 LOGGER.info(
                     "Step 3: Increased the memory utilization in the factor of GB")
-                LOGGER.info("Step 4: Checking memory utilization on %s node",obj.host)
+                LOGGER.info("Step 4: Verifying memory utilization on %s node", obj.host)
                 if obj.check_memory_utilization().strip() >= int(cpu_usage):
                     flag = True
                     break
@@ -560,7 +560,6 @@ class TestServerOS:
                 string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("Step 5: Verified the generated alert on the SSPL")
-
         LOGGER.info("Step 6: Checking CPU fault alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -584,10 +583,8 @@ class TestServerOS:
                 string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("Step 7: Verified the generated alert on the SSPL")
-
         LOGGER.info(
             "Step 8: Checking CPU fault resolved alerts on CSM REST API")
-
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
             starttime,
