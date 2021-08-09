@@ -16,7 +16,7 @@ def update_branches_dropdown(release):
     options = None
     value = None
     disabled = False
-    if release is None:
+    if release is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         branches = get_distinct_keys(release, 'Branch', {})
@@ -24,7 +24,6 @@ def update_branches_dropdown(release):
             options = get_dict_from_array(branches, False)
             if 'Release' in branches:
                 value = 'Release'
-                print("here")
             elif 'stable' in branches:
                 value = 'stable'
             elif 'custom' in branches:
@@ -52,7 +51,7 @@ def update_builds_dropdown(release, branch):
     versions = None
     value = None
     disabled = False
-    if not all([branch, release]):
+    if not all([branch, release]): # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         builds = get_distinct_keys(release, 'Build', {'Branch': branch})
@@ -81,7 +80,7 @@ def update_nodes_dropdown(release, branch, build):
     options = None
     value = None
     disabled = False
-    if not all([branch, build]):
+    if not all([branch, build]): # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         nodes = get_distinct_keys(release, 'Count_of_Servers', {
@@ -112,7 +111,7 @@ def update_percentfill_dropdown(release, branch, build, nodes):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes]):
+    if not all([branch, build, nodes]): # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         pfulls = get_distinct_keys(release, 'Percentage_full', {
@@ -143,7 +142,7 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes]) and pfull is None:
+    if not all([branch, build, nodes]) and pfull is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         iterations = get_distinct_keys(release, 'Iteration', {
@@ -175,7 +174,7 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:
+    if not all([branch, build, nodes, itrns]) and pfull is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
@@ -204,11 +203,11 @@ def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
     Input('perf_custom_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
+def update_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:
+    if not all([branch, build, nodes, itrns]) and pfull is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
@@ -237,18 +236,19 @@ def update_S3_sessions_dropdown(release, branch, build, nodes, pfull, itrns, cus
     Input('perf_pfull_dropdown', 'value'),
     Input('perf_iteration_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
+    Input('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hs_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom):
+def update_buckets_dropdown(release, branch, build, nodes, pfull, itrns, custom, sessions):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:
+    if not all([branch, build, nodes, itrns, sessions]) and pfull is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
             'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
-            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
+            'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
         })
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
@@ -280,7 +280,7 @@ def update_bucketops_dropdown(release, branch, build, nodes, pfull, itrns, custo
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns, sessions, buckets]) and pfull is None:
+    if not all([branch, build, nodes, itrns, sessions, buckets]) and pfull is None: # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         objsizes = get_distinct_keys(release, 'Object_Size', {
