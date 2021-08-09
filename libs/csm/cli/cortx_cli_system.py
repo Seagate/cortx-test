@@ -149,7 +149,7 @@ class CortxCliSystemtOperations(CortxCli):
             if force_op:
                 cmd = cmd + " -f true"
             output = self.execute_cli_commands(cmd=cmd)[1]
-            if "invalid" in output.lower() or "exception" in output.lower():
+            if "successfully" not in output.lower() or "error" in output.lower():
                 return False, output
             return True, output
         except Exception as error:
