@@ -21,12 +21,18 @@
             "username": "",
             "password": ""
              },
+        "encl_pdu": {
+            "ip": "",
+            "port": "",
+            "username": "",
+            "password": ""
+             },
         "gem_controller": {
             "ip": "",
             "username": "",
             "password": "",
-            "port1": "9012",
-            "port2": "9014"
+            "port1": "",
+            "port2": ""
             }
     },
     {
@@ -43,12 +49,18 @@
             "username": "",
             "password": ""
              },
+        "encl_pdu": {
+            "ip": "",
+            "port": "",
+            "username": "",
+            "password": ""
+             },
         "gem_controller": {
             "ip": "",
             "username": "",
             "password": "",
-            "port1": "9012",
-            "port2": "9014"
+            "port1": "",
+            "port2": ""
             }
     }
 ],
