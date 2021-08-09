@@ -608,7 +608,7 @@ class SoftwareAlert(RASCoreLib):
             result = resp[0]
         else:
             result = False
-            LOGGER.info("Node is not Up and healthy")
+            LOGGER.error("Node is not Up and healthy")
         return result
 
     def gen_cpu_fault(self, faulty_cpu_id: list):
