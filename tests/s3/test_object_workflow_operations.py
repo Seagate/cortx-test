@@ -29,9 +29,11 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config import S3_OBJ_TST, S3_CFG
+from config import S3_OBJ_TST
+from config import S3_CFG
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import s3_test_lib, s3_cmd_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs, cleanup_dir
+from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 
 
 class TestObjectWorkflowOperations:
@@ -49,14 +51,11 @@ class TestObjectWorkflowOperations:
         self.buckets_list = list()
         self.objects_list = list()
         self.bkt_name_prefix = "objworkflowbkt"
-        self.bucket_name = "{0}{1}".format(
-            self.bkt_name_prefix, time.perf_counter_ns())
+        self.bucket_name = "{0}{1}".format(self.bkt_name_prefix, time.perf_counter_ns())
         self.obj_name_prefix = "objworkflowobj"
-        self.obj_name = "{0}{1}".format(
-            self.obj_name_prefix, time.perf_counter_ns())
-        self.folder_path_prefix = "{0}{1}".format(
-            "test_data", time.perf_counter_ns())
-        self.folder_path = os.path.join(os.getcwd(), self.folder_path_prefix)
+        self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
+        self.folder_path_prefix = "{0}{1}".format("test_data", time.perf_counter_ns())
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, self.folder_path_prefix)
         file_name = "{0}{1}".format("obj_workflow", time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, file_name)
         if not path_exists(self.folder_path):
