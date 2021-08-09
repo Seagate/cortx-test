@@ -1695,6 +1695,10 @@ class TestServerFruAlerts:
             "ENDED: Test alert persistence of RAID array alerts across sspl "
             "stop and start")
 
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23679")
+    @CTFailOn(error_handler)
     def test_node_power_failure_alert_23679(self):
         """
         TEST-23679: Test alert when one of the node's power cable is
@@ -1854,7 +1858,7 @@ class TestServerFruAlerts:
                      self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
-                cmd = f"srv{other_node}_nd.remove_file(filename='{file}')"
+                cmd = f"srv{other_node}_nd.remove_remote_file(filename='{file}')"
                 LOGGER.info("Command: %s", cmd)
                 eval(cmd)
 
