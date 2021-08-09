@@ -22,13 +22,17 @@
 """S3 REST API operation Library."""
 
 import logging
+import json
 
 from commons import errorcodes as err
 from commons.constants import Rest
 from commons.exceptions import CTException
+from commons.utils.s3_utils import get_headers
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from config import CSM_REST_CFG
+from config import S3_CFG
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -212,3 +216,55 @@ class S3AccountOperationsRestAPI(RestS3user):
                 error)
             raise CTException(
                 err.S3_REST_PATCH_REQUEST_FAILED, error) from error
+
+
+class S3AuthServerRestAPI(S3AccountOperationsRestAPI):
+    """S3 Auth service rest api operations."""
+
+    def __init__(self, host):
+        """S3AutheServer operations constructor."""
+        super(S3AuthServerRestAPI, self).__init__()
+        self.endpoint = S3_CFG["s3auth_endpoint"]
+        host = host if host else CMN_CFG[""]
+
+    def reset_password_with_access_secret_key(
+            self, user_name=None, access_key=None, secret_key=None, new_password=None):
+        """Rest s3 account password."""
+        payload = {"Action": "UpdateAccountLoginProfile"}
+        if user_name:
+            payload["AccountName"] = user_name
+        if new_password:
+            payload["Password"] = new_password
+        # Fetching headers
+        headers = get_headers("post", self.endpoint, payload, "s3", "US", access_key, secret_key)
+        LOGGER.debug(headers)
+        # Fetching api response.
+        response = self.restapi.s3auth_rest_call(
+            "post", data=payload, endpoint=self.endpoint,
+            headers=headers, secure_connection=False)
+        if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            return False, f"Failed to reset password for '{user_name}'"
+        LOGGER.debug(response.json())
+
+        return True, response.json()
+
+    def reset_password_with_auth_credential(
+            self, user_name=None, ldap_username=None, ldap_password=None, new_password=None):
+        """Rest s3 account password."""
+        payload = {"Action": "UpdateAccountLoginProfile"}
+        if user_name:
+            payload["AccountName"] = user_name
+        if new_password:
+            payload["Password"] = new_password
+        # Fetching headers.
+        headers = get_headers("post", self.endpoint, payload, "s3", "US", ldap_username, ldap_password)
+        LOGGER.debug(headers)
+        # Fetching api response.
+        response = self.restapi.s3auth_rest_call(
+            "post", data=payload, endpoint=self.endpoint,
+            headers=headers, secure_connection=False)
+        if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            return False, f"Failed to reset password for '{user_name}'"
+        LOGGER.debug(response.json())
+
+        return True, response.json()
