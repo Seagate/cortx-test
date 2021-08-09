@@ -21,20 +21,21 @@
 """
 HA utility methods
 """
-import os
 import logging
+import os
 import time
+
 from commons import commands as common_cmd
-from commons.utils import system_utils
-from commons.exceptions import CTException
 from commons import errorcodes as err
 from commons import pswdmanager
 from commons.constants import Rest as Const
+from commons.exceptions import CTException
+from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG, S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
-from libs.s3.s3_test_lib import S3TestLib
 from libs.di.di_run_man import RunDataCheckManager
+from libs.s3.s3_test_lib import S3TestLib
 
 LOGGER = logging.getLogger(__name__)
 
