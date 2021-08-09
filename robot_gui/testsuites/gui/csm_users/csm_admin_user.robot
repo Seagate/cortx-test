@@ -232,15 +232,6 @@ TEST-5229
     [Tags]  Priority_High  TEST-5229
     Verify IAM User Section Not Present
 
-TEST-6338
-    [Documentation]  Test that on 'Create Local User' form, role section should never be empty
-    ...  Reference : https://jts.seagate.com/browse/TEST-6338
-    [Tags]  Priority_High  TEST-6338
-    Navigate To Page  ${page_name}
-    ${value}=  Fetch Radio Button Value
-    Should Not Be Empty  ${value}
-    Should be equal  ${value}  admin
-
 TEST-1214
     [Documentation]  Test that CSM user with admin role can view, add, or edit Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1214
@@ -450,6 +441,8 @@ TEST-23050
         Create New CSM User  ${new_user_name}  ${new_password}  admin
         Click On Confirm Button
     END
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
     ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     Log To Console And Report  ${admin_users}
@@ -467,7 +460,7 @@ TEST-23872
     Navigate To Page  ${page_name}
     wait for page or element to load
     ${text}=  get text  ${CSM_PAGINATION_LIST_ICON_XPATH}
-    Should Be Equal  "${text}"  "${CSM_DROPDOWN_VALUE}"
+    Should Be Equal  "${text}"  "${CSM_TEST_DEFAULT_DROPDOWN_VALUE}"
 
 TEST-23837
     [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
@@ -489,10 +482,13 @@ TEST-23837
     Click on confirm button
     Re-login  ${new_user_name}  ${new_password}  ${page_name}
     Delete Logged In CSM User  ${new_user_name}
-    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}
+    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}  False
     Delete Logged In CSM User  ${new_user_name1}
-    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}
+    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}  False
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
+    # TODO : monitor user will be able to delte self, verify & modify tests
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_csm_user_name}
     Verify Deleted User  {new_csm_user_name}
@@ -513,6 +509,8 @@ TEST-23502
     ...  Reference : https://jts.seagate.com/browse/TEST-23502
     [Tags]  Priority_High  TEST-23502
     Navigate To Page  ${page_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     FOR   ${cur_role}  IN   admin  manage  monitor
         Create account with input Role and Change Role from Admin account  ${cur_role}
     END
@@ -544,40 +542,45 @@ TEST-23500
 TEST-23884
     [Documentation]  Test that user is able to navigate to last page of Administrator User Page
     ...  Reference : https://jts.seagate.com/browse/TEST-23884
-    [Tags]  TEST-23884
+    [Tags]  Priority_High  TEST-23884
     Navigate To Last Page On Administrative Users Page
 
 TEST-23882
      [Documentation]  Test that user is able to navigate to First page of Administrator User Page
      ...  Refrence : https://jts.seagate.com/browse/TEST-23882
-     [Tags]   TEST-23882
+     [Tags]  Priority_High  TEST-23882
      Navigate To First Page On Administrative Users Page
 
 TEST-23873
      [Documentation]  Test that user is able to navigate to Every page of Administrator User Page
      ...  Refrence : https://jts.seagate.com/browse/TEST-23873
-     [Tags]   TEST-23873
-     Check List Of CSM User And Create New Users
-     Select The Number of Rows To Display    ${ROW_FIVE}
+     [Tags]  Priority_High  TEST-23873
+     ${new_user_list}=  Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display    ${CSM_TEST_ROW_FIVE}
+     wait for page or element to load  10s
      @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
      ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
      FOR    ${Page}    IN    ${New_Page_list}
           Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
+          wait for page or element to load  10s
           Capture Page Screenshot
      END
+     Delete Multiple CSM User  ${new_user_list}
 
 TEST-23874
      [Documentation]  Test that user is able to navigate to Random page of Administrator User Page
      ...  Refrence : https://jts.seagate.com/browse/TEST-23874
-     [Tags]   TEST-23874
-     Check List Of CSM User And Create New Users
-     Select The Number of Rows To Display   ${ROW_FIVE}
+     [Tags]  Priority_High  TEST-23874
+     ${new_user_list}=  Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display   ${CSM_TEST_ROW_FIVE}
+     wait for page or element to load  10s
      @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
      ${New_Page_list}=    Get Slice From List	${Page_list}	1
      ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
      ${Page}=   Evaluate  random.choice($New_Page_list)  random
      Log To Console And Report    ${Page}
      Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
+     Delete Multiple CSM User  ${new_user_list}
 
 TEST-23611
     [Documentation]  Test that pagination should be present for search result 
@@ -606,10 +609,60 @@ TEST-23618
         Log To Console And Report  operation for ${value}
         Click On Confirm Button
         Verify New User  ${new_user_name}
-        Re-login  ${new_user_name}  ${new_password}  DASHBOARD_MENU_ID
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
         Validate CSM Login Success  ${new_user_name}
-        Navigate To Page  ${page_name}
         Verify Filter and Search option present
         Re-login  ${username}  ${password}  ${page_name}
         Delete CSM User  ${new_user_name}
     END
+
+TEST-23616
+    [Documentation]  Test that user should able to select multiple options form the drop down.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23616
+    [Tags]  Priority_High  TEST-23616
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}   admin
+    Click On Confirm Button
+    Select from filter  username
+    Select from filter  role
+#   TODO : revisit once EOS-23034 is fixed.
+
+TEST-23615
+    [Documentation]  Test that user should able to see role and username filter options.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23615
+    [Tags]  Priority_High  TEST-23615
+    Navigate To Page  ${page_name}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    Reload Page
+
+TEST-23614
+    [Documentation]  Test that drop down would be appear when user click on the filter option.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23614
+    [Tags]  Priority_High  TEST-23614
+    Navigate To Page  ${page_name}
+    Select from filter  role
+    wait for page or element to load
+    Reload Page
+
+TEST-23617
+    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23617
+    [Tags]  Priority_High  TEST-23617
+    Navigate To Page  ${page_name}
+    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${X}}
+    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${Y}}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${X1}}
+    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${Y1}}
+    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    ...  ELSE
+    ...  Fail
+    Click Element  ${CSM_FILTER_USERNAME_SELECT_XPATH}

@@ -272,6 +272,23 @@ test_23045:
     - 0
     - 1
 
+test_22787:
+  resource_type: "node:os:cpu_usage"
+  faulty_cpu_id:
+    - 0
+    - 1
+  interval: 30
+
+test_22786:
+  resource_type: "node:os:memory_usage"
+  vm_count: 1
+  memory_size: "5G"
+  timespan: "10m"
+  buffer: 10
+  faulty_cpu_id:
+    - 0
+    - 1
+
 TEST-23606:
   resource_type: "node:os:disk"
   csm_error_msg: "Failed to get OS disk alerts using CSM REST API"
