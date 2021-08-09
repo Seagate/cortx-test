@@ -142,6 +142,7 @@ def initialize_loghandler(log) -> None:
     cortxlogging.set_log_handlers(log, name, mode='w')
 
 
+# pylint: disable-msg=too-many-locals
 def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
     """Form a testrunner command for execution.
     python3 -u testrunner.py -te=$test_exe -tp=$tp_id -tg=${Target_Node}
@@ -173,8 +174,8 @@ def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
         credentials_file = "s3acc_secrets"
         if os.path.exists(credentials_file):
             credentials = ''
-            with open(credentials_file) as fp:
-                lines = fp.readlines()
+            with open(credentials_file) as input_file:
+                lines = input_file.readlines()
                 for line in lines:
                     credentials = line
                     break
@@ -219,8 +220,8 @@ def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
     cmd_line = cmd_line + ['--build=' + args.build, '--build_type=' + args.build_type]
 
     LOGGER.debug('Running pytest command %s', cmd_line)
-    rc = run_cmd(cmd_line)
-    return rc
+    status = run_cmd(cmd_line)
+    return status
 
 
 def revert_vms(args, vm_list):
@@ -237,8 +238,8 @@ def revert_vms(args, vm_list):
         cmd_line = cmd_line + ["-p=" + str(args.vm_pass)]
     for vm_name in vm_machines:
         cmd_line = cmd_line + ["-v=" + str(vm_name)]
-        rc = run_cmd(cmd_line)
-        return rc
+        status = run_cmd(cmd_line)
+        return status
 
 
 def run_cmd(cmd):
@@ -252,8 +253,8 @@ def run_cmd(cmd):
     print("Executing command: {}".format(cmd))
     proc = subprocess.Popen(cmd, env=_env)
     proc.communicate()
-    rc = proc.returncode
-    return rc
+    status = proc.returncode
+    return status
 
 
 def trigger_deployment(args, cluster_ip, retries=3):
