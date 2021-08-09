@@ -217,6 +217,40 @@ class TestServerFruAlerts:
                     "disk": None})
             assert_true(resp[0], resp[1])
 
+        if self.power_failure_flag:
+            test_cfg = RAS_TEST_CFG["power_failure"]
+            other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+            other_host = CMN_CFG["nodes"][other_node - 1]["hostname"]
+
+            LOGGER.info("Powering on node %s from node %s",
+                        self.hostname, other_host)
+            status = test_cfg["power_on"]
+            if test_cfg["bmc_shutdown"]:
+                LOGGER.info("Using BMC ip")
+                LOGGER.info(
+                    "Get BMC ip of node on which fault is to be created")
+                bmc_ip = self.bmc_obj.get_bmc_ip()
+                bmc_user = CMN_CFG["bmc"]["username"]
+                bmc_pwd = CMN_CFG["bmc"]["password"]
+                cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
+                      f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
+                      f"'{bmc_pwd}', status='{status}')"
+                LOGGER.info("Command: %s", cmd)
+                res = eval(cmd)
+            else:
+                LOGGER.info("Using PDU ip")
+                cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                      f"pdu_ip='{self.pdu_details['ip']}', " \
+                      f"pdu_user='{self.pdu_details['username']}', " \
+                      f"pdu_pwd='{self.pdu_details['password']}', " \
+                      f"node_slot='{self.pdu_details['port']}', " \
+                      f"status='{status}')"
+                res = eval(cmd)
+            LOGGER.debug(res)
+            self.power_failure_flag = False
+            time.sleep(test_cfg["wait_10_min"])
+            LOGGER.info("Successfully powered on node using APC/BMC.")
+
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
              url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
@@ -1769,7 +1803,7 @@ class TestServerFruAlerts:
                   f"status='{status}')"
             res = eval(cmd)
         LOGGER.debug(res)
-        self.power_failure_flag = True
+        self.power_failure_flag = False
         LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
 
         time.sleep(test_cfg["wait_10_min"])
@@ -1820,8 +1854,9 @@ class TestServerFruAlerts:
                      self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
-                eval("srv{}_nd.remove_file(filename={})".format(
-                        other_node, file))
+                cmd = f"srv{other_node}_nd.remove_file(filename='{file}')"
+                LOGGER.info("Command: %s", cmd)
+                eval(cmd)
 
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
