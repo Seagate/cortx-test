@@ -217,3 +217,6 @@ RAS_ERROR = CTError(6007, "RAS Error")
 # HA
 HA_BAD_CLUSTER_HEALTH = CTError(7001, "Cluster Health is not good")
 HA_BAD_NODE_HEALTH = CTError(7002, "Node Health is not good")
+
+# Generic
+CLIENT_CMD_EXECUTION_FAILED = CTError(9001, "Command failed to execute on client")

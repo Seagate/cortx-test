@@ -189,6 +189,7 @@ class TestHAClusterHealthGUI:
                 # TODO: Need to get the command once F-11A available.
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
+                                                          bmc_obj=self.bmc_list[node],
                                                           is_safe=True)
             assert_utils.assert_true(resp, "Host has not shutdown yet.")
             self.restored = False
@@ -574,6 +575,7 @@ class TestHAClusterHealthGUI:
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node_index],
                 node_obj=self.node_list[node_index],
+                bmc_obj=self.bmc_list[node_index],
                 is_safe=True)
             assert_utils.assert_true(
                 resp, f"{self.host_list[node_index]} has not shutdown yet.")
