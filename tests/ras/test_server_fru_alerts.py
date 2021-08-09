@@ -1529,6 +1529,11 @@ class TestServerFruAlerts:
         fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
         other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
 
+        LOGGER.info("Get BMC ip of node on which fault is to be created")
+        bmc_ip = self.bmc_obj.get_bmc_ip()
+        bmc_user = CMN_CFG["bmc"]["username"]
+        bmc_pwd = CMN_CFG["bmc"]["password"]
+
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node %s",
                         other_node)
@@ -1544,21 +1549,21 @@ class TestServerFruAlerts:
 
         LOGGER.info("Step 1: Shutting down node %s", self.hostname)
         LOGGER.info("Get BMC ip of %s", self.hostname)
-        bmc_ip = self.bmc_obj.get_bmc_ip()
-        bmc_user = CMN_CFG["bmc"]["username"]
-        bmc_pwd = CMN_CFG["bmc"]["password"]
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
-                                                     bmc_pwd, status)
+            res = eval("srv{}_bmc.bmc_node_power_on_off(bmc_ip={}, "
+                       "bmc_user={}, bmc_pwd={}, status={})".
+                       format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
         else:
             LOGGER.info("Using PDU ip")
-            res = self.node_obj.toggle_apc_node_power(
-                pdu_ip=self.pdu_details["ip"],
-                pdu_user=self.pdu_details["username"],
-                pdu_pwd=self.pdu_details["password"],
-                node_slot=self.pdu_details["port"], status=status)
+            res = eval("srv{}_nd.toggle_apc_node_power(pdu_ip={}, "
+                       "pdu_user={}, pdu_pwd={}, node_slot={}, status={})".
+                       format(other_node, self.pdu_details["ip"],
+                              self.pdu_details["username"],
+                              self.pdu_details["password"],
+                              self.pdu_details["port"], status))
+
         LOGGER.debug(res)
         self.power_failure_flag = True
         LOGGER.info("Step 1: Successfully powered off node using APC/BMC.")
@@ -1596,15 +1601,17 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
-                                                     bmc_pwd, status)
+            res = eval("srv{}_bmc.bmc_node_power_on_off(bmc_ip={}, "
+                       "bmc_user={}, bmc_pwd={}, status={})".
+                       format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
         else:
             LOGGER.info("Using PDU ip")
-            res = self.node_obj.toggle_apc_node_power(
-                pdu_ip=self.pdu_details["ip"],
-                pdu_user=self.pdu_details["username"],
-                pdu_pwd=self.pdu_details["password"],
-                node_slot=self.pdu_details["port"], status=status)
+            res = eval("srv{}_nd.toggle_apc_node_power(pdu_ip={}, "
+                       "pdu_user={}, pdu_pwd={}, node_slot={}, status={})".
+                       format(other_node, self.pdu_details["ip"],
+                              self.pdu_details["username"],
+                              self.pdu_details["password"],
+                              self.pdu_details["port"], status))
         LOGGER.debug(res)
         self.power_failure_flag = True
         LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
