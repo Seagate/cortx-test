@@ -568,3 +568,19 @@ class Node(Host):
                 self.open_empty_file.__name__, error)
             return False
 
+    def remove_remote_file(self, filename: str):
+        """
+        Function removes the unwanted file from the remote host.
+
+        :param filename: Absolute path of the file to be removed.
+        """
+        self.connect_pysftp()
+        log.debug("Connected to %s", self.hostname)
+        try:
+            self.pysftp_obj.remove(filename)
+        except IOError as error:
+            if error.args[0] == 2:
+                log.error(error)
+        self.disconnect()
+
+        return not self.path_exists(filename)
