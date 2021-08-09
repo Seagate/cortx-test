@@ -28,6 +28,7 @@ from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.assert_utils import *
+from commons import Globals
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
@@ -126,7 +127,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25090_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25090_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -198,7 +199,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25091_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25091_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -273,7 +274,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25092_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25092_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -351,7 +352,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25093_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25093_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -429,7 +430,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25094_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25094_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -502,7 +503,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25095_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25095_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -576,7 +577,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22718_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-22718_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -638,7 +639,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22719_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-22719_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
