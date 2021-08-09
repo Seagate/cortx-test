@@ -108,6 +108,7 @@ class TestServerFruAlerts:
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
             globals()[f"srv{i+1}_ras"] = objs[key]['ras_obj']
             globals()[f"srv{i + 1}_nd"] = objs[key]['nd_obj']
+            globals()[f"srv{i + 1}_bmc"] = objs[key]['bmc_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         LOGGER.info("Successfully ran setup_class")
@@ -1528,6 +1529,7 @@ class TestServerFruAlerts:
         fault_description = test_cfg["fault_description"].format(self.test_node)
         fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
         other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+        other_host = CMN_CFG["nodes"][other_node-1]["hostname"]
 
         LOGGER.info("Get BMC ip of node on which fault is to be created")
         bmc_ip = self.bmc_obj.get_bmc_ip()
@@ -1536,7 +1538,7 @@ class TestServerFruAlerts:
 
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node %s",
-                        other_node)
+                        other_host)
             resp = eval("srv{}_ras.start_message_bus_reader_cmd()".format(
                 other_node))
             assert_true(resp, "Failed to start message bus channel")
@@ -1547,8 +1549,8 @@ class TestServerFruAlerts:
         # TODO: Start IOs in one thread
         # TODO: Start random alert generation in one thread
 
-        LOGGER.info("Step 1: Shutting down node %s", self.hostname)
-        LOGGER.info("Get BMC ip of %s", self.hostname)
+        LOGGER.info("Step 1: Shutting down node %s from node %s",
+                    self.hostname, other_host)
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
@@ -1597,7 +1599,8 @@ class TestServerFruAlerts:
         LOGGER.info("Step 3: Successfully checked CSM REST API for "
                     "fault alert. Response: %s", resp_csm)
 
-        LOGGER.info("Step 4: Powering on node %s", self.hostname)
+        LOGGER.info("Step 4: Powering on node %s from node %s",
+                    self.hostname, other_host)
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
