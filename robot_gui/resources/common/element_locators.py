@@ -279,8 +279,8 @@ AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text()
 AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
 AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
 AUDIT_LOG_CURRENT_DATE_XPATH = '//*[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
-AUDIT_LOG_AVAILABLE_DATE_XPATH = '//*[@class="v-btn v-btn--active v-btn--text v-btn--rounded theme--light"]' \
-                                 '//ancestor::table//tr//td//button//div'
+AUDIT_LOG_AVAILABLE_DATE_XPATH = '//*[@class="v-btn v-btn--active v-btn--text v-btn--rounded' \
+                                 ' theme--light"]//ancestor::table//tr//td//button//div'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"

@@ -32,6 +32,7 @@ Select Audit Log Details
     Click Element  ${component}
     Wait Until Element Is Visible  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}  timeout=30
     Click Element  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}
+    wait for page or element to load  2s
     Wait Until Element Is Visible  ${AUDIT_LOG_CURRENT_DATE_XPATH}
     Click Element  ${AUDIT_LOG_CURRENT_DATE_XPATH}
     Click Element  ${AUDIT_LOG_AVAILABLE_DATE_XPATH}
