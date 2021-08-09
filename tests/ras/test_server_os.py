@@ -357,7 +357,7 @@ class TestServerOS:
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21587_disk_usage_threshold(self):
-        """Test to validate OS server alert generation and check for fault resolved (CPU Usage)
+        """Test to validate OS server alert generation and check for fault resolved (Disk Usage)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)

@@ -20,7 +20,7 @@ class CSMConfigsCheck:
         """
         result = False
         try:
-            self._log.info("Creating for setup ")
+            self._log.info("Creating S3 account for setup ")
             response = self._s3account.create_s3_account(user_type="pre-define")
             result = response.status_code in (
                 const.CONFLICT, const.SUCCESS_STATUS)
@@ -38,7 +38,7 @@ class CSMConfigsCheck:
         """
         result = False
         try:
-            self._log.info("Creating for setup ")
+            self._log.info("Creating CSM user for setup ")
             responses = (self._csm_user.create_csm_user(user_type="pre-define", user_role="manage"),
                         self._csm_user.create_csm_user(user_type="pre-define", user_role="monitor")
                         )
@@ -63,13 +63,12 @@ class CSMConfigsCheck:
             responses = self._csm_user.list_csm_users(
                 const.SUCCESS_STATUS, return_actual_response=True).json()["users"]
             expected_result = {
-                "username": self._csm_user.config["csm_user_monitor"]["username"], "roles": ["monitor"]
+                "username": self._csm_user.config["csm_user_monitor"]["username"], "role": "monitor"
             }
             result_monitor = any(config_utils.verify_json_response(
                     actual_result, expected_result) for actual_result in responses)
             expected_result = {
-                "username": self._csm_user.config["csm_user_manage"]["username"], "roles": ["manage"]
-            }
+                "username": self._csm_user.config["csm_user_manage"]["username"], "role": "manage"}
             result_manage = any(config_utils.verify_json_response(
                 actual_result, expected_result) for actual_result in responses)
             result = result_manage and result_monitor
