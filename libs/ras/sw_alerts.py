@@ -26,9 +26,9 @@ import os
 import time
 from collections import OrderedDict
 from commons import commands
+from commons import constants as const
 from libs.ras.ras_core_lib import RASCoreLib
 from config import RAS_VAL
-from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -648,7 +648,7 @@ class SoftwareAlert(RASCoreLib):
         :return [list]: List of core ID which are online.
         """
         resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
-        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        LOGGER.debug("%s response : %s", commands.CPU_COUNT, resp)
         if "," in resp:
             resp = resp.split(",")
         else:
@@ -662,6 +662,86 @@ class SoftwareAlert(RASCoreLib):
                 cpus.append(int(i))
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self, interval: int):
+        """Get CPU utilization
+        :param interval: Check usage in given inteval
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_CPU_UTILIZATION.format(interval)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_available_memory_usage(self):
+        """Find the available memory usage
+
+        :return [str]: Available memory usage(GB)
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_AVAIL_MEMORY).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_AVAIL_MEMORY, resp)
+        memory = int(resp) / (1024 ** 3)
+        LOGGER.info("Available memory usage : %s", memory)
+        return memory
+
+    def install_tool(self, tool_name: str):
+        """Installing specific tool
+
+        :return [str]: Response from tool
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name), inputs="yes").decode('utf-8')
+        LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
+        return resp
+
+    def increase_memory(self, vm_count: int, memory_size: str, timespan: str):
+        """Increasing memory
+        :param vm_count: Count of the VM
+        :param memory_size: Malloc per vm worker(e.g. : 128MB, 1GB)
+        :param timespan: Timeout value
+        :return [str]: Response from stress command
+        """
+        cmd = commands.CMD_INCREASE_MEMORY.format(vm_count, memory_size, timespan)
+        resp = self.node_utils.host_obj.exec_command(cmd)
+        LOGGER.debug("%s response : %s",cmd, resp)
+        return resp
+
+    def check_memory_utilization(self):
+        """Check memory utilization
+        :return [str]: Response from command
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_MEMORY_UTILIZATION, resp)
+        return resp
 
     def gen_disk_usage_fault_with_persistence_cache(self, delta_disk_usage):
         """Creates disk faults with persistence cache (service disable/enable)
