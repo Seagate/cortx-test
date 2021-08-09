@@ -1257,5 +1257,3 @@ class RASTestLib(RASCoreLib):
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_nw_infc_names.__name__, error))
             return False, error
-
-
