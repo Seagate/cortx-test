@@ -32,6 +32,7 @@ SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
 ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
+IF_CMD = "if{} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
