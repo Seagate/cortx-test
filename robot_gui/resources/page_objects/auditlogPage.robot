@@ -24,28 +24,28 @@ Click On Download Audit Log Button
 
 Select Audit Log Details
     [Documentation]  Test keyword is for generating audit log of given details
-    [Arguments]  ${component}  ${duration}
+    [Arguments]  ${component}
     ${component}=  Convert To Upper Case  ${component}
     Log To Console And Report  generating audit log for ${component}
-    Log To Console And Report  generating audit log since ${duration}
     Wait Until Element Is Visible  ${AUDIT_LOG_COMPONENT_DROP_DOWN_ID}  timeout=30
     Click Element  ${AUDIT_LOG_COMPONENT_DROP_DOWN_ID}
     Click Element  ${component}
     Wait Until Element Is Visible  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}  timeout=30
     Click Element  ${AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID}
-    Wait Until Element Is Visible  ${duration}
-    Click Element  ${duration}
+    Wait Until Element Is Visible  ${AUDIT_LOG_CURRENT_DATE_XPATH}
+    Click Element  ${AUDIT_LOG_CURRENT_DATE_XPATH}
+    Click Element  ${AUDIT_LOG_AVAILABLE_DATE_XPATH}
 
 View Audit Log
     [Documentation]  Test keyword is for viewing audit log of given details
-    [Arguments]  ${component}  ${duration}
-    Select Audit Log Details  ${component}  ${duration}
+    [Arguments]  ${component}
+    Select Audit Log Details  ${component}
     Click On View Audit Log Button
 
 Download Audit Log
     [Documentation]  Test keyword is for downloading audit log of given details
-    [Arguments]  ${component}  ${duration}
-    Select Audit Log Details  ${component}  ${duration}
+    [Arguments]  ${component}
+    Select Audit Log Details  ${component}
     Click On Download Audit Log Button
 
 Verify Audit Log Generated
@@ -64,14 +64,11 @@ Verify Audit Log Downloaded
 
 Verify CSM Audit Log In Tabular format
     [Documentation]  Test keyword is to verify that csm audit log details has shown in tabular format
-    FOR    ${value}    IN    @{Audit_log_days}
-      View Audit Log  CSM  ${value}
-      wait for page or element to load  #  Audit log need time to load
-      Page Should Contain Element  ${CSM_AUDIT_LOG_TABLE_XPATH}
-      ${csm_audit_log_table_data}=  Read Table Data  ${CSM_AUDIT_LOG_TABLE_XPATH}
-      Should Not Be Empty  ${csm_audit_log_table_data}
-      Navigate To Audit Log Section
-    END
+     View Audit Log  CSM
+     wait for page or element to load  #  Audit log need time to load
+     Page Should Contain Element  ${CSM_AUDIT_LOG_TABLE_XPATH}
+     ${csm_audit_log_table_data}=  Read Table Data  ${CSM_AUDIT_LOG_TABLE_XPATH}
+     Should Not Be Empty  ${csm_audit_log_table_data}
 
 Select Audit Log Component
     [Documentation]  Test keyword is for Select Audit Log for given component
