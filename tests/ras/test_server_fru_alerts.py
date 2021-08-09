@@ -1554,17 +1554,21 @@ class TestServerFruAlerts:
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = eval("srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, "
-                       "bmc_user={2}, bmc_pwd={3}, status={4})".
-                       format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
+            cmd = "srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, bmc_user={2}," \
+                  "bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
+                                                    bmc_user, bmc_pwd, status)
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
-            res = eval("srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, "
-                       "pdu_user={2}, pdu_pwd={3}, node_slot={4}, status={5})".
-                       format(other_node, self.pdu_details["ip"],
-                              self.pdu_details["username"],
-                              self.pdu_details["password"],
-                              self.pdu_details["port"], status))
+            cmd = "srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, pdu_user={2}," \
+                  " pdu_pwd={3}, node_slot={4}, status={5})".\
+                format(other_node, self.pdu_details["ip"],
+                       self.pdu_details["username"],
+                       self.pdu_details["password"], self.pdu_details["port"],
+                       status)
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
 
         LOGGER.debug(res)
         self.power_failure_flag = True
@@ -1604,17 +1608,20 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = eval("srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, "
-                       "bmc_user={2}, bmc_pwd={3}, status={4})".
-                       format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
+            cmd = "srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, bmc_user={2}," \
+                  " bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
+                                                     bmc_user, bmc_pwd, status)
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
-            res = eval("srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, "
-                       "pdu_user={2}, pdu_pwd={3}, node_slot={4}, status={5})".
-                       format(other_node, self.pdu_details["ip"],
-                              self.pdu_details["username"],
-                              self.pdu_details["password"],
-                              self.pdu_details["port"], status))
+            cmd = "srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, pdu_user={2}, " \
+                  "pdu_pwd={3}, node_slot={4}, status={5})".\
+                format(other_node, self.pdu_details["ip"],
+                       self.pdu_details["username"],
+                       self.pdu_details["password"],
+                       self.pdu_details["port"], status)
+            res = eval(cmd)
         LOGGER.debug(res)
         self.power_failure_flag = True
         LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
