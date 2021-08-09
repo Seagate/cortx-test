@@ -15,22 +15,34 @@
         "password": "node 0 password",
         "public_data_ip":"",
         "private_data_ip":"",
-        "pdu": {
+        "lpdu": {
             "ip": "",
             "port": "",
-            "username": "",
-            "password": ""
+            "user": "",
+            "pwd": ""
              },
-        "encl_pdu": {
+        "rpdu": {
             "ip": "",
             "port": "",
-            "username": "",
-            "password": ""
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
              },
         "gem_controller": {
             "ip": "",
-            "username": "",
-            "password": "",
+            "user": "",
+            "pwd": "",
             "port1": "",
             "port2": ""
             }
@@ -43,22 +55,34 @@
         "password": "node 1 password",
         "public_data_ip":"",
         "private_data_ip":"",
-        "pdu": {
+        "lpdu": {
             "ip": "",
             "port": "",
-            "username": "",
-            "password": ""
+            "user": "",
+            "pwd": ""
              },
-        "encl_pdu": {
+        "rpdu": {
             "ip": "",
             "port": "",
-            "username": "",
-            "password": ""
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
              },
         "gem_controller": {
             "ip": "",
-            "username": "",
-            "password": "",
+            "user": "",
+            "pwd": "",
             "port1": "",
             "port2": ""
             }
