@@ -51,8 +51,7 @@ class TestBucketTagging:
         self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.tag_obj = S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
         self.test_file = "obj_tag{}.txt"
-        self.test_dir_path = os.path.join(
-            TEST_DATA_FOLDER, "TestBucketTagging")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestBucketTagging")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
