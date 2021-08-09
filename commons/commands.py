@@ -165,6 +165,8 @@ MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
 
 # BMC commands.
+CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
+INSTALL_IPMITOOL = "yum install ipmitool -y"
 CMD_LAN_INFO = "ipmitool lan print"
 CMD_SET_LAN_IP_ADDR = "ipmitool lan set 1 ipaddr {}"  # parameter: IP address.
 MSG_SET_LAN_IP_ADDR = "Setting LAN IP Address to {}"  # parameter: IP address.
@@ -358,3 +360,6 @@ CMD_INSTALL_TOOL = "yum install {0}"
 CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=30))'"
+CMD_GREP_PID = " ps | grep {0}"
