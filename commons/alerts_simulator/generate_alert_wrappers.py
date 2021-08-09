@@ -737,7 +737,13 @@ class GenerateAlertWrapper:
             if not resp[0] or d_count != drive_count:
                 return False, f"Failed to connect OS disk"
 
-            return True, f"Successfully connected OS disk"
+            LOGGER.info("Get drive name by host number")
+            resp = ras_test_obj.get_drive_by_hostnum(hostnum=host_num)
+            if not resp[0]:
+                return False, "Failed to get drive name"
+            drive_name = resp[1]
+
+            return True, drive_name
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.connect_os_drive.__name__,

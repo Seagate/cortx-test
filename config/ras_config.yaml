@@ -24,6 +24,7 @@ ras_sspl_alert:
     lsscsi_file: "/root/lsscsi.txt"
     local_path: "/tmp/rabbitmq_alert.log"
     selinux_status: "/root/selinux_status.log"
+    fdisk_file: "fdisk.txt"
 
   sspl_config:
     sspl_section: "NODEDATAMSGHANDLER"
