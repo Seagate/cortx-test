@@ -272,6 +272,13 @@ test_23045:
     - 0
     - 1
 
+test_22787:
+  resource_type: "node:os:cpu_usage"
+  faulty_cpu_id:
+    - 0
+    - 1
+  interval: 30
+
 test_22786:
   resource_type: "node:os:memory_usage"
   vm_count: 1
@@ -293,4 +300,3 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
-
