@@ -143,7 +143,7 @@ class CortxCliSystemtOperations(CortxCli):
         """
         try:
             LOGGER.info("Performing %s on node ID %s", operation, resource_id)
-            cmd = 'node {} -i {}'.format(operation, resource_id)
+            cmd = commands.CMD_NODE_OPERATION.format(operation, resource_id)
             if storage_off and operation == 'poweroff':
                 cmd = cmd + " -s true"
             if force_op:
