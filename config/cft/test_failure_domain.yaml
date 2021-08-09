@@ -1,10 +1,3 @@
-test_24673:
-  clients: 16
-test_25016:
-  clients: 16
-  samples: 256
-  read_loops: 100
-  object_size: 128Mb
 test_23540:
   config_path_local: 'prov_config.ini'
   jenkins_job_name: 'QA-testing-EC-deployment'
