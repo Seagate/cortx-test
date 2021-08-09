@@ -88,10 +88,6 @@ class TestServerFruAlerts:
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
-        # TODO: Add cluster health check
-        # LOGGER.info("Check cluster health")
-        # resp = cls.health_obj.check_node_health()
-
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
             cls.hostname.split('.')[0] in node_d.keys() else assert_true(
@@ -107,8 +103,8 @@ class TestServerFruAlerts:
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
             globals()[f"srv{i+1}_ras"] = objs[key]['ras_obj']
-            globals()[f"srv{i + 1}_nd"] = objs[key]['nd_obj']
-            globals()[f"srv{i + 1}_bmc"] = objs[key]['bmc_obj']
+            globals()[f"srv{i+1}_nd"] = objs[key]['nd_obj']
+            globals()[f"srv{i+1}_bmc"] = objs[key]['bmc_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         LOGGER.info("Successfully ran setup_class")
@@ -117,6 +113,10 @@ class TestServerFruAlerts:
         """Setup operations per test."""
         LOGGER.info("Running setup_method")
         self.starttime = time.time()
+        LOGGER.info("Check cluster health")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp)
+
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         False)
@@ -1554,13 +1554,13 @@ class TestServerFruAlerts:
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = eval("srv{}_bmc.bmc_node_power_on_off(bmc_ip={}, "
-                       "bmc_user={}, bmc_pwd={}, status={})".
+            res = eval("srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, "
+                       "bmc_user={2}, bmc_pwd={3}, status={4})".
                        format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
         else:
             LOGGER.info("Using PDU ip")
-            res = eval("srv{}_nd.toggle_apc_node_power(pdu_ip={}, "
-                       "pdu_user={}, pdu_pwd={}, node_slot={}, status={})".
+            res = eval("srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, "
+                       "pdu_user={2}, pdu_pwd={3}, node_slot={4}, status={5})".
                        format(other_node, self.pdu_details["ip"],
                               self.pdu_details["username"],
                               self.pdu_details["password"],
@@ -1604,13 +1604,13 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            res = eval("srv{}_bmc.bmc_node_power_on_off(bmc_ip={}, "
-                       "bmc_user={}, bmc_pwd={}, status={})".
+            res = eval("srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, "
+                       "bmc_user={2}, bmc_pwd={3}, status={4})".
                        format(other_node, bmc_ip, bmc_user, bmc_pwd, status))
         else:
             LOGGER.info("Using PDU ip")
-            res = eval("srv{}_nd.toggle_apc_node_power(pdu_ip={}, "
-                       "pdu_user={}, pdu_pwd={}, node_slot={}, status={})".
+            res = eval("srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, "
+                       "pdu_user={2}, pdu_pwd={3}, node_slot={4}, status={5})".
                        format(other_node, self.pdu_details["ip"],
                               self.pdu_details["username"],
                               self.pdu_details["password"],
