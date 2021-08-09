@@ -883,7 +883,7 @@ class TestServerFruAlerts:
             raid_parts = resp[1] if resp[0] else LOGGER.error("Step 6: Failed "
                                                               "to get partition"
                                                               " details of "
-                                                              f"{new_drive}")
+                                                              "%s".format(new_drive))
 
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
