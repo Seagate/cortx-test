@@ -459,8 +459,7 @@ def get_available_target(kafka_msg, client):
     """
     lock_task = LockingServer()
     acquired_target = ""
-    HealthCheck().health_check(kafka_msg.target_list)
-
+    HealthCheck(runner.get_db_credential()).health_check(kafka_msg.target_list)
     while acquired_target == "":
         if kafka_msg.parallel:
             target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)

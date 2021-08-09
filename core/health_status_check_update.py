@@ -41,8 +41,8 @@ class HealthCheck:
     And add health status in mongodb
     """
 
-    def __init__(self):
-        self.db_user, self.db_password = runner.get_db_credential()
+    def __init__(self, credentials):
+        self.db_user, self.db_password = credentials
 
     def get_setup_details(self, targets):
         """
@@ -97,7 +97,7 @@ class HealthCheck:
         result = True
         try:
             result = health.check_node_health(node)
-        except:
+        except IOError:
             result = False
         finally:
             health.disconnect()
@@ -118,7 +118,7 @@ class HealthCheck:
             ha_result = health.get_sys_capacity()
             ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
             result = ha_used_percent < 98.0
-        except:
+        except IOError:
             result = False
         finally:
             health.disconnect()
