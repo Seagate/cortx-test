@@ -24,11 +24,12 @@ import logging
 import re
 import os
 import time
+import multiprocessing as mp
 from collections import OrderedDict
 from commons import commands
+from commons import constants as const
 from libs.ras.ras_core_lib import RASCoreLib
 from config import RAS_VAL
-from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -471,6 +472,41 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Actual Threshold value %s", resp)
         return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
 
+    def gen_cpu_usage_fault_thres_restart_node(self, delta_cpu_usage):
+        """Creates CPU faults
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_thresh_restart_node(self, cpu_usage_thresh):
+        """Resolves CPU faults
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
     def gen_mem_usage_fault(self, delta_mem_usage):
         """Creates memory faults
 
@@ -562,6 +598,20 @@ class SoftwareAlert(RASCoreLib):
             result = False
         return result
 
+    def restart_node(self):
+        """Restart node
+        """
+        LOGGER.info("Restarting Node")
+        resp = self.health_obj.reboot_node()
+        if resp:
+            resp = self.health_obj.check_node_health()
+            LOGGER.info("response: %s", resp)
+            result = resp[0]
+        else:
+            result = False
+            LOGGER.error("Node is not Up and healthy")
+        return result
+
     def gen_cpu_fault(self, faulty_cpu_id: list):
         """Generate CPU faults
 
@@ -599,7 +649,7 @@ class SoftwareAlert(RASCoreLib):
         :return [list]: List of core ID which are online.
         """
         resp = self.node_utils.execute_cmd(cmd=commands.CPU_COUNT).decode('utf-8')
-        LOGGER.DEBUG("%s response : %s", commands.CPU_COUNT, resp)
+        LOGGER.debug("%s response : %s", commands.CPU_COUNT, resp)
         if "," in resp:
             resp = resp.split(",")
         else:
@@ -613,6 +663,86 @@ class SoftwareAlert(RASCoreLib):
                 cpus.append(int(i))
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self, interval: int):
+        """Get CPU utilization
+        :param interval: Check usage in given inteval
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_CPU_UTILIZATION.format(interval)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_available_memory_usage(self):
+        """Find the available memory usage
+
+        :return [str]: Available memory usage(GB)
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_AVAIL_MEMORY).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_AVAIL_MEMORY, resp)
+        memory = int(resp) / (1024 ** 3)
+        LOGGER.info("Available memory usage : %s", memory)
+        return memory
+
+    def install_tool(self, tool_name: str):
+        """Installing specific tool
+
+        :return [str]: Response from tool
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name), inputs="yes").decode('utf-8')
+        LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
+        return resp
+
+    def increase_memory(self, vm_count: int, memory_size: str, timespan: str):
+        """Increasing memory
+        :param vm_count: Count of the VM
+        :param memory_size: Malloc per vm worker(e.g. : 128MB, 1GB)
+        :param timespan: Timeout value
+        :return [str]: Response from stress command
+        """
+        cmd = commands.CMD_INCREASE_MEMORY.format(vm_count, memory_size, timespan)
+        resp = self.node_utils.host_obj.exec_command(cmd)
+        LOGGER.debug("%s response : %s",cmd, resp)
+        return resp
+
+    def check_memory_utilization(self):
+        """Check memory utilization
+        :return [str]: Response from command
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_MEMORY_UTILIZATION, resp)
+        return resp
 
     def gen_disk_usage_fault_with_persistence_cache(self, delta_disk_usage):
         """Creates disk faults with persistence cache (service disable/enable)
@@ -752,3 +882,51 @@ class SoftwareAlert(RASCoreLib):
         result = True
 
         return result
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self):
+        """Get CPU utilization
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
+        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def start_cpu_increase_parallel(self):
+        """
+        Start blocking process parallely
+        """
+        LOGGER.info("Start increasing in CPU usage")
+        process = mp.Process(target=self.initiate_blocking_process())
+        process.start()
+        if process.is_alive():
+            LOGGER.info("started joining")
+            process.join()
+        LOGGER.info("Started increasing in CPU usage")
