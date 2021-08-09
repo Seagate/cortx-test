@@ -366,7 +366,8 @@ Select from filter
     [Documentation]  Functionality to filter in manage page for dropdown.
     [Arguments]  ${filter_entry}
     wait for page or element to load
-    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    ${present}=  Run Keyword And Return Status    Element Should Be Visible   ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Run Keyword If  ${present} == False  Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
     wait for page or element to load  2s
     ${var}=  CATENATE  csm filter ${filter_entry} select xpath
     Log To Console And Report  ${${var}}  
@@ -612,3 +613,43 @@ Create and login with CSM monitor user
     Verify New User  ${new_user_name}
     Re-login  ${new_user_name}  ${new_password}  MANAGE_MENU_ID
     [Return]  ${new_user_name}  ${new_password}
+
+Verify Filter options got selected
+    [Documentation]  This keyword is to verify that filter drop down menu contents role and username
+    [Arguments]  ${filter_entry}
+    ${var}=  CATENATE  CSM_FILTER ${filter_entry} SELECTED_XPATH
+    Log To Console And Report  ${${var}}
+    ${attrib}=  Get Element Attribute  ${${var}}  aria-selected
+    Should be equal  ${attrib}  true
+
+Verify Filter options Contents
+    [Documentation]  This keyword is to verify that filter drop down menu contents role and username
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load
+    Element Should Be Visible  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Element Should Be Visible  ${CSM_FILTER_LIST_CONTENT_XPATH}
+    ${filter_list}=  Read Drop Down Data  ${CSM_FILTER_LIST_CONTENT_XPATH}
+    Lists Should Be Equal  ${filter_list}  ${CSM_SEARCH_CONTENTS}
+
+Verify Filter drop down Appear For User Search
+    [Documentation]  This keyword is to verify that filter drop down menu appears for user search
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load
+    Element Should Be Visible  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Element Should Be Visible  ${CSM_FILTER_LIST_CONTENT_XPATH}
+
+Verify Filter drop down Appear Correctly Over Filters
+    [Documentation]  This keyword is to verify that filter drop down menu appears over the filters selection
+    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${X}}
+    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${Y}}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${X1}}
+    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${Y1}}
+    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    ...  ELSE
+    ...  Fail

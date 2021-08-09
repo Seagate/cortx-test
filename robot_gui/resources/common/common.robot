@@ -31,6 +31,19 @@ Navigate To Page
     Run Keyword If  ${value}
     ...  Click Element  ${${sub_page}}
 
+Read Drop Down Data
+    [Documentation]  This Keyword is for reading the data from the html drop down and it returns list format.
+    [Arguments]  ${drop_down}
+    @{elements_data}=    Create List
+    @{drop_down_elements}=  Get WebElements  ${drop_down}
+    sleep  2s
+    FOR  ${elements}  IN  @{drop_down_elements}
+            ${text}=    Get Text    ${elements}
+            Append To List  ${elements_data}  ${text}
+    END
+    Log To Console And Report   ${elements_data}
+    [Return]   @{elements_data}
+
 Read Table Data
     [Documentation]  This Keyword is for reading the data from the html table and it returns the data in list format.
     [Arguments]  ${table_element}
