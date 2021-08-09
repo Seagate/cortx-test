@@ -36,7 +36,7 @@ external_stylesheets = [dbc.themes.COSMO]
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
                 prevent_initial_callbacks=True, suppress_callback_exceptions=True)
 
-app.title = "CORTX Test Status"
+app.title = "CORTX Companion"
 server = app.server
 __version__ = "5.27"
 
