@@ -32,6 +32,7 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -56,8 +57,7 @@ class TestMultipartUpload:
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.test_file = "mp_obj"
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "multipart_upload")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUpload")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.config_backup_path = os.path.join(
             cls.test_dir_path, "config_backup")
