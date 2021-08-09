@@ -1270,6 +1270,7 @@ class RASTestLib(RASCoreLib):
         """
         try:
             LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
+            sensor_name = f"'{sensor_name}'"
             output = super().get_ipmi_sensor_states(sensor_name)
             sensor_states = [state.strip().lower() for state in output[2:]]
         except Exception as error:
@@ -1290,6 +1291,8 @@ class RASTestLib(RASCoreLib):
         """
         try:
             LOGGER.info("Fetching all sensor states for sensor %s", sensor_name)
+            sensor_name = f"'{sensor_name}'"
+            sensor_state = f"'{sensor_state}'"
             output = super().assert_deassert_sensor_state(sensor_name, sensor_state, deassert)
             event_details = [val.strip() for val in output[-1].split("|")]
             if not deassert and "Asserted" in event_details:

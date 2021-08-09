@@ -913,7 +913,3 @@ class RASCoreLib:
         output = self.node_utils.execute_cmd(event_cmd, read_lines=True)
 
         return output
-
-
-
-

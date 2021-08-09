@@ -162,6 +162,7 @@ class TestServerFruAlerts:
         self.raid_stopped = False
         self.failed_disk = False
         self.removed_disk = False
+        self.server_psu_fault = False
         LOGGER.info(
             "Fetching the disks details from mdstat for RAID array %s",
             self.md_device)
@@ -207,6 +208,11 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["assemble_operation"],
                     "md_device": self.raid_stopped,
                     "disk": None})
+            assert_true(resp[0], resp[1])
+
+        if self.server_psu_fault:
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.SERVER_PSU_FAULT_RESOLVED)
             assert_true(resp[0], resp[1])
 
         LOGGER.info("Change sspl log level to INFO")
@@ -1512,245 +1518,93 @@ class TestServerFruAlerts:
     @CTFailOn(error_handler)
     def test_power_supply_disable_enable_alert_23682(self):
         """
-        TEST-23682: Test alerts when system power supply is disabled/removed and enabled/reconnected
+        TEST-23682: Test server psu alerts for following psu states:
+            - "Presence detected"
+            - "Failure detected"
+            - "Power Supply AC lost"
         """
         LOGGER.info(
-            "STARTED: Test alerts when system power supply is disabled/removed and enabled/reconnected")
+            "STARTED: Test alerts for server psu faults")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["test_23682"]
         alert_types = RAS_TEST_CFG["alert_types"]
 
-        LOGGER.info("Getting available power supply devices in system")
-        resp = self.ras_test_obj.get_ipmi_sensor_list(test_cfg["sensor_type"])
-        assert_true(resp[0], resp[1])
-        ps_device = random.choice(resp[1])
-
-        LOGGER.info("Generating Fault by removing power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"])
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
+        for state in test_cfg["sensor_states"]:
+            LOGGER.info("Generating server power supply device fault for state %s", state)
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.SERVER_PSU_FAULT,
+                input_parameters={
+                    "sensor_type": test_cfg["sensor_type"],
+                    "sensor_states": [state],
+                    "deassert": False})
             assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault"],
-            False,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault alert using CSM REST API")
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault alert on message bus logs")
+
+            LOGGER.info("Checking CSM REST API for psu fault alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["fault"],
+                False,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault alert using CSM REST API")
+        self.server_psu_fault = True
 
         LOGGER.info("Performing health check after fault generation")
         resp = self.health_obj.check_node_health()
         assert_true(resp[0], resp[1])
 
-        LOGGER.info("Resolving Fault by reconnecting power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"],
-                                                              deassert=True)
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault_resolved alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault_resolved"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
+        for state in test_cfg["sensor_states"]:
+            LOGGER.info("Resolving server power supply device fault for state %s",
+            state)
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.SERVER_PSU_FAULT_RESOLVED,
+                input_parameters={
+                    "sensor_type": test_cfg["sensor_type"],
+                    "sensor_states": [state],
+                    "deassert": True})
             assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault_resolved alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault_resolved"],
-            True,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault_resolved alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault_resolved"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault_resolved alert on message bus logs")
+
+            LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
+        self.server_psu_fault = False
 
         LOGGER.info("Performing health check after resolving fault")
         resp = self.health_obj.check_node_health()
         assert_true(resp[0], resp[1])
         LOGGER.info(
-            "ENDED: Test alerts when system power supply is disabled/removed and enabled/reconnected")
-
-    @pytest.mark.cluster_monitor_ops
-    @pytest.mark.hw_alert
-    @pytest.mark.tags("TEST-23683")
-    @CTFailOn(error_handler)
-    def test_power_supply_failure_alert_23683(self):
-        """
-        TEST-23683: Test alerts when Failure is detected for system power supply
-        """
-        LOGGER.info(
-            "STARTED: Test alerts when Failure is detected for system power supply")
-        common_cfg = RAS_VAL["ras_sspl_alert"]
-        test_cfg = RAS_TEST_CFG["test_23683"]
-        alert_types = RAS_TEST_CFG["alert_types"]
-
-        LOGGER.info("Getting available power supply devices in system")
-        resp = self.ras_test_obj.get_ipmi_sensor_list(test_cfg["sensor_type"])
-        assert_true(resp[0], resp[1])
-        ps_device = random.choice(resp[1])
-
-        LOGGER.info("Putting power supply device %s in failed state", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"])
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault alert on message bus logs")
-
-        LOGGER.info("Checking CSM REST API for psu fault alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault"],
-            False,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault alert using CSM REST API")
-
-        LOGGER.info("Performing health check after fault generation")
-        resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
-
-        LOGGER.info("Bringing back power supply device %s from failed state", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"],
-                                                              deassert=True)
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault_resolved alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault_resolved"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault_resolved alert on message bus logs")
-
-        LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault_resolved"],
-            True,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
-
-        LOGGER.info("Performing health check after resolving fault")
-        resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
-        LOGGER.info(
-            "ENDED: Test alerts when Failure is detected for system power supply")
-
-    @pytest.mark.cluster_monitor_ops
-    @pytest.mark.hw_alert
-    @pytest.mark.tags("TEST-23684")
-    @CTFailOn(error_handler)
-    def test_power_supply_ac_lost_alert_23684(self):
-        """
-        TEST-23684: Test alerts of system power supply when power supply AC is lost
-        """
-        LOGGER.info(
-            "STARTED: Test alerts of system power supply when power supply AC is lost")
-        common_cfg = RAS_VAL["ras_sspl_alert"]
-        test_cfg = RAS_TEST_CFG["test_23684"]
-        alert_types = RAS_TEST_CFG["alert_types"]
-
-        LOGGER.info("Getting available power supply devices in system")
-        resp = self.ras_test_obj.get_ipmi_sensor_list(test_cfg["sensor_type"])
-        assert_true(resp[0], resp[1])
-        ps_device = random.choice(resp[1])
-
-        LOGGER.info("Disabling AC of power supply device %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"])
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault alert on message bus logs")
-
-        LOGGER.info("Checking CSM REST API for psu fault alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault"],
-            False,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault alert using CSM REST API")
-
-        LOGGER.info("Performing health check after fault generation")
-        resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
-
-        LOGGER.info("Enabling AC of power supply device %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"],
-                                                              deassert=True)
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault_resolved alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault_resolved"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault_resolved alert on message bus logs")
-
-        LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault_resolved"],
-            True,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
-
-        LOGGER.info("Performing health check after resolving fault")
-        resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
-        LOGGER.info(
-            "ENDED: Test alerts of system power supply when power supply AC is lost")
+            "ENDED: Test alerts for server psu faults")
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
@@ -1766,36 +1620,38 @@ class TestServerFruAlerts:
         test_cfg = RAS_TEST_CFG["test_23682"]
         alert_types = RAS_TEST_CFG["alert_types"]
 
-        LOGGER.info("Getting available power supply devices in system")
-        resp = self.ras_test_obj.get_ipmi_sensor_list(test_cfg["sensor_type"])
-        assert_true(resp[0], resp[1])
-        ps_device = random.choice(resp[1])
-
-        LOGGER.info("Generating Fault by removing power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"])
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
+        for state in test_cfg["sensor_states"]:
+            LOGGER.info("Generating server power supply device fault for state %s", state)
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.SERVER_PSU_FAULT,
+                input_parameters={
+                    "sensor_type": test_cfg["sensor_type"],
+                    "sensor_states": [state],
+                    "deassert": False})
             assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault"],
-            False,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault alert using CSM REST API")
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault alert on message bus logs")
+
+            LOGGER.info("Checking CSM REST API for psu fault alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["fault"],
+                False,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault alert using CSM REST API")
+        self.server_psu_fault = True
 
         LOGGER.info("Rebooting node %s ", self.hostname)
         resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
@@ -1817,32 +1673,39 @@ class TestServerFruAlerts:
         assert_true(resp, common_cfg["csm_error_msg"])
         LOGGER.info("Verified psu fault alert persistency across node reboot")
 
-        LOGGER.info("Resolving Fault by reconnecting power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"],
-                                                              deassert=True)
-        assert_true(resp[0], resp[1])
-
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault_resolved alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault_resolved"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
+        for state in test_cfg["sensor_states"]:
+            LOGGER.info("Resolving server power supply device fault for state %s",
+                        state)
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.SERVER_PSU_FAULT_RESOLVED,
+                input_parameters={
+                    "sensor_type": test_cfg["sensor_type"],
+                    "sensor_states": [state],
+                    "deassert": True})
             assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault_resolved alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault_resolved"],
-            True,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault_resolved alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault_resolved"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault_resolved alert on message bus logs")
+
+            LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
+        self.server_psu_fault = False
 
         LOGGER.info("Performing health check after resolving fault")
         resp = self.health_obj.check_node_health()
@@ -1879,15 +1742,15 @@ class TestServerFruAlerts:
         assert_exact_string("inactive", resp[0], "sspl service is not in stopped state")
         LOGGER.info("Successfully stopped SSPL service")
 
-        LOGGER.info("Getting available power supply devices in system")
-        resp = self.ras_test_obj.get_ipmi_sensor_list(test_cfg["sensor_type"])
+        LOGGER.info("Generating server power supply device fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.SERVER_PSU_FAULT,
+            input_parameters={
+                "sensor_type": test_cfg["sensor_type"],
+                "sensor_states": [test_cfg["sensor_states"]],
+                "deassert": False})
         assert_true(resp[0], resp[1])
-        ps_device = random.choice(resp[1])
-
-        LOGGER.info("Generating Fault by removing power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"])
-        assert_true(resp[0], resp[1])
+        self.server_psu_fault = True
 
         LOGGER.info("Starting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
@@ -1908,26 +1771,28 @@ class TestServerFruAlerts:
         resp = self.health_obj.check_node_health()
         assert_true(resp[0], resp[1])
 
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault alert on message bus logs")
+        for state in test_cfg["sensor_states"]:
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault"],
-            False,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault alert using CSM REST API")
+            LOGGER.info("Checking CSM REST API for psu fault alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["fault"],
+                False,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault alert using CSM REST API")
 
         LOGGER.info("Stopping pcs resource for SSPL: %s", self.sspl_resource_id)
         resp = self.health_obj.pcs_resource_ops_cmd(
@@ -1943,11 +1808,15 @@ class TestServerFruAlerts:
         assert_exact_string("inactive", resp[0], "sspl service is not in stopped state")
         LOGGER.info("Successfully stopped SSPL service")
 
-        LOGGER.info("Resolving Fault by reconnecting power supply device: %s", ps_device)
-        resp = self.ras_test_obj.assert_deassert_sensor_state(sensor_name=ps_device,
-                                                              sensor_state=test_cfg["sensor_state"],
-                                                              deassert=True)
+        LOGGER.info("Resolving server power supply device fault")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.SERVER_PSU_FAULT_RESOLVED,
+            input_parameters={
+                "sensor_type": test_cfg["sensor_type"],
+                "sensor_states": [test_cfg["sensor_states"]],
+                "deassert": True})
         assert_true(resp[0], resp[1])
+        self.server_psu_fault = False
 
         LOGGER.info("Starting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
@@ -1968,26 +1837,28 @@ class TestServerFruAlerts:
         resp = self.health_obj.check_node_health()
         assert_true(resp[0], resp[1])
 
-        if self.start_msg_bus:
-            LOGGER.info(
-                "Checking the generated psu fault_resolved alert on message bus")
-            alert_list = [test_cfg["resource_type"],
-                          alert_types["fault_resolved"]]
-            resp = self.ras_test_obj.alert_validation(
-                string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Verified the psu fault_resolved alert on message bus logs")
+        for state in test_cfg["sensor_states"]:
+            if self.start_msg_bus:
+                LOGGER.info(
+                    "Checking the generated psu fault_resolved alert on message bus")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["fault_resolved"],
+                              state]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Verified the psu fault_resolved alert on message bus logs")
 
-        LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
-        resp = self.csm_alert_obj.verify_csm_response(
-            self.starttime,
-            alert_types["fault_resolved"],
-            True,
-            test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
-        LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
+            LOGGER.info("Checking CSM REST API for psu fault_resolved alert")
+            time.sleep(common_cfg["csm_alert_gen_delay"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, common_cfg["csm_error_msg"])
+            LOGGER.info("Successfully verified psu fault_resolved alert using CSM REST API")
 
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across sspl stop and start")
