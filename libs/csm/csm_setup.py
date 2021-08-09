@@ -100,7 +100,12 @@ class CSMConfigsCheck:
         return result
 
     def preboarding(self, username, old_password, new_password):
-        """Perform preboarding step
+        """Perform preboarding
+
+        :param username: admin user name
+        :param old_password: Default password
+        :param new_password: New password to be set
+        :return [type]: True if preboarding is successful
         """
         self._log.info("Starting the preboarding for user : %s", username)
         rest_test_obj = RestTestLib()
