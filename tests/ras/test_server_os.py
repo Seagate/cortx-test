@@ -735,7 +735,7 @@ class TestServerOS:
             resp = obj.get_command_pid("yes")
             process_id = re.findall(r'(\d+) \?', resp.decode('utf-8').strip())
             LOGGER.info("Collected PID's for yes command")
-            LOGGER.info("Step 6: Killing the process one by one")
+            LOGGER.info("Step 6: Killing the yes process one by one")
             for i in process_id:
                 resp = obj.kill_process(i)
             LOGGER.info("Step 6: Processes are killed by one by one")
