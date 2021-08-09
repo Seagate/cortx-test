@@ -61,7 +61,7 @@ TEST-1239
     Verify that monitor user is not able to create delete csm user
     Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
     wait for page or element to load  20s
-    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  &{CSM_USERNAME_COLUMN}
+    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{users_list}
         Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
         ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}

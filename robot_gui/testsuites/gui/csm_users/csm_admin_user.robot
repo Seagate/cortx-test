@@ -463,37 +463,23 @@ TEST-23872
     Should Be Equal  "${text}"  "${CSM_TEST_DEFAULT_DROPDOWN_VALUE}"
 
 TEST-23837
-    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    [Documentation]  Test that any user with any role should be able to delete themselves.
     ...  Reference : https://jts.seagate.com/browse/TEST-23837
     [Tags]  Priority_High  TEST-23837
     Navigate To Page  ${page_name}
     wait for page or element to load
     ${new_password}=  Generate New Password
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}  admin
-    Click on confirm button
-    ${new_password1}=  Generate New Password
-    ${new_user_name1}=  Generate New User Name
-    Create New CSM User  ${new_user_name1}  ${new_password1}  manage
-    Click on confirm button
-    ${new_csm_user_password}=  Generate New Password
-    ${new_csm_user_name}=  Generate New User Name
-    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
-    Click on confirm button
-    Re-login  ${new_user_name}  ${new_password}  ${page_name}
-    Delete Logged In CSM User  ${new_user_name}
-    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}  False
-    Delete Logged In CSM User  ${new_user_name1}
-    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}  False
-    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
-    wait for page or element to load  20s
-    Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
-    # TODO : monitor user will be able to delte self, verify & modify tests
-    Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_csm_user_name}
-    Verify Deleted User  {new_csm_user_name}
-    Verify Deleted User  {new_user_name1}
-    Verify Deleted User  {new_user_name}
+    ${users_type}=  Create List  admin  manage  monitor
+    FOR    ${value}    IN    @{users_type}
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
+        Delete Logged In CSM User  ${new_user_name}
+        Re-login  ${username}  ${password}  ${page_name}    False
+        Verify Deleted User  ${new_user_name}
+    END
 
 TEST-23859
     [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
