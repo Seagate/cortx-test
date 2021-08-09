@@ -1555,8 +1555,8 @@ class TestServerFruAlerts:
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
             cmd = "srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, bmc_user={2}," \
-                  "bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
-                                                    bmc_user, bmc_pwd, status)
+                  " bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
+                                                     bmc_user, bmc_pwd, status)
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
         else:
