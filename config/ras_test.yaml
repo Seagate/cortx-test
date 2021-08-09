@@ -300,3 +300,6 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+test_22787:
+  resource_type: "node:os:cpu_usage"
