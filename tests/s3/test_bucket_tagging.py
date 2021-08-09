@@ -31,11 +31,9 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from config import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
-
-S3_OBJ = S3TestLib()
-TAG_OBJ = S3TaggingTestLib()
 
 
 class TestBucketTagging:
@@ -50,9 +48,10 @@ class TestBucketTagging:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test suite operations.")
+        self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.tag_obj = S3TaggingTestLib(endpoint_url=S3_CFG["s3_url"])
         self.test_file = "obj_tag{}.txt"
-        self.test_dir_path = os.path.join(
-            TEST_DATA_FOLDER, "TestBucketTagging")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestBucketTagging")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
@@ -63,9 +62,9 @@ class TestBucketTagging:
         self.log.info("ENDED: Test setup operations.")
         yield
         self.log.info("STARTED: Test teardown operations.")
-        resp = S3_OBJ.bucket_list()[1]
+        resp = self.s3_obj.bucket_list()[1]
         if self.bucket_name in resp:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp)
         self.log.info("ENDED: Test teardown operations.")
 
@@ -77,7 +76,7 @@ class TestBucketTagging:
         """Verify PUT Bucket tagging."""
         self.log.info("STARTED: Verify PUT Bucket tagging")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -86,7 +85,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s ", self.bucket_name)
         self.log.info("Step 2: Setting tag for bucket")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testval")
@@ -94,7 +93,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for bucket")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(
+        resp = self.tag_obj.get_bucket_tags(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -117,7 +116,7 @@ class TestBucketTagging:
         """Verify GET Bucket tagging."""
         self.log.info("STARTED: Verify GET Bucket tagging")
         self.log.info("Step 1: Creating a bucket: %s ", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -126,7 +125,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testval")
@@ -134,7 +133,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -156,7 +155,7 @@ class TestBucketTagging:
         """Verify DELETE Bucket tagging."""
         self.log.info("STARTED: Verify DELETE Bucket tagging")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -165,7 +164,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s ", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testval")
@@ -173,14 +172,14 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
         self.log.info("Step 3: Deleting tag of a bucket")
-        resp = TAG_OBJ.delete_bucket_tagging(
+        resp = self.tag_obj.delete_bucket_tagging(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Deleted tag of a bucket")
         self.log.info("Step 4: Retrieving tag of same bucket")
         try:
-            resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+            resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -202,7 +201,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag whose key is up to 128 Unicode characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -211,7 +210,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s ", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekey"
             "isupto128Unicodecharacterslengthshouldbe128cha",
@@ -220,7 +219,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
         self.log.info("Step 2: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(
+        resp = self.tag_obj.get_bucket_tags(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -248,7 +247,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag whose key is more than 128 Unicode characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -258,7 +257,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhose"
                 "keyisupto128Unicodecharacterslengthshouldbe128char",
@@ -285,7 +284,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag having values up to 256 Unicode characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -294,7 +293,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekey"
@@ -305,7 +304,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Tag is set for a bucket")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         tag_value = f"organizationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatag" \
@@ -334,7 +333,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create a tag having values more than 512 Unicode characters in length")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -344,7 +343,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting tag for a bucket")
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "testkey",
                 "caationCreateatagwhosekeyisupto128UnicodecharactersinlengtCreateatagwhosekeyis"
@@ -375,7 +374,7 @@ class TestBucketTagging:
         """Create Bucket tags, up to 50."""
         self.log.info("STARTED: Create Bucket tags, up to 50")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -384,7 +383,7 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting %s tags for a bucket", self.bucket_name)
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testval",
@@ -395,7 +394,7 @@ class TestBucketTagging:
             "Step 2: %d tags are set for a bucket",
             50)
         self.log.info("Step 3: Retrieving tags of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         sorted_tags = sorted(resp[1], key=lambda x: int(
             x["Key"][len("testkey"):]))
@@ -417,7 +416,7 @@ class TestBucketTagging:
         """Create Bucket tags, more than 50."""
         self.log.info("STARTED: Create Bucket tags, more than 50")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -429,7 +428,7 @@ class TestBucketTagging:
             "Step 2: Setting %d tags for a bucket",
             51)
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "testkey",
                 "testval",
@@ -456,7 +455,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Verify bucket Tag Keys with case sensitive labels")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -466,7 +465,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info(
             "Step 2 : Setting tag for a bucket with case sensitive tag keys")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "TESTKEY",
             "testval")
@@ -475,7 +474,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 2 : Tag is set for a bucket with case sensitive tag keys")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(
+        resp = self.tag_obj.get_bucket_tags(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -500,7 +499,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Verify bucket tag Values with case sensitive labels")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -510,7 +509,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info(
             "Step 2: Setting tag for a bucket with case sensitive tag values")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "TESTVALUE")
@@ -519,7 +518,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 2: Tag is set for a bucket with case sensitive tag values")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -543,7 +542,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create multiple tags with tag keys having special characters")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -556,13 +555,13 @@ class TestBucketTagging:
         for char in ["+", "-", "=", ".", "_", ":"]:
             tag_key = "{0}{1}{2}".format(
                 char, "key", char)
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 tag_key,
                 "testval")
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+            resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_equal(
@@ -583,7 +582,7 @@ class TestBucketTagging:
         self.log.info(
             "STARTED: Create multiple tags with tag keys having invalid special characters")
         self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(resp[1],
@@ -596,7 +595,7 @@ class TestBucketTagging:
             key = "{0}{1}{2}".format(
                 char, "key", char)
             try:
-                resp = TAG_OBJ.set_bucket_tag(
+                resp = self.tag_obj.set_bucket_tag(
                     self.bucket_name,
                     key,
                     "testval")
@@ -621,7 +620,7 @@ class TestBucketTagging:
         self.log.info("STARTED: Create multiple tags with tag values having "
                       "invalid special character")
         self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -635,7 +634,7 @@ class TestBucketTagging:
             value = "{0}{1}{2}".format(
                 char, "val", char)
             try:
-                resp = TAG_OBJ.set_bucket_tag(
+                resp = self.tag_obj.set_bucket_tag(
                     self.bucket_name,
                     "testkey",
                     value)
@@ -659,7 +658,7 @@ class TestBucketTagging:
         """Create bucket tags with duplicate keys."""
         self.log.info("STARTED: Create bucket tags with duplicate keys")
         self.log.info("Step 1: Creating a bucket: %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -669,7 +668,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket: %s", self.bucket_name)
         self.log.info("Step 2: Setting bucket tags with duplicate keys")
         try:
-            resp = TAG_OBJ.set_bucket_tag_duplicate_keys(
+            resp = self.tag_obj.set_bucket_tag_duplicate_keys(
                 self.bucket_name,
                 "testkey",
                 "testval")
@@ -693,7 +692,7 @@ class TestBucketTagging:
         """verify values in a tag set should be unique."""
         self.log.info("STARTED: verify values in a tag set should be unique")
         self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -702,14 +701,14 @@ class TestBucketTagging:
             resp[1])
         self.log.info("Step 1: Created a bucket %s", self.bucket_name)
         self.log.info("Step 2: Setting bucket tags with unique tag values")
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testvalue",
             2)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testvalue",
@@ -718,7 +717,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Set bucket tags with unique tag values")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         for num in range(2):
@@ -738,7 +737,7 @@ class TestBucketTagging:
         self.log.info("STARTED: Create bucket tags with invalid "
                       "(characters outside the allowed set) special characters")
         self.log.info("Step 1: Creating a bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -747,7 +746,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Created a bucket %s", self.bucket_name)
         self.log.info(
             "Step 2: Setting a bucket tag with invalid special characters")
-        resp = TAG_OBJ.set_bucket_tag_invalid_char(
+        resp = self.tag_obj.set_bucket_tag_invalid_char(
             self.bucket_name,
             "testkey",
             "testvalue")
@@ -756,7 +755,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 2: Set a bucket tag with invalid special characters")
         self.log.info("Step 3: Retrieving tag of a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Retrieved tag of a bucket")
@@ -775,7 +774,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 1: Creating a bucket %s and uploading an object %s",
             self.bucket_name, obj_name)
-        resp = S3_OBJ.create_bucket_put_object(
+        resp = self.s3_obj.create_bucket_put_object(
             self.bucket_name,
             obj_name,
             self.test_file_path,
@@ -787,7 +786,7 @@ class TestBucketTagging:
             self.bucket_name, obj_name)
         self.log.info(
             "Step 2: Setting tag for a bucket %s", self.bucket_name)
-        resp = TAG_OBJ.set_bucket_tag(
+        resp = self.tag_obj.set_bucket_tag(
             self.bucket_name,
             "testkey",
             "testval")
@@ -796,7 +795,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 2: Tag is set for a bucket %s", self.bucket_name)
         self.log.info("Step 3: Setting tag for an object %s", obj_name)
-        resp = TAG_OBJ.set_object_tag(
+        resp = self.tag_obj.set_object_tag(
             self.bucket_name,
             obj_name,
             "testobjkey",
@@ -806,7 +805,7 @@ class TestBucketTagging:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Set tag for an object %s", obj_name)
         self.log.info("Step 4: Verifying tag is set for a bucket")
-        resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+        resp = self.tag_obj.get_bucket_tags(self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
@@ -820,7 +819,7 @@ class TestBucketTagging:
         self.log.info(
             "Step 4: Verified that tag is set for a bucket successfully")
         self.log.info("Step 5: Verifying tag is set for an object")
-        resp = TAG_OBJ.get_object_tags(self.bucket_name, obj_name)
+        resp = self.tag_obj.get_object_tags(self.bucket_name, obj_name)
         self.log.info(resp)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -835,12 +834,12 @@ class TestBucketTagging:
                 f"testobjvalue{num}")
         self.log.info("Step 5: Verified tag is set for an object")
         self.log.info("Step 6: Deleting a bucket")
-        resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+        resp = self.s3_obj.delete_bucket(self.bucket_name, force=True)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7: Retrieving tag of a bucket")
         try:
-            resp = TAG_OBJ.get_bucket_tags(self.bucket_name)
+            resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -853,7 +852,7 @@ class TestBucketTagging:
             "NoSuchBucket")
         self.log.info("Step 8: Retrieving tag of an object")
         try:
-            resp = TAG_OBJ.get_object_tags(self.bucket_name, obj_name)
+            resp = self.tag_obj.get_object_tags(self.bucket_name, obj_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -879,21 +878,22 @@ class TestBucketTagging:
         buckets = []
         for i in range(100):
             bucket_name = "{}-{}".format(self.bucket_name, str(i))
-            resp = S3_OBJ.create_bucket(bucket_name)
+            resp = self.s3_obj.create_bucket(bucket_name)
             self.log.info(resp)
             assert_utils.assert_is_not_none(resp[0], resp[1])
             assert_utils.assert_equal(bucket_name, resp[1], resp[1])
             buckets.append(bucket_name)
         for bucket in buckets:
-            resp = TAG_OBJ.set_bucket_tag(bucket, "testkey", "testval", 50)
+            resp = self.tag_obj.set_bucket_tag(
+                bucket, "testkey", "testval", 50)
             self.log.info(resp)
             assert_utils.assert_is_not_none(resp[0], resp[1])
-            resp = TAG_OBJ.get_bucket_tags(bucket)
+            resp = self.tag_obj.get_bucket_tags(bucket)
             self.log.info(resp)
             assert_utils.assert_is_not_none(resp[0], resp[1])
         self.log.debug(buckets)
         self.log.debug("Total buckets : %d", len(buckets))
-        status, resp = S3_OBJ.delete_multiple_buckets(buckets)
+        status, resp = self.s3_obj.delete_multiple_buckets(buckets)
         self.log.info(resp)
         assert_utils.assert_true(status, resp)
         self.log.info("ENDED: Verification of max. no. of Buckets user can "
@@ -911,7 +911,7 @@ class TestBucketTagging:
             "Step 1: Setting a tag for non existing bucket: %s",
             self.bucket_name)
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "testkey",
                 "testvalue")
@@ -938,7 +938,7 @@ class TestBucketTagging:
             "STARTED: Verify GET bucket tagging to non-existing bucket")
         self.log.info("Step 1: Setting a tag for non existing bucket")
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "testkey",
                 "testvalue")
@@ -954,7 +954,7 @@ class TestBucketTagging:
             "NoSuchBucket")
         self.log.info("Step 2: Retrieving tag of non existing bucket")
         try:
-            resp = TAG_OBJ.get_bucket_tags(
+            resp = self.tag_obj.get_bucket_tags(
                 self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
@@ -979,7 +979,7 @@ class TestBucketTagging:
             "STARTED: Verify DELETE bucket tagging to non-existing bucket")
         self.log.info("Step 1: Setting tag for non existing bucket")
         try:
-            resp = TAG_OBJ.set_bucket_tag(
+            resp = self.tag_obj.set_bucket_tag(
                 self.bucket_name,
                 "testkey",
                 "testvalue")
@@ -993,7 +993,7 @@ class TestBucketTagging:
         self.log.info("Step 1: Setting tag for non existing bucket failed")
         self.log.info("Step 2: Deleting tag of a non existing bucket")
         try:
-            resp = TAG_OBJ.delete_bucket_tagging(
+            resp = self.tag_obj.delete_bucket_tagging(
                 self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])

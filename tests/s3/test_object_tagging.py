@@ -29,12 +29,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from config import S3_OBJ_TST
+from config import S3_CFG
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
-
-S3_TEST_OBJ = s3_test_lib.S3TestLib()
-TAG_OBJ = s3_tagging_test_lib.S3TaggingTestLib()
-S3_MP_OBJ = s3_multipart_test_lib.S3MultipartTestLib()
 
 
 class TestObjectTagging:
@@ -47,9 +45,14 @@ class TestObjectTagging:
         It will perform all prerequisite test steps if any.
         """
         self.log = logging.getLogger(__name__)
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
+            endpoint_url=S3_CFG["s3_url"])
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(
+            endpoint_url=S3_CFG["s3_url"])
         self.object_name = "{}{}".format("objtag", time.perf_counter_ns())
         self.bucket_name = "{}{}".format("objtagbkt", time.perf_counter_ns())
-        self.folder_path = os.path.join(os.getcwd(), "tagging")
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectTagging")
         self.file_name = "{}{}".format("obj_tag", time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, self.file_name)
         if not path_exists(self.folder_path):
@@ -59,7 +62,7 @@ class TestObjectTagging:
     def teardown_method(self):
         """setup method."""
         self.log.info("STARTED:  Teardown Method")
-        S3_TEST_OBJ.delete_bucket(self.bucket_name, force=True)
+        self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
         if os.path.exists(self.file_path):
             remove_file(self.file_path)
         self.log.info("ENDED: Teardown Method")
@@ -85,17 +88,17 @@ class TestObjectTagging:
         value = kwargs.get("value", None)
         tag_count = kwargs.get("tag_count", 1)
         self.log.info("Creating a bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        resp = self.s3_test_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         create_file(file_path, mb_count)
         self.log.info(
             "Uploading an object %s to bucket %s",
             obj_name,
             bucket_name)
-        resp = S3_TEST_OBJ.put_object(bucket_name, obj_name, file_path)
+        resp = self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
         assert resp[0], resp[1]
         self.log.info("Setting tag to an object %s", obj_name)
-        resp = TAG_OBJ.set_object_tag(
+        resp = self.tag_obj.set_object_tag(
             bucket_name, obj_name, key, value, tag_count=tag_count)
         assert resp[0], resp[1]
 
@@ -119,7 +122,7 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -146,7 +149,7 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -173,18 +176,18 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved tag of an object")
         self.log.info(
             "Deleting tag of an object and verifying tag of a same object")
-        resp = TAG_OBJ.delete_object_tagging(
+        resp = self.tag_obj.delete_object_tagging(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert len(
@@ -202,7 +205,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -216,7 +219,7 @@ class TestObjectTagging:
             "Uploading an object %s to a bucket %s with tagging support",
             self.object_name,
             self.bucket_name)
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -236,7 +239,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -250,7 +253,7 @@ class TestObjectTagging:
             "Uploading an object %s to a bucket %s with tagging support",
             self.object_name,
             self.bucket_name)
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -260,7 +263,7 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -276,7 +279,7 @@ class TestObjectTagging:
         self.log.info("Verify Multipart Upload with tagging support")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -284,14 +287,14 @@ class TestObjectTagging:
             "Bucket is created with name %s",
             self.bucket_name)
         self.log.info("Creating multipart upload with tagging")
-        resp = TAG_OBJ.create_multipart_upload_with_tagging(
+        resp = self.tag_obj.create_multipart_upload_with_tagging(
             self.bucket_name,
             self.object_name,
             S3_OBJ_TST["test_9418"]["object_tag"])
         assert (resp[0]), resp[1]
         self.log.info("Created multipart upload with tagging support")
         self.log.info("Performing list multipart uploads")
-        resp = S3_MP_OBJ.list_multipart_uploads(
+        resp = self.s3_mp_obj.list_multipart_uploads(
             self.bucket_name)
         assert resp[0], resp[1]
         upload_id = resp[1]["Uploads"][0]["UploadId"]
@@ -300,7 +303,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Uploading parts to a bucket %s",
                       self.bucket_name)
-        resp = S3_MP_OBJ.upload_parts(
+        resp = self.s3_mp_obj.upload_parts(
             upload_id,
             self.bucket_name,
             self.object_name,
@@ -315,15 +318,15 @@ class TestObjectTagging:
         self.log.info(
             "Performing list parts of object %s",
             self.object_name)
-        resp = S3_MP_OBJ.list_parts(upload_id,
-                                    self.bucket_name,
-                                    self.object_name)
+        resp = self.s3_mp_obj.list_parts(upload_id,
+                                         self.bucket_name,
+                                         self.object_name)
         assert resp[0], resp[1]
         self.log.info("Performed list parts operation")
         self.log.info(
             "Performing complete multipart upload on a bucket %s",
             self.bucket_name)
-        resp = S3_MP_OBJ.complete_multipart_upload(
+        resp = self.s3_mp_obj.complete_multipart_upload(
             upload_id,
             upload_parts_list,
             self.bucket_name,
@@ -355,7 +358,7 @@ class TestObjectTagging:
         self.log.info(
             "Created a bucket, uploading an object and setting tag for object")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -375,7 +378,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -387,7 +390,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
                       self.object_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -395,7 +398,7 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Adding more than 10 tags to an existing object")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -417,7 +420,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -428,7 +431,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
                       self.object_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -436,7 +439,7 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Adding tags to an existing object with unique keys")
         try:
-            TAG_OBJ.set_duplicate_object_tags(
+            self.tag_obj.set_duplicate_object_tags(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -458,7 +461,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -469,7 +472,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
                       self.object_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -477,7 +480,7 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info(
             "Adding tags to an existing object with duplicate values")
-        resp = TAG_OBJ.set_duplicate_object_tags(
+        resp = self.tag_obj.set_duplicate_object_tags(
             self.bucket_name,
             self.object_name,
             S3_OBJ_TST["s3_object"]["key"],
@@ -487,7 +490,7 @@ class TestObjectTagging:
         self.log.info(
             "Tags are added to an existing object with duplicate values")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -516,7 +519,7 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -535,7 +538,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -546,7 +549,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
                       self.object_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -555,7 +558,7 @@ class TestObjectTagging:
         self.log.info(
             "Adding tags to an existing object whose key is greater than 128 character in length")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -587,7 +590,7 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -606,7 +609,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -617,7 +620,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object %s",
                       self.object_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -626,7 +629,7 @@ class TestObjectTagging:
         self.log.info(
             "Adding tags to an existing object whose value is greater than 512 character in length")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -657,13 +660,13 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved tag of an object")
         self.log.info("Setting object tags keys with case sensitive labels")
-        resp = TAG_OBJ.set_object_tag(
+        resp = self.tag_obj.set_object_tag(
             self.bucket_name,
             self.object_name,
             S3_OBJ_TST["test_9427"]["key2"],
@@ -671,7 +674,7 @@ class TestObjectTagging:
         assert resp[0], resp[1]
         self.log.info("Tags are set to object with case sensitive labesls")
         self.log.info("Retrieving object tags after case sensitive labels")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -698,14 +701,14 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved tag of an object")
         self.log.info(
             "Setting object tag values with case sensitive labels")
-        resp = TAG_OBJ.set_object_tag(
+        resp = self.tag_obj.set_object_tag(
             self.bucket_name,
             self.object_name,
             S3_OBJ_TST["s3_object"]["key"],
@@ -713,7 +716,7 @@ class TestObjectTagging:
         assert resp[0], resp[1]
         self.log.info("Tags are set to object with case sensitive labesls")
         self.log.info("Retrieving object tags after case sensitive labels")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -740,7 +743,7 @@ class TestObjectTagging:
             "Created a bucket, uploaded an object and tag is set for object")
         self.log.info("Retrieving tag of an object %s",
                       self.object_name)
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -759,7 +762,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -772,7 +775,7 @@ class TestObjectTagging:
             "Uploading an object %s to a bucket %s",
             self.object_name,
             self.bucket_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -786,14 +789,14 @@ class TestObjectTagging:
             self.log.info(
                 "Setting object tags with invalid key %s", each_char)
             try:
-                TAG_OBJ.set_object_tag(
+                self.tag_obj.set_object_tag(
                     self.bucket_name,
                     self.object_name,
                     invalid_key,
                     S3_OBJ_TST["test_9430"]["value"])
             except CTException as error:
                 assert S3_OBJ_TST["test_9430"]["error_message"] \
-                       in str(error.message), error.message
+                    in str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag keys having invalid special characters")
 
@@ -809,7 +812,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -822,7 +825,7 @@ class TestObjectTagging:
             "Uploading an object %s to a bucket %s",
             self.object_name,
             self.bucket_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -836,14 +839,14 @@ class TestObjectTagging:
             self.log.info(
                 "Setting object tags with invalid key %s", each_char)
             try:
-                TAG_OBJ.set_object_tag(
+                self.tag_obj.set_object_tag(
                     self.bucket_name,
                     self.object_name,
                     S3_OBJ_TST["s3_object"]["key"],
                     invalid_value)
             except CTException as error:
                 assert S3_OBJ_TST["test_9431"]["error_message"] in \
-                       str(error.message), error.message
+                    str(error.message), error.message
         self.log.info(
             "Create multiple tags with tag values having invalid special characters")
 
@@ -859,7 +862,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert self.bucket_name == resp[1], resp[1]
         self.log.info(
@@ -872,14 +875,14 @@ class TestObjectTagging:
             "Uplading an object %s to a bucket %s",
             self.object_name,
             self.bucket_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
         assert resp[0], resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Setting object tag with invalid character")
-        resp = TAG_OBJ.set_object_tag_invalid_char(
+        resp = self.tag_obj.set_object_tag_invalid_char(
             self.bucket_name,
             self.object_name,
             S3_OBJ_TST["s3_object"]["key"],
@@ -887,7 +890,7 @@ class TestObjectTagging:
         assert resp[0], resp[1]
         self.log.info("Tags with invalid character is set to object")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -907,7 +910,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -919,7 +922,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object with tagging suport to an existing bucket")
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -928,14 +931,14 @@ class TestObjectTagging:
         assert self.object_name == resp[1].key, resp[1]
         self.log.info("Object is uploaded with tagging support")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
         self.log.info("Retrieved tag of an object")
         self.log.info(
             "Uploading object tag with same name in an existing bucket")
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -944,7 +947,7 @@ class TestObjectTagging:
         assert self.object_name == resp[1].key, resp[1]
         self.log.info("Object tags with same name is uploaded")
         self.log.info("Retrieving duplicate object tags")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -963,7 +966,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -978,20 +981,20 @@ class TestObjectTagging:
             obj = "{0}{1}".format(
                 self.object_name,
                 str(each_obj))
-            resp = S3_TEST_OBJ.put_object(
+            resp = self.s3_test_obj.put_object(
                 self.bucket_name,
                 obj,
                 self.file_path)
             assert resp[0], resp[1]
         self.log.info("Objects are uploaded to an existing bucket")
         self.log.info("Performing list object operations")
-        resp = S3_TEST_OBJ.object_list(
+        resp = self.s3_test_obj.object_list(
             self.bucket_name)
         assert resp[0], resp[1]
         self.log.info("Objects are listed")
         for each_obj in resp[1]:
             self.log.info("Setting tag to an object %s", each_obj)
-            resp = TAG_OBJ.set_object_tag(
+            resp = self.tag_obj.set_object_tag(
                 self.bucket_name,
                 each_obj,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -1000,7 +1003,7 @@ class TestObjectTagging:
             assert resp[0], resp[1]
             self.log.info("Tag is set to an object %s", each_obj)
             self.log.info("Retrieving tags of an object")
-            resp = TAG_OBJ.get_object_tags(
+            resp = self.tag_obj.get_object_tags(
                 self.bucket_name, each_obj)
             assert resp[0], resp[1]
             assert len(
@@ -1020,7 +1023,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -1032,7 +1035,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object with user defined metadata and tags")
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -1043,7 +1046,7 @@ class TestObjectTagging:
         assert resp[1].key == self.object_name, resp[1]
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -1062,7 +1065,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -1074,7 +1077,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object with user defined metadata and tags")
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -1086,12 +1089,12 @@ class TestObjectTagging:
         self.log.info(
             "Object is uploaded to a bucket with user defined metadata")
         self.log.info("Retrieving tags of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
         self.log.info("Retrieving object info")
-        resp = S3_TEST_OBJ.object_info(
+        resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -1099,7 +1102,7 @@ class TestObjectTagging:
         self.log.info("Retrieved info of an object")
         self.log.info(
             "Updating user defined metadata of an existing object")
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -1108,7 +1111,7 @@ class TestObjectTagging:
         assert resp[0], resp[1]
         self.log.info("Updated user defined metadata of an existing object")
         self.log.info("Retrieving object info after updating metadata")
-        resp = S3_TEST_OBJ.object_info(
+        resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -1116,7 +1119,7 @@ class TestObjectTagging:
         self.log.info("Retrieved object info after updating metadata")
         self.log.info(
             "Retrieving tags of an object after updating metadata")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert len(resp[1]) == S3_OBJ_TST["test_9436"]["tag_len"], resp[1]
@@ -1135,7 +1138,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[1]
@@ -1147,7 +1150,7 @@ class TestObjectTagging:
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
             "Uploading an object with user defined metadata and tags")
-        resp = TAG_OBJ.put_object_with_tagging(
+        resp = self.tag_obj.put_object_with_tagging(
             self.bucket_name,
             self.object_name,
             self.file_path,
@@ -1159,7 +1162,7 @@ class TestObjectTagging:
         self.log.info(
             "Uploaded an object with user defined metadata and tags")
         self.log.info("Retrieving tag of an object")
-        resp = TAG_OBJ.get_object_tags(
+        resp = self.tag_obj.get_object_tags(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
@@ -1180,7 +1183,7 @@ class TestObjectTagging:
         self.log.info(
             "Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1194,7 +1197,7 @@ class TestObjectTagging:
             "Uploading an object %s to a bucket %s",
             self.object_name,
             self.bucket_name)
-        resp = S3_TEST_OBJ.put_object(
+        resp = self.s3_test_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
@@ -1202,7 +1205,7 @@ class TestObjectTagging:
         self.log.info("Object is uploaded to a bucket")
         self.log.info("Adding tags to an existing object")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -1223,7 +1226,7 @@ class TestObjectTagging:
         self.log.info("verify PUT object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1232,7 +1235,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Setting tag to non existing object")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -1251,7 +1254,7 @@ class TestObjectTagging:
         self.log.info("verify GET object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1260,7 +1263,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Retrieving tags from non existing object")
         try:
-            TAG_OBJ.get_object_tags(
+            self.tag_obj.get_object_tags(
                 self.bucket_name,
                 self.object_name)
         except CTException as error:
@@ -1277,7 +1280,7 @@ class TestObjectTagging:
         self.log.info("verify DELETE object tagging to non-existing object")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1286,7 +1289,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Deleting tags of non-existing object")
         try:
-            TAG_OBJ.delete_object_tagging(
+            self.tag_obj.delete_object_tagging(
                 self.bucket_name,
                 self.object_name)
         except CTException as error:
@@ -1304,7 +1307,7 @@ class TestObjectTagging:
             "Verify put object with tagging support to non-existing object")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1313,7 +1316,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Setting tags to non-existing object")
         try:
-            TAG_OBJ.set_object_tag(
+            self.tag_obj.set_object_tag(
                 self.bucket_name,
                 self.object_name,
                 S3_OBJ_TST["s3_object"]["key"],
@@ -1334,7 +1337,7 @@ class TestObjectTagging:
             "Verify get object with tagging support to non-existing object")
         self.log.info("Creating a bucket with name %s",
                       self.bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert resp[0], resp[1]
         assert self.bucket_name == resp[1], resp[1]
@@ -1343,7 +1346,7 @@ class TestObjectTagging:
             self.bucket_name)
         self.log.info("Retrieving tags from non existing object")
         try:
-            TAG_OBJ.get_object_with_tagging(
+            self.tag_obj.get_object_with_tagging(
                 self.bucket_name,
                 self.object_name)
         except CTException as error:

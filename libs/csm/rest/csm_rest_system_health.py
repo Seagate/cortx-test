@@ -459,7 +459,7 @@ class SystemHealth(RestTestLib):
         :return: bool, Response Message
         """
         health_resp = self.get_health_status(resource=resource)
-        health_dict = health_resp.json()["data"]
+        health_dict = health_resp.json()["data"][0]
         if health_dict['status'] != exp_status.lower():
             return False, f"{resource}'s health status is {health_dict['status']}"
         return True, f"{resource}'s health status is {health_dict['status']}"

@@ -20,28 +20,27 @@
 
 """S3 Account User Management delete/view s3 account, create/regenerate access key test module."""
 
+import logging
 import os
 import time
-from time import perf_counter_ns
 from multiprocessing import Process
+from time import perf_counter_ns
 
-import logging
 import pytest
-from commons.utils import assert_utils
-from commons.utils import system_utils
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import S3_CFG
-from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.cortxcli_test_lib import CSMAccountOperations
-
-S3_OBJ = s3_test_lib.S3TestLib()
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from scripts.s3_bench import s3bench
 
 
 class TestAccountUserMgmtDeleteAccountCreateAccessKey:
@@ -56,6 +55,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         2. Check cluster status, all services are running.
         """
         self.log = logging.getLogger(__name__)
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("STARTED: test setup.")
         self.parallel_ios = None
         self.account_dict = dict()
@@ -95,9 +95,9 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
                 self.parallel_ios.join()
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bkt_list = S3_OBJ.bucket_list()[1]
+        bkt_list = self.s3_obj.bucket_list()[1]
         if self.io_bucket_name in bkt_list:
-            resp = S3_OBJ.delete_bucket(self.io_bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.io_bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step cleanup resources.")
         for resource in self.resources_dict:
@@ -154,7 +154,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         self.log.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.s3_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -188,7 +188,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
                           self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
-                resp = S3_OBJ.object_list(self.io_bucket_name)
+                resp = self.s3_obj.object_list(self.io_bucket_name)
                 self.log.info(resp)
                 self.parallel_ios.join()
                 self.log.info(
@@ -295,7 +295,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23321_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-23321_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -338,7 +338,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.account_dict[self.s3acc_name1]
         self.log.info("Step 10. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23321_ios")
+            ios="Stop", log_prefix="TEST-23321_s3bench_ios")
         self.log.info(
             "Step 11. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -365,7 +365,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23322_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-23322_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having manage role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -416,7 +416,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.account_dict[self.s3acc_name1]
         self.log.info("Step 10. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23322_ios")
+            ios="Stop", log_prefix="TEST-23322_s3bench_ios")
         self.log.info(
             "Step 11. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -443,7 +443,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23323_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-23323_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having monitor role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -491,7 +491,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.account_dict[self.s3acc_name1]
         self.log.info("Step 10. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23323_ios")
+            ios="Stop", log_prefix="TEST-23323_s3bench_ios")
         self.log.info(
             "Step 11. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -518,7 +518,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23324_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-23324_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create two s3account s3acc1, s3acc2.")
         s3_test_obj1 = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -567,7 +567,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23324_ios")
+            ios="Stop", log_prefix="TEST-23324_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -594,7 +594,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23379_ios", duration="0h5m")
+            ios="Start", log_prefix="TEST-23379_s3bench_ios", duration="0h5m")
         self.log.info("Step 3. Create N number s3account.")
         account_list = self.create_n_number_s3accounts(cnt=10)
         self.log.info(
@@ -636,7 +636,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 11. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23379_ios")
+            ios="Stop", log_prefix="TEST-23379_s3bench_ios")
         self.log.info(
             "Step 12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -662,7 +662,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23380_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-23380_s3bench_ios", duration="0h1m")
         self.log.info("Step 3: create s3 accounts.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -702,7 +702,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.account_dict[self.s3acc_name1]
         self.log.info("Step 9: Stop and validate S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23380_ios")
+            ios="Stop", log_prefix="TEST-23380_s3bench_ios")
         self.log.info(
             "Step 10: Check cluster status, all services are running")
         self.check_cluster_health()
@@ -729,7 +729,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23381_ios", duration="0h5m")
+            ios="Start", log_prefix="TEST-23381_s3bench_ios", duration="0h5m")
         self.log.info("Step 3. Create N number s3account.")
         account_list = self.create_n_number_s3accounts(cnt=10)
         assert_utils.assert_equal(
@@ -753,7 +753,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23381_ios")
+            ios="Stop", log_prefix="TEST-23381_s3bench_ios")
         self.log.info(
             "Step 8. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -780,7 +780,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23382_ios", duration="0h5m")
+            ios="Start", log_prefix="TEST-23382_s3bench_ios", duration="0h5m")
         self.log.info("Step 3. Create N number s3account.")
         account_list = self.create_n_number_s3accounts(cnt=10)
         assert_utils.assert_equal(
@@ -814,7 +814,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 11. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23382_ios")
+            ios="Stop", log_prefix="TEST-23382_s3bench_ios")
         self.log.info(
             "Step 12. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -841,7 +841,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23395_ios", duration="0h5m")
+            ios="Start", log_prefix="TEST-23395_s3bench_ios", duration="0h5m")
         self.log.info(
             "Step 3. Create N number s3account with csm user having different role "
             "(admin, manage, monitor).")
@@ -875,7 +875,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23395_ios")
+            ios="Stop", log_prefix="TEST-23395_s3bench_ios")
         self.log.info(
             "Step 6. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -903,7 +903,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23396_ios", duration="0h5m")
+            ios="Start", log_prefix="TEST-23396_s3bench_ios", duration="0h5m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -938,7 +938,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         assert_utils.assert_in(self.object_name, resp[1], resp)
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23396_ios")
+            ios="Stop", log_prefix="TEST-23396_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()

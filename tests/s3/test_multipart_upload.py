@@ -32,12 +32,10 @@ from commons.utils.config_utils import read_yaml
 from commons.utils.system_utils import create_file, remove_file, run_local_cmd, path_exists
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-
-S3_TEST_OBJ = S3TestLib()
-S3_MP_TEST_OBJ = S3MultipartTestLib()
 
 MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]
 
@@ -53,12 +51,13 @@ class TestMultipartUpload:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
+        cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.aws_config_path = []
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.test_file = "mp_obj"
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "multipart_upload")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUpload")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.config_backup_path = os.path.join(
             cls.test_dir_path, "config_backup")
@@ -110,11 +109,11 @@ class TestMultipartUpload:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Teardown operations")
-        resp = S3_TEST_OBJ.bucket_list()
+        resp = self.s3_test_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith("mp-bkt")]
         if pref_list:
-            resp = S3_TEST_OBJ.delete_multiple_buckets(pref_list)
+            resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Restoring aws config file from %s to %s...",
@@ -143,18 +142,19 @@ class TestMultipartUpload:
             total_parts):
         """Create bucket, initiate multipart upload and upload parts."""
         self.log.info("Creating a bucket with name : %s", bucket_name)
-        res = S3_TEST_OBJ.create_bucket(bucket_name)
+        res = self.s3_test_obj.create_bucket(bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info("Created a bucket with name : %s", bucket_name)
         self.log.info("Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(bucket_name, object_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(
+            bucket_name, object_name)
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info(
             "Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
-        res = S3_MP_TEST_OBJ.upload_parts(
+        res = self.s3_mp_test_obj.upload_parts(
             mpu_id,
             bucket_name,
             object_name,
@@ -188,7 +188,7 @@ class TestMultipartUpload:
             mp_config["total_parts"])
         mpu_id, parts = res
         self.log.info("Listing parts of multipart upload")
-        res = S3_MP_TEST_OBJ.list_parts(
+        res = self.s3_mp_test_obj.list_parts(
             mpu_id,
             self.bucket_name,
             self.object_name)
@@ -197,13 +197,13 @@ class TestMultipartUpload:
                                   mp_config["total_parts"], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Completing multipart upload")
-        res = S3_MP_TEST_OBJ.complete_multipart_upload(
+        res = self.s3_mp_test_obj.complete_multipart_upload(
             mpu_id,
             parts,
             self.bucket_name,
             self.object_name)
         assert_utils.assert_true(res[0], res[1])
-        res = S3_TEST_OBJ.object_list(self.bucket_name)
+        res = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info(
@@ -224,12 +224,12 @@ class TestMultipartUpload:
         mpu_id, parts = res
         self.log.info("Response: %s, %s", mpu_id, parts)
         self.log.info("Aborting multipart upload")
-        res = S3_MP_TEST_OBJ.abort_multipart_upload(
+        res = self.s3_mp_test_obj.abort_multipart_upload(
             self.bucket_name,
             self.object_name,
             mpu_id)
         assert_utils.assert_true(res[0], res[1])
-        res = S3_MP_TEST_OBJ.list_multipart_uploads(
+        res = self.s3_mp_test_obj.list_multipart_uploads(
             self.bucket_name)
         assert_utils.assert_not_in(mpu_id, res[1], res[1])
         self.log.info(
@@ -251,7 +251,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -262,7 +262,7 @@ class TestMultipartUpload:
             mp_config["total_parts"],
             random_part_size=True)
         self.log.info("Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(
+        res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name, sp_file[0]["Output"])
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
@@ -285,13 +285,13 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
             "Created a bucket with name : %s", self.bucket_name)
         self.log.info("Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(
+        res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name,
             self.object_name,
             "user_id",
@@ -320,7 +320,7 @@ class TestMultipartUpload:
         mpu_id, parts = res
         self.log.info("Response: %s, %s", mpu_id, parts)
         self.log.info("Listing parts of multipart upload")
-        res = S3_MP_TEST_OBJ.list_parts(
+        res = self.s3_mp_test_obj.list_parts(
             mpu_id,
             self.bucket_name,
             self.object_name)
@@ -341,13 +341,13 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
             "Created a bucket with name : %s", self.bucket_name)
         self.log.info("Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(
+        res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name,
             self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -355,7 +355,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Listing multipart uploads")
-        res = S3_MP_TEST_OBJ.list_multipart_uploads(self.bucket_name)
+        res = self.s3_mp_test_obj.list_multipart_uploads(self.bucket_name)
         assert_utils.assert_in(mpu_id, str(res[1]), res[1])
         self.log.info(
             "Listed multipart uploads: %s",
@@ -387,7 +387,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -402,7 +402,7 @@ class TestMultipartUpload:
         assert_utils.assert_true(
             path_exists(
                 self.mp_obj_path))
-        res = S3_TEST_OBJ.object_upload(
+        res = self.s3_test_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.mp_obj_path)
@@ -496,13 +496,13 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
             "Created a bucket with name : %s", self.bucket_name)
         self.log.info("Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(
+        res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name,
             self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -511,7 +511,7 @@ class TestMultipartUpload:
             "Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
         try:
-            resp = S3_MP_TEST_OBJ.upload_parts(
+            resp = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
                 self.bucket_name,
                 self.object_name,
@@ -543,7 +543,7 @@ class TestMultipartUpload:
             mp_config["total_parts"])
         mpu_id, parts = res
         self.log.info("Listing parts of multipart upload")
-        res = S3_MP_TEST_OBJ.list_parts(
+        res = self.s3_mp_test_obj.list_parts(
             mpu_id,
             self.bucket_name,
             self.object_name)
@@ -555,7 +555,7 @@ class TestMultipartUpload:
         err_msg = mp_config["err_msg"]
         self.log.info("Completing multipart upload")
         try:
-            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = self.s3_mp_test_obj.complete_multipart_upload(
                 mpu_id,
                 parts,
                 self.bucket_name,
@@ -567,7 +567,7 @@ class TestMultipartUpload:
                 err_msg,
                 error.message,
                 error.message)
-        res = S3_TEST_OBJ.object_list(self.bucket_name)
+        res = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, res[1], res[1])
         self.log.info("Cannot complete multipart upload")
         self.log.info(
@@ -591,7 +591,7 @@ class TestMultipartUpload:
         self.log.info(
             "Multipart Upload Part numbers should be in range of 1 to 10,000")
         self.log.info("Listing parts of multipart upload")
-        res = S3_MP_TEST_OBJ.list_parts(
+        res = self.s3_mp_test_obj.list_parts(
             mpu_id,
             self.bucket_name,
             self.object_name)
@@ -622,7 +622,7 @@ class TestMultipartUpload:
             mp_config["total_parts"])
         mpu_id, parts = res
         self.log.info("Listing parts of multipart upload")
-        res = S3_MP_TEST_OBJ.list_parts(
+        res = self.s3_mp_test_obj.list_parts(
             mpu_id,
             self.bucket_name,
             self.object_name)
@@ -633,7 +633,7 @@ class TestMultipartUpload:
         self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Completing multipart upload")
         try:
-            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = self.s3_mp_test_obj.complete_multipart_upload(
                 mpu_id,
                 parts,
                 self.bucket_name,
@@ -645,7 +645,7 @@ class TestMultipartUpload:
                 MPART_CFG["test_8925"]["err_msg"],
                 error.message,
                 error.message)
-        res = S3_TEST_OBJ.object_list(self.bucket_name)
+        res = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, res[1], res[1])
         self.log.info("Cannot complete multipart upload")
         self.log.info(
@@ -661,7 +661,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -671,7 +671,7 @@ class TestMultipartUpload:
         for count in range(mp_config["total_mp_uploads"]):
             object_name = "{0}-{1}".format(self.object_name, count)
             self.log.info("Initiating multipart upload")
-            res = S3_MP_TEST_OBJ.create_multipart_upload(
+            res = self.s3_mp_test_obj.create_multipart_upload(
                 self.bucket_name,
                 object_name)
             assert_utils.assert_true(res[0], res[1])
@@ -679,7 +679,7 @@ class TestMultipartUpload:
             self.log.info(
                 "Multipart Upload initiated with mpu_id %s", mpu_id)
             self.log.info("Uploading parts into bucket")
-            res = S3_MP_TEST_OBJ.upload_parts(
+            res = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
                 self.bucket_name,
                 object_name,
@@ -690,7 +690,7 @@ class TestMultipartUpload:
             parts = res[1]
             self.log.info("Uploaded parts into bucket: %s", parts)
             self.log.info("Listing parts of multipart upload")
-            res = S3_MP_TEST_OBJ.list_parts(
+            res = self.s3_mp_test_obj.list_parts(
                 mpu_id,
                 self.bucket_name,
                 object_name)
@@ -703,13 +703,13 @@ class TestMultipartUpload:
             obj_dict[object_name] = [mpu_id, parts]
         self.log.info("Completing multipart uploads")
         for obj in obj_dict:
-            res = S3_MP_TEST_OBJ.complete_multipart_upload(
+            res = self.s3_mp_test_obj.complete_multipart_upload(
                 obj_dict[obj][0],
                 obj_dict[obj][1],
                 self.bucket_name,
                 obj)
             assert_utils.assert_true(res[0], res[1])
-            res = S3_TEST_OBJ.object_list(self.bucket_name)
+            res = self.s3_test_obj.object_list(self.bucket_name)
             assert_utils.assert_in(obj, res[1], res[1])
         self.log.info("Multipart upload completed")
         self.log.info("Create up to 1000 Multipart uploads")
@@ -724,7 +724,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -734,7 +734,7 @@ class TestMultipartUpload:
         for count in range(mp_config["total_mp_uploads"]):
             object_name = "{0}-{1}".format(self.object_name, count)
             self.log.info("Initiating multipart upload")
-            res = S3_MP_TEST_OBJ.create_multipart_upload(
+            res = self.s3_mp_test_obj.create_multipart_upload(
                 self.bucket_name,
                 object_name)
             assert_utils.assert_true(res[0], res[1])
@@ -742,7 +742,7 @@ class TestMultipartUpload:
             self.log.info(
                 "Multipart Upload initiated with mpu_id %s", mpu_id)
             self.log.info("Uploading parts into bucket")
-            res = S3_MP_TEST_OBJ.upload_parts(
+            res = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
                 self.bucket_name,
                 object_name,
@@ -753,7 +753,7 @@ class TestMultipartUpload:
             parts = res[1]
             self.log.info("Uploaded parts into bucket: %s", parts)
             self.log.info("Listing parts of multipart upload")
-            res = S3_MP_TEST_OBJ.list_parts(
+            res = self.s3_mp_test_obj.list_parts(
                 mpu_id,
                 self.bucket_name,
                 object_name)
@@ -765,7 +765,7 @@ class TestMultipartUpload:
                 res[1])
             obj_dict[object_name] = [mpu_id, parts]
             self.log.info("Listing multipart uploads")
-        res = S3_MP_TEST_OBJ.list_multipart_uploads(self.bucket_name)
+        res = self.s3_mp_test_obj.list_multipart_uploads(self.bucket_name)
         assert_utils.assert_equal(
             mp_config["max_uploads"], len(
                 res[1]['Uploads']), res[1])
@@ -801,7 +801,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -816,7 +816,7 @@ class TestMultipartUpload:
         assert_utils.assert_true(
             path_exists(
                 self.mp_obj_path))
-        res = S3_TEST_OBJ.object_upload(
+        res = self.s3_test_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.mp_obj_path)
@@ -865,7 +865,7 @@ class TestMultipartUpload:
         self.log.info(
             "Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
@@ -880,7 +880,7 @@ class TestMultipartUpload:
         assert_utils.assert_true(
             path_exists(
                 self.mp_obj_path))
-        res = S3_TEST_OBJ.object_upload(
+        res = self.s3_test_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.mp_obj_path)
@@ -914,14 +914,14 @@ class TestMultipartUpload:
         self.log.info(
             "Step 1: Creating a bucket with name : %s",
             self.bucket_name)
-        res = S3_TEST_OBJ.create_bucket(self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
             "Step 1: Created a bucket with name : %s",
             self.bucket_name)
         self.log.info("Step 2: Initiating multipart upload")
-        res = S3_MP_TEST_OBJ.create_multipart_upload(
+        res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name,
             self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -937,7 +937,7 @@ class TestMultipartUpload:
         self.log.info(
             "Step 4: Complete the multipart with input of wrong json/etag")
         try:
-            resp = S3_MP_TEST_OBJ.complete_multipart_upload(
+            resp = self.s3_mp_test_obj.complete_multipart_upload(
                 mpu_id,
                 wrong_json,
                 self.bucket_name,

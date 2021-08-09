@@ -51,6 +51,7 @@ if sys.platform in ['linux', 'linux2']:
 
 LOGGER = logging.getLogger(__name__)
 
+dns_rr_counter = 0
 
 def run_remote_cmd(
         cmd: str,
@@ -80,15 +81,19 @@ def run_remote_cmd(
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
@@ -99,6 +104,47 @@ def run_remote_cmd(
         return False, error
 
     return True, output
+
+
+def run_remote_cmd_wo_decision(
+        cmd: str,
+        hostname: str,
+        username: str,
+        password: str,
+        **kwargs) -> tuple:
+    """
+    Execute command on remote machine.
+    :return: stdout, stderr, status
+    :Need this command because motr api send output on stderr
+    """
+    LOGGER.info("Host: %s, User: %s, Password: %s", hostname, username, password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
+    client = SSHClient()
+    client.set_missing_host_key_policy(AutoAddPolicy())
+    LOGGER.debug("Command: %s", str(cmd))
+    client.connect(hostname, username=username,
+                   password=password, timeout=timeout_sec)
+    _, stdout, stderr = client.exec_command(cmd)
+    exit_status = stdout.channel.recv_exit_status()
+    if read_lines:
+        output = stdout.readlines()
+        output = [r.strip().strip("\n").strip() for r in output]
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
+        error = stderr.readlines()
+        error = [r.strip().strip("\n").strip() for r in error]
+        if error:
+            LOGGER.debug("Error: %s", str(error))
+    else:
+        output = stdout.read(read_nbytes)
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
+        error = stderr.read()
+        if error:
+            LOGGER.debug("Error: %s", str(error))
+    return output, error, exit_status
 
 
 def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
@@ -958,6 +1004,19 @@ def umount_dir(mnt_dir: str = None) -> tuple:
     return True, "Directory is unmounted"
 
 
+def get_s3_url(cfg, node_index):
+    """
+    Function to format s3 url for individual vm
+    :param cfg: config object
+    :param node_index: node index for indexing s3_dns fqdn
+    :return: dict respo with s3_url and iam_url as key
+    """
+    final_urls = dict()
+    final_urls["s3_url"] = f"https://{cfg['s3_dns'][node_index]}"
+    final_urls["iam_url"] = f"https://{cfg['s3_dns'][node_index]}:9443"
+    return final_urls
+
+
 def configure_jclient_cloud(
         source: str,
         destination: str,
@@ -1151,12 +1210,18 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
         if int(response.split(":")[1].strip()) != 0:
             return False, response
     LOGGER.info("Observed no Error count in io log.")
-    error_kws = ["with error ", "panic", "status code", "exit status 2"]
+    error_kws = [
+        "with error ",
+        "panic",
+        "status code",
+        "exit status 2",
+        "InternalError",
+        "ServiceUnavailable"]
     for error in error_kws:
         if error in ",".join(lines):
             return False, f"{error} Found in S3Bench Run."
     LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
-    remove_file(log_path)
+    # remove_file(log_path)  # Keeping logs for FA/Debugging.
     LOGGER.info("S3 parallel ios log validation completed.")
 
     return True, "S3 parallel ios completed successfully."

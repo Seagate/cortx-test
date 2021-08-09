@@ -119,6 +119,7 @@ class TestCliS3BKT:
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-10805")
     @CTFailOn(error_handler)
     def test_971_verify_delete_bucket(self):

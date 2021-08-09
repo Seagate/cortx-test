@@ -23,129 +23,145 @@ from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions, dict_style_profiles, dict_Style_Stats_input_options
-from Performance.global_functions import benchmark_config, get_dict_from_array
-from Performance.statistics.statistics_functions import fetch_configs_from_file
+    dict_style_sub_label, style_perf_captions, style_workload_captions,\
+    dict_Style_Stats_input_options, style_filters_captions, dict_button_style
+
 
 release = [
     {'label': 'LR-R1', 'value': '1'},
     {'label': 'LR-R2', 'value': '2'}
 ]
 
-bucketOps = get_dict_from_array(fetch_configs_from_file(
-    benchmark_config, 'Hsbench', 'object_size'), False)
 
 statistics_layout = Card(
-    CardBody(
-        [
-            html.P(html.U("Performance Metrics Statistics Summary"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-            html.P("Note: Each data point represents PER CLUSTER data.",  style={
-                   "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-            html.P("S3 Bench", style=style_perf_captions),
-            Markdown('''
+    CardBody([
+        html.P(html.U("Performance Metrics Statistics Summary"),
+               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+        html.P("Note: Each data point represents PER CLUSTER data.",  style={
+            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+        html.P("Run Details", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+        html.P(id="statistics_workload",
+               style=style_workload_captions),
+        html.P("S3Bench", style=style_perf_captions),
+        Markdown('''
             ___
             '''),
 
-            html.P("IOPath Performance Statistics",
-                   style=dict_style_table_caption),
-            html.P(id="statistics_s3bench_workload",
-                   style=style_workload_captions),
-            html.Div(id="statistics_s3bench_table"),
+        html.P("IOPath Performance Statistics",
+               style=dict_style_table_caption),
+        html.Div(id="statistics_s3bench_table"),
 
-            html.P("Metadata Operations Latency (captured with 1KB object)",
-                   style=dict_style_table_caption),
-            html.Div(id="statistics_metadata_table"),
+        html.P("Metadata Operations Latency (captured with 1KB object)",
+               style=dict_style_table_caption),
+        html.Div(id="statistics_metadata_table"),
 
-            html.Br(),
-            html.P("HS Bench", style=style_perf_captions),
-            Markdown('''
+        html.Br(),
+        html.P("HSBench", style=style_perf_captions),
+        Markdown('''
             ___
             '''),
-            html.P("IOPath Performance Statistics",
-                   style=dict_style_table_caption),
-            html.P(id="statistics_hsbench_workload_1",
-                   style=style_workload_captions),
-            html.Div(id="statistics_hsbench_table_1"),
-            html.P(id="statistics_hsbench_workload_2",
-                   style=style_workload_captions),
-            html.Div(id="statistics_hsbench_table_2"),
-            html.P(id="statistics_hsbench_workload_3",
-                   style=style_workload_captions),
-            html.Div(id="statistics_hsbench_table_3"),
 
-            html.P("Bucket Operations Statistics",
-                   style=dict_style_table_caption),
-            Row(
-                Dropdown(
-                    id="bucketops_dropdown",
-                    options=bucketOps,
-                    placeholder="Select object size from given dropdown to get the details.",
-                    style={'width': '500px', 'verticalAlign': 'middle', "margin-right": "15px",
-                           "margin-top": "10px", 'align-items': 'center', 'justify-content': 'center'},
-                ), justify='center'),
-            html.P(id="statistics_bucketops_workload_1",
-                   style=style_workload_captions),
-            html.Div(id="statistics_bucketops_table_1"),
-            html.P(id="statistics_bucketops_workload_2",
-                   style=style_workload_captions),
-            html.Div(id="statistics_bucketops_table_2"),
-            html.P(id="statistics_bucketops_workload_3",
-                   style=style_workload_captions),
-            html.Div(id="statistics_bucketops_table_3"),
+        html.P("IOPath Performance Statistics",
+               style=dict_style_table_caption),
+        html.Div(id="statistics_hsbench_table"),
 
-            html.Br(),
-            html.P("COS Bench", style=style_perf_captions),
-            Markdown('''
+        html.P("Bucket Operations Statistics",
+               style=dict_style_table_caption),
+        Row(
+            Dropdown(
+                id="perf_bucketops_dropdown",
+                placeholder="Select Object Size",
+                style=dict_Style_Stats_input_options
+            ), justify='center'),
+        html.Div(id="statistics_bucketops_table",
+                 style={'margin-top': '20px'}),
+
+        html.Br(),
+        html.P("COSBench", style=style_perf_captions),
+        Markdown('''
             ___
             '''),
-            html.P("IOPath Performance Statistics",
-                   style=dict_style_table_caption),
-            html.P(id="statistics_cosbench_workload_1",
-                   style=style_workload_captions),
-            html.Div(id="statistics_cosbench_table_1"),
-            html.P(id="statistics_cosbench_workload_2",
-                   style=style_workload_captions),
-            html.Div(id="statistics_cosbench_table_2"),
-            html.P(id="statistics_cosbench_workload_3",
-                   style=style_workload_captions),
-            html.Div(id="statistics_cosbench_table_3"),
-        ]
+
+        html.P("IOPath Performance Statistics",
+               style=dict_style_table_caption),
+        html.Div(id="statistics_cosbench_table"),
+    ]
     ),
     className="flex-sm-fill nav-link"
 )
 
-stats_input_options = Row(
-    [
-        Dropdown(
-            id="perf_release_dropdown",
-            options=release,
-            placeholder="Select Release",
-            style=dict_Style_Stats_input_options,
-        ),
+stats_input_options = [
+    Row(
+        [
+            html.P("Setup Configuration » ", style=style_filters_captions),
+            Dropdown(
+                id="perf_release_dropdown",
+                options=release,
+                placeholder="Select Release",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id="perf_branch_dropdown",
+                placeholder="Select Branch",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id='perf_build_dropdown',
+                placeholder="Select Build",
+                style=dict_Style_Stats_input_options,
+            ),
+            Dropdown(
+                id='perf_nodes_dropdown',
+                placeholder="Select Nodes",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_pfull_dropdown',
+                placeholder="Select Cluster % Fill",
+                style=dict_Style_Stats_input_options
+            )
+        ],
+        justify='center'
+    ),
+    Row(
+        [
+            html.P("User Configuration » ", style=style_filters_captions),
+            Dropdown(
+                id='perf_iteration_dropdown',
+                placeholder="Select Iterations",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_custom_dropdown',
+                placeholder="Select Tag",
+                style=dict_Style_Stats_input_options
+            )
+        ],
+        justify='center'
+    ),
+    Row(
+        [
+            html.P("Benchmark Configuration » ", style=style_filters_captions),
+            Dropdown(
+                id='perf_sessions_dropdown',
+                placeholder="Select Sessions",
+                style=dict_Style_Stats_input_options
+            ),
+            Dropdown(
+                id='perf_buckets_dropdown',
+                placeholder="Select Buckets",
+                style=dict_Style_Stats_input_options
+            ),
 
-        Dropdown(
-            id="perf_branch_dropdown",
-            placeholder="Select Branch",
-            style=dict_Style_Stats_input_options,
-        ),
-
-        Dropdown(
-            id='perf_build_dropdown',
-            placeholder="Select Build",
-            style=dict_Style_Stats_input_options,
-        ),
-        Dropdown(
-            id='profiles_options',
-            placeholder="Select Profile",
-            style=dict_style_profiles
-        ),
-
-        Button("Get!", id="perf_submit_button", n_clicks=0, color="success",
-               style={'height': '35px', 'margin-top': '20px'}),
-    ],
-    justify='center', style={'margin-bottom': '20px'}
-)
+            Button("Show", id="perf_submit_button", n_clicks=0, color="success",
+                   style=dict_button_style),
+        ],
+        justify='center', style={'margin-bottom': '20px'}
+    )
+]
 
 statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",

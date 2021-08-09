@@ -5,9 +5,6 @@ Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
