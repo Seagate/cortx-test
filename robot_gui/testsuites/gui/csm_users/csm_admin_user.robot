@@ -443,7 +443,7 @@ TEST-23050
     END
     Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
     wait for page or element to load  20s
-    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
+    Verify Edit Action Enabled On The Table Element  ${username}
     ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     Log To Console And Report  ${admin_users}
     Remove Values From List  ${admin_users}  ${username}

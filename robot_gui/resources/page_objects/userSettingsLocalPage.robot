@@ -166,12 +166,6 @@ Verify Absence of Admin User Section
     Should Not Contain  ${csm_tab_text}  Administrative user
     Page Should Not Contain Button  ${ADD_USER_BUTTON_ID}
 
-Verify Absence of Delete Button on CSM users
-    [Documentation]  Verify Absence of delete icon
-    Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
-    wait for page or element to load  3s  # Took time to load CSM accounts
-    Page Should Not Contain Button  ${DELETE_USER_BUTTON_ID}
-
 Verify Only Valid Password Get Added
     [Documentation]  Functionality to validate correct pawwsord
     FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
@@ -311,11 +305,6 @@ Edit S3 User Password
     ...  Click Sigin Button
     Validate CSM Login Success  ${s3_account_name}
 
-Verify that monitor user is not able to create delete csm user
-       [Documentation]  this keyword verifys that monitor user not able to edit or delete csm user
-       Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
-       Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
-
 Verify Monitor User Is Not Able To Create Csm User
        [Documentation]  this keyword verifys that monitor user not able to add new csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
@@ -436,10 +425,20 @@ Verify Clean Search operation
     Should Not Be Equal As Integers  ${length1}  ${length2}
     Should Be Equal As Integers  ${length1}  ${length3}
 
+Verify Delete Action Enabled On The Table Element
+    [Documentation]  Verify delete action enabled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Enabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
 Verify Delete Action Disabled On The Table Element
     [Documentation]  Verify delete action disbled on the table element for given user.
     [Arguments]  ${username}
     Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
+Verify Edit Action Enabled On The Table Element
+    [Documentation]  Verify edit action enabled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
 
 Verify Edit Action Disabled On The Table Element
     [Documentation]  Verify edit action disbled on the table element for given user.

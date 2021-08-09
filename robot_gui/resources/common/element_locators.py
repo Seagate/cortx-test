@@ -194,7 +194,6 @@ CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(t
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
-DELETE_USER_BUTTON_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
 CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
