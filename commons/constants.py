@@ -150,9 +150,9 @@ class Rest:
     METHOD_NOT_FOUND = 404
     SUCCESS_STATUS_FOR_POST = 201
     USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
-                " \"roles\": [\"user_role\"],\"email\":\"testmonitoruser@seagate.com\"," \
+                " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
                 "\"alert_notification\":true}"
-    MISSING_USER_DATA = "{\"username\": \"testusername\", \"roles\": [\"user_role\"]}"
+    MISSING_USER_DATA = "{\"username\": \"testusername\", \"role\": \"user_role\"}"
     CONTENT_TYPE = {'Content-Type': 'application/json'}
     BUCKET_NAME = "bucket_name"
     BUCKET = "buckets"
@@ -181,7 +181,7 @@ class Rest:
     CSM_NUM_OF_USERS_TO_CREATE = 5
     RANDOM_NUM_START = 3
     RANDOM_NUM_END = 9
-    SORT_DIR_ERROR = "{\'sort_dir\': [\'Must be one of: desc, asc.\']}"
+    SORT_DIR_ERROR = "{\'dir\': [\'Must be one of: desc, asc.\']}"
     SORT_BY_EMPTY_PARAM_ERROR_RESPONSE = {
         'error_code': '4099', 'message_id': "{'sort_by': ['Must be one of: user_id,"
                                             " username, user_type, created_time, updated_time.']}",
