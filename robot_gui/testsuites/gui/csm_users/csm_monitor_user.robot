@@ -4,12 +4,11 @@ Resource    ${RESOURCES}/resources/page_objects/alertPage.robot
 Resource    ${RESOURCES}/resources/page_objects/bucket_page.robot
 Resource    ${RESOURCES}/resources/page_objects/loginPage.robot
 Resource    ${RESOURCES}/resources/page_objects/s3accountPage.robot
+Resource    ${RESOURCES}/resources/page_objects/lyvePilotPage.robot
 Resource    ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 Resource    ${RESOURCES}/resources/page_objects/dashboardPage.robot
 Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 
-#Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}  ${username}  ${password}
-#...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -24,20 +23,6 @@ ${page_name}  MANAGE_MENU_ID
 ${url}
 ${username}
 ${password}
-
-*** Keywords ***
-
-Create and login with CSM monitor user
-    [Documentation]  This keyword is to create and login with csm monitor user
-    ${new_user_name}=  Generate New User Name
-    ${new_password}=  Generate New Password
-    Navigate To Page  ${page_name}  ${Sub_tab}
-    wait for page or element to load
-    Create New CSM User  ${new_user_name}  ${new_password}  monitor
-    Click On Confirm Button 
-    Verify New User  ${new_user_name}
-    Re-login  ${new_user_name}  ${new_password}  ${page_name}
-    [Return]  ${new_user_name}  ${new_password}
 
 *** Test Cases ***
 
@@ -74,7 +59,9 @@ TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
     Verify that monitor user is not able to create delete csm user
-    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  3
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
+    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  &{CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{users_list}
         Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
         ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}
@@ -102,6 +89,7 @@ TEST-1234
     [Documentation]  Test that monitor user cannot create, update or delete s3 accounts.
     [Tags]  Priority_High  user_role  TEST-1234
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    wait for page or element to load
     Verify Absence of Edit And Delete Button on S3account
     wait for page or element to load
     Re-login  ${username}  ${password}  ${page_name}
@@ -174,23 +162,21 @@ TEST-22768
     [Documentation]  Test that CSM user with role monitor cannot delete empty or non-empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-22768
     [Tags]  Priority_High  TEST-22768  S3_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page   CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Absence of Delete Button on S3account
-    Re-login  ${username}  ${password}  ${page_name}
+    Re-login  ${username}  ${password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete s3 account using csm user  ${S3_account_name}
-    Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
+    Navigate To Page  ADMINISTRATIVE_USER_TAB_ID
     Delete CSM User  ${new_user_name}
 
 TEST-23046
@@ -209,6 +195,8 @@ TEST-23053
     Log To Console And Report  Create Account with role: monitor
     ${monitor_user_name}  ${monitor_user_password}=  Create and login with CSM monitor user
     wait for page or element to load
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     @{admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{admin_users}
         Log To Console And Report  Verify Edit Action Disable for ${user}

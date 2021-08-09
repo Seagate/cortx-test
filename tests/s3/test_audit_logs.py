@@ -34,13 +34,11 @@ from commons.utils.config_utils import update_cfg_based_on_separator
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.errorcodes import error_handler
+from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
 from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-
-S3_OBJ = S3TestLib()
-MP_OBJ = S3MultipartTestLib()
 
 
 class TestAuditLogs:
@@ -55,6 +53,8 @@ class TestAuditLogs:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        cls.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.mp_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.rem_path = const.S3_CONFIG
         cls.lcl_path = "/tmp/s3config.yaml"
         cls.common_file = "audit_test_file.txt"
@@ -62,8 +62,7 @@ class TestAuditLogs:
         cls.section = "S3_SERVER_CONFIG"
         cls.key = "S3_AUDIT_LOGGER_POLICY"
         cls.pwd_key = "password"
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "TestAuditLogs")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAuditLogs")
         cls.common_file_path = os.path.join(cls.test_dir_path, cls.common_file)
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
         if not system_utils.path_exists(cls.test_dir_path):
@@ -123,13 +122,13 @@ class TestAuditLogs:
         This function will delete buckets and accounts created for tests.
         """
         self.log.info("STARTED: Teardown operations.")
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_obj.bucket_list()
         if resp:
             pref_list = [
                 each_bucket for each_bucket in resp[1] if each_bucket.startswith("audit")]
             if pref_list:
-                self.log.info("Deleting listed buckets: %s",  pref_list)
-            S3_OBJ.delete_multiple_buckets(pref_list)
+                self.log.info("Deleting listed buckets: %s", pref_list)
+            self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("Reverting s3config changes to default")
         val = self.old_value
         self.old_value = self.new_val
@@ -273,9 +272,9 @@ class TestAuditLogs:
                                     str(int(time.time())))
         self.log.info(
             "Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
-        res = MP_OBJ.create_multipart_upload(
+        res = self.mp_obj.create_multipart_upload(
             bucket_name, test_conf["object_name"])
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
@@ -283,17 +282,18 @@ class TestAuditLogs:
         self.log.info("Uploading parts into bucket")
         file_size = test_conf["file_size"]
         total_part = test_conf["total_parts"]
-        res = MP_OBJ.upload_parts(
+        res = self.mp_obj.upload_parts(
             mpu_id, bucket_name, test_conf["object_name"],
             file_size, total_parts=total_part,
             multipart_obj_path=self.test_file_path)
         assert_utils.assert_true(res[0], res[1])
         parts = res[1]
         self.log.info("Listing parts of multipart upload")
-        res = MP_OBJ.list_parts(mpu_id, bucket_name, test_conf["object_name"])
+        res = self.mp_obj.list_parts(
+            mpu_id, bucket_name, test_conf["object_name"])
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Completing multipart upload")
-        res = MP_OBJ.complete_multipart_upload(
+        res = self.mp_obj.complete_multipart_upload(
             mpu_id, parts, bucket_name, test_conf["object_name"])
         assert_utils.assert_true(res[0], res[1])
         if check_audit:
@@ -315,14 +315,16 @@ class TestAuditLogs:
                                     str(int(time.time())))
         self.log.info(
             "Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         resp = system_utils.create_file(
             self.test_file_path,
             test_conf["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        res = S3_OBJ.put_object(bucket_name, test_conf["object_name"],
-                                self.test_file_path)
+        res = self.s3_obj.put_object(
+            bucket_name,
+            test_conf["object_name"],
+            self.test_file_path)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
             "Step 4: Check audit logs under every s3server instance folder."
@@ -332,7 +334,7 @@ class TestAuditLogs:
         self.log.debug(result[1])
         assert_utils.assert_true(result[0], result[1])
         self.log.info("Step 5: List Objects using list-objects command")
-        res = S3_OBJ.object_list(bucket_name)
+        res = self.s3_obj.object_list(bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
             "Step 6: Check audit logs under every s3server instance folder."
@@ -342,7 +344,7 @@ class TestAuditLogs:
         self.log.debug(result[1])
         assert_utils.assert_true(result[0], result[1])
         self.log.info("Step 7: Delete Object within a bucket ")
-        res = S3_OBJ.delete_object(bucket_name, test_conf["object_name"])
+        res = self.s3_obj.delete_object(bucket_name, test_conf["object_name"])
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
             "Step 8: Check audit logs under every s3server instance folder."
@@ -364,7 +366,7 @@ class TestAuditLogs:
                                     str(int(time.time())))
         self.log.info(
             "Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info(
             "Step 4: Check audit logs under every s3server instance folder."
@@ -374,7 +376,7 @@ class TestAuditLogs:
         self.log.debug(result[1])
         assert_utils.assert_true(result[0], result[1])
         self.log.info("Step 5: List Buckets")
-        res = S3_OBJ.bucket_list()
+        res = self.s3_obj.bucket_list()
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
             "Step 6: Check audit logs under every s3server instance folder."
@@ -384,7 +386,7 @@ class TestAuditLogs:
         self.log.debug(result[1])
         assert_utils.assert_true(result[0], result[1])
         self.log.info("Step 7: Delete Bucket ")
-        res = S3_OBJ.delete_bucket(bucket_name)
+        res = self.s3_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info(
             "Step 8: Check audit logs under every s3server instance folder."
@@ -407,7 +409,7 @@ class TestAuditLogs:
         self.log.info("Step 3 : Create a bucket ")
         bucket_name = "{}{}".format(
             "audit-bkt5248", str(time.time()))
-        resp = S3_OBJ.create_bucket(bucket_name)
+        resp = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 4 : Check if audit folder gets "
@@ -570,9 +572,9 @@ class TestAuditLogs:
                                     str(int(time.time())))
         self.log.info(
             "Step 3: Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_in(bucket_name, res[1], res[1])
-        res = S3_OBJ.bucket_list()
+        res = self.s3_obj.bucket_list()
         assert_utils.assert_in(bucket_name, res[1], res[1])
         self.log.info(
             "Step 3: Created a bucket with name : %s", bucket_name)
@@ -621,14 +623,14 @@ class TestAuditLogs:
             "Step 3: Putting an %s object into %s bucket",
             obj_name,
             bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_in(bucket_name, res[1], res[1])
-        res = S3_OBJ.bucket_list()
+        res = self.s3_obj.bucket_list()
         assert_utils.assert_in(bucket_name, res[1], res[1])
         system_utils.create_file(
             self.common_file_path,
             int(2))
-        res = S3_OBJ.put_object(
+        res = self.s3_obj.put_object(
             bucket_name,
             obj_name,
             self.common_file_path)
@@ -679,17 +681,17 @@ class TestAuditLogs:
             "Step 1,2: Updated config and restarted s3 service instances.")
         self.log.info(
             "Step 3: Creating a bucket with name : %s", bucket_name)
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info(
             "Step 3: Created a bucket with name : %s", bucket_name)
         self.log.info("Step 4: List buckets")
-        res = S3_OBJ.bucket_list()
+        res = self.s3_obj.bucket_list()
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_in(bucket_name, res[1], res[1])
         self.log.info("Step 4: List bucket successful")
         self.log.info("Step 5: Delete Bucket %s", bucket_name)
-        res = S3_OBJ.delete_bucket(bucket_name)
+        res = self.s3_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Bucket deleted successfully")
         self.log.info(
@@ -723,7 +725,7 @@ class TestAuditLogs:
         bucket_name = "{}{}".format("audit-bkt5240",
                                     str(int(time.time())))
         obj_name = "audit-obj5240"
-        res = S3_OBJ.create_bucket(bucket_name)
+        res = self.s3_obj.create_bucket(bucket_name)
         assert_utils.assert_equal(res[1], bucket_name, res[1])
         self.log.info(
             "Step 1,2: Updated config and restarted s3 service instances.")
@@ -732,7 +734,7 @@ class TestAuditLogs:
         system_utils.create_file(
             self.common_file_path,
             5)
-        res = S3_OBJ.put_object(
+        res = self.s3_obj.put_object(
             bucket_name,
             obj_name,
             self.common_file_path)
@@ -740,12 +742,12 @@ class TestAuditLogs:
         self.log.info(
             "Step 3: Put an object into bucket is successful")
         self.log.info("Step 4: List objects from bucket %s", bucket_name)
-        res = S3_OBJ.object_list(bucket_name)
+        res = self.s3_obj.object_list(bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_in(obj_name, res[1], res[1])
         self.log.info("Step 4: Successfully listed object from bucket")
         self.log.info("Step 5: Delete object from bucket %s", bucket_name)
-        res = S3_OBJ.delete_object(bucket_name, obj_name)
+        res = self.s3_obj.delete_object(bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Deleted object successfully")
         self.log.info(

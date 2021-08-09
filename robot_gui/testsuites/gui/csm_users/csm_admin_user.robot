@@ -8,9 +8,6 @@ Resource   ${RESOURCES}/resources/page_objects/s3accountPage.robot
 Resource   ${RESOURCES}/resources/page_objects/settingsPage.robot
 Resource   ${RESOURCES}/resources/page_objects/userSettingsLocalPage.robot
 
-# Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-# ...  ${username}  ${password}
-# ...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -27,6 +24,8 @@ ${username}
 ${password}
 ${Download_File_Path}  /root/Downloads
 ${server_file_name}  s3server.pem
+${count}  0
+
 
 *** Test Cases ***
 
@@ -74,7 +73,7 @@ TEST-1853
     [Tags]  Priority_High  TEST-1853
     Navigate To Page  ${page_name}
     Click On Add User Button
-    Verify Create Button Must Remain disabled
+    Verify Create Button Must Remain disabled  admin
 
 TEST-1854
     [Documentation]  Test that "Password" and "confirm password" field must remain hidden while adding password to user on the User Settings
@@ -190,15 +189,15 @@ TEST-5327
     ...  Reference : https://jts.seagate.com/browse/TEST-1865
     [Tags]  Priority_High  TEST-5327
     Navigate To Page  ${page_name}
-    Verify Presence of Pagination
+    Verify Presence of Pagination on Administrative Page
 
 TEST-5328
     [Documentation]  Test that pagination bar must have 5/10/15/All rows per page option
     ...  Reference : https://jts.seagate.com/browse/TEST-5328
     [Tags]  Priority_High  TEST-5328
     Navigate To Page  ${page_name}
-    ${fetched_values}=  Read Pagination Options
-    ${actual_values}=  Create List  5  10  15  All
+    ${fetched_values}=  Read Pagination Options on Administrative Page
+    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
     Lists Should Be Equal  ${fetched_values}  ${actual_values}
 
 TEST-3583
@@ -233,15 +232,6 @@ TEST-5229
     [Tags]  Priority_High  TEST-5229
     Verify IAM User Section Not Present
 
-TEST-6338
-    [Documentation]  Test that on 'Create Local User' form, role section should never be empty
-    ...  Reference : https://jts.seagate.com/browse/TEST-6338
-    [Tags]  Priority_High  TEST-6338
-    Navigate To Page  ${page_name}
-    ${value}=  Fetch Radio Button Value
-    Should Not Be Empty  ${value}
-    Should be equal  ${value}  manage
-
 TEST-1214
     [Documentation]  Test that CSM user with admin role can view, add, or edit Settings
     ...  Reference : https://jts.seagate.com/browse/TEST-1214
@@ -261,8 +251,6 @@ TEST-18326
     [Documentation]  Test that csm Admin user is able to reset the s3 account users password through CSM GUI
     ...  Reference : https://jts.seagate.com/browse/TEST-18326
     [Tags]  Priority_High  TEST-18326  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -274,7 +262,7 @@ TEST-18326
 TEST-4871
     [Documentation]  Test that SSl certificate get uploaded on SSl certificate upload page	
     ...  Reference : https://jts.seagate.com/browse/TEST-4871
-    [Tags]  Priority_High  CFT_Test  TEST-4871
+    [Tags]  CFT_Test  TEST-4871
     ${test_id}    Set Variable    TEST-4871
     ${installation_status_init} =  Format String  not_installed
     Navigate To Page  SETTINGS_ID  SETTINGS_SSL_BUTTON_ID
@@ -286,7 +274,7 @@ TEST-4871
 TEST-9045
     [Documentation]  Test that user should able to see latest changes on settings page : SSL certificate
     ...  Reference : https://jts.seagate.com/browse/TEST-9045
-    [Tags]  Priority_High  CFT_Test  TEST-9045
+    [Tags]  CFT_Test  TEST-9045
     ${test_id}    Set Variable    TEST-9045
     ${installation_status_init} =  Format String  not_installed
     ${installation_status_success} =  Format String  installation_successful
@@ -308,7 +296,7 @@ TEST-9045
 TEST-11152
     [Documentation]  Test that IEM alerts should be generated for number of days mentioned in /etc/csm/csm.conf prior to SSL certificate expiration
     ...  Reference : https://jts.seagate.com/browse/TEST-11152
-    [Tags]  Priority_High  CFT_Test  TEST-11152
+    [Tags]  CFT_Test  TEST-11152
     SSL certificate expiration alert Verification  0
     SSL certificate expiration alert Verification  1
     SSL certificate expiration alert Verification  5
@@ -318,8 +306,6 @@ TEST-18330
     [Documentation]  Test that reset password for s3 account does not accept invalid password
     ...  Reference : https://jts.seagate.com/browse/TEST-18330
     [Tags]  Priority_High  TEST-18330  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -335,8 +321,6 @@ TEST-18332
     ...  disabled for password and confirm password does not match.
     ...  Reference : https://jts.seagate.com/browse/TEST-18332
     [Tags]  Priority_High  TEST-18332  S3_test  Smoke_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -351,8 +335,6 @@ TEST-21589
     [Documentation]  Test that CSM Admin user can delete empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21589
     [Tags]  Priority_High  TEST-21589  S3_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -362,8 +344,6 @@ TEST-21590
     [Documentation]  Test that CSM Admin user cannot delete non-empty s3 account
     ...  Reference : https://jts.seagate.com/browse/TEST-21590
     [Tags]  Priority_High  TEST-21590  S3_test
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${S3_password} =  Create S3 account
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
@@ -375,13 +355,12 @@ TEST-21590
     wait for page or element to load
     Re-login  ${username}  ${password}  MANAGE_MENU_ID
     wait for page or element to load
-    Navigate To Page    MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Check S3 Account Exists  S3_ACCOUNTS_TABLE_XPATH  ${S3_account_name}
     Verify Error Msg is Shown For Non Empty S3account delete  ${S3_account_name}
     wait for page or element to load
-    Re-login  ${S3_account_name}  ${S3_password}  MANAGE_MENU_ID
-    Navigate To Page  S3_BUCKET_TAB_ID
+    Re-login  ${S3_account_name}  ${S3_password}  S3_BUCKET_TAB_ID
     Delete Bucket  ${bucketname}
     Delete S3 Account  ${S3_account_name}  ${password}  True
 
@@ -448,13 +427,13 @@ TEST-23612
 TEST-11153
     [Documentation]  CSM GUI: Test that appropriate IEM alert is generated after SSL certificate has expired
     ...  Reference : https://jts.seagate.com/browse/TEST-11153
-    [Tags]  full    TEST-11153
+    [Tags]  TEST-11153
     SSL certificate expiration alert Verification  0
 
 TEST-23050
     [Documentation]  Test that admin user should not able to delete all users with admin role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23050
-    [Tags]  full    TEST-23050
+    [Tags]  Priority_High  TEST-23050
     Navigate To Page  ${page_name}
     FOR  ${index}  IN RANGE  3
         ${new_password}=  Generate New Password
@@ -462,6 +441,8 @@ TEST-23050
         Create New CSM User  ${new_user_name}  ${new_password}  admin
         Click On Confirm Button
     END
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
     ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     Log To Console And Report  ${admin_users}
@@ -472,11 +453,64 @@ TEST-23050
     END
     Verify Delete Action Disabled On The Table Element  ${username}
 
+TEST-23872
+    [Documentation]  Test verify default number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23872
+    [Tags]  Priority_High  TEST-23872
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    ${text}=  get text  ${CSM_PAGINATION_LIST_ICON_XPATH}
+    Should Be Equal  "${text}"  "${CSM_TEST_DEFAULT_DROPDOWN_VALUE}"
+
+TEST-23837
+    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23837
+    [Tags]  Priority_High  TEST-23837
+    Navigate To Page  ${page_name}
+    wait for page or element to load
+    ${new_password}=  Generate New Password
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}  admin
+    Click on confirm button
+    ${new_password1}=  Generate New Password
+    ${new_user_name1}=  Generate New User Name
+    Create New CSM User  ${new_user_name1}  ${new_password1}  manage
+    Click on confirm button
+    ${new_csm_user_password}=  Generate New Password
+    ${new_csm_user_name}=  Generate New User Name
+    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
+    Click on confirm button
+    Re-login  ${new_user_name}  ${new_password}  ${page_name}
+    Delete Logged In CSM User  ${new_user_name}
+    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}  False
+    Delete Logged In CSM User  ${new_user_name1}
+    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}  False
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
+    Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
+    # TODO : monitor user will be able to delte self, verify & modify tests
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_csm_user_name}
+    Verify Deleted User  {new_csm_user_name}
+    Verify Deleted User  {new_user_name1}
+    Verify Deleted User  {new_user_name}
+
+TEST-23859
+    [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23859
+    [Tags]  Priority_High  TEST-23859
+    Navigate To Page  ${page_name}
+    ${fetched_values}=  Read Pagination Options on Administrative Page
+    ${actual_values}=  Create List  5 rows  10 rows  20 rows  30 rows  50 rows  100 rows  150 rows  200 rows
+    Lists Should Be Equal  ${fetched_values}  ${actual_values}
+
 TEST-23502
     [Documentation]  Test that admin user should able to reset other users role from csm UI
     ...  Reference : https://jts.seagate.com/browse/TEST-23502
     [Tags]  Priority_High  TEST-23502
     Navigate To Page  ${page_name}
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
     FOR   ${cur_role}  IN   admin  manage  monitor
         Create account with input Role and Change Role from Admin account  ${cur_role}
     END
@@ -505,3 +539,130 @@ TEST-23500
     Navigate To Page  ${page_name}
     Verify Change User Type Radio Button Disabled  ${username}
 
+TEST-23884
+    [Documentation]  Test that user is able to navigate to last page of Administrator User Page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23884
+    [Tags]  Priority_High  TEST-23884
+    Navigate To Last Page On Administrative Users Page
+
+TEST-23882
+     [Documentation]  Test that user is able to navigate to First page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23882
+     [Tags]  Priority_High  TEST-23882
+     Navigate To First Page On Administrative Users Page
+
+TEST-23873
+     [Documentation]  Test that user is able to navigate to Every page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23873
+     [Tags]  Priority_High  TEST-23873
+     ${new_user_list}=  Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display    ${CSM_TEST_ROW_FIVE}
+     wait for page or element to load  10s
+     @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
+     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
+     FOR    ${Page}    IN    ${New_Page_list}
+          Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
+          wait for page or element to load  10s
+          Capture Page Screenshot
+     END
+     Delete Multiple CSM User  ${new_user_list}
+
+TEST-23874
+     [Documentation]  Test that user is able to navigate to Random page of Administrator User Page
+     ...  Refrence : https://jts.seagate.com/browse/TEST-23874
+     [Tags]  Priority_High  TEST-23874
+     ${new_user_list}=  Check List Of CSM User And Create New Users
+     Select The Number of Rows To Display   ${CSM_TEST_ROW_FIVE}
+     wait for page or element to load  10s
+     @{Page_list}    ${Page_count}=   Get List of Page   ${CSM_PAGINATION_PAGE_XPATH}
+     ${New_Page_list}=    Get Slice From List	${Page_list}	1
+     ${New_Page_list}=    Get Slice From List	${Page_list}	end=-1
+     ${Page}=   Evaluate  random.choice($New_Page_list)  random
+     Log To Console And Report    ${Page}
+     Navigate To The Desired Page    ${CSM_PAGINATION_PAGE_XPATH}   ${Page}
+     Delete Multiple CSM User  ${new_user_list}
+
+TEST-23611
+    [Documentation]  Test that pagination should be present for search result 
+    ...  Reference : https://jts.seagate.com/browse/TEST-23611
+    [Tags]  Priority_High  TEST-23611
+    Navigate To Page  ${page_name}
+    Verify Pagination Present on Administrative Page Search results
+
+TEST-23610
+    [Documentation]  Test that user would get blank table for unavailable search
+    ...  Reference : https://jts.seagate.com/browse/TEST-23610
+    [Tags]  Priority_High  TEST-23610
+    Navigate To Page  ${page_name}
+    Verify Blank Table on Search operation
+
+TEST-23618
+    [Documentation]  Test that all csm users should have filter and search option in csm users page
+    ...  Reference : https://jts.seagate.com/browse/TEST-23618
+    [Tags]  Priority_High  TEST-23618
+    ${new_password}=  Generate New Password
+    ${users_type}=  Create List  manage  monitor  admin
+    Navigate To Page  ${page_name}
+    FOR    ${value}    IN    @{users_type}
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Verify New User  ${new_user_name}
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
+        Validate CSM Login Success  ${new_user_name}
+        Verify Filter and Search option present
+        Re-login  ${username}  ${password}  ${page_name}
+        Delete CSM User  ${new_user_name}
+    END
+
+TEST-23616
+    [Documentation]  Test that user should able to select multiple options form the drop down.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23616
+    [Tags]  Priority_High  TEST-23616
+    ${new_password}=  Generate New Password
+    Navigate To Page  ${page_name}
+    ${new_user_name}=  Generate New User Name
+    Create New CSM User  ${new_user_name}  ${new_password}   admin
+    Click On Confirm Button
+    Select from filter  username
+    Select from filter  role
+#   TODO : revisit once EOS-23034 is fixed.
+
+TEST-23615
+    [Documentation]  Test that user should able to see role and username filter options.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23615
+    [Tags]  Priority_High  TEST-23615
+    Navigate To Page  ${page_name}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    Reload Page
+
+TEST-23614
+    [Documentation]  Test that drop down would be appear when user click on the filter option.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23614
+    [Tags]  Priority_High  TEST-23614
+    Navigate To Page  ${page_name}
+    Select from filter  role
+    wait for page or element to load
+    Reload Page
+
+TEST-23617
+    [Documentation]  Test that filter drop down should not get over the heading panel alignment.
+    ...  Reference : https://jts.seagate.com/browse/TEST-23617
+    [Tags]  Priority_High  TEST-23617
+    Navigate To Page  ${page_name}
+    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${X}}
+    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${Y}}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${X1}}
+    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${Y1}}
+    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    ...  ELSE
+    ...  Fail
+    Click Element  ${CSM_FILTER_USERNAME_SELECT_XPATH}

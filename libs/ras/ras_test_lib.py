@@ -25,6 +25,8 @@ class
 import logging
 import os
 import time
+import re
+import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
@@ -463,7 +465,7 @@ class RASTestLib(RASCoreLib):
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.list_alert_validation.__name__, error)
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
@@ -1154,3 +1156,258 @@ class RASTestLib(RASCoreLib):
                     c_dict[f"srvnode-{n}"]["ctrl_obj"] = ctrl_obj
 
         return c_dict
+
+    def get_node_drive_details(self, check_drive_count: bool = False):
+        """
+        Function to get details of the drives connected to node
+        :return: True/False, drive_name, host_num, drive_count
+        (e.g. '/dev/sda', 2, 4)
+        """
+        try:
+            filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
+            tempfile = RAS_VAL["ras_sspl_alert"]["file"]["temp_txt_file"]
+
+            cmd = common_commands.LSSCSI_CMD.format(filepath)
+            LOGGER.info(f"Running command {cmd}")
+            response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
+                                                username=self.username,
+                                                password=self.pwd,
+                                                read_lines=True, shell=False)
+            if not response[0]:
+                return response
+
+            LOGGER.info(f"Copying file from remote to local")
+            resp = self.node_utils.copy_file_to_local(remote_path=filepath,
+                                                      local_path=localpath)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Getting drive information")
+            cmd = common_commands.LINUX_STRING_CMD.format("ATA", filepath, tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Checking OS drive count")
+            cmd = common_commands.LINE_COUNT_CMD.format(tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+
+            drive_count = int(re.findall(r'\d+', resp[1])[0])
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"{drive_count} number of drives are connected to node "
+                        f"{self.host}")
+
+            if check_drive_count:
+                return resp[0], drive_count
+            else:
+                line_num = random.randint(1, drive_count)
+                LOGGER.info(f"Getting LUN number of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+
+                numeric_filter = filter(str.isdigit, resp.split(':')[0])
+                host_num = "".join(numeric_filter)
+
+                LOGGER.info(f"Getting name of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+                drive_name = resp.strip()
+                return True, drive_name, host_num, drive_count
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_node_drive_details.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(localpath):
+                os.remove(localpath)
+            if os.path.exists(tempfile):
+                os.remove(tempfile)
+            self.node_utils.remove_file(filename=filepath)
+
+    def get_raid_arrays(self) -> Tuple[bool, list]:
+        """
+        Function to get names of the raid arrays of node
+        Returns: status, list (e.g. ['md2', 'md0', 'md1'])
+        """
+        try:
+            cmd = common_commands.GET_RAID_ARRAYS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            resp = resp.decode("utf-8").split('\n')
+            arrays = list(filter(None, resp))
+            LOGGER.debug("Response: %s", resp)
+            return True, arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_arrays.__name__, error))
+            return False, error
+
+    def get_raid_array_details(self) -> Tuple[bool, dict]:
+        """
+        Function to get details of the raid arrays of node
+        Returns: status, dict (e.g. {'md2': {'state': 'Degraded', 'drives': [
+        'sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
+        """
+        try:
+            LOGGER.info("Checking state of arrays")
+            resp = self.check_raid_array_state()
+            if not resp[0]:
+                return resp
+            md_arrays = resp[1]
+            cmd = common_commands.GET_RAID_ARRAY_DETAILS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd, read_lines=True)
+            for key, value in md_arrays.items():
+                for i in resp:
+                    x = i.replace("\n", "")
+                    k = (x.split(":")[0]).strip()
+                    if key == k:
+                        v_lst = ((x.split(":")[1]).strip()).split()
+                        lst = []
+                        for v in v_lst:
+                            if (re.match("^sd[a-z0-9]*", v)) is not None:
+                                lst.append(re.match("^sd[a-z0-9]*", v).group())
+                        md_arrays[k]["drives"] = lst
+                    else:
+                        continue
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_array_details.__name__, error))
+            return False, error
+
+    def check_raid_array_state(self) -> Tuple[bool, dict]:
+        """
+        Function to get states of the raid arrays of node
+        Returns: status, dict
+        (e.g. {'md0': {'state': 'Active'}, 'md1': {'state':
+        'Active'}, 'md2': {'state': 'Degraded'}})
+        """
+        try:
+            md_arrays = {}
+            LOGGER.info("Getting raid array names")
+            resp = self.get_raid_arrays()
+            if not resp[0]:
+                return resp
+            arrays = resp[1]
+            for ar in arrays:
+                md_arrays[ar] = {}
+                cmd = common_commands.RAID_ARRAY_STATE_CMD.format(ar)
+                resp = self.node_utils.execute_cmd(cmd=cmd)
+                state = resp.decode('utf-8').split('\n')[0]
+                if state != '0':
+                    LOGGER.info("Array %s is in degraded state", ar)
+                    md_arrays[ar]["state"] = "Degraded"
+                else:
+                    md_arrays[ar]["state"] = "Active"
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.check_raid_array_state.__name__, error))
+            return False, error
+
+    def get_drive_partition_details(self, filepath: str, drive: str) -> \
+            Tuple[bool, list]:
+        """
+        Function to get raid drive partitions of drive
+        Returns: status, list (e.g. ['/dev/sda1', '/dev/sda3'])
+        """
+        try:
+            local_path = filepath
+            cmd = common_commands.FDISK_RAID_PARTITION_CMD.format(drive,
+                                                                  filepath)
+            LOGGER.info("Running command %s", cmd)
+            self.node_utils.execute_cmd(cmd=cmd)
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.copy_file_to_local(filepath, local_path)
+            LOGGER.info("Extract Linux RAID partitions of drive %s", drive)
+            f = open(local_path, 'r')
+            resp = (f.read()).split('\n')
+            resp = list(filter(None, resp))
+            raid_parts = []
+            for i in resp:
+                if re.search("^[0-9]", i) is not None:
+                    d_name = drive + i
+                    raid_parts.append(d_name)
+                else:
+                    raid_parts = resp
+                    break
+
+            LOGGER.debug("Response: %s", raid_parts)
+            return True, raid_parts
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_partition_details.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.remove_file(filename=filepath)
+
+    def get_drive_by_hostnum(self, hostnum: str) -> Tuple[bool, str]:
+        """
+        Function to get drive name by its host number
+        Returns: status, str (e.g. '/dev/sda1')
+        """
+        try:
+            cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            drive_name = resp.decode('utf-8').replace('\n', '')
+            return True, drive_name
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_by_hostnum.__name__, error))
+            return False, error
+
+    def add_raid_partitions(self, alert_lib_obj, alert_type, raid_parts: list,
+                            md_arrays: dict) -> Tuple[bool, dict]:
+        """
+        Function to add partitions of drive in raid array
+        Returns: status, dict (e.g.
+        {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
+        """
+        try:
+            for part in raid_parts:
+                for k, v in md_arrays.items():
+                    if part.split("/")[-1] in v["drives"]:
+                        resp = alert_lib_obj.generate_alert(
+                            alert_type.RAID_ADD_DISK_ALERT,
+                            input_parameters={
+                                "operation": "add_disk",
+                                "md_device": f"/dev/{k}",
+                                "disk": part})
+                    else:
+                        for drv in v["drives"]:
+                            if re.search("[0-9]*$", drv).group() == \
+                                    re.search("[0-9]*$", part.split("/")[-1]).group():
+                                resp = alert_lib_obj.generate_alert(
+                                    alert_type.RAID_ADD_DISK_ALERT,
+                                    input_parameters={
+                                        "operation": "add_disk",
+                                        "md_device": f"/dev/{k}",
+                                        "disk": part})
+            LOGGER.info("Getting new RAID array details of node %s",
+                        self.host)
+            resp = self.get_raid_array_details()
+            if not resp[0]:
+                return resp
+            new_md_arrays = resp[1]
+            return True, new_md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.add_raid_partitions.__name__, error))
+            return False, error

@@ -9,7 +9,7 @@ Variables  ${RESOURCES}/resources/common/element_locators.py
 
 Click AlertPage Image
     [Documentation]  click on bell icon to open Alert page
-    Click Element    ${ALERT_IMAGE_2_ID}
+    Click Element    ${ALERT_IMAGE_XPATH}
 
 Click AlertPageDashboard Image
     [Documentation]  On Dashboard page, click on '+' image from Alert section to open Alert page
@@ -113,6 +113,8 @@ Verify Presence SSL certificate expires alert
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -139,6 +141,8 @@ Fail if alert already exists in New alerts tab
     Log To Console And Report  ${description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -154,6 +158,8 @@ Print alert table
     [Documentation]  Verify Presence of any alert with description
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -167,6 +173,8 @@ Check if alert exists in New alerts tab
     Log To Console And Report  ${description}
     wait for page or element to load  2s
     Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -293,6 +301,8 @@ Fail if New alerts exist SW Service
     Log To Console And Report  ${Description3}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -324,6 +334,8 @@ Verify failed alerts exist SW Service
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -346,6 +358,8 @@ Verify inactive alerts exist SW Service
     ${Description} =  Set Variable  ${servicename}.service in inactive state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -370,6 +384,8 @@ Verify deactivating alerts exist SW Service
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -392,6 +408,8 @@ Verify and Acknowledge failed resolved alerts exist SW Service
     ${Description} =  Set Variable  ${servicename} in failed state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -419,6 +437,8 @@ Verify and Acknowledge inactive resolved alerts exist SW Service
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
     FOR    ${item}     IN      @{alert_table_row_data}
@@ -444,6 +464,8 @@ Verify and Acknowledge deactivating resolved alerts exist SW Service
     ${Description} =  Set Variable  ${servicename} in deactivating state.
     Log To Console And Report  ${Description}
     Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -482,7 +504,6 @@ Acknowledge if Active alerts exist
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
         ...  AND  Acknowledge alert  ${description}
-        ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
     END
 
@@ -492,6 +513,8 @@ Acknowledge if New alerts exist
     ${found}=  Set Variable  False
     Log To Console And Report  ${description}
     Click AlertPage Image
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click NewAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     Capture Page Screenshot
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
@@ -503,7 +526,6 @@ Acknowledge if New alerts exist
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
         ...  AND  Acknowledge alert  ${description}
-        ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
     END
 

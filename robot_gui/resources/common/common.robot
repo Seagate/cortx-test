@@ -36,7 +36,6 @@ Read Table Data
     [Arguments]  ${table_element}
     @{table_data}=    Create List
     @{table_elements}=  Get WebElements  ${table_element}
-    Log To Console And Report  ${table_element}
     sleep  2s
     FOR  ${elements}  IN  @{table_elements}
             ${text}=    Get Text    ${elements}
@@ -76,9 +75,12 @@ Action On The Table Element
     Log To Console And Report   ${Element_for_action}
     ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
     Log To Console And Report   ${Action_element}
-    ${table_elements}=  Get WebElement  ${Action_element}
+    ${element}=  Get WebElement  ${Action_element}
+    Scroll Element Into View  ${element}
+    wait until element is visible    ${element}     timeout=10
+    Set Focus To Element  ${element}
     sleep  2s
-    click element   ${table_elements}
+    click element   ${element}
     sleep  2s
 
 Verify Action Disabled On The Table Element
@@ -97,6 +99,11 @@ Verify Action Enabled On The Table Element
     Log To Console And Report   ${Element_for_action}
     ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
     Log To Console And Report   ${Action_element}
+    ${element}=  Get WebElement  ${Action_element}
+    Scroll Element Into View  ${element}
+    wait until element is visible    ${element}     timeout=10
+    Set Focus To Element  ${element}
+    Element Should Be Enabled  ${element}
     Element Should Be Visible  ${Action_element}
 
 Generate New User Name

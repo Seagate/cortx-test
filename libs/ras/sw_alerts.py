@@ -26,9 +26,9 @@ import os
 import time
 from collections import OrderedDict
 from commons import commands
+from commons import constants as const
 from libs.ras.ras_core_lib import RASCoreLib
 from config import RAS_VAL
-from commons import constants as const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -471,6 +471,41 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Actual Threshold value %s", resp)
         return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
 
+    def gen_cpu_usage_fault_thres_restart_node(self, delta_cpu_usage):
+        """Creates CPU faults
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_thresh_restart_node(self, cpu_usage_thresh):
+        """Resolves CPU faults
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
     def gen_mem_usage_fault(self, delta_mem_usage):
         """Creates memory faults
 
@@ -562,6 +597,20 @@ class SoftwareAlert(RASCoreLib):
             result = False
         return result
 
+    def restart_node(self):
+        """Restart node
+        """
+        LOGGER.info("Restarting Node")
+        resp = self.health_obj.reboot_node()
+        if resp:
+            resp = self.health_obj.check_node_health()
+            LOGGER.info("response: %s", resp)
+            result = resp[0]
+        else:
+            result = False
+            LOGGER.error("Node is not Up and healthy")
+        return result
+
     def gen_cpu_fault(self, faulty_cpu_id: list):
         """Generate CPU faults
 
@@ -651,3 +700,184 @@ class SoftwareAlert(RASCoreLib):
         resp = self.node_utils.execute_cmd(cmd=cmd)
         LOGGER.debug("%s response : %s", cmd, resp)
         return resp
+
+    def get_available_memory_usage(self):
+        """Find the available memory usage
+
+        :return [str]: Available memory usage(GB)
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_AVAIL_MEMORY).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_AVAIL_MEMORY, resp)
+        memory = int(resp) / (1024 ** 3)
+        LOGGER.info("Available memory usage : %s", memory)
+        return memory
+
+    def install_tool(self, tool_name: str):
+        """Installing specific tool
+
+        :return [str]: Response from tool
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_INSTALL_TOOL.format(tool_name), inputs="yes").decode('utf-8')
+        LOGGER.debug("%s Response : %s", commands.CMD_INSTALL_TOOL.format(tool_name), resp)
+        return resp
+
+    def increase_memory(self, vm_count: int, memory_size: str, timespan: str):
+        """Increasing memory
+        :param vm_count: Count of the VM
+        :param memory_size: Malloc per vm worker(e.g. : 128MB, 1GB)
+        :param timespan: Timeout value
+        :return [str]: Response from stress command
+        """
+        cmd = commands.CMD_INCREASE_MEMORY.format(vm_count, memory_size, timespan)
+        resp = self.node_utils.host_obj.exec_command(cmd)
+        LOGGER.debug("%s response : %s",cmd, resp)
+        return resp
+
+    def check_memory_utilization(self):
+        """Check memory utilization
+        :return [str]: Response from command
+        """
+        resp = self.node_utils.execute_cmd\
+            (cmd=commands.CMD_MEMORY_UTILIZATION).decode('utf-8')
+        LOGGER.debug("%s response : %s", commands.CMD_MEMORY_UTILIZATION, resp)
+        return resp
+
+    def gen_disk_usage_fault_with_persistence_cache(self, delta_disk_usage):
+        """Creates disk faults with persistence cache (service disable/enable)
+
+        :param delta_disk_usage: Delta to be added to disk usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching disk usage from server node")
+        status, disk_usage = self.node_utils.disk_usage_python_interpreter_cmd(
+            dir_path="/", field_val=3)
+        if not status:
+            return False, "Unable to read disk usage"
+        LOGGER.info("Current disk usage of server is %s", disk_usage)
+        disk_usage_thresh = float("{:.1f}".format(sum([float(disk_usage), delta_disk_usage])))
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def resolv_disk_usage_fault_with_persistence_cache(self, disk_usage_thresh):
+        """Resolves disk faults with persistence cache (service disable/enable)
+
+        :param disk_usage_thresh: Value of the disk threshold to be set.
+        :return [type]: True, error message
+        """
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def gen_cpu_usage_fault_with_persistence_cache(self, delta_cpu_usage):
+        """Creates CPU faults with persistence cache (service disable/enable)
+
+        :param delta_cpu_usage: Delta to be added to CPU usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching CPU usage from server node")
+        cpu_usage = self.health_obj.get_cpu_usage()
+        LOGGER.info("Current cpu usage of server node %s is %s", self.host, cpu_usage)
+        cpu_usage_thresh = float("{:.1f}".format(sum([cpu_usage, delta_cpu_usage])))
+        LOGGER.info("Setting new value of cpu_usage_threshold %s", cpu_usage_thresh)
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def resolv_cpu_usage_fault_with_persistence_cache(self, cpu_usage_thresh):
+        """Resolves CPU faults with persistence cache (service disable/enable)
+
+        :param cpu_usage_thresh: CPU thresold value to restore the CPU fault
+        :return [type]: True, error message
+        """
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_USAGE": cpu_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_CPU_USAGE)
+        LOGGER.info("Expected Threshold value %s", cpu_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(cpu_usage_thresh), "CPU usage threshold is not set as expected."
+
+    def gen_mem_usage_fault_with_persistence_cache(self, delta_mem_usage):
+        """Creates memory faults with persistence cache (service disable/enable)
+
+        :param delta_mem_usage: Delta to be added to memory usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching memory usage from server node")
+        mem_usage = self.health_obj.get_memory_usage()
+        LOGGER.info("Current memory usage of server is %s", mem_usage)
+        mem_usage_thresh = float("{:.1f}".format(sum([mem_usage, delta_mem_usage])))
+        LOGGER.info("Setting new value of host_memory_usage_threshold to %s", mem_usage_thresh)
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def resolv_mem_usage_fault_with_persistence_cache(self, mem_usage_thresh):
+        """Resolves memory faults with persistent cache (service disable/enable)
+
+        :param mem_usage_thresh: Value to the memory usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.disable_sspl()
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.enable_sspl()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def enable_sspl(self):
+        """Enabling sspl service
+        """
+        LOGGER.info("Enabling sspl service")
+        resp = self.health_obj.enable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        time.sleep(RAS_VAL["ras_sspl_alert"]["sspl_timeout"])
+
+        result = True
+
+        return result
+
+    def disable_sspl(self):
+        """Disable sspl service
+        """
+        LOGGER.info("Disabling sspl service")
+        resp = self.health_obj.disable_pcs_resource(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+        LOGGER.info("sspl service is disabled successfully")
+        result = True
+
+        return result
