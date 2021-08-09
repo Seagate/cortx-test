@@ -113,6 +113,8 @@ def parse_args():
                         default='', help="db_user")
     parser.add_argument("-dp", "--db_pass", type=str,
                         default='', help="db_pass")
+    parser.add_argument("-dp", "--data_ip", type=str,
+                        default='', help="data_ip")
     return parser.parse_args()
 
 
@@ -140,12 +142,52 @@ def initialize_loghandler(log) -> None:
     cortxlogging.set_log_handlers(log, name, mode='w')
 
 
-def run_tesrunner_cmd(args, todo=False):
+def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
     """Form a testrunner command for execution.
     python3 -u testrunner.py -te=$test_exe -tp=$tp_id -tg=${Target_Node}
      -b=${Build} -t=${Build_Branch} -d=${DB_Update} -p=${Process_Cnt_Parallel_Exe}
       --force_serial_run ${Sequential_Execution}
     """
+    if attempts > 1:
+        # do preboarding/onboarding, aws configure and s3 account creation on client.
+        preboarding_cmd = ['python3.7', '-m', 'unittest',
+                           'scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding']
+        onboarding_cmd = ['python3.7', '-m', 'unittest',
+                          'scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding']
+        run_cmd(preboarding_cmd)
+        run_cmd(onboarding_cmd)
+
+        username = os.getenv('ADMIN_USR')
+        password = os.getenv('ADMIN_PWD')
+        account_name = 'dadmin'
+        account_email = 'dadmin@seagate.com'
+        acc_creation_cmd = ['python3.7', 'scripts/s3_tools/create_s3_account.py'] + \
+                           ['--mgmt_vip=' + str(m_vip)] + \
+                           ["--username=" + str(username)] + \
+                           ["--password=" + str(password)] + \
+                           ["--account_name=" + account_name] + \
+                           ["--account_email=" + account_email] + \
+                           ["--account_password=" + 'Seagate@1']
+        run_cmd(acc_creation_cmd)
+
+        credentials_file = "s3acc_secrets"
+        if os.path.exists(credentials_file):
+            credentials = ''
+            with open(credentials_file) as fp:
+                lines = fp.readlines()
+                for line in lines:
+                    credentials = line
+                    break
+            credentials_list = credentials.split(" ")
+            access = credentials_list[0]
+            secret = credentials_list[1]
+            s3_tool_config_cmd = ["make", "all", "--makefile=scripts/s3_tools/Makefile",
+                                  "ACCESS="+access, "SECRET="+secret]
+            LOGGER.debug(s3_tool_config_cmd)
+            run_cmd(s3_tool_config_cmd)
+        else:
+            return True
+
     cwd = os.getcwd()
     cmd_line = ['python3.7', '-u', cwd + "/" + 'testrunner.py']
     _env = os.environ.copy()
@@ -172,14 +214,12 @@ def run_tesrunner_cmd(args, todo=False):
 
     if todo:
         args.test_type = ['TODO']
-        cmd_line = cmd_line + ["--test_type=" + args.test_type]
+        cmd_line = cmd_line + ["--test_type=" + str(args.test_type)]
 
     cmd_line = cmd_line + ['--build=' + args.build, '--build_type=' + args.build_type]
 
     LOGGER.debug('Running pytest command %s', cmd_line)
-    prc = subprocess.Popen(cmd_line, env=_env)
-    prc.communicate()
-    rc = prc.returncode
+    rc = run_cmd(cmd_line)
     return rc
 
 
@@ -197,9 +237,7 @@ def revert_vms(args, vm_list):
         cmd_line = cmd_line + ["-p=" + str(args.vm_pass)]
     for vm_name in vm_machines:
         cmd_line = cmd_line + ["-v=" + str(vm_name)]
-        prc = subprocess.Popen(cmd_line, env=_env)
-        prc.communicate()
-        rc = prc.returncode
+        rc = run_cmd(cmd_line)
         return rc
 
 
@@ -210,10 +248,12 @@ def run_cmd(cmd):
     :return: command output
     :rtype: string
     """
+    _env = os.environ.copy()
     print("Executing command: {}".format(cmd))
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    result = str(proc.communicate())
-    return result
+    proc = subprocess.Popen(cmd, env=_env)
+    proc.communicate()
+    rc = proc.returncode
+    return rc
 
 
 def trigger_deployment(args, cluster_ip, retries=3):
@@ -224,23 +264,28 @@ def trigger_deployment(args, cluster_ip, retries=3):
     while retries > 0:
         vm_machines = args.hosts.split(',')
         res_status = revert_vms(args, vm_machines)
-        if not res_status:
+        if res_status:
             return False
 
         parameters = dict()
+        suffix = 'colo.seagate.com'
+        hosts = list()
+        for host in vm_machines:
+            hosts.append('.'.join([host.strip(), suffix]))
+
         if len(vm_machines) == 1:
             LOGGER.info("1N deployment job will be triggered")
             job_name = JOB_DEPLOY_1N
             parameters['CORTX_BUILD'] = args.build_path
-            parameters['NODE1'] = vm_machines[0]
+            parameters['NODE1'] = hosts[0]
             parameters['NODE_PASS'] = args.node_pass
         elif len(vm_machines) == 3:
             job_name = JOB_DEPLOY_3N
             LOGGER.info("3N deployment job will be triggered")
             parameters['CORTX_BUILD'] = args.build_path
-            parameters['NODE1'] = vm_machines[0]
-            parameters['NODE2'] = vm_machines[1]
-            parameters['NODE3'] = vm_machines[2]
+            parameters['NODE1'] = hosts[0]
+            parameters['NODE2'] = hosts[1]
+            parameters['NODE3'] = hosts[2]
             parameters['NODE_PASS'] = args.node_pass
             parameters['NODE_MGMT_VIP'] = cluster_ip
         token = args.token
@@ -311,10 +356,6 @@ def single_node_server_changes(hostname, username, password, mg_ip):
 def configure_haproxy_lb(hostname, username, password, mg_ip):
     """
     Configure haproxy as Load Balancer on server
-    :param list hostname: hostnames of all the nodes
-    :param str username: username of nodes
-    :param str password: password of nodes
-    :return: None
     """
     server_haproxy_cfg = CONFIG['default']['haproxy_config']
     local_haproxy_cfg = CONFIG['default']['tmp_haproxy_config']
@@ -354,7 +395,7 @@ def configure_haproxy_lb(hostname, username, password, mg_ip):
         single_node_server_changes(hostname, username, password, mg_ip)
 
 
-def setup_client(args, hosts, cluster_ip):
+def setup_client(args, hosts, data_ip):
     """
     Perform client settings
     """
@@ -366,8 +407,8 @@ def setup_client(args, hosts, cluster_ip):
         system_utils.run_local_cmd(cmd="rm -f {}".format(local_cert_path), flg=True)
     nd_obj_host = Node(hostname=host, username=uname, password=upasswd)
     nd_obj_host.copy_file_to_local(remote_path=remote_cert_path, local_path=local_cert_path)
-    set_s3_endpoints(cluster_ip)
-    #configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
+    set_s3_endpoints(data_ip)
+    # configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
 
 
 def update_vm_db(args):
@@ -430,7 +471,8 @@ def main(args):
                                                       args.csm_pass, args.node_pass)
     hosts = hosts_list
     cluster_ip = setup_details['csm']['mgmt_vip']
-    setup_client(args, hosts, cluster_ip)
+    data_ip = args.data_ip
+    setup_client(args, hosts, data_ip)
     te_list = args.te_tickets
     for te_num in te_list:
         te_completed = False
@@ -441,9 +483,9 @@ def main(args):
                 raise EnvironmentError('More than 5 attempts of executing tests crossed.')
 
             if attempts == 1:
-                status = run_tesrunner_cmd(args=args, todo=False)
+                status = run_tesrunner_cmd(args, attempts, cluster_ip, todo=False)
             else:
-                status = run_tesrunner_cmd(args=args, todo=True)
+                status = run_tesrunner_cmd(args, attempts, cluster_ip, todo=True)
             attempts += 1
             if status:
                 ret = trigger_deployment(args, cluster_ip, retries=3)
