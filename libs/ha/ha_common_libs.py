@@ -184,10 +184,10 @@ class HALibs:
             sys_obj.close_connection(set_session_obj_none=True)
 
     def polling_host(self,
-            max_timeout: int,
-            host: str,
-            exp_resp: bool,
-            bmc_obj):
+                     max_timeout: int,
+                     host: str,
+                     exp_resp: bool,
+                     bmc_obj):
         """
         Helper function to poll for host ping response.
         :param max_timeout: Max timeout allowed for expected response from ping
@@ -220,11 +220,11 @@ class HALibs:
                 else:
                     exp_state = pw_state == 'down'
             else:
-                resp = bmc_obj.bmc_node_power_status(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd)
+                out = bmc_obj.bmc_node_power_status(self.bmc_user, self.bmc_pwd)
                 if exp_resp:
-                    exp_state = "on" in resp[0]
+                    exp_state = "on" in out
                 else:
-                    exp_state = "off" in resp[0]
+                    exp_state = "off" in out
 
             if resp == exp_resp and exp_state:
                 return True
@@ -281,11 +281,12 @@ class HALibs:
             if not resp[0]:
                 raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
         else:
-            bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(), self.bmc_user, self.bmc_pwd, "on")
+            bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
 
         LOGGER.info("Check if %s is powered on.", host)
         # SSC cloud is taking time to on VM host hence timeout
-        resp = self.polling_host(max_timeout=self.t_power_on, host=host, exp_resp=True, bmc_obj=bmc_obj)
+        resp = self.polling_host(max_timeout=self.t_power_on, host=host,
+                                 exp_resp=True, bmc_obj=bmc_obj)
         return resp
 
     def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
@@ -311,8 +312,7 @@ class HALibs:
                     raise CTException(err.CLI_COMMAND_FAILURE,
                                       msg=f"VM power off command not executed")
             else:
-                bmc_obj.bmc_node_power_on_off(bmc_obj.get_bmc_ip(),
-                                              self.bmc_user, self.bmc_pwd, "off")
+                bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "off")
 
         LOGGER.info("Check if %s is powered off.", host)
         # SSC cloud is taking time to off VM host hence timeout
@@ -370,7 +370,7 @@ class HALibs:
 
         LOGGER.info("Check cluster, site and rack health status is online in REST")
         resp = self.system_health.check_csr_health_status_rest(exp_status='online')
-        if resp[0]:
+        if not resp[0]:
             raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
 
         LOGGER.info("Cluster, site and rack health status is online in CLI and REST")
@@ -378,12 +378,12 @@ class HALibs:
         LOGGER.info("Check all nodes health status is online in CLI")
         check_rem_node = ["online" for _ in range(len(srvnode_list))]
         resp = self.verify_node_health_status(sys_obj[1], status=check_rem_node)
-        if resp[0]:
+        if not resp[0]:
             raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
 
         LOGGER.info("Check all nodes health status is online in REST")
         resp = self.system_health.verify_node_health_status_rest(check_rem_node)
-        if resp[0]:
+        if not resp[0]:
             raise CTException(err.HA_BAD_NODE_HEALTH, resp[1])
 
         LOGGER.info("Node health status is online in CLI and REST")
