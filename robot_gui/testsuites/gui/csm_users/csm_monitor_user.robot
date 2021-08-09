@@ -54,16 +54,16 @@ TEST-5269
     Delete CSM User  ${new_user_name}
 
 TEST-1239
-    [Documentation]  Test that CSM user with role monitor cannot create, delete Any CSM users and can not edit user other than itself.
+    [Documentation]  Test that CSM user with role monitor cannot create, and can not delete & edit user other than itself.
     [Tags]  Priority_High  user_role  TEST-1239
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Verify that monitor user is not able to create delete csm user
+    Verify Monitor User Is Not Able To Create Csm User
     Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
     wait for page or element to load  20s
-    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  &{CSM_USERNAME_COLUMN}
+    @{users_list}=  Get Column Data  ${CSM_TABLE_COLUMN_XPATH}  ${CSM_USERNAME_COLUMN}
     FOR    ${user}    IN    @{users_list}
-        Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Disabled On The Table Element  ${user}
+        Run Keyword If  "${user}" == "${new_user_name}"  Verify Delete Action Enabled On The Table Element  ${user}
         ...  ELSE  Verify Edit Action Disabled On The Table Element  ${user}
     END
     ${changed_password}=  Generate New Password
@@ -71,17 +71,18 @@ TEST-1239
     Edit CSM User Details  ${new_user_name}  ${changed_password}  ${new_email}  ${new_password}
     Re-login  ${new_user_name}  ${changed_password}  ${page_name}
     Validate CSM Login Success  ${new_user_name}
+    Delete Logged In CSM User  ${new_user_name}
     Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_user_name}
+    Verify Deleted User  ${new_user_name}
 
 TEST-1838
-    [Documentation]  Test that monitor user can't able to delete any user
+    [Documentation]  Test that monitor user can't able to delete any S3 user
     ...  Reference : https://jts.seagate.com/browse/TEST-1838
     [Tags]  Priority_High  TEST-1838
     ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
     wait for page or element to load
-    Verify Absence of Edit And Delete Button on S3account
-    Verify Absence of Delete Button on CSM users
+    Navigate To Page  MANAGE_MENU_ID  CSM_S3_ACCOUNTS_TAB_ID
+    Verify Absence of Delete Button on S3account
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}
 
