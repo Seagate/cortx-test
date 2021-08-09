@@ -34,8 +34,8 @@ from config import CMN_CFG, HA_CFG, S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.s3.s3_test_lib import S3TestLib
-
 from libs.di.di_run_man import RunDataCheckManager
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -448,7 +448,7 @@ class HALibs:
         :param f_opt: If true, enables force start on node
         :param user: Manage user name
         :param pswd: Manage user password
-        return: (bool, Command Response)
+        :return: (bool, Command Response)
         """
         try:
             sys_obj.open_connection()
@@ -475,10 +475,12 @@ class HALibs:
         """
         This function will check hctl status and if cluster is clean
         it will get the json data and check for the service's not expected status
+        and update hctl_srvs for the same.
         :param hlt_obj: Health class object
         :param host_data: Dictionary of host data info
         :param hctl_srvs: Dictionary of not expected status service state
         :param node: Node ID which has been stopped
+        :return: (bool, Response)
         """
         # Get hctl status response for stopped node (Cluster not running)
         checknode = host_data["hostname"]
@@ -509,7 +511,7 @@ class HALibs:
                         temp_svc['service'] = svcs['name']
                         temp_svc['status'] = svcs['status']
                         hctl_srvs[node_data['name']].append(temp_svc)
-        return True
+        return True, "HCTL status updated successfully in dictionary"
 
     # pylint: disable-msg=too-many-locals
     def check_pcs_status_resp(self, node, node_obj, hlt_obj):
@@ -604,8 +606,8 @@ class HALibs:
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
                                    access_key=details['accesskey'],
                                    secret_key=details['secretkey'])
-                s3_data = {'user_name': details['user_name'], 'password': details['password']}
-                response = s3_del.delete_s3_acc_buckets(s3_data)
+                s3_user_data = {'user_name': details['user_name'], 'password': details['password']}
+                response = s3_del.delete_s3_acc_buckets(s3_user_data)
                 if not response[0]:
                     return response
 
