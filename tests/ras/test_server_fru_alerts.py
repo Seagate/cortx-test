@@ -1543,13 +1543,13 @@ class TestServerFruAlerts:
         # TODO: Start random alert generation in one thread
 
         LOGGER.info("Step 1: Shutting down node %s", self.hostname)
+        LOGGER.info("Get BMC ip of %s", self.hostname)
+        bmc_ip = self.bmc_obj.get_bmc_ip()
+        bmc_user = CMN_CFG["bmc"]["username"]
+        bmc_pwd = CMN_CFG["bmc"]["password"]
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            LOGGER.info("Get BMC ip of %s", self.hostname)
-            bmc_ip = self.bmc_obj.get_bmc_ip()
-            bmc_user = CMN_CFG["bmc"]["username"]
-            bmc_pwd = CMN_CFG["bmc"]["password"]
             res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
                                                      bmc_pwd, status)
         else:
@@ -1596,10 +1596,6 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            LOGGER.info("Get BMC ip of %s", self.hostname)
-            bmc_ip = self.bmc_obj.get_bmc_ip()
-            bmc_user = CMN_CFG["bmc"]["username"]
-            bmc_pwd = CMN_CFG["bmc"]["password"]
             res = self.bmc_obj.bmc_node_power_on_off(bmc_ip, bmc_user,
                                                      bmc_pwd, status)
         else:
