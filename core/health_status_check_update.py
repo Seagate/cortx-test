@@ -136,14 +136,14 @@ class HealthCheck:
         for setupname in target_dict:
             setup_details = target_dict[setupname]
             if setup_details["is_setup_free"] or not setup_details["in_use_for_parallel"]:
-                setup_nodes = setup_details[nodes]
-                for node in setup_nodes:
+                nodes = setup_details["nodes"]
+                for node in nodes:
                     health_result = self.check_cortx_cluster_health(node)
                     storage_result = self.check_cluster_storage(node)
                     if health_result and storage_result:
                         target_status_dict[setupname] = True
                     else:
                         target_status_dict[setupname] = False
-                        LOGGER.info("Health check failed for %s of target %s", node['host'], setupname)
+                        LOGGER.info("Health check failed for %s of %s", node['host'], setupname)
                         break
         self.update_health_status(target_status_dict)
