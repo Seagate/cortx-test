@@ -1554,19 +1554,19 @@ class TestServerFruAlerts:
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            cmd = "srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, bmc_user={2}," \
-                  " bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
-                                                     bmc_user, bmc_pwd, status)
+            cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
+                  f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
+                  f"'{bmc_pwd}', status='{status}')"
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
-            cmd = "srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, pdu_user={2}," \
-                  " pdu_pwd={3}, node_slot={4}, status={5})".\
-                format(other_node, self.pdu_details["ip"],
-                       self.pdu_details["username"],
-                       self.pdu_details["password"], self.pdu_details["port"],
-                       status)
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.pdu_details['ip']}', " \
+                  f"pdu_user='{self.pdu_details['username']}', " \
+                  f"pdu_pwd='{self.pdu_details['password']}', " \
+                  f"node_slot='{self.pdu_details['port']}', " \
+                  f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
 
@@ -1608,19 +1608,19 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            cmd = "srv{0}_bmc.bmc_node_power_on_off(bmc_ip={1}, bmc_user={2}," \
-                  " bmc_pwd={3}, status={4})".format(other_node, bmc_ip,
-                                                     bmc_user, bmc_pwd, status)
+            cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
+                  f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
+                  f"'{bmc_pwd}', status='{status}')"
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
-            cmd = "srv{0}_nd.toggle_apc_node_power(pdu_ip={1}, pdu_user={2}, " \
-                  "pdu_pwd={3}, node_slot={4}, status={5})".\
-                format(other_node, self.pdu_details["ip"],
-                       self.pdu_details["username"],
-                       self.pdu_details["password"],
-                       self.pdu_details["port"], status)
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.pdu_details['ip']}', " \
+                  f"pdu_user='{self.pdu_details['username']}', " \
+                  f"pdu_pwd='{self.pdu_details['password']}', " \
+                  f"node_slot='{self.pdu_details['port']}', " \
+                  f"status='{status}')"
             res = eval(cmd)
         LOGGER.debug(res)
         self.power_failure_flag = True
@@ -1649,7 +1649,7 @@ class TestServerFruAlerts:
         LOGGER.info("Step 7: Checking CSM REST API for alert")
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                           self.alert_types[
-                                                              "fault_resolved"],
+                                                              "resolved"],
                                                           True,
                                                           test_cfg[
                                                               "resource_type"],
