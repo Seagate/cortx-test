@@ -30,6 +30,7 @@ from commons.helpers.host import Host
 from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
+from config import RAS_VAL
 
 LOG = logging.getLogger(__name__)
 
@@ -454,6 +455,16 @@ class Health(Host):
             return False, node_health_failure
 
         return True, "cluster on {} up and running.".format(self.hostname)
+
+    def reboot_node(self):
+        """Reboot node
+        """
+        LOG.info("Restarting Node")
+        cmd = commands.REBOOT_NODE_CMD
+        resp = self.execute_cmd(cmd, read_lines=True, exc=False)
+        LOG.info("Waiting for Node to Come UP %s", resp)
+        time.sleep(RAS_VAL["ras_sspl_alert"]["reboot_delay"])
+        return True
 
     @staticmethod
     def get_node_health_xml(pcs_response: str):
