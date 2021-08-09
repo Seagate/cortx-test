@@ -74,7 +74,7 @@ Get Column Data
     @{column_data}=    Create List
     ${column_xpath}=  Format String  ${column_element}  ${column_no}
     @{table_elements}=  Get WebElements  ${column_xpath}
-    sleep  2s
+    wait for page or element to load  2s
     FOR  ${elements}  IN  @{table_elements}
             ${text}=    Get Text    ${elements}
             Append To List  ${column_data}  ${text}
@@ -84,7 +84,7 @@ Get Column Data
 Action On The Table Element
     [Documentation]  This Keyword is for performing actions like edit/delete on particular user/element in html table.
     [Arguments]  ${Element_for_action}  ${USER_NAME}
-    sleep  2s
+    wait for page or element to load  2s
     Log To Console And Report   ${Element_for_action}
     ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
     Log To Console And Report   ${Action_element}
@@ -92,14 +92,14 @@ Action On The Table Element
     Scroll Element Into View  ${element}
     wait until element is visible    ${element}     timeout=10
     Set Focus To Element  ${element}
-    sleep  2s
+    wait for page or element to load  2s
     click element   ${element}
-    sleep  2s
+    wait for page or element to load  2s
 
 Verify Action Disabled On The Table Element
     [Documentation]  This Keyword is for verifying actions e.g. edit/delete on particular user/element in html table are not present.
     [Arguments]  ${Element_for_action}  ${USER_NAME}
-    sleep  2s
+    wait for page or element to load  2s
     Log To Console And Report   ${Element_for_action}
     ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
     Log To Console And Report   ${Action_element}
@@ -108,7 +108,7 @@ Verify Action Disabled On The Table Element
 Verify Action Enabled On The Table Element
     [Documentation]  This Keyword is for verifying actions e.g. edit/delete on particular user/element in html table is present.
     [Arguments]  ${Element_for_action}  ${USER_NAME}
-    sleep  2s
+    wait for page or element to load  2s
     Log To Console And Report   ${Element_for_action}
     ${Action_element} =  Format String  ${Element_for_action}  ${USER_NAME}
     Log To Console And Report   ${Action_element}
@@ -156,7 +156,7 @@ Verify message
 Upload File
     [Documentation]  This keyword upload files to required webelement
     [Arguments]  ${element_locator}  ${file_path}
-    Sleep  5s
+    wait for page or element to load  5s
     wait until element is visible  ${${element_locator}}  timeout=60
     Choose File  id=${${element_locator}}  ${file_path}
 

@@ -72,6 +72,8 @@ TEST-1239
     Re-login  ${new_user_name}  ${changed_password}  ${page_name}
     Validate CSM Login Success  ${new_user_name}
     Delete Logged In CSM User  ${new_user_name}
+    Re-login  ${username}  ${password}  ${page_name}
+    Verify Deleted User  ${new_user_name}
 
 TEST-1838
     [Documentation]  Test that monitor user can't able to delete any S3 user
