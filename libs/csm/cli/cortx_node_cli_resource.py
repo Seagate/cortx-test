@@ -46,7 +46,8 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "command not found"]
         res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_DISCOVER,
                                            patterns=default_patterns, time_out=timeout)
-        return res[1]
+        LOGGER.info("Command completed successfully %s", res)
+        return True
 
     def resource_health_show_node_cli(self, timeout: int):
         # ToDo: Complete function
@@ -57,7 +58,8 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "command not found"]
         res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_SHOW_HEALTH,
                                            patterns=default_patterns, time_out=timeout)
-        return res[1]
+        result = CortxNodeCli.format_str_to_dict(input_str= res)
+        return result
 
     def resource_health_show_rpath_node_cli(self, timeout: int, rpath: str):
         # ToDo: Complete function
@@ -66,6 +68,8 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "exception",
             "usage:",
             "command not found"]
-        res = super().execute_cli_commands(cmd=f"resource health --show rpath {rpath}",
+        res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_SHOW_HEALTH_CONT,
                                            patterns=default_patterns, time_out=timeout)
-        return res[1]
+        result = CortxNodeCli.format_str_to_dict(input_str=res)
+
+        return result

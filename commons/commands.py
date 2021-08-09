@@ -336,6 +336,10 @@ CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoin
 #cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
 CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"
+CMD_RESOURCE_SHOW_HEALTH_CONT = "cortx_setup resource show --health --resource_type 'node>storage[0]>hw>controllers'"
+CMD_RESOURCE_SHOW_HEALTH_MEM = "cortx_setup resource show --health --resource_type 'node>compute[0]>hw>memory'"
+CMD_RESOURCE_SHOW_HEALTH_CPU = "cortx_setup resource show --health --resource_type 'node>compute[0]>hw>cpu'"
+CMD_RESOURCE_SHOW_HEALTH_FAN = "cortx_setup resource show --health --resource_type 'node>compute[0]>hw>fans'"
 
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
