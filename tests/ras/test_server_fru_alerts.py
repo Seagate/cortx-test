@@ -1783,7 +1783,7 @@ class TestServerFruAlerts:
             time.sleep(self.cm_cfg["sleep_val"])
             LOGGER.info("Step 6: Verifying alert logs for get alert ")
             alert_list = [test_cfg["resource_type"],
-                          self.alert_types["fault_resolved"], fault_res_desc]
+                          self.alert_types["resolved"], fault_res_desc]
             resp = eval("srv{}_ras.list_alert_validation({})".format(
                 other_node, alert_list))
             assert_true(resp[0], f"Step 6: Expected alert not found. Error: "
