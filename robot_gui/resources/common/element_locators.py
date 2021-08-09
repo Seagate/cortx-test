@@ -184,13 +184,16 @@ CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
 CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
 CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+CSM_FILTER_LIST_BUTTON_XPATH = '//*[@class="v-select-list v-card theme--light"]/div'
+CSM_FILTER_LIST_CONTENT_XPATH = '//*[@class="v-list-item__title"]'
+CSM_FILTER_ROLE_SELECTED_XPATH = '//div[contains(@aria-labelledby,"role-list")]'
+CSM_FILTER_USERNAME_SELECTED_XPATH = '//div[contains(@aria-labelledby,"username-list")]'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
 
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
-DELETE_USER_BUTTON_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
 CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
@@ -247,6 +250,7 @@ IAM_USER_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
 IAM_USER_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
 IAM_USER_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
 IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/td"
+IAM_USER_LIMIT_MSG_ID = "dialog-message-label"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
