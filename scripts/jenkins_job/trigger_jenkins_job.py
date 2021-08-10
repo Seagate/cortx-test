@@ -24,11 +24,12 @@ import argparse
 from commons.utils import assert_utils
 from libs.prov.provisioner import Provisioner
 from commons import constants
-JOB_DEPLOY_3N = 'VM-Deployment-R2-3Node'
-JOB_DEPLOY_1N = 'VM-Deployment-R2-1Node'
+
+JOB_DEPLOY_3N = "Partition Main Deploy 3N"
+JOB_DEPLOY_1N = 'Partition Main Deploy 1N'
 JOB_DESTROY_3N = '3-Node-VM-Destroy'
-JEN_DEPLOY_URL = "http://eos-jenkins.colo.seagate.com/job/Cortx-Deployment"
 JEN_DESTROY_URL = "http://eos-jenkins.colo.seagate.com/job/Provisioner"
+JEN_DEPLOY_URL = "http://eos-jenkins.colo.seagate.com/job/Cortx-Main/job/centos-7.8.2003"
 
 LOGGER = logging.getLogger(__name__)
 
