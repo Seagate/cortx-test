@@ -157,4 +157,3 @@ class CSMConfigsCheck:
         else:
             self._log.error("Failed to login using old password: %s", old_password)
         return result
-
