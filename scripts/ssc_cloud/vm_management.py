@@ -59,7 +59,7 @@ class VmStateManagement:
         }
 
         payload.update({"projection": {"hostnames": True, "client": True, "setupname": True,
-                                       "m_vip": True}})
+                                       "m_vip": True, "data_ip": True}})
 
         payload.update(
             {"db_username": self.db_username,
@@ -80,6 +80,7 @@ class VmStateManagement:
                 hostnames = json_response["result"][0]["hostnames"]
                 client = json_response["result"][0]["client"]
                 m_vip = json_response["result"][0]["m_vip"]
+                data_ip = json_response["result"][0]["data_ip"]
                 payload = {
                         "filter": {"setupname": setup_name},
                         "update": {"$set": {"is_setup_free": "no", "setup_in_useby": "auto"}}
@@ -96,6 +97,7 @@ class VmStateManagement:
                         setup_info["hostnames"] = hostnames
                         setup_info["client"] = client
                         setup_info["m_vip"] = m_vip
+                        setup_info["data_ip"] = data_ip
                 except requests.exceptions.RequestException as fault:
                     LOGGER.exception(str(fault))
                     LOGGER.error("Failed to do patch request on db")
