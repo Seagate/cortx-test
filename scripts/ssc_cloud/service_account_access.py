@@ -42,7 +42,8 @@ def main(args):
             with open(os.path.join(os.getcwd(), AVAILABLE_VM_CSV), 'w', newline='') as vm_info_csv:
                 writer = csv.writer(vm_info_csv)
                 writer.writerow([setup_info["setup_name"], setup_info["client"],
-                                 setup_info["hostnames"], setup_info['m_vip']])
+                                 setup_info["hostnames"], setup_info["data_ip"],
+                                 setup_info['m_vip']])
             return lock_acquired
     elif args.action == "mark_setup_free":
         lock_released = vm_state.unlock_system(args.setupname)
