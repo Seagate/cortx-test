@@ -166,6 +166,8 @@ MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
 
 # BMC commands.
+CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
+INSTALL_IPMITOOL = "yum install ipmitool -y"
 CMD_LAN_INFO = "ipmitool lan print"
 CMD_SET_LAN_IP_ADDR = "ipmitool lan set 1 ipaddr {}"  # parameter: IP address.
 MSG_SET_LAN_IP_ADDR = "Setting LAN IP Address to {}"  # parameter: IP address.
@@ -220,6 +222,7 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_NODE_OPERATION = "cluster_management node {} -i {}"
 CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
 CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
@@ -298,7 +301,7 @@ CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
-CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {} --data {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -359,3 +362,6 @@ CMD_INSTALL_TOOL = "yum install {0}"
 CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=30))'"
+CMD_GREP_PID = " ps | grep {0}"

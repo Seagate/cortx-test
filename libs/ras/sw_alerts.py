@@ -24,6 +24,7 @@ import logging
 import re
 import os
 import time
+import multiprocessing as mp
 from collections import OrderedDict
 from commons import commands
 from commons import constants as const
@@ -861,6 +862,43 @@ class SoftwareAlert(RASCoreLib):
         return float(resp) == float(
             mem_usage_thresh), "Memory usage threshold is not set as expected."
 
+    def gen_mem_usage_fault_reboot_node(self, delta_mem_usage):
+        """Creates memory faults
+
+        :param delta_mem_usage: Delta to be added to memory usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching memory usage from server node")
+        mem_usage = self.health_obj.get_memory_usage()
+        LOGGER.info("Current memory usage of server is %s", mem_usage)
+        mem_usage_thresh = float("{:.1f}".format(sum([mem_usage, delta_mem_usage])))
+        LOGGER.info("Setting new value of host_memory_usage_threshold to %s", mem_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def resolv_mem_usage_fault_reboot_node(self, mem_usage_thresh):
+        """Resolves memory faults
+
+        :param mem_usage_thresh: Value to the memory usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
     def enable_sspl(self):
         """Enabling sspl service
         """
@@ -881,3 +919,51 @@ class SoftwareAlert(RASCoreLib):
         result = True
 
         return result
+
+    def initiate_blocking_process(self):
+        """Initiate blocking process
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
+        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
+        return resp
+
+    def get_cpu_utilization(self):
+        """Get CPU utilization
+        :return [str]: Process ID
+        """
+        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
+        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
+        return resp
+
+    def kill_process(self, process_id):
+        """Kill the process ID
+        :param process_id: Process ID to be killed
+        :return [str]: Process ID
+        """
+        cmd = commands.KILL_CMD.format(process_id)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def get_command_pid(self, cmd):
+        """Fetch the process ID's
+        :param cmd: Command to get pid
+        :return [str]: Process ID
+        """
+        cmd = commands.CMD_GREP_PID.format(cmd)
+        resp = self.node_utils.execute_cmd(cmd=cmd)
+        LOGGER.debug("%s response : %s", cmd, resp)
+        return resp
+
+    def start_cpu_increase_parallel(self):
+        """
+        Start blocking process parallely
+        """
+        LOGGER.info("Start increasing in CPU usage")
+        process = mp.Process(target=self.initiate_blocking_process())
+        process.start()
+        if process.is_alive():
+            LOGGER.info("started joining")
+            process.join()
+        LOGGER.info("Started increasing in CPU usage")
