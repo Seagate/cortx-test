@@ -113,7 +113,7 @@ def parse_args():
                         default='', help="db_user")
     parser.add_argument("-dp", "--db_pass", type=str,
                         default='', help="db_pass")
-    parser.add_argument("-dp", "--data_ip", type=str,
+    parser.add_argument("-ip", "--data_ip", type=str,
                         default='', help="data_ip")
     return parser.parse_args()
 
