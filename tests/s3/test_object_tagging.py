@@ -28,7 +28,9 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config import S3_OBJ_TST, S3_CFG
+from config import S3_OBJ_TST
+from config import S3_CFG
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
 
@@ -50,7 +52,7 @@ class TestObjectTagging:
             endpoint_url=S3_CFG["s3_url"])
         self.object_name = "{}{}".format("objtag", time.perf_counter_ns())
         self.bucket_name = "{}{}".format("objtagbkt", time.perf_counter_ns())
-        self.folder_path = os.path.join(os.getcwd(), "tagging")
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectTagging")
         self.file_name = "{}{}".format("obj_tag", time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, self.file_name)
         if not path_exists(self.folder_path):
