@@ -663,7 +663,7 @@ class HALibs:
             if not del_resp[0]:
                 raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
             return True, "Di check for IOs passed successfully"
-        except (Exception, CTException) as error:
+        except (ValueError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HALibs.perform_ios_ops.__name__,
