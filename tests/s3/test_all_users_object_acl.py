@@ -19,21 +19,25 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """All Users Object Acl Test Module."""
-import logging
 import os
 import time
-
+import logging
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.utils.system_utils import make_dirs, remove_file, path_exists
+from commons.params import TEST_DATA_FOLDER
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import path_exists
 from config import S3_CFG
-from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
+from libs.s3 import s3_test_lib
+from libs.s3 import iam_test_lib
+from libs.s3 import s3_acl_test_lib
 
 
-class TestAllUsers:
+class TestAllUsersObjectAcl:
     """All Users Object ACL Testsuite."""
 
     def setup_method(self):
@@ -54,16 +58,14 @@ class TestAllUsers:
             endpoint_url=S3_CFG["iam_url"])
         self.err_msg = "Access Denied"
         self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
-        self.test_file = "{}{}".format(
-            "all_users_obj_acl", time.perf_counter_ns())
-        self.test_dir_path = os.path.join(os.getcwd(), "testdata")
+        self.test_file = "{}{}".format("all_users_obj_acl", time.perf_counter_ns())
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAllUsersObjectAcl")
         if not path_exists(self.test_dir_path):
             resp = make_dirs(self.test_dir_path)
             self.log.info("Created Directory path: %s", resp)
         self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
         self.log.info("Test file path: %s", self.test_file_path)
-        self.bucket_name = "allusersobjacl-bkt{}".format(
-            time.perf_counter_ns())
+        self.bucket_name = "allusersobjacl-bkt{}".format(time.perf_counter_ns())
         self.obj_name = "allusersobj{}".format(time.perf_counter_ns())
         self.log.info("Creating a bucket and putting an object into bucket")
         resp = self.s3_test_obj.create_bucket_put_object(
