@@ -30,8 +30,8 @@ class TestCsmLoad():
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
-        cls.log.info("[STARTED]: Setup class")
         cls.log = logging.getLogger(__name__)
+        cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
         cls.log.info("[Completed]: Setup class")
         cls.config_chk = CSMConfigsCheck()
