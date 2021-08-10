@@ -203,6 +203,8 @@ def server(*args: Any) -> None:
                             test_set, str(te_ticket), work_item.targets,
                             str(work_item.build), work_item.build_type,
                             work_item.test_plan)
+            LOGGER.info("Ticket picked up for execution is  %s", test_set)
+            print(f"Ticket picked up for execution is {test_set}")
             produce(producer, topic=topic, uuid=str(uuid4()), value=ticket,
                     on_delivery=delivery_report)
             work_item.task_done()
