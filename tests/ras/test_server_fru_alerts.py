@@ -64,7 +64,8 @@ class TestServerFruAlerts:
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
         cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
         cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
-        cls.pdu_details = CMN_CFG["nodes"][cls.test_node-1]["pdu"]
+        cls.lpdu_details = CMN_CFG["nodes"][cls.test_node-1]["lpdu"]
+        cls.rpdu_details = CMN_CFG["nodes"][cls.test_node - 1]["rpdu"]
 
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
@@ -239,12 +240,24 @@ class TestServerFruAlerts:
                 res = eval(cmd)
             else:
                 LOGGER.info("Using PDU ip")
+                LOGGER.info("Making left pdu port up")
                 cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
-                      f"pdu_ip='{self.pdu_details['ip']}', " \
-                      f"pdu_user='{self.pdu_details['username']}', " \
-                      f"pdu_pwd='{self.pdu_details['password']}', " \
-                      f"node_slot='{self.pdu_details['port']}', " \
+                      f"pdu_ip='{self.lpdu_details['ip']}', " \
+                      f"pdu_user='{self.lpdu_details['user']}', " \
+                      f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                      f"node_slot='{self.lpdu_details['port']}', " \
                       f"status='{status}')"
+                LOGGER.info("Command: %s", cmd)
+                res = eval(cmd)
+                LOGGER.debug(res)
+                LOGGER.info("Making right pdu port up")
+                cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                      f"pdu_ip='{self.rpdu_details['ip']}', " \
+                      f"pdu_user='{self.rpdu_details['user']}', " \
+                      f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                      f"node_slot='{self.rpdu_details['port']}', " \
+                      f"status='{status}')"
+                LOGGER.info("Command: %s", cmd)
                 res = eval(cmd)
             LOGGER.debug(res)
             self.power_failure_flag = False
@@ -1745,11 +1758,22 @@ class TestServerFruAlerts:
             res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
+            LOGGER.info("Making left pdu port down")
             cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
-                  f"pdu_ip='{self.pdu_details['ip']}', " \
-                  f"pdu_user='{self.pdu_details['username']}', " \
-                  f"pdu_pwd='{self.pdu_details['password']}', " \
-                  f"node_slot='{self.pdu_details['port']}', " \
+                  f"pdu_ip='{self.lpdu_details['ip']}', " \
+                  f"pdu_user='{self.lpdu_details['user']}', " \
+                  f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                  f"node_slot='{self.lpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+            LOGGER.debug(res)
+            LOGGER.info("Making right pdu port down")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.rpdu_details['ip']}', " \
+                  f"pdu_user='{self.rpdu_details['user']}', " \
+                  f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                  f"node_slot='{self.rpdu_details['port']}', " \
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
@@ -1799,12 +1823,24 @@ class TestServerFruAlerts:
             res = eval(cmd)
         else:
             LOGGER.info("Using PDU ip")
+            LOGGER.info("Making left pdu port up")
             cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
-                  f"pdu_ip='{self.pdu_details['ip']}', " \
-                  f"pdu_user='{self.pdu_details['username']}', " \
-                  f"pdu_pwd='{self.pdu_details['password']}', " \
-                  f"node_slot='{self.pdu_details['port']}', " \
+                  f"pdu_ip='{self.lpdu_details['ip']}', " \
+                  f"pdu_user='{self.lpdu_details['user']}', " \
+                  f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                  f"node_slot='{self.lpdu_details['port']}', " \
                   f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+            LOGGER.debug(res)
+            LOGGER.info("Making right pdu port up")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.rpdu_details['ip']}', " \
+                  f"pdu_user='{self.rpdu_details['user']}', " \
+                  f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                  f"node_slot='{self.rpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
         LOGGER.debug(res)
         self.power_failure_flag = False
