@@ -87,12 +87,6 @@ def parse_args(argv):
                         help="Enable async reporting to Jira and MongoDB")
     parser.add_argument("-c", "--cancel_run", type=bool, default=False,
                         help="Enable Cancel run")
-    parser.add_argument("-p", "--pause_run", type=bool, default=False,
-                        help="Pause test run")
-    parser.add_argument("-r", "--resume_run", type=bool, default=False,
-                        help="Resume from paused state")
-    parser.add_argument("-s", "--stop_on_error", type=bool, default=False,
-                        help="Resume from paused state")
     return parser.parse_args(args=argv)
 
 
