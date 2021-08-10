@@ -68,6 +68,8 @@ class AlertType(Enum, settings=NoAlias):
     NW_CABLE_FAULT_RESOLVED = 12
     OS_DISK_DISABLE = 13
     OS_DISK_ENABLE = 14
+    RAID_INTEGRITY_FAULT = 15
+    RAID_INTEGRITY_RESOLVED = 16
 
 
 class GenerateAlertLib:
@@ -188,6 +190,16 @@ class GenerateAlertLib:
                         f'input_parameters={input_parameters})'},
             14: {
                 'cmd': 'connect_os_drive',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            15: {
+                'cmd': 'create_raid_integrity_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            16: {
+                'cmd': 'resolve_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},

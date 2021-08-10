@@ -96,6 +96,7 @@ SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
+CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"

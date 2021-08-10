@@ -609,3 +609,76 @@ class TestRAIDOperations:
                     "using CSM REST API")
         LOGGER.info(
             "ENDED: TEST-5343 RAID: Add drive to array")
+
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.tags("TEST-22781")
+    @pytest.mark.skip
+    def test_22781_raid_integrity(self):
+        """
+        RAID integrity fault
+        """
+        LOGGER.info(
+            "STARTED: TEST-22781 RAID integrity")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_22781"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+
+        LOGGER.info(
+            "Step 1: Create RAID Integrity fault")
+        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT, input_parameters={'count': 5, 'timeout':60})
+        assert resp[0], resp[1]
+        self.integrity_fault = True
+        LOGGER.info("Step 1: RAID integrity fault created.")
+
+        if self.start_rmq:
+            LOGGER.info(
+                "Step 2: Checking the generated RAID fault alert on RMQ channel"
+                " logs")
+            alert_list = [test_cfg["resource_type"],
+                          "fault", resource_id]
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info(
+                "Step 2: Verified the RAID fault alert on RMQ channel logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID integrity alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            "fault",
+            False,
+            test_cfg["resource_type"])
+        assert resp, csm_error_msg
+        LOGGER.info(
+            "Step 3: Successfully verified RAID integrity alert using CSM REST API")
+
+        LOGGER.info("Step 4: Resolve RAID integrity fault")
+        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_RESOLVED))
+        assert resp[0], resp[1]
+        self.integrity_fault = False
+        LOGGER.info("Step 4: Resolved RAID integrity fault.")
+
+        if self.start_rmq:
+            LOGGER.info(
+                "Step 5: Checking the generated RAID missing alert on RMQ "
+                "channel logs")
+            alert_list = [test_cfg["resource_type"],
+                          test_cfg["alert_missing"], resource_id]
+            resp = self.ras_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info(
+                "Step 5: Verified the RAID missing alert on RMQ channel logs")
+
+        LOGGER.info("Step 6: Checking CSM REST API for RAID missing alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            test_cfg["alert_missing"],
+            False,
+            test_cfg["resource_type"])
+        assert resp, csm_error_msg
+        LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
+                    " REST API")
