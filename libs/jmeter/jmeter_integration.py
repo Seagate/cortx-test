@@ -27,7 +27,7 @@ import logging
 import re
 from commons.commands import JMX_CMD
 from commons.utils import system_utils
-from config import JMETER_CFG
+from config import JMETER_CFG, CSM_REST_CFG
 
 
 class JmeterInt():
@@ -58,7 +58,7 @@ class JmeterInt():
         :return [tuple]: boolean, Error message
         """
         content = {"test.environment.hostname": JMETER_CFG["mgmt_vip"],
-                   "test.environment.port": JMETER_CFG["port"],
+                   "test.environment.port": CSM_REST_CFG["port"],
                    "test.environment.protocol": "https",
                    "test.environment.adminuser": JMETER_CFG["csm_admin_user"]["username"],
                    "test.environment.adminpswd": JMETER_CFG["csm_admin_user"]["password"]}
