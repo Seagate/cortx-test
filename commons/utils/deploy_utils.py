@@ -38,31 +38,30 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CreateSetupJson:
+    """
+    Setup entry creation in db
+    """
 
-    def __init__(self, hosts: List):
+    def __init__(self, hosts, node_pass):
         self.hosts = hosts
         self.repr_object = dict()
-
-        self.nd_obj_host = Node(hostname=hosts[0]['hostname'], username=hosts[0]['username'],
-                                password=hosts[0]['password'])
+        self.node_pass = node_pass
+        self.nd_obj_host = Node(hostname=hosts[0], username='root',
+                                password=node_pass)
         remote_path = "/opt/seagate/cortx_configs/provisioner_cluster.json"
         local_path = os.path.join(os.getcwd() + "/provisioner_cluster.json")
         self.nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
         with open('provisioner_cluster.json') as json_file:
             self.data = json.load(json_file)
-        self.m_ip = self.data["cluster"][list(data["cluster"].keys())[0]]['network']['management'][
-            'virtual_host']
+        data = self.data["cluster"][list(self.data["cluster"].keys())[0]]
+        self.m_ip = data['network']['management']['virtual_host']
 
-    def create_setup_entry(self, target_name, setup_type='VM'):
+    def create_setup_entry(self, target_name, setup_type, csm_user, csm_pass):
+        """
+        Populate all setup entry data
+        """
         target_setup = dict()
-        enc = dict()
-        pdu = dict()
         nodes = list()
-        gc = dict()
-        ldap = dict()
-        bmc = list()
-        csm = list()
-        s3 = list()
         target_setup.update(dict(setupname=target_name,
                                  setup_type=setup_type,
                                  setup_in_useby="",
@@ -73,34 +72,44 @@ class CreateSetupJson:
             node_details = self.add_nodes_details(host_number, host)
             nodes.append(node_details)
         target_setup.update({'nodes': nodes})
-        target_setup.update({'enclosure': self.add_enclosure_details(enc)})
-        target_setup.update({'pdu': self.add_pdu_details(pdu)})
-        target_setup.update({'gem_controller': self.add_gem_controller_details(gc)})
-        target_setup.update({'ldap': self.add_ldap_details(ldap)})
-        target_setup.update({'bmc': self.add_bmc_details(bmc)})
-        target_setup.update({'csm': self.add_csm_details(csm)})
-        target_setup.update({'s3': self.add_s3_details(s3)})
+        target_setup.update({'enclosure': self.add_enclosure_details()})
+        target_setup.update({'pdu': self.add_pdu_details()})
+        target_setup.update({'gem_controller': self.add_gem_controller_details()})
+        target_setup.update({'ldap': self.add_ldap_details()})
+        target_setup.update({'bmc': self.add_bmc_details()})
+        target_setup.update({'csm': self.add_csm_details(csm_user, csm_pass)})
+        target_setup.update({'s3': self.add_s3_details()})
         LOGGER.debug("Setup entry %s created for target %s", target_setup, target_name)
         return target_setup
 
-    @staticmethod
-    def add_nodes_details(host_number, node):
+    def add_nodes_details(self, host_number, node):
+        """
+        Add node details in setup entry
+        """
         return dict(
             host="srvnode-" + str(host_number),
-            hostname=node["hostname"],
+            hostname=node,
             ip="node_ip",
-            username=node["username"],
-            password=node["password"]
+            username='root',
+            password=self.node_pass
         )
 
-    def add_enclosure_details(self, enc):
+    @staticmethod
+    def add_enclosure_details():
+        """
+        Add enclosure details in setup entry
+        """
         return dict(primary_enclosure_ip="10.0.0.2",
                     secondary_enclosure_ip="10.0.0.3",
                     enclosure_user="",
                     enclosure_pwd=""
                     )
 
-    def add_pdu_details(self, pdu):
+    @staticmethod
+    def add_pdu_details():
+        """
+        Add pdu details in setup entry
+        """
         return dict(
             ip="",
             username="",
@@ -110,7 +119,11 @@ class CreateSetupJson:
             sleep_time=120
         )
 
-    def add_gem_controller_details(self, con):
+    @staticmethod
+    def add_gem_controller_details():
+        """
+        Add gem details in setup entry
+        """
         return dict(
             ip="",
             username="",
@@ -118,57 +131,73 @@ class CreateSetupJson:
             port1="9012",
             port2="9014")
 
-    def add_bmc_details(self, bmc):
+    @staticmethod
+    def add_bmc_details():
+        """
+        Add bmc details in setup entry
+        """
         return dict(username="",
                     password="")
 
-    def add_ldap_details(self, ldap):
-        sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
-        cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
-        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-        key = resp1[0]
-        key = key.strip('\n')
-        cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
-        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-        ldap_pass = resp1[0]
-        ldap_pass = ldap_pass.strip('\n')
+    # pylint: disable=broad-except
+    def add_ldap_details(self):
+        """
+        Add ldap details in setup entry
+        """
+        ldap_value = ''
+        try:
+            sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
+            cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
+            resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+            key = resp1[0]
+            key = key.strip('\n')
+            cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
+            resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+            ldap_value = resp1[0]
+            ldap_value = ldap_value.strip('\n')
+        except Exception as error:
+            LOGGER.debug("Error in getting ldap credentials %s", error)
         return dict(username="sgiamadmin",
-                    password=ldap_pass,
-                    sspl_pass=ldap_pass)
+                    password=ldap_value,
+                    sspl_pass=ldap_value)
 
-    def add_csm_details(self, csm):
+    def add_csm_details(self, csm_user, csm_pass):
+        """
+        Add csm details in setup entry
+        """
         return dict(mgmt_vip=self.m_ip,
-                    csm_admin_user=dict(username="",
-                                        password="")
+                    csm_admin_user=dict(username=csm_user,
+                                        password=csm_pass)
                     )
 
-    def add_s3_details(self, s3):
+    def add_s3_details(self):
+        """
+        Add s3 details in setup entry
+        """
         return dict(s3_server_ip=self.m_ip,
-                    s3_server_user=dict(username=self.hosts[0]['username'],
-                                        password=self.hosts[0]['password']))
+                    s3_server_user=dict(username='root',
+                                        password=self.node_pass))
 
 
-def register_setup_entry(hosts: List, new_entry=True):
-    setup_json = CreateSetupJson(hosts)
-    DBUSER = os.environ.get('DB_USER')
-    DBPSWD = os.environ.get('DB_PASSWORD')
-    setupname = setup_json['setupname']
-    setup_query = {"setupname": setupname}
-    mongodburi = "mongodb://{0}:{1}@{2}"
-    uri = mongodburi.format(quote_plus(DBUSER), quote_plus(DBPSWD), DB_HOSTNAME)
+def register_setup_entry(hosts: List, setupname, csm_user, csm_pass, node_pass):
+    """
+    Add setup entry in db
+    """
+    setup_json_obj = CreateSetupJson(hosts, node_pass)
+    setup_json = setup_json_obj.create_setup_entry(setupname, 'VM', csm_user, csm_pass)
+    setup_query = {"setupname": setup_json['setupname']}
+    uri = "mongodb://{0}:{1}@{2}".format(quote_plus(os.environ.get('DB_USER')),
+                                         quote_plus(os.environ.get('DB_PASSWORD')), DB_HOSTNAME)
     client = MongoClient(uri)
-    setup_db = client[DB_NAME]
-    collection_obj = setup_db[SYS_INFO_COLLECTION]
+    collection_obj = client[DB_NAME][SYS_INFO_COLLECTION]
     LOGGER.debug("Collection obj for DB interaction %s", collection_obj)
     LOGGER.debug("Setup query : %s", setup_query)
     entry_exist = collection_obj.find(setup_query).count()
-    if new_entry and entry_exist:
-        LOGGER.error("%s already exists", setup_query)
-    elif new_entry and not entry_exist:
-        rdata = collection_obj.insert_one(setup_json)
+    if not entry_exist:
+        collection_obj.insert_one(setup_json)
         LOGGER.info("Setup Data is inserted successfully")
     else:
-        rdata = collection_obj.update_one(setup_query, {'$set': setup_json})
+        collection_obj.update_one(setup_query, {'$set': setup_json})
         LOGGER.debug("Setup Data is updated successfully")
     setup_details = collection_obj.find_one(setup_query)
     return setup_details
