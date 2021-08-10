@@ -24,6 +24,7 @@ This library contains methods for system node operations using CORTX CLI
 import logging
 from commons import commands
 from commons.constants import Rest as Const
+from commons.exceptions import CTException
 from libs.csm.cli.cortx_cli import CortxCli
 
 LOGGER = logging.getLogger(__name__)
@@ -152,7 +153,7 @@ class CortxCliSystemtOperations(CortxCli):
             if "successfully" not in output.lower() or "error" in output.lower():
                 return False, output
             return True, output
-        except Exception as error:
+        except (ValueError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          CortxCliSystemtOperations.node_operation.__name__,

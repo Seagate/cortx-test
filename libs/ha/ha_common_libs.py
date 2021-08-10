@@ -613,7 +613,7 @@ class HALibs:
                     return response
 
             return True, "Successfully performed S3 operation clean up"
-        except (Exception, CTException) as error:
+        except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HALibs.delete_s3_acc_buckets_objects.__name__,
