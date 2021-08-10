@@ -23,12 +23,15 @@ HA GUI utility methods
 """
 import logging
 import os
+from datetime import datetime
 
-from robot_gui.utils.call_robot_test import trigger_robot
+from commons import Globals
 from commons.utils.assert_utils import assert_true
 from config import CMN_CFG
+from robot_gui.utils.call_robot_test import trigger_robot
 
 LOGGER = logging.getLogger(__name__)
+
 
 class HAGUILibs:
     """
@@ -51,7 +54,8 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_cluster_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_cluster_state'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_cluster_state_' \
+                               + "{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -61,7 +65,7 @@ class HAGUILibs:
         else:
             gui_dict['tag'] = 'CHECK_IN_HEALTH_CLUSTER_ONLINE'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_cluster_state")
 
     def verify_node_state(self, node_id, status):
@@ -70,7 +74,8 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_node_state")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_state'+ str(node_id)
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_cluster_state_' + str(node_id) \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -81,19 +86,19 @@ class HAGUILibs:
         else:
             gui_dict['tag'] = 'CHECK_IN_HEALTH_NODE_ONLINE'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_node_state")
 
-    def verify_node_down_alert(self, node_id = 0):
+    def verify_node_down_alert(self, node_id=0):
         """
         This function will verify the node lost alert
         """
         LOGGER.info("Start : verify_node_down_alert")
-        alert_description = f'The cluster has lost srvnode-{node_id+1}'
+        alert_description = f'The cluster has lost srvnode-{node_id + 1}'
         LOGGER.info(alert_description)
-        # TODO: If alert add hostname, update alert_description
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_down_alert'+ str(node_id)
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_node_down_alert_' + str(node_id) \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -101,18 +106,19 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_node_down_alert")
 
-    def verify_node_back_up_alert(self, node_id = 0):
+    def verify_node_back_up_alert(self, node_id=0):
         """
         This function will verify the node joined back alert
         """
         LOGGER.info("Start : verify_node_back_up_alert")
-        alert_description = f'has joined back the cluster. System is restored. Extra Info: host=srvnode-{node_id+1}'
-        # TODO: If alert add hostname, update alert_description
+        alert_description = f'has joined back the cluster. System is restored. ' \
+                            f'Extra Info: host=srvnode-{node_id + 1}'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_node_back_up_alert'+ str(node_id)
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_node_back_up_alert_' + str(node_id) \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -120,7 +126,7 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_node_back_up_alert")
 
     def acknowledge_node_alerts_in_new_alerts(self):
@@ -131,7 +137,8 @@ class HAGUILibs:
         alert_description = 'The cluster has lost srvnode-'
         # TODO: If alert add hostname, update alert_description
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/acknowledge_node_alerts_in_new_alerts'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'acknowledge_node_alerts_in_new_alerts' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -139,7 +146,7 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'ACKNOWLEDGE_NEW_ALERTS'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : acknowledge_node_alerts_in_new_alerts")
 
     def acknowledge_node_alerts_in_active_alerts(self):
@@ -147,10 +154,11 @@ class HAGUILibs:
         This function will Acknowledge all alerts if present in active alert table already
         """
         LOGGER.info("Start : acknowledge_node_alerts_in_active_alerts")
-        alert_description = 'has joined back the cluster. System is restored. Extra Info: host=srvnode-'
-        # TODO: update alert_description if required 
+        alert_description = 'has joined back the cluster. System is restored. ' \
+                            'Extra Info: host=srvnode-'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/acknowledge_node_alerts_in_active_alerts'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'acknowledge_node_alerts_in_active_alerts' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -158,18 +166,18 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'ACKNOWLEDGE_ACTIVE_ALERT'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : acknowledge_node_alerts_in_active_alerts")
 
-    def verify_network_interface_down_alert(self, eth_number = 0):
+    def verify_network_interface_down_alert(self, eth_number=0):
         """
         This function will verify the network interface down alert
         """
         LOGGER.info("Start : verify_network_interface_down_alert")
-        alert_description = 'Network interface eth' # +eth_number + " is down" # TODO : VERIFY AND ADD
-        # TODO: update alert_description if required
+        alert_description = f'Network interface eth{eth_number} is down'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_network_interface_down_alert'+ eth_number
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_network_interface_down_alert_' \
+                               + str(eth_number) + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -177,18 +185,18 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'CHECK_IN_NEW_ALERTS'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_network_interface_down_alert")
 
-    def verify_network_interface_back_up_alert(self, eth_number = 0):
+    def verify_network_interface_back_up_alert(self, eth_number=0):
         """
         This function will verify the network interface back alert
         """
         LOGGER.info("Start : verify_network_interface_back_up_alert")
-        alert_description = 'Network interface eth' # +eth_number + " is down" # TODO : VERIFY AND ADD
-        # TODO: update alert_description if required 
+        alert_description = f'Network interface eth{eth_number} is up'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/verify_network_interface_back_up_alert'+ eth_number
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_network_interface_back_up_alert' \
+                               + str(eth_number) + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -196,7 +204,7 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : verify_network_interface_back_up_alert")
 
     def acknowledge_network_interface_back_up_alerts(self):
@@ -204,10 +212,10 @@ class HAGUILibs:
         This function will Acknowledge all alerts if present in active alert table already
         """
         LOGGER.info("Start : acknowledge_network_interface_back_up_alerts")
-        alert_description = 'Network interface eth' # +eth_number + " is down" # TODO : VERIFY AND ADD
-        # TODO: update alert_description if required 
+        alert_description = 'Network interface eth'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/acknowledge_network_interface_back_up_alerts'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'acknowledge_network_interface_back_up_alerts' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -215,20 +223,22 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['tag'] = 'ACKNOWLEDGE_ACTIVE_ALERT'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : acknowledge_network_interface_back_up_alerts")
 
     def assert_if_network_interface_down_alert_present(self):
         """
-        if we have any network port down before starting test tests, we should not continue the tests
-        This function will check if any "network interface ethX down" alert is present, we should not continue the tests.
+        if we have any network port down before starting test tests,
+        we should not continue the tests
+        This function will check if any "network interface ethX down" alert is present,
+        we should not continue the tests.
         This function will assert if network interface down alert in new alert table already present
         """
         LOGGER.info("Start : assert_if_network_interface_down_alert_present")
         alert_description = 'Network interface eth'
-        # TODO: update alert_description if required
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/assert_if_network_interface_down_alert_present'
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'assert_if_network_interface_down_alert_present' \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -236,5 +246,5 @@ class HAGUILibs:
                                 "description:" + alert_description]
         gui_dict['test'] = 'CHECK_IN_NEW_ALERTS_AND_FAIL'
         gui_response = trigger_robot(gui_dict)
-        assert_true( gui_response, 'GUI FAILED')
+        assert_true(gui_response, 'GUI FAILED')
         LOGGER.info("End : assert_if_network_interface_down_alert_present")
