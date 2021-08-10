@@ -205,3 +205,18 @@ TEST-23053
     END
     Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${monitor_user_name}
+
+TEST-23049
+    [Documentation]  Test that monitor user should not able to delete users with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23049
+    [Tags]  Priority_High  TEST-23049
+    ${new_user_name}  ${new_password}=  Create and login with CSM monitor user
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
+    ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    Log To Console And Report  ${admin_users}
+    FOR  ${user}  IN  @{admin_users}
+        Verify Delete Action Disabled On The Table Element  ${user}
+    END
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
