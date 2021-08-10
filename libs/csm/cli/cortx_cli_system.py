@@ -23,7 +23,8 @@ This library contains methods for system node operations using CORTX CLI
 
 import logging
 from commons import commands
-from config import CMN_CFG
+from commons.constants import Rest as Const
+from commons.exceptions import CTException
 from libs.csm.cli.cortx_cli import CortxCli
 
 LOGGER = logging.getLogger(__name__)
@@ -37,9 +38,9 @@ class CortxCliSystemtOperations(CortxCli):
     def __init__(
             self,
             session_obj: object = None,
-            host=CMN_CFG["nodes"][0]["host"],
-            username=CMN_CFG["nodes"][0]["username"],
-            password=CMN_CFG["nodes"][0]["password"]):
+            host=None,
+            username=None,
+            password=None):
         """
         This method initializes members of CortxCliSystemtOperations
         :param object session_obj: session object of host connection if already established
@@ -124,3 +125,37 @@ class CortxCliSystemtOperations(CortxCli):
             return False, output
 
         return True, output
+
+    def node_operation(
+            self,
+            operation: str,
+            resource_id: int,
+            force_op: bool = False,
+            storage_off: bool = False):
+        """
+        This function is used to perform node operation (stop/poweroff/start)
+        :param operation: Operation to be performed on node
+        :param resource_id: Resource ID for the operation
+        :param force_op: Specifying this enables force operation.
+        :param storage_off: The poweroff operation will be performed along
+        with powering off the storage.
+        Valid only with poweroff operation on node.
+        :return: (Boolean, response)
+        """
+        try:
+            LOGGER.info("Performing %s on node ID %s", operation, resource_id)
+            cmd = commands.CMD_NODE_OPERATION.format(operation, resource_id)
+            if storage_off and operation == 'poweroff':
+                cmd = cmd + " -s true"
+            if force_op:
+                cmd = cmd + " -f true"
+            output = self.execute_cli_commands(cmd=cmd)[1]
+            if "successfully" not in output.lower() or "error" in output.lower():
+                return False, output
+            return True, output
+        except (ValueError, CTException) as error:
+            LOGGER.error("%s %s: %s",
+                         Const.EXCEPTION_ERROR,
+                         CortxCliSystemtOperations.node_operation.__name__,
+                         error)
+            return False, error

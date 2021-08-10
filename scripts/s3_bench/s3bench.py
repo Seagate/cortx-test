@@ -128,7 +128,7 @@ def check_log_file_error(file_path, errors=None):
     """
     if not errors:
         errors = ["with error ", "panic", "status code",
-                  "flag provided but not defined"]
+                  "flag provided but not defined", "InternalError", "ServiceUnavailable"]
     error_found = False
     LOGGER.info("Debug: Log File Path {}".format(file_path))
     resp_filtered = []
@@ -200,13 +200,13 @@ def s3bench(
     if skip_read:
         cmd = cmd + "-skipRead "
     if skip_cleanup:
-        cmd = cmd + "-skip_cleanup "
+        cmd = cmd + "-skipCleanup "
     if validate:
         cmd = cmd + "-validate "
     if verbose:
         cmd = cmd + "-verbose "
 
-    cmd = f"{cmd}> {log_path} 2>&1"
+    cmd = f"{cmd}>> {log_path} 2>&1"
 
     # In case duration is None
     if not duration:

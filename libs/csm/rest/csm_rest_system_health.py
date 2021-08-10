@@ -426,30 +426,42 @@ class SystemHealth(RestTestLib):
             raise CTException(
                 err.CSM_REST_GET_REQUEST_FAILED, error) from error
 
-    def verify_node_health_status_rest(self, exp_status: list, node_id: int = None):
+    def verify_node_health_status_rest(
+            self,
+            exp_status: list,
+            node_id: int = None,
+            single_node: bool = False):
         """
         This method will get and verify health status of node
         :param exp_status: List of expected node health status
         :param node_id: To get and verify node health status for node_id
+        :param single_node: To get for single node status
         :return: bool, Response Message
         """
-        if node_id:
+        if single_node:
             param = dict()
             param["resource_id"] = node_id
-            node_resp = self.get_health_status(resource="node", parameters=param)
+            node_resp = self.get_health_status(
+                resource="node", parameters=param)
             if node_resp.json()["data"][0]["status"] != exp_status[0].lower():
                 return False, f'Node health status is {node_resp.json()["data"][0]["status"]}'
         else:
             node_resp = self.get_health_status(resource="node")
             for index, node_dict in enumerate(node_resp.json()["data"]):
                 if node_dict['status'] == exp_status[index].lower():
-                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
-                                  index+1, node_dict['status'], exp_status[index])
+                    self.log.info(
+                        'Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                        index + 1,
+                        node_dict['status'],
+                        exp_status[index])
                 else:
-                    self.log.info('Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
-                                  index+1, node_dict['status'], exp_status[index])
-                    return False, f'Node-"{index+1}" health status is {node_dict["status"]}'
-        return True, f"Node health status is as expected"
+                    self.log.info(
+                        'Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                        index + 1,
+                        node_dict['status'],
+                        exp_status[index])
+                    return False, f'Node-"{index + 1}" health status is {node_dict["status"]}'
+        return True, "Node health status is as expected"
 
     def check_resource_health_status_rest(self, resource: str, exp_status: str):
         """
@@ -459,7 +471,7 @@ class SystemHealth(RestTestLib):
         :return: bool, Response Message
         """
         health_resp = self.get_health_status(resource=resource)
-        health_dict = health_resp.json()["data"]
+        health_dict = health_resp.json()["data"][0]
         if health_dict['status'] != exp_status.lower():
             return False, f"{resource}'s health status is {health_dict['status']}"
         return True, f"{resource}'s health status is {health_dict['status']}"

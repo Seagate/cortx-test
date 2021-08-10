@@ -20,28 +20,27 @@
 
 """Account user management reset password test module."""
 
+import logging
 import os
 import time
-from time import perf_counter_ns
 from multiprocessing import Process
+from time import perf_counter_ns
 
-import logging
 import pytest
-from commons.utils import assert_utils
-from commons.utils import system_utils
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import S3_CFG
-from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.cortxcli_test_lib import CSMAccountOperations
-
-S3_OBJ = s3_test_lib.S3TestLib()
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from scripts.s3_bench import s3bench
 
 
 class TestAccountUserManagementResetPassword:
@@ -57,13 +56,15 @@ class TestAccountUserManagementResetPassword:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: test setup.")
+        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.parallel_ios = None
         self.account_dict = dict()
         self.resources_dict = dict()
         self.csm_user_list = list()
-        self.log.info("Setup s3 bench tool")
-        res = s3bench.setup_s3bench()
-        assert_utils.assert_true(res, res)
+        self.log.info("Check s3 bench tool installed.")
+        res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
+        assert_utils.assert_true(
+            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(
             TEST_DATA_FOLDER, "TestAccountUserManagementResetPassword")
         if not system_utils.path_exists(self.test_dir_path):
@@ -96,9 +97,9 @@ class TestAccountUserManagementResetPassword:
                 self.parallel_ios.join()
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
-        bkt_list = S3_OBJ.bucket_list()[1]
+        bkt_list = self.s3_obj.bucket_list()[1]
         if self.io_bucket_name in bkt_list:
-            resp = S3_OBJ.delete_bucket(self.io_bucket_name, force=True)
+            resp = self.s3_obj.delete_bucket(self.io_bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step cleanup resources.")
         for resource in self.resources_dict:
@@ -157,7 +158,7 @@ class TestAccountUserManagementResetPassword:
         kwargs.setdefault("end_point", S3_CFG["s3_url"])
         self.log.info("STARTED: s3 io's operations.")
         bucket = bucket if bucket else self.io_bucket_name
-        resp = S3_OBJ.create_bucket(bucket)
+        resp = self.s3_obj.create_bucket(bucket)
         assert_utils.assert_true(resp[0], resp[1])
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
@@ -178,33 +179,6 @@ class TestAccountUserManagementResetPassword:
             f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")
 
-    def validate_parallel_execution(self, log_prefix=None):
-        """Check parallel execution failure."""
-        self.log.info("S3 parallel ios log validation started.")
-        log_file_list = system_utils.list_dir(s3bench.LOG_DIR)
-        log_path = None
-        for filename in log_file_list:
-            if filename.startswith(log_prefix):
-                log_path = os.path.join(s3bench.LOG_DIR, filename)
-        self.log.info("IO log path: %s", log_path)
-        assert_utils.assert_is_not_none(
-            log_path, "failed to generate logs for parallel S3 IO.")
-        lines = open(log_path).readlines()
-        resp_filtered = [
-            line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
-        self.log.info("'Error count' filtered list: %s", resp_filtered)
-        for response in resp_filtered:
-            assert_utils.assert_equal(
-                int(response.split(":")[1].strip()), 0, response)
-        self.log.info("Observed no Error count in io log.")
-        error_kws = ["with error ", "panic", "status code", "exit status 2"]
-        for error in error_kws:
-            assert_utils.assert_not_equal(
-                error, ",".join(lines), f"{error} Found in S3Bench Run.")
-        self.log.info("Observed no Error keyword '%s' in io log.", error_kws)
-        system_utils.remove_file(log_path)
-        self.log.info("S3 parallel ios log validation completed.")
-
     def start_stop_validate_parallel_s3ios(
             self, ios=None, log_prefix=None, duration="0h1m"):
         """Start/stop parallel s3 io's and validate io's worked successfully."""
@@ -218,14 +192,16 @@ class TestAccountUserManagementResetPassword:
                           self.parallel_ios.is_alive(), duration)
         if ios == "Stop":
             if self.parallel_ios.is_alive():
-                resp = S3_OBJ.object_list(self.io_bucket_name)
+                resp = self.s3_obj.object_list(self.io_bucket_name)
                 self.log.info(resp)
                 self.parallel_ios.join()
                 self.log.info(
                     "Parallel IOs stopped: %s",
                     not self.parallel_ios.is_alive())
             if log_prefix:
-                self.validate_parallel_execution(log_prefix)
+                resp = system_utils.validate_s3bench_parallel_execution(
+                    s3bench.LOG_DIR, log_prefix)
+                assert_utils.assert_true(resp[0], resp[1])
 
     def create_s3_acc(
             self,
@@ -274,18 +250,18 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test s3 account user is not able to reset password of other s3 account user and create resources for both
-        account while S3 IO's are in progress.
+        Test s3 account user is not able to reset password of other s3 account user and create
+        resources for both account while S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test s3 account user is not able to reset password of other s3 account user and "
-            "create resources for both account while S3 IO's are in progress.")
+            "STARTED: Test s3 account user is not able to reset password of other s3 account user"
+            " and create resources for both account while S3 IO's are in progress.")
         self.log.info(
             "Step 1: Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22793_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22793_s3bench_ios", duration="0h1m")
         self.log.info("Step 3: Create two s3account s3acc1, s3acc2.")
         s3_test_obj1 = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -327,13 +303,13 @@ class TestAccountUserManagementResetPassword:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22793_ios")
+            ios="Stop", log_prefix="TEST-22793_s3bench_ios")
         self.log.info(
             "Step 8: Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test s3 account user is not able to reset password of other s3 account user and "
-            "create resources for both account while S3 IO's are in progress.")
+            "ENDED: Test s3 account user is not able to reset password of other s3 account user"
+            " and create resources for both account while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -347,14 +323,14 @@ class TestAccountUserManagementResetPassword:
         S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test reset s3 account password using csm user having monitor role and create resources"
-            " while S3 IO's are in progress.")
+            "STARTED: Test reset s3 account password using csm user having monitor role and "
+            "create resources while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22794_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22794_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having monitor role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -385,13 +361,13 @@ class TestAccountUserManagementResetPassword:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22794_ios")
+            ios="Stop", log_prefix="TEST-22794_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test reset s3 account password using csm user having monitor role and create resources"
-            " while S3 IO's are in progress.")
+            "ENDED: Test reset s3 account password using csm user having monitor role and "
+            "create resources while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -405,14 +381,14 @@ class TestAccountUserManagementResetPassword:
         while S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test reset s3 account password using csm user having manage role and create resources"
-            " while S3 IO's are in progress.")
+            "STARTED: Test reset s3 account password using csm user having manage role and "
+            "create resources while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22795_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22795_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having manage role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -444,13 +420,13 @@ class TestAccountUserManagementResetPassword:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22795_ios")
+            ios="Stop", log_prefix="TEST-22795_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test reset s3 account password using csm user having manage role and create resources"
-            " while S3 IO's are in progress.")
+            "ENDED: Test reset s3 account password using csm user having manage role and "
+            "create resources while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -460,7 +436,8 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test s3 account user to reset it's own password and create s3 resources while S3 IO's are in progress.
+        Test s3 account user to reset it's own password and create s3 resources while S3 IO's
+         are in progress.
         """
         self.log.info(
             "STARTED: Test s3 account user to reset it's own password and create s3 resources while"
@@ -470,7 +447,7 @@ class TestAccountUserManagementResetPassword:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22796_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22796_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -494,7 +471,7 @@ class TestAccountUserManagementResetPassword:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22796_ios")
+            ios="Stop", log_prefix="TEST-22796_s3bench_ios")
         self.log.info(
             "Step 8. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -510,17 +487,18 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test reset s3 account password using csm admin user and create s3 resources while S3 IO's are in progress.
+        Test reset s3 account password using csm admin user and create s3 resources while S3 IO's
+         are in progress.
         """
         self.log.info(
-            "STARTED: Test reset s3 account password using csm admin user and create s3 resources while"
-            " S3 IO's are in progress.")
+            "STARTED: Test reset s3 account password using csm admin user and create s3 resources"
+            " while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22797_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22797_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -549,13 +527,13 @@ class TestAccountUserManagementResetPassword:
             f"{self.object_name} not exists in {bkt_list}")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22797_ios")
+            ios="Stop", log_prefix="TEST-22797_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test reset s3 account password using csm admin user and create s3 resources while"
-            " S3 IO's are in progress.")
+            "ENDED: Test reset s3 account password using csm admin user and create s3 resources"
+            " while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -565,18 +543,18 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test s3 account user is not able to reset password of other s3 account user and check resource intact
-         for both account while S3 IO's are in progress.
+        Test s3 account user is not able to reset password of other s3 account user and check
+        resource intact for both account while S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test s3 account user is not able to reset password of other s3 account user and"
-            " check resource intact for both account while S3 IO's are in progress.")
+            "STARTED: Test s3 account user is not able to reset password of other s3 account user"
+            " and check resource intact for both account while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22798_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22798_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create two s3account s3acc1, s3acc2.")
         s3_test_obj1 = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -631,7 +609,7 @@ class TestAccountUserManagementResetPassword:
             "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22798_ios")
+            ios="Stop", log_prefix="TEST-22798_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -658,7 +636,7 @@ class TestAccountUserManagementResetPassword:
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22799_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22799_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having monitor role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -696,7 +674,7 @@ class TestAccountUserManagementResetPassword:
             "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22799_ios")
+            ios="Stop", log_prefix="TEST-22799_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
@@ -716,14 +694,14 @@ class TestAccountUserManagementResetPassword:
          while S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test reset s3 account password using csm user having manage role and check resource"
-            " intact while S3 IO's are in progress.")
+            "STARTED: Test reset s3 account password using csm user having manage role and check"
+            " resource intact while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22800_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22800_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create csm user having manage role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
@@ -762,13 +740,13 @@ class TestAccountUserManagementResetPassword:
             "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22800_ios")
+            ios="Stop", log_prefix="TEST-22800_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test reset s3 account password using csm user having manage role and check resource"
-            " intact while S3 IO's are in progress.	")
+            "ENDED: Test reset s3 account password using csm user having manage role and check"
+            " resource intact while S3 IO's are in progress.	")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -778,16 +756,17 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test s3 account user to reset it's own password and check resources intact while S3 IO's are in progress.
+        Test s3 account user to reset it's own password and check resources intact while S3 IO's
+         are in progress.
         """
         self.log.info(
-            "STARTED: Test s3 account user to reset it's own password and check resources intact while"
-            " S3 IO's are in progress.")
+            "STARTED: Test s3 account user to reset it's own password and check resources intact"
+            " while S3 IO's are in progress.")
         self.log.info("Step 1: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info("Step 2: start s3 IO's")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22801_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22801_s3bench_ios", duration="0h1m")
         self.log.info("Step 3: create s3 accounts.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -817,12 +796,12 @@ class TestAccountUserManagementResetPassword:
             "Failed to list bucket.")
         self.log.info("Step 7: Stop and validate S3 IOs")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22801_ios")
+            ios="Stop", log_prefix="TEST-22801_s3bench_ios")
         self.log.info("Step 8: Check cluster status, all services are running")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test s3 account user to reset it's own password and check resources intact while"
-            " S3 IO's are in progress.")
+            "ENDED: Test s3 account user to reset it's own password and check resources intact"
+            " while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -832,17 +811,18 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test reset s3 account password using csm admin user and check s3 resource intact while S3 IO's are in progress.
+        Test reset s3 account password using csm admin user and check s3 resource intact while
+        S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test reset s3 account password using csm admin user and check s3 resource intact"
-            " while S3 IO's are in progress.")
+            "STARTED: Test reset s3 account password using csm admin user and check s3 resource"
+            " intact while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22802_ios", duration="0h1m")
+            ios="Start", log_prefix="TEST-22802_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = self.create_s3_acc(
             self.s3acc_name1, self.email_id.format(
@@ -874,13 +854,13 @@ class TestAccountUserManagementResetPassword:
             "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22802_ios")
+            ios="Stop", log_prefix="TEST-22802_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info(
-            "ENDED: Test reset s3 account password using csm admin user and check s3 resource intact"
-            " while S3 IO's are in progress.")
+            "ENDED: Test reset s3 account password using csm admin user and check s3 resource "
+            "intact while S3 IO's are in progress.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -890,18 +870,18 @@ class TestAccountUserManagementResetPassword:
         """
         Reset s3 account password.
 
-        Test reset n number of s3 account password using csm user having different role (admin, manage, monitor)
-         while S3 IO's are in progress.
+        Test reset n number of s3 account password using csm user having different role (admin,
+        manage, monitor) while S3 IO's are in progress.
         """
         self.log.info(
-            "STARTED: Test reset n number of s3 account password using csm user having different role"
-            " (admin, manage, monitor) while S3 IO's are in progress.")
+            "STARTED: Test reset n number of s3 account password using csm user having different"
+            " role (admin, manage, monitor) while S3 IO's are in progress.")
         self.log.info(
             "Step 1. Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
         self.log.info("Step 2. Start S3 IO.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_22882_ios", duration="0h2m")
+            ios="Start", log_prefix="TEST-22882_s3bench_ios", duration="0h2m")
         self.log.info("Step 3. Create N number s3account.")
         account_list = []
         for i in range(10):
@@ -945,7 +925,7 @@ class TestAccountUserManagementResetPassword:
             assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 9. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_22882_ios")
+            ios="Stop", log_prefix="TEST-22882_s3bench_ios")
         self.log.info(
             "Step 10. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()

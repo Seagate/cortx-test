@@ -72,6 +72,7 @@ class Provisioner:
             time.sleep(10)
             LOGGER.info("Running the deployment job")
             while True:
+                LOGGER.info(jenkins_server_obj.get_job_info(job_name)['lastBuild']['number'])
                 if jenkins_server_obj.get_job_info(job_name)['lastCompletedBuild']['number'] == \
                         jenkins_server_obj.get_job_info(job_name)['lastBuild']['number']:
                     break

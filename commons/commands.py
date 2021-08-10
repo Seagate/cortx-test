@@ -38,6 +38,19 @@ GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
 IP_LINK_SHOW_CMD = "ip link show | grep {} | grep -o {}"
 CMD_UPDATE_FILE = "echo {} > {}"
 CMD_TOUCH_FILE = "touch {}"
+LSSCSI_CMD = "lsscsi > {}"
+LINUX_STRING_CMD = "sed '/{}/!d' {} > {}"
+LINE_COUNT_CMD = "cat {} | wc -l"
+DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
+CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
+GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
+GET_RAID_ARRAYS_CMD = "grep -oP '\\bmd[0-9]\\b' /proc/mdstat"
+RAID_ARRAY_STATE_CMD = "cat /sys/block/{}/md/degraded"
+GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
+FDISK_RAID_PARTITION_CMD = "fdisk -l {} | grep -i raid | awk '{{print $1}}' > {}"
+GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {}: | awk '{{print $NF}}'"
+FILE_COMPARE_CMD = "diff {} {}"
+
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -152,6 +165,8 @@ MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
 
 # BMC commands.
+CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
+INSTALL_IPMITOOL = "yum install ipmitool -y"
 CMD_LAN_INFO = "ipmitool lan print"
 CMD_SET_LAN_IP_ADDR = "ipmitool lan set 1 ipaddr {}"  # parameter: IP address.
 MSG_SET_LAN_IP_ADDR = "Setting LAN IP Address to {}"  # parameter: IP address.
@@ -206,6 +221,7 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_NODE_OPERATION = "cluster_management node {} -i {}"
 CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
 CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
@@ -222,7 +238,7 @@ CMD_MOUNT = "mount -t nfs {} {}"
 CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
-CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{print $1}'"
+CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_HOSTS = "cat /etc/hosts"
 
 # Provisioner commands
@@ -279,11 +295,12 @@ CMD_START_CLSTR = "cortx cluster start"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
+CMD_PCS_GET_XML = "pcs status xml"
 CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
-CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {} --data {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
@@ -328,7 +345,22 @@ CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
+              "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
 CPU_RESOLVE = "echo 1 > /sys/devices/system/cpu/cpu{}/online"
+
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval={0}))'"
+CMD_GREP_PID = " ps | grep {0}"
+
+CMD_AVAIL_MEMORY = "python3 -c 'import psutil; print(psutil.virtual_memory().available)'"
+CMD_INSTALL_TOOL = "yum install {0}"
+CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
+CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
+JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+CMD_BLOCKING_PROCESS = "yes > /dev/null &"
+CMD_CPU_UTILIZATION = "python3 -c 'import psutil; print(psutil.cpu_percent(interval=30))'"
+CMD_GREP_PID = " ps | grep {0}"

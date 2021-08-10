@@ -38,10 +38,8 @@ from libs.s3 import S3H_OBJ, CMN_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3 import cortxcli_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3 import S3_CFG
-
-S3T_OBJ = S3TestLib()
-IAMT_OBJ = IamTestLib()
 
 
 class TestDataDurability:
@@ -56,7 +54,10 @@ class TestDataDurability:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
+        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.iamt_obj = IamTestLib(endpoint_url=S3_CFG["iam_url"])
         self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.log.info("STARTED: setup test operations.")
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -65,12 +66,11 @@ class TestDataDurability:
         self.object_name = "obj_data_durability"
         self.sleep_time = 10
         self.file_size = 5
-        self.host_ip = CMN_CFG["nodes"][0]["host"]
+        self.host_ip = CMN_CFG["nodes"][0]["hostname"]
         self.uname = CMN_CFG["nodes"][0]["username"]
         self.passwd = CMN_CFG["nodes"][0]["password"]
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestDataDurability")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDataDurability")
         self.file_path = os.path.join(self.test_dir_path, self.test_file)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
@@ -89,18 +89,16 @@ class TestDataDurability:
             system_utils.remove_file(self.file_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         if self.bucket_name in resp[1]:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
         self.log.info("Deleting the IAM accounts and users")
         self.log.debug(self.s3_account)
         if self.s3_account:
             for acc in self.s3_account:
-                self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-                resp = self.cli_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_passwd)
+                self.cli_obj.login_cortx_cli(username=acc, password=self.s3acc_passwd)
                 self.log.debug("Deleting %s account", acc)
                 self.cli_obj.delete_all_iam_users()
                 self.cli_obj.logout_cortx_cli()
@@ -138,14 +136,14 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Uploading a object to a bucket %s", (
                 self.bucket_name))
-        resp = S3T_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3t_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.put_object(
+        resp = self.s3t_obj.put_object(
             self.bucket_name,
             self.object_name,
             self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.object_list(self.bucket_name)
+        resp = self.s3t_obj.object_list(self.bucket_name)
         assert_utils.assert_in(
             self.object_name,
             resp[1],
@@ -180,7 +178,7 @@ class TestDataDurability:
             "Step 4: Restarted %s service",
             service)
         self.log.info("Step 5: Verifying that data is accessible or not")
-        resp = S3T_OBJ.object_list(self.bucket_name)
+        resp = self.s3t_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             self.object_name,
@@ -190,7 +188,7 @@ class TestDataDurability:
         self.log.info(
             "Step 6: Removing file from client and downloading object")
         system_utils.remove_file(self.file_path)
-        resp = S3T_OBJ.object_download(
+        resp = self.s3t_obj.object_download(
             self.bucket_name, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6: Downloaded object from a bucket")
@@ -241,9 +239,9 @@ class TestDataDurability:
         self.log.info(
             "Step 3: Uploading a object to a bucket %s", (
                 self.bucket_name))
-        resp = self.cli_obj.create_account_cortxcli(self.account_name,
-                                                    self.email_id,
-                                                    self.s3acc_passwd)
+        resp = self.rest_obj.create_s3_account(self.account_name,
+                                               self.email_id,
+                                               self.s3acc_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
@@ -259,7 +257,7 @@ class TestDataDurability:
                 self.bucket_name))
         self.log.info(
             "Step 4: Changing credentials of an account %s", self.account_name)
-        resp = IAMT_OBJ.reset_account_access_key_s3iamcli(self.account_name)
+        resp = self.iamt_obj.reset_account_access_key_s3iamcli(self.account_name)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["AccessKeyId"]
         secret_key = resp[1]["SecretKey"]
@@ -313,7 +311,7 @@ class TestDataDurability:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Restart s3server instances")
         self.log.info("Step 5: Verifying that data is accessible or not")
-        resp = S3T_OBJ.object_list(self.bucket_name)
+        resp = self.s3t_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             self.object_name,
@@ -323,7 +321,7 @@ class TestDataDurability:
         self.log.info(
             "Step 6: Removing file from client and downloading object")
         system_utils.remove_file(self.file_path)
-        resp = S3T_OBJ.object_download(
+        resp = self.s3t_obj.object_download(
             self.bucket_name, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6: Downloaded object from a bucket")
@@ -354,7 +352,7 @@ class TestDataDurability:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Restarted motr service")
         self.log.info("Step 5: Verifying that data is accessible or not")
-        resp = S3T_OBJ.object_list(self.bucket_name)
+        resp = self.s3t_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
             self.object_name,
@@ -364,7 +362,7 @@ class TestDataDurability:
         self.log.info(
             "Step 6: Removing file from client and downloading object")
         system_utils.remove_file(self.file_path)
-        resp = S3T_OBJ.object_download(
+        resp = self.s3t_obj.object_download(
             self.bucket_name, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6: Downloaded object from a bucket")

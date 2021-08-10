@@ -21,7 +21,12 @@
 
 import logging
 from typing import Any
+
+import commons.errorcodes as err
+from commons import commands
+from commons.exceptions import CTException
 from commons.helpers.host import Host
+from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,28 +34,32 @@ LOGGER = logging.getLogger(__name__)
 class Bmc(Host):
     """BMC helper class."""
 
+    def __init__(self, hostname: str, username: str, password: str):
+        super().__init__(hostname, username, password)
+        if not self.execute_cmd(commands.CHECK_IPMITOOL)[0]:
+            LOGGER.debug("Installing ipmitool")
+            self.execute_cmd(commands.INSTALL_IPMITOOL)
+        self.bmc_ip = self.get_bmc_ip()
+
     def bmc_node_power_status(
             self,
-            bmc_ip: str,
             bmc_user: str,
             bmc_pwd: str) -> Any:
         """
         Function to check node power states using BMC.
 
-        :param bmc_ip: Node BMC IP
         :param bmc_user: Node BMC user name
         :param bmc_pwd: Node BMC user pwd
         :return: resp
         """
-        if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
-            LOGGER.debug("Installing ipmitool")
-            self.execute_cmd("yum install ipmitool")
+        cmd = f"ipmitool -I lanplus -H {self.bmc_ip} -U {bmc_user} " \
+              f"-P {bmc_pwd} chassis power status"
         try:
-            cmd = f"ipmitool -I lanplus -H {bmc_ip} -U {bmc_user} -P {bmc_pwd} chassis power status"
-            if not cmd:
-                return "Command not found"
             LOGGER.info("Executing cmd: %s", cmd)
-            resp = self.execute_cmd(cmd)
+            success, resp = system_utils.run_local_cmd(cmd)
+            if not success:
+                raise CTException(
+                      err.CLIENT_CMD_EXECUTION_FAILED, "Could not get BMC power status")
             LOGGER.debug("Output: %s", str(resp))
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",
@@ -63,29 +72,26 @@ class Bmc(Host):
 
     def bmc_node_power_on_off(
             self,
-            bmc_ip: str,
             bmc_user: str,
             bmc_pwd: str,
             status: str = "on") -> Any:
         """
         Function to on and off node power using BMC IP.
 
-        :param bmc_ip: Node BMC IP
         :param bmc_user: Node BMC user name
         :param bmc_pwd: Node BMC user pwd
         :param status: Status of bmc
         :return: resp
         """
-        if not self.execute_cmd("rpm  -qa | grep ipmitool")[0]:
-            LOGGER.debug("Installing ipmitool")
-            self.execute_cmd("yum install ipmitool")
-        cmd = f"ipmitool -I lanplus -H {bmc_ip} -U {bmc_user} -P " \
-            f"{bmc_pwd} chassis power {status.lower()}"
+        cmd = f"ipmitool -I lanplus -H {self.bmc_ip} -U {bmc_user} -P " \
+              f"{bmc_pwd} chassis power {status.lower()}"
         try:
-            if not cmd:
-                return "Command not found"
             LOGGER.info("Executing cmd: %s", cmd)
-            resp = self.execute_cmd(cmd)
+            success, resp = system_utils.run_local_cmd(cmd)
+            if not success:
+                raise CTException(
+                    err.CLIENT_CMD_EXECUTION_FAILED,
+                    f"Could not execute BMC power {status} command")
             LOGGER.debug("Output: %s", str(resp))
         except BaseException as error:
             LOGGER.error("*ERROR* An exception occurred in %s: %s",

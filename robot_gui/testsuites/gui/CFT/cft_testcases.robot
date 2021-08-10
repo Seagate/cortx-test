@@ -14,9 +14,6 @@ Resource    ${RESOURCES}/resources/page_objects/preboardingPage.robot
 Resource    ${RESOURCES}/resources/common/common.robot
 Variables   ${RESOURCES}/resources/common/common_variables.py
 
-Suite Setup  run keywords   check csm admin user status  ${url}  ${browser}  ${headless}
-...  ${username}  ${password}
-...  AND  Close Browser
 Test Setup  CSM GUI Login  ${url}  ${browser}  ${headless}  ${username}  ${password}
 Test Teardown  Close Browser
 Suite Teardown  Close All Browsers
@@ -147,8 +144,6 @@ TEST-1037
     ...  Reference : https://jts.seagate.com/browse/TEST-1037
     [Tags]  Priority_High  CFT_Test  TEST-1037
     ${test_id}    Set Variable    TEST-1037
-    Navigate To Page    MANAGE_MENU_ID  S3_ACCOUNTS_TAB_ID
-    wait for page or element to load
     ${S3_account_name}  ${email}  ${password} =  Create S3 account
     wait for page or element to load
     Capture Page Screenshot  ${test_id}_s3_user.png
@@ -165,17 +160,17 @@ TEST-4932
     ${test_id}    Set Variable    TEST-4932
     Navigate To Audit Log Section
     Capture Page Screenshot  ${test_id}_audit_log_section.png
-    View Audit Log  CSM  One day
+    View Audit Log  CSM
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_CSM_audit_log_generated.png
-    Download Audit Log  CSM  One day
+    Download Audit Log  CSM
     Verify Audit Log Downloaded  ${Download_File_Path}  csm
     Capture Page Screenshot  ${test_id}_CSM_audit_log_downloaded.png
-    View Audit Log  S3  One day
+    View Audit Log  S3
     wait for page or element to load
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_S3_audit_log_generated.png
-    Download Audit Log  S3  One day
+    Download Audit Log  S3
     wait for page or element to load
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
     Capture Page Screenshot  ${test_id}_S3_audit_log_downloaded.png

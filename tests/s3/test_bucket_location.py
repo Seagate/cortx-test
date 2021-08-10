@@ -30,10 +30,8 @@ from commons.exceptions import CTException
 from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from config import S3_CFG
-
-S3_OBJ = s3_test_lib.S3TestLib()
 
 
 class TestBucketLocation:
@@ -48,27 +46,27 @@ class TestBucketLocation:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED : Setup test operations.")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.account_name1 = "location-acc1{}".format(time.perf_counter_ns())
         self.email_id1 = "{}@seagate.com".format(time.perf_counter_ns())
         self.account_name2 = "location-acc2{}".format(time.perf_counter_ns())
         self.email_id2 = "{}@seagate.com".format(time.perf_counter_ns())
         self.bucket_name = "location-bkt{}".format(time.perf_counter_ns())
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.cortx_obj = CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.log.info("ENDED : Setup test operations.")
         yield
         self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
-        resp = S3_OBJ.bucket_list()[1]
+        resp = self.s3_test_obj.bucket_list()[1]
         self.log.info("Bucket list: %s", resp)
         if self.bucket_name in resp:
-            resp = S3_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
-            self.cortx_obj.delete_account_cortxcli(account_name=acc, password=self.s3acc_password)
-        self.cortx_obj.close_connection()
+            self.rest_obj.delete_s3_account(acc)
         self.log.info("ENDED: Teardown test operations.")
 
     @pytest.mark.parallel
@@ -82,7 +80,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -95,7 +93,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Retrieving bucket location on existing bucket %s",
             self.bucket_name)
-        resp = S3_OBJ.bucket_location(
+        resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
@@ -120,21 +118,20 @@ class TestBucketLocation:
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
         try:
-            resp = S3_OBJ.bucket_location(
-                self.bucket_name)
+            resp = self.s3_test_obj.bucket_location(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "NoSuchBucket" in str(
-                error.message), error.message
+            assert_utils.assert_in("NoSuchBucket", str(
+                error.message), error.message)
         self.log.info(
             "Step 1 : Get bucket location on non existing bucket failed with error %s",
             "NoSuchBucket")
         self.log.info(
             "Verify get bucket location for the bucket which is not present")
 
-    @pytest.mark.parallel
+    # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
@@ -151,11 +148,12 @@ class TestBucketLocation:
         self.log.info(
             "Creating account1 with name prefix as %s",
             self.account_name1)
-        acc1_resp = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name1, account_email=self.email_id1,
-            password=self.s3acc_password)
+        acc1_resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name1, email_id=self.email_id1,
+            passwd=self.s3acc_password)
         assert_utils.assert_true(acc1_resp[0], acc1_resp[1])
         s3_acl_obj_1 = s3_acl_test_lib.S3AclTestLib(
+            endpoint_url=S3_CFG['s3_url'],
             access_key=acc1_resp[1]["access_key"],
             secret_key=acc1_resp[1]["secret_key"])
         s3_obj_1 = s3_test_lib.S3TestLib(
@@ -166,9 +164,9 @@ class TestBucketLocation:
         self.log.info(
             "Creating account2 with name prefix as %s",
             self.account_name2)
-        acc2_resp = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name2, account_email=self.email_id2,
-            password=self.s3acc_password)
+        acc2_resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name2, email_id=self.email_id2,
+            passwd=self.s3acc_password)
         assert_utils.assert_true(acc2_resp[0], acc2_resp[1])
         self.account_list.append(self.account_name2)
         s3_obj_2 = s3_test_lib.S3TestLib(
@@ -224,7 +222,7 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
@@ -234,16 +232,16 @@ class TestBucketLocation:
         self.log.info("Step 1 : Created bucket with name %s", self.bucket_name)
         self.log.info(
             "Step 2 : Creating second account to retrieve bucket location")
-        resp = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name1,
-            account_email=self.email_id1,
-            password=self.s3acc_password)
+        resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name1,
+            email_id=self.email_id1,
+            passwd=self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         self.account_list.append(self.account_name1)
-        s3_obj_2 = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+        s3_obj_2 = s3_test_lib.S3TestLib(endpoint_url=S3_CFG['s3_url'],
+                                         access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2 : Created second account to retrieve bucket location")
         self.log.info(
@@ -252,8 +250,8 @@ class TestBucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert "AccessDenied" in str(
-                error.message), error.message
+            assert_utils.assert_in("AccessDenied", str(
+                error.message), error.message)
         self.log.info(
             "Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")

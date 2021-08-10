@@ -28,9 +28,13 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils.web_utils import http_head_request
-from commons.utils.assert_utils import assert_equal, assert_true
-from commons.utils.system_utils import path_exists, remove_file, make_dirs
+from commons.utils.assert_utils import assert_equal
+from commons.utils.assert_utils import assert_true
+from commons.utils.system_utils import path_exists
+from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import make_dirs
 from commons.helpers.node_helper import Node
+from commons.params import TEST_DATA_FOLDER
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
 
 
@@ -45,13 +49,13 @@ class TestAuthServerHealthCheckAPI:
         It will perform all prerequisite test suite steps if any.
         """
         cls.log = logging.getLogger(__name__)
-        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["host"],
+        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["hostname"],
                         username=CM_CFG["nodes"][0]["username"],
                         password=CM_CFG["nodes"][0]["password"])
         cls.service = "haproxy"
         cls.remote_path = const.CFG_FILES[0]
         cls.auth_log_path = const.AUTHSERVER_LOG_PATH
-        cls.test_dir_path = os.path.join(os.getcwd(), "testdata", "AuthServerHealthCheck")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "AuthServerHealthCheck")
         cls.local_file = os.path.join(cls.test_dir_path, "haproxy.cfg")
         if not path_exists(cls.test_dir_path):
             make_dirs(cls.test_dir_path)
@@ -60,6 +64,7 @@ class TestAuthServerHealthCheckAPI:
     def setup_method(self):
         """Function to perform the setup ops for each test."""
         self.log.info("Started: Performing setup operations")
+        self.head_url =  f"{S3_CFG['iam_url']}{S3_CFG['head_urls']}"
         resp = self.nobj.path_exists(self.remote_path)
         self.log.info(resp)
         assert_true(
@@ -131,7 +136,7 @@ class TestAuthServerHealthCheckAPI:
         resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
-            res = http_head_request(url=S3_CFG["head_urls"])
+            res = http_head_request(url=self.head_url)
             self.log.info(res)
             assert_equal("200", str(res.status_code))
         self.log.info(
@@ -153,7 +158,7 @@ class TestAuthServerHealthCheckAPI:
         resp = self.nobj.get_authserver_log(path=self.auth_log_path)
         self.log.debug(resp)
         for _ in range(2):
-            res = http_head_request(url=S3_CFG["head_urls"])
+            res = http_head_request(url=self.head_url)
             self.log.info(res)
             assert_equal("200", str(res.status_code))
         self.log.info(

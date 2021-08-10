@@ -170,10 +170,8 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        LOGGER.info("Uploading object")
         self.s3_resource.meta.client.upload_file(
             file_path, bucket_name, object_name)
-        LOGGER.info("Uploading object done")
 
         return file_path
 
@@ -281,7 +279,8 @@ class S3Lib:
     def object_download(self,
                         bucket_name: str = None,
                         obj_name: str = None,
-                        file_path: str = None) -> str:
+                        file_path: str = None,
+                        **kwargs) -> str:
         """
         Downloading Object of the required Bucket.
 
@@ -290,7 +289,7 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
+        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
         LOGGER.debug(
             "The %s has been downloaded successfully at mentioned file path %s",
             obj_name,
@@ -1067,6 +1066,43 @@ class Acl(S3Lib):
         else:
             response = self.s3_client.put_bucket_acl(
                 ACL=acl, Bucket=bucket_name)
+
+        return response
+
+    def put_bucket_multiple_permission(self,
+                                       bucket_name: str = None,
+                                       **kwargs) -> bool:
+        """
+        Set the permissions on a bucket using access control lists (ACL).
+
+        :param bucket_name: Name of the bucket
+        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+         permissions on the bucket.
+        :param grant_read: Allows grantee to list the objects in the bucket.
+        :param grant_read_acp: Allows grantee to read the bucket ACL.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+         in the bucket.
+        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        :return: True or False
+        """
+        grantee = {}
+        grant_full_control = kwargs.get("grant_full_control", None)
+        grant_read = kwargs.get("grant_read", None)
+        grant_read_acp = kwargs.get("grant_read_acp", None)
+        grant_write = kwargs.get("grant_write", None)
+        grant_write_acp = kwargs.get("grant_write_acp", None)
+
+        if grant_full_control:
+            grantee["GrantFullControl"] = grant_full_control
+        if grant_read:
+            grantee["GrantRead"] = grant_read
+        if grant_read_acp:
+            grantee["GrantReadACP"] = grant_read_acp
+        if grant_write:
+            grantee["GrantWrite"] = grant_write
+        if grant_write_acp:
+            grantee["GrantWriteACP"] = grant_write_acp
+        response = self.s3_client.put_bucket_acl(Bucket=bucket_name, **grantee)
 
         return response
 
