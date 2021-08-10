@@ -24,7 +24,7 @@ import logging
 import pytest
 
 from commons import configmanager
-from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 from scripts.s3_bench import s3bench
 from config import CMN_CFG
 
@@ -113,6 +113,7 @@ class TestWorkloadS3Bench:
             clients = clients * 5
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
+        access_key, secret_key = S3H_OBJ.get_local_keys()
         for workload in workloads:
             bucket_name = bucket_prefix + "-" + str(workload).lower()
             if "Kb" in workload:
@@ -123,7 +124,7 @@ class TestWorkloadS3Bench:
                 samples = 20
             if self.setup_type == "HW":
                 samples = samples * 5
-            resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=clients,
+            resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name, num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
                                    obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix="TEST-24673")
@@ -145,28 +146,30 @@ class TestWorkloadS3Bench:
         bucket_name = "test-bucket-25016"
         resp = s3bench.setup_s3bench()
         assert resp, "Could not setup s3bench."
+        access_key, secret_key = S3H_OBJ.get_local_keys()
 
-        self.log.info(f"Perform Write Operation on Bucket {bucket_name}:")
-        self.log.info(f"Workload: {samples} objects of {size} with {clients} parallel clients.")
-        resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+        self.log.info("Perform Write Operation on Bucket %s", bucket_name)
+        self.log.info("Workload: %s objects of %s with %s parallel clients.", samples, size,
+                      clients)
+        resp = s3bench.s3bench(access_key, SECRET_KEY, bucket=bucket_name,
                                num_clients=clients, num_sample=samples,
                                obj_name_pref="test_25016", obj_size=size,
                                skip_cleanup=True, duration=None,
                                log_file_prefix="test_25016")
 
-        self.log.info(f"Perform Read Operation in Loop on Bucket {bucket_name}:")
+        self.log.info("Perform Read Operation in Loop on Bucket :%s", bucket_name)
         for loop in range(read_loops):
             self.log.info(
-                f"Loop: {loop} Workload: {samples} objects of {size} with {clients} parallel "
-                f"clients.")
+                "Loop: %s Workload: %s objects of %s with %s parallel "
+                "clients.", loop, samples, size, clients)
             skip_cleanup = True
             if loop == read_loops - 1:
                 skip_cleanup = False
-            resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+            resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                    num_clients=clients, num_sample=samples,
                                    obj_name_pref="test_25016", obj_size=size, skip_write=True,
                                    skip_cleanup=skip_cleanup, duration=None,
                                    log_file_prefix="test_25016")
-            self.log.info(f"Log Path {resp[1]}")
+            self.log.info("Log Path %s", resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
