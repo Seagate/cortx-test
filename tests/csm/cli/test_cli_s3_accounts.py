@@ -1591,7 +1591,8 @@ class TestCliS3ACC:
         resp = self.iam_user_obj.reset_iamuser_password(
             iamuser_name=iam_user_name, new_password=new_pwd)
         assert_utils.assert_equals(False, resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], "Access denied")
+        assert_utils.assert_exact_string(resp[1], "request was rejected")
+        self.logger.debug(resp)
         self.logger.info(
             "Verified reset password of IAM user operation is perfomed successfully")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
@@ -2191,8 +2192,6 @@ class TestCliS3ACC:
             "Performing delete S3 account without account name parameter using CSM user")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(account_name="")
         assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_exact_string(
-            resp[1], "The following arguments are required: account_name")
         self.logger.info(resp[1])
         self.logger.info(
             "Performed delete S3 account without account name parameter is failed with error %s",
@@ -2230,7 +2229,7 @@ class TestCliS3ACC:
         self.logger.info(
             "Try to access deleted S3 account using new ssh connection")
         resp = self.s3acc_obj1.show_s3account_cortx_cli()
-        assert_utils.assert_false(login[0], login[1])
+        assert_utils.assert_exact_string(resp[1], "Session expired")
         self.logger.info(resp)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
