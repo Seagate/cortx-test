@@ -778,7 +778,7 @@ class TestServerOS:
     @pytest.mark.tags("TEST-22891")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
-    def test_22891_cpu_usage(self):
+    def test_22891_load_test(self):
         """
         Load testing with high memory usage, CPU usage,
          disk usage are above threshold and CPU faults.
