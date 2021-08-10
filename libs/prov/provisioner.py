@@ -71,13 +71,22 @@ class Provisioner:
                 job_name, parameters=parameters, token=token)
             time.sleep(10)
             LOGGER.info("Running the deployment job")
+            # poll job status waiting for a result
+            timeout = 7200  # sec
+            interval = 10
+            start_epoch = int(time.time())
             while True:
-                LOGGER.info(jenkins_server_obj.get_job_info(job_name)['lastBuild']['number'])
-                if jenkins_server_obj.get_job_info(job_name)['lastCompletedBuild']['number'] == \
-                        jenkins_server_obj.get_job_info(job_name)['lastBuild']['number']:
+                build_info = jenkins_server_obj.get_build_info(
+                    job_name, next_build_number)
+                result = build_info['result']
+                expected_result = ['SUCCESS', 'FAILURE', 'ABORTED', 'UNSTABLE']
+                if result in expected_result:
                     break
-            build_info = jenkins_server_obj.get_build_info(
-                job_name, next_build_number)
+                cur_epoch = int(time.time())
+                if (cur_epoch - start_epoch) > timeout:
+                    LOGGER.error("No status before timeout of %s secs", timeout)
+                    break
+                time.sleep(interval)
             console_output = jenkins_server_obj.get_build_console_output(
                 job_name, next_build_number)
             LOGGER.debug("console output:\n %s", console_output)
