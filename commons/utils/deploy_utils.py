@@ -139,11 +139,12 @@ class CreateSetupJson:
         return dict(username="",
                     password="")
 
+    # pylint: disable=broad-except
     def add_ldap_details(self):
         """
         Add ldap details in setup entry
         """
-        ldap_pass = ''
+        ldap_value = ''
         try:
             sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
             cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
@@ -152,13 +153,13 @@ class CreateSetupJson:
             key = key.strip('\n')
             cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
             resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-            ldap_pass = resp1[0]
-            ldap_pass = ldap_pass.strip('\n')
-        except Exception as e:
-            LOGGER.debug("Error in getting ldap credentials %s", e)
+            ldap_value = resp1[0]
+            ldap_value = ldap_value.strip('\n')
+        except Exception as error:
+            LOGGER.debug("Error in getting ldap credentials %s", error)
         return dict(username="sgiamadmin",
-                    password=ldap_pass,
-                    sspl_pass=ldap_pass)
+                    password=ldap_value,
+                    sspl_pass=ldap_value)
 
     def add_csm_details(self, csm_user, csm_pass):
         """

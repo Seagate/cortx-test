@@ -455,8 +455,9 @@ def post_test_execution_action(args, hosts_list):
     """
     Perform post actions
     """
-    revert_vms(args, hosts_list)
     update_vm_db(args=args)
+    revert_vms(args, hosts_list)
+
 
 
 def main(args):
@@ -481,6 +482,7 @@ def main(args):
         while not te_completed:
             args.te_ticket = te_num
             if attempts >= 5:
+                post_test_execution_action(args, hosts_list)
                 raise EnvironmentError('More than 5 attempts of executing tests crossed.')
 
             if attempts == 1:
@@ -491,6 +493,7 @@ def main(args):
             if status:
                 ret = trigger_deployment(args, cluster_ip, retries=3)
                 if not ret:
+                    post_test_execution_action(args, hosts_list)
                     raise EnvironmentError('Deployment or VM revert ran into errors')
             else:
                 te_completed = True
