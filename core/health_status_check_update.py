@@ -135,7 +135,11 @@ class HealthCheck:
         target_status_dict = {}
         for setupname in target_dict:
             setup_details = target_dict[setupname]
-            if setup_details["is_setup_free"] or not setup_details["in_use_for_parallel"]:
+            if not setup_details["is_setup_free"] and not setup_details["in_use_for_parallel"]:
+                continue
+            if not setup_details["is_setup_free"] and setup_details["in_use_for_parallel"] and not setup_details["setup_in_useby"] == "":
+                continue
+            else:
                 nodes = setup_details["nodes"]
                 for node in nodes:
                     health_result = self.check_cortx_cluster_health(node)
