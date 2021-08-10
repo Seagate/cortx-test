@@ -143,15 +143,19 @@ class CreateSetupJson:
         """
         Add ldap details in setup entry
         """
-        sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
-        cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
-        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-        key = resp1[0]
-        key = key.strip('\n')
-        cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
-        resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
-        ldap_pass = resp1[0]
-        ldap_pass = ldap_pass.strip('\n')
+        ldap_pass = ''
+        try:
+            sgiam_secret = self.data['cortx']['software']['openldap']['sgiam']['secret']
+            cmd = common_cmd.CMD_GET_S3CIPHER_CONST_KEY
+            resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+            key = resp1[0]
+            key = key.strip('\n')
+            cmd = common_cmd.CMD_DECRYPT_S3CIPHER_CONST_KEY.format(key, sgiam_secret)
+            resp1 = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+            ldap_pass = resp1[0]
+            ldap_pass = ldap_pass.strip('\n')
+        except Exception as e:
+            LOGGER.debug("Error in getting ldap credentials %s", e)
         return dict(username="sgiamadmin",
                     password=ldap_pass,
                     sspl_pass=ldap_pass)
