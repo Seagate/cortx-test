@@ -15,7 +15,37 @@
         "password": "node 0 password",
         "public_data_ip":"",
         "private_data_ip":"",
-        "mgmt_ip": ""
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
     },
     {
         "host": "srv-node-1",
@@ -25,7 +55,37 @@
         "password": "node 1 password",
         "public_data_ip":"",
         "private_data_ip":"",
-        "mgmt_ip": ""
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+             },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+            }
     }
 ],
 
@@ -35,24 +95,6 @@
     "secondary_enclosure_ip": "10.0.0.3",
     "enclosure_user": "",
     "enclosure_pwd": ""
-},
-
-"pdu":{
-    "ip": "",
-    "username": "",
-    "password": "",
-    "power_on": "on",
-    "power_off": "off",
-    "sleep_time": 120
-},
-
-"gem_controller":
-{
-    "ip": "",
-    "username": "",
-    "password": "",
-    "port1": "9012",
-    "port2": "9014"
 },
 
 "bmc":
@@ -75,6 +117,5 @@
     "username": "",
     "password": ""
   }
-
 }
 }
