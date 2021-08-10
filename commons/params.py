@@ -111,4 +111,4 @@ DOWNLOAD_HOME = '/var/log/'
 
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
