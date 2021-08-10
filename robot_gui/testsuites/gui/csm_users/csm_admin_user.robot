@@ -443,7 +443,7 @@ TEST-23050
     END
     Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
     wait for page or element to load  20s
-    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
+    Verify Edit Action Enabled On The Table Element  ${username}
     ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
     Log To Console And Report  ${admin_users}
     Remove Values From List  ${admin_users}  ${username}
@@ -463,37 +463,23 @@ TEST-23872
     Should Be Equal  "${text}"  "${CSM_TEST_DEFAULT_DROPDOWN_VALUE}"
 
 TEST-23837
-    [Documentation]  Test that any user with any role should be able to delete themselves except monitor role user.
+    [Documentation]  Test that any user with any role should be able to delete themselves.
     ...  Reference : https://jts.seagate.com/browse/TEST-23837
     [Tags]  Priority_High  TEST-23837
     Navigate To Page  ${page_name}
     wait for page or element to load
     ${new_password}=  Generate New Password
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}  admin
-    Click on confirm button
-    ${new_password1}=  Generate New Password
-    ${new_user_name1}=  Generate New User Name
-    Create New CSM User  ${new_user_name1}  ${new_password1}  manage
-    Click on confirm button
-    ${new_csm_user_password}=  Generate New Password
-    ${new_csm_user_name}=  Generate New User Name
-    Create New CSM User  ${new_csm_user_name}  ${new_csm_user_password}  monitor
-    Click on confirm button
-    Re-login  ${new_user_name}  ${new_password}  ${page_name}
-    Delete Logged In CSM User  ${new_user_name}
-    Re-login  ${new_user_name1}  ${new_password1}  ${page_name}  False
-    Delete Logged In CSM User  ${new_user_name1}
-    Re-login  ${new_csm_user_name}  ${new_csm_user_password}  ${page_name}  False
-    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
-    wait for page or element to load  20s
-    Verify Delete Action Disabled On The Table Element  ${new_csm_user_name}
-    # TODO : monitor user will be able to delte self, verify & modify tests
-    Re-login  ${username}  ${password}  ${page_name}
-    Delete CSM User  ${new_csm_user_name}
-    Verify Deleted User  {new_csm_user_name}
-    Verify Deleted User  {new_user_name1}
-    Verify Deleted User  {new_user_name}
+    ${users_type}=  Create List  admin  manage  monitor
+    FOR    ${value}    IN    @{users_type}
+        ${new_user_name}=  Generate New User Name
+        Create New CSM User  ${new_user_name}  ${new_password}  ${value}
+        Log To Console And Report  operation for ${value}
+        Click On Confirm Button
+        Re-login  ${new_user_name}  ${new_password}  ${page_name}
+        Delete Logged In CSM User  ${new_user_name}
+        Re-login  ${username}  ${password}  ${page_name}    False
+        Verify Deleted User  ${new_user_name}
+    END
 
 TEST-23859
     [Documentation]  Test user should be able to select number of rows to be displayed per page in administrative users CSM UI page
@@ -620,49 +606,29 @@ TEST-23616
     [Documentation]  Test that user should able to select multiple options form the drop down.
     ...  Reference : https://jts.seagate.com/browse/TEST-23616
     [Tags]  Priority_High  TEST-23616
-    ${new_password}=  Generate New Password
     Navigate To Page  ${page_name}
-    ${new_user_name}=  Generate New User Name
-    Create New CSM User  ${new_user_name}  ${new_password}   admin
-    Click On Confirm Button
     Select from filter  username
     Select from filter  role
-#   TODO : revisit once EOS-23034 is fixed.
+    Verify Filter options got selected  username
+    Verify Filter options got selected  role
 
 TEST-23615
     [Documentation]  Test that user should able to see role and username filter options.
     ...  Reference : https://jts.seagate.com/browse/TEST-23615
     [Tags]  Priority_High  TEST-23615
     Navigate To Page  ${page_name}
-    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
-    wait for page or element to load  10s
-    Reload Page
+    Verify Filter options Contents
 
 TEST-23614
     [Documentation]  Test that drop down would be appear when user click on the filter option.
     ...  Reference : https://jts.seagate.com/browse/TEST-23614
     [Tags]  Priority_High  TEST-23614
     Navigate To Page  ${page_name}
-    Select from filter  role
-    wait for page or element to load
-    Reload Page
+    Verify Filter drop down Appear For User Search
 
 TEST-23617
     [Documentation]  Test that filter drop down should not get over the heading panel alignment.
     ...  Reference : https://jts.seagate.com/browse/TEST-23617
     [Tags]  Priority_High  TEST-23617
     Navigate To Page  ${page_name}
-    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
-    Log To Console And Report  ${${X}}
-    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
-    Log To Console And Report  ${${Y}}
-    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
-    wait for page or element to load  10s
-    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
-    Log To Console And Report  ${${X1}}
-    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
-    Log To Console And Report  ${${Y1}}
-    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
-    ...  ELSE
-    ...  Fail
-    Click Element  ${CSM_FILTER_USERNAME_SELECT_XPATH}
+    Verify Filter drop down Appear Correctly Over Filters
