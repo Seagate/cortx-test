@@ -62,8 +62,7 @@ class TestS3Concurrency:
         self.obj_name = "obj{}.txt".format(time.perf_counter_ns())
         self.file_name = "concurrency{}.txt".format(time.perf_counter_ns())
         self.resp_lst = MANAGER.list()
-        self.test_dir_path = os.path.join(
-            os.getcwd(), TEST_DATA_FOLDER, "TestS3Concurrency")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestS3Concurrency")
         self.file_path = os.path.join(self.test_dir_path, self.file_name)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
