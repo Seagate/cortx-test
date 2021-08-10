@@ -440,7 +440,7 @@ class VMOperations:
         if _vm_state == "on":
             _stop_res = self.stop_vm(_vm_id)
             if _stop_res:
-                time.sleep(30)
+                time.sleep(120)
                 _vm_info = self.get_vm_info()
                 _vm_state = _vm_info['resources'][0]['power_state']
                 print("VM has been stopped successfully. VM status is %s.." % _vm_state)
