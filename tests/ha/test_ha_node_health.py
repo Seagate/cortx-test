@@ -177,7 +177,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 node_obj=self.node_list[node],
@@ -229,7 +230,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
 
             LOGGER.info("Check all nodes are back online in CLI and REST.")
             self.ha_obj.status_nodes_online(
@@ -276,7 +278,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
@@ -328,7 +331,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
 
             LOGGER.info("Check all nodes are back online in CLI and REST.")
             self.ha_obj.status_nodes_online(
@@ -500,7 +504,8 @@ class TestHANodeHealth:
                     "HW: Need to disable stonith on the %s before shutdown",
                     self.srvnode_list[node_index])
                 self.node_list[node_index].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
+                    read_lines=True)
 
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node_index],
@@ -554,7 +559,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node_index].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
+                    read_lines=True)
 
             LOGGER.info("Checked All nodes are online in CLI and REST.")
             self.ha_obj.status_nodes_online(
@@ -611,7 +617,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
                 self.node_list[node_index].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
+                    read_lines=True)
 
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node_index],
@@ -665,7 +672,8 @@ class TestHANodeHealth:
                 LOGGER.debug(
                     "HW: Need to enable stonith on the node after node came back up")
                 self.node_list[node_index].execute_cmd(
-                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index), read_lines=True)
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
+                    read_lines=True)
 
             LOGGER.info("Check all nodes are back online in CLI and REST")
             self.ha_obj.status_nodes_online(
