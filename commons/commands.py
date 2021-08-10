@@ -221,6 +221,7 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_NODE_OPERATION = "cluster_management node {} -i {}"
 CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
 CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
@@ -299,7 +300,7 @@ CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
-CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {} --data {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
