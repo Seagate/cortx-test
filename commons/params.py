@@ -29,7 +29,7 @@ CONFIG_DIR = 'config'
 LOG_DIR_NAME = 'log'
 LATEST_LOG_FOLDER = 'latest'
 LOG_DIR = os.path.join(SCRIPT_HOME, LOG_DIR_NAME)
-TEST_DATA_FOLDER = 'TestData'
+TEST_DATA_FOLDER = os.path.join(LOG_DIR, 'TestData')
 VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
