@@ -967,3 +967,41 @@ class SoftwareAlert(RASCoreLib):
             LOGGER.info("started joining")
             process.join()
         LOGGER.info("Started increasing in CPU usage")
+
+    def gen_disk_usage_fault_reboot_node(self, delta_disk_usage):
+        """Creates disk space full faults
+
+        :param delta_disk_usage: Delta to be added to disk usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching disk usage from server node")
+        disk_usage = self.health_obj.get_disk_usage()
+        LOGGER.info("Current disk usage of server is %s", disk_usage)
+        disk_usage_thresh = float("{:.1f}".format(sum([disk_usage, delta_disk_usage])))
+        LOGGER.info("Setting new value of host_disk_usage_threshold to %s", disk_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": disk_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def resolv_disk_usage_fault_reboot_node(self, disk_usage_thresh):
+        """Resolves disk space full faults
+
+        :param disk_usage_thresh: Value to the disk usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
