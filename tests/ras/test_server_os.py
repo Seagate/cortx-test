@@ -557,7 +557,7 @@ class TestServerOS:
                 LOGGER.info(
                     "Step 3: Increased the memory utilization in the factor of GB")
                 LOGGER.info("Step 4: Verifying memory utilization on %s node", obj.host)
-                if obj.check_memory_utilization().strip() >= int(cpu_usage):
+                if float(obj.check_memory_utilization().strip()) >= int(cpu_usage):
                     flag = True
                     break
                 LOGGER.info("Step 4: Verified memory utilization on %s node", obj.host)
@@ -842,7 +842,7 @@ class TestServerOS:
             LOGGER.info(
                 "Increased the memory utilization in the factor of GB")
             LOGGER.info("Checking memory utilization")
-            if self.sw_alert_obj.check_memory_utilization().strip() >= cpu_usage:
+            if float(self.sw_alert_obj.check_memory_utilization().strip()) >= int(cpu_usage):
                 memory_flag = True
                 break
             LOGGER.info("Verified memory utilization")
