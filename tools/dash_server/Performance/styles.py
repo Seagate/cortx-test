@@ -25,7 +25,7 @@ dict_style_table_caption = {
     'margin-top': '18px',
     'margin-bottom': '18px',
     'text-align': 'center'
-}
+} # rename 
 
 style_workload_captions = {
     'color': '#000000',
@@ -51,7 +51,7 @@ style_perf_captions = {
     'text-align': 'center'
 }
 
-dict_style_header = {
+style_dashtable_header = {
     'backgroundColor': '#7F8C8D',
     'textAlign': 'center',
     'font-size': '18px',
@@ -60,7 +60,7 @@ dict_style_header = {
     'font-family': 'sans-serif'
 }
 
-dict_style_cell = {
+style_table_cell = {
     'textAlign': 'center',
     'border': '1px solid black',
     'fontWeight': 'bold',
@@ -68,26 +68,14 @@ dict_style_cell = {
     'font-family': 'sans-serif'
 }
 
-dict_style_tab = {
-    'margin-left': 10,
-    'margin-right': 10
-}
 
-dict_style_label = {
-    'font-size': '22px',
-    'color': '#44cc00',
-    'background-color': '#343a40',
-    'border-style': 'solid',
-    'border-color': '#ffffff'
-}
-
-dict_style_sub_tab = {
+style_sub_tab = {
     'margin-left': 10,
     'margin-right': 10,
     'margin-top': '10px'
 }
 
-dict_style_sub_label = {
+style_sub_label = {
     'font-size': '18px',
     'color': '#44cc00',
     'background-color': '#343a40',
@@ -95,21 +83,29 @@ dict_style_sub_label = {
     'margin-top': '20px'
 }
 
-dict_style_dropdown_medium = {
-    'width': '160px',
+style_dropdown_small = {
+    'width': '100px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px",
 }
 
-dict_dropdown_normal_Style = {
-    'width': '200px',
+style_dropdown_small_2 = {
+    'width': '125px',
+    'verticalAlign': 'middle',
+    "margin-right": "10px",
+    "margin-top": "10px",
+}
+
+
+style_dropdown_medium = {
+    'width': '150px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px"
 }
 
-dict_style_dropdown_large = {
+style_dropdown_large = {
     'width': '250px',
     'verticalAlign': 'middle',
     "margin-right": "10px",

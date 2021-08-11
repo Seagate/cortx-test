@@ -19,7 +19,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from Performance.graphs.graphs_layouts import graphs_perf_tabs, second_input_set, first_input_set
+from Performance.graphs.graphs_layouts import graphs_perf_tabs, graphs_input_options
 import dash_html_components as html
 from Performance.statistics.statistics_layouts import statistics_perf_tabs, stats_input_options
 
@@ -33,8 +33,7 @@ perf_stats_page = html.Div(
 
 perf_graphs_page = html.Div(
     [
-        html.Div(first_input_set),
-        html.Div(second_input_set),
+        html.Div(graphs_input_options),
         html.Div(graphs_perf_tabs)
     ]
 )

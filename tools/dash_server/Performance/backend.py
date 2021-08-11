@@ -20,12 +20,11 @@
 # !/usr/bin/python
 
 from Performance.schemas import statistics_column_headings, multiple_buckets_headings
-# from threading import Thread
 import pandas as pd
 from Performance.schemas import *
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, get_db_details, keys_exists, round_off, check_empty_list
 from Performance.mongodb_api import find_documents, count_documents
-from Performance.styles import dict_style_header, dict_style_cell
+from Performance.styles import style_dashtable_header, style_table_cell
 import dash_table
 import dash_html_components as html
 
@@ -154,12 +153,12 @@ def get_dash_table_from_dataframe(df, bench, column_id):
             data=df.to_dict('records'),
             merge_duplicate_headers=True,
             sort_action="native",
-            style_header=dict_style_header,
+            style_header=style_dashtable_header,
             style_data_conditional=[
                 {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
                 {'if': {'column_id': column_id}, 'backgroundColor': '#D8D8D8'}
             ],
-            style_cell=dict_style_cell
+            style_cell=style_table_cell
         )
 
     return benchmark

@@ -25,7 +25,9 @@ from dash_core_components import Dropdown, Graph
 import dash_html_components as html
 import dash_daq as daq
 
-from Performance.styles import dict_style_sub_tab, dict_style_sub_label, dict_style_dropdown_medium, dict_dropdown_normal_Style, dict_style_dropdown_large
+from Performance.styles import style_sub_tab, style_sub_label,\
+        style_dropdown_small, style_dropdown_small_2, \
+        style_dropdown_medium, style_dropdown_large, dict_button_style, dict_Style_Stats_input_options
 
 # Variable declarations
 Xfilter = [
@@ -33,130 +35,182 @@ Xfilter = [
     {'label': 'Build', 'value': 'Build'},
 ]
 
-benchmarks = [
-    {'label': 'S3Bench', 'value': 'S3bench'},
-    {'label': 'COSBench', 'value': 'Cosbench'},
-    {'label': 'HSBench', 'value': 'Hsbench'},
-]
-
-operations = [
-    {'label': 'Read & Write', 'value': 'both'},
-    {'label': 'Read', 'value': 'read'},
-    {'label': 'Write', 'value': 'write'},
-]
-
 release = [
     {'label': 'LR-R1', 'value': '1'},
     {'label': 'LR-R2', 'value': '2'}
 ]
 
-# set of compulsary input options
-first_input_set = Row([
-    Dropdown(
-        id="filter_dropdown",
-        options=Xfilter,
-        placeholder="Filter by",
-        style=dict_style_dropdown_medium
-    ),
-    Dropdown(
-        id="release_dropdown_first",
-        options=release,
-        placeholder="Select Release",
-        style=dict_dropdown_normal_Style
-    ),
-    Dropdown(
-        id="branch_dropdown_first",
-        placeholder="Select Branch",
-        style=dict_dropdown_normal_Style
-    ),
-    Dropdown(
-        id='dropdown_first',
-        placeholder="Build/object Size",
-        style=dict_dropdown_normal_Style
-    ),
-    Dropdown(
-        id='profiles_options_first',
-        placeholder="Select Profile",
-        style={'display': 'none'}
-    ),
-    Dropdown(
-        id="benchmark_dropdown_first",
-        options=benchmarks,
-        placeholder="Benchmark",
-        style=dict_style_dropdown_medium
-    ),
-    Dropdown(
-        id='configs_dropdown_first',
-        placeholder="Choose configurations",
-        style=dict_style_dropdown_large
-    ),
-    Dropdown(
-        id="operations_dropdown_first",
-        options=operations,
-        placeholder="Operation",
-        value='both',
-        style=dict_style_dropdown_medium
-    ),
-    daq.ToggleSwitch(
-        id="compare_flag",
-        label="Compare",
-        labelPosition="bottom",
-        style={'color': '#FFFFFF', 'margin-top': '15px'}
-    )
-],
-    justify='center'
-)
+benchmarks = [ # get from database
+    {'label': 'S3Bench', 'value': 'S3bench'},
+    {'label': 'COSBench', 'value': 'Cosbench'},
+    {'label': 'HSBench', 'value': 'Hsbench'},
+]
 
-# set of non-mandatory input options
-second_input_set = Row([
-    Dropdown(
-        id="release_dropdown_second",
-        options=release,
-        placeholder="Select Release",
-        style={'display': 'none'}
-    ),
-    Dropdown(
-        id="branch_dropdown_second",
-        placeholder="Select Branch",
-        style={'display': 'none'}
-    ),
-    Dropdown(
-        id='dropdown_second',
-        placeholder="Select Build",
-        style={'display': 'none'}
-    ),
-    Dropdown(
-        id='profiles_options_second',
-        placeholder="Select Profile",
-        style={'display': 'none'}
-    ),
-    Button("Get!", id="get_graphs", color="success",
-           style={'height': '35px', 'margin-top': '20px'}),
-],
-    justify='center', style={'margin-bottom': '20px'}
-)
+operations = [ # write a function for this
+    {'label': 'Read & Write', 'value': 'both'},
+    {'label': 'Read', 'value': 'read'},
+    {'label': 'Write', 'value': 'write'},
+]
 
-# graph layouts function
-graphs_layout = Card(
-    CardBody(
+
+graphs_input_options = [
+    Row(
         [
-            html.P(html.U("Graphical Representation of Performance Data", id="graphs_headings"),
-                   style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-            html.P("Note: Each data point represents PER NODE data. Data is displayed for the builds on which PerfPro has run.",  style={
-                   "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-
-            Graph(id='plot_Throughput'),
-            Graph(id='plot_Latency'),
-            Graph(id='plot_IOPS'),
-            Graph(id='plot_TTFB'),
-            Graph(id='plot_all'),
-        ]
+            Dropdown(
+                id="graphs_filter_dropdown",
+                options=Xfilter,
+                placeholder="Filter by",
+                style= style_dropdown_small
+            ),
+            Dropdown(
+                id="graphs_benchmark_dropdown",
+                options=benchmarks,
+                placeholder="Benchmark",
+                style=style_dropdown_small_2
+            ),
+            Dropdown(
+                id="graphs_operations_dropdown",
+                options=operations,
+                placeholder="Operation",
+                value='both',
+                style=style_dropdown_medium
+            ),
+        ],
+        justify='center'
     ),
-    className="flex-sm-fill nav-link"
-)
+    Row(
+        [
+            Dropdown(
+                id="graphs_release_dropdown",
+                options=release,
+                placeholder="Release",
+                style=style_dropdown_small,
+            ),
+            Dropdown(
+                id="graphs_branch_dropdown",
+                placeholder="Branch",
+                style=style_dropdown_small_2,
+            ),
+            Dropdown(
+                id='graphs_build_dropdown',
+                placeholder="Build/Object Size",
+                style=style_dropdown_medium,
+            ),
+            Dropdown(
+                id='graphs_nodes_dropdown',
+                placeholder="Nodes",
+                style=style_dropdown_small
+            ),
+            Dropdown(
+                id='graphs_pfull_dropdown',
+                placeholder="Cluster % Fill",
+                style=style_dropdown_small_2
+            ),
+            Dropdown(
+                id='graphs_iteration_dropdown',
+                placeholder="Iterations",
+                style=style_dropdown_small_2
+            ),
+            Dropdown(
+                id='graphs_custom_dropdown',
+                placeholder="Select Tag",
+                style=style_dropdown_medium
+            ),
+            Dropdown(
+                id='graphs_sessions_dropdown',
+                placeholder="Sessions",
+                style=style_dropdown_small_2
+            ),
+            Dropdown(
+                id='graphs_buckets_dropdown',
+                placeholder="Buckets",
+                style=style_dropdown_small_2
+            ),
+        ],
+        justify='center'
+    ),
+    Row(
+        [
+            daq.ToggleSwitch(
+                id="compare_flag",
+                label="Compare",
+                labelPosition="bottom",
+                style={'color': '#FFFFFF', 'margin-top': '15px', 'margin-right': '10px'}
+            ),
+            Dropdown(
+                id="graphs_release_compare_dropdown",
+                options=release,
+                placeholder="Release",
+                style={'display': 'none'},
+            ),
+            Dropdown(
+                id="graphs_branch_compare_dropdown",
+                placeholder="Branch",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_build_compare_dropdown',
+                placeholder="Build/Object Size",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_nodes_compare_dropdown',
+                placeholder="Nodes",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_pfull_compare_dropdown',
+                placeholder="Cluster % Fill",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_iteration_compare_dropdown',
+                placeholder="Iterations",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_custom_compare_dropdown',
+                placeholder="Select Tag",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_sessions_compare_dropdown',
+                placeholder="Sessions",
+                style={'display': 'none'}
+            ),
+            Dropdown(
+                id='graphs_buckets_compare_dropdown',
+                placeholder="Buckets",
+                style={'display': 'none'}
+            ),
+            Button("Show", id="graphs_submit_button", n_clicks=0, color="success",
+                style=dict_button_style),
+        ],
+        justify='center'
+    )
+]
+
 
 graphs_perf_tabs = html.Div(
-    Tab(graphs_layout, id="perf_graphs_content", label="Performance Graphs",
-        style=dict_style_sub_tab, label_style=dict_style_sub_label
-        )
+    Tab(
+        Card(
+            CardBody(
+                [
+                    html.P(html.U("Graphical Representation of Performance Data", id="graphs_headings"),
+                        style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+                    html.P("Note: Each data point represents PER NODE data. Data is displayed for the builds on which PerfPro has run.",  style={
+                        "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+
+                    Graph(id='plot_Throughput'),
+                    Graph(id='plot_Latency'),
+                    Graph(id='plot_IOPS'),
+                    Graph(id='plot_TTFB'),
+                    Graph(id='plot_all'),
+                ]
+            ),
+            className="flex-sm-fill nav-link"
+        ),
+        id="perf_graphs_content", label="Performance Graphs",
+        style=style_sub_tab, label_style=style_sub_label
+    )
 )

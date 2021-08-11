@@ -22,8 +22,8 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
-from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions,\
+from Performance.styles import style_sub_tab, dict_style_table_caption,\
+    style_sub_label, style_perf_captions, style_workload_captions,\
     dict_Style_Stats_input_options, style_filters_captions, dict_button_style
 
 
@@ -165,6 +165,6 @@ stats_input_options = [
 
 statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
-        style=dict_style_sub_tab, label_style=dict_style_sub_label
+        style=style_sub_tab, label_style=style_sub_label
         )
 )

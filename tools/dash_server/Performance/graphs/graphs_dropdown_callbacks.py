@@ -11,8 +11,8 @@ from Performance.styles import dict_style_profiles
 
 
 @app.callback(
-    Output('branch_dropdown_first', 'options'),
-    Input('release_dropdown_first', 'value'),
+    Output('graphs_branch_dropdown', 'options'),
+    Input('graphs_release_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_branches_dropdown(release):
@@ -22,10 +22,10 @@ def update_branches_dropdown(release):
 
 
 @app.callback(
-    Output('dropdown_first', 'options'),
-    Input('filter_dropdown', 'value'),
-    Input('release_dropdown_first', 'value'),
-    Input('branch_dropdown_first', 'value'),
+    Output('graphs_build_dropdown', 'options'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
     prevent_initial_call=True
 )
 
@@ -47,11 +47,11 @@ def update_options_dropdown(xfilter, release, branch):
 
 
 @app.callback(
-    Output('configs_dropdown_first', 'options'),
-    Input('filter_dropdown', 'value'),
-    Input('release_dropdown_first', 'value'),
-    Input('branch_dropdown_first', 'value'),
-    Input('dropdown_first', 'value'),
+    Output('graphs_nodes_dropdown', 'options'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
+    Input('graphs_build_dropdown', 'value'),
     Input('benchmark_dropdown_first', 'value'),
     prevent_initial_call=True
 )
