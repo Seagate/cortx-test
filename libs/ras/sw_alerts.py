@@ -854,6 +854,43 @@ class SoftwareAlert(RASCoreLib):
         return float(resp) == float(
             mem_usage_thresh), "Memory usage threshold is not set as expected."
 
+    def gen_mem_usage_fault_reboot_node(self, delta_mem_usage):
+        """Creates memory faults
+
+        :param delta_mem_usage: Delta to be added to memory usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching memory usage from server node")
+        mem_usage = self.health_obj.get_memory_usage()
+        LOGGER.info("Current memory usage of server is %s", mem_usage)
+        mem_usage_thresh = float("{:.1f}".format(sum([mem_usage, delta_mem_usage])))
+        LOGGER.info("Setting new value of host_memory_usage_threshold to %s", mem_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
+    def resolv_mem_usage_fault_reboot_node(self, mem_usage_thresh):
+        """Resolves memory faults
+
+        :param mem_usage_thresh: Value to the memory usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": mem_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_MEM_USAGE)
+        LOGGER.info("Expected Threshold value %s", mem_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            mem_usage_thresh), "Memory usage threshold is not set as expected."
+
     def enable_sspl(self):
         """Enabling sspl service
         """

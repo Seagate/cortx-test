@@ -160,17 +160,17 @@ TEST-4932
     ${test_id}    Set Variable    TEST-4932
     Navigate To Audit Log Section
     Capture Page Screenshot  ${test_id}_audit_log_section.png
-    View Audit Log  CSM  One day
+    View Audit Log  CSM
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_CSM_audit_log_generated.png
-    Download Audit Log  CSM  One day
+    Download Audit Log  CSM
     Verify Audit Log Downloaded  ${Download_File_Path}  csm
     Capture Page Screenshot  ${test_id}_CSM_audit_log_downloaded.png
-    View Audit Log  S3  One day
+    View Audit Log  S3
     wait for page or element to load
     Verify Audit Log Generated
     Capture Page Screenshot  ${test_id}_S3_audit_log_generated.png
-    Download Audit Log  S3  One day
+    Download Audit Log  S3
     wait for page or element to load
     Verify Audit Log Downloaded  ${Download_File_Path}  s3
     Capture Page Screenshot  ${test_id}_S3_audit_log_downloaded.png
