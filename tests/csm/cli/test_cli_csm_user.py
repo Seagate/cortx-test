@@ -485,7 +485,8 @@ class TestCliCSMUser:
         resp = self.CSM_USER.list_csm_users(limit=-1, op_format="json")
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "value must be positive integer")
+            resp[1], "Invalid parameter")
+        self.logger.debug(resp[1])
         self.logger.info(
             "List csm user with invalid value for limit is failed with error %s",
             resp[1])
@@ -608,7 +609,8 @@ class TestCliCSMUser:
         self.logger.info("Verifying delete admin/root User")
         resp = self.CSM_USER.delete_csm_user(user_name="admin")
         assert_utils.assert_equals(resp[0], False, resp)
-        assert_utils.assert_exact_string(resp[1], "Cannot delete admin user")
+        assert_utils.assert_exact_string(resp[1], "Cannot delete")
+        self.logger.debug(resp[1])
         self.logger.info(
             "Verifying delete admin/root User is failed with error %s",
             resp[1])
@@ -1250,7 +1252,7 @@ class TestCliCSMUser:
         assert_utils.assert_equals(
             resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "password field can't be empty")
+            resp[1], "password field can not be empty")
         self.logger.info("Created csm user with name %s", self.user_name)
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -1614,6 +1616,7 @@ class TestCliCSMUser:
         self.update_password = True
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
+    @pytest.mark.skip("Test is invalid for R2")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-16932")
@@ -1650,7 +1653,7 @@ class TestCliCSMUser:
         self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non admin user cannot change other user")
+            resp[1], "can not update")
         self.CSM_USER.logout_cortx_cli()
         self.logger.info(
             "Verified manage user can not change roles for other user")
@@ -1666,7 +1669,7 @@ class TestCliCSMUser:
         self.logger.debug(resp[1])
         assert_utils.assert_equals(resp[0], False, resp)
         assert_utils.assert_exact_string(
-            resp[1], "Non admin user cannot change other user")
+            resp[1], "can not update")
         self.logger.info(
             "Verified monitor user can not change roles for other user")
         self.logger.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -1916,7 +1919,7 @@ class TestCliCSMUser:
             confirm_password=self.new_pwd)
         assert_utils.assert_equals(resp[0], False, resp[1])
         assert_utils.assert_exact_string(
-            resp[1], "Non admin user cannot change other user")
+            resp[1], "can not update")
         self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.logger.info(
@@ -1956,7 +1959,7 @@ class TestCliCSMUser:
         self.logger.debug(resp)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(
-            resp[1], "Cannot change roles for admin user")
+            resp[1], "Cannot change role")
         self.logger.info(
             "Verified admin user should not able to change roles for root user")
         self.logger.info(
@@ -1972,8 +1975,6 @@ class TestCliCSMUser:
                 current_password=CMN_CFG["csm"]["csm_admin_user"]["password"])
             self.logger.debug(resp)
             assert_utils.assert_false(resp[0], resp[1])
-            assert_utils.assert_exact_string(
-                resp[1], "Non admin user cannot change other user")
             self.CSM_USER.logout_cortx_cli()
         self.CSM_USER.login_cortx_cli()
         self.logger.info(

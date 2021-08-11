@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Test suite for storage enclosure fru related tests."""
+"""Test suite for storage enclosure fru related tests"""
 
 import os
 import time
@@ -84,9 +84,9 @@ class TestServerFruAlerts:
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
-        # TODO: Add cluster health check
-        # LOGGER.info("Check cluster health")
-        # resp = cls.health_obj.check_node_health()
+        LOGGER.info("Check cluster health")
+        resp = cls.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
 
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
@@ -102,6 +102,7 @@ class TestServerFruAlerts:
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
 
+        cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
@@ -139,9 +140,9 @@ class TestServerFruAlerts:
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"]]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]],
-                                         decode=True)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                        self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         for svc in services:
@@ -158,6 +159,20 @@ class TestServerFruAlerts:
         assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
 
+        self.raid_stopped = False
+        self.failed_disk = False
+        self.removed_disk = False
+        LOGGER.info(
+            "Fetching the disks details from mdstat for RAID array %s",
+            self.md_device)
+        md_stat = self.node_obj.get_mdstat()
+        self.disks = md_stat["devices"][os.path.basename(
+            self.md_device)]["disks"].keys()
+        self.disk1 = RAS_VAL["raid_param"]["disk_path"].format(
+            list(self.disks)[0])
+        self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(
+            list(self.disks)[1])
+
         LOGGER.info("Successfully performed Setup operations")
 
     def teardown_method(self):
@@ -165,6 +180,34 @@ class TestServerFruAlerts:
         LOGGER.info("Performing Teardown operation")
         self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         True)
+
+        if self.failed_disk:
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.RAID_REMOVE_DISK_ALERT,
+                input_parameters={
+                    "operation": RAS_VAL["raid_param"]["remove_operation"],
+                    "md_device": self.md_device,
+                    "disk": self.failed_disk})
+            assert_true(resp[0], resp[1])
+            self.removed_disk = self.failed_disk
+
+        if self.removed_disk:
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.RAID_ADD_DISK_ALERT,
+                input_parameters={
+                    "operation": RAS_VAL["raid_param"]["add_operation"],
+                    "md_device": self.md_device,
+                    "disk": self.removed_disk})
+            assert_true(resp[0], resp[1])
+
+        if self.raid_stopped:
+            resp = self.alert_api_obj.generate_alert(
+                AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
+                input_parameters={
+                    "operation": RAS_VAL["raid_param"]["assemble_operation"],
+                    "md_device": self.raid_stopped,
+                    "disk": None})
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -212,10 +255,9 @@ class TestServerFruAlerts:
                 self.node_obj.remove_file(filename=file)
 
         LOGGER.info("Restarting SSPL service")
-        service = self.cm_cfg["service"]
-        self.node_obj.send_systemctl_cmd(command="restart",
-                                         services=[service["sspl_service"]],
-                                         decode=True)
+        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
+                                                    resources=[
+                                                        self.sspl_resource_id])
         time.sleep(self.cm_cfg["sleep_val"])
 
         LOGGER.info("Successfully performed Teardown operation")
@@ -231,11 +273,29 @@ class TestServerFruAlerts:
         """
         LOGGER.info("STARTED: Test alerts for OS disk removal and insertion")
 
-        common_cfg = RAS_VAL["ras_sspl_alert"]
         test_cfg = RAS_TEST_CFG["TEST-23606"]
         df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
                           columns='Iteration0'.split())
         df = df.assign(Iteration0='Pass')
+
+        # TODO: Start CRUD operations in one thread
+        # TODO: Start IOs in one thread
+        # TODO: Start random alert generation in one thread
+
+        LOGGER.info("Step 1: Getting RAID array details of node %s",
+                    self.hostname)
+        resp = self.ras_test_obj.get_raid_array_details()
+        if not resp[0]:
+            df['Iteration0']['Step1'] = 'Fail'
+        md_arrays = resp[1] if resp[0] else assert_true(resp[0], "Step 1: Failed"
+                                                                 " to get raid "
+                                                                 "array details")
+
+        LOGGER.info("MDRAID arrays: %s", md_arrays)
+        for k, v in md_arrays.items():
+            if v["state"] != "Active":
+                df['Iteration0']['Step1'] = 'Fail'
+                assert_true(False, f"Step 1: Array {k} is in degraded state")
 
         LOGGER.info("Step 1: Getting details of drive to be removed")
         resp = self.ras_test_obj.get_node_drive_details()
@@ -268,8 +328,9 @@ class TestServerFruAlerts:
                         "Response: %s", drive_name, resp)
 
         time.sleep(self.cm_cfg["sleep_val"])
-        # TODO: Check cluster health
-        # resp = f"srv{self.test_node}_hlt".check_node_health()
+        LOGGER.info("Check health of node %s", self.test_node)
+        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
             LOGGER.info("Step 3: Verifying alert logs for fault alert ")
@@ -285,7 +346,6 @@ class TestServerFruAlerts:
                             "%s", resp)
 
         LOGGER.info("Step 4: Checking CSM REST API for alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                           self.alert_types["missing"],
                                                           False,
@@ -311,31 +371,57 @@ class TestServerFruAlerts:
 
         if not resp[0]:
             df['Iteration0']['Step5'] = 'Fail'
-            LOGGER.error("Step 5: Failed to resolve fault. Error: %s", resp[1])
+            LOGGER.error("Step 5: Failed to resolve fault.")
         else:
             LOGGER.info("Step 5: Successfully connected disk %s\n Response: %s",
-                        drive_name, resp)
+                        resp[1], resp)
+
+        new_drive = resp[1]
+        LOGGER.info("Starting RAID recovery...")
+        LOGGER.info("Step 6: Getting raid partitions of drive %s", new_drive)
+        resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
+                drive=new_drive)
+        if not resp[0]:
+            df['Iteration0']['Step6'] = 'Fail'
+        raid_parts = resp[1] if resp[0] else assert_true(resp[0],
+                                                         f"Step 6: Failed to "
+                                                         f"get partition "
+                                                         f"details of "
+                                                         f"{new_drive}")
+
+        LOGGER.info("Step 7: Adding raid partitions of drive %s in raid array",
+                    new_drive)
+        resp = self.ras_test_obj.add_raid_partitions(
+            alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
+            raid_parts=raid_parts, md_arrays=md_arrays)
+        if not resp[0]:
+            df['Iteration0']['Step7'] = 'Fail'
+        new_array = resp[1] if resp[0] else assert_true(resp[0],
+                                                        "Step 7: Failed to "
+                                                        "add drive in raid "
+                                                        "array")
+        LOGGER.info("New MDARRAY: %s", new_array)
 
         time.sleep(self.cm_cfg["sleep_val"])
-        # TODO: Check cluster health
-        # resp = f"srv{self.test_node}_hlt".check_node_health()
+        LOGGER.info("Check health of node %s", self.test_node)
+        resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+        assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
-            LOGGER.info("Step 6: Checking the generated alert logs")
+            LOGGER.info("Step 8: Checking the generated alert logs")
             alert_list = [test_cfg["resource_type"],
                           self.alert_types["insertion"]]
             resp = self.ras_test_obj.list_alert_validation(alert_list)
             if not resp[0]:
-                df['Iteration0']['Step6'] = 'Fail'
-                LOGGER.error("Step 6: Expected alert not found. Error: %s",
+                df['Iteration0']['Step8'] = 'Fail'
+                LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              resp[1])
             else:
-                LOGGER.info("Step 6: Checked generated alert logs\n "
+                LOGGER.info("Step 8: Successfully checked generated alert logs\n "
                             "Response: %s", resp)
-                LOGGER.info("Step 6: Checked generated alert logs")
 
-        LOGGER.info("Step 7: Checking CSM REST API for alert")
-        time.sleep(common_cfg["csm_alert_gen_delay"])
+        LOGGER.info("Step 9: Checking CSM REST API for alert")
         resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
                                                           self.alert_types[
                                                               "insertion"],
@@ -344,12 +430,16 @@ class TestServerFruAlerts:
                                                               "resource_type"])
 
         if not resp_csm:
-            df['Iteration0']['Step7'] = 'Fail'
-            LOGGER.error("Step 7: Expected alert not found. Error: %s",
+            df['Iteration0']['Step9'] = 'Fail'
+            LOGGER.error("Step 9: Expected alert not found. Error: %s",
                          test_cfg["csm_error_msg"])
         else:
-            LOGGER.info("Step 7: Successfully checked CSM REST API for "
+            LOGGER.info("Step 9: Successfully checked CSM REST API for "
                         "fault alert. Response: %s", resp_csm)
+
+        # TODO: Check status of CRUD operations
+        # TODO: Check status of IOs
+        # TODO: Check status of random alert generation
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
@@ -402,6 +492,24 @@ class TestServerFruAlerts:
             resolve_enum = value['resolve_enum']
             fault_alert = value['fault_alert']
             resolved_alert = value['resolved_alert']
+
+            LOGGER.info("Step 1: Getting RAID array details of node %s",
+                        self.hostname)
+            resp = self.ras_test_obj.get_raid_array_details()
+            if not resp[0]:
+                df['Iteration0']['Step1'] = 'Fail'
+            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
+                                                            "Step 1: Failed"
+                                                            " to get raid "
+                                                            "array details")
+
+            LOGGER.info("MDRAID arrays: %s", md_arrays)
+            for k, v in md_arrays.items():
+                if v["state"] != "Active":
+                    df['Iteration0']['Step1'] = 'Fail'
+                    assert_true(False,
+                                f"Step 1: Array {k} is in degraded state")
+
             LOGGER.info("Step 1: Generating %s os disk fault on drive %s",
                         key, drive_name)
             resp = self.alert_api_obj.generate_alert(
@@ -419,8 +527,10 @@ class TestServerFruAlerts:
                             "Response: %s", drive_name, resp)
 
             time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
 
             if self.start_msg_bus:
                 LOGGER.info("Step 2: Verifying alert logs for fault alert ")
@@ -457,8 +567,10 @@ class TestServerFruAlerts:
             LOGGER.info(
                 "Step 4: Rebooted node: %s, Response: %s", self.hostname, resp)
             time.sleep(self.cm_cfg["reboot_delay"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
 
             LOGGER.info("Step 5: Checking if fault alert is persistent "
                         "in CSM across node reboot")
@@ -468,7 +580,7 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
@@ -487,16 +599,42 @@ class TestServerFruAlerts:
 
             if not resp[0]:
                 df[key]['Step6'] = 'Fail'
-                LOGGER.error("Step 6: Failed to resolve fault. Error: %s",
+                LOGGER.error("Step 6: Failed to resolve fault on %s",
                              resp[1])
             else:
                 LOGGER.info("Step 6: Successfully resolved fault for disk %s\n "
                             "Response: %s", drive_name, resp)
 
-            time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
+            new_drive = resp[1]
+            LOGGER.info("Starting RAID recovery...")
+            LOGGER.info("Step 6: Getting raid partitions of drive %s",
+                        new_drive)
+            resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
+                drive=new_drive)
+            if not resp[0]:
+                df['Iteration0']['Step6'] = 'Fail'
+            raid_parts = resp[1] if resp[0] else LOGGER.error(
+                                                             "Step 6: Failed to "
+                                                             "get partition "
+                                                             "details of "
+                                                             "%s", new_drive)
 
+            LOGGER.info(
+                "Step 7: Adding raid partitions of drive %s in raid array",
+                new_drive)
+            resp = self.ras_test_obj.add_raid_partitions(
+                alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
+                raid_parts=raid_parts, md_arrays=md_arrays)
+            if not resp[0]:
+                df['Iteration0']['Step7'] = 'Fail'
+            new_array = resp[1] if resp[0] else LOGGER.error(
+                                                            "Step 7: Failed to "
+                                                            "add drive in raid "
+                                                            "array")
+            LOGGER.info("New MDARRAY: %s", new_array)
+
+            time.sleep(self.cm_cfg["sleep_val"])
             if self.start_msg_bus:
                 LOGGER.info("Step 7: Checking the generated alert logs")
                 alert_list = [test_cfg["resource_type"],
@@ -507,9 +645,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 7: Checked generated alert logs\n "
-                                "Response: %s", resp)
-                    LOGGER.info("Step 7: Checked generated alert logs")
+                    LOGGER.info("Step 7: Successfully checked generated alert "
+                                "logs\n Response: %s", resp)
 
             LOGGER.info("Step 8: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
@@ -519,13 +656,17 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step8'] = 'Fail'
                 LOGGER.error("Step 8: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
                 LOGGER.info("Step 8: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
@@ -582,6 +723,23 @@ class TestServerFruAlerts:
             fault_alert = value['fault_alert']
             resolved_alert = value['resolved_alert']
 
+            LOGGER.info("Step 1: Getting RAID array details of node %s",
+                        self.hostname)
+            resp = self.ras_test_obj.get_raid_array_details()
+            if not resp[0]:
+                df['Iteration0']['Step1'] = 'Fail'
+            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
+                                                            "Step 1: Failed"
+                                                            " to get raid "
+                                                            "array details")
+
+            LOGGER.info("MDRAID arrays: %s", md_arrays)
+            for k, v in md_arrays.items():
+                if v["state"] != "Active":
+                    df['Iteration0']['Step1'] = 'Fail'
+                    assert_true(False,
+                                f"Step 1: Array {k} is in degraded state")
+
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
             resp = self.health_obj.pcs_resource_ops_cmd(
@@ -627,9 +785,8 @@ class TestServerFruAlerts:
                                                         self.current_srvnode)
             if not resp:
                 df[key]['Step3'] = 'Fail'
-                assert_true(resp, f"Failed to clear/start "
-                                  f" {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to clear/start %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
             LOGGER.info("Step 3: Checking if SSPL is in running state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -638,7 +795,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step3'] = 'Fail'
-                compare(resp[0], "active")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 3: Successfully started SSPL service")
 
@@ -653,8 +810,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 4: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 4: Checked generated alert logs. "
-                                "Response: %s", resp)
+                    LOGGER.info("Step 4: Successfully checked generated alert "
+                                "logs. Response: %s", resp)
 
             LOGGER.info("Step 5: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
@@ -664,13 +821,18 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
                 LOGGER.info("Step 5: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            # Revisit when health state information is available
+            LOGGER.info("Response: %s", resp)
 
             LOGGER.info("Step 6: Again stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -679,8 +841,8 @@ class TestServerFruAlerts:
                 srvnode=self.current_srvnode)
             if not resp:
                 df[key]['Step6'] = 'Fail'
-                assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to ban/stop %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
             LOGGER.info("Step 6: Checking if SSPL is in stopped state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -689,7 +851,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
                 df[key]['Step6'] = 'Fail'
-                compare(resp[0], "inactive")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 6: Successfully stopped SSPL service")
 
@@ -703,11 +865,39 @@ class TestServerFruAlerts:
 
             if not resp[0]:
                 df[key]['Step7'] = 'Fail'
-                LOGGER.error("Step 7: Failed to resolve fault. Error: %s",
+                LOGGER.error("Step 7: Failed to resolve fault on %s",
                              resp[1])
             else:
                 LOGGER.info("Step 7: Successfully resolved fault for disk %s\n "
                             "Response: %s", drive_name, resp)
+
+            new_drive = resp[1]
+            LOGGER.info("Starting RAID recovery...")
+            LOGGER.info("Step 6: Getting raid partitions of drive %s",
+                        new_drive)
+            resp = self.ras_test_obj.get_drive_partition_details(
+                filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
+                drive=new_drive)
+            if not resp[0]:
+                df['Iteration0']['Step6'] = 'Fail'
+            raid_parts = resp[1] if resp[0] else LOGGER.error("Step 6: Failed "
+                                                              "to get partition"
+                                                              " details of "
+                                                              f"{new_drive}")
+
+            LOGGER.info(
+                "Step 7: Adding raid partitions of drive %s in raid array",
+                new_drive)
+            resp = self.ras_test_obj.add_raid_partitions(
+                alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
+                raid_parts=raid_parts, md_arrays=md_arrays)
+            if not resp[0]:
+                df['Iteration0']['Step7'] = 'Fail'
+            new_array = resp[1] if resp[0] else LOGGER.error(
+                                                            "Step 7: Failed to "
+                                                            "add drive in raid "
+                                                            "array")
+            LOGGER.info("New MDARRAY: %s", new_array)
 
             LOGGER.info("Step 8: Starting SSPL service")
             resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
@@ -717,9 +907,8 @@ class TestServerFruAlerts:
                                                         self.current_srvnode)
             if not resp:
                 df[key]['Step8'] = 'Fail'
-                assert_true(resp, f"Failed to clear/start "
-                                  f" {self.sspl_resource_id} "
-                                  f"on node {self.current_srvnode}")
+                LOGGER.error("Failed to clear/start %s on node %s",
+                             self.sspl_resource_id, self.current_srvnode)
             LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
             LOGGER.info("Step 8: Checking if SSPL is in running state.")
             resp = self.node_obj.send_systemctl_cmd(command="is-active",
@@ -728,14 +917,11 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "active":
                 df[key]['Step8'] = 'Fail'
-                compare(resp[0], "active")
+                LOGGER.error("SSPL state: %s", resp[0])
             else:
                 LOGGER.info("Step 8: Successfully started SSPL service")
 
             time.sleep(self.cm_cfg["sleep_val"])
-            # TODO: Check cluster health
-            # resp = f"srv{self.test_node}_hlt".check_node_health()
-
             if self.start_msg_bus:
                 LOGGER.info("Step 9: Checking the generated alert logs")
                 alert_list = [test_cfg["resource_type"],
@@ -746,9 +932,8 @@ class TestServerFruAlerts:
                     LOGGER.error("Step 7: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
-                    LOGGER.info("Step 9: Checked generated alert logs\n "
-                                "Response: %s", resp)
-                    LOGGER.info("Step 9: Checked generated alert logs")
+                    LOGGER.info("Step 9: Successfully checked generated alert "
+                                "logs\n Response: %s", resp)
 
             LOGGER.info("Step 10: Checking CSM REST API for alert")
             time.sleep(common_cfg["csm_alert_gen_delay"])
@@ -758,13 +943,17 @@ class TestServerFruAlerts:
                                                               test_cfg[
                                                                "resource_type"])
 
-            if not resp_csm[0]:
+            if not resp_csm:
                 df[key]['Step10'] = 'Fail'
                 LOGGER.error("Step 10: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
                 LOGGER.info("Step 10: Successfully checked CSM REST API for "
                             "fault alert. Response: %s", resp_csm)
+
+            LOGGER.info("Check health of node %s", self.test_node)
+            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
+            assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
@@ -773,3 +962,692 @@ class TestServerFruAlerts:
 
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "sspl stop and start")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23715")
+    @CTFailOn(error_handler)
+    def test_assemble_dissemble_raid_array_23715(self):
+        """
+        TEST-23715: Test alerts for assembling and dissembling RAID array
+        """
+        LOGGER.info(
+            "STARTED: TEST-23715: Test alerts for assembling and dissembling RAID array")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_23715"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
+
+        LOGGER.info(
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "stopping array")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_STOP_DEVICE_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["stop_operation"],
+                "md_device": test_cfg["md_device"],
+                "disk": None})
+        assert_true(resp[0], resp[1])
+        self.raid_stopped = test_cfg["md_device"]
+        LOGGER.info("Step 1: Ran ALERT API for generating RAID fault alert by "
+                    "stopping array")
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 2: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["fault"]]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 2: Verified the RAID fault alert on RMQ channel logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID fault alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["fault"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 3: Successfully verified RAID fault alert using CSM REST API")
+
+        LOGGER.info("Performing health check after fault creation")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        LOGGER.info(
+            "Step 4: Running ALERT API for generating RAID fault_resolved "
+            "alert by assembling array")
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["assemble_operation"],
+                "md_device": self.md_device,
+                "disk": None})
+        assert_true(resp[0], resp[1])
+        self.raid_stopped = False
+        LOGGER.info("Step 4: Ran ALERT API for generating RAID fault_resolved "
+                    "alerts by assembling array")
+
+        if self.start_msg_bus:
+            LOGGER.info("Step 5: Checking the generated RAID fault alert on RMQ"
+                        " channel logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["resolved"]]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                 restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 5: Verified the RAID fault alert on RMQ channel logs")
+
+        LOGGER.info(
+            "Step 6: Checking CSM REST API for RAID fault_resolved alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["resolved"],
+            True,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 6: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
+
+        LOGGER.info("Performing health check after fault resolved")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
+
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23723")
+    @CTFailOn(error_handler)
+    def test_fail_remove_add_drive_raid_array_23723(self):
+        """
+        TEST-23723: Test alerts for failing drive, removing drive
+        from RAID array and adding drive in RAID array.
+        """
+        LOGGER.info(
+            "STARTED: Test alerts for failing drive, removing drive"
+            "from RAID array and adding drive in RAID array")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_23723"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
+
+        LOGGER.info(
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "failing disk %s from array %s", self.disk2, self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_FAIL_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["fail_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = self.disk2
+        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        LOGGER.info(
+            "Step 1: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
+
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 2: Checking the generated RAID fault alert on message bus")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["fault"], resource_id]
+            resp = self.ras_test_obj.alert_validation(
+                string_list=alert_list, restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 2: Verified the RAID fault alert on message bus logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID fault alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["fault"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 3: Successfully verified RAID fault alert using CSM REST API")
+
+        LOGGER.info(
+            "Step 4: Running ALERT API for generating RAID missing alert by "
+            "removing faulty disk %s from array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_REMOVE_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["remove_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = False
+        self.removed_disk = self.disk2
+        LOGGER.info(
+            "Step 4: Ran ALERT API for generating RAID missing alert by "
+            "removing faulty disk from array")
+
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 5: Checking the generated RAID missing alert on message bus")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["missing"], resource_id]
+            resp = self.ras_test_obj.alert_validation(
+                string_list=alert_list, restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 5: Verified the RAID missing alert on message bus logs")
+
+        LOGGER.info("Step 6: Checking CSM REST API for RAID missing alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["missing"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 6: Successfully verified RAID missing alert using CSM"
+            " REST API")
+
+        LOGGER.info("Performing health check after fault creation")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        LOGGER.info(
+            "Step 7: Running ALERT API for generating RAID fault_resolved alert"
+            "by adding removed disk %s to array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_ADD_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["add_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 7: Ran ALERT API for generating RAID fault_resolved alert "
+            "by adding removed disk to array")
+
+        md_stat = resp[1]
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 8: Checking the generated RAID insertion alert on"
+                " message bus logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["insertion"], resource_id]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                      restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 8: Verified the RAID insertion alert on message bus logs")
+
+        LOGGER.info("Step 9: Checking CSM REST API for RAID insertion alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["insertion"],
+            True,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 9: Successfully verified RAID insertion alert using "
+                    "CSM REST API")
+
+        if not all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            time.sleep(raid_cmn_cfg["resync_delay"])
+
+        if all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            if self.start_msg_bus:
+                LOGGER.info("Step 10: Checking the generated RAID "
+                            "fault_resolved alert on message bus logs")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["resolved"], resource_id]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Step 10: Verified the RAID fault_resolved alert on"
+                    " message bus logs")
+
+            LOGGER.info(
+                "Step 11: Checking CSM REST API for RAID fault_resolved alert")
+            time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, csm_error_msg)
+        self.removed_disk = False
+        LOGGER.info("Step 11: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
+
+        LOGGER.info("Performing health check after fault resolved")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        LOGGER.info(
+            "ENDED: Test alerts for failing drive, removing drive"
+            "from RAID array and adding drive in RAID array")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23724")
+    @CTFailOn(error_handler)
+    def test_raid_array_alert_persistence_node_reboot_23724(self):
+        """
+        TEST-23724: Test alert persistence of RAID array alerts across node reboot.
+        """
+        LOGGER.info(
+            "STARTED: Test alert persistence of RAID array alerts across node reboot")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_23723"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        alert_types = RAS_TEST_CFG["alert_types"]
+
+        LOGGER.info(
+            "Step 1: Running ALERT API for generating RAID fault alert by "
+            "failing disk %s from array %s", self.disk2, self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_FAIL_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["fail_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = self.disk2
+        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        LOGGER.info(
+            "Step 1: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
+
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 2: Checking the generated RAID fault alert on message bus")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["fault"], resource_id]
+            resp = self.ras_test_obj.alert_validation(
+                string_list=alert_list, restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 2: Verified the RAID fault alert on message bus logs")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID fault alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["fault"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 3: Successfully verified RAID fault alert using CSM REST API")
+
+        LOGGER.info(
+            "Step 4: Running ALERT API for generating RAID missing alert by "
+            "removing faulty disk %s from array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_REMOVE_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["remove_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = False
+        self.removed_disk = self.disk2
+        LOGGER.info(
+            "Step 4: Ran ALERT API for generating RAID missing alert by "
+            "removing faulty disk from array")
+
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 5: Checking the generated RAID missing alert on message bus")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["missing"], resource_id]
+            resp = self.ras_test_obj.alert_validation(
+                string_list=alert_list, restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 5: Verified the RAID missing alert on message bus logs")
+
+        LOGGER.info("Step 6: Checking CSM REST API for RAID missing alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["missing"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 6: Successfully verified RAID missing alert using CSM"
+            " REST API")
+
+        LOGGER.info("Step 7: Rebooting node %s ", self.hostname)
+        resp = self.node_obj.execute_cmd(cmd=common_cmd.REBOOT_NODE_CMD,
+                                         read_lines=True, exc=False)
+        LOGGER.info(
+            "Step 7: Rebooted node: %s, Response: %s", self.hostname, resp)
+        time.sleep(self.cm_cfg["reboot_delay"])
+
+        LOGGER.info("Performing health check after node reboot")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 8: Checking if fault alert is persistent "
+                    "in CSM across node reboot")
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["missing"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 8: Successfully checked CSM REST API for RAID "
+                    "fault alert persistent across node reboot. ")
+
+        LOGGER.info(
+            "Step 9: Running ALERT API for generating RAID fault_resolved alert"
+            "by adding removed disk %s to array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_ADD_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["add_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 9: Ran ALERT API for generating RAID fault_resolved alert "
+            "by adding removed disk to array")
+
+        md_stat = resp[1]
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 10: Checking the generated RAID insertion alert on"
+                " message bus logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["insertion"], resource_id]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                      restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 10: Verified the RAID insertion alert on message bus logs")
+
+        LOGGER.info("Step 11: Checking CSM REST API for RAID insertion alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["insertion"],
+            True,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 11: Successfully verified RAID insertion alert using "
+                    "CSM REST API")
+
+        if not all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            time.sleep(raid_cmn_cfg["resync_delay"])
+
+        if all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            if self.start_msg_bus:
+                LOGGER.info("Step 12: Checking the generated RAID "
+                            "fault_resolved alert on message bus logs")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["resolved"], resource_id]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Step 12: Verified the RAID fault_resolved alert on"
+                    " message bus logs")
+
+            LOGGER.info(
+                "Step 13: Checking CSM REST API for RAID fault_resolved alert")
+            time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, csm_error_msg)
+        self.removed_disk = False
+        LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
+        LOGGER.info(
+            "ENDED: Test alert persistence of RAID array alerts across node reboot")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23725")
+    @CTFailOn(error_handler)
+    def test_raid_array_alert_persistence_sspl_stop_start_23725(self):
+        """
+        TEST-23724: Test alert persistence of RAID array alerts across sspl stop and start.
+        """
+        LOGGER.info(
+            "STARTED: Test alert persistence of RAID array alerts across sspl stop and start")
+        raid_cmn_cfg = RAS_VAL["raid_param"]
+        test_cfg = RAS_TEST_CFG["test_23723"]
+        csm_error_msg = raid_cmn_cfg["csm_error_msg"]
+        service = self.cm_cfg["service"]
+        alert_types = RAS_TEST_CFG["alert_types"]
+
+        LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
+                    self.sspl_resource_id)
+        resp = self.health_obj.pcs_resource_ops_cmd(
+            command="ban", resources=[self.sspl_resource_id],
+            srvnode=self.current_srvnode)
+
+        assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
+        LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
+        LOGGER.info("Checking if SSPL is in stopped state.")
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=[service[
+                                                              "sspl_service"]],
+                                                decode=True, exc=False)
+        assert_exact_string("inactive", resp[0], "sspl service is not in stopped state")
+        LOGGER.info("Step 1: Successfully stopped SSPL service")
+
+        LOGGER.info(
+            "Step 2: Running ALERT API for generating RAID fault alert by "
+            "failing disk %s from array %s", self.disk2, self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_FAIL_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["fail_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = self.disk2
+        resource_id = "{}:{}".format(self.md_device, self.disk2)
+        LOGGER.info(
+            "Step 2: Ran ALERT API for generating RAID fault alert by failing "
+            "a disk from array")
+
+        LOGGER.info(
+            "Step 3: Running ALERT API for generating RAID missing alert by "
+            "removing faulty disk %s from array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_REMOVE_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["remove_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        self.failed_disk = False
+        self.removed_disk = self.disk2
+        LOGGER.info(
+            "Step 3: Ran ALERT API for generating RAID missing alert by "
+            "removing faulty disk from array")
+
+        LOGGER.info("Step 4: Starting SSPL service")
+        resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
+                                                    resources=[
+                                                        self.sspl_resource_id],
+                                                    srvnode=
+                                                    self.current_srvnode)
+        assert_true(resp, f"Failed to clear/start {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
+        LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
+        LOGGER.info("Checking if SSPL is in running state.")
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=[service[
+                                                              "sspl_service"]],
+                                                decode=True, exc=False)
+        assert_exact_string("active", resp[0], "sspl service is not active")
+        LOGGER.info("Step 4: Successfully started SSPL service")
+
+        LOGGER.info("Performing health check after SSPL start")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 5: Checking the generated RAID missing alert on message bus")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["missing"], resource_id]
+            resp = self.ras_test_obj.alert_validation(
+                string_list=alert_list, restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 5: Verified the RAID missing alert on message bus logs")
+
+        LOGGER.info("Step 6: Checking CSM REST API for RAID missing alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["missing"],
+            False,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info(
+            "Step 6: Successfully verified RAID missing alert using CSM"
+            " REST API")
+
+        LOGGER.info("Step 7: Again stopping pcs resource for SSPL: %s",
+                    self.sspl_resource_id)
+        resp = self.health_obj.pcs_resource_ops_cmd(
+            command="ban", resources=[self.sspl_resource_id],
+            srvnode=self.current_srvnode)
+
+        assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
+        f"on node {self.current_srvnode}")
+        LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
+        LOGGER.info("Checking if SSPL is in stopped state.")
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=[service[
+                                                              "sspl_service"]],
+                                                decode=True, exc=False)
+        assert_exact_string("inactive", resp[0], "sspl service is not in stopped state")
+        LOGGER.info("Step 7: Successfully stopped SSPL service")
+
+        LOGGER.info(
+            "Step 8: Running ALERT API for generating RAID fault_resolved alert"
+            "by adding removed disk %s to array %s",
+            self.disk2,
+            self.md_device)
+        resp = self.alert_api_obj.generate_alert(
+            AlertType.RAID_ADD_DISK_ALERT,
+            input_parameters={
+                "operation": raid_cmn_cfg["add_operation"],
+                "md_device": self.md_device,
+                "disk": self.disk2})
+        assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 8: Ran ALERT API for generating RAID fault_resolved alert "
+            "by adding removed disk to array")
+
+        LOGGER.info("Step 9: Starting SSPL service")
+        resp = self.health_obj.pcs_resource_ops_cmd(command="clear",
+                                                    resources=[
+                                                        self.sspl_resource_id],
+                                                    srvnode=
+                                                    self.current_srvnode)
+        assert_true(resp, f"Failed to clear/start {self.sspl_resource_id} "
+        f"on node {self.current_srvnode}")
+        LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
+        LOGGER.info("Checking if SSPL is in running state.")
+        resp = self.node_obj.send_systemctl_cmd(command="is-active",
+                                                services=[service[
+                                                              "sspl_service"]],
+                                                decode=True, exc=False)
+        assert_exact_string("active", resp[0], "sspl service is not active")
+        LOGGER.info("Step 9: Successfully started SSPL service")
+
+        LOGGER.info("Performing health check after SSPL start")
+        resp = self.health_obj.check_node_health()
+        assert_true(resp[0], resp[1])
+
+        md_stat = resp[1]
+        if self.start_msg_bus:
+            LOGGER.info(
+                "Step 10: Checking the generated RAID insertion alert on"
+                " message bus logs")
+            alert_list = [test_cfg["resource_type"],
+                          alert_types["insertion"], resource_id]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list,
+                                                      restart=False)
+            assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 10: Verified the RAID insertion alert on message bus logs")
+
+        LOGGER.info("Step 11: Checking CSM REST API for RAID insertion alert")
+        time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+        resp = self.csm_alert_obj.verify_csm_response(
+            self.starttime,
+            alert_types["insertion"],
+            True,
+            test_cfg["resource_type"])
+        assert_true(resp, csm_error_msg)
+        LOGGER.info("Step 11: Successfully verified RAID insertion alert using "
+                    "CSM REST API")
+
+        if not all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            time.sleep(raid_cmn_cfg["resync_delay"])
+
+        if all(md_stat["devices"][os.path.basename(
+                self.md_device)]["status"]["synced"]):
+            if self.start_msg_bus:
+                LOGGER.info("Step 12: Checking the generated RAID "
+                            "fault_resolved alert on message bus logs")
+                alert_list = [test_cfg["resource_type"],
+                              alert_types["resolved"], resource_id]
+                resp = self.ras_test_obj.alert_validation(
+                    string_list=alert_list, restart=False)
+                assert_true(resp[0], resp[1])
+                LOGGER.info(
+                    "Step 12: Verified the RAID fault_resolved alert on"
+                    " message bus logs")
+
+            LOGGER.info(
+                "Step 13: Checking CSM REST API for RAID fault_resolved alert")
+            time.sleep(raid_cmn_cfg["csm_alert_reflection_time"])
+            resp = self.csm_alert_obj.verify_csm_response(
+                self.starttime,
+                alert_types["resolved"],
+                True,
+                test_cfg["resource_type"])
+            assert_true(resp, csm_error_msg)
+        self.removed_disk = False
+        LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
+                    "using CSM REST API")
+        LOGGER.info(
+            "ENDED: Test alert persistence of RAID array alerts across sspl stop and start")

@@ -30,6 +30,7 @@ from commons.helpers.host import Host
 from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
+from config import RAS_VAL
 
 LOG = logging.getLogger(__name__)
 
@@ -277,8 +278,8 @@ class Health(Host):
                  hctl_command, self.hostname)
         result = self.execute_cmd(hctl_command, read_lines=False)
         result = result.decode("utf-8")
-        LOG.info("Response of the command %s:\n %s ",
-                 hctl_command, result)
+        # LOG.info("Response of the command %s:\n %s ",
+        #          hctl_command, result)
         result = json.loads(result)
 
         return result
@@ -289,7 +290,7 @@ class Health(Host):
         :return [tuple]: total_cap,avail_cap,used_cap
         """
         response = self.hctl_status_json()
-        LOG.info("HCTL response : \n%s", response)
+        # LOG.info("HCTL response : \n%s", response)
         avail_cap = response['filesystem']['stats']['fs_avail_disk']
         LOG.info("Available Capacity : %s", avail_cap)
         total_cap = response['filesystem']['stats']['fs_total_disk']
@@ -357,15 +358,14 @@ class Health(Host):
         LOG.info("Node %s is online.", self.hostname)
 
         LOG.info("Checking hctl status for %s node", self.hostname)
-        status, result = run_remote_cmd(
+        status, hctl_result = run_remote_cmd(
             cmd=commands.MOTR_STATUS_CMD,
             hostname=self.hostname,
             username=self.username,
             password=self.password,
             read_lines=True)
         if not status:
-            return False, f"Failed to get HCTL status {result}"
-        LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname, result)
+            return False, f"Failed to get HCTL status {hctl_result}"
 
         resp = self.hctl_status_json()
         hctl_services_failed = {}
@@ -394,21 +394,20 @@ class Health(Host):
             time.sleep(10)
 
         LOG.info("Checking pcs status for %s node", self.hostname)
-        status, result = run_remote_cmd(
+        status, pcs_result = run_remote_cmd(
             cmd=commands.PCS_STATUS_CMD,
             hostname=self.hostname,
             username=self.username,
             password=self.password,
             read_lines=True)
         if not status:
-            return False, f"Failed to get PCS status {result}"
-        LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname, result)
+            return False, f"Failed to get PCS status {pcs_result}"
 
         pcs_failed_data = {}
         daemons = ["corosync:", "pacemaker:", "pcsd:"]
         LOG.info("Checking status of Daemons: %s", daemons)
         for daemon in daemons:
-            for line in result:
+            for line in pcs_result:
                 if daemon in line:
                     if "active/enabled" not in line:
                         pcs_failed_data[daemon] = line
@@ -422,34 +421,50 @@ class Health(Host):
         no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
-        LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
-                  self.hostname, clone_set_dict)
         for key, val in clone_set_dict.items():
             for status in val.values():
                 if status != "Started":
                     pcs_failed_data[key] = val
 
         resource_dict = self.get_resource_status(crm_mon_res)
-        LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
-                  self.hostname, resource_dict)
         for resource, value in resource_dict.items():
             if value['status'] != 'Started':
                 pcs_failed_data[resource] = value
 
         group_dict = self.get_group_status(crm_mon_res)
-        LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
-                  self.hostname, group_dict)
         for group, value in group_dict.items():
             if value['status'] != 'Started':
                 pcs_failed_data[group] = value
         node_health_failure = {}
         if pcs_failed_data:
+            LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname,
+                      pcs_result)
+            LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
+                      self.hostname, clone_set_dict)
+            LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
+                      self.hostname, resource_dict)
+            LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
+                      self.hostname, group_dict)
             node_health_failure['PCS_STATUS'] = pcs_failed_data
         if node_hctl_failure:
+            LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname,
+                      hctl_result)
             node_health_failure['HCTL_STATUS'] = node_hctl_failure
         if node_health_failure:
+            LOG.error("Node health failure: %s", node_health_failure)
             return False, node_health_failure
+
         return True, "cluster on {} up and running.".format(self.hostname)
+
+    def reboot_node(self):
+        """Reboot node
+        """
+        LOG.info("Restarting Node")
+        cmd = commands.REBOOT_NODE_CMD
+        resp = self.execute_cmd(cmd, read_lines=True, exc=False)
+        LOG.info("Waiting for Node to Come UP %s", resp)
+        time.sleep(RAS_VAL["ras_sspl_alert"]["reboot_delay"])
+        return True
 
     @staticmethod
     def get_node_health_xml(pcs_response: str):
@@ -659,7 +674,7 @@ class Health(Host):
         d_node = dict(zip(node, h_list))
         return d_node
 
-        def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
+    def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
             -> Tuple[bool, str]:
         """
         Disable given resource using pcs resource command

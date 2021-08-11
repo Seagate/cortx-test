@@ -25,6 +25,7 @@ Click LicenseCancle Button
 
 Click LicenseCancle Image
     [Documentation]  On EULA Pop Up, click on 'X' icon to close
+    wait until element is visible  ${license_cancle_image_id}  timeout=20
     click image    ${license_cancle_image_id}
 
 Verify Presence of Elements on EULA Page
@@ -37,7 +38,7 @@ Verify Presence of Elements on EULA Page
     Capture Element Screenshot  ${license_data_id}  eula_data.png
 
 Validate ELUA Success
-    [Documentation]  This keyword is used to validate that Preboarding page is accessible.
+    [Documentation]  This keyword is used to validate that Under Preboarding, ELUA page is accessible.
     sleep  1s
     Capture Page Screenshot  preboarding.png
     Click Accept Button
@@ -47,13 +48,24 @@ Validate ELUA Success
     Click LicenseCancle Button
     Click Accept Button
     Verify Presence of Elements on EULA Page
-    #Click LicenseCancle Image
-    Click LicenseCancle Button
+    Click LicenseCancle Image
     Click Accept Button
     sleep  1s
     Click License Button
+
+Validate ELUA page after canceling the agreement
+    [Documentation]  This keyword is used to validate that user stays on EULA page after canceling the agreement
     sleep  1s
-    Capture Page Screenshot  admin_config.png
+    Capture Page Screenshot  preboarding.png
+    Click Accept Button
+    sleep  1s
+    Capture Page Screenshot  eula.png
+    Verify Presence of Elements on EULA Page
+    Click LicenseCancle Button
+    Click Accept Button
+    Verify Presence of Elements on EULA Page
+    Click LicenseCancle Image
+    wait until element is visible  ${elua_button_id}  timeout=20
 
 Preboarding
     [Documentation]  This keyword is used to login to CSM GUI.
@@ -75,3 +87,23 @@ Validate EULA Data
     ${data}=  get text  ${EULA_CONTENT_MSG_XPATH}
     Log To Console And Report  ${data}
     Should Not Be Empty  ${data}
+
+admin user preboarding
+   [Documentation]  This keyword will change the password for admin user for first time login.
+   [Arguments]  ${username}  ${password}  ${new_password}=${password}
+   Click Accept Button
+   Click License Button
+   Enter Username And Password  ${username}  ${password}
+   Click Sigin Button
+   wait for page or element to load  2s
+   ${check_first_time_login} =  Run Keyword And Return Status    Element Should Be Visible   ${CHANGE_PASSWORD_ID}
+   Log To Console And Report  ${new_password}
+   Run Keyword If  '${check_first_time_login}'=='True'
+   ...  Run Keywords
+   ...  Change password on login   ${new_password}     ${new_password}
+   ...  AND  Click on reset password
+   Log To Console And Report  Waiting for receiving GUI response...
+   Page Should Contain Element  ${SYSTEM_NAME_TEXT_ID}
+   Re-login   ${username}  ${new_password}  DASHBOARD_MENU_ID
+
+
