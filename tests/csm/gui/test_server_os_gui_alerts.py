@@ -565,10 +565,10 @@ class TestServerOSAlerts:
         LOGGER.info("Step 13: Successfully verified Memory usage alert with persistent cache on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-22718")
+    @pytest.mark.tags("TEST-25106")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_22718_cpu_usage_threshold(self):
+    def test_25106_cpu_usage_threshold(self):
         """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
         test_case_name = cortxlogging.get_frame()
@@ -577,7 +577,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22718_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25106_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -627,10 +627,10 @@ class TestServerOSAlerts:
         LOGGER.info("Step 11: Successfully verified CPU usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.tags("TEST-22719")
+    @pytest.mark.tags("TEST-25107")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
-    def test_22719_memory_usage_threshold(self):
+    def test_25107_memory_usage_threshold(self):
         """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (Memory Usage)
         """
         test_case_name = cortxlogging.get_frame()
@@ -639,7 +639,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22719_Gui_Logs'
+        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25107_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
