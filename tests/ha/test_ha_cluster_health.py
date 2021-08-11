@@ -132,6 +132,12 @@ class TestHAClusterHealth:
                     resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
+                    if self.setup_type == "HW":
+                        LOGGER.debug(
+                            "HW: Need to enable stonith on the node after node powered on")
+                        self.node_list[node].execute_cmd(
+                            common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                            read_lines=True)
                 if self.nw_data:
                     resp = self.node_list[node].execute_cmd(
                         common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
