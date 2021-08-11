@@ -72,7 +72,7 @@ class TestAccountUserManagement:
         # Delete created user with prefix.
         self.log.info("STARTED: Test setup operations.")
         self.test_file = "testfile_{}".format(time.perf_counter_ns())
-        self.test_dir_path = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAccountUserManagement")
         self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
         if not os.path.exists(self.test_dir_path):
             os.makedirs(self.test_dir_path)

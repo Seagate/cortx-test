@@ -29,7 +29,7 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import toggle_nw_status
+from commons.utils.system_utils import toggle_nw_infc_status
 from commons import commands
 from commons.helpers.node_helper import Node
 
@@ -574,8 +574,8 @@ class GenerateAlertWrapper:
             LOGGER.info(f"Creating nw fault for resource {device} on "
                         f"{host}")
             LOGGER.info(f"Making {device} {status} on {host}")
-            resp = toggle_nw_status(device=device, status=status, host=host,
-                                    username=h_user, pwd=h_pwd)
+            resp = toggle_nw_infc_status(device=device, status=status,
+                                         host=host, username=h_user, pwd=h_pwd)
             return resp, f"Created NW Port Fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
@@ -604,8 +604,8 @@ class GenerateAlertWrapper:
             status = "up"
             LOGGER.info(f"Resolving network fault for resource {device} on "
                         f"{host}")
-            resp = toggle_nw_status(device=device, status=status, host=host,
-                                    username=h_user, pwd=h_pwd)
+            resp = toggle_nw_infc_status(device=device, status=status,
+                                         host=host, username=h_user, pwd=h_pwd)
             LOGGER.info(resp)
             return resp, f"Resolved NW fault of {device}"
         except BaseException as error:
@@ -737,7 +737,13 @@ class GenerateAlertWrapper:
             if not resp[0] or d_count != drive_count:
                 return False, f"Failed to connect OS disk"
 
-            return True, f"Successfully connected OS disk"
+            LOGGER.info("Get drive name by host number")
+            resp = ras_test_obj.get_drive_by_hostnum(hostnum=host_num)
+            if not resp[0]:
+                return False, "Failed to get drive name"
+            drive_name = resp[1]
+
+            return True, drive_name
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
                          GenerateAlertWrapper.connect_os_drive.__name__,
