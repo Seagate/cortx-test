@@ -458,7 +458,7 @@ class VMOperations:
                 _vm_info = self.get_vm_info()
                 _vm_state = _vm_info['resources'][0]['power_state']
                 while _vm_state != "off":
-                    time.sleep(30)
+                    time.sleep(60)
                     self.refresh_vm_state(_vm_id)
                     _vm_info = self.get_vm_info()
                     _vm_state = _vm_info['resources'][0]['power_state']
@@ -490,9 +490,17 @@ class VMOperations:
                     print(json.dumps(_revert_res, indent=4, sort_keys=True))
                     LOGGER.debug(json.dumps(_revert_res, indent=4, sort_keys=True))
                     # Start the VM after snapshot revert
+                    time.sleep(60)
                     _start_res = self.start_vm(_vm_id)
                     if _start_res:
-                        time.sleep(240)  # wait to get VM started
+                        _vm_info = self.get_vm_info()
+                        _vm_state = _vm_info['resources'][0]['power_state']
+                        while _vm_state != "on":
+                            time.sleep(60)
+                            self.refresh_vm_state(_vm_id)
+                            _vm_info = self.get_vm_info()
+                            _vm_state = _vm_info['resources'][0]['power_state']
+                            LOGGER.debug("VM status is %s", _vm_state)
                         print("Started the VM after snapshot revert")
                         print(json.dumps(_start_res, indent=4, sort_keys=True))
                         LOGGER.debug("Started the VM after snapshot revert")
