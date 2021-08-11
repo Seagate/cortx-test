@@ -408,7 +408,8 @@ def setup_client(args, hosts, data_ip):
         system_utils.run_local_cmd(cmd="rm -f {}".format(local_cert_path), flg=True)
     nd_obj_host = Node(hostname=host, username=uname, password=upasswd)
     nd_obj_host.copy_file_to_local(remote_path=remote_cert_path, local_path=local_cert_path)
-    set_s3_endpoints(data_ip)
+    if len(hosts) == 1:
+        set_s3_endpoints(data_ip)
     # configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
 
 
