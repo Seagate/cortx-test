@@ -443,6 +443,10 @@ class VMOperations:
                 time.sleep(120)
                 _vm_info = self.get_vm_info()
                 _vm_state = _vm_info['resources'][0]['power_state']
+                while _vm_state != "off":
+                    time.sleep(30)
+                    _vm_info = self.get_vm_info()
+                    _vm_state = _vm_info['resources'][0]['power_state']
                 print("VM has been stopped successfully. VM status is %s.." % _vm_state)
                 LOGGER.debug("VM has been stopped successfully. VM status is %s", _vm_state)
         else:
@@ -461,6 +465,7 @@ class VMOperations:
             self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
             # Process the request
             _response = self.execute_request()
+            LOGGER.debug(json.dumps(_response, indent=4, sort_keys=True))
             if _response["success"]:
                 _revert_res = self.check_status(_response)
                 if _revert_res['state'] == "Finished":

@@ -451,12 +451,12 @@ def destroy_vm(hosts, token, node_passwd=None):
                               "Job is not successful, please check the url.")
 
 
-def post_test_execution_action(args, hosts_list):
+def post_test_execution_action(args):
     """
     Perform post actions
     """
     update_vm_db(args=args)
-    revert_vms(args, hosts_list)
+    # revert_vms(args, hosts_list)
 
 
 
