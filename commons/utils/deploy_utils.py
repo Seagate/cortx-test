@@ -56,6 +56,24 @@ class CreateSetupJson:
         data = self.data["cluster"][list(self.data["cluster"].keys())[0]]
         self.m_ip = data['network']['management']['virtual_host']
 
+        # Get required ips
+        required_ips = 3
+        self.num_nodes = len(hosts)
+        self.srvnode_ips = [None] * self.num_nodes * required_ips
+        cmd = "cat /etc/hosts"
+        output = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+        for line in output:
+            for host_num in range(len(hosts)):
+                search_string = "srvnode-{}.mgmt.public".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[host_num * required_ips] = line.split()[0]
+                search_string = "srvnode-{}.data.public".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[(host_num * required_ips) + 1] = line.split()[0]
+                search_string = "srvnode-{}.data.private".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[(host_num * required_ips) + 2] = line.split()[0]
+
     def create_setup_entry(self, target_name, setup_type, csm_user, csm_pass):
         """
         Populate all setup entry data
@@ -89,10 +107,16 @@ class CreateSetupJson:
         return dict(
             host="srvnode-" + str(host_number),
             hostname=node,
-            ip="node_ip",
+            ip=self.srvnode_ips[host_number * self.num_nodes],
             username='root',
-            password=self.node_pass
-        )
+            password=self.node_pass,
+            public_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 1],
+            private_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 2],
+            ldpu=dict(ip="", port="", user="", pwd=""),
+            rpdu=dict(ip="", port="", user="", pwd=""),
+            encl_lpdu=dict(ip="", port="", user="", pwd=""),
+            encl_rpdu=dict(ip="", port="", user="", pwd=""),
+            gem_controller=dict(ip="",user="", pwd="", port1="", port2=""))
 
     @staticmethod
     def add_enclosure_details():

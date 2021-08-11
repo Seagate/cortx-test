@@ -469,9 +469,12 @@ def main(args):
     os.environ["JIRA_PASSWORD"] = args.jira_pass
     hosts_list = args.hosts.split(',')
     # Get setup details
-    setup_details = deploy_utils.register_setup_entry(hosts_list, args.setupname, args.csm_user,
+    suffix = 'colo.seagate.com'
+    hosts = list()
+    for host in hosts_list:
+        hosts.append('.'.join([host.strip(), suffix]))
+    setup_details = deploy_utils.register_setup_entry(hosts, args.setupname, args.csm_user,
                                                       args.csm_pass, args.node_pass)
-    hosts = hosts_list
     cluster_ip = setup_details['csm']['mgmt_vip']
     data_ip = args.data_ip
     setup_client(args, hosts, data_ip)
@@ -482,7 +485,7 @@ def main(args):
         while not te_completed:
             args.te_ticket = te_num
             if attempts >= 5:
-                post_test_execution_action(args, hosts_list)
+                post_test_execution_action(args)
                 raise EnvironmentError('More than 5 attempts of executing tests crossed.')
 
             if attempts == 1:
@@ -493,12 +496,12 @@ def main(args):
             if status:
                 ret = trigger_deployment(args, cluster_ip, retries=3)
                 if not ret:
-                    post_test_execution_action(args, hosts_list)
+                    post_test_execution_action(args)
                     raise EnvironmentError('Deployment or VM revert ran into errors')
             else:
                 te_completed = True
     else:
-        post_test_execution_action(args, hosts_list)
+        post_test_execution_action(args)
 
 
 if __name__ == '__main__':

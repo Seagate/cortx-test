@@ -14,7 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from commons import pswdmanager
 from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
+from libs.csm.csm_setup import CSMConfigsCheck
 
+
+config_chk = CSMConfigsCheck()
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
@@ -40,47 +43,18 @@ class CSMBoarding(unittest.TestCase):
         self.usr = "root"
         self.create_admin_user = True
         CSM_REST_CFG["mgmt_vip"] = self.csm_mgmt_ip
+        '''
         rest_obj = RestTestLib()
         response = rest_obj.custom_rest_login(self.admin_user, self.admin_pwd)
         if response.status_code in [200, 201]:
             self.create_admin_user = False
+        '''
 
     def test_preboarding(self):
-        try:
-            if self.create_admin_user:
-                browser = self.driver
-                preboarding_url = config['csmboarding']['preboarding_url'].format(
-                    self.csm_mgmt_ip)
-                browser.get(preboarding_url)
-                ele = self.get_element(By.ID, loc.Preboarding.start_btn)
-                ele.click()
-                ele = self.get_element(By.ID, loc.Preboarding.terms_btn)
-                ele.click()
-                ele = self.get_element(By.ID, loc.Preboarding.accept_btn)
-                ele.click()
-                ele = self.get_element(By.ID, loc.Preboarding.username_ip)
-                ele.send_keys(self.admin_user)
-                ele = self.get_element(By.ID, loc.Preboarding.password_ip)
-                ele.send_keys(self.admin_pwd)
-                ele = self.get_element(By.ID, loc.Preboarding.confirmpwd_ip)
-                ele.send_keys(self.admin_pwd)
-                ele = self.get_element(By.ID, loc.Preboarding.email_ip)
-                ele.send_keys(config['csmboarding']['email'])
-                ele = self.get_element(By.ID, loc.Preboarding.create_btn)
-                ele.click()
-                ele = self.get_element(By.ID, loc.Preboarding.userlogin_ip)
-                self.driver.save_screenshot("".join(["Success-Preboarding-Screenshot",
-                                                     str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
-                print("Admin user is created")
-                print(
-                    "Username: {} \nPassword: {}".format(
-                        self.admin_user,
-                        self.admin_pwd))
-            else:
-                print("Admin user already present. Skipping Preboarding")
-        except BaseException:
-            self.driver.save_screenshot("".join(["Failure-Preboarding-Screenshot",
-                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
+        result = config_chk.preboarding(self.admin_user, self.admin_pwd, self.admin_pwd)
+        if result:
+            print("Preboarding is done")
+        else:
             self.assertTrue(False, "Failed to create Admin User")
 
     def test_onboarding(self):
