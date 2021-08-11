@@ -24,12 +24,15 @@ RAS GUI utility methods
 """
 import logging
 import os
+from datetime import datetime
 
+from commons import Globals
 from robot_gui.utils.call_robot_test import trigger_robot
 from commons.utils.assert_utils import assert_true
 from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
+
 
 class SoftwareAlertGUI():
     """
@@ -52,7 +55,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_inactive_alert")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INIT_Gui_Logs_' + svc
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_init_' + svc \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -69,7 +73,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_inactive_alert")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_Gui_Logs_' + svc
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_inactive_alert_' + svc \
+                               + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -86,7 +91,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_inactive_alert_resolved")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_INACTIVATE_RESOLVED_Gui_Logs_' + svc
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_inactive_alert_resolved_'\
+                               + svc + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -103,7 +109,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_deactivat_alert")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_Gui_Logs_' + svc
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_deactivat_alert_' \
+                               + svc + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -120,7 +127,8 @@ class SoftwareAlertGUI():
         """
         LOGGER.info("Start : verify_sw_service_deactivat_alert_resolved")
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/SW_SERVICE_VERIFY_DEACTIVATE_RESOLVED_Gui_Logs_' + svc
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_sw_service_deactivat_alert_resolved' \
+                               + svc + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
