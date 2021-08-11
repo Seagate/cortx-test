@@ -79,7 +79,6 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("############ Running setup_method ############")
         common_cfg = RAS_VAL["ras_sspl_alert"]
         services = self.cm_cfg["service"]
-        sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
 
         LOGGER.info("Check that all the 3rd party services are active")
@@ -118,9 +117,10 @@ class Test3PSvcMonitoringGUI:
         self.sw_alert_obj.restore_svc_config(
             teardown_restore=True, svc_path_dict=self.svc_path_dict)
         for svc in self.external_svcs:
-            op = self.sw_alert_obj.recover_svc(svc, attempt_start=True)
-            LOGGER.info("Service recovery details : %s", op)
-            assert op["state"] == "active", f"Unable to recover the {svc} service"
+            response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+                                               timeout=const.SVC_LOAD_TIMEOUT_SEC)
+            LOGGER.info("Service recovery details : %s", response)
+            assert response["state"] == "active", f"Unable to recover the {svc} service"
         LOGGER.info("All 3rd party services recovered and in active state.")
 
         if self.changed_level:
@@ -204,10 +204,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -253,10 +253,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -313,10 +313,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -373,10 +373,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -434,10 +434,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -494,10 +494,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -556,10 +556,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -615,10 +615,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -681,10 +681,10 @@ class Test3PSvcMonitoringGUI:
         # TODO: verify while TE
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -741,10 +741,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -802,10 +802,10 @@ class Test3PSvcMonitoringGUI:
         self.ras_gui_obj.verify_sw_service_deactivat_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
@@ -867,10 +867,10 @@ class Test3PSvcMonitoringGUI:
         # self.ras_gui_obj.verify_sw_service_inactive_alert(svc)
 
         LOGGER.info("Start the %s service again", svc)
-        op = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
+        response = self.sw_alert_obj.recover_svc(svc, attempt_start=True,
                                                timeout=const.SVC_LOAD_TIMEOUT_SEC)
-        LOGGER.info("Service recovery details : %s", op)
-        assert op["state"] == "active", "Unable to recover the service"
+        LOGGER.info("Service recovery details : %s", response)
+        assert response["state"] == "active", "Unable to recover the service"
         LOGGER.info("%s service is active and running", svc)
 
         LOGGER.info("Wait for : %s seconds", self.intrmdt_state_timeout)
