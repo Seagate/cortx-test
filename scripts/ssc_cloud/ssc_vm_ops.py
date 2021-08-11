@@ -370,6 +370,20 @@ class VMOperations:
             _res_stop = self.check_status(_response)
         return _response
 
+    def refresh_vm_state(self, vm_id):
+        self.method = "POST"
+        self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
+        self.payload = {
+            "action": "refresh"
+        }
+        self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
+        # Process the request
+        _response = self.execute_request()
+        if _response['success']:
+            print("Refreshing the VM might take time...")
+            _res_stop = self.check_status(_response)
+        return _response
+
     def start_vm(self, vm_id):
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
@@ -445,8 +459,10 @@ class VMOperations:
                 _vm_state = _vm_info['resources'][0]['power_state']
                 while _vm_state != "off":
                     time.sleep(30)
+                    self.refresh_vm_state(_vm_id)
                     _vm_info = self.get_vm_info()
                     _vm_state = _vm_info['resources'][0]['power_state']
+                    LOGGER.debug("VM status is %s", _vm_state)
                 print("VM has been stopped successfully. VM status is %s.." % _vm_state)
                 LOGGER.debug("VM has been stopped successfully. VM status is %s", _vm_state)
         else:
