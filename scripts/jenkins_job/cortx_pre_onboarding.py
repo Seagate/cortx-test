@@ -51,11 +51,47 @@ class CSMBoarding(unittest.TestCase):
         '''
 
     def test_preboarding(self):
+        '''
         result = config_chk.preboarding(self.admin_user, self.admin_pwd, self.admin_pwd)
         if result:
             print("Preboarding is done")
         else:
             self.assertTrue(False, "Failed to create Admin User")
+        '''
+        try:
+            browser = self.driver
+            preboarding_url = config['csmboarding']['preboarding_url'].format(
+                self.csm_mgmt_ip)
+            browser.get(preboarding_url)
+            ele = self.get_element(By.ID, loc.Preboarding.start_btn)
+            ele.click()
+            ele = self.get_element(By.ID, loc.Preboarding.terms_btn)
+            ele.click()
+            ele = self.get_element(By.ID, loc.Preboarding.accept_btn)
+            ele.click()
+            ele = self.get_element(By.ID, loc.Preboarding.username_ip)
+            ele.send_keys(self.admin_user)
+            ele = self.get_element(By.ID, loc.Preboarding.password_ip)
+            ele.send_keys(self.admin_pwd)
+            ele = self.get_element(By.ID, loc.Preboarding.confirmpwd_ip)
+            ele.send_keys(self.admin_pwd)
+            ele = self.get_element(By.ID, loc.Preboarding.email_ip)
+            ele.send_keys(config['csmboarding']['email'])
+            ele = self.get_element(By.ID, loc.Preboarding.create_btn)
+            ele.click()
+            ele = self.get_element(By.ID, loc.Preboarding.userlogin_ip)
+            self.driver.save_screenshot("".join(["Success-Preboarding-Screenshot",
+                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
+            print("Admin user is created")
+            print(
+                "Username: {} \nPassword: {}".format(
+                    self.admin_user,
+                    self.admin_pwd))
+        except BaseException:
+            self.driver.save_screenshot("".join(["Failure-Preboarding-Screenshot",
+                                                 str(time.strftime("-%Y%m%d-%H%M%S")), ".png"]))
+            self.assertTrue(False, "Failed to create Admin User")
+
 
     def test_onboarding(self):
         try:
