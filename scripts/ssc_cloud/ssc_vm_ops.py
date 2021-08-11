@@ -112,7 +112,8 @@ def get_args():
 
 class VMOperations:
     """
-    This will help to reduce manual workload required to create vm's for deployment and other vm related testing.
+    This will help to reduce manual workload required to create vm's for deployment and other
+    vm related testing.
     Attributes
     ----------
     parameters (list) : Commandline Inputs
@@ -147,6 +148,9 @@ class VMOperations:
             print(self.args.token)
 
     def execute_request(self):
+        """
+        Execute request
+        """
         try:
 
             if self.method == "POST":
@@ -160,6 +164,9 @@ class VMOperations:
         return r.json()
 
     def check_status(self, _response):
+        """
+        Check status of request
+        """
         self.url = _response['task_href']
         self.method = "GET"
         self.payload = ""
@@ -176,12 +183,16 @@ class VMOperations:
                 print("Checking the VM status again...")
                 if _count == ITER_COUNT:
                     print(
-                        'The request has been processed, but response state is not matched with expectation')
+                        'The request has been processed, but response state is not matched '
+                        'with expectation')
                     sys.exit()
             _count += 1
         return _res
 
     def get_catalog_id(self):
+        """
+        Get catalog id
+        """
         self.method = "GET"
         self.payload = ""
         self.headers = {'content-type': 'application/json', 'X-Auth-Token': self.args.token}
@@ -191,6 +202,9 @@ class VMOperations:
         return self.execute_request()
 
     def create_vm(self):
+        """
+        Create new vm
+        """
         service_template_resp = self.get_catalog_id()
         service_catalog_id = service_template_resp['service_template_catalog_id']
         self.method = "POST"
@@ -241,6 +255,9 @@ class VMOperations:
         return _response
 
     def get_vms(self):
+        """
+        Get vms information
+        """
         self.payload = ""
         self.method = "GET"
         self.url = f"https://{self.args.fqdn}/api/services?expand=resources"
@@ -271,6 +288,9 @@ class VMOperations:
         return res
 
     def get_vm_info(self):
+        """
+        Get vm information
+        """
         self.payload = ""
         self.method = "GET"
         self.url = "https://%s/api/vms?expand=resources&filter%%5B%%5D=name='%s'" \
@@ -279,12 +299,15 @@ class VMOperations:
         return self.execute_request()
 
     def retire_vm(self):
+        """
+        Retire a vm
+        """
         _get_vm_info = self.get_vm_info()
         _response = ""
         if _get_vm_info['resources'][0]['retirement_state'] != "retired":
             _vm_id = _get_vm_info['resources'][0]['id']
             self.method = "POST"
-            #self.url = "https://%s/api/vms/%s" % (self.args.fqdn, _vm_id)
+            # self.url = "https://%s/api/vms/%s" % (self.args.fqdn, _vm_id)
             self.url = f"https://{self.args.fqdn}/api/services/{self.args.vm_service_id}"
             self.payload = {
                 "action": "request_retire"
@@ -315,6 +338,9 @@ class VMOperations:
         return _response
 
     def list_vm_snaps(self):
+        """
+        List vm snapshots
+        """
         _vm_info = self.get_vm_info()
         _vm_id = _vm_info['resources'][0]['id']
         self.url = "https://%s/api/vms/%s/snapshots" % (self.args.fqdn, _vm_id)
@@ -323,6 +349,9 @@ class VMOperations:
         return self.execute_request()
 
     def power_on_vm(self):
+        """
+        Power on VM
+        """
         _vm_info = self.get_vm_info()
         _vm_state = _vm_info['resources'][0]['power_state']
         _vm_id = _vm_info['resources'][0]['id']
@@ -340,6 +369,9 @@ class VMOperations:
         return _start_res
 
     def power_off_vm(self):
+        """
+        Power off vm
+        """
         _vm_info = self.get_vm_info()
         _vm_state = _vm_info['resources'][0]['power_state']
         _vm_id = _vm_info['resources'][0]['id']
@@ -357,6 +389,9 @@ class VMOperations:
         return _stop_res
 
     def stop_vm(self, vm_id):
+        """
+        Stop vm
+        """
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
         self.payload = {
@@ -371,6 +406,9 @@ class VMOperations:
         return _response
 
     def refresh_vm_state(self, vm_id):
+        """
+        Refresh vm state
+        """
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
         self.payload = {
@@ -385,6 +423,9 @@ class VMOperations:
         return _response
 
     def start_vm(self, vm_id):
+        """
+        Start VM
+        """
         self.method = "POST"
         self.url = "https://%s/api/vms/%s" % (self.args.fqdn, vm_id)
         self.payload = {
@@ -399,6 +440,9 @@ class VMOperations:
         return _response
 
     def create_vm_snap(self, _response=''):
+        """
+        Create vm snapshot
+        """
         _vm_info = self.get_vm_info()
         _vm_name = _vm_info['resources'][0]['name']
         name = "%s-%s" % (_vm_name, ''.join(random.sample(string.ascii_lowercase, 6)))
@@ -424,6 +468,9 @@ class VMOperations:
         return _response
 
     def revert_vm_snap(self, _response=''):
+        """
+        Revert vm snapshot
+        """
         LOGGER.debug('Running revert vm snap')
         if not self.args.snap_id:
             self.payload = ""
@@ -527,6 +574,9 @@ class VMOperations:
 
 
 def main():
+    """
+    main function
+    """
     args = get_args()
     if not (args.user and args.password) and not args.token:
         sys.exit("Specify either token/password for SSC Auth...")

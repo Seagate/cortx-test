@@ -14,10 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from commons import pswdmanager
 from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
-from libs.csm.csm_setup import CSMConfigsCheck
+#from libs.csm.csm_setup import CSMConfigsCheck
 
 
-config_chk = CSMConfigsCheck()
+#config_chk = CSMConfigsCheck()
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
@@ -41,9 +41,9 @@ class CSMBoarding(unittest.TestCase):
         self.admin_pwd = os.getenv('ADMIN_PWD', self.default_password)
         self.host_passwd = os.getenv('HOST_PASS')
         self.usr = "root"
-        self.create_admin_user = True
-        CSM_REST_CFG["mgmt_vip"] = self.csm_mgmt_ip
         '''
+        CSM_REST_CFG["mgmt_vip"] = self.csm_mgmt_ip
+        self.create_admin_user = True
         rest_obj = RestTestLib()
         response = rest_obj.custom_rest_login(self.admin_user, self.admin_pwd)
         if response.status_code in [200, 201]:

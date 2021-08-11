@@ -112,11 +112,11 @@ class CreateSetupJson:
             password=self.node_pass,
             public_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 1],
             private_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 2],
-            ldpu=dict(ip="", port="", user="", pwd=""),
-            rpdu=dict(ip="", port="", user="", pwd=""),
-            encl_lpdu=dict(ip="", port="", user="", pwd=""),
-            encl_rpdu=dict(ip="", port="", user="", pwd=""),
-            gem_controller=dict(ip="",user="", pwd="", port1="", port2=""))
+            ldpu=dict(ip="", port="", user="", pwd=self.node_pass),
+            rpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            encl_lpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            encl_rpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            gem_controller=dict(ip="", user="", pwd=self.node_pass, port1="", port2=""))
 
     @staticmethod
     def add_enclosure_details():
