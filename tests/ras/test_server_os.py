@@ -46,6 +46,9 @@ class TestServerOS:
     def setup_class(cls):
         """Setup for module."""
         LOGGER.info("Running setup_class...")
+        cls.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.bkt_name_prefix = "serverOS"
+        cls.obj_name_prefix = "serverOS"
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.cfg = RAS_VAL["ras_sspl_alert"]
         cls.changed_level = False
@@ -75,9 +78,6 @@ class TestServerOS:
     def setup_method(self):
         """Setup operations per test."""
         LOGGER.info("Running setup_method...")
-        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.bkt_name_prefix = "serverOS"
-        self.obj_name_prefix = "serverOS"
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
         LOGGER.info("Check SSPL status")
@@ -533,6 +533,7 @@ class TestServerOS:
         cpu_usage = read_properties_file(
             "/etc/sspl.conf")["cpu_usage_threshold"]
         test_cfg = RAS_TEST_CFG["test_22786"]
+        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info(
                 "Step 1: Checking available memory usage and convert it to GB")
@@ -579,7 +580,7 @@ class TestServerOS:
             "Step 6: Successfully verified Memory usage fault alert on CSM REST API")
         starttime = time.time()
         LOGGER.info("Resolving CPU fault.")
-        resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+        resp = self.sw_alert_obj.resolv_cpu_fault(cmn_cfg["faulty_cpu_id"])
         assert resp[0], resp[1]
         LOGGER.info("CPU fault is resolved.")
         self.default_cpu_fault = False
@@ -616,6 +617,7 @@ class TestServerOS:
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
+        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info("Step 1: Getting CPU count")
             cpu_cnt = obj.get_available_cpus()
@@ -662,7 +664,7 @@ class TestServerOS:
             LOGGER.info("Step 7: Verified memory utilization is decreasing")
             starttime = time.time()
             LOGGER.info("Step 8: Resolving CPU fault.")
-            resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+            resp = self.sw_alert_obj.resolv_cpu_fault(cmn_cfg["faulty_cpu_id"])
             assert resp[0], resp[1]
             LOGGER.info("Step 8: CPU fault is resolved.")
             self.default_cpu_fault = False
@@ -704,6 +706,7 @@ class TestServerOS:
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
+        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info("Step 1: Getting CPU count")
             cpu_cnt = obj.get_available_cpus()
@@ -751,7 +754,7 @@ class TestServerOS:
             LOGGER.info("Step 7: Verified memory utilization is decreasing")
             starttime = time.time()
             LOGGER.info("Resolving CPU fault.")
-            resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+            resp = self.sw_alert_obj.resolv_cpu_fault(cmn_cfg["faulty_cpu_id"])
             assert resp[0], resp[1]
             LOGGER.info("CPU fault is resolved.")
             self.default_cpu_fault = False
@@ -791,6 +794,7 @@ class TestServerOS:
             "/etc/sspl.conf")["disk_usage_threshold"]
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22891"]
+        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         LOGGER.info("Getting CPU count")
         cpu_cnt = self.sw_alert_obj.get_available_cpus()
         assert len(cpu_cnt) > 0
@@ -857,7 +861,7 @@ class TestServerOS:
 
         # Verifying CPU faults are reported when CPU is offline
         LOGGER.info("Generate CPU fault.")
-        resp = self.sw_alert_obj.gen_cpu_fault(test_cfg["faulty_cpu_id"])
+        resp = self.sw_alert_obj.gen_cpu_fault(cmn_cfg["faulty_cpu_id"])
         assert resp[0], resp[1]
         LOGGER.info("CPU fault is created successfully.")
         if self.start_msg_bus:
@@ -932,7 +936,7 @@ class TestServerOS:
         # Verifying CPU fault resolved by bringing CPU online
         self.starttime = time.time()
         LOGGER.info("Resolving CPU fault.")
-        resp = self.sw_alert_obj.resolv_cpu_fault(test_cfg["faulty_cpu_id"])
+        resp = self.sw_alert_obj.resolv_cpu_fault(cmn_cfg["faulty_cpu_id"])
         assert resp[0], resp[1]
         LOGGER.info("CPU fault is resolved.")
         self.default_cpu_fault = False

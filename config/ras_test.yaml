@@ -16,6 +16,11 @@ network_interfaces:
     PUBLIC_DATA: "enp175s0f0"
     PRIVATE_DATA: "enp175s0f1"
 
+common_cfg:
+  faulty_cpu_id:
+    - 0
+    - 1
+
 test_3005:
   alert: True
   du_val: 8
@@ -274,9 +279,6 @@ test_23045:
 
 test_22787:
   resource_type: "node:os:cpu_usage"
-  faulty_cpu_id:
-    - 0
-    - 1
   interval: 30
 
 test_22786:
@@ -285,9 +287,6 @@ test_22786:
   memory_size: "5G"
   timespan: "10m"
   buffer: 10
-  faulty_cpu_id:
-    - 0
-    - 1
 
 TEST-23606:
   resource_type: "node:os:disk"
@@ -306,9 +305,6 @@ test_22891:
   resource_cpu_usage: "node:os:cpu_usagee"
   resource_memory_usage: "node:os:memory_usage"
   resource_cpu_fault: "node:os:cpu:core"
-  faulty_cpu_id:
-    - 0
-    - 1
   vm_count: 1
   memory_size: "5G"
   timespan: "10m"
