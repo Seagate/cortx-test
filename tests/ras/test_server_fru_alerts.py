@@ -1662,7 +1662,7 @@ class TestServerFruAlerts:
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23682")
     @CTFailOn(error_handler)
-    def test_power_supply_disable_enable_alert_23682(self):
+    def test_server_psu_alerts_23682(self):
         """
         TEST-23682: Test server psu alerts for following psu states:
             - "Presence detected"
