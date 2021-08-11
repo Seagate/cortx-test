@@ -26,20 +26,20 @@ import random
 import logging
 import pytest
 import pandas as pd
-from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.controller_helper import ControllerLib
-from libs.s3 import S3H_OBJ
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons import constants as cons
 from commons import commands as common_cmd
-from commons.utils.assert_utils import *
-from libs.csm.rest.csm_rest_alert import SystemAlerts
+from commons.utils import assert_utils
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.ras.ras_test_lib import RASTestLib
+from libs.s3 import S3H_OBJ
 
 LOGGER = logging.getLogger(__name__)
 
@@ -86,11 +86,11 @@ class TestServerFruAlerts:
 
         LOGGER.info("Check cluster health")
         resp = cls.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
-            cls.hostname.split('.')[0] in node_d.keys() else assert_true(
+            cls.hostname.split('.')[0] in node_d.keys() else assert_utils.assert_true(
             False, "Node name not found")
 
         LOGGER.info("Creating objects for all the nodes in cluster")
@@ -103,6 +103,7 @@ class TestServerFruAlerts:
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
+        cls.server_psu_fault = False
         LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
@@ -126,7 +127,8 @@ class TestServerFruAlerts:
         if self.start_msg_bus:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
-            assert_true(resp, "Failed to start message bus channel")
+            assert_utils.assert_true(
+                resp, "Failed to start message bus channel")
             LOGGER.info(
                 "Successfully started read_message_bus.py script on node")
 
@@ -156,7 +158,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Starting collection of sspl.log")
         res = self.ras_test_obj.sspl_log_collect()
-        assert_true(res[0], res[1])
+        assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Started collection of sspl logs")
 
         self.raid_stopped = False
@@ -189,7 +191,7 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["remove_operation"],
                     "md_device": self.md_device,
                     "disk": self.failed_disk})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             self.removed_disk = self.failed_disk
 
         if self.removed_disk:
@@ -199,7 +201,7 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["add_operation"],
                     "md_device": self.md_device,
                     "disk": self.removed_disk})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
         if self.raid_stopped:
             resp = self.alert_api_obj.generate_alert(
@@ -208,12 +210,12 @@ class TestServerFruAlerts:
                     "operation": RAS_VAL["raid_param"]["assemble_operation"],
                     "md_device": self.raid_stopped,
                     "disk": None})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
         if self.server_psu_fault:
             resp = self.alert_api_obj.generate_alert(
                 AlertType.SERVER_PSU_FAULT_RESOLVED)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -294,22 +296,25 @@ class TestServerFruAlerts:
         resp = self.ras_test_obj.get_raid_array_details()
         if not resp[0]:
             df['Iteration0']['Step1'] = 'Fail'
-        md_arrays = resp[1] if resp[0] else assert_true(
+        md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
             resp[0], "Step 1: Failed" " to get raid " "array details")
 
         LOGGER.info("MDRAID arrays: %s", md_arrays)
         for k, v in md_arrays.items():
             if v["state"] != "Active":
                 df['Iteration0']['Step1'] = 'Fail'
-                assert_true(False, f"Step 1: Array {k} is in degraded state")
+                assert_utils.assert_true(
+                    False, f"Step 1: Array {k} is in degraded state")
 
         LOGGER.info("Step 1: Getting details of drive to be removed")
         resp = self.ras_test_obj.get_node_drive_details()
         if not resp[0]:
             df['Iteration0']['Step1'] = 'Fail'
 
-        assert_true(resp[0], f"Step 1: Failed to get details of OS disks. "
-                             f"Response: {resp}")
+        assert_utils.assert_true(
+            resp[0],
+            f"Step 1: Failed to get details of OS disks. "
+            f"Response: {resp}")
 
         drive_name = resp[1].split("/")[2]
         host_num = resp[2]
@@ -337,7 +342,7 @@ class TestServerFruAlerts:
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
         resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
             LOGGER.info("Step 3: Verifying alert logs for fault alert ")
@@ -390,11 +395,8 @@ class TestServerFruAlerts:
             drive=new_drive)
         if not resp[0]:
             df['Iteration0']['Step6'] = 'Fail'
-        raid_parts = resp[1] if resp[0] else assert_true(resp[0],
-                                                         f"Step 6: Failed to "
-                                                         f"get partition "
-                                                         f"details of "
-                                                         f"{new_drive}")
+        raid_parts = resp[1] if resp[0] else assert_utils.assert_true(
+            resp[0], f"Step 6: Failed to " f"get partition " f"details of " f"{new_drive}")
 
         LOGGER.info("Step 7: Adding raid partitions of drive %s in raid array",
                     new_drive)
@@ -403,16 +405,14 @@ class TestServerFruAlerts:
             raid_parts=raid_parts, md_arrays=md_arrays)
         if not resp[0]:
             df['Iteration0']['Step7'] = 'Fail'
-        new_array = resp[1] if resp[0] else assert_true(resp[0],
-                                                        "Step 7: Failed to "
-                                                        "add drive in raid "
-                                                        "array")
+        new_array = resp[1] if resp[0] else assert_utils.assert_true(
+            resp[0], "Step 7: Failed to " "add drive in raid " "array")
         LOGGER.info("New MDARRAY: %s", new_array)
 
         time.sleep(self.cm_cfg["sleep_val"])
         LOGGER.info("Check health of node %s", self.test_node)
         resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
             LOGGER.info("Step 8: Checking the generated alert logs")
@@ -450,8 +450,10 @@ class TestServerFruAlerts:
 
         LOGGER.info("Summary of test: %s", df)
         result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        assert_utils.assert_true(
+            result,
+            "Test failed. Please check summary for failed "
+            "step.")
         LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
 
     @pytest.mark.cluster_monitor_ops
@@ -472,8 +474,9 @@ class TestServerFruAlerts:
         LOGGER.info("Getting details of drive on which faults are to "
                     "be created")
         resp = self.ras_test_obj.get_node_drive_details()
-        assert_true(resp[0], f"Failed to get details of OS disks. "
-                             f"Response: {resp}")
+        assert_utils.assert_true(
+            resp[0], f"Failed to get details of OS disks. "
+            f"Response: {resp}")
 
         drive_name = resp[1].split("/")[2]
         host_num = resp[2]
@@ -505,17 +508,15 @@ class TestServerFruAlerts:
             resp = self.ras_test_obj.get_raid_array_details()
             if not resp[0]:
                 df['Iteration0']['Step1'] = 'Fail'
-            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
-                                                            "Step 1: Failed"
-                                                            " to get raid "
-                                                            "array details")
+            md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
+                resp[0], "Step 1: Failed" " to get raid " "array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
             for k, v in md_arrays.items():
                 if v["state"] != "Active":
                     df['Iteration0']['Step1'] = 'Fail'
-                    assert_true(False,
-                                f"Step 1: Array {k} is in degraded state")
+                    assert_utils.assert_true(
+                        False, f"Step 1: Array {k} is in degraded state")
 
             LOGGER.info("Step 1: Generating %s os disk fault on drive %s",
                         key, drive_name)
@@ -665,12 +666,14 @@ class TestServerFruAlerts:
 
             LOGGER.info("Check health of node %s", self.test_node)
             resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        assert_utils.assert_true(
+            result,
+            "Test failed. Please check summary for failed "
+            "step.")
 
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "node reboot")
@@ -694,8 +697,9 @@ class TestServerFruAlerts:
         LOGGER.info("Getting details of drive on which faults are to "
                     "be created")
         resp = self.ras_test_obj.get_node_drive_details()
-        assert_true(resp[0], f"Failed to get details of OS disks. "
-                             f"Response: {resp}")
+        assert_utils.assert_true(
+            resp[0], f"Failed to get details of OS disks. "
+            f"Response: {resp}")
 
         drive_name = resp[1].split("/")[2]
         host_num = resp[2]
@@ -727,17 +731,15 @@ class TestServerFruAlerts:
             resp = self.ras_test_obj.get_raid_array_details()
             if not resp[0]:
                 df['Iteration0']['Step1'] = 'Fail'
-            md_arrays = resp[1] if resp[0] else assert_true(resp[0],
-                                                            "Step 1: Failed"
-                                                            " to get raid "
-                                                            "array details")
+            md_arrays = resp[1] if resp[0] else assert_utils.assert_true(
+                resp[0], "Step 1: Failed" " to get raid " "array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
             for k, v in md_arrays.items():
                 if v["state"] != "Active":
                     df['Iteration0']['Step1'] = 'Fail'
-                    assert_true(False,
-                                f"Step 1: Array {k} is in degraded state")
+                    assert_utils.assert_true(
+                        False, f"Step 1: Array {k} is in degraded state")
 
             LOGGER.info("Step 1: Stopping pcs resource for SSPL: %s",
                         self.sspl_resource_id)
@@ -746,7 +748,7 @@ class TestServerFruAlerts:
                 srvnode=self.current_srvnode)
             if not resp:
                 df[key]['Step1'] = 'Fail'
-                assert_true(
+                assert_utils.assert_true(
                     resp, f"Failed to ban/stop {self.sspl_resource_id} "
                     f"on node {self.current_srvnode}")
             LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
@@ -757,7 +759,7 @@ class TestServerFruAlerts:
                                                     decode=True, exc=False)
             if resp[0] != "inactive":
                 df[key]['Step1'] = 'Fail'
-                compare(resp[0], "inactive")
+                assert_utils.compare(resp[0], "inactive")
             else:
                 LOGGER.info("Step 1: Successfully stopped SSPL service")
 
@@ -878,8 +880,8 @@ class TestServerFruAlerts:
                 df['Iteration0']['Step6'] = 'Fail'
             raid_parts = resp[1] if resp[0] else LOGGER.error("Step 6: Failed "
                                                               "to get partition"
-                                                              " details of "
-                                                              f"{new_drive}")
+                                                              " details of %s",
+                                                              new_drive)
 
             LOGGER.info(
                 "Step 7: Adding raid partitions of drive %s in raid array",
@@ -944,12 +946,14 @@ class TestServerFruAlerts:
 
             LOGGER.info("Check health of node %s", self.test_node)
             resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Summary of test: \n%s", df)
         result = False if 'Fail' in df.values else True
-        assert_true(result, "Test failed. Please check summary for failed "
-                            "step.")
+        assert_utils.assert_true(
+            result,
+            "Test failed. Please check summary for failed "
+            "step.")
 
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "sspl stop and start")
@@ -978,7 +982,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["stop_operation"],
                 "md_device": test_cfg["md_device"],
                 "disk": None})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.raid_stopped = test_cfg["md_device"]
         LOGGER.info("Step 1: Ran ALERT API for generating RAID fault alert by "
                     "stopping array")
@@ -991,7 +995,7 @@ class TestServerFruAlerts:
                           alert_types["fault"]]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on RMQ channel logs")
 
@@ -1002,13 +1006,13 @@ class TestServerFruAlerts:
             alert_types["fault"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
         LOGGER.info("Performing health check after fault creation")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info(
             "Step 4: Running ALERT API for generating RAID fault_resolved "
@@ -1019,7 +1023,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["assemble_operation"],
                 "md_device": self.md_device,
                 "disk": None})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.raid_stopped = False
         LOGGER.info("Step 4: Ran ALERT API for generating RAID fault_resolved "
                     "alerts by assembling array")
@@ -1032,7 +1036,7 @@ class TestServerFruAlerts:
                           alert_types["resolved"]]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: Verified the RAID fault alert on RMQ channel logs")
 
@@ -1044,13 +1048,13 @@ class TestServerFruAlerts:
             alert_types["resolved"],
             True,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info("Step 6: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
 
         LOGGER.info("Performing health check after fault resolved")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
 
@@ -1080,7 +1084,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -1094,7 +1098,7 @@ class TestServerFruAlerts:
                           alert_types["fault"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on message bus logs")
 
@@ -1105,7 +1109,7 @@ class TestServerFruAlerts:
             alert_types["fault"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
@@ -1120,7 +1124,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = False
         self.removed_disk = self.disk2
         LOGGER.info(
@@ -1134,7 +1138,7 @@ class TestServerFruAlerts:
                           alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on message bus logs")
 
@@ -1145,14 +1149,14 @@ class TestServerFruAlerts:
             alert_types["missing"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 6: Successfully verified RAID missing alert using CSM"
             " REST API")
 
         LOGGER.info("Performing health check after fault creation")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info(
             "Step 7: Running ALERT API for generating RAID fault_resolved alert"
@@ -1165,7 +1169,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["add_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 7: Ran ALERT API for generating RAID fault_resolved alert "
             "by adding removed disk to array")
@@ -1179,7 +1183,7 @@ class TestServerFruAlerts:
                           alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 8: Verified the RAID insertion alert on message bus logs")
 
@@ -1190,7 +1194,7 @@ class TestServerFruAlerts:
             alert_types["insertion"],
             True,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info("Step 9: Successfully verified RAID insertion alert using "
                     "CSM REST API")
 
@@ -1207,7 +1211,7 @@ class TestServerFruAlerts:
                               alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Step 10: Verified the RAID fault_resolved alert on"
                     " message bus logs")
@@ -1220,14 +1224,14 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, csm_error_msg)
+            assert_utils.assert_true(resp, csm_error_msg)
         self.removed_disk = False
         LOGGER.info("Step 11: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
 
         LOGGER.info("Performing health check after fault resolved")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info(
             "ENDED: Test alerts for failing drive, removing drive"
@@ -1257,7 +1261,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -1271,7 +1275,7 @@ class TestServerFruAlerts:
                           alert_types["fault"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 2: Verified the RAID fault alert on message bus logs")
 
@@ -1282,7 +1286,7 @@ class TestServerFruAlerts:
             alert_types["fault"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 3: Successfully verified RAID fault alert using CSM REST API")
 
@@ -1297,7 +1301,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = False
         self.removed_disk = self.disk2
         LOGGER.info(
@@ -1311,7 +1315,7 @@ class TestServerFruAlerts:
                           alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on message bus logs")
 
@@ -1322,7 +1326,7 @@ class TestServerFruAlerts:
             alert_types["missing"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 6: Successfully verified RAID missing alert using CSM"
             " REST API")
@@ -1336,7 +1340,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Performing health check after node reboot")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Step 8: Checking if fault alert is persistent "
                     "in CSM across node reboot")
@@ -1345,7 +1349,7 @@ class TestServerFruAlerts:
             alert_types["missing"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info("Step 8: Successfully checked CSM REST API for RAID "
                     "fault alert persistent across node reboot. ")
 
@@ -1360,7 +1364,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["add_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 9: Ran ALERT API for generating RAID fault_resolved alert "
             "by adding removed disk to array")
@@ -1374,7 +1378,7 @@ class TestServerFruAlerts:
                           alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 10: Verified the RAID insertion alert on message bus logs")
 
@@ -1385,7 +1389,7 @@ class TestServerFruAlerts:
             alert_types["insertion"],
             True,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 11: Successfully verified RAID insertion alert using "
             "CSM REST API")
@@ -1403,7 +1407,7 @@ class TestServerFruAlerts:
                               alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Step 12: Verified the RAID fault_resolved alert on"
                     " message bus logs")
@@ -1416,7 +1420,7 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, csm_error_msg)
+            assert_utils.assert_true(resp, csm_error_msg)
         self.removed_disk = False
         LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
@@ -1445,15 +1449,16 @@ class TestServerFruAlerts:
             command="ban", resources=[self.sspl_resource_id],
             srvnode=self.current_srvnode)
 
-        assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
-                    f"on node {self.current_srvnode}")
+        assert_utils.assert_true(
+            resp, f"Failed to ban/stop {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
         LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
         LOGGER.info("Checking if SSPL is in stopped state.")
         resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                 services=[service[
                                                     "sspl_service"]],
                                                 decode=True, exc=False)
-        assert_exact_string(
+        assert_utils.assert_exact_string(
             "inactive",
             resp[0],
             "sspl service is not in stopped state")
@@ -1468,7 +1473,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["fail_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = self.disk2
         resource_id = "{}:{}".format(self.md_device, self.disk2)
         LOGGER.info(
@@ -1486,7 +1491,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["remove_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.failed_disk = False
         self.removed_disk = self.disk2
         LOGGER.info(
@@ -1497,20 +1502,22 @@ class TestServerFruAlerts:
         resp = self.health_obj.pcs_resource_ops_cmd(
             command="clear", resources=[
                 self.sspl_resource_id], srvnode=self.current_srvnode)
-        assert_true(resp, f"Failed to clear/start {self.sspl_resource_id} "
-                    f"on node {self.current_srvnode}")
+        assert_utils.assert_true(
+            resp, f"Failed to clear/start {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
         LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
         LOGGER.info("Checking if SSPL is in running state.")
         resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                 services=[service[
                                                     "sspl_service"]],
                                                 decode=True, exc=False)
-        assert_exact_string("active", resp[0], "sspl service is not active")
+        assert_utils.assert_exact_string(
+            "active", resp[0], "sspl service is not active")
         LOGGER.info("Step 4: Successfully started SSPL service")
 
         LOGGER.info("Performing health check after SSPL start")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         if self.start_msg_bus:
             LOGGER.info(
@@ -1519,7 +1526,7 @@ class TestServerFruAlerts:
                           alert_types["missing"], resource_id]
             resp = self.ras_test_obj.alert_validation(
                 string_list=alert_list, restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: Verified the RAID missing alert on message bus logs")
 
@@ -1530,7 +1537,7 @@ class TestServerFruAlerts:
             alert_types["missing"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 6: Successfully verified RAID missing alert using CSM"
             " REST API")
@@ -1541,15 +1548,16 @@ class TestServerFruAlerts:
             command="ban", resources=[self.sspl_resource_id],
             srvnode=self.current_srvnode)
 
-        assert_true(resp, f"Failed to ban/stop {self.sspl_resource_id} "
-                    f"on node {self.current_srvnode}")
+        assert_utils.assert_true(
+            resp, f"Failed to ban/stop {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
         LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
         LOGGER.info("Checking if SSPL is in stopped state.")
         resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                 services=[service[
                                                     "sspl_service"]],
                                                 decode=True, exc=False)
-        assert_exact_string(
+        assert_utils.assert_exact_string(
             "inactive",
             resp[0],
             "sspl service is not in stopped state")
@@ -1566,7 +1574,7 @@ class TestServerFruAlerts:
                 "operation": raid_cmn_cfg["add_operation"],
                 "md_device": self.md_device,
                 "disk": self.disk2})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 8: Ran ALERT API for generating RAID fault_resolved alert "
             "by adding removed disk to array")
@@ -1575,20 +1583,22 @@ class TestServerFruAlerts:
         resp = self.health_obj.pcs_resource_ops_cmd(
             command="clear", resources=[
                 self.sspl_resource_id], srvnode=self.current_srvnode)
-        assert_true(resp, f"Failed to clear/start {self.sspl_resource_id} "
-                    f"on node {self.current_srvnode}")
+        assert_utils.assert_true(
+            resp, f"Failed to clear/start {self.sspl_resource_id} "
+            f"on node {self.current_srvnode}")
         LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
         LOGGER.info("Checking if SSPL is in running state.")
         resp = self.node_obj.send_systemctl_cmd(command="is-active",
                                                 services=[service[
                                                     "sspl_service"]],
                                                 decode=True, exc=False)
-        assert_exact_string("active", resp[0], "sspl service is not active")
+        assert_utils.assert_exact_string(
+            "active", resp[0], "sspl service is not active")
         LOGGER.info("Step 9: Successfully started SSPL service")
 
         LOGGER.info("Performing health check after SSPL start")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         md_stat = resp[1]
         if self.start_msg_bus:
@@ -1599,7 +1609,7 @@ class TestServerFruAlerts:
                           alert_types["insertion"], resource_id]
             resp = self.ras_test_obj.alert_validation(string_list=alert_list,
                                                       restart=False)
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 10: Verified the RAID insertion alert on message bus logs")
 
@@ -1610,7 +1620,7 @@ class TestServerFruAlerts:
             alert_types["insertion"],
             True,
             test_cfg["resource_type"])
-        assert_true(resp, csm_error_msg)
+        assert_utils.assert_true(resp, csm_error_msg)
         LOGGER.info(
             "Step 11: Successfully verified RAID insertion alert using "
             "CSM REST API")
@@ -1628,7 +1638,7 @@ class TestServerFruAlerts:
                               alert_types["resolved"], resource_id]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Step 12: Verified the RAID fault_resolved alert on"
                     " message bus logs")
@@ -1641,7 +1651,7 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, csm_error_msg)
+            assert_utils.assert_true(resp, csm_error_msg)
         self.removed_disk = False
         LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
@@ -1675,7 +1685,7 @@ class TestServerFruAlerts:
                     "sensor_type": test_cfg["sensor_type"],
                     "sensor_states": [state],
                     "deassert": False})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
             if self.start_msg_bus:
                 LOGGER.info(
@@ -1685,7 +1695,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault alert on message bus logs")
 
@@ -1696,14 +1706,14 @@ class TestServerFruAlerts:
                 alert_types["fault"],
                 False,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault alert using CSM REST API")
         self.server_psu_fault = True
 
         LOGGER.info("Performing health check after fault generation")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         for state in test_cfg["sensor_states"]:
             LOGGER.info(
@@ -1715,7 +1725,7 @@ class TestServerFruAlerts:
                     "sensor_type": test_cfg["sensor_type"],
                     "sensor_states": [state],
                     "deassert": True})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
             if self.start_msg_bus:
                 LOGGER.info(
@@ -1725,7 +1735,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault_resolved alert on message bus logs")
 
@@ -1736,14 +1746,14 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault_resolved alert using CSM REST API")
         self.server_psu_fault = False
 
         LOGGER.info("Performing health check after resolving fault")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "ENDED: Test alerts for server psu faults")
 
@@ -1771,7 +1781,7 @@ class TestServerFruAlerts:
                     "sensor_type": test_cfg["sensor_type"],
                     "sensor_states": [state],
                     "deassert": False})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
             if self.start_msg_bus:
                 LOGGER.info(
@@ -1781,7 +1791,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault alert on message bus logs")
 
@@ -1792,7 +1802,7 @@ class TestServerFruAlerts:
                 alert_types["fault"],
                 False,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault alert using CSM REST API")
         self.server_psu_fault = True
@@ -1806,7 +1816,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Performing health check after node reboot")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info(
             "Checking if fault alert is persistent in CSM across node reboot")
@@ -1815,7 +1825,7 @@ class TestServerFruAlerts:
             alert_types["fault"],
             False,
             test_cfg["resource_type"])
-        assert_true(resp, common_cfg["csm_error_msg"])
+        assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
         LOGGER.info("Verified psu fault alert persistency across node reboot")
 
         for state in test_cfg["sensor_states"]:
@@ -1828,7 +1838,7 @@ class TestServerFruAlerts:
                     "sensor_type": test_cfg["sensor_type"],
                     "sensor_states": [state],
                     "deassert": True})
-            assert_true(resp[0], resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
             if self.start_msg_bus:
                 LOGGER.info(
@@ -1838,7 +1848,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault_resolved alert on message bus logs")
 
@@ -1849,14 +1859,14 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault_resolved alert using CSM REST API")
         self.server_psu_fault = False
 
         LOGGER.info("Performing health check after resolving fault")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across node reboot")
 
@@ -1882,7 +1892,7 @@ class TestServerFruAlerts:
             command="ban", resources=[self.sspl_resource_id],
             srvnode=self.current_srvnode)
 
-        assert_true(
+        assert_utils.assert_true(
             resp,
             f"Failed to ban/stop {self.sspl_resource_id} on node {self.current_srvnode}")
         LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
@@ -1893,7 +1903,7 @@ class TestServerFruAlerts:
                 service["sspl_service"]],
             decode=True,
             exc=False)
-        assert_exact_string(
+        assert_utils.assert_exact_string(
             "inactive",
             resp[0],
             "sspl service is not in stopped state")
@@ -1906,14 +1916,14 @@ class TestServerFruAlerts:
                 "sensor_type": test_cfg["sensor_type"],
                 "sensor_states": [test_cfg["sensor_states"]],
                 "deassert": False})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.server_psu_fault = True
 
         LOGGER.info("Starting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(
             command="clear", resources=[
                 self.sspl_resource_id], srvnode=self.current_srvnode)
-        assert_true(
+        assert_utils.assert_true(
             resp,
             f"Failed to clear/start {self.sspl_resource_id} on node {self.current_srvnode}")
         LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
@@ -1924,12 +1934,13 @@ class TestServerFruAlerts:
                 service["sspl_service"]],
             decode=True,
             exc=False)
-        assert_exact_string("active", resp[0], "sspl service is not active")
+        assert_utils.assert_exact_string(
+            "active", resp[0], "sspl service is not active")
         LOGGER.info("Successfully started SSPL service")
 
         LOGGER.info("Performing health check after SSPL start")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         for state in test_cfg["sensor_states"]:
             if self.start_msg_bus:
@@ -1940,7 +1951,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault alert on message bus logs")
 
@@ -1951,7 +1962,7 @@ class TestServerFruAlerts:
                 alert_types["fault"],
                 False,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault alert using CSM REST API")
 
@@ -1962,7 +1973,7 @@ class TestServerFruAlerts:
             command="ban", resources=[self.sspl_resource_id],
             srvnode=self.current_srvnode)
 
-        assert_true(
+        assert_utils.assert_true(
             resp,
             f"Failed to ban/stop {self.sspl_resource_id} on node {self.current_srvnode}")
         LOGGER.info("Successfully disabled %s", self.sspl_resource_id)
@@ -1973,7 +1984,7 @@ class TestServerFruAlerts:
                 service["sspl_service"]],
             decode=True,
             exc=False)
-        assert_exact_string(
+        assert_utils.assert_exact_string(
             "inactive",
             resp[0],
             "sspl service is not in stopped state")
@@ -1986,14 +1997,14 @@ class TestServerFruAlerts:
                 "sensor_type": test_cfg["sensor_type"],
                 "sensor_states": [test_cfg["sensor_states"]],
                 "deassert": True})
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         self.server_psu_fault = False
 
         LOGGER.info("Starting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(
             command="clear", resources=[
                 self.sspl_resource_id], srvnode=self.current_srvnode)
-        assert_true(
+        assert_utils.assert_true(
             resp,
             f"Failed to clear/start {self.sspl_resource_id} on node {self.current_srvnode}")
         LOGGER.info("Successfully enabled %s", self.sspl_resource_id)
@@ -2004,12 +2015,13 @@ class TestServerFruAlerts:
                 service["sspl_service"]],
             decode=True,
             exc=False)
-        assert_exact_string("active", resp[0], "sspl service is not active")
+        assert_utils.assert_exact_string(
+            "active", resp[0], "sspl service is not active")
         LOGGER.info("Successfully started SSPL service")
 
         LOGGER.info("Performing health check after SSPL start")
         resp = self.health_obj.check_node_health()
-        assert_true(resp[0], resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
 
         for state in test_cfg["sensor_states"]:
             if self.start_msg_bus:
@@ -2020,7 +2032,7 @@ class TestServerFruAlerts:
                               state]
                 resp = self.ras_test_obj.alert_validation(
                     string_list=alert_list, restart=False)
-                assert_true(resp[0], resp[1])
+                assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info(
                     "Verified the psu fault_resolved alert on message bus logs")
 
@@ -2031,7 +2043,7 @@ class TestServerFruAlerts:
                 alert_types["resolved"],
                 True,
                 test_cfg["resource_type"])
-            assert_true(resp, common_cfg["csm_error_msg"])
+            assert_utils.assert_true(resp, common_cfg["csm_error_msg"])
             LOGGER.info(
                 "Successfully verified psu fault_resolved alert using CSM REST API")
 

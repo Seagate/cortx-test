@@ -342,8 +342,7 @@ class RASTestLib(RASCoreLib):
                 field_val=0)
             total_disk_size = int(resp[1].strip().decode("utf-8"))
             file_name = common_cfg["file"]["disk_usage_temp_file"]
-            file_size = int((total_disk_size * du_val) /
-                            (1024 * 1024 * 100)) * 2
+            file_size = int((total_disk_size * du_val) / (1024 * 1024 * 100)) * 2
 
             LOGGER.info("Fetching server disk usage")
             resp = self.node_utils.disk_usage_python_interpreter_cmd(
@@ -448,7 +447,7 @@ class RASTestLib(RASCoreLib):
             LOGGER.debug("Reading the alert log file")
             read_resp = self.node_utils.read_file(
                 common_cfg["file"]["alert_log_file"],
-                "/tmp/rabbitmq_alert.log")
+                common_cfg["file"]["local_path"])
             LOGGER.debug(
                 "======================================================")
             LOGGER.debug(read_resp)
@@ -1223,8 +1222,9 @@ class RASTestLib(RASCoreLib):
                 return resp
 
             LOGGER.info(
-                f"{drive_count} number of drives are connected to node "
-                f"{self.host}")
+                "%s number of drives are connected to nodes %s",
+                drive_count,
+                self.host)
 
             if check_drive_count:
                 return resp[0], drive_count
@@ -1282,8 +1282,8 @@ class RASTestLib(RASCoreLib):
                                    for line in output]
 
                     return True, sensor_list
-                else:
-                    return False, "Invalid Sensor Type"
+
+                return False, "Invalid Sensor Type"
 
             return True, all_types
         except Exception as error:
