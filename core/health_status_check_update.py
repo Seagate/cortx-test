@@ -25,7 +25,6 @@ Utility Class for health status check and update to database
 import logging
 from urllib.parse import quote_plus
 from pymongo import MongoClient
-from core import runner
 from commons.helpers.health_helper import Health
 from commons.params import DB_HOSTNAME
 from commons.params import DB_NAME
@@ -134,20 +133,19 @@ class HealthCheck:
         target_dict = self.get_setup_details(targets)
         target_status_dict = {}
         for setupname in target_dict:
-            setup_details = target_dict[setupname]
-            if not setup_details["is_setup_free"] and not setup_details["in_use_for_parallel"]:
+            setup = target_dict[setupname]
+            if not setup["is_setup_free"] and not setup["in_use_for_parallel"]:
                 continue
-            if not setup_details["is_setup_free"] and setup_details["in_use_for_parallel"] and not setup_details["setup_in_useby"] == "":
+            if not setup["is_setup_free"] and setup["in_use_for_parallel"] and not setup["setup_in_useby"] == "":
                 continue
-            else:
-                nodes = setup_details["nodes"]
-                for node in nodes:
-                    health_result = self.check_cortx_cluster_health(node)
-                    storage_result = self.check_cluster_storage(node)
-                    if health_result and storage_result:
-                        target_status_dict[setupname] = True
-                    else:
-                        target_status_dict[setupname] = False
-                        LOGGER.info("Health check failed for %s of %s", node['host'], setupname)
-                        break
+            nodes = setup["nodes"]
+            for node in nodes:
+                health_result = self.check_cortx_cluster_health(node)
+                storage_result = self.check_cluster_storage(node)
+                if health_result and storage_result:
+                    target_status_dict[setupname] = True
+                else:
+                    target_status_dict[setupname] = False
+                    LOGGER.info("Health check failed for %s of %s", node['host'], setupname)
+                    break
         self.update_health_status(target_status_dict)
