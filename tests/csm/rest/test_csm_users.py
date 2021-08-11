@@ -2824,3 +2824,18 @@ class TestCsmUser():
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-25278')
+    def test_25278(self):
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25278"]
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="admin",
+                                    role="manage")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , "Error code check failed."
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor","manage") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
