@@ -1290,7 +1290,7 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_ipmi_sensor_list.__name__, error))
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
     def get_ipmi_sensor_states(self, sensor_name: str) -> list:
         """
@@ -1309,7 +1309,7 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.get_ipmi_sensor_states.__name__, error))
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
         return sensor_states
 
@@ -1344,6 +1344,35 @@ class RASTestLib(RASCoreLib):
             LOGGER.error("%s %s: %s".format(
                 cmn_cons.EXCEPTION_ERROR,
                 RASTestLib.assert_deassert_sensor_state.__name__, error))
+            return False, error
+
+    def get_nw_infc_names(self, node_num):
+        """
+        Function to get names of the network interfaces
+        :return: True/False, dict
+        (e.g. (True, {'MGMT': 'eno1', 'PUBLIC_DATA': 'enp175s0f0',
+        'PRIVATE_DATA': 'enp216s0f0'}))
+        :rtype: Boolean, dict
+        """
+        ips = [CMN_CFG["nodes"][node_num]["ip"],
+               CMN_CFG["nodes"][node_num]["public_data_ip"],
+               CMN_CFG["nodes"][node_num]["private_data_ip"]]
+
+        network_interfaces = {"MGMT": None, "PUBLIC_DATA": None,
+                              "PRIVATE_DATA": None}
+        try:
+            for ip in ips:
+                cmd = common_commands.GET_INFCS_NAME_CMD.format(ip)
+                resp = self.node_utils.execute_cmd(cmd=cmd, read_lines=True)
+                infc_name = resp[0].strip()
+                network_interfaces[list(network_interfaces.keys())[ips.index(
+                    ip)]] = infc_name
+
+            return True, network_interfaces
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_nw_infc_names.__name__, error))
             return False, error
 
     def get_raid_arrays(self) -> Tuple[bool, list]:
