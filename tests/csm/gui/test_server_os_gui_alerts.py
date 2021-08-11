@@ -25,16 +25,16 @@ import time
 import logging
 import pytest
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-from commons import commands
 from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.assert_utils import *
+from commons import Globals
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ras.sw_alerts import SoftwareAlert
 from robot_gui.utils.call_robot_test import trigger_robot
-LOGGER = logging.getLogger(__name__)
 
+LOGGER = logging.getLogger(__name__)
 
 class TestServerOSAlerts:
     """3rd party service monitoring test suite."""
@@ -127,7 +127,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25090_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25090_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -199,7 +199,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25091_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25091_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -274,7 +274,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25092_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25092_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -352,7 +352,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if disk usage fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25093_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25093_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -430,7 +430,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25094_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25094_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -503,7 +503,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25095_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-25095_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -577,7 +577,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if cpu fault is not already present in new alerts")
         alert_description = 'CPU usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22718_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-22718_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -639,7 +639,7 @@ class TestServerOSAlerts:
         LOGGER.info("Step 1: Checking if memory usage fault is not already present in new alerts")
         alert_description = 'Host memory usage increased to'
         gui_dict = dict()
-        gui_dict['log_path'] = self.cwd + '/log/latest/TEST-22719_Gui_Logs'
+        gui_dict['log_path'] = Globals.CSM_LOGS + '/log/latest/TEST-22719_Gui_Logs'
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
                                 self.browser_type, 'username:' + self.csm_user,
@@ -655,9 +655,10 @@ class TestServerOSAlerts:
         self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
         LOGGER.info("Step 2: Generate memory usage fault.")
-        resp = self.sw_alert_obj.gen_mem_usage_fault(test_cfg["delta_mem_usage"])
+        resp = self.sw_alert_obj.gen_mem_usage_fault_reboot_node(test_cfg["delta_mem_usage"])
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Memory usage fault is created successfully.")
+
         LOGGER.info("Step 4: Keep the Memory usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -673,26 +674,20 @@ class TestServerOSAlerts:
         assert_equals(False, gui_response, 'GUI FAILED: Alert is already present in active alert')
         LOGGER.info("Step 7: Successfully verified Memory usage fault alert on CSM GUI")
         LOGGER.info("Step 8: Resolving Memory usage fault.")
-        LOGGER.info("Step 9: Rebooting node %s ", self.host)
-        resp = self.node_obj.execute_cmd(cmd=commands.REBOOT_NODE_CMD,
-                                         read_lines=True, exc=False)
-        LOGGER.info(
-            "Step 10: Rebooted node: %s, Response: %s", self.host, resp)
-        time.sleep(self.cm_cfg["reboot_delay"])
-        LOGGER.info("Performing health check after node reboot")
-        resp = self.health_obj.check_node_health()
+        LOGGER.info("Updating default Memory usage threshold value")
+        resp = self.sw_alert_obj.resolv_mem_usage_fault_reboot_node(self.default_mem_usage)
         assert resp[0], resp[1]
-        LOGGER.info("Memory usage fault is resolved.")
+        LOGGER.info("Step 9: Memory usage fault is resolved.")
         self.default_mem_usage = False
-        LOGGER.info("Step 11: Keep the memory usage below threshold for %s seconds",
+        LOGGER.info("Step 10: Keep the memory usage below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 12: Memory usage was below threshold for %s seconds",
+        LOGGER.info("Step 11: Memory usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
-        LOGGER.info("Step 13: Checking Memory usage resolved alerts on CSM GUI")
+        LOGGER.info("Step 12: Checking Memory usage resolved alerts on CSM GUI")
         time.sleep(10)
         gui_dict['tag'] = 'CHECK_IN_ACTIVE_ALERTS'
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
-        LOGGER.info("Step 14: Successfully verified Memory usage alert on CSM GUI")
+        LOGGER.info("Step 13: Successfully verified Memory usage alert on CSM GUI")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)

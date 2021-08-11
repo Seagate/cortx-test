@@ -38,7 +38,8 @@ def login(mgmt_vip, username, password, port=28100, set_secure=True):
         start = "https://"
     else:
         start = "http://"
-    base_url = "{}{}:{}".format(start, mgmt_vip, str(port))
+    #base_url = "{}{}:{}".format(start, mgmt_vip, str(port))
+    base_url = "{}{}".format(start, mgmt_vip)
     login_data = {"username": username, "password": password}
     login_url = base_url + "/api/v2/login"
     print(f"URL : {login_url}")
@@ -107,8 +108,8 @@ if __name__ == '__main__':
         args.mgmt_vip,
         args.username,
         args.password)
-    access_key = response[1]["access_key"]
-    secret_key = response[1]["secret_key"]
+    access_key = response["access_key"]
+    secret_key = response["secret_key"]
     with open('s3acc_secrets', 'w') as ptr:
         ptr.write(access_key + ' ' + secret_key)
     
