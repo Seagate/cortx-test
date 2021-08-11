@@ -76,10 +76,12 @@ Following steps helps to setup client side env, where test framework runs. These
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
 
 ## Script to setup client environemnt (Alternate option to manual steps)
-Change dir to your local repository root folder.
+Change dir to your local repository root folder. If you have checked out your code 
+in clean_dev directory created in your home on Linux machine (RHEL Flavour), then
+/home/<yourname>/clean_dev is the local repository root folder. 
 ```
-cd cortx-test/ci_tools
-./client_setup.sh 
+ # cd clean_dev
+ # ./cortx-test/ci_tools/client_setup.sh 
 ```
 This script should handle client setup. However note that python configure does not have switch --enable-loadable-sqlite-extensions in script.
 

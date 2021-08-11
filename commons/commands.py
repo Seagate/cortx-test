@@ -32,6 +32,7 @@ SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
 ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
+IF_CMD = "if{} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
@@ -44,13 +45,13 @@ LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
 GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
+GET_INFCS_NAME_CMD = "ip a s | grep {} | awk '{{print $NF}}'"
 GET_RAID_ARRAYS_CMD = "grep -oP '\\bmd[0-9]\\b' /proc/mdstat"
 RAID_ARRAY_STATE_CMD = "cat /sys/block/{}/md/degraded"
 GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
 FDISK_RAID_PARTITION_CMD = "fdisk -l {} | grep -i raid | awk '{{print $1}}' > {}"
 GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {}: | awk '{{print $NF}}'"
 FILE_COMPARE_CMD = "diff {} {}"
-
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -221,6 +222,7 @@ CMD_SYSTEM_STATUS = "system status"
 CMD_SYSTEM_START = "system start"
 CMD_SYSTEM_STOP = "system stop"
 CMD_SYSTEM_SHUTDOWN = "system shutdown"
+CMD_NODE_OPERATION = "cluster_management node {} -i {}"
 CMD_CREATE_S3ACC_ACCESS_KEY = "s3accesskeys create {}"
 CMD_SHOW_S3ACC_ACCESS_KEY = "s3accesskeys show {}"
 CMD_CREATE_ACCESS_KEY = "s3accesskeys create -iu"
@@ -299,7 +301,7 @@ CMD_PCS_GREP = "pcs status --full | grep {}"
 CMD_SALT_GET_HOST = 'salt "*" grains.get host'
 # LDAP commands
 CMD_GET_S3CIPHER_CONST_KEY = "s3cipher generate_key --const_key cortx"
-CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {​}​ --data {​}​"
+CMD_DECRYPT_S3CIPHER_CONST_KEY = "s3cipher decrypt --key {} --data {}"
 
 # S3 awscli  Commands
 CMD_AWSCLI_CREATE_BUCKET = "aws s3 mb s3://{0}"
