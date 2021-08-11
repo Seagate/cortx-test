@@ -228,6 +228,10 @@ def pytest_addoption(parser):
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
     )
+    parser.addoption(
+        "--log_level", action="store",
+        help = "Decide log level for imported modules"
+    )
 
 
 def read_test_list_csv() -> List:
@@ -440,7 +444,8 @@ def pytest_sessionstart(session: Session) -> None:
     reset_imported_module_log_level()
 
 
-def reset_imported_module_log_level():
+
+def reset_imported_module_log_level(request):
     """Reset logging level of imported modules.
     Add check for imported module logger.
     """
@@ -448,7 +453,7 @@ def reset_imported_module_log_level():
     for _logger in loggers:
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
-            continue
+            print(request.config.getoption("--log_level"))
         if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
     # Handle Place holders logging
