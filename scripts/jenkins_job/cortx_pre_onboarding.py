@@ -13,7 +13,7 @@ from scripts.jenkins_job import gui_element_locators as loc
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from commons import pswdmanager
-from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
+#from libs.csm.rest.csm_rest_test_lib import CSM_REST_CFG, RestTestLib
 #from libs.csm.csm_setup import CSMConfigsCheck
 
 
