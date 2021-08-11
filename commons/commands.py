@@ -164,7 +164,7 @@ MDADM_FAIL = "--fail"
 MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
 IPMI_SDR_TYPE_CMD = "ipmitool sdr type"
-IPMI_EVENT_CMD = "ipmitool event"
+IPMI_EVENT_CMD = "ipmitoolg event"
 
 # BMC commands.
 CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
