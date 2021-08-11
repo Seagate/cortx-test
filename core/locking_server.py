@@ -190,13 +190,15 @@ class LockingServer:
             if target_found:
                 if lock_type == common_cnst.SHARED_LOCK:
                     payload = {
-                        "query": {"is_setup_free": {"$eq": False}, "is_setup_healthy": {"$eq": True},
+                        "query": {"is_setup_free": {"$eq": False},
+                                  "is_setup_healthy": {"$eq": True},
                                   "setupname": target_name,
                                   "in_use_for_parallel": {"$eq": True}}
                     }
                 else:
                     payload = {
-                        "query": {"is_setup_free": {"$eq": True}, "is_setup_healthy": {"$eq": True},
+                        "query": {"is_setup_free": {"$eq": True},
+                                  "is_setup_healthy": {"$eq": True},
                                   "setupname": target_name}
                     }
                 payload.update(
