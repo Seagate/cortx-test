@@ -74,7 +74,7 @@ class HAGUILibs:
         """
         LOGGER.info("Start : verify_node_state")
         gui_dict = dict()
-        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_cluster_state_' + str(node_id) \
+        gui_dict['log_path'] = Globals.CSM_LOGS + 'verify_node_state_' + str(node_id) \
                                + "_{:%Y_%m_%d_%H_%M_%S}".format(datetime.now())
         gui_dict['test_path'] = self.robot_test_path
         gui_dict['variable'] = ['headless:True', 'url:' + self.csm_url, 'browser:' +
