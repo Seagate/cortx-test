@@ -21,6 +21,7 @@
 """Test library for System Health related operations.
    Author: Divya Kachhwaha
 """
+import json
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -407,7 +408,7 @@ class SystemHealth(RestTestLib):
                 headers=self.headers,
                 params=parameters,
                 save_json=True)
-            if response.status_code != 200:
+            if response.status_code != const.SUCCESS_STATUS:
                 self.log.error(f'Response ={response.text}\n'
                                f'Request Headers={response.request.headers}\n'
                                f'Request Body={response.request.body}')
@@ -497,3 +498,88 @@ class SystemHealth(RestTestLib):
         if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
         return False, f"Cluster, site and rack health status is not as expected"
+
+    @RestTestLib.authenticate_and_login
+    def perform_cluster_operation(
+            self,
+            operation: str,
+            resource: str,
+            resource_id: int,
+            storage_off: bool = False,
+            force_op: bool = False):
+        """
+        This method performs cluster operation like stop/start/poweroff with rest API
+        :param resource: resource type like cluster, node etc
+        :param operation: Operation to be performed on cluster resource
+        :param resource_id: Resource ID for the operation
+        :param force_op: Specifying this enables force operation.
+        :param storage_off: The poweroff operation will be performed along
+        :return: bool/cluster operation POST rest API response
+        """
+        try:
+            # Building request url to perform cluster operation
+            self.log.info("Performing %s operation on %s ...", operation, resource)
+            endpoint = self.config["cluster_operation_endpoint"].format(resource)
+            self.log.info(
+                "Endpoint for cluster operation is %s", endpoint)
+            data = {"operation": operation,
+                    "arguments": {"resource_id": str(resource_id),
+                                  "storageoff": storage_off,
+                                  "force": force_op}}
+            # Fetching api response
+            response = self.restapi.rest_call(
+                "post",
+                endpoint=endpoint,
+                data=json.dumps(data),
+                headers=self.headers)
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error(f'Message = {response.json()["message"]}\n'
+                               f'ErrorCode = {response.json()["error_code"]}')
+                return False, response
+            self.log.info("%s operation on %s POST REST response : %s",
+                          operation,
+                          resource,
+                          response.json()["message"])
+            return True, response
+        except (ValueError, KeyError, BaseException) as error:
+            self.log.error("%s %s: %s",
+                         const.EXCEPTION_ERROR,
+                         SystemHealth.perform_cluster_operation.__name__,
+                         error)
+            raise CTException(
+                err.CSM_REST_POST_REQUEST_FAILED, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def check_on_cluster_effect(self, resource_id: int):
+        """
+        This method Get the effect of node stop/poweroff operation on cluster with rest API
+        :param resource_id: Resource ID for the operation
+        :return: bool/GET effect status of node operation on cluster rest API response
+        """
+        try:
+            # Building request url to perform cluster status operation
+            self.log.info("Check the effect of %s stop/poweroff operation on cluster...",
+                          resource_id)
+            endpoint = self.config["cluster_status_endpoint"].format(resource_id)
+            self.log.info(
+                "Endpoint for cluster status operation is %s", endpoint)
+            # Fetching api response
+            response = self.restapi.rest_call(
+                request_type="get",
+                endpoint=endpoint,
+                headers=self.headers)
+            if response.status_code != const.SUCCESS_STATUS:
+                self.log.error("cluster status operation response = %s",
+                               response.json()["message"])
+                return False, response
+            self.log.info("cluster status operation response status=%s\nmessage=%s",
+                          response.json()["status"],
+                          response.json()["message"])
+            return True, response
+        except (ValueError, KeyError, BaseException) as error:
+            self.log.error("%s %s: %s",
+                         const.EXCEPTION_ERROR,
+                         SystemHealth.check_on_cluster_effect.__name__,
+                         error)
+            raise CTException(
+                err.CSM_REST_GET_REQUEST_FAILED, error) from error

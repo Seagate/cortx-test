@@ -35,6 +35,8 @@ Restcall:
   capacity_endpoint: "/api/v2/capacity"
   health_component_endpoint: "/api/v2/system/health/components"
   health_resource_endpoint: "/api/v2/system/health/{}"
+  cluster_operation_endpoint: "/api/v2/system/management/{}"
+  cluster_status_endpoint: "/api/v2/system/management/cluster_status/{}"
 
 CliConfig:
   iam_user:
