@@ -254,9 +254,9 @@ def trigger_tests_from_te(args):
                                                    remote_path=remote_path,
                                                    local_path=logFile)
         if resp[0]:
-                print("Log file is uploaded at location : %s", resp[1])
+            print("Log file is uploaded at location : %s", resp[1])
         else:
-                print("Failed to upload log file at location : %s", resp[1])
+            print("Failed to upload log file at location : %s", resp[1])
         # update jira for status and log file
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
 
