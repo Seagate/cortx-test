@@ -664,14 +664,6 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
 
-    def initiate_blocking_process(self):
-        """Initiate blocking process
-        :return [str]: Process ID
-        """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
-        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
-        return resp
-
     def get_cpu_utilization(self, interval: int):
         """Get CPU utilization
         :param interval: Check usage in given inteval
@@ -926,26 +918,6 @@ class SoftwareAlert(RASCoreLib):
         """
         resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
         LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
-        return resp
-
-    def kill_process(self, process_id):
-        """Kill the process ID
-        :param process_id: Process ID to be killed
-        :return [str]: Process ID
-        """
-        cmd = commands.KILL_CMD.format(process_id)
-        resp = self.node_utils.execute_cmd(cmd=cmd)
-        LOGGER.debug("%s response : %s", cmd, resp)
-        return resp
-
-    def get_command_pid(self, cmd):
-        """Fetch the process ID's
-        :param cmd: Command to get pid
-        :return [str]: Process ID
-        """
-        cmd = commands.CMD_GREP_PID.format(cmd)
-        resp = self.node_utils.execute_cmd(cmd=cmd)
-        LOGGER.debug("%s response : %s", cmd, resp)
         return resp
 
     def start_cpu_increase_parallel(self):
