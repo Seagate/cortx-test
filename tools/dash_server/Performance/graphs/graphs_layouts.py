@@ -84,17 +84,17 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_small,
+                style=style_dropdown_small
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
                 placeholder="Branch",
-                style=style_dropdown_small_2,
+                style=style_dropdown_small_2
             ),
             Dropdown(
                 id='graphs_build_dropdown',
                 placeholder="Build/Object Size",
-                style=style_dropdown_medium,
+                style=style_dropdown_medium
             ),
             Dropdown(
                 id='graphs_nodes_dropdown',
@@ -119,12 +119,12 @@ graphs_input_options = [
             Dropdown(
                 id='graphs_sessions_dropdown',
                 placeholder="Sessions",
-                style=style_dropdown_small_2
+                style=style_dropdown_medium
             ),
             Dropdown(
                 id='graphs_buckets_dropdown',
                 placeholder="Buckets",
-                style=style_dropdown_small_2
+                style=style_dropdown_medium
             ),
         ],
         justify='center'

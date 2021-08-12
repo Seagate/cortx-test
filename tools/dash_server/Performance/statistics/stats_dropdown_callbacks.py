@@ -89,7 +89,7 @@ def update_nodes_dropdown(release, branch, build):
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
             value = options[0]['value']
-            if len(options) == 1:
+            if len(nodes) == 1:
                 disabled = True
         else:
             raise PreventUpdate
