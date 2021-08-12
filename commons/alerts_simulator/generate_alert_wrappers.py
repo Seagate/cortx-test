@@ -29,7 +29,7 @@ from libs.ras.ras_test_lib import RASTestLib
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
-from commons.utils.system_utils import toggle_nw_status
+from commons.utils.system_utils import toggle_nw_infc_status
 from commons import commands
 from commons.helpers.node_helper import Node
 
@@ -574,8 +574,8 @@ class GenerateAlertWrapper:
             LOGGER.info(f"Creating nw fault for resource {device} on "
                         f"{host}")
             LOGGER.info(f"Making {device} {status} on {host}")
-            resp = toggle_nw_status(device=device, status=status, host=host,
-                                    username=h_user, pwd=h_pwd)
+            resp = toggle_nw_infc_status(device=device, status=status,
+                                         host=host, username=h_user, pwd=h_pwd)
             return resp, f"Created NW Port Fault of {device}"
         except BaseException as error:
             LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
@@ -604,8 +604,8 @@ class GenerateAlertWrapper:
             status = "up"
             LOGGER.info(f"Resolving network fault for resource {device} on "
                         f"{host}")
-            resp = toggle_nw_status(device=device, status=status, host=host,
-                                    username=h_user, pwd=h_pwd)
+            resp = toggle_nw_infc_status(device=device, status=status,
+                                         host=host, username=h_user, pwd=h_pwd)
             LOGGER.info(resp)
             return resp, f"Resolved NW fault of {device}"
         except BaseException as error:
@@ -749,3 +749,32 @@ class GenerateAlertWrapper:
                          GenerateAlertWrapper.connect_os_drive.__name__,
                          error)
             return False, error
+
+    @staticmethod
+    def ipmi_alerts(host: str, h_user: str, h_pwd: str, input_parameters: dict) -> tuple:
+        """
+        Wrapper for generating server alerts on the given host using ipmitool
+
+        :param host: hostname or IP of the host
+        :param h_user: Username of the host
+        :param h_pwd: Password of the host
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :return: Returns response tuple
+        """
+        sensor_type = input_parameters['sensor_type']
+        sensor_states = input_parameters['sensor_states']
+        deassert = input_parameters['deassert']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        LOGGER.info("Getting all available sensors for sensor type: %s", sensor_type)
+        resp = ras_test_obj.get_ipmi_sensor_list(sensor_type)
+        sensor_name = random.SystemRandom().choice(seq=resp[1])
+        resp_list = list()
+        for state in sensor_states:
+            resp = ras_test_obj.assert_deassert_sensor_state(sensor_name=sensor_name,
+                                                              sensor_state=state, deassert=deassert)
+            if not resp[0]:
+                return False, resp[1]
+            resp_list.append(resp[1])
+
+        return True, resp[1]

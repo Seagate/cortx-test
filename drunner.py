@@ -87,12 +87,6 @@ def parse_args(argv):
                         help="Enable async reporting to Jira and MongoDB")
     parser.add_argument("-c", "--cancel_run", type=bool, default=False,
                         help="Enable Cancel run")
-    parser.add_argument("-p", "--pause_run", type=bool, default=False,
-                        help="Pause test run")
-    parser.add_argument("-r", "--resume_run", type=bool, default=False,
-                        help="Resume from paused state")
-    parser.add_argument("-s", "--stop_on_error", type=bool, default=False,
-                        help="Resume from paused state")
     return parser.parse_args(args=argv)
 
 
@@ -179,7 +173,11 @@ def run(opts: dict) -> None:
     rev_tag_map = dict()  # mark: dict(parallel=set(), sequential=set())}
     skip_marks = ("dataprovider", "test", "run", "skip", "usefixtures",
                   "filterwarnings", "skipif", "xfail", "parametrize")
-    base_components_marks = ('csm', 's3_ops', 'ha', 'ras', 'stress', 'combinational')
+
+    internal_skip_marks = ('release_regression', 'sanity')
+    base_components_marks = ('cluster_user_ops', 'cluster_management_ops', 's3_ops',
+                             'ha', 'stress', 'longevity', 'scalability',
+                             'combinational')
     skip_test = list()
     selected_tag_map = dict()
     meta_file = os.path.join(log_home, 'te_meta.json')
@@ -189,12 +187,15 @@ def run(opts: dict) -> None:
     meta_data = config_utils.read_content_json(meta_file, mode='rb')
     create_test_map(base_components_marks, meta_data,
                     rev_tag_map, skip_marks, skip_test,
-                    test_map)
+                    test_map, internal_skip_marks)
 
     develop_execution_plan(rev_tag_map, selected_tag_map, skip_test, test_map, tickets)
     kafka_admin_conf = {"bootstrap.servers": params.BOOTSTRAP_SERVERS}
     kafka_client = AdminClient(kafka_admin_conf)
     delete_topic(client=kafka_client, topics=[params.TEST_EXEC_TOPIC])
+    # This topic could be deleted during execution of a distributed execution.
+    # Ensure that only 1 execution is run with multiple targets. This will be enhanced
+    # when we start running multiple distributed executions for multiple targets.
     create_topic(kafka_client)
     work_queue = worker.WorkQ(producer.produce, 1024)
     finish = False  # Use finish to exit loop
@@ -283,7 +284,8 @@ def create_test_map(base_components_marks: Tuple,
                     rev_tag_map: Dict,
                     skip_marks: Dict,
                     skip_test: List,
-                    test_map: Dict) -> None:
+                    test_map: Dict,
+                    internal_skip_marks: Tuple) -> None:
     """Create a test metadata dict and tag reverse dict."""
     special_mark = ('parallel',)
     for test_meta in meta_data:
@@ -304,14 +306,15 @@ def create_test_map(base_components_marks: Tuple,
         for mark in test_meta.get('marks'):
             if mark in skip_marks + special_mark:
                 continue
+            if mark in internal_skip_marks:
+                continue
             if mark in base_components_marks:
                 parent_marks.append(mark)
                 continue
-
             update_rev_tag_map(mark, parallel, rev_tag_map, tid)
             test_mark = mark
         if not test_mark and parent_marks:
-            test_mark = parent_marks[0]
+            test_mark = parent_marks[0]  # anyhow use first parent marker now
 
             # a case when a test is decorated with a base component mark
             update_rev_tag_map(mark, parallel, rev_tag_map, tid)
