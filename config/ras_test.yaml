@@ -5,6 +5,22 @@ alert_types:
   insertion: "insertion"
   get: "get"
 
+network_interfaces:
+  VM:
+    MGMT: "eth0"
+    PUBLIC_DATA: "eth1"
+    PRIVATE_DATA: "eth3"
+  HW:
+    #Check network interface names when R2 HW is available
+    MGMT: "eno1"
+    PUBLIC_DATA: "enp175s0f0"
+    PRIVATE_DATA: "enp175s0f1"
+
+common_cfg:
+  faulty_cpu_id:
+    - 0
+    - 1
+
 test_3005:
   alert: True
   du_val: 8
@@ -265,9 +281,6 @@ test_23045:
 
 test_22787:
   resource_type: "node:os:cpu_usage"
-  faulty_cpu_id:
-    - 0
-    - 1
   interval: 30
 
 test_22786:
@@ -276,9 +289,6 @@ test_22786:
   memory_size: "5G"
   timespan: "10m"
   buffer: 10
-  faulty_cpu_id:
-    - 0
-    - 1
 
 TEST-23606:
   resource_type: "node:os:disk"
@@ -291,6 +301,16 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+test_22891:
+  resource_disk_space: "node:os:disk_space"
+  resource_cpu_usage: "node:os:cpu_usagee"
+  resource_memory_usage: "node:os:memory_usage"
+  resource_cpu_fault: "node:os:cpu:core"
+  vm_count: 1
+  memory_size: "5G"
+  timespan: "10m"
+  interval: 30
 
 test_23682:
   sensor_type: "Power Supply"
