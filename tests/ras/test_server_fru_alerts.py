@@ -228,16 +228,11 @@ class TestServerFruAlerts:
             status = test_cfg["power_on"]
             if test_cfg["bmc_shutdown"]:
                 LOGGER.info("Using BMC ip")
-                LOGGER.info(
-                    "Get BMC ip of node on which fault is to be created")
-                bmc_ip = self.bmc_obj.get_bmc_ip()
                 bmc_user = CMN_CFG["bmc"]["username"]
                 bmc_pwd = CMN_CFG["bmc"]["password"]
-                cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
-                      f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
-                      f"'{bmc_pwd}', status='{status}')"
-                LOGGER.info("Command: %s", cmd)
-                res = eval(cmd)
+                res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                         bmc_pwd=bmc_pwd,
+                                                         status=status)
             else:
                 LOGGER.info("Using PDU ip")
                 LOGGER.info("Making left pdu port up")
@@ -1727,9 +1722,6 @@ class TestServerFruAlerts:
         fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
         other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
         other_host = CMN_CFG["nodes"][other_node-1]["hostname"]
-
-        LOGGER.info("Get BMC ip of node on which fault is to be created")
-        bmc_ip = self.bmc_obj.get_bmc_ip()
         bmc_user = CMN_CFG["bmc"]["username"]
         bmc_pwd = CMN_CFG["bmc"]["password"]
 
@@ -1751,11 +1743,9 @@ class TestServerFruAlerts:
         status = test_cfg["power_off"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
-                  f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
-                  f"'{bmc_pwd}', status='{status}')"
-            LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                     bmc_pwd=bmc_pwd,
+                                                     status=status)
         else:
             LOGGER.info("Using PDU ip")
             LOGGER.info("Making left pdu port down")
@@ -1816,11 +1806,9 @@ class TestServerFruAlerts:
         status = test_cfg["power_on"]
         if test_cfg["bmc_shutdown"]:
             LOGGER.info("Using BMC ip")
-            cmd = f"srv{other_node}_bmc.bmc_node_power_on_off(" \
-                  f"bmc_ip='{bmc_ip}', bmc_user='{bmc_user}', bmc_pwd=" \
-                  f"'{bmc_pwd}', status='{status}')"
-            LOGGER.info("Command: %s", cmd)
-            res = eval(cmd)
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                     bmc_pwd=bmc_pwd,
+                                                     status=status)
         else:
             LOGGER.info("Using PDU ip")
             LOGGER.info("Making left pdu port up")
