@@ -85,7 +85,8 @@ class CreateSetupJson:
                                  setup_in_useby="",
                                  in_use_for_parallel=False,
                                  parallel_client_cnt=0,
-                                 is_setup_free=True))
+                                 is_setup_free=True,
+                                 lb=""))
         for host_number, host in enumerate(self.hosts):
             node_details = self.add_nodes_details(host_number, host)
             nodes.append(node_details)
