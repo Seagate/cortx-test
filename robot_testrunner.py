@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-""Test Runner for robot test-cases"""
+"""Test Runner for robot test-cases"""
 import os
 import subprocess
 import argparse
@@ -222,6 +222,9 @@ def trigger_tests_from_te(args):
         # update jira for status and log file
         test_status = 'EXECUTING'
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status)
+        #Clear main.log from previous Test.
+        if os.path.exists("main.log"):
+            os.remove("main.log")
 
         log_dir = run_robot_cmd(args, test_id, logFile='main.log')
         end_time = datetime.datetime.now()
@@ -234,16 +237,15 @@ def trigger_tests_from_te(args):
 
         # move all log files to nfs share
         log_dir =glob.glob(log_dir + "/*")
+        remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
+                                   args.te_ticket, test_id)
         for log_file in log_dir:
-            print("Uploading test log file to NFS server ", log_file)
-            remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
-                                       args.te_ticket, test_id)
             resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                        mnt_dir=params.MOUNT_DIR,
                                                        remote_path=remote_path,
                                                        local_path=log_file)
             if resp[0]:
-                print("Output file is uploaded at location : %s", resp[1])
+                print("Log file is uploaded at location : %s", resp[1])
             else:
                 print("Failed to upload log file at location : %s", resp[1])
         #upload main.log file to NFS share
@@ -251,6 +253,10 @@ def trigger_tests_from_te(args):
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
                                                    local_path=logFile)
+        if resp[0]:
+                print("Log file is uploaded at location : %s", resp[1])
+        else:
+                print("Failed to upload log file at location : %s", resp[1])
         # update jira for status and log file
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
 
