@@ -325,7 +325,7 @@ class TestHANodeStartStop:
         """
         LOGGER.info(
             "Started: Test to Check Stop services on node from CLI and unsafe shutdown.")
-        node = self.system_random.choice(range(self.num_nodes))
+        node = self.system_random.choice(list(range(self.num_nodes)))
         self.restored = False
         opt_user = self.system_random.choice(self.user_data)
         LOGGER.info(
