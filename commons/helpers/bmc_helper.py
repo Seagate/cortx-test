@@ -41,8 +41,8 @@ class Bmc(Host):
             resp = system_utils.run_local_cmd(commands.INSTALL_IPMITOOL)
             if not resp[0]:
                 raise CTException(
-                    err.CLIENT_CMD_EXECUTION_FAILED,
-                    f"Could not ipmitool on client")
+                    err.CLIENT_CMD_EXECUTION_FAILED, "Could not ipmitool on "
+                                                     "client")
 
         self.bmc_ip = self.get_bmc_ip()
 
