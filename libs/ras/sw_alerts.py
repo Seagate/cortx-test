@@ -928,14 +928,6 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
         return resp
 
-    def get_cpu_utilization(self):
-        """Get CPU utilization
-        :return [str]: Process ID
-        """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
-        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
-        return resp
-
     def kill_process(self, process_id):
         """Kill the process ID
         :param process_id: Process ID to be killed
