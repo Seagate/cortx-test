@@ -874,6 +874,9 @@ class RestCsmUser(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     def edit_csm_user(self, user:str=None, role:str=None, email:str=None, password:str=None, current_password:str=None):
+        """
+        Functionality to edit csm user details
+        """
         endpoint = self.config["csmuser_endpoint"] + "/" + user
         patch_payload = {}
         if role is not None:
