@@ -293,9 +293,9 @@ Fail if New alerts exist SW Service
     ${found1}=  Set Variable  False
     ${found2}=  Set Variable  False
     ${found3}=  Set Variable  False
-    ${Description1} =  Set Variable  ${servicename} in failed state.
-    ${Description2} =  Set Variable  ${servicename} in inactive state.
-    ${Description3} =  Set Variable  ${servicename} in deactivating state.
+    ${Description1} =  Set Variable  ${servicename} in failed state
+    ${Description2} =  Set Variable  ${servicename} in inactive state
+    ${Description3} =  Set Variable  ${servicename} in deactivating state
     Log To Console And Report  ${Description1}
     Log To Console And Report  ${Description2}
     Log To Console And Report  ${Description3}
@@ -330,7 +330,7 @@ Verify failed alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename} in failed state.
+    ${Description} =  Set Variable  ${servicename} in failed state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -344,6 +344,7 @@ Verify failed alerts exist SW Service
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -355,7 +356,7 @@ Verify inactive alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename}.service in inactive state.
+    ${Description} =  Set Variable  ${servicename} in inactive state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -369,6 +370,7 @@ Verify inactive alerts exist SW Service
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -380,7 +382,7 @@ Verify deactivating alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename} in deactivating state.
+    ${Description} =  Set Variable  ${servicename} in deactivating state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
@@ -394,6 +396,7 @@ Verify deactivating alerts exist SW Service
         ...  Run Keywords
         ...  Log To Console And Report  ${found}
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -405,11 +408,13 @@ Verify and Acknowledge failed resolved alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename} in failed state.
+    ${Description} =  Set Variable  ${servicename} in failed state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click ActiveAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -422,6 +427,7 @@ Verify and Acknowledge failed resolved alerts exist SW Service
         ...  AND  Acknowledge alert  ${servicename}
         ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -433,11 +439,13 @@ Verify and Acknowledge inactive resolved alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename} in inactive state.
+    ${Description} =  Set Variable  ${servicename} in inactive state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click ActiveAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -450,6 +458,7 @@ Verify and Acknowledge inactive resolved alerts exist SW Service
         ...  AND  Acknowledge alert  ${servicename}
         ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -461,11 +470,13 @@ Verify and Acknowledge deactivating resolved alerts exist SW Service
     [Documentation]  Find and mark Fail if SW Service alerts not exist
     [Arguments]  ${servicename}
     ${found}=  Set Variable  False
-    ${Description} =  Set Variable  ${servicename} in deactivating state.
+    ${Description} =  Set Variable  ${servicename} in deactivating state
     Log To Console And Report  ${Description}
     Click AlertPage Image
     wait for page or element to load  10s  # Took time to load all alerts
     Click NewAlert Tab
+    wait for page or element to load  10s  # Took time to load all alerts
+    Click ActiveAlert Tab
     wait for page or element to load  10s  # Took time to load all alerts
     ${alert_table_row_data}=  Read Table Data  ${ALERT_TABLE_ROW_XPATH}
     # loop through all alerts row
@@ -478,6 +489,7 @@ Verify and Acknowledge deactivating resolved alerts exist SW Service
         ...  AND  Acknowledge alert  ${servicename}
         ...  AND  Click AlertHistory Tab
         ...  AND  Capture Page Screenshot
+        ...  AND  Exit For Loop  # as soon as correct Description found, exit from loop, no need to check all alerts
     END
     Run Keyword If  ${found} == False
     ...  Run Keywords
@@ -535,9 +547,9 @@ Acknowledge if Active alerts exist SW Service
     ${found1}=  Set Variable  False
     ${found2}=  Set Variable  False
     ${found3}=  Set Variable  False
-    ${Description1} =  Set Variable  ${servicename} in failed state.
-    ${Description2} =  Set Variable  ${servicename} in inactive state.
-    ${Description3} =  Set Variable  ${servicename} in deactivating state.
+    ${Description1} =  Set Variable  ${servicename} in failed state
+    ${Description2} =  Set Variable  ${servicename} in inactive state
+    ${Description3} =  Set Variable  ${servicename} in deactivating state
     Log To Console And Report  ${Description1}
     Log To Console And Report  ${Description2}
     Log To Console And Report  ${Description3}

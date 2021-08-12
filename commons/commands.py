@@ -33,6 +33,7 @@ SYSTEM_CTL_STOP_CMD = "systemctl stop {}"
 START_MSG_BUS_READER_CMD = "python3 read_message_bus.py"
 ADD_SPARES_CMD = "add spares {} disk-group {}"
 IP_LINK_CMD = "ip link set {} {}"
+IF_CMD = "if{} {}"
 CONF_GET_CMD = "conf '{}' get '{}'"
 CONF_SET_CMD = "conf '{}' set '{}'"
 GET_ALL_NW_IFCS_CMD = 'ls /sys/class/net'
@@ -45,13 +46,13 @@ LINE_COUNT_CMD = "cat {} | wc -l"
 DISCONNECT_OS_DRIVE_CMD = "echo 1 > /sys/block/{}/device/delete"
 CONNECT_OS_DRIVE_CMD = 'echo "- - -" > /sys/class/scsi_host/host{}/scan'
 GET_IFCS_STATUS = "ip -br -c addr show | grep -v lo | grep {}"
+GET_INFCS_NAME_CMD = "ip a s | grep {} | awk '{{print $NF}}'"
 GET_RAID_ARRAYS_CMD = "grep -oP '\\bmd[0-9]\\b' /proc/mdstat"
 RAID_ARRAY_STATE_CMD = "cat /sys/block/{}/md/degraded"
 GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
 FDISK_RAID_PARTITION_CMD = "fdisk -l {} | grep -i raid | awk '{{print $1}}' > {}"
 GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {}: | awk '{{print $NF}}'"
 FILE_COMPARE_CMD = "diff {} {}"
-
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -164,6 +165,8 @@ MDADM_MANAGE = "--manage"
 MDADM_FAIL = "--fail"
 MDADM_REMOVE = "--remove"
 MDADM_ADD = "--add"
+IPMI_SDR_TYPE_CMD = "ipmitool sdr type"
+IPMI_EVENT_CMD = "ipmitool event"
 
 # BMC commands.
 CHECK_IPMITOOL = "rpm -qa | grep ipmitool"
