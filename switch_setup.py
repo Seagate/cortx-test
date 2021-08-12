@@ -239,7 +239,8 @@ def revert_vms(args, vm_list):
     for vm_name in vm_machines:
         cmd_line = cmd_line + ["-v=" + str(vm_name)]
         status = run_cmd(cmd_line)
-        return status
+        if status:
+            return status
 
 
 def run_cmd(cmd):
