@@ -37,6 +37,7 @@ from commons import commands as common_cmd
 from commons.utils import assert_utils
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
+from commons.utils import system_utils
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -1775,7 +1776,11 @@ class TestServerFruAlerts:
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
 
-        LOGGER.debug(res)
+        LOGGER.debug("Response: %s", res)
+
+        LOGGER.info("Checking if node is powered off")
+        resp = system_utils.check_ping(host=self.hostname)
+        assert_utils.assert_false(resp, "Failed to power off the node")
         self.power_failure_flag = True
         LOGGER.info("Step 1: Successfully powered off node using APC/BMC.")
 
@@ -1837,15 +1842,19 @@ class TestServerFruAlerts:
                   f"status='{status}')"
             LOGGER.info("Command: %s", cmd)
             res = eval(cmd)
-        LOGGER.debug(res)
+        LOGGER.debug("Response: %s", res)
+
+        time.sleep(test_cfg["wait_10_min"])
+        LOGGER.info("Checking if node is powered on")
+        resp = system_utils.check_ping(host=self.hostname)
+        assert_utils.assert_true(resp, "Failed to power on the node")
         self.power_failure_flag = False
         LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
 
-        time.sleep(test_cfg["wait_10_min"])
         LOGGER.info("Step 5: Check cluster health")
         resp = eval("srv{}_hlt.check_node_health()".format(other_node))
         assert_utils.assert_true(resp[0], "Step 5: Cluster health is not good. "
-                               "\nResponse: {resp}")
+                                 "\nResponse: {resp}")
         LOGGER.info("Step 5: Cluster health is good. \nResponse: %s", resp)
 
         if self.start_msg_bus:
