@@ -176,3 +176,8 @@ test_1172:
   status_code: 401
 test_7362:
   password: 'qiLA1WIqNyX0Uy4gz1RuqEiM2ZCVHAok0Ht6y0HS04E='
+
+test_25278:
+    error_code: 4101
+    message: "{} can not update the role for {}"
+    message_id: "update_not_allowed"

@@ -871,3 +871,20 @@ class RestCsmUser(RestTestLib):
                            f"Request body : {response.request.body}")
             raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
                               msg="CSM user password change request failed.")
+
+    @RestTestLib.authenticate_and_login
+    def edit_csm_user(self, user:str=None, role:str=None, email:str=None, password:str=None, current_password:str=None):
+        endpoint = self.config["csmuser_endpoint"] + "/" + user
+        patch_payload = {}
+        if role is not None:
+            patch_payload.update({"role":role})
+        if email is not None:
+            patch_payload.update({"email":email})
+        if password is not None:
+            patch_payload.update({"password":password})
+        if current_password is not None:
+            patch_payload.update({"current_password":current_password})
+        self.log.info(patch_payload)
+        response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
+                                              headers=self.headers)
+        return response
