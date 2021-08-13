@@ -214,7 +214,7 @@ def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
         cmd_line = cmd_line + [force_serial_run]
 
     if todo:
-        args.test_type = ['TODO']
+        args.test_type = 'TODO'
         cmd_line = cmd_line + ["--test_type=" + str(args.test_type)]
 
     cmd_line = cmd_line + ['--build=' + args.build, '--build_type=' + args.build_type]
