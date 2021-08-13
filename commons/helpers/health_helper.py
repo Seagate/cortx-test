@@ -30,6 +30,7 @@ from commons.helpers.host import Host
 from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
+from config import RAS_VAL
 
 LOG = logging.getLogger(__name__)
 
@@ -455,6 +456,16 @@ class Health(Host):
 
         return True, "cluster on {} up and running.".format(self.hostname)
 
+    def reboot_node(self):
+        """Reboot node
+        """
+        LOG.info("Restarting Node")
+        cmd = commands.REBOOT_NODE_CMD
+        resp = self.execute_cmd(cmd, read_lines=True, exc=False)
+        LOG.info("Waiting for Node to Come UP %s", resp)
+        time.sleep(RAS_VAL["ras_sspl_alert"]["reboot_delay"])
+        return True
+
     @staticmethod
     def get_node_health_xml(pcs_response: str):
         """
@@ -622,18 +633,19 @@ class Health(Host):
 
         return True
 
-    def check_nw_interface_status(self):
+    def check_nw_interface_status(self, nw_infcs: list = None):
         """
         Function to get status of all available network interfaces on node.
         """
         LOG.info("Getting all network interfaces on host")
-        LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
-        res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
-        nw_ifcs = list(filter(None, res.decode("utf-8").split('\n')))
-        LOG.debug(nw_ifcs)
+        if nw_infcs is None:
+            LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
+            res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
+            nw_infcs = list(filter(None, res.decode("utf-8").split('\n')))
+        LOG.debug(nw_infcs)
         LOG.info("Check status of all available network interfaces")
         status = {}
-        for nw in nw_ifcs:
+        for nw in nw_infcs:
             stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
             nw_st = self.execute_cmd(stat_cmd, exc=False)
             nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))

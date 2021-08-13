@@ -24,6 +24,7 @@ ras_sspl_alert:
     lsscsi_file: "/root/lsscsi.txt"
     local_path: "/tmp/rabbitmq_alert.log"
     selinux_status: "/root/selinux_status.log"
+    fdisk_file: "fdisk.txt"
 
   sspl_config:
     sspl_section: "NODEDATAMSGHANDLER"
@@ -66,7 +67,7 @@ ras_sspl_alert:
   selinux_disabled: "disabled"
   selinux_enforced: "enforcing"
   local_selinux_path: "selinux_config"
-  reboot_delay: 720
+  reboot_delay: 900
   one_min_delay: 60
   disk_clean_time: 120
 

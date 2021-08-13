@@ -156,8 +156,8 @@ EULA_CONTENT_MSG_XPATH = "//p[@data-v-1ad3de5e]"
 CSM_USERS_TABLE_XPATH = '//*[@id="localuser-tabledata"]//table'
 CSM_USERS_NUMBER_OF_ROWS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[2]'
 CSM_USERS_NUMBER_OF_COLUMNS_XPATH = '//*[@id="localuser-tabledata"]//table/tbody/tr[1]/td'
-CSM_USER_EDIT_XPATH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
-CSM_USER_DELETE_XAPTH = '//td//div[contains(text(), "{0}")]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
+CSM_USER_EDIT_XPATH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-edit-icon"]'
+CSM_USER_DELETE_XAPTH = '//td[3]//div[text()="{0}"]//parent::td//parent::tr//td[4]//div[@class="cortx-icon-btn cortx-delete-icon"]'
 CSM_TABLE_ELEMENTS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr//td'
 CSM_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 CSM_TABLE_COLUMN_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[*]//td[{0}]'
@@ -184,13 +184,16 @@ CSM_USER_SEARCH_BOX_XPATH = '//input[@placeholder="Search"]'
 CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
 CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
+CSM_FILTER_LIST_BUTTON_XPATH = '//*[@class="v-select-list v-card theme--light"]/div'
+CSM_FILTER_LIST_CONTENT_XPATH = '//*[@class="v-list-item__title"]'
+CSM_FILTER_ROLE_SELECTED_XPATH = '//div[contains(@aria-labelledby,"role-list")]'
+CSM_FILTER_USERNAME_SELECTED_XPATH = '//div[contains(@aria-labelledby,"username-list")]'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
 
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
-DELETE_USER_BUTTON_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
 CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
@@ -247,6 +250,7 @@ IAM_USER_TAB_S3_URL_TEXT_ID = "s3-account-manage-lbl"
 IAM_USER_TAB_COPY_S3_URL_ONE_ID = "copy-url-btn-0"
 IAM_USER_TAB_COPY_S3_URL_TWO_ID = "copy-url-btn-1"
 IAM_USER_ACCESS_KEY_TABLE_XPATH = "//*[@id='download-csv-dialog-datatable']/tr/td"
+IAM_USER_LIMIT_MSG_ID = "dialog-message-label"
 
 # About Section
 ABOUT_VIEW_ID = 'menu-actionmanagebtn'
@@ -268,7 +272,7 @@ AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
-CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
+CSM_AUDIT_LOG_TABLE_XPATH = "//*[@class='v-data-table__wrapper']//table//tr//td"
 CURRENT_DATE_IN_DATE_PICKER_XPATH = '//button[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
 AUDIT_LOG_SEARCH_BAR_XPATH = '//input[@placeholder="Search"]'
 AUDIT_LOG_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
@@ -276,6 +280,9 @@ AUDIT_LOG_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
 AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "{0}")]'
 AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
 AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
+AUDIT_LOG_CURRENT_DATE_XPATH = '//*[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
+AUDIT_LOG_AVAILABLE_DATE_XPATH = '//*[@class="v-btn v-btn--active v-btn--text v-btn--rounded' \
+                                 ' theme--light"]//ancestor::table//tr//td//button//div'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"
