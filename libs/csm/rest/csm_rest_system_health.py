@@ -509,12 +509,13 @@ class SystemHealth(RestTestLib):
             force_op: bool = False):
         """
         This method performs cluster operation like stop/start/poweroff with rest API
-        :param resource: resource type like cluster, node etc
         :param operation: Operation to be performed on cluster resource
+        :param resource: resource type like cluster, node etc
         :param resource_id: Resource ID for the operation
+        :param storage_off: If true, The poweroff operation will be performed along
+        with powering off the storage. (Valid only with poweroff operation on node.)
         :param force_op: Specifying this enables force operation.
-        :param storage_off: The poweroff operation will be performed along
-        :return: bool/cluster operation POST rest API response
+        :return: bool/cluster operation POST API response
         """
         try:
             # Building request url to perform cluster operation
@@ -536,7 +537,7 @@ class SystemHealth(RestTestLib):
                 self.log.error(f'Message = {response.json()["message"]}\n'
                                f'ErrorCode = {response.json()["error_code"]}')
                 return False, response
-            self.log.info("%s operation on %s POST REST response : %s",
+            self.log.info("%s operation on %s POST REST API response : %s",
                           operation,
                           resource,
                           response.json()["message"])
@@ -553,12 +554,12 @@ class SystemHealth(RestTestLib):
     def check_on_cluster_effect(self, resource_id: int):
         """
         This method Get the effect of node stop/poweroff operation on cluster with rest API
-        :param resource_id: Resource ID for the operation
+        :param resource_id: Id of the node for which cluster status is to be checked.
         :return: bool/GET effect status of node operation on cluster rest API response
         """
         try:
             # Building request url to perform cluster status operation
-            self.log.info("Check the effect of %s stop/poweroff operation on cluster...",
+            self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
                           resource_id)
             endpoint = self.config["cluster_status_endpoint"].format(resource_id)
             self.log.info(
