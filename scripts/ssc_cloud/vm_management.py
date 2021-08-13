@@ -59,7 +59,7 @@ class VmStateManagement:
         }
 
         payload.update({"projection": {"hostnames": True, "client": True, "setupname": True,
-                                       "m_vip": True, "data_ip": True}, "nodes": True})
+                                       "m_vip": True, "data_ip": True}})
 
         payload.update(
             {"db_username": self.db_username,
@@ -80,7 +80,6 @@ class VmStateManagement:
                 hostnames = json_response["result"][0]["hostnames"]
                 client = json_response["result"][0]["client"]
                 m_vip = json_response["result"][0]["m_vip"]
-                nodes = json_response["result"][0]["nodes"]
                 data_ip = json_response["result"][0]["data_ip"]
                 payload = {
                         "filter": {"setupname": setup_name},
