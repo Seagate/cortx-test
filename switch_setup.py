@@ -106,9 +106,9 @@ def parse_args():
     parser.add_argument("-cp", "--csm_pass", type=str,
                         default='', help="csm_pass")
     parser.add_argument("-ju", "--jira_user", type=str,
-                        default='522085', help="jira_user")
+                        default='', help="jira_user")
     parser.add_argument("-jp", "--jira_pass", type=str,
-                        default='Swap@#$098', help="jira_pass")
+                        default='', help="jira_pass")
     parser.add_argument("-du", "--db_user", type=str,
                         default='', help="db_user")
     parser.add_argument("-dp", "--db_pass", type=str,
