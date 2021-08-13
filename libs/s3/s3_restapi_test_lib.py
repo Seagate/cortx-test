@@ -225,7 +225,7 @@ class S3AuthServerRestAPI(S3AccountOperationsRestAPI):
         """S3AutheServer operations constructor."""
         super(S3AuthServerRestAPI, self).__init__()
         nodes = CMN_CFG.get("nodes")
-        host = host if host else nodes[1]["public_data_ip"] if nodes else None
+        host = host if host else nodes[0]["public_data_ip"] if nodes else None
         self.endpoint = S3_CFG["s3auth_endpoint"].format(host)
 
     def update_account_login_profile(
