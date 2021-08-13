@@ -521,7 +521,7 @@ class SystemHealth(RestTestLib):
         try:
             # Building request url to perform cluster operation
             self.log.info("Performing %s operation on %s ...", operation, resource)
-            endpoint = self.config["cluster_operation_endpoint"].format(resource)
+            endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
             self.log.info(
                 "Endpoint for cluster operation is %s", endpoint)
             data = {"operation": operation,
@@ -535,15 +535,17 @@ class SystemHealth(RestTestLib):
                 data=json.dumps(data),
                 headers=self.headers)
             if response.status_code != const.SUCCESS_STATUS:
-                self.log.error(f'Message = {response.json()["message"]}\n'
-                               f'ErrorCode = {response.json()["error_code"]}')
+                self.log.error("%s operation on %s POST REST API response : %s",
+                          operation,
+                          resource,
+                          response.json())
                 return False, response
             self.log.info("%s operation on %s POST REST API response : %s",
                           operation,
                           resource,
-                          response.json()["message"])
+                          response.json())
             return True, response
-        except (ValueError, KeyError, BaseException) as error:
+        except BaseException as error:
             self.log.error("%s %s: %s",
                          const.EXCEPTION_ERROR,
                          SystemHealth.perform_cluster_operation.__name__,
@@ -562,7 +564,7 @@ class SystemHealth(RestTestLib):
             # Building request url to perform cluster status operation
             self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
                           resource_id)
-            endpoint = self.config["cluster_status_endpoint"].format(resource_id)
+            endpoint = "{}/{}".format(self.config["cluster_status_endpoint"], resource_id)
             self.log.info(
                 "Endpoint for cluster status operation is %s", endpoint)
             # Fetching api response
@@ -572,13 +574,12 @@ class SystemHealth(RestTestLib):
                 headers=self.headers)
             if response.status_code != const.SUCCESS_STATUS:
                 self.log.error("cluster status operation response = %s",
-                               response.json()["message"])
+                               response.json())
                 return False, response
-            self.log.info("cluster status operation response status=%s\nmessage=%s",
-                          response.json()["status"],
-                          response.json()["message"])
+            self.log.info("cluster status operation response = %s",
+                          response.json())
             return True, response
-        except (ValueError, KeyError, BaseException) as error:
+        except BaseException as error:
             self.log.error("%s %s: %s",
                          const.EXCEPTION_ERROR,
                          SystemHealth.check_on_cluster_effect.__name__,
