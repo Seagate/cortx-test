@@ -181,3 +181,14 @@ test_25278:
     error_code: 4101
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
+
+test_25280:
+    error_code: 4101
+    message: "{} can not update the password for {}"
+    message_id: "update_not_allowed"
+
+test_25282:
+    error_code: 4101
+    message: "{} can not update the email id for {}"
+    message_id: "update_not_allowed"
+

@@ -2872,3 +2872,96 @@ class TestCsmUser():
                                                + "Message check failed.")
         assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-25280')
+    def test_25280(self):
+        """
+        Function to test Monitor user is not able to edit the passwords of the
+        admin, manage and other monitor user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25280"]
+        self.log.info("Step 1: Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        userid = response.json()["id"]
+        self.log.info("Step 2: Verified User %s got created successfully", username)
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="admin",
+                               password="Seagate@1", current_password="Testuser@123")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor","admin") , (
+                                                  + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="csm_user_manage",
+                               password="Seagate@1", current_password="Testuser@123")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor","csm_user_manage") , (
+                                                  + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
+                                password="Seagate@1", current_password="Testuser@123")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                               + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",username) , (
+                                               + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.skip(reason="Bug EOS-23254")
+    @pytest.mark.tags('TEST-25282')
+    def test_25282(self):
+        """
+        Function to test Monitor user is not able to edit the email ids of the
+        admin, manage and other monitor user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25280"]
+        self.log.info("Step 1: Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        self.log.info("Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        userid = response.json()["id"]
+        self.log.info("Step 2: Verified User %s got created successfully", username)
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="admin",
+                              email_id="admin@seagate.com")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor","admin") , (
+                                                  + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="csm_user_manage",
+                              email_id="manageuser@seagate.com")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor","csm_user_manage") , (
+                                                  + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
+                              email_id="monitoruser@seagate.com")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                               + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",username) , (
+                                               + "Message check failed.")
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
