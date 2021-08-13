@@ -479,7 +479,7 @@ class TestHANodeStartStop:
         back through cortx REST with admin or manage user
         """
         LOGGER.info(
-            "Started: Test to check poweroff (only server) start operation one by one for all nodes.")
+            "Started: Test to check poweroff (only server) start operation one by one all nodes.")
         for node in range(self.num_nodes):
             self.restored = False
             opt_user = self.system_random.choice(self.user_data)
@@ -566,7 +566,6 @@ class TestHANodeStartStop:
             resp = self.csm_alerts_obj.verify_csm_response(
                 self.starttime, self.alert_type["resolved"], True, "iem")
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
-            # TODO: If CSM REST getting changed, add alert check from msg bus
             self.starttime = time.time()
             LOGGER.info(
                 "Step 8: Verified the IEM fault resolved alert for node up")
@@ -578,4 +577,4 @@ class TestHANodeStartStop:
             self.restored = True
 
         LOGGER.info(
-            "Completed: Test to check poweroff (only server) start operation one by one for all nodes.")
+            "Completed: Test to check poweroff (only server) start operation one by one all nodes.")

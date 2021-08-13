@@ -499,6 +499,7 @@ class SystemHealth(RestTestLib):
             return True, f"Cluster, site and rack health status is {exp_status}"
         return False, f"Cluster, site and rack health status is not as expected"
 
+    # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
     def perform_cluster_operation(
             self,
