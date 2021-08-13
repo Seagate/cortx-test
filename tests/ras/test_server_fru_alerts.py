@@ -18,7 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Test suite for storage enclosure fru related tests"""
+"""Test suite for server fru related tests"""
 
 import os
 import time
