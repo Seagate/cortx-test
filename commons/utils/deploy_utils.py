@@ -54,8 +54,8 @@ class CreateSetupJson:
         with open('provisioner_cluster.json') as json_file:
             self.data = json.load(json_file)
         data = self.data["cluster"][list(self.data["cluster"].keys())[0]]
-        self.m_ip = data['network']['management']['virtual_host']
-
+        m_vip = str(data['network']['management']['virtual_host'])
+        self.m_ip = m_vip.strip()
         # Get required ips
         required_ips = 3
         self.num_nodes = len(hosts)
