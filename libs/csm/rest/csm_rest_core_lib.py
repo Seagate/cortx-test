@@ -19,9 +19,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """ This is the core module for REST API. """
+
 import logging
 import json
 import requests
+
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from commons.constants import Rest as const
 
@@ -86,25 +88,20 @@ class RestClient:
 
         return response_object
 
-    def s3auth_rest_call(self, request_type, endpoint, secure_connection=False,
-                         data=None, headers=None, params=None, json_dict=None,
-                         save_json=False):
+    def s3auth_rest_call(self, request_type=None, endpoint=None, data=None, headers=None,
+                         params=None, json_dict=None, save_json=False):
         """
         This function will request REST methods like GET, POST, PUT etc.
 
-        :param request_type: get/post/delete/update etc
-        :param endpoint: endpoint url
-        :param secure_connection: HTTP / HTTPS connection required
-        :param data: data required for REST call
-        :param headers: headers required for REST call
-        :param params: parameters required for REST call
-        :param save_json: In case user required to store json file
-        :return: response of the request
+        :param request_type: get/post/delete/update etc.
+        :param endpoint: IAM url.
+        :param data: data required for REST call.
+        :param headers: headers required for REST call.
+        :param params: parameters required for REST call.
+        :param save_json: In case user required to store json file.
+        :return: response of the request.
         """
-        # Building final endpoint request url
-        set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
-        request_url = "{}{}".format(set_secure, endpoint)
-        self.log.debug("Request URL : %s", request_url)
+        self.log.debug("Request URL : %s", endpoint)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)
         self.log.debug("Data : %s", data)
@@ -112,12 +109,13 @@ class RestClient:
         self.log.debug("json_dict: %s", json_dict)
         # Request a REST call
         response_object = self._request[request_type](
-            request_url, headers=headers,
+            endpoint, headers=headers,
             data=data, params=params, verify=False, json=json_dict)
         self.log.debug("Response Object: %s", response_object)
         try:
             self.log.debug("Response JSON: %s", response_object.json())
-        except BaseException:
+        except BaseException as error:
+            self.log.warning(error)
             self.log.debug("Response Text: %s", response_object.text)
         # Can be used in case of larger response
         if save_json:
