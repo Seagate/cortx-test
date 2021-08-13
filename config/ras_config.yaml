@@ -67,7 +67,7 @@ ras_sspl_alert:
   selinux_disabled: "disabled"
   selinux_enforced: "enforcing"
   local_selinux_path: "selinux_config"
-  reboot_delay: 720
+  reboot_delay: 900
   one_min_delay: 60
   disk_clean_time: 120
 
