@@ -27,10 +27,10 @@ from multiprocessing import Process
 from time import perf_counter_ns
 
 import pytest
-
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
+from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -40,6 +40,8 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CSMAccountOperations
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from scripts.s3_bench import s3bench
 
 
@@ -72,6 +74,8 @@ class TestAccountUserManagementResetPassword:
             self.log.info("Created path: %s", self.test_dir_path)
         self.cli_test_obj = CortxCliTestLib()
         self.csm_obj = CSMAccountOperations()
+        self.rest_obj = S3AccountOperations()
+        self.s3auth_obj = S3AuthServerRestAPI()
         self.account_prefix = "acc-reset-passwd-{}"
         self.csm_user = "csm-user-{}".format(time.perf_counter_ns())
         self.s3acc_name1 = "acc1-reset-passwd-{}".format(
@@ -112,8 +116,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("setup %s", all_accounts)
         for acc in self.account_dict:
             if acc in all_accounts:
-                resp = self.cli_test_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.account_dict[acc])
+                resp = self.rest_obj.delete_s3_account(acc)
                 assert_utils.assert_true(resp[0], resp[1])
                 self.log.info("Deleted %s account successfully", acc)
         for user in self.csm_user_list:
@@ -138,6 +141,19 @@ class TestAccountUserManagementResetPassword:
             assert_utils.assert_true(resp[0], resp[1])
             health_obj.disconnect()
         self.log.info("Checked cluster status, all services are running.")
+
+    def get_ldap_creds(self):
+        """Get the ldap credentials from node."""
+        nodes = CMN_CFG["nodes"]
+        self.node_hobj = Node(hostname=nodes[0]["hostname"],
+                              username=nodes[0]["username"],
+                              password=nodes[0]["password"])
+        self.node_hobj.connect()
+        resp = self.node_hobj.get_ldap_credential()
+        assert_utils.assert_is_not_none(resp[0], resp[1])
+        self.node_hobj.disconnect()
+
+        return resp
 
     def s3_ios(self,
                bucket=None,
@@ -222,7 +238,7 @@ class TestAccountUserManagementResetPassword:
             "Step : Creating account with name %s and email_id %s",
             account_name,
             email_id)
-        create_account = self.cli_test_obj.create_account_cortxcli(
+        create_account = self.rest_obj.create_s3_account(
             account_name, email_id, password)
         assert_utils.assert_true(create_account[0], create_account[1])
         access_key = create_account[1]["access_key"]
@@ -932,3 +948,135 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Test reset n number of s3 account password using csm user having different role"
             " (admin, manage, monitor) while S3 IO's are in progress.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21502")
+    @CTFailOn(error_handler)
+    def test_21502(self):
+        """
+        Reset s3 account password.
+
+        Use REST API call Update Account Login Profile using access/secret key.
+        """
+        self.log.info(
+            "STARTED: Use REST API call Update Account Login Profile using access/secret key.")
+        self.log.info("Steps 1. Create Account & Login Profile.")
+        response = self.create_s3_acc(self.s3acc_name1, self.email_id.format(
+            self.s3acc_name1), self.s3acc_passwd)
+        access_key, secret_key = response[1], response[2]
+        self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
+                      "REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(
+            self.s3acc_name1, self.new_passwd, access_key, secret_key)
+        assert_utils.assert_true(response[0], response[1])
+        self.log.info("Step 3. Check password updated.")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.new_passwd)
+        assert_utils.assert_true(resp.ok, resp)
+        self.log.info(
+            "ENDED: Use REST API call Update Account Login Profile using access/secret key.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21514")
+    @CTFailOn(error_handler)
+    def test_21514(self):
+        """
+        Reset s3 account password.
+
+        Use REST API call Update Account Login Profile using LDAP credentials.
+        """
+        self.log.info(
+            "STARTED: Use REST API call Update Account Login Profile using LDAP credentials.")
+        self.log.info("Steps 1. Create Account & Login Profile.")
+        self.create_s3_acc(self.s3acc_name1, self.email_id.format(
+            self.s3acc_name1), self.s3acc_passwd)
+        self.log.info("Get ldap credentials.")
+        ldap_user, ldap_password = self.get_ldap_creds()
+        self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
+                      "REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
+                                                                ldap_user, ldap_password)
+        assert_utils.assert_true(response[0], response[1])
+        self.log.info("Step 3. Check password updated.")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.new_passwd)
+        assert_utils.assert_true(resp.ok, resp)
+        self.log.info(
+            "ENDED: Use REST API call Update Account Login Profile using LDAP credentials.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21517")
+    @CTFailOn(error_handler)
+    def test_21517(self):
+        """
+        Reset s3 account password.
+
+        Use REST API call Update Account Login Profile using invalid credentials.
+        """
+        self.log.info(
+            "STARTED: Use REST API call Update Account Login Profile using invalid credentials.")
+        self.log.info("Steps 1. Create Account & Login Profile.")
+        response = self.create_s3_acc(self.s3acc_name1, self.email_id.format(
+            self.s3acc_name1), self.s3acc_passwd)
+        access_key, secret_key = response[1], response[2]
+        self.log.info("Step 2. Update Account Login Profile using invalid Access Key and valid "
+                      "Secret key credentials using direct REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
+                                                                access_key[:-3], secret_key)
+        assert_utils.assert_false(response[0], response[1])
+        self.log.info("Step 3. Update Account Login Profile using Valid Access key and Invalid "
+                      "Secret Key credentials using direct REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
+                                                                access_key, secret_key[:-3])
+        assert_utils.assert_false(response[0], response[1])
+        self.log.info("Step 4. Update Account Login Profile using invalid access and invalid "
+                      "secret key using direct REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
+                                                                access_key[:-3], secret_key[:-3])
+        assert_utils.assert_false(response[0], response[1])
+        self.log.info(
+            "ENDED: Use REST API call Update Account Login Profile using invalid credentials.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21520")
+    @CTFailOn(error_handler)
+    def test_21520(self):
+        """
+        Reset s3 account password.
+
+        Use REST API call to Update Account Login Profile without mentioning Account name.
+        """
+        self.log.info("STARTED: Use REST API call to Update Account Login Profile without "
+                      "mentioning Account name.")
+        self.log.info("Steps 1. Create Account & Login Profile.")
+        response = self.create_s3_acc(self.s3acc_name1, self.email_id.format(
+            self.s3acc_name1), self.s3acc_passwd)
+        access_key, secret_key = response[1], response[2]
+        self.log.info("Step 2. Update Account Login Profile without specifying Account name using"
+                      " direct REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(
+            new_password=self.new_passwd, access_key=access_key, secret_key=secret_key)
+        assert_utils.assert_false(response[0], response[1])
+        self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
+                      "mentioning Account name.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21521")
+    @CTFailOn(error_handler)
+    def test_21521(self):
+        """
+        Reset s3 account password.
+
+        Use REST API call to Update Account Login Profile without mentioning new Password.
+        """
+        self.log.info("STARTED: Use REST API call to Update Account Login Profile without "
+                      "mentioning new Password.")
+        self.log.info("Steps 1. Create Account & Login Profile.")
+        response = self.create_s3_acc(self.s3acc_name1, self.email_id.format(
+            self.s3acc_name1), self.s3acc_passwd)
+        access_key, secret_key = response[1], response[2]
+        self.log.info("Step 2. Update Account Login Profile without specifying new Password "
+                      "using direct REST API call.")
+        response = self.s3auth_obj.update_account_login_profile(
+            user_name=self.s3acc_name1, access_key=access_key, secret_key=secret_key)
+        assert_utils.assert_false(response[0], response[1])
+        self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
+                      "mentioning new Password.")

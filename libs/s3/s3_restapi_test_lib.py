@@ -218,7 +218,7 @@ class S3AccountOperationsRestAPI(RestS3user):
                 err.S3_REST_PATCH_REQUEST_FAILED, error) from error
 
 
-class S3AuthServerRestAPI(S3AccountOperationsRestAPI):
+class S3AuthServerRestAPI(RestS3user):
     """S3 Auth service rest api operations."""
 
     def __init__(self, host=None):
