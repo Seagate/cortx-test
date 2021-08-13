@@ -139,7 +139,7 @@ class S3AclTestLib(Acl):
             )
 
             LOGGER.debug(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382)  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.copy_object_acl.__name__,
@@ -165,7 +165,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acl(bucket_name, object_name, acl)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acl.__name__,
@@ -191,7 +191,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acp(bucket_name, object_name, acp)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acp.__name__,
@@ -235,7 +235,7 @@ class S3AclTestLib(Acl):
             LOGGER.info(modified_acl)
             response = super().put_object_acp(bucket_name, object_name, modified_acl)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.add_grantee.__name__,
@@ -287,7 +287,7 @@ class S3AclTestLib(Acl):
                 access_control_policy=access_control_policy,
                 **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_canned_acl.__name__,
@@ -321,7 +321,7 @@ class S3AclTestLib(Acl):
             response = super().put_object_with_acl2(
                 bucket_name, key, file_path, **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl2.__name__,
@@ -367,7 +367,7 @@ class S3AclTestLib(Acl):
                                                    acl=acl,
                                                    **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["object_put_acl"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl.__name__,
@@ -408,7 +408,7 @@ class S3AclTestLib(Acl):
                                                       acl,
                                                       **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["bucket_put_acl_and_policy"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.create_bucket_with_acl.__name__,
@@ -454,7 +454,7 @@ class S3AclTestLib(Acl):
                 access_control_policy,
                 **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["bucket_put_acl_and_policy"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
@@ -492,7 +492,7 @@ class S3AclTestLib(Acl):
                 bucket_name,
                 **kwargs)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["bucket_put_acl_and_policy"])  # Workaround for multinode setup; ref: EOS-21382
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_multiple_permission.__name__,
@@ -528,8 +528,6 @@ class S3AclTestLib(Acl):
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["bucket_put_acl_and_policy"])  # Workaround for multinode setup; ref: EOS-21382
-            return True, response
         except BaseException as error:
             LOGGER.error(
                 "Error in %s: %s",
