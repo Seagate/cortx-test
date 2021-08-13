@@ -36,9 +36,14 @@ class Bmc(Host):
 
     def __init__(self, hostname: str, username: str, password: str):
         super().__init__(hostname, username, password)
-        if not self.execute_cmd(commands.CHECK_IPMITOOL)[0]:
+        if not system_utils.run_local_cmd(commands.CHECK_IPMITOOL)[0]:
             LOGGER.debug("Installing ipmitool")
-            self.execute_cmd(commands.INSTALL_IPMITOOL)
+            resp = system_utils.run_local_cmd(commands.INSTALL_IPMITOOL)
+            if not resp[0]:
+                raise CTException(
+                    err.CLIENT_CMD_EXECUTION_FAILED, "Could not install "
+                                                     "ipmitool on client")
+
         self.bmc_ip = self.get_bmc_ip()
 
     def bmc_node_power_status(
