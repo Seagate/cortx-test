@@ -467,8 +467,8 @@ def main(args):
     """
     os.environ["DB_USER"] = args.db_user
     os.environ["DB_PASSWORD"] = args.db_pass
-    os.environ["JIRA_ID"] = args.jira_user
-    os.environ["JIRA_PASSWORD"] = args.jira_pass
+    # os.environ["JIRA_ID"] = args.jira_user
+    # os.environ["JIRA_PASSWORD"] = args.jira_pass
     hosts_list = args.hosts.split(',')
     # Get setup details
     suffix = 'colo.seagate.com'
