@@ -458,3 +458,9 @@ def write_properties_file(fpath: str, prop_dict: dict):
     except Exception as error:
         LOG.error(error)
         return False
+
+def convert_to_seconds(time_str:str):
+    """ Converts <num>|postfix from s/m/h/d to seconds
+    """
+    seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+    return int(time_str[:-1]) * seconds_per_unit[time_str[-1]]
