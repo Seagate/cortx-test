@@ -226,9 +226,12 @@ def get_tests_from_te(jira_obj, args, test_type=None):
     if test_type is None:
         test_type = ['ALL']
     test_tuple, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
-    test_list = list(list(zip(*test_tuple))[0])
-    if len(test_list) == 0 or tag == "":
-        raise EnvironmentError("Please check TE provided, tests or tag is missing")
+    if test_tuple:
+        test_list = list(list(zip(*test_tuple))[0])
+        if len(test_list) == 0 or tag == "":
+            raise EnvironmentError("Please check TE provided, tests or tag is missing")
+    else:
+        test_list = []
     return test_list, tag
 
 
@@ -399,39 +402,40 @@ def trigger_tests_from_te(args):
 
     test_list, te_tag = get_tests_from_te(jira_obj, args, test_types)
 
-    # writing the data into the file
-    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
-            as test_file:
-        write = csv.writer(test_file)
-        for test in test_list:
-            write.writerow([test])
+    if test_list:
+        # writing the data into the file
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in test_list:
+                write.writerow([test])
 
-    tp_metadata = create_test_meta_data_file(args, test_list)
-    if not args.build and not args.build_type:
-        args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
+        tp_metadata = create_test_meta_data_file(args, test_list)
+        if not args.build and not args.build_type:
+            args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
-    if args.data_integrity_chk:
-        thread_io, event = runner.start_parallel_io(args)
+        if args.data_integrity_chk:
+            thread_io, event = runner.start_parallel_io(args)
 
-    _env = os.environ.copy()
-    if not args.force_serial_run:
-        # First execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, True, env=_env)
+        _env = os.environ.copy()
+        if not args.force_serial_run:
+            # First execute all tests with parallel tag which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, True, env=_env)
 
-        # Sequentially executes test which didn't execute during parallel execution
-        test_list = read_selected_tests_csv()
-        trigger_unexecuted_tests(args, test_list)
+            # Sequentially executes test which didn't execute during parallel execution
+            test_list = read_selected_tests_csv()
+            trigger_unexecuted_tests(args, test_list)
 
-        # Execute all tests having no parallel tag and which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, False, env=_env)
-    else:
-        # Sequentially execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, True, env=_env)
-        # Execute all other tests not having parallel tag with given component tag.
-        run_pytest_cmd(args, te_tag, False, env=_env)
+            # Execute all tests having no parallel tag and which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, False, env=_env)
+        else:
+            # Sequentially execute all tests with parallel tag which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, True, env=_env)
+            # Execute all other tests not having parallel tag with given component tag.
+            run_pytest_cmd(args, te_tag, False, env=_env)
 
-    if args.data_integrity_chk:
-        runner.stop_parallel_io(thread_io, event)
+        if args.data_integrity_chk:
+            runner.stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
