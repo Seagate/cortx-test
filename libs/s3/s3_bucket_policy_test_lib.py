@@ -26,6 +26,7 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import BucketPolicy
+from time import sleep
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,6 +97,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
