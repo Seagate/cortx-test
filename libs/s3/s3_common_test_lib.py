@@ -23,10 +23,13 @@
 
 import logging
 
+from config import CMN_CFG
+from config import S3_CFG
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from config import CMN_CFG
+from libs.s3 import s3_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 LOG = logging.getLogger(__name__)
 
@@ -58,3 +61,42 @@ def get_ldap_creds() -> tuple:
     node_hobj.disconnect()
 
     return resp
+
+
+def create_s3_acc(
+        account_name: str = None,
+        email_id: str = None,
+        password: str = None) -> tuple:
+    """
+    Function will create s3 accounts with specified account name and email-id.
+
+    :param str account_name: Name of account to be created.
+    :param str email_id: Email id for account creation.
+    :param password: account password.
+    :param account_dict:
+    :return tuple: It returns multiple values such as access_key,
+    secret_key and s3 objects which required to perform further operations.
+    """
+    rest_obj = S3AccountOperations()
+    LOG.info(
+        "Step : Creating account with name %s and email_id %s",
+        account_name,
+        email_id)
+    create_account = rest_obj.create_s3_account(
+        account_name, email_id, password)
+    assert_utils.assert_true(create_account[0], create_account[1])
+    access_key = create_account[1]["access_key"]
+    secret_key = create_account[1]["secret_key"]
+    LOG.info("Step Successfully created the s3 account")
+    s3_obj = s3_test_lib.S3TestLib(
+        access_key,
+        secret_key,
+        endpoint_url=S3_CFG["s3_url"],
+        s3_cert_path=S3_CFG["s3_cert_path"],
+        region=S3_CFG["region"])
+    response = (
+        s3_obj,
+        access_key,
+        secret_key)
+
+    return response
