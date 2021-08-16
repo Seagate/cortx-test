@@ -115,7 +115,10 @@ def create_s3_account():
 
 
 def test_preboarding():
-    admin_user = os.getenv('ADMIN_USR', config['csmboarding']['username'])
+    """
+    Test for verifying csm pre-boarding using restapi
+    """
+    admin_user = os.getenv('ADMIN_USR', pswdmanager.decrypt(config['csmboarding']['username']))
     old_passwd = pswdmanager.decrypt(config['csmboarding']['password'])
     new_passwd = os.getenv('ADMIN_PWD', old_passwd)
     resp = config_chk.preboarding(admin_user, old_passwd, new_passwd)
