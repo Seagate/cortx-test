@@ -21,12 +21,14 @@
 """
 AWS configuration file with access key and secret key
 """
-from time import perf_counter_ns
+import os
 import configparser
 import logging
 import subprocess
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from time import perf_counter_ns
 from commons import pswdmanager
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -35,6 +37,8 @@ config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
 cortx_obj = CortxCliTestLib()
+config_chk = CSMConfigsCheck()
+
 
 def run_cmd(cmd):
     """
@@ -50,6 +54,7 @@ def run_cmd(cmd):
 
     result = str(proc.communicate())
     return result
+
 
 def configure_awscli(access_key, secret_key):
     """
@@ -81,6 +86,7 @@ def configure_awscli(access_key, secret_key):
     run_cmd("aws configure set s3api.endpoint_url https://s3.seagate.com")
     run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
 
+
 def test_create_acc_aws_conf():
     LOGGER.info("Getting access and secret key for configuring AWS")
     acc_name = "nightly_s3acc{}".format(perf_counter_ns())
@@ -106,6 +112,14 @@ def create_s3_account():
     cortx_obj.close_connection()
     with open('s3acc_secrets', 'w') as ptr:
         ptr.write(access_key + ' ' + secret_key)
+
+
+def test_preboarding():
+    admin_user = os.getenv('ADMIN_USR', config['csmboarding']['username'])
+    old_passwd = pswdmanager.decrypt(config['csmboarding']['password'])
+    new_passwd = os.getenv('ADMIN_PWD', old_passwd)
+    resp = config_chk.preboarding(admin_user, old_passwd, new_passwd)
+    assert resp, "Preboarding Failed"
 
 
 if __name__ == '__main':
