@@ -1142,6 +1142,7 @@ class RASTestLib(RASCoreLib):
         nd_c = kwargs.get("node_c", None)
         hlt_c = kwargs.get("hlt_c", None)
         ctrl_c = kwargs.get("ctrl_c", None)
+        bmc_c = kwargs.get("bmc_c", None)
         for n in range(1, num_nodes + 1):
             c_dict[f"srvnode-{n}"] = {}
             for k, v in node_d.items():
@@ -1167,10 +1168,12 @@ class RASTestLib(RASCoreLib):
                         username=uname,
                         password=passwd) if nd_c is not None else None
                     c_dict[f"srvnode-{n}"]["nd_obj"] = nd_obj
-                    hlt_obj = hlt_c(
-                        hostname=host,
-                        username=uname,
-                        password=passwd) if hlt_c is not None else None
+                    bmc_obj = bmc_c(hostname=host, username=uname,
+                                    password=passwd) if bmc_c is not None else None
+                    c_dict[f"srvnode-{n}"]["bmc_obj"] = bmc_obj
+
+                    hlt_obj = hlt_c(hostname=host, username=uname,
+                                    password=passwd) if hlt_c is not None else None
                     c_dict[f"srvnode-{n}"]["hlt_obj"] = hlt_obj
                     ctrl_obj = ctrl_c(
                         host=host, h_user=uname, h_pwd=passwd,
