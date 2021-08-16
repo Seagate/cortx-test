@@ -527,7 +527,7 @@ class S3AclTestLib(Acl):
         try:
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants
-            LOGGER.info(response)
+            LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error(
                 "Error in %s: %s",
