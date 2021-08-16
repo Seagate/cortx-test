@@ -255,7 +255,7 @@ class S3AuthServerRestAPI(RestS3user):
             "post", data=payload, endpoint=self.endpoint,
             headers=headers)
         if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
-            return False, f"Failed to reset password for '{user_name}'"
+            return False, f"Failed to reset password for '{user_name}', reason: {response.text}"
         LOGGER.debug(response)
 
         return True, response

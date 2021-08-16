@@ -111,13 +111,10 @@ class TestAccountUserManagementResetPassword:
                 resp = resource.delete_bucket(
                     self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
-        all_accounts = self.rest_obj.list_s3_accounts()
-        self.log.info("setup %s", all_accounts)
         for acc in self.account_dict:
-            if acc in all_accounts:
-                resp = self.rest_obj.delete_s3_account(acc)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deleted %s account successfully", acc)
+            resp = self.rest_obj.delete_s3_account(acc)
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Deleted %s account successfully", acc)
         for user in self.csm_user_list:
             resp = self.csm_obj.csm_user_delete(user)
             assert_utils.assert_true(resp[0], resp[1])
@@ -897,8 +894,8 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "STARTED: Use REST API call Update Account Login Profile using access/secret key.")
         self.log.info("Steps 1. Create Account & Login Profile.")
-        response = create_s3_acc(self.s3acc_name1, self.email_id.format(
-            self.s3acc_name1), self.s3acc_passwd)
+        response = create_s3_acc(
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
@@ -906,9 +903,12 @@ class TestAccountUserManagementResetPassword:
         response = self.s3auth_obj.update_account_login_profile(
             self.s3acc_name1, self.new_passwd, access_key, secret_key)
         assert_utils.assert_true(response[0], response[1])
-        self.log.info("Step 3. Check password updated.")
+        self.log.info("Step 3. Check password updated by login with new password.")
         resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.new_passwd)
         assert_utils.assert_true(resp.ok, resp)
+        self.log.info("Step 4. Check password updated by login with old password.")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.s3acc_passwd)
+        assert_utils.assert_false(resp.ok, resp)
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using access/secret key.")
 
@@ -924,19 +924,21 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "STARTED: Use REST API call Update Account Login Profile using LDAP credentials.")
         self.log.info("Steps 1. Create Account & Login Profile.")
-        create_s3_acc(self.s3acc_name1, self.email_id.format(
-            self.s3acc_name1), self.s3acc_passwd)
+        create_s3_acc(self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Get ldap credentials.")
         ldap_user, ldap_password = get_ldap_creds()
         self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
                       "REST API call.")
-        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
-                                                                ldap_user, ldap_password)
+        response = self.s3auth_obj.update_account_login_profile(
+            self.s3acc_name1, self.new_passwd, ldap_user, ldap_password)
         assert_utils.assert_true(response[0], response[1])
-        self.log.info("Step 3. Check password updated.")
+        self.log.info("Step 3. Check password updated by login with new password.")
         resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.new_passwd)
         assert_utils.assert_true(resp.ok, resp)
+        self.log.info("Step 4. Check password updated by login with old password.")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.s3acc_passwd)
+        assert_utils.assert_false(resp.ok, resp)
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using LDAP credentials.")
 
@@ -958,19 +960,33 @@ class TestAccountUserManagementResetPassword:
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile using invalid Access Key and valid "
                       "Secret key credentials using direct REST API call.")
-        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
-                                                                access_key[:-3], secret_key)
+        response = self.s3auth_obj.update_account_login_profile(
+            self.s3acc_name1, self.new_passwd, access_key[:-3], secret_key)
         assert_utils.assert_false(response[0], response[1])
+        assert_utils.assert_in(
+            "The AWS access key Id you provided does not exist in our records.",
+            response[1],
+            response[1])
         self.log.info("Step 3. Update Account Login Profile using Valid Access key and Invalid "
                       "Secret Key credentials using direct REST API call.")
-        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
-                                                                access_key, secret_key[:-3])
+        response = self.s3auth_obj.update_account_login_profile(
+            self.s3acc_name1, self.new_passwd, access_key, secret_key[:-3])
         assert_utils.assert_false(response[0], response[1])
+        assert_utils.assert_in(
+            "The request signature we calculated does not match the signature you provided."
+            " Check your AWS secret access key", response[1], response[1])
         self.log.info("Step 4. Update Account Login Profile using invalid access and invalid "
                       "secret key using direct REST API call.")
-        response = self.s3auth_obj.update_account_login_profile(self.s3acc_name1, self.new_passwd,
-                                                                access_key[:-3], secret_key[:-3])
+        response = self.s3auth_obj.update_account_login_profile(
+            self.s3acc_name1, self.new_passwd, access_key[:-3], secret_key[:-3])
         assert_utils.assert_false(response[0], response[1])
+        assert_utils.assert_in(
+            "The AWS access key Id you provided does not exist in our records.",
+            response[1],
+            response[1])
+        self.log.info("Step 5. Check impact of wrong api call by login with old password .")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.s3acc_passwd)
+        assert_utils.assert_true(resp.ok, resp)
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using invalid credentials.")
 
@@ -986,8 +1002,8 @@ class TestAccountUserManagementResetPassword:
         self.log.info("STARTED: Use REST API call to Update Account Login Profile without "
                       "mentioning Account name.")
         self.log.info("Steps 1. Create Account & Login Profile.")
-        response = create_s3_acc(self.s3acc_name1, self.email_id.format(
-            self.s3acc_name1), self.s3acc_passwd)
+        response = create_s3_acc(
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying Account name using"
@@ -995,6 +1011,10 @@ class TestAccountUserManagementResetPassword:
         response = self.s3auth_obj.update_account_login_profile(
             new_password=self.new_passwd, access_key=access_key, secret_key=secret_key)
         assert_utils.assert_false(response[0], response[1])
+        assert_utils.assert_in("Please provide account name", response[1], response[1])
+        self.log.info("Step 3. Check impact of wrong api call by login with old password .")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.s3acc_passwd)
+        assert_utils.assert_true(resp.ok, resp)
         self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
                       "mentioning Account name.")
 
@@ -1010,8 +1030,8 @@ class TestAccountUserManagementResetPassword:
         self.log.info("STARTED: Use REST API call to Update Account Login Profile without "
                       "mentioning new Password.")
         self.log.info("Steps 1. Create Account & Login Profile.")
-        response = create_s3_acc(self.s3acc_name1, self.email_id.format(
-            self.s3acc_name1), self.s3acc_passwd)
+        response = create_s3_acc(
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying new Password "
@@ -1019,5 +1039,9 @@ class TestAccountUserManagementResetPassword:
         response = self.s3auth_obj.update_account_login_profile(
             user_name=self.s3acc_name1, access_key=access_key, secret_key=secret_key)
         assert_utils.assert_false(response[0], response[1])
+        assert_utils.assert_in("Please provide password", response[1], response[1])
+        self.log.info("Step 3. Check impact of wrong api call by login with old password .")
+        resp = self.s3auth_obj.custom_rest_login(self.s3acc_name1, self.s3acc_passwd)
+        assert_utils.assert_true(resp.ok, resp)
         self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
                       "mentioning new Password.")
