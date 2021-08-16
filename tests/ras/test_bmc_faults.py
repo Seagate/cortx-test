@@ -25,7 +25,6 @@ import time
 import random
 import logging
 import pytest
-import pandas as pd
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.bmc_helper import Bmc
@@ -33,7 +32,6 @@ from commons.helpers.controller_helper import ControllerLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons import constants as cons
-from commons import commands as common_cmd
 from commons.utils import assert_utils
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
@@ -46,7 +44,7 @@ from libs.s3 import S3H_OBJ
 LOGGER = logging.getLogger(__name__)
 
 
-class TestServerFruAlerts:
+class TestBMCAlerts:
     """SSPL Server FRU Test Suite."""
 
     @classmethod
@@ -258,7 +256,7 @@ class TestServerFruAlerts:
 
         LOGGER.info(
             "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
-        self.node_obj.remove_file(
+        self.node_obj.remove_remote_file(
             filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_msg_bus:
@@ -269,7 +267,7 @@ class TestServerFruAlerts:
                      self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
-                self.node_obj.remove_file(filename=file)
+                self.node_obj.remove_remote_file(filename=file)
 
         LOGGER.info("Restarting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
@@ -292,7 +290,7 @@ class TestServerFruAlerts:
         TEST-23606: Test verifies fault and fault resolved alert in message
         bus and CSM REST after disabling and enabling a node drive.
         """
-        test_cfg = RAS_TEST_CFG["test-23728"]
+        test_cfg = RAS_TEST_CFG["test_23728"]
         LOGGER.info("STARTED: Test alerts when BMC IP is changed.")
         LOGGER.info(
             "Step 1. Validate if BMC port is configured with correct IP.")
@@ -313,7 +311,7 @@ class TestServerFruAlerts:
         # TODO: Start random alert generation in one thread
 
         inv_bmc_ip = test_cfg["inv_bmc_ip"]
-        LOGGER.info("Step 3: Checking if %s is not pinging %s", inv_bmc_ip)
+        LOGGER.info("Step 3: Checking if %s is not pinging", inv_bmc_ip)
         status = system_utils.check_ping(host=inv_bmc_ip)
         assert_utils.assert_false(status, f"{inv_bmc_ip} is valid pinging ip "
                                           "Please select non-pinging valid ip")
