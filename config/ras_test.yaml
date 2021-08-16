@@ -330,3 +330,13 @@ test_23682:
     - "Failure detected"
     - "Power Supply AC lost"
   resource_type: "node:fru:psu"
+
+test_23728:
+  inv_bmc_ip: "10.240.76.98"
+  generate_fault: "down"
+  resolve_fault: "up"
+  resource_id: "ebmc0"
+  resource_id_monitor: '"resource_id": "ebmc0"'
+  resource_id_csm: '"resource_id":"ebmc0"'
+  resource_type: "node:interface:nw"
+  error_msg: "Failed to put bmc network port"

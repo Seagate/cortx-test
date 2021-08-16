@@ -32,6 +32,7 @@ from commons.helpers.controller_helper import ControllerLib
 from commons.utils.system_utils import toggle_nw_infc_status
 from commons import commands
 from commons.helpers.node_helper import Node
+from commons.helpers.bmc_helper import Bmc
 
 LOGGER = logging.getLogger(__name__)
 
@@ -778,3 +779,29 @@ class GenerateAlertWrapper:
             resp_list.append(resp[1])
 
         return True, resp[1]
+
+    @staticmethod
+    def create_resolve_bmc_ip_change_fault(host, h_user, h_pwd, input_parameters):
+        """
+        Create or resolve bmc ip change fault by updating non ping-able valid
+        ip.
+
+        :param host: hostname or IP of the host
+        :param h_user: Username of the host
+        :param h_pwd: Password of the host
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :return: Returns boolean
+        """
+        bmc_ip = input_parameters['bmc_ip']
+        bmc_obj = Bmc(hostname=host, username=h_user, password=h_pwd)
+        try:
+            LOGGER.info("Change bmc ip to %s on node %s", bmc_ip, host)
+            bmc_obj.set_bmc_ip(bmc_ip=bmc_ip)
+            return True, bmc_ip
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.
+                         create_resolve_bmc_ip_change_fault.__name__,
+                         error)
+            return False, error
