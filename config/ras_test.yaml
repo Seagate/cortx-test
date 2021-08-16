@@ -283,3 +283,7 @@ test_23715:
 
 test_23723:
   resource_type: "node:os:raid_data"
+
+test_22781:
+  resource_type: "node:os:raid_data"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
