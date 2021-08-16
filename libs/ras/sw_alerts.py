@@ -618,6 +618,10 @@ class SoftwareAlert(RASCoreLib):
         :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be created.
         :return [tuple]: bool, error message
         """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_FAULT_EN": 'true'})
+        self.restart_sspl()
         faulty_cpu_id = [int(i) for i in faulty_cpu_id]
         n_cpu = set(faulty_cpu_id).intersection(self.get_available_cpus())
         for cpu in n_cpu:

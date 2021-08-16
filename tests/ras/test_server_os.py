@@ -443,12 +443,13 @@ class TestServerOS:
             "\nStep 6: Successfully verified Memory usage alert on CSM REST API\n")
         LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
 
-    @pytest.mark.skip("This test may bring down cluster EOS-21174")
+    @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-23045")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_23045_cpu_fault(self):
         """Test CPU fault and fault resolved alert.
+        
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
@@ -1157,7 +1158,7 @@ class TestServerOS:
         
         LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
 
-    @pytest.mark.skip("CPU faults")
+    @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-22891")
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
@@ -1191,6 +1192,7 @@ class TestServerOS:
                 flag = True
                 break
             LOGGER.info("Calculated CPU utilization")
+
         if self.start_msg_bus:
             LOGGER.info("Checking the generated alert on SSPL for CPU usage")
             alert_list = [test_cfg["resource_cpu_usage"], const.AlertType.FAULT]

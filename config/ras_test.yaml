@@ -276,7 +276,6 @@ test_21586:
 test_23045:
   resource_type: "node:os:cpu:core"
   faulty_cpu_id:
-    - 0
     - 1
 
 test_22787:
