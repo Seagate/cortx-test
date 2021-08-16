@@ -60,8 +60,7 @@ class CreateSetupJson:
         required_ips = 3
         self.num_nodes = len(hosts)
         self.srvnode_ips = [None] * self.num_nodes * required_ips
-        cmd = "cat /etc/hosts"
-        output = self.nd_obj_host.execute_cmd(cmd, read_lines=True)
+        output = self.nd_obj_host.execute_cmd(common_cmd.CMD_HOSTS, read_lines=True)
         for line in output:
             for host_num in range(len(hosts)):
                 search_string = "srvnode-{}.mgmt.public".format(host_num + 1)
