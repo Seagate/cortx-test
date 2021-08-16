@@ -873,7 +873,8 @@ class RestCsmUser(RestTestLib):
                               msg="CSM user password change request failed.")
 
     @RestTestLib.authenticate_and_login
-    def edit_csm_user(self, user:str=None, role:str=None, email:str=None, password:str=None, current_password:str=None):
+    def edit_csm_user(self, user:str=None, role:str=None, 
+                    email:str=None, password:str=None, current_password:str=None):
         """
         Functionality to edit csm user details
         """
