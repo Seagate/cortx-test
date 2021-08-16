@@ -87,36 +87,52 @@ def update_Ttfb_Style(bench):
     Output('plot_IOPS', 'figure'),
     Output('plot_TTFB', 'figure'),
     Output('plot_all', 'figure'),
-    Input('get_graphs', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('release_dropdown_first', 'value'),
-    Input('branch_dropdown_first', 'value'),
-    Input('dropdown_first', 'value'),
-    Input('profiles_options_first', 'value'),
-    Input('benchmark_dropdown_first', 'value'),
-    Input('configs_dropdown_first', 'value'),
-    Input('operations_dropdown_first', 'value'),
+    Input('graphs_submit_button', 'n_clicks'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_operations_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
+    Input('graphs_build_dropdown', 'value'),
+    Input('graphs_nodes_dropdown', 'value'),
+    Input('graphs_pfull_dropdown', 'value'),
+    Input('graphs_iteration_dropdown', 'value'),
+    Input('graphs_custom_dropdown', 'value'),
+    Input('graphs_sessions_dropdown', 'value'),
+    Input('graphs_buckets_dropdown', 'value'),
+    Input('graphs_release_compare_dropdown', 'value'),
+    Input('graphs_branch_compare_dropdown', 'value'),
+    Input('graphs_build_compare_dropdown', 'value'),
+    Input('graphs_nodes_compare_dropdown', 'value'),
+    Input('graphs_pfull_compare_dropdown', 'value'),
+    Input('graphs_iteration_compare_dropdown', 'value'),
+    Input('graphs_custom_compare_dropdown', 'value'),
+    Input('graphs_sessions_compare_dropdown', 'value'),
+    Input('graphs_buckets_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
-    Input('release_dropdown_second', 'value'),
-    Input('branch_dropdown_second', 'value'),
-    Input('dropdown_second', 'value'),
-    Input('profiles_options_second', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, release1, branch1, option1, profile1, bench, config, operation,
-                  flag, release2, branch2, option2, profile2):
+def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1, nodes1, pfull1, itrns1, custom1, sessions1, buckets1,
+        release2, branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
     return_val = [None] * 5
-    if n_clicks is None or xfilter is None or branch1 is None:
+    if not n_clicks:
         raise PreventUpdate
-
-    if bench is None or release1 is None or option1 is None or config is None:
+    if not all([xfilter, bench, operation]):
         raise PreventUpdate
-
+    if not all([branch1, option1, nodes1, itrns1, custom1, sessions1, buckets1]) and pfull1 is None:
+        raise PreventUpdate
     if flag:
-        if release2 is None or branch2 is None or option2 is None:
+        if not all([branch2, option2, nodes2, itrns2, custom2, sessions2, buckets2]) and pfull2 is None:
             raise PreventUpdate
 
     if n_clicks > 0:
+        data = {
+            'release': release1, xfilter: option1, 'branch': branch1,
+            'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
+            'buckets': buckets1, 'sessions': sessions1, 'name': bench
+        }
+
+        dataframe = get_data_from_database(data)
         figs = []
         fig_all = go.Figure()
         param = None

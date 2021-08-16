@@ -183,7 +183,7 @@ graphs_input_options = [
                 placeholder="Buckets",
                 style={'display': 'none'}
             ),
-            Button("Show", id="graphs_submit_button", n_clicks=0, color="success",
+            Button("Plot", id="graphs_submit_button", n_clicks=0, color="success",
                 style=dict_button_style),
         ],
         justify='center'
