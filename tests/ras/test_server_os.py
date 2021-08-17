@@ -46,7 +46,7 @@ class TestServerOS:
     @classmethod
     def setup_class(cls):
         """Setup for module."""
-        LOGGER.info("\n%s Running setup_class %s","*"*50 , "*"*50)
+        LOGGER.info("\n%s Running setup_class %s", "*" * 50, "*" * 50)
         cls.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.bkt_name_prefix = "serverOS"
         cls.obj_name_prefix = "serverOS"
@@ -67,6 +67,7 @@ class TestServerOS:
         cls.default_mem_usage = False
         cls.default_disk_usage = False
         cls.default_cpu_fault = False
+        cls.node_reboot = False
         cls.starttime = time.time()
         cls.sw_alert_objs = []
         for i in range(len(CMN_CFG["nodes"])):
@@ -74,11 +75,11 @@ class TestServerOS:
             uname = CMN_CFG["nodes"][i]["username"]
             passwd = CMN_CFG["nodes"][i]["password"]
             cls.sw_alert_objs.append(SoftwareAlert(host, uname, passwd))
-        LOGGER.info("\n%s Completed setup_class %s", "*"*50 , "*"*50)
+        LOGGER.info("\n%s Completed setup_class %s", "*" * 50, "*" * 50)
 
     def setup_method(self):
         """Setup operations per test."""
-        LOGGER.info("\n%s Running setup_method %s","*"*50 , "*"*50)
+        LOGGER.info("\n%s Running setup_method %s", "*" * 50, "*" * 50)
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
         LOGGER.info("Check SSPL status")
@@ -129,11 +130,11 @@ class TestServerOS:
         self.default_mem_usage = False
         self.default_disk_usage = False
         self.node_reboot = False
-        LOGGER.info("\n%s Completed setup_method. %s\n", "*"*50 , "*"*50)
+        LOGGER.info("\n%s Completed setup_method. %s\n", "*" * 50, "*" * 50)
 
     def teardown_method(self):
         """Teardown operations."""
-        LOGGER.info("\n%s Performing Teardown operation %s", "*"*50 , "*"*50)
+        LOGGER.info("\n%s Performing Teardown operation %s", "*" * 50, "*" * 50)
 
         LOGGER.info("Terminating the process of reading sspl.log")
         if not self.node_reboot:
@@ -162,7 +163,6 @@ class TestServerOS:
                     self.sw_alert_obj.node_utils.remove_file(filename=file)
         except Exception as error:
             LOGGER.warning(error)
-        
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -200,7 +200,7 @@ class TestServerOS:
             LOGGER.info("\nStep 4: Resolving CPU fault.")
             resp = self.sw_alert_obj.resolv_cpu_fault(self.default_cpu_fault)
             assert resp[0], resp[1]
-        LOGGER.info("\n%s Successfully performed Teardown operation %s\n", "*"*50 , "*"*50)
+        LOGGER.info("\n%s Successfully performed Teardown operation %s\n", "*" * 50, "*" * 50)
 
     @pytest.mark.tags("TEST-21587")
     @pytest.mark.cluster_monitor_ops
@@ -209,7 +209,7 @@ class TestServerOS:
         """Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate CPU usage fault.")
         test_cfg = RAS_TEST_CFG["test_21587"]
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
@@ -220,7 +220,7 @@ class TestServerOS:
         LOGGER.info("\nStep 1: CPU usage fault is created successfully.\n")
 
         LOGGER.info("\nStep 2: Keep the CPU usage above threshold for %s seconds.",
-            self.cfg["alert_wait_threshold"])
+                    self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("\nStep 2: CPU usage was above threshold for %s seconds.\n",
                     self.cfg["alert_wait_threshold"])
@@ -279,7 +279,7 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info(
             "\nStep 6: Successfully verified CPU usage alert on CSM REST API. \n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-21588")
     @pytest.mark.cluster_monitor_ops
@@ -288,7 +288,7 @@ class TestServerOS:
         """Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         test_cfg = RAS_TEST_CFG["test_21588"]
 
         self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
@@ -360,7 +360,7 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info(
             "\nStep 6: Successfully verified Memory usage alert on CSM REST API\n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-21586")
     @pytest.mark.cluster_monitor_ops
@@ -369,7 +369,7 @@ class TestServerOS:
         """Test to validate OS server alert generation and check for fault resolved (Disk Usage)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         test_cfg = RAS_TEST_CFG["test_21586"]
 
         self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
@@ -441,7 +441,7 @@ class TestServerOS:
 
         LOGGER.info(
             "\nStep 6: Successfully verified Memory usage alert on CSM REST API\n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-23045")
@@ -449,10 +449,10 @@ class TestServerOS:
     @pytest.mark.sw_alert
     def test_23045_cpu_fault(self):
         """Test CPU fault and fault resolved alert.
-        
+
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate CPU fault.")
         test_cfg = RAS_TEST_CFG["test_23045"]
         self.default_cpu_fault = test_cfg["faulty_cpu_id"]
@@ -507,7 +507,7 @@ class TestServerOS:
 
         LOGGER.info(
             "\nStep 6: Successfully verified CPU fault resolved alert on CSM REST API\n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22786")
     @pytest.mark.cluster_monitor_ops
@@ -529,10 +529,10 @@ class TestServerOS:
         after increasing and decreasing memory usage
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         start_time = time.time()
         mem_usage = self.sw_alert_obj.get_conf_store_vals(
-                        url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
         test_cfg = RAS_TEST_CFG["test_22786"]
         cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
@@ -540,12 +540,12 @@ class TestServerOS:
             resp = obj.get_available_memory_usage()
             LOGGER.info("Available memory : %s", resp)
             LOGGER.info("\nStep 1: Calculated available memory usage in GB\n")
-            
+
             LOGGER.info("\nStep 2: Installing stress tool on the system")
             resp = obj.node_utils.execute_cmd(cmd="yum install stress")
             LOGGER.info(resp)
             LOGGER.info("\nStep 2: Installed stress tool on the system\n")
-            
+
             flag = False
             while not flag:
                 LOGGER.info(
@@ -557,13 +557,13 @@ class TestServerOS:
                 LOGGER.info(resp)
                 LOGGER.info(
                     "\nStep 3: Increased the memory utilization in the factor of GB\n")
-                
+
                 LOGGER.info("\nStep 4: Verifying memory utilization on %s node", obj.host)
                 if float(obj.check_memory_utilization().strip()) >= float(mem_usage):
                     flag = True
                     break
                 LOGGER.info("\nStep 4: Verified memory utilization on %s node\n", obj.host)
-        
+
         LOGGER.info("\nStep 2: Keep the Memory usage above threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
@@ -577,7 +577,7 @@ class TestServerOS:
                 string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("\nStep 5: Verified the generated alert on the SSPL\n")
-        
+
         LOGGER.info("\nStep 6: Checking memory usage alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -589,8 +589,8 @@ class TestServerOS:
         LOGGER.info(
             "\nStep 6: Successfully verified Memory usage fault alert on CSM REST API\n")
         time_sec = config_utils.convert_to_seconds(test_cfg["timespan"])
-        
-        LOGGER.info("\nStep 7: Keep the Memory usage above threshold for %s seconds",time_sec)
+
+        LOGGER.info("\nStep 7: Keep the Memory usage above threshold for %s seconds", time_sec)
         time.sleep(time_sec)
 
         if self.start_msg_bus:
@@ -600,7 +600,7 @@ class TestServerOS:
                 string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("\nVerified the generated alert on the SSPL\n")
-        
+
         LOGGER.info(
             "\nStep 8: Checking Memory usage resolved alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(
@@ -613,7 +613,7 @@ class TestServerOS:
 
         LOGGER.info(
             "\nStep 8: Successfully verified Memory usage resolved alert on CSM REST API\n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22787")
     @pytest.mark.cluster_monitor_ops
@@ -624,7 +624,7 @@ class TestServerOS:
         increase in CPU usage on each node of the cluster sequentially.
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
         cmn_cfg = RAS_TEST_CFG["common_cfg"]
@@ -695,7 +695,7 @@ class TestServerOS:
             LOGGER.info(
                 "\nStep 10: Successfully verified CPU fault resolved alert on CSM REST API\n")
             LOGGER.info("[COMPLETED] : Testing for node : %s", obj.host)
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22844")
     @pytest.mark.cluster_monitor_ops
@@ -706,7 +706,7 @@ class TestServerOS:
         increase in CPU usage on each node of the cluster parallelly.
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
         cmn_cfg = RAS_TEST_CFG["common_cfg"]
@@ -743,7 +743,7 @@ class TestServerOS:
                                                      test_cfg["resource_type"])
             assert resp[0], resp[1]
             LOGGER.info("\nStep 5: Successfully verified CPU usage fault alert on CSM REST API")
-            
+
             starttime = time.time()
             LOGGER.info("Fetching PID's for yes command")
             resp = obj.get_command_pid("yes")
@@ -777,7 +777,7 @@ class TestServerOS:
             LOGGER.info(
                 "\nStep 9: Successfully verified CPU fault resolved alert on CSM REST API")
             LOGGER.info("[COMPLETED] : Testing for node : %s", obj.host)
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22716")
     @pytest.mark.csm_gui
@@ -787,7 +787,7 @@ class TestServerOS:
            with persistence cache (service disable/enable)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         test_cfg = RAS_TEST_CFG["test_21586"]
         LOGGER.info("\nStep 1: Generate disk usage fault.")
         starttime = time.time()
@@ -795,7 +795,8 @@ class TestServerOS:
             url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
         if self.default_disk_usage == 'False':
             self.default_disk_usage = 80
-        resp = self.sw_alert_obj.gen_disk_usage_fault_with_persistence_cache(test_cfg["delta_disk_usage"])
+        resp = self.sw_alert_obj.gen_disk_usage_fault_with_persistence_cache(
+            test_cfg["delta_disk_usage"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 1: Disk usage fault is created successfully.\n")
 
@@ -812,7 +813,7 @@ class TestServerOS:
                 string_list=alert_list, restart=False)
             assert resp[0], resp[1]
             LOGGER.info("\nVerified the generated alert on the SSPL")
-        
+
         LOGGER.info("\nStep 3: Checking if disk usage fault is present in new alerts")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -826,7 +827,8 @@ class TestServerOS:
         starttime = time.time()
         LOGGER.info("\nStep 4: Resolving Disk usage fault.")
         LOGGER.info("Updating default Disk usage threshold value")
-        resp = self.sw_alert_obj.resolv_disk_usage_fault_with_persistence_cache(self.default_disk_usage)
+        resp = self.sw_alert_obj.resolv_disk_usage_fault_with_persistence_cache(
+            self.default_disk_usage)
         assert resp[0], resp[1]
         LOGGER.info("\nStep 4: Disk usage fault is resolved.\n")
         self.default_disk_usage = False
@@ -854,7 +856,7 @@ class TestServerOS:
             test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 6: Successfully verified Disk usage resolved with persistent cache on CSM\n")
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22717")
     @pytest.mark.csm_gui
@@ -864,13 +866,14 @@ class TestServerOS:
            with persistence cache (service disable/enable)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate CPU usage fault.")
         test_cfg = RAS_TEST_CFG["test_21587"]
         starttime = time.time()
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
-        resp = self.sw_alert_obj.gen_cpu_usage_fault_with_persistence_cache(test_cfg["delta_cpu_usage"])
+        resp = self.sw_alert_obj.gen_cpu_usage_fault_with_persistence_cache(
+            test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 1: CPU usage fault is created successfully.\n")
 
@@ -896,11 +899,12 @@ class TestServerOS:
             test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 3: Verified CPU usage alert is present in new alerts\n")
-        
+
         starttime = time.time()
         LOGGER.info("\nStep 4: Resolving CPU usage fault.")
         LOGGER.info("Updating default CPU usage threshold value")
-        resp = self.sw_alert_obj.resolv_cpu_usage_fault_with_persistence_cache(self.default_cpu_usage)
+        resp = self.sw_alert_obj.resolv_cpu_usage_fault_with_persistence_cache(
+            self.default_cpu_usage)
         assert resp[0], resp[1]
         LOGGER.info("\nStep 4: CPU usage fault is resolved.\n")
         self.default_cpu_usage = False
@@ -929,7 +933,7 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info("\nStep 6: Verified CPU usage resolved is present in new alerts\n")
 
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22720")
     @pytest.mark.csm_gui
@@ -939,13 +943,14 @@ class TestServerOS:
            with persistence cache (service disable/enable)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate memory usage fault.")
         test_cfg = RAS_TEST_CFG["test_21588"]
         starttime = time.time()
         self.default_mem_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
-        resp = self.sw_alert_obj.gen_mem_usage_fault_with_persistence_cache(test_cfg["delta_mem_usage"])
+        resp = self.sw_alert_obj.gen_mem_usage_fault_with_persistence_cache(
+            test_cfg["delta_mem_usage"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 1: Memory usage fault is created successfully.\n")
 
@@ -976,7 +981,8 @@ class TestServerOS:
         starttime = time.time()
         LOGGER.info("\nStep 4: Resolving Memory usage fault.")
         LOGGER.info("Updating default Memory usage threshold value")
-        resp = self.sw_alert_obj.resolv_mem_usage_fault_with_persistence_cache(self.default_mem_usage)
+        resp = self.sw_alert_obj.resolv_mem_usage_fault_with_persistence_cache(
+            self.default_mem_usage)
         assert resp[0], resp[1]
         LOGGER.info("\nStep 4: Memory usage fault is resolved.\n")
         self.default_mem_usage = False
@@ -1005,7 +1011,7 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info("\nStep 6: Verified memory usage resolved is present in new alerts\n")
 
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22718")
     @pytest.mark.csm_gui
@@ -1014,7 +1020,7 @@ class TestServerOS:
         """System Test to validate OS server alert generation and check for fault resolved (CPU Usage)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate CPU usage fault.")
         starttime = time.time()
         test_cfg = RAS_TEST_CFG["test_21587"]
@@ -1028,9 +1034,9 @@ class TestServerOS:
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("\nStep 2: CPU usage was above threshold for %s seconds\n",
-                 self.cfg["alert_wait_threshold"])
+                    self.cfg["alert_wait_threshold"])
 
-       #if self.start_msg_bus:
+       # if self.start_msg_bus:
        #    LOGGER.info("\nChecking the generated alert on SSPL")
        #    alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
        #    resp = self.ras_test_obj.alert_validation(
@@ -1062,7 +1068,7 @@ class TestServerOS:
         LOGGER.info("\nStep 5: cpu usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
 
-        #if self.start_msg_bus:
+        # if self.start_msg_bus:
         #    LOGGER.info("\nChecking the generated alert on SSPL")
         #    alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
         #    resp = self.ras_test_obj.alert_validation(
@@ -1080,17 +1086,17 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info("\nStep 6: Verified cpu fault resolved is present in new alerts\n")
 
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22719")
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22719_memory_usage_threshold_node_reboot(self):
-        """System Test to validate OS server alert generation and check for fault resolved 
+        """System Test to validate OS server alert generation and check for fault resolved
         (Memory Usage) with persistence cache (node reboot)
         """
         test_case_name = cortxlogging.get_frame()
-        LOGGER.info("\n%s Test started -  %s %s\n", "#"*50, test_case_name, "#"*50)
+        LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         LOGGER.info("\nStep 1: Generate memory usage fault.")
         starttime = time.time()
         test_cfg = RAS_TEST_CFG["test_21588"]
@@ -1106,7 +1112,7 @@ class TestServerOS:
         LOGGER.info("\nStep 2: Memory usage was above threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
-        #if self.start_msg_bus:
+        # if self.start_msg_bus:
         #    LOGGER.info("\nChecking the generated alert on SSPL")
         #    alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
         #    resp = self.ras_test_obj.alert_validation(
@@ -1138,7 +1144,7 @@ class TestServerOS:
         LOGGER.info("\nStep 5: Memory usage was below threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
-        #if self.start_msg_bus:
+        # if self.start_msg_bus:
         #    LOGGER.info("\nChecking the generated alert on SSPL")
         #    alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
         #    resp = self.ras_test_obj.alert_validation(
@@ -1155,8 +1161,8 @@ class TestServerOS:
             test_cfg["resource_type"])
         assert resp[0], resp[1]
         LOGGER.info("\nStep 6: Verified memory usage resolved alert is present in new alerts\n")
-        
-        LOGGER.info("\n%s Test completed -  %s %s\n", "#"*50, test_case_name, "#"*50)
+
+        LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
     @pytest.mark.tags("TEST-22891")
@@ -1170,9 +1176,9 @@ class TestServerOS:
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-                        url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         disk_usage = self.sw_alert_obj.get_conf_store_vals(
-                        url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22891"]
         cmn_cfg = RAS_TEST_CFG["common_cfg"]
