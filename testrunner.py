@@ -12,6 +12,7 @@ from jira import JIRA
 from core import runner
 from core import kafka_consumer
 from core.health_status_check_update import HealthCheck
+from core.client_config import ClientConfig
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
@@ -511,6 +512,7 @@ def check_kafka_msg_trigger_test(args):
                 current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
                 client = system_utils.get_host_name() + "_" + current_time_ms
                 acquired_target = get_available_target(kafka_msg, client)
+                ClientConfig(runner.get_db_credential()).client_configure_for_given_target(acquired_target)
                 args.te_ticket = kafka_msg.te_ticket
                 args.parallel_exe = kafka_msg.parallel
                 args.build = kafka_msg.build
