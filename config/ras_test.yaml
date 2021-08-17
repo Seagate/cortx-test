@@ -306,7 +306,7 @@ test_22781:
   resource_type: "node:os:raid_data"
   csm_error_msg: "Failed to get alerts using CSM REST API"
 
-  power_failure:
+power_failure:
   shutdown_option: "-r now"
   power_on: "on"
   power_off: "off"

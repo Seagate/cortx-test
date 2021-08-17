@@ -609,4 +609,3 @@ class TestRAIDOperations:
                     "using CSM REST API")
         LOGGER.info(
             "ENDED: TEST-5343 RAID: Add drive to array")
-
