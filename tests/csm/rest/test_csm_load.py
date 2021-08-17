@@ -23,16 +23,28 @@ import logging
 import pytest
 from commons import cortxlogging
 from libs.jmeter.jmeter_integration import JmeterInt
+from libs.csm.csm_setup import CSMConfigsCheck
 
 class TestCsmLoad():
     """Test cases for performing CSM REST API load testing using jmeter"""
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
-        cls.log.info("[STARTED]: Setup class")
         cls.log = logging.getLogger(__name__)
+        cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
         cls.log.info("[Completed]: Setup class")
+        cls.config_chk = CSMConfigsCheck()
+        cls.config_chk.delete_csm_users()
+        cls.config_chk.delete_s3_users()
+        user_already_present = cls.config_chk.check_predefined_csm_user_present()
+        if not user_already_present:
+            user_already_present = cls.config_chk.setup_csm_users()
+            assert user_already_present
+        s3acc_already_present = cls.config_chk.check_predefined_s3account_present()
+        if not s3acc_already_present:
+            s3acc_already_present = cls.config_chk.setup_csm_s3()
+        assert s3acc_already_present
 
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -43,6 +55,35 @@ class TestCsmLoad():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         jmx_file = "CSM_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file)
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22203')
+    def test_22203(self):
+        """Sample test to run any jmeter script."""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file)
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22204')
+    def test_22204(self):
+        """Sample test to run any jmeter script."""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         resp = self.jmx_obj.run_jmx(jmx_file)
         assert resp, "Jmeter Execution Failed."

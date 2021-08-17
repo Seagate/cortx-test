@@ -102,7 +102,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         """
         try:
             self.login_cortx_cli()
-            response = super().update_role(user_name=user_name, role=role, current_password=password, confirm="Y")
+            response = super().update_role(user_name=user_name, role=role,
+                                           current_password=password, confirm="Y")
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -287,7 +288,6 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         :param csm_user: Name of the csm user.
         :param passwd: password of the csm user.
-        :param acc_name: Name of the account.
         :param new_password: New password of the account.
         :return: True/False and Response.
         """
@@ -308,7 +308,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
         return response
 
-    def reset_s3acc_password(self, csm_user=None, passwd=None, acc_name=None, new_password=None) -> tuple:
+    def reset_s3acc_password(self, csm_user=None, passwd=None, acc_name=None,
+                             new_password=None) -> tuple:
         """
         Reset account password using csm user.
 
@@ -323,7 +324,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
                 self.login_cortx_cli(username=csm_user, password=passwd)
             else:
                 self.login_cortx_cli()
-            response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
+            response = super().reset_s3account_password(account_name=acc_name,
+                                                        new_password=new_password)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -346,7 +348,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
         """
         try:
             self.login_cortx_cli(username=acc_name, password=old_password)
-            response = super().reset_s3account_password(account_name=acc_name, new_password=new_password)
+            response = super().reset_s3account_password(account_name=acc_name,
+                                                        new_password=new_password)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -436,7 +439,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
 
     def delete_account_cortxcli(self,
                                 account_name: str,
-                                password: str) -> tuple:
+                                password: str = None) -> tuple:
         """
         Deleting account using cortxcli.
 
@@ -445,7 +448,10 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         :return:
         """
         try:
-            self.login_cortx_cli(username=account_name, password=password)
+            if password:
+                self.login_cortx_cli(username=account_name, password=password)
+            else:
+                self.login_cortx_cli()
             response = super().delete_s3account_cortx_cli(account_name)
 
         except Exception as error:
@@ -459,9 +465,9 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
 
     def reset_s3_account_password(
             self,
-            account_name: str,
-            old_password: str,
-            new_password: str,
+            account_name: str = None,
+            old_password: str = None,
+            new_password: str = None,
             **kwargs) -> tuple:
         """
         Function will update password for specified s3 account to new_password using CORTX CLI.
@@ -474,7 +480,10 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
         """
         # inherit from csm cli
         try:
-            self.login_cortx_cli(username=account_name, password=old_password)
+            if old_password:
+                self.login_cortx_cli(username=account_name, password=old_password)
+            else:
+                self.login_cortx_cli()
             response = super().reset_s3account_password(account_name,
                                                         new_password,
                                                         **kwargs)
@@ -657,7 +666,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
         """
         Function will create a bucket using CORTX CLI.
 
-        :param user_name: for whon access key needs to be created.
+        :param user_name: for whom access key needs to be created.
         :return: True/False and response returned by CORTX CLI
         """
         try:
@@ -768,7 +777,7 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
 
     def list_bucket_cortx_cli(
             self,
-            op_format: str = "sjon") -> tuple:
+            op_format: str = "json") -> tuple:
         """
         Function will create a bucket using CORTX CLI.
 

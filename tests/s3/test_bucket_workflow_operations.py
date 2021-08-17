@@ -35,7 +35,7 @@ from commons.utils import system_utils
 from config import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
 class TestBucketWorkflowOperations:
@@ -56,13 +56,12 @@ class TestBucketWorkflowOperations:
         self.account_name = "bktwrkflowaccnt{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.folder_path = os.path.join(
-            TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestBucketWorkflowOperations")
         self.filename = "bkt_workflow{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, self.filename)
         if not system_utils.path_exists(self.folder_path):
             system_utils.make_dirs(self.folder_path)
-        self.cortx_obj = CortxCliTestLib()
+        self.rest_obj = S3AccountOperations()
         self.account_list = []
         self.bucket_list = []
         self.log.info("ENDED: Setup test operations")
@@ -76,9 +75,7 @@ class TestBucketWorkflowOperations:
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Account list: %s", self.account_list)
         for acc in self.account_list:
-            self.cortx_obj.delete_account_cortxcli(
-                account_name=acc, password=self.s3acc_password)
-        self.cortx_obj.close_connection()
+            self.rest_obj.delete_s3_account(acc)
         self.log.info("ENDED: Setup test operations.")
 
     @pytest.mark.parallel
@@ -822,13 +819,14 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
-        create_account = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name,
-            account_email=self.email_id,
-            password=self.s3acc_password)
+        create_account = self.rest_obj.create_s3_account(
+            acc_name=self.account_name,
+            email_id=self.email_id,
+            passwd=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
+        self.account_list.append(self.account_name)
         self.log.info("Step Successfully created the cortxcli account")
         s3_obj_2 = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)
@@ -887,13 +885,14 @@ class TestBucketWorkflowOperations:
         self.log.info(
             "Step : Creating account with name %s and email_id %s",
             self.account_name, self.email_id)
-        create_account = self.cortx_obj.create_account_cortxcli(
-            account_name=self.account_name,
-            account_email=self.email_id,
-            password=self.s3acc_password)
+        create_account = self.rest_obj.create_s3_account(
+            acc_name=self.account_name,
+            email_id=self.email_id,
+            passwd=self.s3acc_password)
         assert create_account[0], create_account[1]
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
+        self.account_list.append(self.account_name)
         self.log.info("Step Successfully created the cortxcli account")
         s3_obj_2 = s3_test_lib.S3TestLib(
             access_key=access_key, secret_key=secret_key)

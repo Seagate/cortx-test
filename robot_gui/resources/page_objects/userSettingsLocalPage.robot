@@ -166,12 +166,6 @@ Verify Absence of Admin User Section
     Should Not Contain  ${csm_tab_text}  Administrative user
     Page Should Not Contain Button  ${ADD_USER_BUTTON_ID}
 
-Verify Absence of Delete Button on CSM users
-    [Documentation]  Verify Absence of delete icon
-    Navigate To Page    MANAGE_MENU_ID  ADMINISTRATIVE_USER_TAB_ID
-    wait for page or element to load  3s  # Took time to load CSM accounts
-    Page Should Not Contain Button  ${DELETE_USER_BUTTON_ID}
-
 Verify Only Valid Password Get Added
     [Documentation]  Functionality to validate correct pawwsord
     FOR    ${value}    IN    @{INVALID_PASSWORDS_LIST}
@@ -311,11 +305,6 @@ Edit S3 User Password
     ...  Click Sigin Button
     Validate CSM Login Success  ${s3_account_name}
 
-Verify that monitor user is not able to create delete csm user
-       [Documentation]  this keyword verifys that monitor user not able to edit or delete csm user
-       Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
-       Page Should Not Contain Element  ${DELETE_USER_BUTTON_ID}
-
 Verify Monitor User Is Not Able To Create Csm User
        [Documentation]  this keyword verifys that monitor user not able to add new csm user
        Page Should Not Contain Element  ${ADD_USER_BUTTON_ID}
@@ -366,7 +355,8 @@ Select from filter
     [Documentation]  Functionality to filter in manage page for dropdown.
     [Arguments]  ${filter_entry}
     wait for page or element to load
-    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    ${present}=  Run Keyword And Return Status    Element Should Be Visible   ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Run Keyword If  ${present} == False  Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
     wait for page or element to load  2s
     ${var}=  CATENATE  csm filter ${filter_entry} select xpath
     Log To Console And Report  ${${var}}  
@@ -435,10 +425,20 @@ Verify Clean Search operation
     Should Not Be Equal As Integers  ${length1}  ${length2}
     Should Be Equal As Integers  ${length1}  ${length3}
 
+Verify Delete Action Enabled On The Table Element
+    [Documentation]  Verify delete action enabled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Enabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
 Verify Delete Action Disabled On The Table Element
     [Documentation]  Verify delete action disbled on the table element for given user.
     [Arguments]  ${username}
     Verify Action Disabled On The Table Element  ${CSM_USER_DELETE_XAPTH}  ${username}
+
+Verify Edit Action Enabled On The Table Element
+    [Documentation]  Verify edit action enabled on the table element for given user.
+    [Arguments]  ${username}
+    Verify Action Enabled On The Table Element  ${CSM_USER_EDIT_XPATH}  ${username}
 
 Verify Edit Action Disabled On The Table Element
     [Documentation]  Verify edit action disbled on the table element for given user.
@@ -612,3 +612,43 @@ Create and login with CSM monitor user
     Verify New User  ${new_user_name}
     Re-login  ${new_user_name}  ${new_password}  MANAGE_MENU_ID
     [Return]  ${new_user_name}  ${new_password}
+
+Verify Filter options got selected
+    [Documentation]  This keyword is to verify that filter drop down menu contents role and username
+    [Arguments]  ${filter_entry}
+    ${var}=  CATENATE  CSM_FILTER ${filter_entry} SELECTED_XPATH
+    Log To Console And Report  ${${var}}
+    ${attrib}=  Get Element Attribute  ${${var}}  aria-selected
+    Should be equal  ${attrib}  true
+
+Verify Filter options Contents
+    [Documentation]  This keyword is to verify that filter drop down menu contents role and username
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load
+    Element Should Be Visible  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Element Should Be Visible  ${CSM_FILTER_LIST_CONTENT_XPATH}
+    ${filter_list}=  Read Drop Down Data  ${CSM_FILTER_LIST_CONTENT_XPATH}
+    Lists Should Be Equal  ${filter_list}  ${CSM_SEARCH_CONTENTS}
+
+Verify Filter drop down Appear For User Search
+    [Documentation]  This keyword is to verify that filter drop down menu appears for user search
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load
+    Element Should Be Visible  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Element Should Be Visible  ${CSM_FILTER_LIST_CONTENT_XPATH}
+
+Verify Filter drop down Appear Correctly Over Filters
+    [Documentation]  This keyword is to verify that filter drop down menu appears over the filters selection
+    ${X}=  Get Horizontal Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${X}}
+    ${Y}=  Get Vertical Position    ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    Log To Console And Report  ${${Y}}
+    Click Element  ${CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH}
+    wait for page or element to load  10s
+    ${X1}=  Get Horizontal Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${X1}}
+    ${Y1}=  Get Vertical Position    ${CSM_FILTER_LIST_BUTTON_XPATH}
+    Log To Console And Report  ${${Y1}}
+    Run Keyword If  ${X}== ${X1} and ${Y}== ${Y1}  log to console and report  ${CSM_FILTER_LIST_BUTTON_XPATH}
+    ...  ELSE
+    ...  Fail

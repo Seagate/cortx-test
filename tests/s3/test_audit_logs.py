@@ -34,6 +34,7 @@ from commons.utils.config_utils import update_cfg_based_on_separator
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.errorcodes import error_handler
+from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
 from libs.s3 import S3H_OBJ, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -61,8 +62,7 @@ class TestAuditLogs:
         cls.section = "S3_SERVER_CONFIG"
         cls.key = "S3_AUDIT_LOGGER_POLICY"
         cls.pwd_key = "password"
-        cls.test_dir_path = os.path.join(
-            os.getcwd(), "testdata", "TestAuditLogs")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestAuditLogs")
         cls.common_file_path = os.path.join(cls.test_dir_path, cls.common_file)
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
         if not system_utils.path_exists(cls.test_dir_path):

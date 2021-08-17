@@ -68,8 +68,10 @@ class AlertType(Enum, settings=NoAlias):
     NW_CABLE_FAULT_RESOLVED = 12
     OS_DISK_DISABLE = 13
     OS_DISK_ENABLE = 14
-    RAID_INTEGRITY_FAULT = 15
-    RAID_INTEGRITY_RESOLVED = 16
+    RAID_INTEGRITY_FAULT = 17
+    RAID_INTEGRITY_RESOLVED = 18
+    SERVER_PSU_FAULT = 15
+    SERVER_PSU_FAULT_RESOLVED = 16
 
 
 class GenerateAlertLib:
@@ -193,16 +195,25 @@ class GenerateAlertLib:
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
-            15: {
+            17: {
                 'cmd': 'create_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
-            16: {
+            18: {
                 'cmd': 'resolve_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
                         f'input_parameters={input_parameters})'},
+            15: {'cmd': 'ipmi_alerts',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                f'h_pwd="{h_pwd}", '
+                f'input_parameters={input_parameters})'},
+            16: {
+                'cmd': 'ipmi_alerts',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                f'h_pwd="{h_pwd}", '
+                f'input_parameters={input_parameters})'}
         }
 
         arguments = (switcher[alert_type.value]['args'])
