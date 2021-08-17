@@ -969,7 +969,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
-        shutil.copy(local_path, new_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, new_path)
+        else:
+            shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
     except Exception as error:
         LOGGER.error(error)
@@ -979,7 +982,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             LOGGER.info("Creating local log directory")
             resp = make_dirs(dpath=log_path)
 
-        shutil.copy(local_path, log_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, log_path)
+        else:
+            shutil.copytree(local_path, os.path.join(log_path, os.path.basename(local_path)))
 
     return True, log_path
 
