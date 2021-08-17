@@ -882,6 +882,7 @@ class TestAccountUserManagementResetPassword:
             "ENDED: Test reset n number of s3 account password using csm user having different role"
             " (admin, manage, monitor) while S3 IO's are in progress.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
@@ -912,6 +913,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using access/secret key.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
@@ -942,6 +944,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using LDAP credentials.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21517")
     @CTFailOn(error_handler)
@@ -990,6 +993,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using invalid credentials.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21520")
     @CTFailOn(error_handler)
@@ -1018,6 +1022,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("ENDED: Use REST API call to Update Account Login Profile without "
                       "mentioning Account name.")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21521")
     @CTFailOn(error_handler)
