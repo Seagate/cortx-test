@@ -55,7 +55,7 @@ class TestRAIDOperations:
         Setup operations for the test file.
         """
         LOGGER.info("STARTED: Setup Module operations")
-        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.host = CMN_CFG["nodes"][0]["host"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname,
@@ -609,6 +609,4 @@ class TestRAIDOperations:
                     "using CSM REST API")
         LOGGER.info(
             "ENDED: TEST-5343 RAID: Add drive to array")
-
-
 
