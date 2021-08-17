@@ -88,8 +88,7 @@ class RestClient:
 
         return response_object
 
-    def s3auth_rest_call(self, request_type=None, endpoint=None, data=None, headers=None,
-                         params=None, json_dict=None, save_json=False):
+    def s3auth_rest_call(self, request_type=None, endpoint=None, data=None, headers=None, **kwargs):
         """
         This function will request REST methods like GET, POST, PUT etc.
 
@@ -101,6 +100,9 @@ class RestClient:
         :param save_json: In case user required to store json file.
         :return: response of the request.
         """
+        json_dict = kwargs.get("json_dict")
+        save_json = kwargs.get("save_json")
+        params = kwargs.get("params")
         self.log.debug("Request URL : %s", endpoint)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)

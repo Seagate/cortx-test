@@ -348,7 +348,7 @@ UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_ob
 CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
-    "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 

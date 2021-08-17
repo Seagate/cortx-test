@@ -223,7 +223,7 @@ class S3AuthServerRestAPI(RestS3user):
 
     def __init__(self, host=None):
         """S3AutheServer operations constructor."""
-        super(S3AuthServerRestAPI, self).__init__()
+        super().__init__()
         nodes = CMN_CFG.get("nodes")
         host = host if host else nodes[0]["public_data_ip"] if nodes else None
         self.endpoint = S3_CFG["s3auth_endpoint"].format(host)
@@ -245,7 +245,14 @@ class S3AuthServerRestAPI(RestS3user):
         if new_password:
             payload["Password"] = new_password
         # Fetching headers.
-        headers = get_headers("post", self.endpoint, payload, "s3", "US", access_key, secret_key)
+        headers = get_headers(
+            "post",
+            self.endpoint,
+            payload,
+            service="s3",
+            region="US",
+            access_key=access_key,
+            secret_key=secret_key)
         LOGGER.debug(headers)
         # Input data.
         payload = urllib.parse.urlencode(payload)

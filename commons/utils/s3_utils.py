@@ -17,10 +17,16 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+"""S3 utility Library."""
+
 import urllib
 import hmac
 import datetime
 import hashlib
+import logging
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def utf8_encode(msg):
@@ -44,7 +50,9 @@ def get_timestamp(epoch_t):
 
 
 def get_canonicalized_xamz_headers(headers):
-    """
+    r"""
+    Get the canonicalized xmaz headers.
+
     if x-amz-* has multiple values then value for that header should be passed as
     list of values eg. headers['x-amz-authors'] = ['Jack', 'Jelly']
     example return value: x-amz-authors:Jack,Jelly\nx-amz-org:Seagate\n
@@ -90,19 +98,22 @@ def sign(key, msg):
     return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
 
-def get_v4_signature_key(key, dateStamp, regionName, serviceName):
+def get_v4_signature_key(key, date_stamp, region_name, service_name):
     """Get the V4 signature key."""
-    kDate = sign(('AWS4' + key).encode('utf-8'), dateStamp)
-    kRegion = sign(kDate, regionName)
-    kService = sign(kRegion, serviceName)
-    kSigning = sign(kService, 'aws4_request')
+    kdate = sign(('AWS4' + key).encode('utf-8'), date_stamp)
+    kregion = sign(kdate, region_name)
+    kservice = sign(kregion, service_name)
+    ksigning = sign(kservice, 'aws4_request')
 
-    return kSigning
+    return ksigning
 
 
-def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None,
-                             algorithm='', host='', service='s3', region='US'):
+def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None, **kwargs):
     """Create aws signature from data string."""
+    service = kwargs.get("service", "s3")
+    region = kwargs.get("region", "US")
+    host = kwargs.get("host")
+    algorithm = kwargs.get("algorithm", 'AWS4-HMAC-SHA256')
     canonical_request = create_canonical_request(method, canonical_uri, body, epoch_t, host)
     credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
     string_to_sign = algorithm + '\n' + get_timestamp(epoch_t) + '\n' + credential_scope \
@@ -111,31 +122,40 @@ def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None,
     return string_to_sign
 
 
-def sign_request_v4(method=None, canonical_uri='/', body='', epoch_t=None,
-                    host='', service='s3', region='US', access_key=None, secret_key=None):
-    """Calculate aws authentication headers."""
-    credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
+def sign_request_v4(method=None, canonical_uri='/', body='',
+                    epoch_t=None, host='', **kwargs) -> str:
+    """
+    Calculate aws authentication headers.
+
     signed_headers = 'host;x-amz-date'
     algorithm = 'AWS4-HMAC-SHA256'
-    string_to_sign = create_string_to_sign_v4(method, canonical_uri, body, epoch_t,
-                                              algorithm, host, service, region)
+    """
+    service = kwargs.get("service", "s3")
+    region = kwargs.get("region", "US")
+    access_key = kwargs.get("access_key")
+    secret_key = kwargs.get("secret_key")
+    credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
+    string_to_sign = create_string_to_sign_v4(
+        method, canonical_uri, body, epoch_t, algorithm='AWS4-HMAC-SHA256', host=host,
+        service=service, region=region)
     signing_key = get_v4_signature_key(secret_key, get_date(epoch_t), region, service)
     signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
-    authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + \
-        credential_scope + ', ' + 'SignedHeaders=' + signed_headers + \
+    authorization_header = 'AWS4-HMAC-SHA256' + ' ' + 'Credential=' + access_key + '/' + \
+        credential_scope + ', ' + 'SignedHeaders=' + 'host;x-amz-date' + \
         ', ' + 'Signature=' + signature
 
     return authorization_header
 
 
-def get_headers(request=None, endpoint=None, payload=None, service=None,
-                region=None, access_key=None, secret_key=None):
-    """
-    Get the aws s3 rest headers.
-    """
+def get_headers(request=None, endpoint=None, payload=None, **kwargs) -> dict:
+    """Get the aws s3 rest headers."""
     # Get host value from url https://iam.seagate.com:9443
+    service = kwargs.get("service", "s3")
+    region = kwargs.get("region", "US")
+    access_key = kwargs.get("access_key")
+    secret_key = kwargs.get("secret_key")
     if request is None:
-        print("method can not be null")
+        LOGGER.info("method can not be null")
         raise Exception("Method is None.")
     headers = dict()
     url_parse_result = urllib.parse.urlparse(endpoint)
@@ -146,8 +166,8 @@ def get_headers(request=None, endpoint=None, payload=None, service=None,
     headers['Authorization'] = sign_request_v4(request.upper(),
                                                '/', body, epoch_t,
                                                url_parse_result.netloc,
-                                               service, region,
-                                               access_key, secret_key)
+                                               service=service, region=region,
+                                               access_key=access_key, secret_key=secret_key)
     headers['X-Amz-Date'] = get_timestamp(epoch_t)
 
     return headers
