@@ -302,6 +302,17 @@ test_23715:
 test_23723:
   resource_type: "node:os:raid_data"
 
+power_failure:
+  shutdown_option: "-r now"
+  power_on: "on"
+  power_off: "off"
+  wait_10_min: 600
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  bmc_shutdown: True
+  fault_description: "The cluster has lost srvnode-{}.data.private server"
+  fault_res_desc: "Server srvnode-{}.data.private has joined back the cluster"
+  resource_type: "iem"
+
 test_22891:
   resource_disk_space: "node:os:disk_space"
   resource_cpu_usage: "node:os:cpu_usagee"
