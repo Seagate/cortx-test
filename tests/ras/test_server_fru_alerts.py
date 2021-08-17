@@ -28,6 +28,7 @@ import pytest
 import pandas as pd
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
+from commons.helpers.bmc_helper import Bmc
 from commons.helpers.controller_helper import ControllerLib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -36,6 +37,7 @@ from commons import commands as common_cmd
 from commons.utils import assert_utils
 from commons.alerts_simulator.generate_alert_lib import \
     GenerateAlertLib, AlertType
+from commons.utils import system_utils
 from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -59,15 +61,19 @@ class TestServerFruAlerts:
         cls.test_node = random.randint(1, cls.node_cnt)
 
         LOGGER.info("Fault testing will be done on node: %s", cls.test_node)
-        cls.host = CMN_CFG["nodes"][cls.test_node - 1]["host"]
-        cls.uname = CMN_CFG["nodes"][cls.test_node - 1]["username"]
-        cls.passwd = CMN_CFG["nodes"][cls.test_node - 1]["password"]
-        cls.hostname = CMN_CFG["nodes"][cls.test_node - 1]["hostname"]
+        cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
+        cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
+        cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
+        cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
+        cls.lpdu_details = CMN_CFG["nodes"][cls.test_node-1]["lpdu"]
+        cls.rpdu_details = CMN_CFG["nodes"][cls.test_node - 1]["rpdu"]
 
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
         cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
                             password=cls.passwd)
+        cls.bmc_obj = Bmc(hostname=cls.hostname, username=cls.uname,
+                          password=cls.passwd)
         cls.health_obj = Health(hostname=cls.hostname, username=cls.uname,
                                 password=cls.passwd)
         cls.controller_obj = ControllerLib(
@@ -84,10 +90,6 @@ class TestServerFruAlerts:
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
 
-        LOGGER.info("Check cluster health")
-        resp = cls.health_obj.check_node_health()
-        assert_utils.assert_true(resp[0], resp[1])
-
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
             cls.hostname.split('.')[0] in node_d.keys() else assert_utils.assert_true(
@@ -97,10 +99,14 @@ class TestServerFruAlerts:
         objs = cls.ras_test_obj.create_obj_for_nodes(ras_c=RASTestLib,
                                                      node_c=Node,
                                                      hlt_c=Health,
-                                                     ctrl_c=ControllerLib)
+                                                     ctrl_c=ControllerLib,
+                                                     bmc_c=Bmc)
 
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
+            globals()[f"srv{i+1}_ras"] = objs[key]['ras_obj']
+            globals()[f"srv{i+1}_nd"] = objs[key]['nd_obj']
+            globals()[f"srv{i+1}_bmc"] = objs[key]['bmc_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         cls.server_psu_fault = False
@@ -110,6 +116,10 @@ class TestServerFruAlerts:
         """Setup operations per test."""
         LOGGER.info("Running setup_method")
         self.starttime = time.time()
+        LOGGER.info("Check cluster health")
+        resp = self.health_obj.check_node_health()
+        assert_utils.assert_true(resp[0], resp)
+
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(
             self.cm_cfg["file"]["original_sspl_conf"], False)
@@ -216,6 +226,47 @@ class TestServerFruAlerts:
             resp = self.alert_api_obj.generate_alert(
                 AlertType.SERVER_PSU_FAULT_RESOLVED)
             assert_utils.assert_true(resp[0], resp[1])
+
+        if self.power_failure_flag:
+            test_cfg = RAS_TEST_CFG["power_failure"]
+            other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+            other_host = CMN_CFG["nodes"][other_node - 1]["hostname"]
+
+            LOGGER.info("Powering on node %s from node %s",
+                        self.hostname, other_host)
+            status = test_cfg["power_on"]
+            if test_cfg["bmc_shutdown"]:
+                LOGGER.info("Using BMC ip")
+                bmc_user = CMN_CFG["bmc"]["username"]
+                bmc_pwd = CMN_CFG["bmc"]["password"]
+                res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                         bmc_pwd=bmc_pwd,
+                                                         status=status)
+            else:
+                LOGGER.info("Using PDU ip")
+                LOGGER.info("Making left pdu port up")
+                cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                      f"pdu_ip='{self.lpdu_details['ip']}', " \
+                      f"pdu_user='{self.lpdu_details['user']}', " \
+                      f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                      f"node_slot='{self.lpdu_details['port']}', " \
+                      f"status='{status}')"
+                LOGGER.info("Command: %s", cmd)
+                res = eval(cmd)
+                LOGGER.debug(res)
+                LOGGER.info("Making right pdu port up")
+                cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                      f"pdu_ip='{self.rpdu_details['ip']}', " \
+                      f"pdu_user='{self.rpdu_details['user']}', " \
+                      f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                      f"node_slot='{self.rpdu_details['port']}', " \
+                      f"status='{status}')"
+                LOGGER.info("Command: %s", cmd)
+                res = eval(cmd)
+            LOGGER.debug(res)
+            self.power_failure_flag = False
+            time.sleep(test_cfg["wait_10_min"])
+            LOGGER.info("Successfully powered on node using APC/BMC.")
 
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
@@ -1656,7 +1707,203 @@ class TestServerFruAlerts:
         LOGGER.info("Step 13: Successfully verified RAID fault_resolved alert "
                     "using CSM REST API")
         LOGGER.info(
-            "ENDED: Test alert persistence of RAID array alerts across sspl stop and start")
+            "ENDED: Test alert persistence of RAID array alerts across sspl "
+            "stop and start")
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.hw_alert
+    @pytest.mark.tags("TEST-23679")
+    @CTFailOn(error_handler)
+    def test_node_power_failure_alert_23679(self):
+        """
+        TEST-23679: Test alert when one of the node's power cable is
+        disconnected and connected
+        """
+        LOGGER.info(
+            "STARTED: Test alert when one of the node's power cable is "
+            "disconnected and connected")
+        common_cfg = RAS_VAL["ras_sspl_alert"]
+        test_cfg = RAS_TEST_CFG["power_failure"]
+        csm_error_msg = test_cfg["csm_error_msg"]
+        fault_description = test_cfg["fault_description"].format(self.test_node)
+        fault_res_desc = test_cfg["fault_res_desc"].format(self.test_node)
+        other_node = self.test_node - 1 if self.test_node > 1 else self.test_node + 1
+        other_host = CMN_CFG["nodes"][other_node-1]["hostname"]
+        bmc_user = CMN_CFG["bmc"]["username"]
+        bmc_pwd = CMN_CFG["bmc"]["password"]
+
+        if self.start_msg_bus:
+            LOGGER.info("Running read_message_bus.py script on node %s",
+                        other_host)
+            resp = eval("srv{}_ras.start_message_bus_reader_cmd()".format(
+                other_node))
+            assert_utils.assert_true(resp, "Failed to start message bus "
+                                           "channel")
+            LOGGER.info(
+                "Successfully started read_message_bus.py script on node")
+
+        # TODO: Start CRUD operations in one thread
+        # TODO: Start IOs in one thread
+        # TODO: Start random alert generation in one thread
+
+        LOGGER.info("Step 1: Shutting down node %s from node %s",
+                    self.hostname, other_host)
+        status = test_cfg["power_off"]
+        if test_cfg["bmc_shutdown"]:
+            LOGGER.info("Using BMC ip")
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                     bmc_pwd=bmc_pwd,
+                                                     status=status)
+        else:
+            LOGGER.info("Using PDU ip")
+            LOGGER.info("Making left pdu port down")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.lpdu_details['ip']}', " \
+                  f"pdu_user='{self.lpdu_details['user']}', " \
+                  f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                  f"node_slot='{self.lpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+            LOGGER.debug(res)
+            LOGGER.info("Making right pdu port down")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.rpdu_details['ip']}', " \
+                  f"pdu_user='{self.rpdu_details['user']}', " \
+                  f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                  f"node_slot='{self.rpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+
+        LOGGER.debug("Response: %s", res)
+
+        LOGGER.info("Checking if node is powered off")
+        resp = system_utils.check_ping(host=self.hostname)
+        assert_utils.assert_false(resp, "Failed to power off the node")
+        self.power_failure_flag = True
+        LOGGER.info("Step 1: Successfully powered off node using APC/BMC.")
+
+        if self.start_msg_bus:
+            time.sleep(self.cm_cfg["sleep_val"])
+            LOGGER.info("Step 2: Verifying alert logs for get alert ")
+            alert_list = [test_cfg["resource_type"], self.alert_types["get"],
+                          fault_description]
+            resp = eval("srv{}_ras.list_alert_validation({})".format(
+                other_node, alert_list))
+            assert_utils.assert_true(resp[0], f"Step 2: Expected alert not "
+                                              f"found. Error: {resp[1]}")
+
+            LOGGER.info("Step 2: Successfully checked generated alert logs. "
+                        "Response: %s", resp)
+
+        LOGGER.info("Step 3: Checking CSM REST API for alert")
+        time.sleep(common_cfg["csm_alert_gen_delay"])
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                          self.alert_types[
+                                                              "get"],
+                                                          False,
+                                                          test_cfg[
+                                                              "resource_type"],
+                                                          fault_description)
+
+        assert_utils.assert_true(resp_csm, f"Step 3: Expected alert not "
+                                           f"found. Error: {csm_error_msg}")
+
+        LOGGER.info("Step 3: Successfully checked CSM REST API for "
+                    "fault alert. Response: %s", resp_csm)
+
+        LOGGER.info("Step 4: Powering on node %s from node %s",
+                    self.hostname, other_host)
+        status = test_cfg["power_on"]
+        if test_cfg["bmc_shutdown"]:
+            LOGGER.info("Using BMC ip")
+            res = self.bmc_obj.bmc_node_power_on_off(bmc_user=bmc_user,
+                                                     bmc_pwd=bmc_pwd,
+                                                     status=status)
+        else:
+            LOGGER.info("Using PDU ip")
+            LOGGER.info("Making left pdu port up")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.lpdu_details['ip']}', " \
+                  f"pdu_user='{self.lpdu_details['user']}', " \
+                  f"pdu_pwd='{self.lpdu_details['pwd']}', " \
+                  f"node_slot='{self.lpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+            LOGGER.debug(res)
+            LOGGER.info("Making right pdu port up")
+            cmd = f"srv{other_node}_nd.toggle_apc_node_power(" \
+                  f"pdu_ip='{self.rpdu_details['ip']}', " \
+                  f"pdu_user='{self.rpdu_details['user']}', " \
+                  f"pdu_pwd='{self.rpdu_details['pwd']}', " \
+                  f"node_slot='{self.rpdu_details['port']}', " \
+                  f"status='{status}')"
+            LOGGER.info("Command: %s", cmd)
+            res = eval(cmd)
+        LOGGER.debug("Response: %s", res)
+
+        time.sleep(test_cfg["wait_10_min"])
+        LOGGER.info("Checking if node is powered on")
+        resp = system_utils.check_ping(host=self.hostname)
+        assert_utils.assert_true(resp, "Failed to power on the node")
+        self.power_failure_flag = False
+        LOGGER.info("Step 4: Successfully powered on node using APC/BMC.")
+
+        LOGGER.info("Step 5: Check cluster health")
+        resp = eval("srv{}_hlt.check_node_health()".format(other_node))
+        assert_utils.assert_true(resp[0], "Step 5: Cluster health is not good. "
+                                 "\nResponse: {resp}")
+        LOGGER.info("Step 5: Cluster health is good. \nResponse: %s", resp)
+
+        if self.start_msg_bus:
+            time.sleep(self.cm_cfg["sleep_val"])
+            LOGGER.info("Step 6: Verifying alert logs for get alert ")
+            alert_list = [test_cfg["resource_type"],
+                          self.alert_types["resolved"], fault_res_desc]
+            resp = eval("srv{}_ras.list_alert_validation({})".format(
+                other_node, alert_list))
+            assert_utils.assert_true(resp[0], f"Step 6: Expected alert not "
+                                              f"found. Error: {resp[1]}")
+
+            LOGGER.info("Step 6: Successfully checked generated alert logs. "
+                        "Response: %s", resp)
+
+        LOGGER.info("Step 7: Checking CSM REST API for alert")
+        resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                          self.alert_types[
+                                                              "resolved"],
+                                                          True,
+                                                          test_cfg[
+                                                              "resource_type"],
+                                                          fault_res_desc)
+
+        assert_utils.assert_true(resp_csm, f"Step 7: Expected alert not "
+                                           f"found. Error: {csm_error_msg}")
+
+        LOGGER.info("Step 7: Successfully checked CSM REST API for "
+                    "fault resolved alert. Response: %s", resp_csm)
+
+        # TODO: Check status of CRUD operations
+        # TODO: Check status of IOs
+        # TODO: Check status of random alert generation
+
+        if self.start_msg_bus:
+            LOGGER.info("Terminating the process read_message_bus.py")
+            eval("srv{}_ras.kill_remote_process('read_message_bus.py')".format(
+                other_node))
+            files = [self.cm_cfg["file"]["alert_log_file"],
+                     self.cm_cfg["file"]["extracted_alert_file"],
+                     self.cm_cfg["file"]["screen_log"]]
+            for file in files:
+                LOGGER.info("Removing log file %s from the Node", file)
+                cmd = f"srv{other_node}_nd.remove_remote_file(filename='{file}')"
+                LOGGER.info("Command: %s", cmd)
+                eval(cmd)
+
+        LOGGER.info("ENDED: Test alert when one of the node's power cable is "
+                    "disconnected and connected")
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
