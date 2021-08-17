@@ -30,7 +30,6 @@ from commons.utils import config_utils
 from commons.constants import SwAlerts as const
 from commons import constants as cons
 from commons import cortxlogging
-from commons.utils.config_utils import read_properties_file
 from commons.utils.assert_utils import *
 from commons.utils.system_utils import create_file, path_exists, make_dirs
 from libs.csm.rest.csm_rest_alert import SystemAlerts
@@ -534,7 +533,6 @@ class TestServerOS:
         mem_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_MEM_USAGE)
         test_cfg = RAS_TEST_CFG["test_22786"]
-        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info("\nStep 1: Checking available memory usage and convert it to GB")
             resp = obj.get_available_memory_usage()
@@ -627,7 +625,6 @@ class TestServerOS:
         LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
-        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info("[STARTED] : Testing for node : %s", obj.host)
             LOGGER.info("\nStep 1: Getting CPU count")
@@ -709,7 +706,6 @@ class TestServerOS:
         LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
         start_time = time.time()
         test_cfg = RAS_TEST_CFG["test_22787"]
-        cmn_cfg = RAS_TEST_CFG["common_cfg"]
         for obj in self.sw_alert_objs:
             LOGGER.info("[STARTED] : Testing for node : %s", obj.host)
             LOGGER.info("\nStep 1: Getting CPU count")
@@ -855,7 +851,8 @@ class TestServerOS:
             True,
             test_cfg["resource_type"])
         assert resp[0], resp[1]
-        LOGGER.info("\nStep 6: Successfully verified Disk usage resolved with persistent cache on CSM\n")
+        LOGGER.info("\nStep 6: Successfully verified Disk usage resolved with persistent cache on"
+                    " CSM\n")
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.tags("TEST-22717")
@@ -1017,7 +1014,7 @@ class TestServerOS:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_22718_cpu_usage_threshold_node_reboot(self):
-        """System Test to validate OS server alert generation and check for fault resolved (CPU Usage)
+        """System Test to validate OS server alert generation and check for fault resolved CPU Usage
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("\n%s Test started -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
