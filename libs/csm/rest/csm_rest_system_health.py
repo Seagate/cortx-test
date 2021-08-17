@@ -22,6 +22,7 @@
    Author: Divya Kachhwaha
 """
 import json
+from http import HTTPStatus
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -408,7 +409,7 @@ class SystemHealth(RestTestLib):
                 headers=self.headers,
                 params=parameters,
                 save_json=True)
-            if response.status_code != const.SUCCESS_STATUS:
+            if response.status_code != HTTPStatus.OK:
                 self.log.error(f'Response ={response.text}\n'
                                f'Request Headers={response.request.headers}\n'
                                f'Request Body={response.request.body}')
@@ -518,40 +519,32 @@ class SystemHealth(RestTestLib):
         :param force_op: Specifying this enables force operation.
         :return: bool/cluster operation POST API response
         """
-        try:
-            # Building request url to perform cluster operation
-            self.log.info("Performing %s operation on %s ...", operation, resource)
-            endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
-            self.log.info(
-                "Endpoint for cluster operation is %s", endpoint)
-            data = {"operation": operation,
-                    "arguments": {"resource_id": str(resource_id),
-                                  "storageoff": storage_off,
-                                  "force": force_op}}
-            # Fetching api response
-            response = self.restapi.rest_call(
-                "post",
-                endpoint=endpoint,
-                data=json.dumps(data),
-                headers=self.headers)
-            if response.status_code != const.SUCCESS_STATUS:
-                self.log.error("%s operation on %s POST REST API response : %s",
-                          operation,
-                          resource,
-                          response.json())
-                return False, response
-            self.log.info("%s operation on %s POST REST API response : %s",
-                          operation,
-                          resource,
-                          response.json())
-            return True, response
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                         const.EXCEPTION_ERROR,
-                         SystemHealth.perform_cluster_operation.__name__,
-                         error)
-            raise CTException(
-                err.CSM_REST_POST_REQUEST_FAILED, error) from error
+        # Building request url to perform cluster operation
+        self.log.info("Performing %s operation on %s ...", operation, resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        self.log.info(
+            "Endpoint for cluster operation is %s", endpoint)
+        data = {"operation": operation,
+                "arguments": {"resource_id": str(resource_id),
+                              "storageoff": storage_off,
+                              "force": force_op}}
+        # Fetching api response
+        response = self.restapi.rest_call(
+            "post",
+            endpoint=endpoint,
+            data=json.dumps(data),
+            headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response.json())
+            return False, response
+        self.log.info("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response.json())
+        return True, response
 
     @RestTestLib.authenticate_and_login
     def check_on_cluster_effect(self, resource_id: int):
@@ -560,29 +553,21 @@ class SystemHealth(RestTestLib):
         :param resource_id: Id of the node for which cluster status is to be checked.
         :return: bool/GET effect status of node operation on cluster rest API response
         """
-        try:
-            # Building request url to perform cluster status operation
-            self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
-                          resource_id)
-            endpoint = "{}/{}".format(self.config["cluster_status_endpoint"], resource_id)
-            self.log.info(
-                "Endpoint for cluster status operation is %s", endpoint)
-            # Fetching api response
-            response = self.restapi.rest_call(
-                request_type="get",
-                endpoint=endpoint,
-                headers=self.headers)
-            if response.status_code != const.SUCCESS_STATUS:
-                self.log.error("cluster status operation response = %s",
-                               response.json())
-                return False, response
-            self.log.info("cluster status operation response = %s",
-                          response.json())
-            return True, response
-        except BaseException as error:
-            self.log.error("%s %s: %s",
-                         const.EXCEPTION_ERROR,
-                         SystemHealth.check_on_cluster_effect.__name__,
-                         error)
-            raise CTException(
-                err.CSM_REST_GET_REQUEST_FAILED, error) from error
+        # Building request url to perform cluster status operation
+        self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
+                      resource_id)
+        endpoint = "{}/{}".format(self.config["cluster_status_endpoint"], resource_id)
+        self.log.info(
+            "Endpoint for cluster status operation is %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(
+            request_type="get",
+            endpoint=endpoint,
+            headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("cluster status operation response = %s",
+                           response.json())
+            return False, response
+        self.log.info("cluster status operation response = %s",
+                      response.json())
+        return True, response
