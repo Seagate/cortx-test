@@ -2830,7 +2830,7 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-25278')
     def test_25278(self):
         """
-        Function to test Monitor user is not able to edit the roles of the 
+        Function to test Monitor user is not able to edit the roles of the
         admin, manage and other monitor user
         """
         test_case_name = cortxlogging.get_frame()
