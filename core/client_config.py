@@ -114,4 +114,4 @@ class ClientConfig:
         node = nodes[0]
         public_data_ip = node["public_data_ip"]
         self.set_s3_endpoints(public_data_ip)
-        self.configure_s3_tools(target)
+        self.configure_s3_tools(acquired_target)
