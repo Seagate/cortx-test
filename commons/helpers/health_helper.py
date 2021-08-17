@@ -30,7 +30,8 @@ from commons.helpers.host import Host
 from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
-from config import RAS_VAL, CMN_CFG
+from config import RAS_VAL
+from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -425,9 +426,7 @@ class Health(Host):
             if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
                 for srvnode, status in val.items():
                     currentnode = "srvnode-{}".format(key.split("-")[2])
-                    if srvnode == currentnode and status != "Stopped":
-                        pcs_failed_data[key] = val
-                    elif srvnode != currentnode and status != "Started":
+                    if srvnode != currentnode and status != "Started":
                         pcs_failed_data[key] = val
                 continue
             for status in val.values():
