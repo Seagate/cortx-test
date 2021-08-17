@@ -31,6 +31,7 @@ from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
 from config import RAS_VAL
+from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -422,6 +423,12 @@ class Health(Host):
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
+            if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
+                for srvnode, status in val.items():
+                    currentnode = "srvnode-{}".format(key.split("-")[2])
+                    if srvnode != currentnode and status != "Started":
+                        pcs_failed_data[key] = val
+                continue
             for status in val.values():
                 if status != "Started":
                     pcs_failed_data[key] = val
