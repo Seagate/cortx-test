@@ -77,6 +77,21 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
         os.environ['JIRA_PASSWORD'] = jira_pd
     return jira_id, jira_pd
 
+def get_db_credential() -> Tuple[str, Optional[str]]:
+    """ Function to get DB credentials from env or common config or secret.json."""
+    db_user = None
+    db_pwd = None
+    try:
+        db_user = os.environ['DB_USER']
+        db_pwd = os.environ['DB_PASSWORD']
+    except KeyError:
+        print("DB credentials not found in environment")
+        db_user = input("DB username: ")
+        db_pwd = getpass.getpass("DB password: ")
+        os.environ['DB_USER'] = db_user
+        os.environ['DB_PASSWORD'] = db_pwd
+    return db_user, db_pwd
+
 def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
