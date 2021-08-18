@@ -968,5 +968,3 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.info("Actual Threshold value %s", resp)
         return float(resp) == float(
             disk_usage_thresh), "Disk usage threshold is not set as expected."
-
-

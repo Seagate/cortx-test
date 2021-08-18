@@ -695,12 +695,12 @@ class TestServerOSAlerts:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_25105_diskspace_full_threshold(self):
-        """CSM-GUI: System Test to validate OS server alert generation and check for fault resolved (Disk space full)
+     """CSM-GUI: System Test to validate OS server alert & check for fault resolved (Disk space full)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
         test_cfg = RAS_TEST_CFG["test_21586"]
-        LOGGER.info("Step 1: Checking if disk space full  fault is not already present in new alerts")
+        LOGGER.info("Step 1: Check if disk space full fault is not already present in new alerts")
         alert_description = 'Disk usage increased to'
         gui_dict = dict()
         gui_dict['log_path'] = self.cwd + '/log/latest/TEST-25105_Gui_Logs'
@@ -753,5 +753,4 @@ class TestServerOSAlerts:
         gui_response = trigger_robot(gui_dict)
         assert_equals(True, gui_response, 'GUI FAILED: Alert is not present in active alert')
         LOGGER.info("Step 14: Successfully verified Disk space full  usage alert on CSM GUI")
-        LOGGER.info("##### Test completed -  %s #####", test_case_name)
-
+        LOGGER.info("### Test completed - %s ###", test_case_name)
