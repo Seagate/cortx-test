@@ -494,9 +494,9 @@ class Health(Host):
         param: no_node: no of nodes
         return: dict
         """
+        clone_set = {}
+        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
         if CMN_CFG["setup_type"] == "OVA":
-            clone_set = {}
-            node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
             for clone_elem_resp in crm_mon_res['clone']:
                 resources = []
                 if clone_elem_resp["@id"] == 'monitor_group-clone':
@@ -516,10 +516,7 @@ class Health(Host):
                     else:
                         temp_dict[node_dflt[0]] = resource['@role']
                 clone_set[clone_elem_resp["@id"]] = temp_dict
-            return clone_set
         else:
-            clone_set = {}
-            node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node+1)]
             for clone_elem_resp in crm_mon_res['clone']:
                 if clone_elem_resp["@id"] == 'monitor_group-clone':
                     if no_node != 1:
@@ -557,7 +554,7 @@ class Health(Host):
                                 temp_dict[node] = elem['@role']
                                 clone_set[clone_elem_resp["@id"]] = temp_dict
                         clone_set[clone_elem_resp["@id"]] = temp_dict
-            return clone_set
+        return clone_set
 
     @staticmethod
     def get_resource_status(crm_mon_res: dict):
