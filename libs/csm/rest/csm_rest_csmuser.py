@@ -872,6 +872,7 @@ class RestCsmUser(RestTestLib):
             raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
                               msg="CSM user password change request failed.")
 
+    # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
     def edit_csm_user(self, user:str=None, role:str=None,
                     email:str=None, password:str=None, current_password:str=None):
