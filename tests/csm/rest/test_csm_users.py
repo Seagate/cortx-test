@@ -34,6 +34,7 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.csm_setup import CSMConfigsCheck
+from config import CSM_REST_CFG
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -2824,3 +2825,164 @@ class TestCsmUser():
 
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-25278')
+    def test_25278(self):
+        """
+        Function to test Monitor user is not able to edit the roles of the
+        admin, manage and other monitor user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25278"]
+        self.log.info("Step 1: Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        self.log.info("Step 2: Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Verfying edit user functionality for admin user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="admin",
+                                    role="manage")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                       "admin") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 4: Verfying edit user functionality for manage user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user="csm_user_manage",
+                                    role="monitor")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  "csm_user_manage") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 5: Verfying edit user functionality for monitor user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
+                                    role="manage")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                               + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  username) , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info(
+            "Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-25280')
+    def test_25280(self):
+        """
+        Function to test Monitor user is not able to edit the passwords of the
+        admin, manage and other monitor user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25280"]
+        self.log.info("Step 1: Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        self.log.info("Step 2: Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Verifying edit user functionality for admin user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+                                 user=CSM_REST_CFG["csm_admin_user"]["username"],
+                      password=CSM_REST_CFG["csm_admin_user"]["password"],
+                        current_password=test_cfg["current_password"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  "admin") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 4: Verifying edit user functionality for manage user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+                                     user=CSM_REST_CFG["csm_user_manage"]["username"],
+                              password=CSM_REST_CFG["csm_user_manage"]["password"],
+                                   current_password=test_cfg["current_password"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  "csm_user_manage") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 5: Verifying edit user functionality for monitor user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+                                        user=username,
+                                 password=CSM_REST_CFG["csm_user_monitor"]["password"],
+                                    current_password=test_cfg["current_password"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                               + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                 username) , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info(
+            "Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.skip(reason="Bug EOS-23254")
+    @pytest.mark.tags('TEST-25282')
+    def test_25282(self):
+        """
+        Function to test Monitor user is not able to edit the email ids of the
+        admin, manage and other monitor user
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_25280"]
+        self.log.info("Step 1: Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid",user_role="monitor")
+        self.log.info("Step 2: Verifying if user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        self.log.info("Verified User %s got created successfully", username)
+        self.log.info("Step 3: Verifying edit user functionality for admin user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+                      user=CSM_REST_CFG["csm_admin_user"]["username"],
+                       email_id=test_cfg["email_id"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  "admin") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 4: Verifying edit user functionality for manage user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
+                                        user=CSM_REST_CFG["csm_user_manage"]["username"],
+                                        email_id=test_cfg["email_id"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                  "csm_user_manage") , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info("Step 5: Verifying edit user functionality for monitor user")
+        response = self.csm_user.edit_csm_user(login_as="csm_user_monitor", user=username,
+                              email_id=test_cfg["email_id"])
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                               + "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                                                   username) , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
+        self.log.info(
+            "Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
