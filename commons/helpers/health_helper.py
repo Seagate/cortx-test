@@ -486,6 +486,7 @@ class Health(Host):
         json_format = json.loads(temp_dict)
         return json_format
 
+    # pylint: disable-msg=too-many-nested-blocks
     @staticmethod
     def get_clone_set_status(crm_mon_res: dict, no_node: int):
         """
