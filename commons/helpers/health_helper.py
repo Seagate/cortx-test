@@ -31,6 +31,7 @@ from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
 from config import RAS_VAL
+from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -422,6 +423,12 @@ class Health(Host):
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
+            if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
+                for srvnode, status in val.items():
+                    currentnode = "srvnode-{}".format(key.split("-")[2])
+                    if srvnode != currentnode and status != "Started":
+                        pcs_failed_data[key] = val
+                continue
             for status in val.values():
                 if status != "Started":
                     pcs_failed_data[key] = val
@@ -633,18 +640,19 @@ class Health(Host):
 
         return True
 
-    def check_nw_interface_status(self):
+    def check_nw_interface_status(self, nw_infcs: list = None):
         """
         Function to get status of all available network interfaces on node.
         """
         LOG.info("Getting all network interfaces on host")
-        LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
-        res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
-        nw_ifcs = list(filter(None, res.decode("utf-8").split('\n')))
-        LOG.debug(nw_ifcs)
+        if nw_infcs is None:
+            LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
+            res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
+            nw_infcs = list(filter(None, res.decode("utf-8").split('\n')))
+        LOG.debug(nw_infcs)
         LOG.info("Check status of all available network interfaces")
         status = {}
-        for nw in nw_ifcs:
+        for nw in nw_infcs:
             stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
             nw_st = self.execute_cmd(stat_cmd, exc=False)
             nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))

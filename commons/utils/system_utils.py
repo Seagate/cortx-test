@@ -969,7 +969,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
-        shutil.copy(local_path, new_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, new_path)
+        else:
+            shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
     except Exception as error:
         LOGGER.error(error)
@@ -979,7 +982,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             LOGGER.info("Creating local log directory")
             resp = make_dirs(dpath=log_path)
 
-        shutil.copy(local_path, log_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, log_path)
+        else:
+            shutil.copytree(local_path, os.path.join(log_path, os.path.basename(local_path)))
 
     return True, log_path
 
@@ -1225,3 +1231,27 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
     LOGGER.info("S3 parallel ios log validation completed.")
 
     return True, "S3 parallel ios completed successfully."
+
+
+def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
+                          pwd: str):
+    """
+    Toggle network interface status using ip set command.
+    :param str device: Name of the ip network device
+    :param str status: Expect status like up/down
+    :param host: Host name on which command is to be run
+    :param username: Username of host
+    :param pwd: Password of host
+    :return: True/False
+    :rtype: Boolean
+    """
+    LOGGER.info(f"Changing {device} n/w device status to {status}")
+    cmd = commands.IF_CMD.format(status, device)
+    LOGGER.info("Running command: %s", cmd)
+    res = run_remote_cmd(
+        hostname=host, username=username, password=pwd, cmd=cmd,
+        read_lines=True)
+    LOGGER.debug("Response: %s", res)
+
+    LOGGER.debug(res)
+    return res[0]
