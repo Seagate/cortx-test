@@ -106,9 +106,9 @@ def parse_args():
     parser.add_argument("-cp", "--csm_pass", type=str,
                         default='', help="csm_pass")
     parser.add_argument("-ju", "--jira_user", type=str,
-                        default='522085', help="jira_user")
+                        default='', help="jira_user")
     parser.add_argument("-jp", "--jira_pass", type=str,
-                        default='Swap@#$098', help="jira_pass")
+                        default='', help="jira_pass")
     parser.add_argument("-du", "--db_user", type=str,
                         default='', help="db_user")
     parser.add_argument("-dp", "--db_pass", type=str,
@@ -214,7 +214,7 @@ def run_tesrunner_cmd(args, attempts, m_vip, todo=False):
         cmd_line = cmd_line + [force_serial_run]
 
     if todo:
-        args.test_type = ['TODO']
+        args.test_type = 'TODO'
         cmd_line = cmd_line + ["--test_type=" + str(args.test_type)]
 
     cmd_line = cmd_line + ['--build=' + args.build, '--build_type=' + args.build_type]
@@ -239,7 +239,8 @@ def revert_vms(args, vm_list):
     for vm_name in vm_machines:
         cmd_line = cmd_line + ["-v=" + str(vm_name)]
         status = run_cmd(cmd_line)
-        return status
+        if status:
+            return status
 
 
 def run_cmd(cmd):
@@ -408,7 +409,8 @@ def setup_client(args, hosts, data_ip):
         system_utils.run_local_cmd(cmd="rm -f {}".format(local_cert_path), flg=True)
     nd_obj_host = Node(hostname=host, username=uname, password=upasswd)
     nd_obj_host.copy_file_to_local(remote_path=remote_cert_path, local_path=local_cert_path)
-    set_s3_endpoints(data_ip)
+    if len(hosts) == 1:
+        set_s3_endpoints(data_ip)
     # configure_haproxy_lb(hosts, uname, upasswd, cluster_ip)
 
 
@@ -451,12 +453,12 @@ def destroy_vm(hosts, token, node_passwd=None):
                               "Job is not successful, please check the url.")
 
 
-def post_test_execution_action(args, hosts_list):
+def post_test_execution_action(args):
     """
     Perform post actions
     """
     update_vm_db(args=args)
-    revert_vms(args, hosts_list)
+    # revert_vms(args, hosts_list)
 
 
 
@@ -465,13 +467,14 @@ def main(args):
     """
     os.environ["DB_USER"] = args.db_user
     os.environ["DB_PASSWORD"] = args.db_pass
-    os.environ["JIRA_ID"] = args.jira_user
-    os.environ["JIRA_PASSWORD"] = args.jira_pass
     hosts_list = args.hosts.split(',')
     # Get setup details
-    setup_details = deploy_utils.register_setup_entry(hosts_list, args.setupname, args.csm_user,
+    suffix = 'colo.seagate.com'
+    hosts = list()
+    for host in hosts_list:
+        hosts.append('.'.join([host.strip(), suffix]))
+    setup_details = deploy_utils.register_setup_entry(hosts, args.setupname, args.csm_user,
                                                       args.csm_pass, args.node_pass)
-    hosts = hosts_list
     cluster_ip = setup_details['csm']['mgmt_vip']
     data_ip = args.data_ip
     setup_client(args, hosts, data_ip)
@@ -482,7 +485,7 @@ def main(args):
         while not te_completed:
             args.te_ticket = te_num
             if attempts >= 5:
-                post_test_execution_action(args, hosts_list)
+                post_test_execution_action(args)
                 raise EnvironmentError('More than 5 attempts of executing tests crossed.')
 
             if attempts == 1:
@@ -493,12 +496,12 @@ def main(args):
             if status:
                 ret = trigger_deployment(args, cluster_ip, retries=3)
                 if not ret:
-                    post_test_execution_action(args, hosts_list)
+                    post_test_execution_action(args)
                     raise EnvironmentError('Deployment or VM revert ran into errors')
             else:
                 te_completed = True
     else:
-        post_test_execution_action(args, hosts_list)
+        post_test_execution_action(args)
 
 
 if __name__ == '__main__':
