@@ -54,7 +54,24 @@ class CreateSetupJson:
         with open('provisioner_cluster.json') as json_file:
             self.data = json.load(json_file)
         data = self.data["cluster"][list(self.data["cluster"].keys())[0]]
-        self.m_ip = data['network']['management']['virtual_host']
+        m_vip = str(data['network']['management']['virtual_host'])
+        self.m_ip = m_vip.strip()
+        # Get required ips
+        required_ips = 3
+        self.num_nodes = len(hosts)
+        self.srvnode_ips = [None] * self.num_nodes * required_ips
+        output = self.nd_obj_host.execute_cmd(common_cmd.CMD_HOSTS, read_lines=True)
+        for line in output:
+            for host_num in range(len(hosts)):
+                search_string = "srvnode-{}.mgmt.public".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[host_num * required_ips] = line.split()[0]
+                search_string = "srvnode-{}.data.public".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[(host_num * required_ips) + 1] = line.split()[0]
+                search_string = "srvnode-{}.data.private".format(host_num + 1)
+                if search_string in line:
+                    self.srvnode_ips[(host_num * required_ips) + 2] = line.split()[0]
 
     def create_setup_entry(self, target_name, setup_type, csm_user, csm_pass):
         """
@@ -67,7 +84,8 @@ class CreateSetupJson:
                                  setup_in_useby="",
                                  in_use_for_parallel=False,
                                  parallel_client_cnt=0,
-                                 is_setup_free=True))
+                                 is_setup_free=True,
+                                 lb=""))
         for host_number, host in enumerate(self.hosts):
             node_details = self.add_nodes_details(host_number, host)
             nodes.append(node_details)
@@ -89,10 +107,16 @@ class CreateSetupJson:
         return dict(
             host="srvnode-" + str(host_number),
             hostname=node,
-            ip="node_ip",
+            ip=self.srvnode_ips[host_number * self.num_nodes],
             username='root',
-            password=self.node_pass
-        )
+            password=self.node_pass,
+            public_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 1],
+            private_data_ip=self.srvnode_ips[(host_number * self.num_nodes) + 2],
+            ldpu=dict(ip="", port="", user="", pwd=self.node_pass),
+            rpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            encl_lpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            encl_rpdu=dict(ip="", port="", user="", pwd=self.node_pass),
+            gem_controller=dict(ip="", user="", pwd=self.node_pass, port1="", port2=""))
 
     @staticmethod
     def add_enclosure_details():
