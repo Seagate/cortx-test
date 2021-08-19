@@ -742,13 +742,12 @@ def check_cortx_cluster_health():
     """Check the cluster health before each test is picked up for run."""
     LOGGER.info("Check cluster status for all nodes.")
     nodes = CMN_CFG["nodes"]
-    setup_type = CMN_CFG["setup_type"]
     for node in nodes:
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
                         password=node['password'])
-        result = health.check_node_health(False, setup_type)
+        result = health.check_node_health()
         assert_utils.assert_true(result[0],
                                  f'Cluster Node {hostname} failed in health check. Reason: {result}')
         health.disconnect()

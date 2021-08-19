@@ -343,13 +343,12 @@ class Health(Host):
 
         return True, resp
 
-    def check_node_health(self, resource_cleanup: bool = False, setup_type: str = '') -> tuple:
+    def check_node_health(self, resource_cleanup: bool = False) -> tuple:
         """
         Check the node health (pcs and hctl status) and return True if all services up and running.
         1. Checking online status of node.
         2. Check hctl status response for all resources
         3. Check pcs status response for all resources
-        :param setup_type: type of target
         :param resource_cleanup: If True will do pcs resources cleanup.
         :return: True or False, response/dictionary of failed hctl/pcs resources status.
         """
@@ -422,7 +421,7 @@ class Health(Host):
         crm_mon_res = json_format['crm_mon']['resources']
         no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
 
-        clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node, setup_type)
+        clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
             if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
                 for srvnode, status in val.items():
@@ -490,17 +489,22 @@ class Health(Host):
     # pylint: disable-msg=too-many-nested-blocks
     # pylint: disable-msg=too-many-statements
     # pylint: disable-msg=too-many-branches
+    # pylint: disable=broad-except
     @staticmethod
-    def get_clone_set_status(crm_mon_res: dict, no_node: int, setup_type: str = ''):
+    def get_clone_set_status(crm_mon_res: dict, no_node: int):
         """
         Get the clone set from node health pcs response
         param: crm_mon_res: pcs response from pcs status xml command
         param: no_node: no of nodes
-        param: setup_type: type of target
         return: dict
         """
         clone_set = {}
         node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
+        setup_type = ''
+        try:
+            setup_type = CMN_CFG["setup_type"]
+        except Exception as error:
+            LOG.debug("setup_type not found %s", error)
         if setup_type == "OVA":
             for clone_elem_resp in crm_mon_res['clone']:
                 resources = []
