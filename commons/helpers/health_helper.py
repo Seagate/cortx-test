@@ -488,6 +488,8 @@ class Health(Host):
         return json_format
 
     # pylint: disable-msg=too-many-nested-blocks
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
     @staticmethod
     def get_clone_set_status(crm_mon_res: dict, no_node: int, setup_type: str = ''):
         """
