@@ -63,7 +63,7 @@ function install_chrome_driver {
   else
     echo '... chromedriver not found on mounted dir'
     VERSION=$(curl http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-    wget -N https://chromedriver.storage.googleapis.com/$VERSION/chromedriver_linux64.zip
+    wget -N 'https://chromedriver.storage.googleapis.com/'$VERSION'/chromedriver_linux64.zip'
     yes | unzip chromedriver_linux64.zip
     yes | cp -rf  chromedriver /usr/bin/chromedriver
     chmod +x /usr/bin/chromedriver
