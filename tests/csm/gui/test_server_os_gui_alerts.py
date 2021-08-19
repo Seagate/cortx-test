@@ -695,7 +695,7 @@ class TestServerOSAlerts:
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
     def test_25105_diskspace_full_threshold(self):
-     """CSM-GUI: System Test to validate OS server alert & check for fault resolved (Disk space full)
+        """CSM-GUI: System Test to validate OS server alert and check for fault resolved (Disk space full)
         """
         test_case_name = cortxlogging.get_frame()
         LOGGER.info("##### Test started -  %s #####", test_case_name)
