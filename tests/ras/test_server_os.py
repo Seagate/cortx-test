@@ -1053,9 +1053,9 @@ class TestServerOS:
             assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
 
-        LOGGER.info("Step 6: Checking CSM REST API for RAID missing resolved alert")
+        LOGGER.info("Step 6: Checking CSM REST API for RAID integrity resolved alert")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
                     self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
-        LOGGER.info("Step 6: Successfully verified RAID missing resolved alert using CSM"
+        LOGGER.info("Step 6: Successfully verified RAID integrity resolved alert using CSM"
                     " REST API")
