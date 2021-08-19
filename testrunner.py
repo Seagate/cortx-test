@@ -521,6 +521,8 @@ def check_kafka_msg_trigger_test(args):
                 args.build_type = kafka_msg.build_type
                 args.test_plan = kafka_msg.test_plan
                 args.target = acquired_target
+                # force serial run within testrunner till xdist issue is fixed
+                args.force_serial_run = "True"
                 p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
                 p.start()
                 p.join()

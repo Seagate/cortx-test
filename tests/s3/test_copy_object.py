@@ -722,7 +722,7 @@ class TestCopyObjects:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             LOGGER.info(error.message)
-            assert_utils.assert_equal(
+            assert_utils.assert_in(
                 "An error occurred (AccessDenied) when calling the "
                 "GetObjectAcl operation: Access Denied", error.message, error)
         LOGGER.info(
@@ -811,7 +811,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp)
         except CTException as error:
-            assert_utils.assert_equal(
+            assert_utils.assert_in(
                 "An error occurred (AccessDenied) when calling the GetObjectAcl operation:"
                 " Access Denied", error.message, error)
         LOGGER.info(
@@ -1276,7 +1276,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_equal(
+            assert_utils.assert_in(
                 "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
                 "Access Denied", error.message, error)
         LOGGER.info(
@@ -1435,7 +1435,7 @@ class TestCopyObjects:
                 self.bucket_name2, self.object_name2)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
-            assert_utils.assert_equal(
+            assert_utils.assert_in(
                 "An error occurred (AccessDenied) when calling the GetObjectAcl operation: "
                 "Access Denied", error.message, error)
         LOGGER.info(
