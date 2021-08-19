@@ -47,7 +47,7 @@ function install_chrome {
     yes | sudo yum localinstall robot_chrome/google-chrome-stable_current_x86_64.rpm
   else
     echo '... google-chrome not found on mounted dir'
-    wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+    wget -N "https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
     check_installation
   fi
   google-chrome --version
@@ -63,7 +63,7 @@ function install_chrome_driver {
   else
     echo '... chromedriver not found on mounted dir'
     VERSION=$(curl http://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-    wget -N 'https://chromedriver.storage.googleapis.com/'$VERSION'/chromedriver_linux64.zip'
+    wget -N "https://chromedriver.storage.googleapis.com/"$VERSION"/chromedriver_linux64.zip"
     yes | unzip chromedriver_linux64.zip
     yes | cp -rf  chromedriver /usr/bin/chromedriver
     chmod +x /usr/bin/chromedriver
