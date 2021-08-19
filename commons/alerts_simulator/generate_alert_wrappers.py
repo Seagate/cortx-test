@@ -771,10 +771,6 @@ class GenerateAlertWrapper:
         """
         count = input_parameters['count']
         timeout = input_parameters['timeout']
-        if count is None:
-            count = 5
-        if timeout is None:
-            timeout = 60
 
         ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
         node_connect = Node(hostname=host, username=h_user, password=h_pwd)
@@ -798,17 +794,17 @@ class GenerateAlertWrapper:
                                                    field=cons.CONF_RAID_INTEGRITY)
             LOGGER.debug("Response: %s", res)
             
-            cmd = "set -eu -o pipefail"
+            cmd = commands.SET_PIPEFAIL
             LOGGER.info("Executing command : %s", cmd)
             resp = node_connect.execute_cmd(cmd=cmd)
             LOGGER.debug("Response: %s", resp)
 
-            cmd = "rm -rf /var/cortx/sspl/data/raid_integrity"
+            cmd = commands.CMD_REMOVE_DIR.format("/var/cortx/sspl/data/raid_integrity")
             LOGGER.info("Executing command : %s", cmd)
             resp = node_connect.execute_cmd(cmd=cmd)
             LOGGER.debug("Response: %s", resp)
 
-            cmd = "mkdir -p /tmp/sys/block/md0/md/"
+            cmd = commands.CMD_MKDIR.format("/tmp/sys/block/md0/md/")
             LOGGER.info("Executing command : %s", cmd)
             resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
             LOGGER.debug("Response: %s", resp)
@@ -844,8 +840,7 @@ class GenerateAlertWrapper:
             return False, error
 
     @staticmethod
-    def resolve_raid_integrity_faults(host, h_user, h_pwd,
-                                            input_parameters):
+    def resolve_raid_integrity_faults(host, h_user, h_pwd):
         """
         Function to resolve RAID integrity fault
         :param host: host from which command is to be run
