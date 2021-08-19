@@ -68,6 +68,7 @@ class TestServerOS:
         cls.default_mem_usage = False
         cls.default_disk_usage = False
         cls.default_cpu_fault = False
+        cls.integrity_fault = False
         cls.starttime = time.time()
         cls.sw_alert_objs = []
         for i in range(len(CMN_CFG["nodes"])):
@@ -129,6 +130,7 @@ class TestServerOS:
         self.default_cpu_usage = False
         self.default_mem_usage = False
         self.default_disk_usage = False
+        self.integrity_fault = False
         LOGGER.info("Completed setup_method.")
 
     def teardown_method(self):
@@ -199,6 +201,12 @@ class TestServerOS:
             LOGGER.info("Step 4: Resolving CPU fault.")
             resp = self.sw_alert_obj.resolv_cpu_fault(self.default_cpu_fault)
             assert resp[0], resp[1]
+
+        if self.integrity_fault:
+            LOGGER.info("Step 4: Resolve RAID integrity fault")
+            resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_RESOLVED)
+            assert resp[0], resp[1]
+            LOGGER.info("Step 4: Resolved RAID integrity fault.")
 
     @pytest.mark.tags("TEST-21587")
     @pytest.mark.cluster_monitor_ops
@@ -1006,14 +1014,13 @@ class TestServerOS:
         LOGGER.info(
             "STARTED: TEST-22781 RAID integrity")
         test_cfg = RAS_TEST_CFG["test_22781"]
-        csm_error_msg = test_cfg["csm_error_msg"]
 
         LOGGER.info(
             "Step 1: Create RAID Integrity fault")
         resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT, 
-                    host_details= {"host":CMN_CFG["nodes"][0]["hostname"],
-                                   "host_user":CMN_CFG["nodes"][0]["username"],
-                                   "host_password":CMN_CFG["nodes"][0]["password"]},
+                    host_details= {"host":self.host,
+                                   "host_user":self.uname,
+                                   "host_password":self.passwd},
                     input_parameters={'count': 5, 'timeout':60})
         assert resp[0], resp[1]
         self.integrity_fault = True
@@ -1046,9 +1053,9 @@ class TestServerOS:
             assert resp[0], resp[1]
             LOGGER.info("Verified the generated alert on the SSPL")
 
-        LOGGER.info("Step 6: Checking CSM REST API for RAID missing alert")
+        LOGGER.info("Step 6: Checking CSM REST API for RAID missing resolved alert")
         resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
                     self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
         assert resp[0], resp[1]
-        LOGGER.info("Step 6: Successfully verified RAID missing alert using CSM"
+        LOGGER.info("Step 6: Successfully verified RAID missing resolved alert using CSM"
                     " REST API")
