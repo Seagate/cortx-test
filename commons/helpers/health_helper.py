@@ -496,6 +496,7 @@ class Health(Host):
         Get the clone set from node health pcs response
         param: crm_mon_res: pcs response from pcs status xml command
         param: no_node: no of nodes
+        param: setup_type: type of target
         return: dict
         """
         clone_set = {}
