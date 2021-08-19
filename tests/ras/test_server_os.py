@@ -373,17 +373,17 @@ class TestServerOS:
 
         self.default_disk_usage = self.sw_alert_obj.get_conf_store_vals(
             url=cons.SSPL_CFG_URL, field=cons.CONF_DISK_USAGE)
-        LOGGER.info("\nStep 1: Generate memory usage fault.")
+        LOGGER.info("\nStep 1: Generate disk usage fault.")
         resp = self.sw_alert_obj.gen_disk_usage_fault(
             test_cfg["delta_disk_usage"])
         assert resp[0], resp[1]
-        LOGGER.info("\nStep 1: Memory usage fault is created successfully.\n")
+        LOGGER.info("\nStep 1: Disk usage fault is created successfully.\n")
 
         LOGGER.info(
-            "\nStep 2: Keep the Memory usage above threshold for %s seconds",
+            "\nStep 2: Keep the Disk usage above threshold for %s seconds",
             self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("\nStep 2: Memory usage was above threshold for %s seconds\n",
+        LOGGER.info("\nStep 2: Disk usage was above threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
         if self.start_msg_bus:
@@ -395,7 +395,7 @@ class TestServerOS:
             LOGGER.info("\nVerified the generated alert on the SSPL\n")
 
         LOGGER.info(
-            "\nStep 3: Checking Memory usage fault alerts on CSM REST API")
+            "\nStep 3: Checking Disk usage fault alerts on CSM REST API")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
             self.starttime,
@@ -403,21 +403,21 @@ class TestServerOS:
             False,
             test_cfg["resource_type"])
         assert resp[0], resp[1]
-        LOGGER.info("\nStep 3: Successfully verified Memory usage fault alert on CSM REST API\n")
+        LOGGER.info("\nStep 3: Successfully verified Disk usage fault alert on CSM REST API\n")
 
         self.starttime = time.time()
-        LOGGER.info("\nStep 4: Resolving Memory usage fault.")
-        LOGGER.info("Updating default Memory usage threshold value")
+        LOGGER.info("\nStep 4: Resolving Disk usage fault.")
+        LOGGER.info("Updating default Disk usage threshold value")
         resp = self.sw_alert_obj.resolv_disk_usage_fault(
             self.default_disk_usage)
         assert resp[0], resp[1]
-        LOGGER.info("\nStep 4: Memory usage fault is resolved.\n")
+        LOGGER.info("\nStep 4: Disk usage fault is resolved.\n")
         self.default_mem_usage = False
 
-        LOGGER.info("\nStep 5: Keep the memory usage below threshold for %s seconds",
+        LOGGER.info("\nStep 5: Keep the Disk usage below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
         time.sleep(self.cfg["alert_wait_threshold"])
-        LOGGER.info("\nStep 5: Memory usage was below threshold for %s seconds\n",
+        LOGGER.info("\nStep 5: Disk usage was below threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
         if self.start_msg_bus:
@@ -428,7 +428,7 @@ class TestServerOS:
             assert resp[0], resp[1]
             LOGGER.info("\nVerified the generated alert on the SSPL\n")
 
-        LOGGER.info("\nStep 6: Checking Memory usage resolved alerts on CSM REST API")
+        LOGGER.info("\nStep 6: Checking Disk usage resolved alerts on CSM REST API")
 
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -439,7 +439,7 @@ class TestServerOS:
         assert resp[0], resp[1]
 
         LOGGER.info(
-            "\nStep 6: Successfully verified Memory usage alert on CSM REST API\n")
+            "\nStep 6: Successfully verified Disk usage alert on CSM REST API\n")
         LOGGER.info("\n%s Test completed -  %s %s\n", "#" * 50, test_case_name, "#" * 50)
 
     @pytest.mark.skip("CPU faults brings down motr - EOS-21174")
@@ -1109,14 +1109,6 @@ class TestServerOS:
         LOGGER.info("\nStep 2: Memory usage was above threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
-        # if self.start_msg_bus:
-        #    LOGGER.info("\nChecking the generated alert on SSPL")
-        #    alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
-        #    resp = self.ras_test_obj.alert_validation(
-        #        string_list=alert_list, restart=False)
-        #    assert resp[0], resp[1]
-        #    LOGGER.info("\nVerified the generated alert on the SSPL")
-
         LOGGER.info("\nStep 3: Checking if memory usage alert is present in new alerts")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -1140,14 +1132,6 @@ class TestServerOS:
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("\nStep 5: Memory usage was below threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
-
-        # if self.start_msg_bus:
-        #    LOGGER.info("\nChecking the generated alert on SSPL")
-        #    alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
-        #    resp = self.ras_test_obj.alert_validation(
-        #        string_list=alert_list, restart=False)
-        #    assert resp[0], resp[1]
-        #    LOGGER.info("\nVerified the generated alert on the SSPL")
 
         LOGGER.info("\nStep 6: Checking if memory usage resolved alert is present in new alerts")
         resp = self.csm_alert_obj.wait_for_alert(
