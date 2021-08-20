@@ -22,7 +22,7 @@
 from confluent_kafka import DeserializingConsumer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 from confluent_kafka.serialization import StringDeserializer
-from commons.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC
+from commons.params import BOOTSTRAP_SERVERS,TEST_EXEC_TOPIC,MAX_POLL_INTERVAL_MS,FETCH_MAX_WAIT_MS
 
 
 def dict_to_kafka_msg(obj, ctx):
@@ -60,7 +60,10 @@ def get_consumer():
                      'key.deserializer': string_deserializer,
                      'value.deserializer': json_deserializer,
                      'group.id': TEST_EXEC_TOPIC,
-                     'auto.offset.reset': "earliest"}
+                     'auto.offset.reset': "earliest",
+                     'max.poll.interval.ms': MAX_POLL_INTERVAL_MS,
+                     'fetch.max.wait.ms': FETCH_MAX_WAIT_MS
+                     }
 
     consumer = DeserializingConsumer(consumer_conf)
     consumer.subscribe([TEST_EXEC_TOPIC])

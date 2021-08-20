@@ -530,7 +530,8 @@ def check_kafka_msg_trigger_test(args):
                 p.join()
         except KeyboardInterrupt:
             break
-        except BaseException:
+        except BaseException as exce:
+            print(exce)
             received_stop_signal = True
     consumer.close()
 
