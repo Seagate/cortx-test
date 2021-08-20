@@ -127,7 +127,7 @@ class TestHANodeStartStop:
             "Precondition: Health status shows all components as online & PCS looks clean.")
 
         LOGGER.info("Precondition: Create csm user having manage privileges.")
-        self.manage_user = "csm-user-{}".format(time.perf_counter_ns())
+        self.manage_user = "manage-user-{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.manage_user)
         resp = self.csm_obj.csm_user_create(
             self.manage_user, self.email_id, self.csm_passwd, role="manage")
