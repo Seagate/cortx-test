@@ -367,6 +367,6 @@ CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
 
 # Expect utils
-CMD_PDU_POWER_ON = "./scripts/expect_utils/expect_power_on {0} {1} {2} {3}"
-CMD_PDU_POWER_OFF = "./scripts/expect_utils/expect_power_off {0} {1} {2} {3}"
-CMD_PDU_POWER_CYCLE = "./scripts/expect_utils/expect_power_off {0} {1} {2} {3} {4}"
+CMD_PDU_POWER_ON = "expect scripts/expect_utils/expect_power_on.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_OFF = "expect scripts/expect_utils/expect_power_off.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_CYCLE = "expect scripts/expect_utils/expect_power_cycle.exp {0} {1} {2} {3} {4}"
