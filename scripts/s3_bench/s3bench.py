@@ -227,11 +227,11 @@ def s3bench(
         LOGGER.debug("Response: %s", res1)
         result.append(res1[1])
 
-    with open(log_path, "r") as r_fd:
-        r_data = r_fd.readlines()
-
-    for line in r_data:
-        LOGGER.debug(line)
+    # with open(log_path, "r") as r_fd:
+    #     r_data = r_fd.readlines()
+    #
+    # for line in r_data:
+    #     LOGGER.debug(line)
     # Creating log file
     # log_path = create_log(result)
     # Creating json response this function skips the verbose data
