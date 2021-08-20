@@ -26,8 +26,6 @@ export ADMIN_PWD="${ADMIN_PWD}"
 export HOSTNAME="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
-python3.7 setup.py install
-python3.7 setup.py develop
 rm -rf build/
 deactivate
 '''
