@@ -64,8 +64,8 @@ class CortxCliClient:
         :return: None
         """
         if not self.session_obj:
-            self.session_obj = redexpect.RedExpect(
-                expect_timeout=self.expect_timeout)
+            self.session_obj = redexpect.RedExpect(prompt=r'.+?[\#\$\>\:]\s+',
+                                                   expect_timeout=self.expect_timeout)
             self.session_obj.login(
                 hostname=self.host,
                 username=self.username,
