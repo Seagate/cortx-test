@@ -26,7 +26,6 @@ export ADMIN_PWD="${ADMIN_PWD}"
 export HOSTNAME="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
-rm -rf build/
 deactivate
 '''
 			}
