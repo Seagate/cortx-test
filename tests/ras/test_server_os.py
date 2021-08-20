@@ -1009,7 +1009,7 @@ class TestServerOS:
     @pytest.mark.skip("RAID integrity not reported - EOS-23324")
     def test_22781_raid_integrity(self):
         """
-        RAID integrity fault
+        Generate and resolve RAID integrity fault.
         """
         LOGGER.info(
             "STARTED: TEST-22781 RAID integrity")

@@ -858,7 +858,7 @@ class GenerateAlertWrapper:
         ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
         node_connect = Node(hostname=host, username=h_user, password=h_pwd)
 
-        LOGGER.info("Simulating network cable fault using sysfs")
+        LOGGER.info("Simulating RAID integrity fault resolved using sysfs")
         try:
             LOGGER.info("Update sysfs_base_path in sspl.conf file")
             ras_test_obj.set_conf_store_vals(
@@ -869,7 +869,7 @@ class GenerateAlertWrapper:
                                                    field=cons.CONF_SYSFS_BASE_PATH)
             LOGGER.debug("Response: %s", res)
 
-            LOGGER.info("Update dimm sensor in sspl.conf file")
+            LOGGER.info("Update RAID sensor in sspl.conf file")
             ras_test_obj.set_conf_store_vals(
                 url=cons.SSPL_CFG_URL,
                 encl_vals={'CONF_RAID_INTEGRITY': 10})
