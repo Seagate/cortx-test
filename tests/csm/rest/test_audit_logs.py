@@ -352,3 +352,73 @@ class TestAuditLogs():
             "specified parameters and in specified format ")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22361')
+    def test_22361(self):
+        """Test single sort by user parameters on view , download operation on S3 audit log."""
+        self.log.info("STARTED: Test single sort by user parameters on view , download operation"
+                      " on S3 audit log.")
+        self.log.info("Step 1: Create 10 S3 users.")
+        self.log.info("Step 2: Login from each S3 user and create buckets on it.")
+        self.log.info("Step 3: Perform Read and write operations on the above buckets.")
+        self.log.info("Setp 4: Delete the bucket and associated S3 account.")
+        self.log.info("Step 5: GET S3 audit log sorted by User.")
+        self.log.info("Step 6: View, Download CSM audit log is sorted by User.")
+        self.log.info("Step 7: Repeat the above steps for specified number of iterations.")
+        self.log.info("ENDED: Test single sort by user parameters on view , download operation"
+                      " on S3 audit log.")
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22360')
+    def test_22360(self):
+        """Test single sort by timestamp parameters on view , download operation on S3 audit log."""
+        self.log.info("STARTED: Test single sort by timestamp parameters on view , download "
+                      "operation on S3 audit log.")
+        self.log.info("Step 1: Pre-requisite, Create admin, S3, IAM users if not created.")
+        self.log.info("Step 2: Login using S3 user and create bucket.")
+        self.log.info("Step 3: Perform create a bucket after every 60 seconds for the specified"
+                      " number of mins. Make a note of the time stamp when the bucket was created.")
+        self.log.info("Step 4: View S3 audit log sorted by timestamp.")
+        self.log.info("Step 5: Download CSM audit log is sorted by User.")
+        self.log.info("ENDED: Test single sort by timestamp parameters on view , download "
+                      "operation on S3 audit log.")
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22359')
+    def test_22359(self):
+        """Test single sort by response code parameters on view , download operation on S3 audit log."""
+        self.log.info("STARTED: Test single sort by response code parameters on view, download"
+                      " operation on S3 audit log")
+        self.log.info("Step 1: Pre-requisite, Create new S3 account")
+        self.log.info("Step 2: Login using S3 user and perform, Valid Create bucket operation, "
+                      "Invalid Create bucket operation")
+        self.log.info("Step 3: Login using admin user and view S3 audit log")
+        self.log.info("Step 4: Login using admin user and download S3 audit log")
+        self.log.info("ENDED: Test single sort by response code parameters on view , download "
+                      "operation on S3 audit log")
+
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22358')
+    def test_22358(self):
+        """Test filtering by user parameters on view , download operation on S3 audit log."""
+        self.log.info("STARTED: Test filtering by user parameters on view , download operation on"
+                      " S3 audit log")
+        self.log.info("Step 1: Create an S3 user which is the same as the specified number of"
+                      " iteration.")
+        self.log.info("Step 2: Login using above S3 account.")
+        self.log.info("Step 3: Perform the following operations using S3 login.")
+        self.log.info("Step 3.1 Create bucket")
+        self.log.info("Step 3.2 Perform IO on the created bucket")
+        self.log.info("Step 3.3 Delete the created bucket.")
+        self.log.info("Step 4: Delete the S3 account.")
+        self.log.info("Step 5: View S3 audit log sorted by User, Endpoint: /auditlogs/show/S3,"
+                      " parameter: filter by above S3 user.")
+        self.log.info("Step 6: Download CSM audit log is sorted by User")
+        self.log.info("Step 7: Repeat the above operations for different s3 user.")
+        self.log.info("ENDED: Test filtering by user parameters on view , download operation on"
+                      " S3 audit log")
