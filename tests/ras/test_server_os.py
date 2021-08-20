@@ -1033,14 +1033,6 @@ class TestServerOS:
         LOGGER.info("\nStep 2: CPU usage was above threshold for %s seconds\n",
                     self.cfg["alert_wait_threshold"])
 
-       # if self.start_msg_bus:
-       #    LOGGER.info("\nChecking the generated alert on SSPL")
-       #    alert_list = [test_cfg["resource_type"], const.AlertType.FAULT]
-       #    resp = self.ras_test_obj.alert_validation(
-       #        string_list=alert_list, restart=False)
-       #    assert resp[0], resp[1]
-       #    LOGGER.info("\nVerified the generated alert on the SSPL")
-
         LOGGER.info("\nStep 3: Checking if cpu fault is present in new alerts")
         resp = self.csm_alert_obj.wait_for_alert(
             self.cfg["csm_alert_gen_delay"],
@@ -1064,14 +1056,6 @@ class TestServerOS:
         time.sleep(self.cfg["alert_wait_threshold"])
         LOGGER.info("\nStep 5: cpu usage was below threshold for %s seconds",
                     self.cfg["alert_wait_threshold"])
-
-        # if self.start_msg_bus:
-        #    LOGGER.info("\nChecking the generated alert on SSPL")
-        #    alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
-        #    resp = self.ras_test_obj.alert_validation(
-        #        string_list=alert_list, restart=False)
-        #    assert resp[0], resp[1]
-        #    LOGGER.info("\nVerified the generated alert on the SSPL")
 
         LOGGER.info("\nStep 6: Checking if cpu fault resolved is present in new alerts")
         resp = self.csm_alert_obj.wait_for_alert(
