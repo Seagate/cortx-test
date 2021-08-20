@@ -31,12 +31,14 @@ import pytest
 from commons import commands as cmds
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.helpers.bmc_helper import Bmc
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons.helpers.bmc_helper import Bmc
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG, RAS_TEST_CFG
+from config import CMN_CFG
+from config import HA_CFG
+from config import RAS_TEST_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.ha.ha_common_libs import HALibs
@@ -87,7 +89,7 @@ class TestHANodeStartStop:
         cls.lpdu_encl_port = []
         cls.restored = True
         cls.starttime = None
-        cls.user_data = cls.manage_user = cls.email_id = cls.s3_data = None
+        cls.user_data = cls.manage_user = cls.email_id = cls.s3_data = cls.monitor_user = None
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -125,6 +127,7 @@ class TestHANodeStartStop:
         self.s3_data = None
         self.user_data = None
         self.manage_user = None
+        self.monitor_user = None
         LOGGER.info(
             "Precondition: Check PCS is up and running without any failures.")
         for hlt_obj in self.hlt_list:
@@ -140,7 +143,7 @@ class TestHANodeStartStop:
             "Precondition: Health status shows all components as online & PCS looks clean.")
 
         LOGGER.info("Precondition: Create csm user having manage privileges.")
-        self.manage_user = "csm-user-{}".format(time.perf_counter_ns())
+        self.manage_user = "manage-user-{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.manage_user)
         resp = self.csm_obj.csm_user_create(
             self.manage_user, self.email_id, self.csm_passwd, role="manage")
@@ -157,6 +160,10 @@ class TestHANodeStartStop:
         LOGGER.info("Cleanup: Delete CSM manage user.")
         resp = self.csm_obj.csm_user_delete(user_name=self.manage_user)
         assert_utils.assert_true(resp[0], resp[1])
+        if self.monitor_user:
+            LOGGER.info("Cleanup: Delete CSM monitor user.")
+            resp = self.csm_obj.csm_user_delete(user_name=self.monitor_user)
+            assert_utils.assert_true(resp[0], resp[1])
         if not self.restored:
             for node in range(self.num_nodes):
                 # Check if node needs to be power on from BMC/ssc-cloud.
@@ -740,3 +747,128 @@ class TestHANodeStartStop:
         LOGGER.info(
             "Completed: Test to Power off node one by one alongwith storage and start it back "
             "through cortx REST with admin/manage user.")
+
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-25219")
+    @CTFailOn(error_handler)
+    def test_node_stop_start_moniter_user(self):
+        """
+        Test to Check Negative scenario: Stop services/start node operation
+        not supported by monitor user using REST
+        """
+        LOGGER.info(
+            "Started: Test to Check node Stop/Start operation not supported by monitor user.")
+        node = self.system_random.choice(list(range(self.num_nodes)))
+        opt_user = self.system_random.choice(self.user_data)
+        self.restored = False
+        LOGGER.info("Create user with monitor privileges.")
+        self.monitor_user = "monitor-user-{}".format(time.perf_counter_ns())
+        email_id = "{}@seagate.com".format(self.monitor_user)
+        resp = self.csm_obj.csm_user_create(
+            self.monitor_user, email_id, self.csm_passwd, role="monitor")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-25219')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_data = resp[2]
+        LOGGER.info("Step 1: IOs are started successfully.")
+        LOGGER.info(
+            "Step 2: Login to cortx REST with %s user and try to stop services on %s",
+            self.monitor_user,
+            self.srvnode_list[node])
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='stop',
+            resource='node',
+            resource_id=node,
+            login_as={"username": self.monitor_user, "password": self.csm_passwd})
+        assert_utils.assert_false(resp[0], resp[1])
+        LOGGER.info(
+            "Step 2: Verified stop services command by % user failed with %s response",
+            self.monitor_user,
+            resp[1])
+        LOGGER.info(
+            "Step 3: Login to cortx REST with %s user and try to poweroff %s",
+            self.monitor_user,
+            self.srvnode_list[node])
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='poweroff',
+            resource='node',
+            resource_id=node,
+            login_as={"username": self.monitor_user, "password": self.csm_passwd})
+        assert_utils.assert_false(resp[0], resp[1])
+        LOGGER.info(
+            "Step 3: Verified poweroff node command by % user failed with %s response",
+            self.monitor_user,
+            resp[1])
+        LOGGER.info(
+            "Step 4: Login to cortx REST with %s user and try to stop services on %s",
+            opt_user,
+            self.srvnode_list[node])
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='stop',
+            resource='node',
+            resource_id=node,
+            login_as={"username": opt_user, "password": self.csm_passwd})
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = system_utils.check_ping(host=self.host_list[node])
+        assert_utils.assert_true(
+            resp, f"{self.host_list[node]} is failed to ping")
+        resp = self.ha_rest.check_csr_health_status_rest("degraded")
+        assert_utils.assert_true(resp[0], resp[1])
+        check_rem_node = [
+            "offline" if num == node else "online" for num in range(
+                self.num_nodes)]
+        resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_obj.check_pcs_status_resp(
+            node, self.node_list, self.hlt_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 4: PCS services stopped for %s, health status is offline but still pinging",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 5: Login to cortx REST with %s user and try to start the offline %s",
+            self.monitor_user,
+            self.srvnode_list[node])
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='start',
+            resource='node',
+            resource_id=node,
+            login_as={"username": self.monitor_user, "password": self.csm_passwd})
+        assert_utils.assert_false(resp[0], resp[1])
+        LOGGER.info("Step 5: Verified start node command by % user failed with %s response",
+                    self.monitor_user, resp[1])
+        resp = self.csm_obj.csm_user_delete(user_name=self.monitor_user)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.monitor_user = None
+        LOGGER.info(
+            "Step 6: Login to cortx REST with %s user and start the offline %s",
+            opt_user,
+            self.srvnode_list[node])
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='start',
+            resource='node',
+            resource_id=node,
+            login_as={"username": opt_user, "password": self.csm_passwd})
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_rest.check_csr_health_status_rest("online")
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
+        assert_utils.assert_true(resp[0], resp[1])
+        for hlt_obj in self.hlt_list:
+            resp = hlt_obj.check_node_health()
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 6: Verified all the services on %s started and health status is online",
+            self.srvnode_list[node])
+        LOGGER.info("Step 7: Check DI for IOs run")
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.restored = True
+        LOGGER.info("Step 7: Verified DI for IOs run.")
+        LOGGER.info(
+            "Completed: Test to Check node Stop/Start operation not supported by monitor user.")
