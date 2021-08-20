@@ -365,3 +365,8 @@ CMD_INSTALL_TOOL = "yum install {0}"
 CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+
+# Expect utils
+CMD_PDU_POWER_ON = "./scripts/expect_utils/expect_power_on {0} {1} {2} {3}"
+CMD_PDU_POWER_OFF = "./scripts/expect_utils/expect_power_off {0} {1} {2} {3}"
+CMD_PDU_POWER_CYCLE = "./scripts/expect_utils/expect_power_off {0} {1} {2} {3} {4}"

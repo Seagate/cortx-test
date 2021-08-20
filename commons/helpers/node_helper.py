@@ -461,14 +461,11 @@ class Node(Host):
             self.execute_cmd("yum install expect")
 
         if status.lower() == "on":
-            cmd = f"./scripts/expect_utils/expect_power_on" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} on"
+            cmd = commands.CMD_PDU_POWER_ON.format(pdu_ip, pdu_user, pdu_pwd, node_slot)
         elif status.lower() == "off":
-            cmd = f"./scripts/expect_utils/expect_power_off" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} off"
+            cmd = commands.CMD_PDU_POWER_OFF.format(pdu_ip, pdu_user, pdu_pwd, node_slot)
         else:
-            cmd = f"./scripts/expect_utils/expect_power_cycle" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} {timeout}"
+            cmd = commands.CMD_PDU_POWER_CYCLE.format(pdu_ip, pdu_user, pdu_pwd, node_slot, timeout)
 
         try:
             if not cmd:
