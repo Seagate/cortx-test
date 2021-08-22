@@ -43,6 +43,13 @@ def get_statistics_schema(data):
     return entry
 
 
+def get_graphs_schema(data, xfilter):
+    entry = get_common_schema(data)
+    entry[xfilter] = data[xfilter]
+
+    return entry
+
+  
 def get_complete_schema(data):
     entry = get_common_schema(data)
     entry['Build'] = data['build']

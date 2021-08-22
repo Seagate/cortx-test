@@ -1,71 +1,31 @@
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
-import plotly.graph_objs as go
 
 from common import app
-from threading import Thread
-
-from Performance.graphs.graphs_functions import get_data_for_graphs, get_metrics, get_yaxis_heading,\
-    get_structure_trace, get_operations
+from Performance.backend import get_graph_layout, plot_graphs_with_given_data, get_data_for_graphs
 
 
-def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
-                  branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param):
-    yet_to_plot_traces = True
+def get_yaxis_heading(metric):
+    if metric == "Throughput":
+        return "{} (MBps)".format(metric)
+    elif metric == "IOPS":
+        return "{}".format(metric)
+    else:
+        return "{} (ms)".format(metric)
 
-    for op in operations:
-        [x_axis_first, y_data_first] = get_data_for_graphs(xfilter, release1, branch1, option1, profile1, bench,
-                                                           config, op, metric, param)
 
-        if flag and release2 and branch2 and option2:
-            [x_axis_second, y_data_second] = get_data_for_graphs(xfilter, release2, branch2, option2, profile2, bench,
-                                                                 config, op, metric, param)
-
-            if len(x_axis_first) > len(x_axis_second):
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
-
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
-            else:
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
-
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
-
-            yet_to_plot_traces = False
-
-        if yet_to_plot_traces:
-            trace = get_structure_trace(
-                        go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-            fig.add_trace(trace)
-            fig_all.add_trace(trace)
-
-    fig.update_layout(
-        autosize=True,
-        height=625,
-        showlegend=True,
-        title='<b>{} Plot</b>'.format(metric),
-        title_font_size=25,
-        title_font_color='#343a40',
-        legend_title='Glossary',
-        yaxis=dict(
-            title_text=y_axis_heading,
-            titlefont=dict(size=23)),
-        xaxis=dict(
-            title_text=x_axis_heading,
-            titlefont=dict(size=23)
-        ),
-    )
+def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data):
+    plot_data['option'] = data['xfilter']
+    plot_data['custom'] = data['custom']
+    plot_data['metric'] = metric
+    plot_data['y_heading'] = get_yaxis_heading(metric)
+    for operation in operations:
+        plot_data['operation'] = operation
+        for col in df.columns:
+            if col.startswith(" ".join([operation, metric])):
+                y_data = df[col]
+                break
+        plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data)
 
 
 @app.callback(
@@ -113,7 +73,7 @@ def update_Ttfb_Style(bench):
     prevent_initial_call=True
 )
 def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1, nodes1, pfull1, itrns1, custom1, sessions1, buckets1,
-        release2, branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
+                  release2, branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
     return_val = [None] * 5
     if not n_clicks:
         raise PreventUpdate
@@ -127,64 +87,60 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
 
     if n_clicks > 0:
         data = {
-            'release': release1, xfilter: option1, 'branch': branch1,
+            'release': release1, 'xfilter': xfilter, xfilter: option1, 'branch': branch1,
             'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
             'buckets': buckets1, 'sessions': sessions1, 'name': bench
         }
+        if flag:
+            data_optional = {
+                'release': release2, 'xfilter': xfilter, xfilter: option2, 'branch': branch2,
+                'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
+                'buckets': buckets2, 'sessions': sessions2, 'name': bench
+            }
 
-        dataframe = get_data_from_database(data)
-        figs = []
-        fig_all = go.Figure()
-        param = None
-        if xfilter == 'Build':
-            x_axis_heading = 'Object Sizes'
+        if operation == 'both':
+            operations = ['Read', 'Write']
         else:
-            x_axis_heading = 'Builds'
+            operations = [operation]
 
-        operations = get_operations(bench, operation)
-        metrics = get_metrics(bench)
-        threads = []
+        if bench == 'S3bench':
+            stats = ["Throughput", "IOPS", "Latency", "TTFB"]
+        else:
+            stats = ["Throughput", "IOPS", "Latency"]
 
-        for metric in metrics:
-            fig = go.Figure()
-            y_axis_heading = get_yaxis_heading(metric)
+        plot_data = {}
+        if xfilter == 'Build':
+            plot_data['x_heading'] = 'Object Sizes'
+        else:
+            plot_data['x_heading'] = 'Builds'
+        plot_data['metric'] = 'all'
+        fig_all = get_graph_layout(plot_data)
+        figs = []
 
-            if metric in ['Latency', 'TTFB'] and bench != 'Hsbench':
-                param = 'Avg'
-            else:
-                param = None
+        for metric in stats:
+            fig = get_graph_layout(plot_data)
+            df = get_data_for_graphs(data, xfilter)
+            x_data = df.iloc[:, 0]
+            not_plotted = True
+            if flag:
+                df_optional = get_data_for_graphs(data_optional, xfilter)
+                x_data_optional = df_optional.iloc[:, 0]
 
-            temp = Thread(target=graphs_global, args=(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
-                                                      branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param))
+                if len(x_data) > len(x_data_optional):
+                    get_graphs(fig, fig_all, df, operations,
+                               plot_data, data, metric, x_data)
+                    get_graphs(fig, fig_all, df_optional, operations,
+                               plot_data, data_optional, metric, x_data_optional)
 
-            temp.start()
-            threads.append(temp)
+                    not_plotted = False
+
+            if not_plotted:
+                get_graphs(fig, fig_all, df, operations,
+                           plot_data, data, metric, x_data)
+
             figs.append(fig)
 
-        for thread in threads:
-            thread.join()
-
-        fig_all.update_layout(
-            autosize=True,
-            height=625,
-            showlegend=True,
-            title='<b>All Plots in One</b>',
-            title_font_size=25,
-            title_font_color='#343a40',
-            legend_title='Glossary',
-            yaxis=dict(
-                title_text='Data',
-                titlefont=dict(size=23)),
-            xaxis=dict(
-                title_text=x_axis_heading,
-                titlefont=dict(size=23)
-            ),
-        )
-
-        if bench != 'S3bench':
-            figs.append(fig)
         figs.append(fig_all)
-
         return_val = figs
 
     return return_val

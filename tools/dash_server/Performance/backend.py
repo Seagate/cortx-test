@@ -22,11 +22,12 @@
 from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 import pandas as pd
 from Performance.schemas import *
-from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, get_db_details, keys_exists, round_off, check_empty_list
+from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list
 from Performance.mongodb_api import find_documents, count_documents
 from Performance.styles import style_dashtable_header, style_table_cell
 import dash_table
 import dash_html_components as html
+import plotly.graph_objs as go
 
 
 def get_average_data(count, data, stat, subparam, multiplier):
@@ -60,7 +61,8 @@ def get_data_from_database(data):
         }
 
     for obj in objects:
-        get_benchmark_data(data_needed_for_query, results, obj)
+        data_needed_for_query['objsize'] = obj
+        get_benchmark_data(data_needed_for_query, results)
 
     df = pd.DataFrame(results)
     df = df.T
@@ -71,11 +73,56 @@ def get_data_from_database(data):
     return df
 
 
-def get_benchmark_data(data_needed_for_query, results, obj):
+def get_data_for_graphs(data, xfilter):
+    data_needed_for_query = data
+    query = get_graphs_schema(data_needed_for_query, xfilter)
+    if xfilter == 'Build':
+        objects = get_distinct_keys(
+            data_needed_for_query['release'], 'Object_Size', query)
+        objects = sort_object_sizes_list(objects)
+
+        if data_needed_for_query['name'] == 'S3bench':
+            results = {
+                'Object Sizes': statistics_column_headings
+            }
+        else:
+            results = {
+                'Object Sizes': multiple_buckets_headings
+            }
+
+        for obj in objects:
+            data_needed_for_query['objsize'] = obj
+            get_benchmark_data(data_needed_for_query, results)
+    else:
+        builds = get_distinct_keys(
+            data_needed_for_query['release'], 'Build', query)
+        builds = sort_builds_list(builds)
+
+        if data_needed_for_query['name'] == 'S3bench':
+            results = {
+                'Builds': statistics_column_headings
+            }
+        else:
+            results = {
+                'Builds': multiple_buckets_headings
+            }
+        for build in builds:
+            data_needed_for_query['build'] = build
+            get_benchmark_data(data_needed_for_query, results)
+    
+    df = pd.DataFrame(results)
+    df = df.T
+    df.reset_index(inplace=True)
+    df.columns = df.iloc[0]
+    df = df[1:]
+
+    return df
+
+
+def get_benchmark_data(data_needed_for_query, results, xfilter):
     temp_data = []
     added_objects = False
     operations = ["Write", "Read"]
-    data_needed_for_query['objsize'] = obj
 
     if data_needed_for_query["name"] == 'S3bench':
         stats = ["Throughput", "IOPS", "Latency", "TTFB"]
@@ -120,7 +167,10 @@ def get_benchmark_data(data_needed_for_query, results, obj):
                         count, db_data, stat, "Avg", 1))
 
     if not check_empty_list(temp_data):
-        results[obj] = temp_data
+        if xfilter == 'Build':
+            results[data_needed_for_query['objsize']] = temp_data
+        else:
+            results[data_needed_for_query['build']] = temp_data
 
 
 def get_dash_table_from_dataframe(df, bench, column_id):
@@ -248,3 +298,44 @@ def get_bucktops(data_needed_for_query):
         data_frame = pd.DataFrame()
 
     return data_frame
+
+
+def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
+    trace = go.Scatter(
+        name='{} {} - {} {}'.format(
+            plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
+        x=x_data,
+        y=y_data,
+        hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
+            plot_data['operation'], plot_data['option'], plot_data['custom']),
+    )
+
+    fig.add_trace(trace)
+    fig_all.add_trace(trace)
+
+
+def get_graph_layout(plot_data):
+    if plot_data['metric'] != 'all':
+        title_string = '<b>{} Plot</b>'.format(plot_data['metric'])
+    else:
+        title_string = '<b>All Plots in One</b>'
+
+    fig = go.Figure()
+    fig.update_layout(
+        autosize=True,
+        height=625,
+        showlegend=True,
+        title=title_string,
+        title_font_size=25,
+        title_font_color='#343a40',
+        legend_title='Glossary',
+        xaxis=dict(
+            title_text=plot_data['x_heading'],
+            titlefont=dict(size=23)
+        ),
+        yaxis=dict(
+            title_text=plot_data['y_heading'],
+            titlefont=dict(size=23)),
+    )
+
+    return fig
