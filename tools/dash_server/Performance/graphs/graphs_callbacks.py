@@ -14,11 +14,9 @@ def get_yaxis_heading(metric):
         return "{} (ms)".format(metric)
 
 
-def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data):
-    plot_data['option'] = data['xfilter']
+def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data, xfilter_tag):
+    plot_data['option'] = data[xfilter_tag]
     plot_data['custom'] = data['custom']
-    plot_data['metric'] = metric
-    plot_data['y_heading'] = get_yaxis_heading(metric)
     for operation in operations:
         plot_data['operation'] = operation
         for col in df.columns:
@@ -86,14 +84,24 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             raise PreventUpdate
 
     if n_clicks > 0:
+        plot_data = {}
+        figs = []
+
+        if xfilter == 'Build':
+            plot_data['x_heading'] = 'Object Sizes'
+            xfilter_tag = 'build'
+        else:
+            plot_data['x_heading'] = 'Builds'
+            xfilter_tag = 'objsize'
+
         data = {
-            'release': release1, 'xfilter': xfilter, xfilter: option1, 'branch': branch1,
+            'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
             'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
             'buckets': buckets1, 'sessions': sessions1, 'name': bench
         }
         if flag:
             data_optional = {
-                'release': release2, 'xfilter': xfilter, xfilter: option2, 'branch': branch2,
+                'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
                 'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
                 'buckets': buckets2, 'sessions': sessions2, 'name': bench
             }
@@ -108,35 +116,34 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         else:
             stats = ["Throughput", "IOPS", "Latency"]
 
-        plot_data = {}
-        if xfilter == 'Build':
-            plot_data['x_heading'] = 'Object Sizes'
-        else:
-            plot_data['x_heading'] = 'Builds'
         plot_data['metric'] = 'all'
+        plot_data['y_heading'] = 'Data'
         fig_all = get_graph_layout(plot_data)
-        figs = []
 
         for metric in stats:
-            fig = get_graph_layout(plot_data)
-            df = get_data_for_graphs(data, xfilter)
-            x_data = df.iloc[:, 0]
             not_plotted = True
+            plot_data['metric'] = metric
+            plot_data['y_heading'] = get_yaxis_heading(metric)
+
+            fig = get_graph_layout(plot_data)
+            df = get_data_for_graphs(data, xfilter, xfilter_tag)
+            x_data = df.iloc[:, 0]
+
             if flag:
-                df_optional = get_data_for_graphs(data_optional, xfilter)
+                df_optional = get_data_for_graphs(data_optional, xfilter, xfilter_tag)
                 x_data_optional = df_optional.iloc[:, 0]
 
                 if len(x_data) > len(x_data_optional):
                     get_graphs(fig, fig_all, df, operations,
-                               plot_data, data, metric, x_data)
-                    get_graphs(fig, fig_all, df_optional, operations,
-                               plot_data, data_optional, metric, x_data_optional)
+                               plot_data, data, metric, x_data, xfilter_tag)
+                    get_graphs(fig, fig_all, df_optional, operations, plot_data,
+                               data_optional, metric, x_data_optional, xfilter_tag)
 
                     not_plotted = False
 
             if not_plotted:
                 get_graphs(fig, fig_all, df, operations,
-                           plot_data, data, metric, x_data)
+                           plot_data, data, metric, x_data, xfilter_tag)
 
             figs.append(fig)
 

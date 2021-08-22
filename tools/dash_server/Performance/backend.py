@@ -73,9 +73,9 @@ def get_data_from_database(data):
     return df
 
 
-def get_data_for_graphs(data, xfilter):
+def get_data_for_graphs(data, xfilter, xfilter_tag):
     data_needed_for_query = data
-    query = get_graphs_schema(data_needed_for_query, xfilter)
+    query = get_graphs_schema(data_needed_for_query, xfilter, xfilter_tag)
     if xfilter == 'Build':
         objects = get_distinct_keys(
             data_needed_for_query['release'], 'Object_Size', query)
@@ -115,11 +115,11 @@ def get_data_for_graphs(data, xfilter):
     df.reset_index(inplace=True)
     df.columns = df.iloc[0]
     df = df[1:]
-
+    print(df)
     return df
 
 
-def get_benchmark_data(data_needed_for_query, results, xfilter):
+def get_benchmark_data(data_needed_for_query, results):
     temp_data = []
     added_objects = False
     operations = ["Write", "Read"]
@@ -167,7 +167,7 @@ def get_benchmark_data(data_needed_for_query, results, xfilter):
                         count, db_data, stat, "Avg", 1))
 
     if not check_empty_list(temp_data):
-        if xfilter == 'Build':
+        if data_needed_for_query['xfilter'] == 'Build':
             results[data_needed_for_query['objsize']] = temp_data
         else:
             results[data_needed_for_query['build']] = temp_data

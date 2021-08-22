@@ -43,9 +43,9 @@ def get_statistics_schema(data):
     return entry
 
 
-def get_graphs_schema(data, xfilter):
+def get_graphs_schema(data, xfilter, xfilter_tag):
     entry = get_common_schema(data)
-    entry[xfilter] = data[xfilter]
+    entry[xfilter] = data[xfilter_tag]
 
     return entry
 

@@ -27,7 +27,7 @@ import dash_daq as daq
 
 from Performance.styles import style_sub_tab, style_sub_label,\
         style_dropdown_small, style_dropdown_small_2, \
-        style_dropdown_medium, style_dropdown_large, dict_button_style, dict_Style_Stats_input_options
+        style_dropdown_medium, dict_button_style
 
 # Variable declarations
 Xfilter = [
@@ -75,6 +75,13 @@ graphs_input_options = [
                 value='both',
                 style=style_dropdown_medium
             ),
+            Dropdown(
+                id="graphs_obj_size_dropdown",
+                options=operations,
+                placeholder="Operation",
+                value='both',
+                style={'display': 'none'}
+            )
         ],
         justify='center'
     ),
