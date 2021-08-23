@@ -366,6 +366,12 @@ CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
 SET_PIPEFAIL = "set -eu -o pipefail"
+
+# Expect utils
+CMD_PDU_POWER_ON = "expect scripts/expect_utils/expect_power_on.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_OFF = "expect scripts/expect_utils/expect_power_off.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_CYCLE = "expect scripts/expect_utils/expect_power_cycle.exp {0} {1} {2} {3} {4}"
+
 # Ldap commands to fetch user, password.
 LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserver.properties " \
             "getkey --key ldapLoginDN"
