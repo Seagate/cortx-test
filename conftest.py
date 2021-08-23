@@ -991,7 +991,7 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def get_db_cfg(request):
     from config import S3_CFG
     if request.config.getoption('--target'):

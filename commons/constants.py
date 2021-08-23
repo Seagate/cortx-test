@@ -92,6 +92,7 @@ CONF_CPU_USAGE = "NODEDATAMSGHANDLER>cpu_usage_threshold"
 CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
 CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
 CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
+CONF_CPU_FAULT_EN = "CPUFAULTSENSOR>monitor"
 SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
 SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
