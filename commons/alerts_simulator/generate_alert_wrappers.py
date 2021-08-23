@@ -915,7 +915,7 @@ class GenerateAlertWrapper:
         ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
         LOGGER.info("Getting all available sensors for sensor type: %s", sensor_type)
         resp = ras_test_obj.get_ipmi_sensor_list(sensor_type)
-        sensor_name = random.SystemRandom().choice(seq=resp[1])
+        sensor_name = resp[1][0]
         resp_list = list()
         for state in sensor_states:
             resp = ras_test_obj.assert_deassert_sensor_state(sensor_name=sensor_name,

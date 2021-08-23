@@ -337,3 +337,14 @@ test_23682:
     - "Failure detected"
     - "Power Supply AC lost"
   resource_type: "node:fru:psu"
+
+test_23633:
+  sensor_type: "FAN"
+  sensor_states:
+    - "lnr"
+    - "lcr"
+    - "lnc"
+    - "unc"
+    - "ucr"
+    - "unr"
+  resource_type: "node:fru:fan"
