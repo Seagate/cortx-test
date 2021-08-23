@@ -875,7 +875,7 @@ class GenerateAlertWrapper:
             res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
                                                    field=cons.CONF_RAID_INTEGRITY)
             LOGGER.debug("Response: %s", res)
-            
+
             cmd = "echo idle  > /tmp/sys/block/md0/md/sync_action"
             LOGGER.info("Executing command : %s", cmd)
             resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
