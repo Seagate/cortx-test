@@ -17,59 +17,59 @@ Click Graphical Tab
     Wait Until Element Is Visible  ${GRAPHICAL_TAB_ID}  timeout=30
     Navigate To Page  GRAPHICAL_TAB_ID
 
-Check if Node Stops
+Click Node Stop
     [Documentation]  Test keyword is to check node stop scenario
     Wait Until Element Is Visible  ${GRAPH_NODE_ID}  timeout=30
     click Element  ${GRAPH_NODE_ACTION_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_STOP_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_YES_ID}
-    sleep  10s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_OK_ID}
     sleep  10s
 
-Check if Node Poweroff
+Click Node Poweroff
     [Documentation]  Test keyword is to check node poweroff scenario
     Wait Until Element Is Visible  ${GRAPH_NODE_ID}  timeout=30
     click Element  ${GRAPH_NODE_ACTION_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_POWEROFF_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_YES_ID}
-    sleep  10s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_OK_ID}
     sleep  10s
 
-Check if Node Power And Storageoff
+Click Node Power And Storageoff
     [Documentation]  Test keyword is to check node power and storageoff scenario
     Wait Until Element Is Visible  ${GRAPH_NODE_ID}  timeout=30
     click Element  ${GRAPH_NODE_ACTION_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_POWER_STORAGEOFF_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_YES_ID}
-    sleep  10s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_OK_ID}
     sleep  10s
 
-Check if Node Starts
+Click Node Start
     [Documentation]  Test keyword is to check node start scenario
     Wait Until Element Is Visible  ${GRAPH_NODE_ID}  timeout=30
     click Element  ${GRAPH_NODE_ACTION_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_START_ID}
-    sleep  2s
+    wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_YES_ID}
     sleep  10s

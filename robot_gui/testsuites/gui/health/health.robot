@@ -17,18 +17,18 @@ TEST-22645
     [Tags]  Priority_High  R2  TEST-22645
     Navigate To Health
     Click Graphical Tab
-    Check if Node Stops
+    Click Node Stop
 
-TEST-22645-poweroff
+TEST-22645_POWEROFF
     [Documentation]  Test node poweroff scenario for health graph
     [Tags]  Priority_High  R2  TEST-22645
     Navigate To Health
     Click Graphical Tab
-    Check if Node Poweroff
+    Click Node Poweroff
 
-TEST-22645-power-storage-off
+TEST-22645_POWER_AND_STORAGE_OFF
     [Documentation]  Test node Power And Storageoff scenario for health graph
     [Tags]  Priority_High  R2  TEST-22645
     Navigate To Health
     Click Graphical Tab
-    Check if Node Power And Storageoff
+    Click Node Power And Storageoff
