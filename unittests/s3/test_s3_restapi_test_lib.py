@@ -7,8 +7,11 @@ import time
 import logging
 
 from config import CSM_CFG
+from config import CMN_CFG
 from commons.utils import assert_utils
+from commons.helpers.node_helper import Node
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
 
 class TestS3RestAPI:
@@ -17,11 +20,18 @@ class TestS3RestAPI:
     def setup_method(self):
         """Method is for test set-up."""
         self.log = logging.getLogger(__name__)
+        self.host = CMN_CFG["nodes"][0]["hostname"]
+        self.uname = CMN_CFG["nodes"][0]["username"]
+        self.passwd = CMN_CFG["nodes"][0]["password"]
         self.username = "csm_user_manage{}".format(time.perf_counter_ns())
         self.email = "{}@seagate.com".format(self.username)
         self.password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         self.new_password = CSM_CFG["CliConfig"]["csm_user"]["password"]
         self.s3_rest_obj = S3AccountOperationsRestAPI()
+        self.s3auth_rest_obj = S3AuthServerRestAPI()
+        self.node_hobj = Node(hostname=self.host,
+                              username=self.uname,
+                              password=self.passwd)
 
     def teardown_method(self):
         """Method is for cleanup tests."""
@@ -74,3 +84,39 @@ class TestS3RestAPI:
         resp = self.s3_rest_obj.create_s3account_access_key(
             self.username, self.password)
         assert_utils.assert_true(resp[0], resp[1])
+
+    def test_reset_s3account_password_with_access_secret_key(self):
+        """Test update user login profile with s3 access, secret key."""
+        create_account = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
+        assert_utils.assert_true(create_account[0], create_account)
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            self.username, self.new_password, create_account[1]["access_key"],
+            create_account[1]["secret_key"])
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            user_name=self.username, access_key=create_account[1]["access_key"],
+            secret_key=create_account[1]["secret_key"])
+        assert_utils.assert_false(resp[0], resp[1])
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            new_password=self.new_password, access_key=create_account[1]["access_key"],
+            secret_key=create_account[1]["secret_key"])
+        assert_utils.assert_false(resp[0], resp[1])
+
+    def test_reset_s3account_password_with_ldap_cred(self):
+        """Test update user login profile with ldap cred."""
+        ldap_user, ldap_password = self.node_hobj.get_ldap_credential()
+        resp = self.s3_rest_obj.create_s3_account(
+            self.username, self.email, self.password)
+        assert_utils.assert_true(resp[0], resp)
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            self.username, self.new_password, ldap_user, ldap_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            user_name=self.username, access_key=ldap_user,
+            secret_key=ldap_password)
+        assert_utils.assert_false(resp[0], resp[1])
+        resp = self.s3auth_rest_obj.update_account_login_profile(
+            new_password=self.new_password, access_key=ldap_user,
+            secret_key=ldap_password)
+        assert_utils.assert_false(resp[0], resp[1])
