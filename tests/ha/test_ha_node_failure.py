@@ -45,9 +45,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-class TestHANodeStartStop:
+class TestHANodeFailure:
     """
-    Test suite for node start stop operation tests of HA.
+    Test suite for Node failure: Fault tolerance (READ/WRITE/DELETE) testing.
     """
 
     @classmethod
@@ -64,7 +64,6 @@ class TestHANodeStartStop:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.system_random = SystemRandom()
-
         cls.node_list = []
         cls.host_list = []
         cls.hlt_list = []
@@ -87,8 +86,7 @@ class TestHANodeStartStop:
             cls.hlt_list.append(Health(hostname=cls.host,
                                        username=cls.username[node],
                                        password=cls.password[node]))
-
-        LOGGER.info("Done: Setup module operations")
+        LOGGER.info("COMPLETED: Setup module operations")
 
     def setup_method(self):
         """
@@ -110,7 +108,7 @@ class TestHANodeStartStop:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Precondition: Health status shows all components as online & PCS looks clean.")
-        LOGGER.info("ENDED: Setup Operations")
+        LOGGER.info("COMPLETED: Setup Operations")
 
     def teardown_method(self):
         """
@@ -144,9 +142,9 @@ class TestHANodeStartStop:
         resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Cleanup: Health status shows all components as online in cortx REST.")
-        LOGGER.info("ENDED: Teardown Operations.")
+        LOGGER.info("COMPLETED: Teardown Operations.")
 
-    # pylint: disable=R0915
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.tags("TEST-26435")
     @CTFailOn(error_handler)
