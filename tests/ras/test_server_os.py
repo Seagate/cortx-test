@@ -1017,7 +1017,7 @@ class TestServerOS:
 
         LOGGER.info(
             "Step 1: Create RAID Integrity fault")
-        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT, 
+        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT,
                     host_details= {"host":self.host,
                                    "host_user":self.uname,
                                    "host_password":self.passwd},

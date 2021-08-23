@@ -26,7 +26,6 @@ import time
 import random
 import os
 from libs.ras.ras_test_lib import RASTestLib
-from libs.ras.sw_alerts import SoftwareAlert
 from commons.helpers.host import Host
 from commons import constants as cons
 from commons.helpers.controller_helper import ControllerLib
@@ -793,7 +792,7 @@ class GenerateAlertWrapper:
             res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
                                                    field=cons.CONF_RAID_INTEGRITY)
             LOGGER.debug("Response: %s", res)
-            
+
             cmd = commands.SET_PIPEFAIL
             LOGGER.info("Executing command : %s", cmd)
             resp = node_connect.execute_cmd(cmd=cmd)
