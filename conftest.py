@@ -875,7 +875,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = getattr(report, 'logpath')
+        remote_path = getattr(report, 'logpath').replace(":", "_")
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -991,7 +991,7 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def get_db_cfg(request):
     from config import S3_CFG
     if request.config.getoption('--target'):
