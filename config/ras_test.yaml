@@ -262,7 +262,7 @@ nw_cable_fault:
   error_msg: "Failed to {} management network cable"
 
 test_21587:
-  delta_cpu_usage: -5
+  delta_cpu_usage: -80
   resource_type: "node:os:cpu_usage"
 
 test_21588:
@@ -276,12 +276,11 @@ test_21586:
 test_23045:
   resource_type: "node:os:cpu:core"
   faulty_cpu_id:
-    - 0
     - 1
 
 test_22787:
   resource_type: "node:os:cpu_usage"
-  interval: 30
+  interval: 5
 
 test_22786:
   resource_type: "node:os:memory_usage"
@@ -302,9 +301,13 @@ test_23715:
 test_23723:
   resource_type: "node:os:raid_data"
 
+test_22844:
+  resource_type: "node:os:cpu_usage"
+
 test_22781:
   resource_type: "node:os:raid_data"
   csm_error_msg: "Failed to get alerts using CSM REST API"
+
 
 power_failure:
   shutdown_option: "-r now"
