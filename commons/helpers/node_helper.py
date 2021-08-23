@@ -170,7 +170,7 @@ class Node(Host):
 
         return not self.path_exists(filename)
 
-    def read_file(self, filename: str, local_path: str=None):
+    def read_file(self, filename: str, local_path: str = None):
         """
         Function reads the given file and returns the file content.
 
@@ -178,7 +178,7 @@ class Node(Host):
         :param filename: Absolute path of the file to be read
         """
         if local_path is None:
-            local_path = os.path.join(os.getcwd(),filename)
+            local_path = os.path.join(os.getcwd(), filename)
         if os.path.exists(local_path):
             os.remove(local_path)
         self.copy_file_to_local(remote_path=filename, local_path=local_path)
@@ -189,7 +189,7 @@ class Node(Host):
 
         return response
 
-    def write_file(self, fpath: str, content: str=None):
+    def write_file(self, fpath: str, content: str = None):
         """
         This function writes the given file
         :param fpath: file path with name
@@ -461,14 +461,11 @@ class Node(Host):
             self.execute_cmd("yum install expect")
 
         if status.lower() == "on":
-            cmd = f"./scripts/expect_utils/expect_power_on" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} on"
+            cmd = commands.CMD_PDU_POWER_ON.format(pdu_ip, pdu_user, pdu_pwd, node_slot)
         elif status.lower() == "off":
-            cmd = f"./scripts/expect_utils/expect_power_off" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} off"
+            cmd = commands.CMD_PDU_POWER_OFF.format(pdu_ip, pdu_user, pdu_pwd, node_slot)
         else:
-            cmd = f"./scripts/expect_utils/expect_power_cycle" \
-                f" {pdu_ip} {pdu_user} {pdu_pwd} {node_slot} {timeout}"
+            cmd = commands.CMD_PDU_POWER_CYCLE.format(pdu_ip, pdu_user, pdu_pwd, node_slot, timeout)
 
         try:
             if not cmd:
@@ -584,3 +581,21 @@ class Node(Host):
         self.disconnect()
 
         return not self.path_exists(filename)
+
+    def get_ldap_credential(self):
+        """Get the ldap credential from node."""
+        try:
+            # Fetch ldap username.
+            ldap_user = self.execute_cmd(commands.LDAP_USER)
+            ldap_user = ldap_user.decode("utf-8") if isinstance(ldap_user, bytes) else ldap_user
+            ldap_user = ldap_user.split(",")[0].lstrip("cn=").strip()
+            # Fetch ldap password.
+            ldap_passwd = self.execute_cmd(commands.LDAP_PWD)
+            ldap_passwd = ldap_passwd.decode(
+                "utf-8").strip() if isinstance(ldap_passwd, bytes) else ldap_passwd
+            log.debug("LDAP USER: %s, LDAP Password: %s", ldap_user, ldap_passwd)
+
+            return ldap_user, ldap_passwd
+        except Exception as error:
+            log.error("%s %s: %s", const.EXCEPTION_ERROR, self.get_ldap_credential.__name__, error)
+            return None, None
