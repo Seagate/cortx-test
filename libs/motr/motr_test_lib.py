@@ -29,7 +29,9 @@ import re
 import os
 import sys
 import libs.motr as motr_cons
-from commons.helpers import node_helper 
+from commons.helpers import node_helper
+from commons.utils import assert_utils, system_utils
+from commons import commands
 from config import CMN_CFG
 
 logger = logging.getLogger(__name__)
@@ -40,23 +42,32 @@ class MotrTestLib():
         self.files_to_delete = []
         self.hosts = []
         self.per_host_services_pids_endps = {}
-        self.host = CMN_CFG["nodes"][0]["hostname"]
-        self.uname = CMN_CFG["nodes"][0]["username"]
-        self.passwd = CMN_CFG["nodes"][0]["password"]
+        self.num_nodes = len(CMN_CFG["nodes"])
+        self.setuptype = CMN_CFG["setup_type"]
         self.cluster_info = None
         self.profile_fid = None
         self.process_fid = None
         self.local_endpoint = None
         self.ha_endpoint = None
         self.client_index = 0
-        self.utils_obj = node_helper.Node(
-            hostname=self.host, username=self.uname, password=self.passwd)
+        self.host_list = []
+        self.uname_list = []
+        self.passwd_list = []
         self.parse_funcs = {
                             "m0crate": self.m0crate_parse_func,
                             "m0": self.m0_parse_func,
                             "m0kv": self.m0kv_parse_func,
                             "other": self.other_parse_func,
                             }
+        for node in range(self.num_nodes):
+            self.host = CMN_CFG["nodes"][node]["hostname"]
+            self.uname = CMN_CFG["nodes"][node]["username"]
+            self.passwd = CMN_CFG["nodes"][node]["password"]
+            self.host_list.append(self.host)
+            self.uname_list.append(self.uname)
+            self.passwd_list.append(self.passwd)
+        self.utils_obj = node_helper.Node(
+            hostname=self.host_list[0], username=self.uname_list[0], password=self.passwd_list[0])
 
     def get_max_client_index(self, my_svcs_info):
         count = 0
@@ -70,11 +81,12 @@ class MotrTestLib():
         temp = hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
         return hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
 
-    def get_cluster_info(self):
-        ret = 0
-
-        srvnode1 = self.host 
-        cmd = '{}sudo hctl status --json'.format( '' if self.is_localhost(self.host) else f'ssh srvnode-1{self.host} ')
+    def get_cluster_info(self, hostname):
+        if hostname:
+            srvnode = hostname
+        else:
+            srvnode = self.host_list[0]
+        cmd = f'ssh {srvnode} hctl status --json'
         self.cluster_info = json.loads(self.utils_obj.execute_cmd(cmd))
         if (self.cluster_info != None):
             self.profile_fid = self.cluster_info["profiles"][0]
@@ -82,6 +94,7 @@ class MotrTestLib():
             nodes_data = self.cluster_info["nodes"]
             for node in nodes_data:
                 nodename = node["name"]
+                nodename = nodename.split(".")[0]
                 if (nodename.startswith("srvnode") == True):
                     cmd1 = 'salt-call pillar.get cluster:{}:hostname'.format(nodename)
                     cmd2 = 'cut -f 2 -d ":" | tr -d [:space:]'
@@ -89,7 +102,11 @@ class MotrTestLib():
                     nodename = self.utils_obj.execute_cmd(cmd)
                 self.hosts.append(nodename)
                 self.per_host_services_pids_endps[nodename] = node["svcs"]
-            my_svcs_info = self.per_host_services_pids_endps[srvnode1]
+            if bytes(srvnode, 'utf-8') in self.hosts:
+                svcs_host =  bytes(srvnode, 'utf-8')
+            else:
+                svcs_host = self.hosts[0]
+            my_svcs_info = self.per_host_services_pids_endps[svcs_host]
             if (self.client_index < 0):
                 print("User provided client index = {}".format(self.client_index))
                 print("Setting user client index to 0(default)")
@@ -117,10 +134,10 @@ class MotrTestLib():
                        m0_client_counter = m0_client_counter + 1
                     continue
         else:
-            print("Could not fetch cluster info\n", file=sys.stderr)
-            return -1
-
-        return ret
+            print(f"Could not fetch cluster info\n", file=sys.stderr)
+            return False
+     
+        return True
 
     def get_workload_file_name(self, params):
         params_list = params.split()
@@ -137,7 +154,7 @@ class MotrTestLib():
                 logger.debug(result)
 
     def update_workload_file(self, fname):
-        ret = self.get_cluster_info()
+        ret = self.get_cluster_info(self.host_list[0])
         if ret:
             return ret
 
@@ -180,17 +197,19 @@ class MotrTestLib():
         return cmd
 
     def m0_parse_func(self, cmd_dict):
-        ret = self.get_cluster_info()
+        ret = self.get_cluster_info(self.host_list[0])
+        assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
         params = cmd_dict['params'].split()
         cmd = cmd_dict['cmnd']
-        cluster_info = " -l "+ self.local_endpoint + " -H " + self.ha_endpoint + " -p " + self.profile_fid + " -P " + self.process_fid
+        cluster_info = " -l " + self.local_endpoint + " -H " + self.ha_endpoint + " -p " + self.profile_fid + " -P " + self.process_fid
 
         param = ' '.join([str(elem) for elem in params])
         cmd = f'{cmd} {cluster_info} {param}'
         return cmd
 
     def m0kv_parse_func(self, cmd_dict): 
-        ret = self.get_cluster_info()
+        ret = self.get_cluster_info(self.host_list[0])
+        assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
         params = cmd_dict['params'].split()
         cmd = cmd_dict['cmnd']
         cluster_info = " -l "+ self.local_endpoint + " -h " + self.ha_endpoint + " -p " + self.profile_fid + " -f " + self.process_fid
@@ -213,3 +232,82 @@ class MotrTestLib():
         else:
             cmd = self.parse_funcs["other"](cmd_dict)
         return cmd
+
+    def get_endpoints(self, hostname):
+        ret = self.get_cluster_info(hostname)
+        assert_utils.assert_true(ret, "Not able to extract cluster details. Please check cluster status.")
+        return self.local_endpoint, self.ha_endpoint, self.process_fid, self.profile_fid
+
+    def verify_libfabric_version(self):
+        for i in range(self.num_nodes):
+            logger.info(f'Checking libfabric rpm')
+            ret, out = system_utils.run_remote_cmd(cmd=commands.GETRPM.format("libfab"),
+                                                   hostname=self.host_list[i],
+                                                   username=self.uname_list[i],
+                                                   password=self.passwd_list[i])
+            assert_utils.assert_true(ret, f'Libfabric is not preset on HW. Please check the system')
+            assert_utils.assert_not_in(out, b"libfabric", 'Get RPM command Failed, Please check the log')
+            logger.info(f'Checking libfabric version')
+            ret, out = system_utils.run_remote_cmd(cmd=commands.LIBFAB_VERSION,
+                                                   hostname=self.host_list[i],
+                                                   username=self.uname_list[i],
+                                                   password=self.passwd_list[i])
+            assert_utils.assert_true(ret, f'Libfabric is not preset on HW. Please check the system')
+            assert_utils.assert_greater_equal(out, motr_cons.CURR_LIB_VERSION, 'Get Version command Failed, Please check the log')
+            logger.info(f'Checking libfabric tcp protocol presence')
+            ret, out = system_utils.run_remote_cmd(cmd=commands.LIBFAB_TCP,
+                                                   hostname=self.host_list[i],
+                                                   username=self.uname_list[i],
+                                                   password=self.passwd_list[i])
+            assert_utils.assert_true(ret, f'TCP is not preset on HW. Please check the system')
+            assert_utils.assert_not_in(out, b"FI_PROTO_SOCK_TCP", 'TCP command Failed, Please check the log')
+            logger.info(f'Checking libfabric socket protocol presence')
+            ret, out = system_utils.run_remote_cmd(cmd=commands.LIBFAB_SOCKET,
+                                                   hostname=self.host_list[i],
+                                                   username=self.uname_list[i],
+                                                   password=self.passwd_list[i])
+            assert_utils.assert_true(ret, f'Socket is not preset on HW. Please check the system')
+            assert_utils.assert_not_in(out, b"FI_PROTO_SOCK_TCP", 'Socket command Failed, Please check the log')
+            logger.info(f'Checking libfabric verbs protocol presence')
+            if self.setuptype == "HW":
+                ret, out = system_utils.run_remote_cmd(cmd=commands.LIBFAB_VERBS,
+                                                       hostname=self.host_list[i],
+                                                       username=self.uname_list[i],
+                                                       password=self.passwd_list[i])
+                assert_utils.assert_true(ret, f'Verbs is not preset on HW. Please check the system')
+                assert_utils.assert_not_in(out, b"FI_PROTO_RXD", 'Verbs command Failed, Please check the log')
+
+    def get_private_if_ip(self):
+        privateIP = {}
+        for host in self.host_list:
+            ret = self.get_cluster_info(host)
+            assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
+            endpoint = self.local_endpoint
+            ip = endpoint.split("@")
+            privateIP[host] = ip[0]
+        print("Private IPs of all host is: ", privateIP)
+        return privateIP
+
+    def fi_ping_pong(self):
+        self.verify_libfabric_version()
+        privateIP = self.get_private_if_ip()
+        protocols = ["tcp", "socket", "verbs"]
+        for protocol in protocols:
+            logger.info(f'Testing ping pong for {protocol}')
+            for i in range(2):
+                ret, out = system_utils.run_remote_cmd(cmd=commands.FI_SERVER_CMD.format(protocol),
+                                                       hostname=self.host_list[0],
+                                                       username=self.uname,
+                                                       password=self.passwd)
+                assert_utils.assert_true(ret, f'FI Server command Failed, Please check system')
+                logger.info(f'FI Server command Passed, \n Output is: {out}\n')
+                ret, out = system_utils.run_remote_cmd(cmd=commands.FI_CLIENT_CMD.format(privateIP[self.host_list[0]], protocol),
+                                                       hostname=self.host_list[i+1],
+                                                       username=self.uname,
+                                                       password=self.passwd)
+                assert_utils.assert_true(ret, f'FI Client command Failed, Please check system')
+                logger.info(f'FI Client command Passed, \n Output is: {out}\n')
+            logger.info(f'Ping-pong testing of {protocol} PASSED')
+
+
+

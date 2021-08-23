@@ -21,10 +21,11 @@
 import pytest
 import logging
 from commons.ct_fail_on import CTFailOn
-from libs.motr import motr_test_lib
+from libs.motr import motr_test_lib, WORKLOAD_CFG
 from commons.errorcodes import error_handler
-from commons.utils import system_utils
+from commons.utils import system_utils, assert_utils
 from config import CMN_CFG
+from commons import commands
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,12 +35,12 @@ class TestExecuteWorkload:
     @pytest.yield_fixture(autouse=True)
     def setup(self):
         LOGGER.info("STARTED: Setup Operation")
-
-        self.host = CMN_CFG["nodes"][0]["hostname"]
-        self.uname = CMN_CFG["nodes"][0]["username"]
-        self.passwd = CMN_CFG["nodes"][0]["password"]
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
+        self.host_list = self.motr_obj.host_list
+        self.uname_list = self.motr_obj.uname_list
+        self.passwd_list = self.motr_obj.passwd_list
+        self.last_endpoint = None
         LOGGER.info("ENDED: Setup Operation")
 
         yield
@@ -61,11 +62,11 @@ class TestExecuteWorkload:
         LOGGER.info(f' batches: "{batches}", runs: "{runs}"')
         for run in range(runs):
             LOGGER.info(f'Executing run {run + 1}:')
-            for index in range(len(batches)):
+            for index, cnt in enumerate(batches):
                 cmd = self.motr_obj.get_command_str(batches[index])
                 if cmd:
                     LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host, self.uname, self.passwd)
+                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[0], self.uname_list[0], self.passwd_list[0])
                     if ret:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
                         assert False
@@ -336,5 +337,68 @@ class TestExecuteWorkload:
         """
         LOGGER.info("Start: Verify object update operation")
         self.execute_test('test_23207')
+        LOGGER.info("Stop: Verify object update operation")
+
+
+    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.motr_io_load
+    @CTFailOn(error_handler)
+    def test_23036(self):
+        """
+        Verify different size object m0cp m0cat operation
+        """
+        LOGGER.info("Start: Verify multiple m0cp/cat operation")
+        infile = '/tmp/input'
+        outfile = '/tmp/output'
+        for j, host in enumerate(self.host_list):
+            ret = self.motr_obj.get_cluster_info(host)
+            assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
+            i = 1
+            l, H, P, p = self.motr_obj.get_endpoints(host)
+            if self.last_endpoint == l:
+                LOGGER.info("Looks like cluster is not fully deployed. Exiting")
+                break
+            bsize = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K', '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M',
+                     '1M']
+            size = ['4k', '4k', '4k', '8k', '16k', '64k', '64k', '128k', '4k', '1m', '1m', '4m', '4m', '4m', '4m', '16m',
+                    '1m']
+            count = ['1', '2', '4', '4', '4', '2', '4', '4', '250', '2', '4', '2', '3', '4', '8', '4', '1024']
+            layout = ['1', '1', '1', '2', '3', '5', '5', '6', '1', '9', '9', '11', '11', '11', '11', '11', '13']
+            self.last_endpoint = l
+            for bs, s, c, L in zip(bsize, size, count, layout):
+                o = str(i) + ":" + str(i)
+                ddCmd = commands.CREATE_FILE.format("/dev/urandom", infile, bs, c)
+                cpCmd = commands.M0CP.format(l, H, P, p, s, c, o, L, infile)
+                catCmd = commands.M0CAT.format(l, H, P, p, s, c, o, L, outfile)
+                diffCmd = commands.DIFF.format(infile, outfile)
+                mdCmd = commands.MD5SUM.format(infile, outfile)
+                unlinkCmd = commands.M0UNLINK.format(l, H, P, p, o, L)
+                i = i + 1
+                index = i
+                batch = [ddCmd, cpCmd, catCmd, diffCmd, mdCmd, unlinkCmd]
+                for cmd in batch:
+                    if cmd:
+                        LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
+                        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[j], self.uname_list[j],
+                                                                                      self.passwd_list[j])
+                        LOGGER.info(f"{result},{error1}")
+                        if ret:
+                           LOGGER.info(f'"{cmd}" Failed, Please check the log')
+                           assert False
+                        if (b"ERROR" or b"Error") in error1:
+                           LOGGER.error(f'"{cmd}" failed, please check the log')
+                           assert_utils.assert_not_in(error1, b"ERROR" or b"Error", '"{cmd}" Failed, Please check the log')
+            LOGGER.info("Stop: Verify multiple m0cp/cat operation")
+
+    @pytest.mark.tags("TEST-22963")
+    @pytest.mark.motr_io_load
+    @CTFailOn(error_handler)
+    def test_22963(self):
+        """
+        Verify Libfabric is presented on system and basic ping pong operation
+        """
+        LOGGER.info("Start: Verify object update operation")
+        self.motr_obj.verify_libfabric_version()
+        self.motr_obj.fi_ping_pong()
         LOGGER.info("Stop: Verify object update operation")
 
