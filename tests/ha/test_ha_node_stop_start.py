@@ -185,9 +185,11 @@ class TestHANodeStartStop:
                 if not resp_encl1[0]:
                     resp_rpdu = self.node_list[node].toggle_apc_node_power(
                         pdu_ip=self.rpdu_encl_ip[node], pdu_user=self.rpdu_encl_user[node],
-                        pdu_pwd=self.rpdu_encl_pwd[node], node_slot=self.rpdu_encl_port[node], status="on")
+                        pdu_pwd=self.rpdu_encl_pwd[node],
+                        node_slot=self.rpdu_encl_port[node], status="on")
                     if not resp_rpdu:
-                        LOGGER.info("Failed to power on controller1 for node %s", self.srvnode_list[node])
+                        LOGGER.info("Failed to power on controller1 for node %s",
+                                    self.srvnode_list[node])
                 resp_encl2 = system_utils.run_remote_cmd(
                     cmd=cmds.CMD_PING.format("10.0.0.3"), hostname=self.host_list[node],
                     username=self.username[node],
@@ -195,9 +197,11 @@ class TestHANodeStartStop:
                 if not resp_encl2[0]:
                     resp_lpdu = self.node_list[node].toggle_apc_node_power(
                         pdu_ip=self.lpdu_encl_ip[node], pdu_user=self.lpdu_encl_user[node],
-                        pdu_pwd=self.lpdu_encl_pwd[node], node_slot=self.lpdu_encl_port[node], status="on")
+                        pdu_pwd=self.lpdu_encl_pwd[node],
+                        node_slot=self.lpdu_encl_port[node], status="on")
                     if not resp_lpdu:
-                        LOGGER.info("Failed to power on controller2 for node %s", self.srvnode_list[node])
+                        LOGGER.info("Failed to power on controller2 for node %s",
+                                    self.srvnode_list[node])
                 LOGGER.info("Enclosure accessible for %s node", self.srvnode_list[node])
                 # Check if node needs to be start.
                 resp = self.ha_rest.verify_node_health_status_rest(
