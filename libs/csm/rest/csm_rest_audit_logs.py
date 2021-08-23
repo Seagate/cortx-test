@@ -280,13 +280,14 @@ class RestAuditLogs(RestTestLib):
         :return: Success(True/False)
         """
         try:
+            verification_status = False
             response = self.audit_logs_s3_show(
                 login_as=login_as, params=params)
             if response.status_code != expected_status_code:
                 self.log.error(
                     "Response is not 200, Response=%s",
                         response.status_code)
-                return False
+                return verification_status
 
             # Validating response value
             if validate_expected_response:
@@ -496,8 +497,8 @@ class RestAuditLogs(RestTestLib):
                         # if not verification_status:
                         #     self.log.error("Values does not match ")
                         #     return False
-            return True
 
+            return verification_status
         except BaseException as error:
             self.log.error("%s %s: %s",
                 const.EXCEPTION_ERROR,
