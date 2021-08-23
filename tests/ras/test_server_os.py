@@ -31,6 +31,7 @@ from commons import constants as cons
 from commons import cortxlogging
 from commons.utils.config_utils import read_properties_file
 from commons.utils.assert_utils import *
+from commons.alerts_simulator.generate_alert_lib import GenerateAlertLib, AlertType
 from commons.utils.system_utils import create_file, path_exists, make_dirs
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -62,10 +63,12 @@ class TestServerOS:
             username=cls.uname,
             password=cls.passwd)
         cls.csm_alert_obj = SystemAlerts(cls.sw_alert_obj.node_utils)
+        cls.alert_api_obj = GenerateAlertLib()
         cls.default_cpu_usage = False
         cls.default_mem_usage = False
         cls.default_disk_usage = False
         cls.default_cpu_fault = False
+        cls.integrity_fault = False
         cls.starttime = time.time()
         cls.sw_alert_objs = []
         for i in range(len(CMN_CFG["nodes"])):
@@ -127,6 +130,7 @@ class TestServerOS:
         self.default_cpu_usage = False
         self.default_mem_usage = False
         self.default_disk_usage = False
+        self.integrity_fault = False
         LOGGER.info("Completed setup_method.")
 
     def teardown_method(self):
@@ -197,6 +201,12 @@ class TestServerOS:
             LOGGER.info("Step 4: Resolving CPU fault.")
             resp = self.sw_alert_obj.resolv_cpu_fault(self.default_cpu_fault)
             assert resp[0], resp[1]
+
+        if self.integrity_fault:
+            LOGGER.info("Step 4: Resolve RAID integrity fault")
+            resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_RESOLVED)
+            assert resp[0], resp[1]
+            LOGGER.info("Step 4: Resolved RAID integrity fault.")
 
     @pytest.mark.tags("TEST-21587")
     @pytest.mark.cluster_monitor_ops
@@ -993,3 +1003,59 @@ class TestServerOS:
         assert resp[0], resp[1]
         LOGGER.info("Successfully verified CPU fault resolved alert on CSM REST API")
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.cluster_monitor_ops
+    @pytest.mark.tags("TEST-22781")
+    @pytest.mark.skip("RAID integrity not reported - EOS-23324")
+    def test_22781_raid_integrity(self):
+        """
+        Generate and resolve RAID integrity fault.
+        """
+        LOGGER.info(
+            "STARTED: TEST-22781 RAID integrity")
+        test_cfg = RAS_TEST_CFG["test_22781"]
+
+        LOGGER.info(
+            "Step 1: Create RAID Integrity fault")
+        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_FAULT,
+                    host_details= {"host":self.host,
+                                   "host_user":self.uname,
+                                   "host_password":self.passwd},
+                    input_parameters={'count': 5, 'timeout':60})
+        assert resp[0], resp[1]
+        self.integrity_fault = True
+        LOGGER.info("Step 1: RAID integrity fault created.")
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 3: Checking CSM REST API for RAID integrity alert")
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
+                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+        assert resp[0], resp[1]
+        LOGGER.info(
+            "Step 3: Successfully verified RAID integrity alert using CSM REST API")
+
+        LOGGER.info("Step 4: Resolve RAID integrity fault")
+        resp = self.alert_api_obj.generate_alert(AlertType.RAID_INTEGRITY_RESOLVED)
+        assert resp[0], resp[1]
+        self.integrity_fault = False
+        LOGGER.info("Step 4: Resolved RAID integrity fault.")
+
+        if self.start_msg_bus:
+            LOGGER.info("Checking the generated alert on SSPL")
+            alert_list = [test_cfg["resource_type"], const.AlertType.RESOLVED]
+            resp = self.ras_test_obj.alert_validation(string_list=alert_list, restart=False)
+            assert resp[0], resp[1]
+            LOGGER.info("Verified the generated alert on the SSPL")
+
+        LOGGER.info("Step 6: Checking CSM REST API for RAID integrity resolved alert")
+        resp = self.csm_alert_obj.wait_for_alert(self.cfg["csm_alert_gen_delay"],
+                    self.starttime, const.AlertType.RESOLVED, True, test_cfg["resource_type"])
+        assert resp[0], resp[1]
+        LOGGER.info("Step 6: Successfully verified RAID integrity resolved alert using CSM"
+                    " REST API")
