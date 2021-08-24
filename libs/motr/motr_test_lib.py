@@ -94,7 +94,7 @@ class MotrTestLib():
 
         cmd = f'ssh {srvnode} hctl status --json'
         self.cluster_info = json.loads(self.utils_obj.execute_cmd(cmd))
-        if self.cluster_info != None:
+        if self.cluster_info is not None:
             self.profile_fid = self.cluster_info["profiles"][0]
             self.profile_fid = self.profile_fid["fid"]
             nodes_data = self.cluster_info["nodes"]
@@ -141,7 +141,7 @@ class MotrTestLib():
         else:
             print("Could not fetch cluster info\n %s", file=sys.stderr)
             return False
-     
+
         return True
 
     def get_workload_file_name(self, params):
@@ -329,13 +329,11 @@ class MotrTestLib():
                                                        password=self.passwd)
                 assert_utils.assert_true(ret, 'FI Server command Failed, Please check system')
                 logger.info('FI Server command Passed, \n Output is: %s \n', out)
-                ret, out = system_utils.run_remote_cmd(cmd=commands.FI_CLIENT_CMD.format(privateIP[self.host_list[0]], protocol),
-                                                       hostname=self.host_list[i+1],
-                                                       username=self.uname,
-                                                       password=self.passwd)
+                ret, out = system_utils.run_remote_cmd(
+                    cmd=commands.FI_CLIENT_CMD.format(privateIP[self.host_list[0]], protocol),
+                    hostname=self.host_list[i+1],
+                    username=self.uname,
+                    password=self.passwd)
                 assert_utils.assert_true(ret, 'FI Client command Failed, Please check system')
                 logger.info('FI Client command Passed, \n Output is: %s\n', out)
             logger.info('Ping-pong testing of %s PASSED', protocol)
-
-
-

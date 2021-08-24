@@ -64,14 +64,15 @@ class TestExecuteWorkload:
         for run in range(runs):
             LOGGER.info(f'Executing run {run + 1}:')
             for index, cnt in enumerate(batches):
+                LOGGER.info("%s", cnt)
                 cmd = self.motr_obj.get_command_str(batches[index])
                 if cmd:
                     LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
-                                                                                  self.host_list[0],
-                                                                                  self.uname_list[0],
-                                                                                  self.passwd_list[0]
-                                                                                  )
+                    result, error1, ret = \
+                        system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                self.host_list[0],
+                                                                self.uname_list[0],
+                                                                self.passwd_list[0])
                     if ret:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
                         assert False
@@ -393,9 +394,9 @@ class TestExecuteWorkload:
                                                                                   self.host_list[j],
                                                                                   self.uname_list[j],
                                                                                   self.passwd_list[j])
-                    LOGGER.info(f"{result},{error1}")
+                    LOGGER.info("%s , %s", result,error1)
                     if ret:
-                        LOGGER.info(f'"{cmd}" Failed, Please check the log')
+                        LOGGER.info('"%s" Failed, Please check the log', cmd)
                         assert False
                     if (b"ERROR" or b"Error") in error1:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
@@ -414,4 +415,3 @@ class TestExecuteWorkload:
         self.motr_obj.verify_libfabric_version()
         self.motr_obj.fi_ping_pong()
         LOGGER.info("Stop: Verify object update operation")
-
