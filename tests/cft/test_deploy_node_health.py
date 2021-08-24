@@ -26,6 +26,7 @@ class TestNodeHealth:
     """
     @classmethod
     def setup_class(cls):
+        """  Setup module  """
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
@@ -43,13 +44,16 @@ class TestNodeHealth:
         cls.encl_ip = CMN_CFG["enclosure"]["primary_enclosure_ip"]
         cls.encl_username = CMN_CFG["enclosure"]["enclosure_user"]
         cls.encl_passwd = CMN_CFG["enclosure"]["enclosure_pwd"]
-        cls.CONT_OBJ = ControllerLib(host=cls.hostname, h_user=cls.uname, h_pwd=cls.passwd,
-                                     enclosure_ip=cls.encl_ip, enclosure_user=cls.encl_username,
+        cls.CONT_OBJ = ControllerLib(host=cls.hostname, h_user=cls.uname,
+                                     h_pwd=cls.passwd,
+                                     enclosure_ip=cls.encl_ip,
+                                     enclosure_user=cls.encl_username,
                                      enclosure_pwd=cls.encl_passwd)
         cls.csm_alert_obj = SystemAlerts(cls.node_obj)
         cls.start_msg_bus = cls.cm_cfg["start_msg_bus"]
         cls.alert_api_obj = GenerateAlertLib()
-        cls.resource_cli = CortxNodeCLIResourceOps(host=cls.hostname, username=cls.uname, password=cls.passwd)
+        cls.resource_cli = CortxNodeCLIResourceOps(host=cls.hostname, username=cls.uname,
+                                                   password=cls.passwd)
         cls.resource_cli.open_connection()
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
@@ -73,14 +77,11 @@ class TestNodeHealth:
 
     def setup_method(self):
         """Setup operations per test."""
-        LOGGER.info("Running setup_method")
         self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         False)
-
         LOGGER.info("Performing Setup operations")
-
         LOGGER.info("Checking SSPL state file")
         res = self.ras_test_obj.get_sspl_state()
         if not res:
@@ -102,7 +103,6 @@ class TestNodeHealth:
         resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
                                                      field=cons.CONF_SSPL_LOG_LEVEL)
         LOGGER.info("Now SSPL log level is: %s", resp)
-
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]
         services = [service["sspl_service"], service["kafka_service"]]
@@ -110,9 +110,6 @@ class TestNodeHealth:
                                                     resources=[self.sspl_resource_id])
         LOGGER.info("services %s, resp %s", services, resp)
         time.sleep(self.cm_cfg["sleep_val"])
-        self.raid_stopped = False
-        self.failed_disk = False
-        self.removed_disk = False
         self.disable_disk = False
         LOGGER.info(
             "Fetching the disks details from mdstat for RAID array %s",
@@ -124,7 +121,6 @@ class TestNodeHealth:
             list(self.disks)[0])
         self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(
             list(self.disks)[1])
-
         LOGGER.info("Successfully performed Setup operations")
 
     def teardown_method(self):
@@ -132,34 +128,6 @@ class TestNodeHealth:
         LOGGER.info("Performing Teardown operation")
         self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         True)
-        if self.failed_disk:
-            resp = self.alert_api_obj.generate_alert(
-                AlertType.RAID_REMOVE_DISK_ALERT,
-                input_parameters={
-                    "operation": RAS_VAL["raid_param"]["remove_operation"],
-                    "md_device": self.md_device,
-                    "disk": self.failed_disk})
-            assert_utils.assert_true(resp[0], resp[1])
-            self.removed_disk = self.failed_disk
-
-        if self.removed_disk:
-            resp = self.alert_api_obj.generate_alert(
-                AlertType.RAID_ADD_DISK_ALERT,
-                input_parameters={
-                    "operation": RAS_VAL["raid_param"]["add_operation"],
-                    "md_device": self.md_device,
-                    "disk": self.removed_disk})
-            assert_utils.assert_true(resp[0], resp[1])
-
-        if self.raid_stopped:
-            resp = self.alert_api_obj.generate_alert(
-                AlertType.RAID_ASSEMBLE_DEVICE_ALERT,
-                input_parameters={
-                    "operation": RAS_VAL["raid_param"]["assemble_operation"],
-                    "md_device": self.raid_stopped,
-                    "disk": None})
-            assert_utils.assert_true(resp[0], resp[1])
-
         if self.disable_disk:
             resp = self.ras_test_obj.get_node_drive_details()
             if not resp[0]:
@@ -174,7 +142,6 @@ class TestNodeHealth:
                 input_parameters={"host_num": self.host_num,
                                   "drive_count": self.drive_count})
             assert_utils.assert_true(resp[0], resp[1])
-
         LOGGER.info("Change sspl log level to INFO")
         self.ras_test_obj.set_conf_store_vals(
              url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "INFO"})
@@ -234,7 +201,7 @@ class TestNodeHealth:
         """Verify resource discover command"""
         resp = self.resource_cli.resource_discover_node_cli()
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("The test completed successfully %s", resp)
+        LOGGER.info("The Test Completed successfully %s", resp)
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22526")
@@ -257,8 +224,8 @@ class TestNodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
             out = resp[1].split("},")
             i = 0
-            n = len(out)
-            while i < n:
+            num = len(out)
+            while i < num-1:
                 out[i] = out[i] + "}"
                 result = self.resource_cli.format_str_to_dict(out[i])
                 LOGGER.info(result["health"]["status"])
@@ -269,7 +236,7 @@ class TestNodeHealth:
             LOGGER.info(result["health"]["status"])
             LOGGER.info(result["health"]["description"])
             LOGGER.info("=======================================================")
-        LOGGER.info("Test completed Successfully")
+        LOGGER.info("Test Completed Successfully")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22528")
@@ -290,7 +257,8 @@ class TestNodeHealth:
             if not resp[0]:
                 df['Iteration0']['Step1'] = 'Fail'
             md_arrays = resp[1] if resp[0] \
-                else assert_utils.assert_true(resp[0], "Step 1: Failed to get raid array details")
+                else assert_utils.assert_true(resp[0],
+                                              "Step 1: Failed to get raid array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
             for k, v in md_arrays.items():
@@ -342,9 +310,9 @@ class TestNodeHealth:
                 else:
                     LOGGER.info("Step 3: Checked generated alert logs. Response: "
                                 "%s", resp)
-
             LOGGER.info("Step 4: Checking CSM REST API for alert")
-            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime, self.alert_types["missing"],
+            resp_csm = self.csm_alert_obj.verify_csm_response(self.starttime,
+                                                              self.alert_types["missing"],
                                                               False, test_cfg["resource_type"])
             if not resp_csm:
                 df['Iteration0']['Step4'] = 'Fail'
@@ -359,9 +327,8 @@ class TestNodeHealth:
                 assert_utils.assert_true(resp[0], resp[1])
                 out = resp[1].split("},")
                 i = 0
-                n = len(out)
-                LOGGER.info("The len is %s", n)
-                while i < n - 1:
+                num = len(out)
+                while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
                     LOGGER.info("======================================================")
@@ -410,7 +377,6 @@ class TestNodeHealth:
                                                        "add drive in raid "
                                                        "array")
             LOGGER.info("New MDARRAY: %s", new_array)
-
             time.sleep(self.cm_cfg["sleep_val"])
             LOGGER.info("Check health of node %s", self.test_node)
             resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
@@ -451,9 +417,8 @@ class TestNodeHealth:
                 assert_utils.assert_true(resp[0], resp[1])
                 out = resp[1].split("},")
                 i = 0
-                n = len(out)
-                LOGGER.info("The len is %s", n)
-                while i < n - 1:
+                num = len(out)
+                while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
                     LOGGER.info("======================================================")
@@ -473,12 +438,11 @@ class TestNodeHealth:
                 assert_utils.assert_true(resp[0], resp[1])
                 out = resp[1].split("},")
                 i = 0
-                n = len(out)
-                LOGGER.info("The len is %s", n)
-                while i < n - 1:
+                num = len(out)
+                while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info("======================================================")
+                    LOGGER.info("======================================")
                     LOGGER.info(result["health"]["status"])
                     LOGGER.info(result["health"]["description"])
                     i = i + 2
@@ -494,28 +458,30 @@ class TestNodeHealth:
             assert_utils.assert_true(resp[0], resp[1])
             out = resp[1].split("},")
             i = 0
-            n = len(out)
-            while i < n-1:
+            num = len(out)
+            while i < num-1:
                 out[i] = out[i] + "}"
                 result = self.resource_cli.format_str_to_dict(out[i])
-                LOGGER.info("======================================================")
+                LOGGER.info("======================================")
                 LOGGER.info(result["health"]["status"])
                 LOGGER.info(result["health"]["description"])
-                LOGGER.info("=======================================================")
+                LOGGER.info("======================================")
                 i = i+1
             result = self.resource_cli.format_str_to_dict(out[i])
-            LOGGER.info("======================================================")
+            LOGGER.info("==========================================")
             LOGGER.info(result["health"]["status"])
             LOGGER.info(result["health"]["description"])
-            LOGGER.info("=======================================================")
+            LOGGER.info("==========================================")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22530")
     def test_22530_wrong_parameter(self):
         """Verify resource show --health with wrong rpath"""
-        resp = self.resource_cli.resource_health_show_invalid_param(timeout=5 * 60)
-        error_msg = "cortx_setup command Failed:"
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_that(resp[1], error_msg)
-        LOGGER.info("Requesting resource health failed with wrong rpath with error %s",
-                    resp[1])
+        resp = self.resource_cli.resource_discover_node_cli()
+        if resp[0]:
+            resp = self.resource_cli.resource_health_show_invalid_param(timeout=5 * 60)
+            error_msg = "cortx_setup command Failed:"
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_that(resp[1], error_msg)
+            LOGGER.info("Requesting resource health failed with wrong rpath with error %s",
+                        resp[1])
