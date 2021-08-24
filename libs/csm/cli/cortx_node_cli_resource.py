@@ -139,3 +139,33 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         res = super().execute_cli_commands(cmd=cmd,
                                            patterns=default_patterns, time_out=timeout)
         return res
+
+    def split_str_to_list(self, input_str: str):
+        """
+        This Function formats the string to list
+        """
+        out = input_str.split("},")
+        i = 0
+        num = len(out)
+        while i < num - 1:
+            out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
+            result = super().format_str_to_dict(out[i])
+            LOGGER.info(result["health"]["status"])
+            LOGGER.info(result["health"]["description"])
+            i = i + 2
+        return result
+
+    def convert_to_list_format(self, input_str: str):
+        out = input_str.split("},")
+        i = 0
+        num = len(out)
+        while i < num - 1:
+            out[i] = out[i] + "}"
+            result = super().format_str_to_dict(out[i])
+            LOGGER.info(result["health"]["status"])
+            LOGGER.info(result["health"]["description"])
+            i = i + 1
+        result = super().format_str_to_dict(out[i])
+        LOGGER.info(result["health"]["status"])
+        LOGGER.info(result["health"]["description"])
+        return result

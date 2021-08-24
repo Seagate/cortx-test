@@ -187,19 +187,8 @@ class TestNodeHealth:
         if resp[0]:
             resp = self.resource_cli.resource_show_cont_health(timeout=5 * 60)
             assert_utils.assert_true(resp[0], resp[1])
-            out = resp[1].split("},")
-            i = 0
-            num = len(out)
-            while i < num-1:
-                out[i] = out[i] + "}"
-                result = self.resource_cli.format_str_to_dict(out[i])
-                LOGGER.info(result["health"]["status"])
-                LOGGER.info(result["health"]["description"])
-                i = i + 1
-            result = self.resource_cli.format_str_to_dict(out[i])
-            LOGGER.info(result["health"]["status"])
-            LOGGER.info(result["health"]["description"])
-        LOGGER.info("Test Completed Successfully")
+            result = self.resource_cli.convert_to_list_format(resp[1])
+            LOGGER.info("Test Completed Successfully %s", result)
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22528")
@@ -210,7 +199,7 @@ class TestNodeHealth:
         alert_list = [test_cfg["resource_type"], self.alert_types[
             "missing"], f"srvnode-{self.test_node}.mgmt.public"]
         resp = self.ras_test_obj.list_alert_validation(alert_list)
-        if not resp[0]:
+        if resp[0]:
             LOGGER.info("Alert not present")
             df_obj = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
                                   columns='Iteration0'.split())
@@ -288,15 +277,8 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                out = resp[1].split("},")
-                i = 0
-                num = len(out)
-                while i < num-1:
-                    out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
-                    result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info(result["health"]["status"])
-                    LOGGER.info(result["health"]["description"])
-                    i = i + 2
+                result = self.resource_cli.split_str_to_list(resp[1])
+                LOGGER.info("Health Map is %s", result)
             LOGGER.info("Resolving fault...")
             LOGGER.info("Step 5: Connecting OS drive %s", drive_name)
             resp = self.alert_api_obj.generate_alert(
@@ -374,16 +356,8 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                out = resp[1].split("},")
-                i = 0
-                num = len(out)
-                while i < num-1:
-                    out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
-                    result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info(result["health"]["status"])
-                    LOGGER.info(result["health"]["description"])
-                    i = i + 2
-
+                result = self.resource_cli.split_str_to_list(resp[1])
+                LOGGER.info("Health Map is: %s", result)
             LOGGER.info("Summary of test: %s", df_obj)
             result = False if 'Fail' in df_obj.values else True
             assert_utils.assert_true(result, "Test failed. Please check summary for failed step")
@@ -394,16 +368,8 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                out = resp[1].split("},")
-                i = 0
-                num = len(out)
-                while i < num-1:
-                    out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
-                    result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info(result["health"]["status"])
-                    LOGGER.info(result["health"]["description"])
-                    i = i + 2
-            LOGGER.info("======= Test Completed Successfully ========")
+                result = self.resource_cli.split_str_to_list(resp[1])
+                LOGGER.info("======= Test Completed Successfully %s========", result)
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22529")
@@ -413,18 +379,8 @@ class TestNodeHealth:
         if resp[0]:
             resp = self.resource_cli.resource_show_psu_health(timeout=5*60)
             assert_utils.assert_true(resp[0], resp[1])
-            out = resp[1].split("},")
-            i = 0
-            num = len(out)
-            while i < num-1:
-                out[i] = out[i] + "}"
-                result = self.resource_cli.format_str_to_dict(out[i])
-                LOGGER.info(result["health"]["status"])
-                LOGGER.info(result["health"]["description"])
-                i = i+1
-            result = self.resource_cli.format_str_to_dict(out[i])
-            LOGGER.info(result["health"]["status"])
-            LOGGER.info(result["health"]["description"])
+            result = self.resource_cli.convert_to_list_format(resp[1])
+            LOGGER.info("Test Completed Successfully %s", result)
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22530")
