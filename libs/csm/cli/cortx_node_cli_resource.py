@@ -143,6 +143,7 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
     def split_str_to_list(self, input_str: str):
         """
         This Function formats the string to list
+        to alternate index value
         """
         out = input_str.split("},")
         i = 0
@@ -156,6 +157,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         return result
 
     def convert_to_list_format(self, input_str: str):
+        """
+        This Function formats the string
+         to list to index value 1
+        """
         out = input_str.split("},")
         i = 0
         num = len(out)
