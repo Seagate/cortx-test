@@ -33,6 +33,8 @@ deactivate
 		stage('CLIENT_CONFIG') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
+export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+echo $PYTHONPATH
 python3.7 scripts/jenkins_job/client_conf.py
 deactivate
 '''
