@@ -1,7 +1,5 @@
-import os
 import logging
 from commons import commands
-from commons.helpers.host import Host
 from commons.helpers import node_helper
 from config import CMN_CFG
 from libs.csm.cli.cortx_node_cli import CortxNodeCli
@@ -41,6 +39,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             port=port)
 
     def resource_discover_node_cli(self):
+        """"
+        This functions executes the cortx_setup command
+        to create the Health map
+        """
         node_utils = node_helper.Node(hostname=self.host, username=self.username, password=self.password)
         res = node_utils.execute_cmd(cmd=commands.CMD_RESOURCE_DISCOVER)
         if not res:
@@ -51,6 +53,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             return False, res
 
     def resource_health_show_node_cli(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        to show health of the various components in Server
+        """
         default_patterns = [
             "exception",
             "usage:",
@@ -63,6 +69,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         return res
 
     def resource_show_disk_health(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        to fetch the OS disk health status
+        """
         default_patterns = [
             "Error",
             "exception",
@@ -76,6 +86,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         return res
 
     def resource_show_cont_health(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        to fetch the controller health
+        """
         default_patterns = [
             "Error",
             "exception",
@@ -90,6 +104,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         return res
 
     def resource_show_psu_health(self, timeout: int):
+        """"
+        This functions fetch the health of the storage PSU's
+        using cortx_setup.
+        """
         default_patterns = [
             "Error",
             "exception",
@@ -104,7 +122,10 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         return res
 
     def resource_health_show_invalid_param(self, timeout: int):
-        # ToDo: Complete function
+        """"
+        This functions executes the cortx_setup command
+        with wrong resource_path
+        """
         default_patterns = [
             "usage:",
             "command not found",
