@@ -678,26 +678,22 @@ class HALibs:
     def ha_s3_workload_operation(
             self,
             log_prefix,
-            bucketinfo=None,
+            s3userinfo,
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
             nsamples: int = 2,
-            nclients: int = 10,
-            nusers: int = 2,
-            nbuckets: int = 2):
+            nclients: int = 10):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
         operations on VM/HW.
         :param log_prefix: Test number prefix for log file
-        :param bucketinfo: Dictionary for s3 user and buckets info
+        :param s3userinfo: S3 user info
         :param skipread: Skip reading objects created in this run
         :param skipwrite: Skip writing objects created in this run
         :param skipcleanup: Skip deleting objects created in this run
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
-        :param nusers: Number of s3 user
-        :param nbuckets: Number of buckets per s3 user
         :return: bool/operation response
         """
         workloads = [
@@ -705,25 +701,17 @@ class HALibs:
             "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
         if self.setup_type == "HW":
             workloads.extend(["1GB", "4GB", "5GB"])
-        if skipread:
-            users = self.mgnt_ops.create_account_users(nusers=nusers)
-            bucketinfo = self.mgnt_ops.create_buckets(nbuckets=nbuckets, users=users)
-            resp = s3bench.setup_s3bench()
-            if not resp:
-                return resp, "Couldn't setup s3bench on client machine."
-        for s3userinfo in bucketinfo.values():
-            for bucket in s3userinfo['buckets']:
-                for workload in workloads:
-                    resp = s3bench.s3bench(
-                        s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=bucket,
-                        num_clients=nclients, num_sample=nsamples, obj_name_pref="hanodedown_test_",
-                        obj_size=workload, skip_write=skipwrite, skip_read=skipread,
-                        skip_cleanup=skipcleanup, log_file_prefix=log_prefix)
-                    resp = s3bench.check_log_file_error(resp[1])
-                    if resp:
-                        return resp, f"s3bench operation failed with {resp[1]}"
-        if skipwrite:
-            resp = self.delete_s3_acc_buckets_objects(bucketinfo)
-            if not resp[0]:
-                return resp
-        return True, bucketinfo
+
+        resp = s3bench.setup_s3bench()
+        if not resp:
+            return resp, "Couldn't setup s3bench on client machine."
+        for workload in workloads:
+            resp = s3bench.s3bench(
+                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
+                num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
+                obj_size=workload, skip_write=skipwrite, skip_read=skipread,
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}")
+            resp = s3bench.check_log_file_error(resp[1])
+            if resp:
+                return resp, f"s3bench operation failed with {resp[1]}"
+        return True, "Sucessfully completed s3bench operation"

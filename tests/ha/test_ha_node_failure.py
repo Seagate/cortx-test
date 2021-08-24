@@ -38,6 +38,7 @@ from config import CMN_CFG
 from config import RAS_TEST_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_system_health import SystemHealth
+from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs import HALibs
 
 # Global Constants
@@ -64,6 +65,7 @@ class TestHANodeFailure:
         cls.ha_obj = HALibs()
         cls.ha_rest = SystemHealth()
         cls.system_random = SystemRandom()
+        cls.mgnt_ops = ManagementOPs()
         cls.node_list = []
         cls.host_list = []
         cls.hlt_list = []
@@ -104,7 +106,8 @@ class TestHANodeFailure:
             "Precondition: Check Health status shows all components as online in cortx REST.")
         resp = self.ha_rest.check_csr_health_status_rest("online")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Precondition: Health status shows all components as online & PCS looks clean.")
@@ -124,24 +127,26 @@ class TestHANodeFailure:
                     LOGGER.info(
                         "Cleanup: Start %s.", self.srvnode_list[node])
                     resp = self.ha_rest.perform_cluster_operation(
-                        operation='start',
-                        resource='node',
-                        resource_id=node,
-                        login_as={"username": self.csm_user, "password": self.csm_passwd})
+                        operation='start', resource='node', resource_id=node, login_as={
+                            "username": self.csm_user, "password": self.csm_passwd})
                     assert_utils.assert_true(resp[0], resp[1])
                     # TODO: Need to add some delay after node operation performed
             if self.bucket_info:
                 LOGGER.info("Cleanup: Delete s3 accounts and buckets.")
-                self.ha_obj.delete_s3_acc_buckets_objects(self.bucket_info)
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(
+                    self.bucket_info)
+                assert_utils.assert_true(resp[0], resp[1])
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         LOGGER.info("Cleanup: All nodes are online and PCS looks clean.")
         resp = self.ha_rest.check_csr_health_status_rest("online")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Cleanup: Health status shows all components as online in cortx REST.")
+        LOGGER.info(
+            "Cleanup: Health status shows all components as online in cortx REST.")
         LOGGER.info("COMPLETED: Teardown Operations.")
 
     # pylint: disable-msg=too-many-statements
@@ -157,14 +162,20 @@ class TestHANodeFailure:
         node = self.system_random.choice(list(range(self.num_nodes)))
         self.restored = False
 
-        LOGGER.info("Step 1: Perform WRITEs with variable object sizes: 0B + (1KB - 5GB)")
+        LOGGER.info(
+            "Step 1: Perform WRITEs with variable object sizes: 0B + (1KB - 5GB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
         resp = self.ha_obj.ha_s3_workload_operation(
-            log_prefix='TEST-26435', skipread=True, skipcleanup=True)
+            s3userinfo=list(users.values())[0],
+            log_prefix='test_26435',
+            skipread=True,
+            skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.bucket_info = resp[1]
+        self.bucket_info = users
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
         LOGGER.info("Step 2: Poweroff %s from cluster with CORTX REST with %s user",
-                    self.srvnode_list[node], self.csm_user)
+            self.srvnode_list[node],
+            self.csm_user)
         resp = self.ha_rest.perform_cluster_operation(
             operation='poweroff',
             resource='node',
@@ -177,15 +188,13 @@ class TestHANodeFailure:
             resp, f"{self.host_list[node]} is still pinging")
         LOGGER.info("Step 2: %s server is poweroff and not pinging",
                     self.srvnode_list[node])
-        LOGGER.info(
-            "Step 3: Check for the %s down alert",
+        LOGGER.info("Step 3: Check for the %s down alert",
             self.srvnode_list[node])
         resp = self.csm_alerts_obj.verify_csm_response(
             self.starttime, self.alert_type["get"], False, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
-        LOGGER.info(
-            "Step 3: Verified the %s down alert",
-            self.srvnode_list[node])
+        LOGGER.info("Step 3: Verified the %s down alert",
+                    self.srvnode_list[node])
         LOGGER.info(
             "Step 3: Check health status for %s is offline and "
             "cluster/rack/site is degraded with REST",
@@ -208,13 +217,14 @@ class TestHANodeFailure:
             "Step 3: PCS shows services stopped for %s, services on other nodes shows started",
             self.srvnode_list[node])
         LOGGER.info("Step 4: Perform READs and verify DI on the written data")
-        resp = self.ha_obj.ha_s3_workload_operation(
-            log_prefix='TEST-26435', skipwrite=True, bucketinfo=self.bucket_info)
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(
+            users.values())[0], log_prefix='test_26435', skipwrite=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Verified READs successful")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.bucket_info)
         assert_utils.assert_true(resp[0], resp[1])
         self.bucket_info = None
-        LOGGER.info("Step 4: Verified READs successful")
-        LOGGER.info(
-            "Step 5: Start %s from REST with %s user",
+        LOGGER.info("Step 5: Start %s from REST with %s user",
             self.srvnode_list[node],
             self.csm_user)
         resp = self.ha_rest.perform_cluster_operation(
@@ -224,8 +234,7 @@ class TestHANodeFailure:
             login_as={"username": self.csm_user, "password": self.csm_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         # TODO: Need to add some delay after node operation performed
-        LOGGER.info(
-            "Step 5: Started the %s from REST with %s user",
+        LOGGER.info("Step 5: Started the %s from REST with %s user",
             self.srvnode_list[node],
             self.csm_user)
         LOGGER.info(
@@ -233,7 +242,8 @@ class TestHANodeFailure:
             self.srvnode_list[node])
         resp = self.ha_rest.check_csr_health_status_rest("online")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
         assert_utils.assert_true(resp[0], resp[1])
         # To get all the services up and running
         time.sleep(40)
