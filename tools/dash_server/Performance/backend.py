@@ -115,7 +115,6 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
     df.reset_index(inplace=True)
     df.columns = df.iloc[0]
     df = df[1:]
-    print(df)
     return df
 
 

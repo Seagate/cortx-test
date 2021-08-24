@@ -133,12 +133,17 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 df_optional = get_data_for_graphs(data_optional, xfilter, xfilter_tag)
                 x_data_optional = df_optional.iloc[:, 0]
 
-                if len(x_data) > len(x_data_optional):
+                if len(x_data) >= len(x_data_optional):
                     get_graphs(fig, fig_all, df, operations,
-                               plot_data, data, metric, x_data, xfilter_tag)
+                                plot_data, data, metric, x_data, xfilter_tag)
                     get_graphs(fig, fig_all, df_optional, operations, plot_data,
-                               data_optional, metric, x_data_optional, xfilter_tag)
-
+                                data_optional, metric, x_data_optional, xfilter_tag)
+                    not_plotted = False
+                else:
+                    get_graphs(fig, fig_all, df_optional, operations, plot_data,
+                                data_optional, metric, x_data_optional, xfilter_tag)
+                    get_graphs(fig, fig_all, df, operations,
+                                plot_data, data, metric, x_data, xfilter_tag)
                     not_plotted = False
 
             if not_plotted:

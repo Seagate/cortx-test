@@ -597,3 +597,41 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes, pfi
 
     return options, value, disabled
 
+
+@app.callback(
+    Output('graphs_obj_size_dropdown', 'options'),
+    Output('graphs_obj_size_dropdown', 'value'),
+    Output('graphs_obj_size_dropdown', 'disabled'),
+    Output('graphs_obj_size_dropdown', 'style'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
+    Input('graphs_build_dropdown', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_sessions_dropdown', 'value'),
+    prevent_initial_call=True
+)
+def update_object_size_dropdown(xfilter, release, branch, build, bench, sessions):
+    options = None
+    value = None
+    disabled = False
+    style = {'display': 'None'}
+
+    if not all([xfilter, release, branch, build, bench, sessions]): # pylint: disable=no-else-raise
+        raise PreventUpdate
+    else:
+        if sessions == 'all':
+            style = style_dropdown_medium
+            objsizes = get_distinct_keys(release, 'Object_Size', {
+                                    'Branch': branch, xfilter: build, 'Name': bench})
+            if objsizes:
+                options = get_dict_from_array(objsizes, False)
+                value = options[0]['value']
+                if len(objsizes) == 1:
+                    disabled = True
+            else:
+                raise PreventUpdate
+        else:
+            raise PreventUpdate
+
+    return options, value, disabled, style
