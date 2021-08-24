@@ -29,7 +29,7 @@ Click Confirmation Dialogs
     wait for page or element to load  3s
     Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
     click Element  ${GRAPH_NODE_OK_ID}
-    sleep  10s
+    wait for page or element to load  10s
 
 Click Node Stop
     [Documentation]  Test keyword is to check node stop scenario
