@@ -68,3 +68,4 @@ SERVER_PSU_FAULT_RESOLVED = {
         "Failure detected",
         "Power Supply AC lost"],
     "deassert": True}
+RAID_INTEGRITY_FAULT = {"count": 5, "timeout": 60}
