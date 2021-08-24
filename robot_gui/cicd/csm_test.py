@@ -12,24 +12,27 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CsmGuiTest:
-	def __init__(self):
-		self.log_file_name=\
-			f"/tmp/csm_test_results_{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d-%H:%M:%S')}.log"
+	def __init__(self, log_file_name=''):
+		if log_file_name:
+			self.log_file_name = log_file_name
+		else:
+			self.log_file_name=\
+			f"/tmp/csm_gui_test_{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d-%H:%M:%S')}.log"
 		self.csmtestdir = "/opt/seagate/cortx/csm/csm_test/"
-		
+
 	def arg_parser(self):
 		parser = argparse.ArgumentParser()
-		parser.add_argument("-l", "--csm_url", type=str, default="https://localhost:28100/#/",
+		parser.add_argument("-l", "--csm_url", type=str, default="http://localhost/#/",
 							help="CSM GUI URL")
 		parser.add_argument("-b", "--browser", type=str, default="chrome",
-							help="chrome|firefox")
-		parser.add_argument("-u", "--csm_user", type=str,
+							help="browser")
+		parser.add_argument("-u", "--csm_user", type=str, default="cortxadmin",
 							help="username")
-		parser.add_argument("-p", "--csm_pass", type=str,
+		parser.add_argument("-p", "--csm_pass", type=str, default="Cortxadmin@123",
 							help="password")
 		parser.add_argument("-m", "--headless", type=str, default="True",
 							help="headless")
-		parser.add_argument("-t", "--test_tags", type=str, default="Sanity_test",
+		parser.add_argument("-t", "--test_tags", type=str, default="sanity",
 							help="test_tags")
 		return parser.parse_args()
 
@@ -43,8 +46,7 @@ class CsmGuiTest:
 			os.remove(self.log_file_name)
 		self.build_csm_test_cmd(args, logFile=self.log_file_name)
 		test_status, test_output, test_log, test_report = self.getCsmTestStatus(logFile=self.log_file_name)
-		print(test_status)
-		return test_status
+		return test_status, test_output, test_log, test_report
 
 	def getCsmTestStatus(self, logFile=None):
 		"""
@@ -86,8 +88,8 @@ class CsmGuiTest:
 		headless = " -v headless:" + str(args.headless)
 		url = " -v url:"+ str(args.csm_url)
 		browser = " -v browser:" + str(args.browser)
-		username = " -v username:" + str(args.csm_user)
-		password = " -v password:" + str(args.csm_pass)
+		username = " -v username:" + (str(args.csm_user) if args.csm_user else "cortxadmin")
+		password = " -v password:" + (str(args.csm_pass) if args.csm_pass else "Cortxadmin@123")
 		RESOURCES = " -v RESOURCES:" + self.csmtestdir
 		tag = " -i " + str(args.test_tags)
 		directory = " " + self.csmtestdir +"testsuites/."
@@ -95,7 +97,6 @@ class CsmGuiTest:
 
 		cmd_line = "robot --timestampoutputs"+reports+url+browser+\
 				   username+headless+password+RESOURCES+tag+directory+";cd .."
-		print(cmd_line)
 		log = open(logFile, "w+")
 		prc = Popen(cmd_line, shell=True, stdout=log, stderr=log)
 		prc.communicate()
@@ -109,11 +110,13 @@ def main():
     """
 	obj = CsmGuiTest()
 	args = obj.arg_parser()
-	obj.run_cmd_test(args)
+	test_status, test_output, test_log, test_report = obj.run_cmd_test(args)
+	print(test_status)
 
 
 if __name__ == '__main__':
 	sys.path.append(os.path.join(os.path.dirname(pathlib.Path(__file__)), '..', '..'))
 	sys.path.append(os.path.join(os.path.dirname(pathlib.Path(os.path.realpath(__file__))), '..', '..'))
 	main()
+
 
