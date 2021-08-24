@@ -18,13 +18,15 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import pytest
 import logging
+
+import pytest
+
+from commons import commands
 from commons.ct_fail_on import CTFailOn
-from libs.motr import motr_test_lib, WORKLOAD_CFG
 from commons.errorcodes import error_handler
 from commons.utils import system_utils, assert_utils
-from commons import commands
+from libs.motr import motr_test_lib, WORKLOAD_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -65,13 +67,18 @@ class TestExecuteWorkload:
                 cmd = self.motr_obj.get_command_str(batches[index])
                 if cmd:
                     LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[0], self.uname_list[0], self.passwd_list[0])
+                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                                  self.host_list[0],
+                                                                                  self.uname_list[0],
+                                                                                  self.passwd_list[0]
+                                                                                  )
                     if ret:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
                         assert False
                     if (b"ERROR" or b"Error") in error1:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
-                        assert_not_in(error1, b"ERROR" or b"Error", '"{cmd}" Failed, Please check the log')
+                        assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                                   '"{cmd}" Failed, Please check the log')
                     LOGGER.info(f"{result},{error1}")
 
     @pytest.mark.tags("TEST-14882")
@@ -255,7 +262,8 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def test_23198(self):
         """
-        Verify m0kv command (for motr meta data) to generate file with several FID using option "genf"
+        Verify m0kv command (for motr meta data) to
+        generate file with several FID using option "genf"
         """
         LOGGER.info("Start: Verify m0kv command to generate file with several FID using option genf")
         self.execute_test('test_23198')
@@ -266,7 +274,8 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def test_23199(self):
         """
-        Verify motr meta data using the m0kv command to create index using single FID using option "index create"
+        Verify motr meta data using the m0kv command to
+        create index using single FID using option "index create"
         """
         LOGGER.info("Start: Verify motr meta data using the m0kv command to create index using single FID using option index create")
         self.execute_test('test_23199')
@@ -351,18 +360,21 @@ class TestExecuteWorkload:
         outfile = '/tmp/output'
         for j, host in enumerate(self.host_list):
             ret = self.motr_obj.get_cluster_info(host)
-            assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
+            assert_utils.assert_true(ret,
+                                     "Not able to Fetch cluster INFO. Please check cluster status")
             i = 1
             l, H, P, p = self.motr_obj.get_endpoints(host)
             if self.last_endpoint == l:
                 LOGGER.info("Looks like cluster is not fully deployed. Exiting")
                 break
-            bsize = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K', '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M',
-                     '1M']
-            size = ['4k', '4k', '4k', '8k', '16k', '64k', '64k', '128k', '4k', '1m', '1m', '4m', '4m', '4m', '4m', '16m',
-                    '1m']
-            count = ['1', '2', '4', '4', '4', '2', '4', '4', '250', '2', '4', '2', '3', '4', '8', '4', '1024']
-            layout = ['1', '1', '1', '2', '3', '5', '5', '6', '1', '9', '9', '11', '11', '11', '11', '11', '13']
+            bsize = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K',
+                     '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M', '1M']
+            size = ['4k', '4k', '4k', '8k', '16k', '64k', '64k', '128k',
+                    '4k', '1m', '1m', '4m', '4m', '4m', '4m', '16m', '1m']
+            count = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
+                     '2', '4', '2', '3', '4', '8', '4', '1024']
+            layout = ['1', '1', '1', '2', '3', '5', '5', '6', '1',
+                      '9', '9', '11', '11', '11', '11', '11', '13']
             self.last_endpoint = l
             for bs, s, c, L in zip(bsize, size, count, layout):
                 o = str(i) + ":" + str(i)
@@ -376,16 +388,19 @@ class TestExecuteWorkload:
                 index = i
                 batch = [ddCmd, cpCmd, catCmd, diffCmd, mdCmd, unlinkCmd]
                 for cmd in batch:
-					LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-					result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[j], self.uname_list[j],
-																				  self.passwd_list[j])
-					LOGGER.info(f"{result},{error1}")
-					if ret:
-					   LOGGER.info(f'"{cmd}" Failed, Please check the log')
-					   assert False
-					if (b"ERROR" or b"Error") in error1:
-					   LOGGER.error(f'"{cmd}" failed, please check the log')
-					   assert_utils.assert_not_in(error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log')
+                    LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
+                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                                  self.host_list[j],
+                                                                                  self.uname_list[j],
+                                                                                  self.passwd_list[j])
+                    LOGGER.info(f"{result},{error1}")
+                    if ret:
+                        LOGGER.info(f'"{cmd}" Failed, Please check the log')
+                        assert False
+                    if (b"ERROR" or b"Error") in error1:
+                        LOGGER.error(f'"{cmd}" failed, please check the log')
+                        assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                                   f'"{cmd}" Failed, Please check the log')
             LOGGER.info("Stop: Verify multiple m0cp/cat operation")
 
     @pytest.mark.tags("TEST-22963")

@@ -19,27 +19,30 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """S3bench test workload suit."""
-import logging
 
-import pytest
+import logging
 import os
 import time
-import json
+
+import pytest
+
 from commons import configmanager, commands
-from libs.s3 import ACCESS_KEY, SECRET_KEY
-from scripts.s3_bench import s3bench
-from config import CMN_CFG
-from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import S3_CFG
+from config import CMN_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 S3T_OBJ = S3TestLib()
 
 class TestWorkloadS3Bench:
+    """
+    Test suits for S3 AWS workload
+    """
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -78,10 +81,11 @@ class TestWorkloadS3Bench:
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
-            resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name, num_clients=num_clients,
-                                   num_sample=num_sample, obj_name_pref="s3workload_test_", obj_size=workload,
+            resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=bucket_name,
+                                   num_clients=num_clients, num_sample=num_sample,
+                                   obj_name_pref="s3workload_test_", obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix="TEST-23041")
-            self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
@@ -107,7 +111,8 @@ class TestWorkloadS3Bench:
                     bucket_name,
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
-            resp = system_utils.run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(bucket_name))
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(bucket_name))
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_exact_string(resp[1], self.object_name)
             self.log.info("Downloading object from bucket using awscli")
@@ -119,10 +124,11 @@ class TestWorkloadS3Bench:
             assert_utils.assert_true(resp[0], resp[1])
             download_checksum = system_utils.calculate_checksum(
                 self.downloaded_file_path)
-            self.log.info("File path: %s, before_checksum: %s", self.downloaded_file_path, before_checksum)
+            self.log.info("File path: %s, before_checksum: %s", self.downloaded_file_path,
+                          before_checksum)
             assert_utils.assert_equals(before_checksum, download_checksum,
-                                       f"Downloaded file is not same as uploaded: {before_checksum},"
-                                       f" {download_checksum}")
+                                       f"Downloaded file is not same as uploaded:"
+                                       f" {before_checksum}," f" {download_checksum}")
             system_utils.remove_file(self.downloaded_file_path)
             self.buckets_list.append(bucket_name)
             self.log.info("Removing object from bucket using awscli")
@@ -132,7 +138,7 @@ class TestWorkloadS3Bench:
                     self.object_name))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Removing bucket using awscli")
-            resp = system_utils.run_local_cmd(cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name))
+            resp = system_utils.run_local_cmd(
+                cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Successfully downloaded object from bucket using awscli")
-
