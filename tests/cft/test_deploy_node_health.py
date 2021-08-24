@@ -31,7 +31,7 @@ class TestNodeHealth:
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
         cls.list1 = []
-        for index in range(1, cls.node_num):
+        for index in range(1, cls.node_cnt):
             cls.list1.append(index)
         cls.node_num = cls.list1
         cls.test_node = secrets.choice(cls.node_num)
@@ -191,7 +191,7 @@ class TestNodeHealth:
         if resp[0]:
             resp = self.resource_cli.resource_show_cont_health(timeout=5 * 60)
             assert_utils.assert_true(resp[0], resp[1])
-            result = self.resource_cli.convert_to_list_format(resp[1])
+            result = self.resource_cli.convert_to_list_format(resp[1], "},")
             LOGGER.info("Test Completed Successfully %s", result)
 
     # pylint:disable=too-many-locals,too-many-statements,too-many-branches
@@ -276,7 +276,7 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                result = self.resource_cli.split_str_to_list(resp[1])
+                result = self.resource_cli.split_str_to_list(resp[1], "},")
                 LOGGER.info("Health Map is %s", result)
             LOGGER.info("Resolving fault...")
             LOGGER.info("Step 5: Connecting OS drive %s", drive_name)
@@ -349,7 +349,7 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                result = self.resource_cli.split_str_to_list(resp[1])
+                result = self.resource_cli.split_str_to_list(resp[1], "},")
                 LOGGER.info("Health Map is: %s", result)
             LOGGER.info("Summary of test: %s", df_obj)
             result = bool(df_obj.values)
@@ -360,7 +360,7 @@ class TestNodeHealth:
             if resp[0]:
                 resp = self.resource_cli.resource_show_disk_health(timeout=5 * 60)
                 assert_utils.assert_true(resp[0], resp[1])
-                result = self.resource_cli.split_str_to_list(resp[1])
+                result = self.resource_cli.split_str_to_list(resp[1], "},")
                 LOGGER.info("Test Completed Successfully %s", result)
 
     @pytest.mark.cluster_management_ops
@@ -371,7 +371,7 @@ class TestNodeHealth:
         if resp[0]:
             resp = self.resource_cli.resource_show_psu_health(timeout=5*60)
             assert_utils.assert_true(resp[0], resp[1])
-            result = self.resource_cli.convert_to_list_format(resp[1])
+            result = self.resource_cli.convert_to_list_format(resp[1], "},")
             LOGGER.info("Test Completed Successfully %s", result)
 
     @pytest.mark.cluster_management_ops

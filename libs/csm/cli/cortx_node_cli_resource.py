@@ -140,12 +140,12 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
                                            patterns=default_patterns, time_out=timeout)
         return res
 
-    def split_str_to_list(self, input_str: str):
+    def split_str_to_list(self, input_str: str, sep: str):
         """
         This Function formats the string to list
         to alternate index value
         """
-        out = input_str.split("},")
+        out = input_str.split(sep)
         i = 0
         num = len(out)
         while i < num - 1:
@@ -156,12 +156,12 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             i = i + 2
         return result
 
-    def convert_to_list_format(self, input_str: str):
+    def convert_to_list_format(self, input_str: str, sep: str):
         """
         This Function formats the string
          to list to index value 1
         """
-        out = input_str.split("},")
+        out = input_str.split(sep)
         i = 0
         num = len(out)
         while i < num - 1:
