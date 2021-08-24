@@ -32,6 +32,7 @@ mypy==0.782
 pandas==1.2.1
 paramiko==2.6.0
 pika==1.1.0
+psutil
 pycryptodome==3.10.1
 PyHamcrest==2.0.2
 pymongo~=3.11.4

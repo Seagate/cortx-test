@@ -19,66 +19,56 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Threaded RPC Server implementation."""
+import rpyc
+from rpyc.utils.server import ThreadedServer
 import sys
 import threading
+from threading import Thread
+import time
+import trace
 import traceback
-import socketserver
-from typing import Callable
-from typing import Tuple
-from xmlrpc.server import SimpleXMLRPCServer
+
+from core.runner import get_jira_credential
+from commons.utils import jira_utils
+from commons import constants as common_cnst
 
 
-class DispatchException(Exception):
+class RpcCalls(rpyc.Service):
     """
-    Exception class for dispatch failures.
+    RPC class to define functions which needs to be called as async rpc
     """
-    def __init__(self, msg):
+
+    @staticmethod
+    def exposed_test_status_update(te_tkt, test_id, test_status):
         """
-        Raise a DispatchException when method dispatching fails.
+        Function to update test status in jira
         """
-        super(DispatchException).__init__(type(self))
-        self.msg = "E: %s" % msg
+        jira_id, jira_pwd = get_jira_credential()
+        task = jira_utils.JiraTask(jira_id, jira_pwd)
+        task.update_test_jira_status(te_tkt, test_id, test_status)
+        print('done ')
 
-    def __str__(self):
-        return self.msg
-
-
-class XMLRPCServer(socketserver.ThreadingMixIn, SimpleXMLRPCServer):
-    """RPC Server attached to Drunner or Test Runner."""
-    def __init__(self, *args, **kwargs):
-        SimpleXMLRPCServer.__init__(self, *args, **kwargs)
-
-    def _dispatch(self, method, params):
+    @staticmethod
+    def exposed_test_comment_update(test_run_id, test_id, comment):
         """
-        Dispatch method resolves the calling path to mapped function.
-        :param method: method mapped
-        :param params: Arguments of the method
-        :return: returns the returns the serialized return value of dispatched method
+        Function to update log path as comment in jira
         """
-        try:
-            return SimpleXMLRPCServer._dispatch(self, method, params)
-        except DispatchException:
-            print("".join(traceback.format_exception(*sys.exc_info())))
-            raise
+        jira_id, jira_pwd = get_jira_credential()
+        task = jira_utils.JiraTask(jira_id, jira_pwd)
+        task.update_execution_details(test_run_id, test_id, comment)
 
 
-class Server(threading.Thread):
-    """Server Thread to bootstrap XMLRPcServer"""
-    def __init__(self, addr: Tuple, register_cb: Callable):
-        self.port = addr[1]
-        self.bind_int = addr[0]
-        self.register_cb = register_cb
-        self.server = XMLRPCServer((self.bind_int, int(self.port)),
-                                   allow_none=True,
-                                   logRequests=False)
-        threading.Thread.__init__(self)
+def threaded_function():
+    """
+    Threaded server to start rpc
+    """
+    server = ThreadedServer(RpcCalls, port=common_cnst.RPC_PORT)
+    server.start()
 
-    def run(self):
-        """Register the RPC methods and start the RPC server."""
-        try:
-            self.register_cb(self.server)
-            self.server.serve_forever()
-        except Exception as error:
-            print(str(error))
-            traceback.print_exception(*sys.exc_info())
-            sys.exit(0)  # used in child process and exits rpc process
+
+def get_rpc_server():
+    """
+    Get rpc server thread
+    """
+    thread = Thread(target=threaded_function)
+    return thread

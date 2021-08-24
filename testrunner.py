@@ -9,7 +9,10 @@ import requests
 from datetime import datetime
 from multiprocessing import Process
 from jira import JIRA
+import time
+import psutil
 from core import runner
+from core import rpcserver
 from core import kafka_consumer
 from core.health_status_check_update import HealthCheck
 from core.locking_server import LockingServer
@@ -21,6 +24,9 @@ from commons import params
 from commons import cortxlogging
 from commons import constants as common_cnst
 
+INT_IP = '0.0.0.0'
+INT_PORT = 9092
+CURRENT_PID = os.getpid()
 LOGGER = logging.getLogger(__name__)
 
 
@@ -62,6 +68,8 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
+    parser.add_argument("--rpc_enable", type=str_to_bool, default=False,
+                        help="Enable rpc for jira update")
     return parser.parse_args()
 
 
@@ -161,6 +169,9 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         else:
             cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
+    if args.rpc_enable:
+        cmd_line = cmd_line + ["--rpc_enable=" + str(True)]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
@@ -168,10 +179,22 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
     prc.communicate()
     if prc.returncode == 3:
         print('Exiting test runner due to bad health of deployment')
-        sys.exit(1)
+        if args.rpc_enable:
+            print('Wait for 2 mins to finish any asyn rpc call')
+            time.sleep(120)
+            current_pid = psutil.Process(CURRENT_PID)
+            current_pid.terminate()
+        else:
+            sys.exit(1)
     if prc.returncode == 4:
         print('Exiting test runner due to health check script error')
-        sys.exit(2)
+        if args.rpc_enable:
+            print('Wait for 2 mins to finish any asyn rpc call')
+            time.sleep(120)
+            current_pid = psutil.Process(CURRENT_PID)
+            current_pid.terminate()
+        else:
+            sys.exit(2)
 
 
 def delete_status_files():
@@ -577,6 +600,10 @@ def main(args):
         prc = subprocess.Popen(cmd_line)
         out, err = prc.communicate()
     elif args.te_ticket:
+        if args.rpc_enable:
+            rpc_server = rpcserver.get_rpc_server()
+            rpc_server.start()
+            print("RPC server started")
         trigger_tests_from_te(args)
     else:
         check_kafka_msg_trigger_test(args)

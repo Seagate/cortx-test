@@ -280,6 +280,9 @@ PIP_CONFIG = "/etc/pip.conf"
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
 
+# RPC Server
+RPC_PORT = 18812
+
 class SwAlerts:
     SVCS_3P = [
 #        "elasticsearch.service", # brings down the csm

@@ -39,6 +39,7 @@ from typing import List
 
 import pytest
 import requests
+import rpyc
 from _pytest.main import Session
 from filelock import FileLock
 from strip_ansi import strip_ansi
@@ -47,6 +48,7 @@ from commons import Globals, s3_dns
 from commons import cortxlogging
 from commons import params
 from commons import report_client
+from commons import constants as common_cnst
 from commons.helpers.health_helper import Health
 from commons.utils import assert_utils
 from commons.utils import config_utils
@@ -230,7 +232,10 @@ def pytest_addoption(parser):
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
     )
-
+    parser.addoption(
+        "--rpc_enable", action="store", default=False,
+        help="enable rpc for jira tasks."
+    )
 
 def read_test_list_csv() -> List:
     try:
@@ -410,6 +415,12 @@ def pytest_configure(config):
             LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
         else:
             Globals.JIRA_UPDATE = False
+        rpc_enable = ast.literal_eval(str(config.option.rpc_enable))
+        if rpc_enable:
+            Globals.RPC_ENABLE = True
+            LOGGER.info(f'Rpc update pytest switch is set to {Globals.RPC_ENABLE}')
+        else:
+            Globals.RPC_ENABLE = False
     # Handle parallel execution.
     if not hasattr(config, 'workerinput'):
         config.shared_directory = tempfile.mkdtemp()
@@ -424,6 +435,12 @@ def pytest_configure_node(node):
             LOGGER.info(f'Jira update pytest switch is set to {Globals.JIRA_UPDATE}')
         else:
             Globals.JIRA_UPDATE = False
+        rpc_enable = ast.literal_eval(str(node.config.option.rpc_enable))
+        if rpc_enable:
+            Globals.RPC_ENABLE = True
+            LOGGER.info(f'RPC update pytest switch is set to {Globals.RPC_ENABLE}')
+        else:
+            Globals.RPC_ENABLE = False
     node.workerinput['shared_dir'] = node.config.shared_directory
     pytest.dns_rr_counter = 0
 
@@ -456,6 +473,25 @@ def reset_imported_module_log_level():
     # Handle Place holders logging
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
         logging.getLogger(pkg).setLevel(logging.WARNING)
+
+
+def update_jira_through_rpc(te_tkt, test_id, test_status):
+    """
+    Function to update jira status through async rpc
+    """
+    rpc_client = rpyc.connect("localhost", common_cnst.RPC_PORT)
+    rpc_jira_update = rpyc.async_(rpc_client.root.test_status_update)
+    rpc_jira_update(te_tkt, test_id, test_status)
+
+
+def update_jira_details_through_rpc(test_run_id, test_id, comment):
+    """
+    Function to update jira comment through async rpc
+    """
+    rpc_client = rpyc.connect("localhost", common_cnst.RPC_PORT)
+    rpc_comment_update = rpyc.async_(rpc_client.root.test_comment_update)
+    rpc_comment_update(test_run_id, test_id, comment)
+
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -611,6 +647,7 @@ def pytest_runtest_makereport(item, call):
     current_file = 'other_test_calls.log'
     jira_update = ast.literal_eval(str(item.config.option.jira_update))
     db_update = ast.literal_eval(str(item.config.option.db_update))
+    rpc_enable = ast.literal_eval(str(item.config.option.rpc_enable))
     test_id = CACHE.lookup(report.nodeid)
     if report.when == 'setup':
         Globals.CSM_LOGS = f"{LOG_DIR}/latest/{test_id}_Gui_Logs/"
@@ -623,9 +660,12 @@ def pytest_runtest_makereport(item, call):
             # The status is again anyhow updated in teardown as it was earlier.
             try:
                 if jira_update:
-                    jira_id, jira_pwd = get_jira_credential()
-                    task = jira_utils.JiraTask(jira_id, jira_pwd)
-                    task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                    if rpc_enable:
+                        update_jira_through_rpc(item.config.option.te_tkt, test_id, 'FAIL')
+                    else:
+                        jira_id, jira_pwd = get_jira_credential()
+                        task = jira_utils.JiraTask(jira_id, jira_pwd)
+                        task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
             except (requests.exceptions.RequestException, Exception) as fault:
                 LOGGER.exception(str(fault))
                 LOGGER.error("Failed to execute Jira update for %s", test_id)
@@ -647,7 +687,11 @@ def pytest_runtest_makereport(item, call):
                 if item.rep_setup.failed or item.rep_teardown.failed:
                     try:
                         if jira_update:
-                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                            if rpc_enable:
+                                update_jira_through_rpc(item.config.option.te_tkt, test_id, 'FAIL')
+                            else:
+                                task.update_test_jira_status(item.config.option.te_tkt, test_id,
+                                                             'FAIL')
                         if db_update:
                             # capture exec info
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
@@ -658,7 +702,11 @@ def pytest_runtest_makereport(item, call):
                 elif item.rep_setup.passed and (item.rep_call.failed or item.rep_teardown.failed):
                     try:
                         if jira_update:
-                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'FAIL')
+                            if rpc_enable:
+                                update_jira_through_rpc(item.config.option.te_tkt, test_id, 'FAIL')
+                            else:
+                                task.update_test_jira_status(item.config.option.te_tkt, test_id,
+                                                             'FAIL')
                         if db_update:
                             payload = create_report_payload(item, call, 'FAIL', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
@@ -668,7 +716,11 @@ def pytest_runtest_makereport(item, call):
                 elif item.rep_setup.passed and item.rep_call.passed and item.rep_teardown.passed:
                     try:
                         if jira_update:
-                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'PASS')
+                            if rpc_enable:
+                                update_jira_through_rpc(item.config.option.te_tkt, test_id, 'PASS')
+                            else:
+                                task.update_test_jira_status(item.config.option.te_tkt, test_id,
+                                                             'PASS')
                         if db_update:
                             payload = create_report_payload(item, call, 'PASS', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
@@ -681,7 +733,11 @@ def pytest_runtest_makereport(item, call):
                     # Reporting it blocked and updating db.
                     try:
                         if jira_update:
-                            task.update_test_jira_status(item.config.option.te_tkt, test_id, 'BLOCKED')
+                            if rpc_enable:
+                                update_jira_through_rpc(item.config.option.te_tkt, test_id, 'PASS')
+                            else:
+                                task.update_test_jira_status(item.config.option.te_tkt, test_id,
+                                                             'BLOCKED')
                         if db_update:
                             payload = create_report_payload(item, call, 'BLOCKED', db_user, db_pass)
                             REPORT_CLIENT.create_db_entry(**payload)
@@ -857,9 +913,12 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
     if report.when == 'setup' and report.outcome == 'passed':
         # If you reach here and when you know setup passed.
         if Globals.JIRA_UPDATE:
-            jira_id, jira_pwd = get_jira_credential()
-            task = jira_utils.JiraTask(jira_id, jira_pwd)
-            task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
+            if Globals.RPC_ENABLE:
+                update_jira_through_rpc(Globals.TE_TKT, test_id, 'Executing')
+            else:
+                jira_id, jira_pwd = get_jira_credential()
+                task = jira_utils.JiraTask(jira_id, jira_pwd)
+                task.update_test_jira_status(Globals.TE_TKT, test_id, 'Executing')
     elif report.when == 'call':
         pass
     elif report.when == 'teardown':
@@ -896,14 +955,17 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
                     test_run_id = next(d['test_run_id'] for i, d in enumerate(
                         Globals.tp_meta['test_meta']) if d['test_id'] ==
                                        test_id)
-                    resp = task.update_execution_details(
-                        test_run_id=test_run_id, test_id=test_id,
-                        comment=comment)
-                    if resp:
-                        LOGGER.info("Added execution details comment in: %s",
-                                    test_id)
+                    if Globals.RPC_ENABLE:
+                        update_jira_details_through_rpc(test_run_id, test_id, comment)
                     else:
-                        LOGGER.error("Failed to comment to %s", test_id)
+                        resp = task.update_execution_details(
+                            test_run_id=test_run_id, test_id=test_id,
+                            comment=comment)
+                        if resp:
+                            LOGGER.info("Added execution details comment in: %s",
+                                        test_id)
+                        else:
+                            LOGGER.error("Failed to comment to %s", test_id)
                 else:
                     LOGGER.error("Failed to get correct TE id. \nExpected: "
                                  "%s\nActual: %s", Globals.TE_TKT,
