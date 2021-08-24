@@ -79,7 +79,7 @@ class MotrTestLib():
     def is_localhost(self, hostname: str) -> bool:
         name = CMN_CFG["nodes"][0]["hostname"]
         temp = hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
-        return hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
+        return temp
 
     def get_cluster_info(self, hostname):
         if hostname:
@@ -155,24 +155,27 @@ class MotrTestLib():
 
     def update_workload_file(self, fname):
         ret = self.get_cluster_info(self.host_list[0])
-        if ret:
-            return ret
+        assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
 
         str = "s/^\([[:space:]]*MOTR_LOCAL_ADDR: *\).*/\\1\"{}\"/""".format(self.local_endpoint)
         cmd = "sed -i \"{}\" {}".format(str, fname)
         ret = os.system(cmd)
+        assert_utils.assert_equal(ret, 0)
 
         str = "s/^\([[:space:]]*MOTR_HA_ADDR: *\).*/\\1\"{}\"/".format(self.ha_endpoint)
         cmd = "sed -i \"{}\" {}".format(str, fname)
         ret = os.system(cmd)
+        assert_utils.assert_equal(ret, 0)
 
         str = "s/^\([[:space:]]*PROF: *\).*/\\1\"{}\"/".format(self.profile_fid)
         cmd = "sed -i \"{}\" {}".format(str, fname)
         ret = os.system(cmd)
+        assert_utils.assert_equal(ret, 0)
 
         str = "s/^\([[:space:]]*PROCESS_FID: *\).*/\\1\"{}\"/".format(self.process_fid)
         cmd = "sed -i \"{}\" {}".format(str, fname)
         ret = os.system(cmd)
+        assert_utils.assert_equal(ret, 0)
 
     def m0crate_parse_func(self, cmd_dict):
         workload_file = self.get_workload_file_name(cmd_dict['params'])
