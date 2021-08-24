@@ -24,8 +24,6 @@ from commons import params
 from commons import cortxlogging
 from commons import constants as common_cnst
 
-INT_IP = '0.0.0.0'
-INT_PORT = 9092
 CURRENT_PID = os.getpid()
 LOGGER = logging.getLogger(__name__)
 
