@@ -130,7 +130,7 @@ def sort_builds_list(builds):
     Returns:
         list: a list of builds with higher build number first
     """
-    temp_builds = builds
+    temp_builds = list(dict.fromkeys(builds))
     data_sorted = []
     for key in builds:
         if key.startswith('cortx'):
@@ -175,6 +175,7 @@ def sort_object_sizes_list(obj_sizes):
     """
     # Remove any space in object size string, it should only have number and two letter unit without space
     obj_sizes = [s.replace(' ', '') for s in obj_sizes]
+    obj_sizes = list(dict.fromkeys(obj_sizes))
 
     sizes_sorted = {
         'KB': [], 'MB': [], 'GB': [],
@@ -207,40 +208,6 @@ def sort_object_sizes_list(obj_sizes):
     data_sorted = get_unique_object_sizes(data_sorted)
 
     return data_sorted
-
-
-def get_profiles(release, branch, build):
-    """
-    A function to get profiles for PKEY (outdated)
-    """
-    pkeys = get_distinct_keys(release, 'PKey', {
-        'Branch': branch, 'Build': build
-    })
-
-    reference = ('ITR1', '2N', '1C', '0PC', 'NA')
-    pkey_split = {}
-    options = []
-
-    for key in pkeys:
-        pkey_split[key] = key.split("_")[3:]
-
-    for profile_list in list(pkey_split.values()):
-        tag = 'Nodes {}, '.format(profile_list[1][:-1])
-
-        if profile_list[2] != reference[2]:
-            tag = tag + 'Clients {}, '.format(profile_list[2][:-1])
-
-        tag = tag + 'Filled {}%, '.format(profile_list[3][:-2])
-        tag = tag + 'Iteration {}'.format(profile_list[0][3:])
-        if profile_list[4] != reference[4]:
-            tag = tag + ', {}'.format(profile_list[4])
-
-        option = {'label': tag, 'value': '_'.join(
-            [profile_list[0], profile_list[1], profile_list[2], profile_list[3], profile_list[4]])}
-        if option not in options:
-            options.append(option)
-
-    return options
 
 
 def check_empty_list(array):

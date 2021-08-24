@@ -109,7 +109,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
         for build in builds:
             data_needed_for_query['build'] = build
             get_benchmark_data(data_needed_for_query, results)
-    
+
     df = pd.DataFrame(results)
     df = df.T
     df.reset_index(inplace=True)
@@ -166,10 +166,13 @@ def get_benchmark_data(data_needed_for_query, results):
                         count, db_data, stat, "Avg", 1))
 
     if not check_empty_list(temp_data):
-        if data_needed_for_query['xfilter'] == 'Build':
+        try:
+            if data_needed_for_query['xfilter'] == 'Build':
+                results[data_needed_for_query['objsize']] = temp_data
+            else:
+                results[data_needed_for_query['build']] = temp_data
+        except KeyError:
             results[data_needed_for_query['objsize']] = temp_data
-        else:
-            results[data_needed_for_query['build']] = temp_data
 
 
 def get_dash_table_from_dataframe(df, bench, column_id):
@@ -299,7 +302,7 @@ def get_bucktops(data_needed_for_query):
     return data_frame
 
 
-def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
+def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
     trace = go.Scatter(
         name='{} {} - {} {}'.format(
             plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
@@ -307,6 +310,9 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
         y=y_data,
         hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
             plot_data['operation'], plot_data['option'], plot_data['custom']),
+        mode='lines+markers',
+        connectgaps=True,
+        line={'color': color}
     )
 
     fig.add_trace(trace)
@@ -327,10 +333,13 @@ def get_graph_layout(plot_data):
         title=title_string,
         title_font_size=25,
         title_font_color='#343a40',
-        legend_title='Glossary',
+        font_size=19,
+        legend_font_size=13,
+        legend_title='Trend Details',
         xaxis=dict(
             title_text=plot_data['x_heading'],
-            titlefont=dict(size=23)
+            titlefont=dict(size=23),
+
         ),
         yaxis=dict(
             title_text=plot_data['y_heading'],

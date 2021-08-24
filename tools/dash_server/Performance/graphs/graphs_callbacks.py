@@ -3,6 +3,12 @@ from dash.exceptions import PreventUpdate
 
 from common import app
 from Performance.backend import get_graph_layout, plot_graphs_with_given_data, get_data_for_graphs
+from Performance.global_functions import sort_object_sizes_list, sort_builds_list
+
+pallete = {
+    '1': ['#0277BD', '#29B6F6'],
+    '2': ['#EF6C00', '#FFA726']
+}
 
 
 def get_yaxis_heading(metric):
@@ -14,16 +20,28 @@ def get_yaxis_heading(metric):
         return "{} (ms)".format(metric)
 
 
-def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data, xfilter_tag):
+def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data_combined, x_actual_data, xfilter_tag, color):
     plot_data['option'] = data[xfilter_tag]
     plot_data['custom'] = data['custom']
+    i = 0
+
     for operation in operations:
+        y_data = []
         plot_data['operation'] = operation
         for col in df.columns:
             if col.startswith(" ".join([operation, metric])):
-                y_data = df[col]
+                y_actual_data = df[col]
                 break
-        plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data)
+        data = dict(zip(x_actual_data, y_actual_data))
+        for item in x_data_combined:
+            try:
+                y_data.append(data[item])
+            except KeyError:
+                y_data.append(None)
+
+        plot_graphs_with_given_data(
+            fig, fig_all, x_data_combined, y_data, plot_data, color[i])
+        i += 1
 
 
 @app.callback(
@@ -127,28 +145,28 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
 
             fig = get_graph_layout(plot_data)
             df = get_data_for_graphs(data, xfilter, xfilter_tag)
-            x_data = df.iloc[:, 0]
+            x_data = list(df.iloc[:, 0])
 
             if flag:
-                df_optional = get_data_for_graphs(data_optional, xfilter, xfilter_tag)
-                x_data_optional = df_optional.iloc[:, 0]
+                df_optional = get_data_for_graphs(
+                    data_optional, xfilter, xfilter_tag)
+                x_data_optional = list(df_optional.iloc[:, 0])
+                x_data_final = x_data + x_data_optional
 
-                if len(x_data) >= len(x_data_optional):
-                    get_graphs(fig, fig_all, df, operations,
-                                plot_data, data, metric, x_data, xfilter_tag)
-                    get_graphs(fig, fig_all, df_optional, operations, plot_data,
-                                data_optional, metric, x_data_optional, xfilter_tag)
-                    not_plotted = False
+                if xfilter == 'Build':
+                    x_data_final = sort_object_sizes_list(x_data_final)
                 else:
-                    get_graphs(fig, fig_all, df_optional, operations, plot_data,
-                                data_optional, metric, x_data_optional, xfilter_tag)
-                    get_graphs(fig, fig_all, df, operations,
-                                plot_data, data, metric, x_data, xfilter_tag)
-                    not_plotted = False
+                    x_data_final = sort_builds_list(x_data_final)
+
+                get_graphs(fig, fig_all, df, operations,
+                           plot_data, data, metric, x_data_final, x_data, xfilter_tag, pallete['1'])
+                get_graphs(fig, fig_all, df_optional, operations, plot_data,
+                           data_optional, metric, x_data_final, x_data_optional, xfilter_tag, pallete['2'])
+                not_plotted = False
 
             if not_plotted:
                 get_graphs(fig, fig_all, df, operations,
-                           plot_data, data, metric, x_data, xfilter_tag)
+                           plot_data, data, metric, x_data, x_data, xfilter_tag, pallete['1'])
 
             figs.append(fig)
 

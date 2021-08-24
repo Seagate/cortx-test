@@ -26,8 +26,8 @@ import dash_html_components as html
 import dash_daq as daq
 
 from Performance.styles import style_sub_tab, style_sub_label,\
-        style_dropdown_small, style_dropdown_small_2, \
-        style_dropdown_medium, dict_button_style
+    style_dropdown_small, style_dropdown_small_2, \
+    style_dropdown_medium, dict_button_style
 
 # Variable declarations
 Xfilter = [
@@ -40,13 +40,13 @@ release = [
     {'label': 'LR-R2', 'value': '2'}
 ]
 
-benchmarks = [ # get from database
+benchmarks = [  # get from database
     {'label': 'S3Bench', 'value': 'S3bench'},
     {'label': 'COSBench', 'value': 'Cosbench'},
     {'label': 'HSBench', 'value': 'Hsbench'},
 ]
 
-operations = [ # write a function for this
+operations = [  # write a function for this
     {'label': 'Read & Write', 'value': 'both'},
     {'label': 'Read', 'value': 'read'},
     {'label': 'Write', 'value': 'write'},
@@ -60,7 +60,7 @@ graphs_input_options = [
                 id="graphs_filter_dropdown",
                 options=Xfilter,
                 placeholder="Filter by",
-                style= style_dropdown_small
+                style=style_dropdown_small
             ),
             Dropdown(
                 id="graphs_benchmark_dropdown",
@@ -142,7 +142,8 @@ graphs_input_options = [
                 id="compare_flag",
                 label="Compare",
                 labelPosition="bottom",
-                style={'color': '#FFFFFF', 'margin-top': '15px', 'margin-right': '10px'}
+                style={'color': '#FFFFFF', 'margin-top': '15px',
+                       'margin-right': '10px'}
             ),
             Dropdown(
                 id="graphs_release_compare_dropdown",
@@ -191,7 +192,7 @@ graphs_input_options = [
                 style={'display': 'none'}
             ),
             Button("Plot", id="graphs_submit_button", n_clicks=0, color="success",
-                style=dict_button_style),
+                   style=dict_button_style),
         ],
         justify='center'
     )
@@ -204,7 +205,7 @@ graphs_perf_tabs = html.Div(
             CardBody(
                 [
                     html.P(html.U("Graphical Representation of Performance Data", id="graphs_headings"),
-                        style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+                           style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
                     html.P("Note: Each data point represents PER NODE data. Data is displayed for the builds on which PerfPro has run.",  style={
                         "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
 
