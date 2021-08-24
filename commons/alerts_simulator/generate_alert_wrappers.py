@@ -32,6 +32,7 @@ from commons.helpers.controller_helper import ControllerLib
 from commons.utils.system_utils import toggle_nw_infc_status
 from commons import commands
 from commons.helpers.node_helper import Node
+from config import RAS_VAL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -749,3 +750,178 @@ class GenerateAlertWrapper:
                          GenerateAlertWrapper.connect_os_drive.__name__,
                          error)
             return False, error
+
+    @staticmethod
+    def create_raid_integrity_faults(host, h_user, h_pwd,
+                                            input_parameters):
+        """
+        Function to create RAID integrity fault
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        count = input_parameters['count']
+        timeout = input_parameters['timeout']
+
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+
+        LOGGER.info("Simulating RAID integrity fault using sysfs")
+        try:
+            LOGGER.info("Update %s in %s",cons.CONF_SYSFS_BASE_PATH, cons.SSPL_CFG_URL)
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_SYSFS_BASE_PATH': "/tmp/sys/"})
+
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_SYSFS_BASE_PATH)
+            LOGGER.debug("Response: %s", res)
+
+            LOGGER.info("Update %s in %s", cons.CONF_RAID_INTEGRITY, cons.SSPL_CFG_URL)
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_RAID_INTEGRITY': "/tmp/sys/"})
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_RAID_INTEGRITY)
+            LOGGER.debug("Response: %s", res)
+
+            cmd = commands.SET_PIPEFAIL
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd)
+            LOGGER.debug("Response: %s", resp)
+
+            cmd = commands.CMD_REMOVE_DIR.format("/var/cortx/sspl/data/raid_integrity")
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd)
+            LOGGER.debug("Response: %s", resp)
+
+            cmd = commands.CMD_MKDIR.format("/tmp/sys/block/md0/md/")
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            cmd = "echo idle  > /tmp/sys/block/md0/md/sync_action"
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            cmd = "echo {} > /tmp/sys/block/md0/md/mismatch_cnt".format(count)
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+            time_lapsed = 0
+            read_sync_action = "idle"
+            content = "check"
+
+            LOGGER.info("Restarting %s service", RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+            resp = ras_test_obj.restart_service(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+            assert resp[0], resp[1]
+
+            while (time_lapsed < timeout and read_sync_action != content):
+                cmd = "cat /tmp/sys/block/md0/md/sync_action"
+                read_sync_action = node_connect.execute_cmd(cmd=cmd).decode("utf-8").strip()
+                time.sleep(1)
+                time_lapsed = time_lapsed + 1
+            return read_sync_action == content, "RAID Integrity fault created"
+
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.create_raid_integrity_faults
+                         .__name__, error)
+            return False, error
+
+    @staticmethod
+    def resolve_raid_integrity_faults(host, h_user, h_pwd):
+        """
+        Function to resolve RAID integrity fault
+        :param host: host from which command is to be run
+        :type host: str
+        :param h_user: username
+        :type h_user: str
+        :param h_pwd: password
+        :type h_pwd: str
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :type: Dict
+        :return: True/False, Response
+        :rtype: Boolean, str
+        """
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        node_connect = Node(hostname=host, username=h_user, password=h_pwd)
+
+        LOGGER.info("Simulating RAID integrity fault resolved using sysfs")
+        try:
+            LOGGER.info("Update sysfs_base_path in sspl.conf file")
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_SYSFS_BASE_PATH': "/tmp/sys/"})
+
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_SYSFS_BASE_PATH)
+            LOGGER.debug("Response: %s", res)
+
+            LOGGER.info("Update RAID sensor in sspl.conf file")
+            ras_test_obj.set_conf_store_vals(
+                url=cons.SSPL_CFG_URL,
+                encl_vals={'CONF_RAID_INTEGRITY': 10})
+            res = ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
+                                                   field=cons.CONF_RAID_INTEGRITY)
+            LOGGER.debug("Response: %s", res)
+
+            cmd = "echo idle  > /tmp/sys/block/md0/md/sync_action"
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            cmd = "echo 0 > /tmp/sys/block/md0/md/mismatch_cnt"
+            LOGGER.info("Executing command : %s", cmd)
+            resp = node_connect.execute_cmd(cmd=cmd, read_lines=True)
+            LOGGER.debug("Response: %s", resp)
+
+            resp = ras_test_obj.restart_service(RAS_VAL["ras_sspl_alert"]["sspl_resource_id"])
+            assert resp[0], resp[1]
+
+            return True, "Resolved RAID integrity fault"
+
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.resolve_raid_integrity_faults
+                         .__name__, error)
+            return False, error
+
+    @staticmethod
+    def ipmi_alerts(host: str, h_user: str, h_pwd: str, input_parameters: dict) -> tuple:
+        """
+        Wrapper for generating server alerts on the given host using ipmitool
+
+        :param host: hostname or IP of the host
+        :param h_user: Username of the host
+        :param h_pwd: Password of the host
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :return: Returns response tuple
+        """
+        sensor_type = input_parameters['sensor_type']
+        sensor_states = input_parameters['sensor_states']
+        deassert = input_parameters['deassert']
+        ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
+        LOGGER.info("Getting all available sensors for sensor type: %s", sensor_type)
+        resp = ras_test_obj.get_ipmi_sensor_list(sensor_type)
+        sensor_name = random.SystemRandom().choice(seq=resp[1])
+        resp_list = list()
+        for state in sensor_states:
+            resp = ras_test_obj.assert_deassert_sensor_state(sensor_name=sensor_name,
+                                                              sensor_state=state, deassert=deassert)
+            if not resp[0]:
+                return False, resp[1]
+            resp_list.append(resp[1])
+
+        return True, resp[1]

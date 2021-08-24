@@ -439,6 +439,7 @@ class HALibs:
             operation: str,
             resource_id: int,
             f_opt: bool = False,
+            s_off: bool = False,
             user: str = None,
             pswd: str = None):
         """
@@ -447,6 +448,8 @@ class HALibs:
         :param sys_obj: System object
         :param resource_id: Resource ID for the operation
         :param f_opt: If true, enables force start on node
+        :param s_off: If true, The poweroff operation will be performed along
+        with powering off the storage. (Valid only with poweroff operation on node.)
         :param user: Manage user name
         :param pswd: Manage user password
         :return: (bool, Command Response)
@@ -455,7 +458,7 @@ class HALibs:
             sys_obj.open_connection()
             sys_obj.login_cortx_cli(username=user, password=pswd)
             resp = sys_obj.node_operation(
-                operation=operation, resource_id=resource_id, force_op=f_opt)
+                operation=operation, resource_id=resource_id, force_op=f_opt, storage_off=s_off)
             return resp
         except Exception as error:
             LOGGER.error("%s %s: %s",

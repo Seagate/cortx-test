@@ -618,6 +618,10 @@ class SoftwareAlert(RASCoreLib):
         :param n_cpu: CPU core ID starting from 0 to number cores on which fault will be created.
         :return [tuple]: bool, error message
         """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_CPU_FAULT_EN": 'true'})
+        self.restart_sspl()
         faulty_cpu_id = [int(i) for i in faulty_cpu_id]
         n_cpu = set(faulty_cpu_id).intersection(self.get_available_cpus())
         for cpu in n_cpu:
@@ -663,14 +667,6 @@ class SoftwareAlert(RASCoreLib):
                 cpus.append(int(i))
         LOGGER.info("Available CPUs : %s", cpus)
         return set(cpus)
-
-    def initiate_blocking_process(self):
-        """Initiate blocking process
-        :return [str]: Process ID
-        """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_BLOCKING_PROCESS)
-        LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
-        return resp
 
     def get_cpu_utilization(self, interval: int):
         """Get CPU utilization
@@ -928,34 +924,6 @@ class SoftwareAlert(RASCoreLib):
         LOGGER.debug("%s response : %s", commands.CMD_BLOCKING_PROCESS, resp)
         return resp
 
-    def get_cpu_utilization(self):
-        """Get CPU utilization
-        :return [str]: Process ID
-        """
-        resp = self.node_utils.execute_cmd(cmd=commands.CMD_CPU_UTILIZATION)
-        LOGGER.debug("%s response : %s", commands.CMD_CPU_UTILIZATION, resp)
-        return resp
-
-    def kill_process(self, process_id):
-        """Kill the process ID
-        :param process_id: Process ID to be killed
-        :return [str]: Process ID
-        """
-        cmd = commands.KILL_CMD.format(process_id)
-        resp = self.node_utils.execute_cmd(cmd=cmd)
-        LOGGER.debug("%s response : %s", cmd, resp)
-        return resp
-
-    def get_command_pid(self, cmd):
-        """Fetch the process ID's
-        :param cmd: Command to get pid
-        :return [str]: Process ID
-        """
-        cmd = commands.CMD_GREP_PID.format(cmd)
-        resp = self.node_utils.execute_cmd(cmd=cmd)
-        LOGGER.debug("%s response : %s", cmd, resp)
-        return resp
-
     def start_cpu_increase_parallel(self):
         """
         Start blocking process parallely
@@ -967,3 +935,40 @@ class SoftwareAlert(RASCoreLib):
             LOGGER.info("started joining")
             process.join()
         LOGGER.info("Started increasing in CPU usage")
+
+    def gen_disk_usage_fault_reboot_node(self, delta_disk_usage):
+        """Creates disk space full faults
+
+        :param delta_disk_usage: Delta to be added to disk usage.
+        :return [type]: True, error message
+        """
+        LOGGER.info("Fetching disk usage from server node")
+        disk_usage = self.health_obj.get_disk_usage()
+        LOGGER.info("Current disk usage of server is %s", disk_usage)
+        disk_usage_thresh = float("{:.1f}".format(sum([disk_usage, delta_disk_usage])))
+        LOGGER.info("Setting new value of host_disk_usage_threshold to %s", disk_usage_thresh)
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_MEM_USAGE": disk_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."
+
+    def resolv_disk_usage_fault_reboot_node(self, disk_usage_thresh):
+        """Resolves disk space full faults
+
+        :param disk_usage_thresh: Value to the disk usage threshold to be set.
+        :return [type]: True, error message
+        """
+        self.set_conf_store_vals(
+            url=const.SSPL_CFG_URL, encl_vals={
+                "CONF_DISK_USAGE": disk_usage_thresh})
+        self.restart_node()
+        resp = self.get_conf_store_vals(url=const.SSPL_CFG_URL, field=const.CONF_DISK_USAGE)
+        LOGGER.info("Expected Threshold value %s", disk_usage_thresh)
+        LOGGER.info("Actual Threshold value %s", resp)
+        return float(resp) == float(
+            disk_usage_thresh), "Disk usage threshold is not set as expected."

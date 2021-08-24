@@ -1,7 +1,7 @@
 pipeline {
 	agent {
         node {
-			label 'ssc-vm-5613'
+			label 'qa-re-sanity-nodes'
  			customWorkspace "/root/workspace/${JOB_BASE_NAME}"
 		}
     }
@@ -57,8 +57,7 @@ deactivate
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${MGMT_VIP}"
-python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_preboarding
-python -m unittest scripts.jenkins_job.cortx_pre_onboarding.CSMBoarding.test_onboarding
+pytest scripts/jenkins_job/aws_configure.py::test_preboarding --local True --target ${Target_Node}
 deactivate
 '''
 			}
@@ -77,13 +76,14 @@ deactivate
 			steps{
 				script {
 			        env.Sanity_Failed = true
-			    }
+			        env.Health = 'OK'
+
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
-					sh label: '', script: '''#!/bin/sh
+					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
 echo 'Creating s3 account and configuring awscli on client'
-pytest scripts/jenkins_job/aws_configure.py --local True --target ${Target_Node}
+pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node}
 set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
@@ -103,16 +103,33 @@ do
 done < $INPUT
 IFS=$OLDIFS
 deactivate
-'''				}
+'''	)
+				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Sanity due to bad health of deployment')
+                    }
+                    if ( fileExists('log/latest/failed_tests.log') ) {
+                        def failures = readFile 'log/latest/failed_tests.log'
+                        def lines = failures.readLines()
+                        if (lines) {
+                            echo "Sanity Test Failed"
+                            currentBuild.result = 'FAILURE'
+                            error('Skipping Regression as Sanity Test Failed')
+                        }
+                    }
+				}
 			}
 		}
 		stage('REGRESSION_TEST_EXECUTION') {
 			steps {
 				script {
 			        env.Sanity_Failed = false
-			    }
+			        env.Health = 'OK'
+
 				withCredentials([usernamePassword(credentialsId: 'ae26299e-5fc1-4fd7-86aa-6edd535d5b4f', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
-					sh label: '', script: '''#!/bin/sh
+					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
 INPUT=cloned_tp_info.csv
@@ -133,7 +150,13 @@ do
 done < $INPUT
 IFS=$OLDIFS
 deactivate
-'''
+''' )
+				    }
+				    if ( status != 0 ) {
+                        currentBuild.result = 'FAILURE'
+                        env.Health = 'Not OK'
+                        error('Aborted Regression due to bad health of deployment')
+                    }
 				}
 			}
 		}
@@ -149,7 +172,7 @@ deactivate
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, *.png', followSymlinks: false
 			    junit allowEmptyResults: true, testResults: 'log/*report.xml'
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_2.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'cortx.automation@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}

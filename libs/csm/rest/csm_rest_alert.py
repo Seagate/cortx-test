@@ -230,7 +230,7 @@ class SystemAlerts(RestTestLib):
         self.log.error("Couldn't find matching alert")
         return False
 
-    def wait_for_alert(self, timeout: int, *args, **kwargs):
+    def wait_for_alert(self, timeout: int=30, *args, **kwargs):
         """Wait for alert on CSM until timeout is reached.
 
         :param timeout: in seconds.
@@ -241,7 +241,8 @@ class SystemAlerts(RestTestLib):
             resp = self.verify_csm_response(*args, **kwargs)
             time.sleep(1)
             time_lapsed = time_lapsed + 1
-        assert resp, "CSM alert is not reported within {}".format(timeout)
+        return resp, "CSM alert is not reported within {}".format(timeout)
+        self.log.info("CSM alert reported within %s seconds.", time_lapsed)
 
     def get_alerts_id_after(self, starttime):
         """
