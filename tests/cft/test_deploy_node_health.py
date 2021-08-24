@@ -30,7 +30,10 @@ class TestNodeHealth:
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
-        cls.node_num = range(1, cls.node_cnt)
+        cls.list1 = []
+        for x in range(1, cls.node_num):
+            cls.list1.append(x)
+        cls.node_num = cls.list1
         cls.test_node = secrets.choice(cls.node_num)
         cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
@@ -191,6 +194,7 @@ class TestNodeHealth:
             result = self.resource_cli.convert_to_list_format(resp[1])
             LOGGER.info("Test Completed Successfully %s", result)
 
+    # pylint:disable=too-many-locals,too-many-statements,too-many-branches
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22528")
     def test_22528_verify_os_disk_health(self):
@@ -348,7 +352,7 @@ class TestNodeHealth:
                 result = self.resource_cli.split_str_to_list(resp[1])
                 LOGGER.info("Health Map is: %s", result)
             LOGGER.info("Summary of test: %s", df_obj)
-            result = False if 'Fail' in df_obj.values else True
+            result = bool(df_obj.values)
             assert_utils.assert_true(result, "Test failed !")
         else:
             LOGGER.info("Alert is already Present")
