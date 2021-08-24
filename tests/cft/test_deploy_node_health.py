@@ -31,8 +31,8 @@ class TestNodeHealth:
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
         cls.list1 = []
-        for x in range(1, cls.node_num):
-            cls.list1.append(x)
+        for index in range(1, cls.node_num):
+            cls.list1.append(index)
         cls.node_num = cls.list1
         cls.test_node = secrets.choice(cls.node_num)
         cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
