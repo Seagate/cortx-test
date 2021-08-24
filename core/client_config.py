@@ -80,12 +80,13 @@ class ClientConfig:
         :return: None
         """
         # Removing contents of /etc/hosts file and writing new contents
+        line1 = "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n"
+        line2 = "::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n"
+        line3 = "{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n".format(public_data_ip)
+        lines = [line1, line2, line3]
         self.run_cmd(cmd="rm -f /etc/hosts")
         with open("/etc/hosts", 'w') as file:
-            file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
-            file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
-            file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n"
-                       .format(public_data_ip))
+            file.writelines(lines)
 
     def configure_s3_tools(self, target):
         """
