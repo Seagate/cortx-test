@@ -55,14 +55,11 @@ class ClientConfig:
         collection_obj = setup_db[SYS_INFO_COLLECTION]
         setup_query = {"setupname": target}
         entry_exist = collection_obj.find(setup_query).count()
-        if entry_exist == 1:
-            setup_details = collection_obj.find_one(setup_query)
-            return setup_details
-        else:
-            LOGGER.error("Target %s details are not found in database", target)
+        setup_details = collection_obj.find_one(setup_query)
+        return setup_details
 
-
-    def run_cmd(self, cmd):
+    @staticmethod
+    def run_cmd(cmd):
         """
         Execute bash commands on the host
         :param str cmd: command to be executed
