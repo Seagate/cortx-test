@@ -386,7 +386,7 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
 
 #Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
-M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} >> {}"
+M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
 DIFF = "diff {} {}"
 MD5SUM = "md5sum {} {}"
