@@ -113,8 +113,8 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "Error",
             "exception",
             "usage:",
-            "last_updated",
             "Plugged",
+            "last_updated",
             "Location",
             "command not found"]
         cmd = commands.CMD_RESOURCE_SHOW_HEALTH_RES + " " + "'node>storage[0]>hw>psu'"
