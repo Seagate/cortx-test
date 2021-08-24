@@ -1,8 +1,8 @@
 import os
+import time
 import random
 import logging
 import pytest
-import time
 import pandas as pd
 from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
@@ -13,20 +13,22 @@ from commons.alerts_simulator.generate_alert_lib import \
 from commons import constants as cons
 from libs.ras.ras_test_lib import RASTestLib
 from libs.csm.cli.cortx_node_cli_resource import CortxNodeCLIResourceOps
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
 
 
 LOGGER = logging.getLogger(__name__)
 
 
 class TestNodeHealth:
+    """
+    cortx_setup resource show health Test suite
+    """
     @classmethod
     def setup_class(cls):
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
-        LOGGER.info("Randomly picking node to create fault ")
         cls.test_node = random.randint(1, cls.node_cnt)
         cls.host = CMN_CFG["nodes"][cls.test_node-1]["host"]
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
@@ -106,6 +108,7 @@ class TestNodeHealth:
         services = [service["sspl_service"], service["kafka_service"]]
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
                                                     resources=[self.sspl_resource_id])
+        LOGGER.info("services %s, resp %s", services, resp)
         time.sleep(self.cm_cfg["sleep_val"])
         self.raid_stopped = False
         self.failed_disk = False
@@ -258,10 +261,8 @@ class TestNodeHealth:
             while i < n:
                 out[i] = out[i] + "}"
                 result = self.resource_cli.format_str_to_dict(out[i])
-                LOGGER.info("======================================================")
                 LOGGER.info(result["health"]["status"])
                 LOGGER.info(result["health"]["description"])
-                LOGGER.info("=======================================================")
                 i = i + 1
             result = self.resource_cli.format_str_to_dict(out[i])
             LOGGER.info("======================================================")
