@@ -54,7 +54,6 @@ class ClientConfig:
         setup_db = client[DB_NAME]
         collection_obj = setup_db[SYS_INFO_COLLECTION]
         setup_query = {"setupname": target}
-        entry_exist = collection_obj.find(setup_query).count()
         setup_details = collection_obj.find_one(setup_query)
         return setup_details
 
