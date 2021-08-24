@@ -682,7 +682,7 @@ class HALibs:
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
-            nsamples: int = 2,
+            nsamples: int = 20,
             nclients: int = 10):
         """
         This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
