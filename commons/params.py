@@ -66,7 +66,7 @@ TEST_EXEC_TOPIC = 'cortx-test-execution-topic1'
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 # Max pool interval time (12 hrs)
 MAX_POLL_INTERVAL_MS = 43200000
-# Fetch Max Wait time (15 min)
+# Fetch Max Wait time (5 min)
 FETCH_WAIT_MAX_MS = 300000
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
