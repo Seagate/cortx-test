@@ -60,7 +60,7 @@ graphs_input_options = [
                 id="graphs_filter_dropdown",
                 options=Xfilter,
                 placeholder="Filter by",
-                style=style_dropdown_small
+                style=style_dropdown_medium
             ),
             Dropdown(
                 id="graphs_benchmark_dropdown",
@@ -106,7 +106,7 @@ graphs_input_options = [
             Dropdown(
                 id='graphs_nodes_dropdown',
                 placeholder="Nodes",
-                style=style_dropdown_small
+                style=style_dropdown_medium
             ),
             Dropdown(
                 id='graphs_pfull_dropdown',

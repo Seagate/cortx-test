@@ -333,7 +333,7 @@ def get_graph_layout(plot_data):
         title=title_string,
         title_font_size=25,
         title_font_color='#343a40',
-        font_size=19,
+        font_size=17,
         legend_font_size=13,
         legend_title='Trend Details',
         xaxis=dict(

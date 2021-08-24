@@ -42,6 +42,23 @@ def update_branches_dropdown(release):
 
     return options, value, disabled
 
+@app.callback(
+    Output('graphs_build_dropdown', 'placeholder'),
+    Output('graphs_build_compare_dropdown', 'placeholder'),
+    Input('graphs_filter_dropdown', 'value'),
+    prevent_initial_call=True
+)
+def update_placeholder(xfilter):
+    placeholder = ""
+    if not xfilter:
+        raise PreventUpdate
+    elif xfilter == 'Build':
+        placeholder = "Build"
+    else:
+        placeholder = "Object Size"
+    
+    return [placeholder]*2
+
 
 @app.callback(
     Output('graphs_build_dropdown', 'options'),
@@ -236,7 +253,7 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
-            options.append({'label': 'All', 'value': 'all'})
+            options.append({'label': 'All', 'value': 'all', 'disabled': True})
         else:
             raise PreventUpdate
 
@@ -298,7 +315,7 @@ def update_compare_dropdown_styles(flag):
     if flag:
         return [
             style_dropdown_small, style_dropdown_small_2, style_dropdown_medium,
-            style_dropdown_small, style_dropdown_small_2, style_dropdown_small_2,
+            style_dropdown_medium, style_dropdown_small_2, style_dropdown_small_2,
             style_dropdown_medium, style_dropdown_medium, style_dropdown_medium
         ]
     else:

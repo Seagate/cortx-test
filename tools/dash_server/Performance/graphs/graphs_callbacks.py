@@ -46,7 +46,7 @@ def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data_com
 
 @app.callback(
     Output('plot_TTFB', 'style'),
-    Input('benchmark_dropdown_first', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_Ttfb_Style(bench):
@@ -170,6 +170,8 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
 
             figs.append(fig)
 
+        if bench != 'S3bench':
+            figs.append(fig)
         figs.append(fig_all)
         return_val = figs
 
