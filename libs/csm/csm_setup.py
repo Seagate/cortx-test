@@ -100,18 +100,6 @@ class CSMConfigsCheck:
             self._log.error("Error occurred during setup : %s", error)
         return result
 
-    def preboarding(self, username, old_password, new_password):
-        """Perform preboarding step
-        """            
-        self._log.info("Starting the preboarding for user : %s", username)
-        rest_test_obj = RestTestLib()
-        response = rest_test_obj.rest_login({"username": username, "password": old_password})
-        headers = {'Authorization': response.headers['Authorization']}
-        patch_payload = {"confirmPassword": new_password, "password": new_password, "reset_password": True}
-        endpoint = "{}/{}".format(rest_test_obj.config["csmuser_endpoint"], username)
-        response = rest_test_obj.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
-                                              headers=headers)
-        self._log.info("Preboarding completed")
     def delete_csm_users(self):
         """Function will delete all the stray csm user appart from predefined ones.
         """
