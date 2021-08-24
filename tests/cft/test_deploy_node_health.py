@@ -74,11 +74,17 @@ class TestNodeHealth:
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         cls.disable_disk = False
+        cls.starttime = time.time()
+        resp = cls.ras_test_obj.get_node_drive_details()
+        if not resp[0]:
+            assert_utils.assert_true(resp[0], resp)
+        cls.drive_name = resp[1].split("/")[2]
+        cls.host_num = resp[2]
+        cls.drive_count = resp[3]
         LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
         """Setup operations per test."""
-        self.starttime = time.time()
         LOGGER.info("Retaining the original/default config")
         self.ras_test_obj.retain_config(self.cm_cfg["file"]["original_sspl_conf"],
                                         False)
@@ -191,10 +197,8 @@ class TestNodeHealth:
                 LOGGER.info(result["health"]["description"])
                 i = i + 1
             result = self.resource_cli.format_str_to_dict(out[i])
-            LOGGER.info("======================================================")
             LOGGER.info(result["health"]["status"])
             LOGGER.info(result["health"]["description"])
-            LOGGER.info("=======================================================")
         LOGGER.info("Test Completed Successfully")
 
     @pytest.mark.cluster_management_ops
@@ -207,28 +211,28 @@ class TestNodeHealth:
             "missing"], f"srvnode-{self.test_node}.mgmt.public"]
         resp = self.ras_test_obj.list_alert_validation(alert_list)
         if not resp[0]:
-            LOGGER.info("alert not present")
-            df = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
-                              columns='Iteration0'.split())
-            df = df.assign(Iteration0='Pass')
+            LOGGER.info("Alert not present")
+            df_obj = pd.DataFrame(index='Step1 Step2 Step3 Step4 Step5 Step6'.split(),
+                                  columns='Iteration0'.split())
+            df_obj = df_obj.assign(Iteration0='Pass')
             LOGGER.info("Step 1: Getting RAID array details of node %s", self.hostname)
             resp = self.ras_test_obj.get_raid_array_details()
             if not resp[0]:
-                df['Iteration0']['Step1'] = 'Fail'
+                df_obj['Iteration0']['Step1'] = 'Fail'
             md_arrays = resp[1] if resp[0] \
                 else assert_utils.assert_true(resp[0],
                                               "Step 1: Failed to get raid array details")
 
             LOGGER.info("MDRAID arrays: %s", md_arrays)
-            for k, v in md_arrays.items():
-                if v["state"] != "Active":
-                    df['Iteration0']['Step1'] = 'Fail'
+            for k, val in md_arrays.items():
+                if val["state"] != "Active":
+                    df_obj['Iteration0']['Step1'] = 'Fail'
                     assert_utils.assert_true(False, f"Step 1: Array {k} is in degraded state")
 
             LOGGER.info("Step 1: Getting details of drive to be removed")
             resp = self.ras_test_obj.get_node_drive_details()
             if not resp[0]:
-                df['Iteration0']['Step1'] = 'Fail'
+                df_obj['Iteration0']['Step1'] = 'Fail'
 
             assert_utils.assert_true(resp[0], f"Step 1: Failed to get details of OS disks. "
                                               f"Response: {resp}")
@@ -249,7 +253,7 @@ class TestNodeHealth:
                 input_parameters={"drive_name": drive_name.split("/")[-1],
                                   "drive_count": drive_count})
             if not resp[0]:
-                df['Iteration0']['Step2'] = 'Fail'
+                df_obj['Iteration0']['Step2'] = 'Fail'
                 LOGGER.info("Step 2: Failed to create fault. Error: %s", resp[1])
             else:
                 LOGGER.info("Step 2: Successfully disabled/disconnected drive %s\n "
@@ -263,7 +267,7 @@ class TestNodeHealth:
                     "missing"], f"srvnode-{self.test_node}.mgmt.public"]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df['Iteration0']['Step3'] = 'Fail'
+                    df_obj['Iteration0']['Step3'] = 'Fail'
                     LOGGER.error("Step 3: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -274,7 +278,7 @@ class TestNodeHealth:
                                                               self.alert_types["missing"],
                                                               False, test_cfg["resource_type"])
             if not resp_csm:
-                df['Iteration0']['Step4'] = 'Fail'
+                df_obj['Iteration0']['Step4'] = 'Fail'
                 LOGGER.error("Step 4: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -290,7 +294,6 @@ class TestNodeHealth:
                 while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info("======================================================")
                     LOGGER.info(result["health"]["status"])
                     LOGGER.info(result["health"]["description"])
                     i = i + 2
@@ -304,7 +307,7 @@ class TestNodeHealth:
                                   "drive_count": drive_count})
 
             if not resp[0]:
-                df['Iteration0']['Step5'] = 'Fail'
+                df_obj['Iteration0']['Step5'] = 'Fail'
                 LOGGER.error("Step 5: Failed to resolve fault.")
             else:
                 LOGGER.info("Step 5: Successfully connected disk %s\n Response: %s",
@@ -317,7 +320,7 @@ class TestNodeHealth:
                 filepath=RAS_VAL['ras_sspl_alert']['file']['fdisk_file'],
                 drive=new_drive)
             if not resp[0]:
-                df['Iteration0']['Step6'] = 'Fail'
+                df_obj['Iteration0']['Step6'] = 'Fail'
             raid_parts = resp[1] if resp[0] \
                 else assert_utils.assert_true(resp[0], f"Step 6: Failed to "
                                                        f"get partition "
@@ -330,16 +333,13 @@ class TestNodeHealth:
                 alert_lib_obj=self.alert_api_obj, alert_type=AlertType,
                 raid_parts=raid_parts, md_arrays=md_arrays)
             if not resp[0]:
-                df['Iteration0']['Step7'] = 'Fail'
+                df_obj['Iteration0']['Step7'] = 'Fail'
             new_array = resp[1] if resp[0] \
                 else assert_utils.assert_true(resp[0], "Step 7: Failed to "
                                                        "add drive in raid "
                                                        "array")
             LOGGER.info("New MDARRAY: %s", new_array)
             time.sleep(self.cm_cfg["sleep_val"])
-            LOGGER.info("Check health of node %s", self.test_node)
-            resp = eval("srv{}_hlt.check_node_health()".format(self.test_node))
-            assert_utils.assert_true(resp[0], resp[1])
 
             if self.start_msg_bus:
                 LOGGER.info("Step 8: Checking the generated alert logs")
@@ -347,7 +347,7 @@ class TestNodeHealth:
                               self.alert_types["insertion"]]
                 resp = self.ras_test_obj.list_alert_validation(alert_list)
                 if not resp[0]:
-                    df['Iteration0']['Step8'] = 'Fail'
+                    df_obj['Iteration0']['Step8'] = 'Fail'
                     LOGGER.error("Step 8: Expected alert not found. Error: %s",
                                  resp[1])
                 else:
@@ -363,7 +363,7 @@ class TestNodeHealth:
                                                                   "resource_type"])
 
             if not resp_csm:
-                df['Iteration0']['Step9'] = 'Fail'
+                df_obj['Iteration0']['Step9'] = 'Fail'
                 LOGGER.error("Step 9: Expected alert not found. Error: %s",
                              test_cfg["csm_error_msg"])
             else:
@@ -380,13 +380,12 @@ class TestNodeHealth:
                 while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info("======================================================")
                     LOGGER.info(result["health"]["status"])
                     LOGGER.info(result["health"]["description"])
                     i = i + 2
 
-            LOGGER.info("Summary of test: %s", df)
-            result = False if 'Fail' in df.values else True
+            LOGGER.info("Summary of test: %s", df_obj)
+            result = False if 'Fail' in df_obj.values else True
             assert_utils.assert_true(result, "Test failed. Please check summary for failed step")
             LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
         else:
@@ -401,7 +400,6 @@ class TestNodeHealth:
                 while i < num-1:
                     out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
                     result = self.resource_cli.format_str_to_dict(out[i])
-                    LOGGER.info("======================================")
                     LOGGER.info(result["health"]["status"])
                     LOGGER.info(result["health"]["description"])
                     i = i + 2
@@ -421,16 +419,12 @@ class TestNodeHealth:
             while i < num-1:
                 out[i] = out[i] + "}"
                 result = self.resource_cli.format_str_to_dict(out[i])
-                LOGGER.info("======================================")
                 LOGGER.info(result["health"]["status"])
                 LOGGER.info(result["health"]["description"])
-                LOGGER.info("======================================")
                 i = i+1
             result = self.resource_cli.format_str_to_dict(out[i])
-            LOGGER.info("==========================================")
             LOGGER.info(result["health"]["status"])
             LOGGER.info(result["health"]["description"])
-            LOGGER.info("==========================================")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22530")
