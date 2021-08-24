@@ -43,14 +43,15 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
         This functions executes the cortx_setup command
         to create the Health map
         """
-        node_utils = node_helper.Node(hostname=self.host, username=self.username, password=self.password)
+        node_utils = node_helper.Node(hostname=self.host,
+                                      username=self.username, password=self.password)
         res = node_utils.execute_cmd(cmd=commands.CMD_RESOURCE_DISCOVER)
-        if not res:
-            LOGGER.info("Command completed successfully %s", res)
-            return True, res
-        else:
+        if res:
             LOGGER.error("Failed to execute the command %s", res)
             return False, res
+        else:
+            LOGGER.info("Command executed %s", res)
+            return True, res
 
     def resource_health_show_node_cli(self, timeout: int):
         """"
