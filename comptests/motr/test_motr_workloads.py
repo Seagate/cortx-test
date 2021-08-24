@@ -24,7 +24,6 @@ from commons.ct_fail_on import CTFailOn
 from libs.motr import motr_test_lib, WORKLOAD_CFG
 from commons.errorcodes import error_handler
 from commons.utils import system_utils, assert_utils
-from config import CMN_CFG
 from commons import commands
 
 LOGGER = logging.getLogger(__name__)
@@ -377,17 +376,16 @@ class TestExecuteWorkload:
                 index = i
                 batch = [ddCmd, cpCmd, catCmd, diffCmd, mdCmd, unlinkCmd]
                 for cmd in batch:
-                    if cmd:
-                        LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[j], self.uname_list[j],
-                                                                                      self.passwd_list[j])
-                        LOGGER.info(f"{result},{error1}")
-                        if ret:
-                           LOGGER.info(f'"{cmd}" Failed, Please check the log')
-                           assert False
-                        if (b"ERROR" or b"Error") in error1:
-                           LOGGER.error(f'"{cmd}" failed, please check the log')
-                           assert_utils.assert_not_in(error1, b"ERROR" or b"Error", '"{cmd}" Failed, Please check the log')
+					LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
+					result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host_list[j], self.uname_list[j],
+																				  self.passwd_list[j])
+					LOGGER.info(f"{result},{error1}")
+					if ret:
+					   LOGGER.info(f'"{cmd}" Failed, Please check the log')
+					   assert False
+					if (b"ERROR" or b"Error") in error1:
+					   LOGGER.error(f'"{cmd}" failed, please check the log')
+					   assert_utils.assert_not_in(error1, b"ERROR" or b"Error", f'"{cmd}" Failed, Please check the log')
             LOGGER.info("Stop: Verify multiple m0cp/cat operation")
 
     @pytest.mark.tags("TEST-22963")
