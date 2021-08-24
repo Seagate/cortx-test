@@ -17,6 +17,20 @@ Click Graphical Tab
     Wait Until Element Is Visible  ${GRAPHICAL_TAB_ID}  timeout=30
     Navigate To Page  GRAPHICAL_TAB_ID
 
+Click Tablular Tab
+    [Documentation]  Test keyword is for navigating to health Tablular section
+    Wait Until Element Is Visible  ${GRAPHICAL_TAB_ID}  timeout=30
+    Navigate To Page  TABULAR_TAB_ID
+
+Click Confirmation Dialogs
+    [Documentation]  Test keyword is for confirmation of health operations
+    Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
+    click Element  ${GRAPH_NODE_YES_ID}
+    wait for page or element to load  3s
+    Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
+    click Element  ${GRAPH_NODE_OK_ID}
+    wait for page or element to load  10s
+
 Click Node Stop
     [Documentation]  Test keyword is to check node stop scenario
     Wait Until Element Is Visible  ${GRAPH_NODE_ID}  timeout=30
@@ -25,12 +39,7 @@ Click Node Stop
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_STOP_ID}
     wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_YES_ID}
-    wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_OK_ID}
-    sleep  10s
+    Click Confirmation Dialogs
 
 Click Node Poweroff
     [Documentation]  Test keyword is to check node poweroff scenario
@@ -40,12 +49,7 @@ Click Node Poweroff
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_POWEROFF_ID}
     wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_YES_ID}
-    wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_OK_ID}
-    sleep  10s
+    Click Confirmation Dialogs
 
 Click Node Power And Storageoff
     [Documentation]  Test keyword is to check node power and storageoff scenario
@@ -55,12 +59,7 @@ Click Node Power And Storageoff
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_POWER_STORAGEOFF_ID}
     wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_YES_ID}
-    wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_INFO_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_OK_ID}
-    sleep  10s
+    Click Confirmation Dialogs
 
 Click Node Start
     [Documentation]  Test keyword is to check node start scenario
@@ -70,9 +69,47 @@ Click Node Start
     Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_MENU_ID}  timeout=30
     click Element  ${GRAPH_NODE_START_ID}
     wait for page or element to load  3s
-    Wait Until Element Is Visible  ${GRAPH_NODE_SUCCESS_MSG_ID}  timeout=30
-    click Element  ${GRAPH_NODE_YES_ID}
-    sleep  10s
+    Click Confirmation Dialogs
+
+Click Node Stop for health table
+    [Documentation]  Test keyword is to check node stop scenario
+    Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_ACTION_TABLE_CLASS}
+    wait for page or element to load  3s
+    Wait Until Element Is Visible  ${GRAPH_NODE_STOP_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_STOP_TABLE_CLASS}
+    wait for page or element to load  3s
+    Click Confirmation Dialogs
+
+Click Node Poweroff for health table
+    [Documentation]  Test keyword is to check node stop scenario
+    Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_ACTION_TABLE_CLASS}
+    wait for page or element to load  3s
+    Wait Until Element Is Visible  ${GRAPH_NODE_POWEROFF_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_POWEROFF_TABLE_CLASS}
+    wait for page or element to load  3s
+    Click Confirmation Dialogs
+
+Click Node Power And Storageoff for health table
+    [Documentation]  Test keyword is to check node stop scenario
+    Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_ACTION_TABLE_CLASS}
+    wait for page or element to load  3s
+    Wait Until Element Is Visible  ${GRAPH_NODE_POWER_STORAGEOFF_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_POWER_STORAGEOFF_TABLE_CLASS}
+    wait for page or element to load  3s
+    Click Confirmation Dialogs
+
+Click Node Start for health table
+    [Documentation]  Test keyword is to check node stop scenario
+    Wait Until Element Is Visible  ${GRAPH_NODE_ACTION_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_ACTION_TABLE_CLASS}
+    wait for page or element to load  3s
+    Wait Until Element Is Visible  ${GRAPH_NODE_START_TABLE_CLASS}  timeout=30
+    click Element  ${GRAPH_NODE_START_TABLE_CLASS}
+    wait for page or element to load  3s
+    Click Confirmation Dialogs
 
 Check Health Option Not Exists
     [Documentation]  This keyword is to check that user does not have access to Health page
