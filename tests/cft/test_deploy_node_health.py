@@ -73,6 +73,7 @@ class TestNodeHealth:
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
 
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
+        cls.disable_disk = False
         LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
@@ -94,33 +95,7 @@ class TestNodeHealth:
             LOGGER.info("Running read_message_bus.py script on node")
             resp = self.ras_test_obj.start_message_bus_reader_cmd()
             assert_utils.assert_true(resp, "Failed to start message bus channel")
-            LOGGER.info(
-                "Successfully started read_message_bus.py script on node")
-
-        LOGGER.info("Change sspl log level to DEBUG")
-        self.ras_test_obj.set_conf_store_vals(
-            url=cons.SSPL_CFG_URL, encl_vals={"CONF_SSPL_LOG_LEVEL": "DEBUG"})
-        resp = self.ras_test_obj.get_conf_store_vals(url=cons.SSPL_CFG_URL,
-                                                     field=cons.CONF_SSPL_LOG_LEVEL)
-        LOGGER.info("Now SSPL log level is: %s", resp)
-        LOGGER.info("Restarting SSPL service")
-        service = self.cm_cfg["service"]
-        services = [service["sspl_service"], service["kafka_service"]]
-        resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
-                                                    resources=[self.sspl_resource_id])
-        LOGGER.info("services %s, resp %s", services, resp)
-        time.sleep(self.cm_cfg["sleep_val"])
-        self.disable_disk = False
-        LOGGER.info(
-            "Fetching the disks details from mdstat for RAID array %s",
-            self.md_device)
-        md_stat = self.node_obj.get_mdstat()
-        self.disks = md_stat["devices"][os.path.basename(
-            self.md_device)]["disks"].keys()
-        self.disk1 = RAS_VAL["raid_param"]["disk_path"].format(
-            list(self.disks)[0])
-        self.disk2 = RAS_VAL["raid_param"]["disk_path"].format(
-            list(self.disks)[1])
+            LOGGER.info("Successfully started read_message_bus.py script on node")
         LOGGER.info("Successfully performed Setup operations")
 
     def teardown_method(self):
@@ -160,23 +135,6 @@ class TestNodeHealth:
                 filename=RAS_VAL["ras_sspl_alert"]["file"]
                 ["disk_usage_temp_file"])
 
-        LOGGER.info("Terminating the process of reading sspl.log")
-        self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
-
-        LOGGER.debug("Copying contents of sspl.log")
-        read_resp = self.node_obj.read_file(
-            filename=self.cm_cfg["file"]["sspl_log_file"],
-            local_path=self.cm_cfg["file"]["sspl_log_file"])
-        LOGGER.debug(
-            "======================================================")
-        LOGGER.debug(read_resp)
-        LOGGER.debug(
-            "======================================================")
-
-        LOGGER.info(
-            "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
-        self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
-
         if self.start_msg_bus:
             LOGGER.info("Terminating the process read_message_bus.py")
             self.ras_test_obj.kill_remote_process("read_message_bus.py")
@@ -185,7 +143,8 @@ class TestNodeHealth:
                      self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
-                self.node_obj.remove_file(filename=file)
+                if self.node_obj.path_exists(file):
+                    self.node_obj.remove_file(filename=file)
 
         LOGGER.info("Restarting SSPL service")
         resp = self.health_obj.pcs_resource_ops_cmd(command="restart",
