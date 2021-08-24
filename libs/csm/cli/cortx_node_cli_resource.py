@@ -113,6 +113,7 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             "Error",
             "exception",
             "usage:",
+            "last_updated",
             "Plugged",
             "Location",
             "command not found"]
