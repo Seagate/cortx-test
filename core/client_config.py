@@ -110,8 +110,10 @@ class ClientConfig:
         configure client according to acquired_target
         """
         target = self.get_setup_details(acquired_target)
-        nodes = target["nodes"]
-        node = nodes[0]
-        public_data_ip = node["public_data_ip"]
-        self.set_s3_endpoints(public_data_ip)
+        data_ip = target["lb"]
+        if data_ip == "":
+            nodes = target["nodes"]
+            node = nodes[0]
+            data_ip = node["public_data_ip"]
+        self.set_s3_endpoints(data_ip)
         self.configure_s3_tools(acquired_target)
