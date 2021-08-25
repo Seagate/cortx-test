@@ -19,22 +19,25 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import logging
+from random import SystemRandom
 
 import pytest
 
-from random import SystemRandom
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.utils import system_utils, assert_utils
-from libs.motr import motr_test_lib, WORKLOAD_CFG, TEMP_PATH
+from commons.utils import assert_utils
+from commons.utils import system_utils
+from libs.motr import WORKLOAD_CFG, TEMP_PATH
+from libs.motr import motr_test_lib
 
 LOGGER = logging.getLogger(__name__)
+
 
 class TestExecuteWorkload:
     """Execute Workload Test suite"""
 
     @pytest.yield_fixture(autouse=True)
-    def setup(self):
+    def setup_class(self):
         LOGGER.info("STARTED: Setup Operation")
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
@@ -42,8 +45,7 @@ class TestExecuteWorkload:
         LOGGER.info("ENDED: Setup Operation")
 
         yield
-        #Perform the clean up for each test.
-
+        # Perform the clean up for each test.
         LOGGER.info("STARTED: Teardown Operation")
         LOGGER.info("Deleting temp files on node")
         self.motr_obj.delete_remote_files()
@@ -57,27 +59,27 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def execute_test(self, tc_num):
         batches, runs = self.get_batches_runs(tc_num)
-        LOGGER.info(f' batches: "{batches}", runs: "{runs}"')
+        LOGGER.info('batches: "%s", runs: "%s"', batches, runs)
         for run in range(runs):
-            LOGGER.info(f'Executing run {run + 1}:')
+            LOGGER.info('Executing run : %s', run + 1)
             for index, cnt in enumerate(batches):
                 LOGGER.info("%s", cnt)
                 cmd = self.motr_obj.get_command_str(batches[index])
                 if cmd:
-                    LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
+                    LOGGER.info('Step %s: Executing command - "%s"', index + 1, cmd)
                     result, error1, ret = \
                         system_utils.run_remote_cmd_wo_decision(cmd,
                                                                 self.motr_obj.host_list[0],
                                                                 self.motr_obj.uname_list[0],
                                                                 self.motr_obj.passwd_list[0])
                     if ret:
-                        LOGGER.error(f'"{cmd}" failed, please check the log')
+                        LOGGER.error('"%s" failed, please check the log', cmd)
                         assert False
                     if (b"ERROR" or b"Error") in error1:
-                        LOGGER.error(f'"{cmd}" failed, please check the log')
+                        LOGGER.error('"%s" failed, please check the log', cmd)
                         assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                                    '"{cmd}" Failed, Please check the log')
-                    LOGGER.info(f"{result},{error1}")
+                    LOGGER.info("%s, %s", result, error1)
 
     @pytest.mark.tags("TEST-14882")
     @pytest.mark.motr_io_load

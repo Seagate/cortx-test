@@ -31,7 +31,8 @@ import sys
 import libs.motr as motr_cons
 from commons import commands
 from commons.helpers import node_helper
-from commons.utils import assert_utils, system_utils
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ class MotrTestLib():
                             "m0crate": self.m0crate_parse_func,
                             "m0": self.m0_parse_func,
                             "m0kv": self.m0kv_parse_func,
-                            "other": self.other_parse_func,
+                            "other": self.__other_parse_func,
                             }
         for node in range(self.num_nodes):
             self.host = CMN_CFG["nodes"][node]["hostname"]
@@ -74,7 +75,7 @@ class MotrTestLib():
             hostname=self.host_list[0], username=self.uname_list[0], password=self.passwd_list[0])
 
     @staticmethod
-    def get_max_client_index(my_svcs_info):
+    def __get_max_client_index(my_svcs_info):
         """To calculate motr client number"""
         count = 0
         for temp in my_svcs_info:
@@ -83,7 +84,7 @@ class MotrTestLib():
         return count - 1
 
     @staticmethod
-    def is_localhost(hostname: str) -> bool:
+    def __is_localhost(hostname: str) -> bool:
         """To Check provided host is local host or not"""
         name = CMN_CFG["nodes"][0]["hostname"]
         temp = hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
@@ -125,7 +126,7 @@ class MotrTestLib():
                 print("Setting user client index to 0(default)")
                 self.client_index = 0
             else:
-                max_client_index = self.get_max_client_index(my_svcs_info)
+                max_client_index = self.__get_max_client_index(my_svcs_info)
                 if max_client_index < self.client_index:
                     print("Max client index = {}".format(max_client_index))
                     print("But user provided client index = {}. ".format(
@@ -153,7 +154,7 @@ class MotrTestLib():
         return True
 
     @staticmethod
-    def get_workload_file_name(params):
+    def __get_workload_file_name(params):
         """To fetch workload file name from params"""
         params_list = params.split()
         workload_file = params_list[1].split('/')[-1]
@@ -172,29 +173,29 @@ class MotrTestLib():
         ret = self.get_cluster_info(self.host_list[0])
         assert_utils.assert_true(ret, "Not able to Fetch cluster INFO. Please check cluster status")
 
-        str = "s/^\([[:space:]]*MOTR_LOCAL_ADDR: *\).*/\\1\"{}\"/""".format(self.local_endpoint)
-        cmd = "sed -i \"{}\" {}".format(str, fname)
+        f_str = "s/^\([[:space:]]*MOTR_LOCAL_ADDR: *\).*/\\1\"{}\"/""".format(self.local_endpoint)
+        cmd = "sed -i \"{}\" {}".format(f_str, fname)
         ret = os.system(cmd)
         assert_utils.assert_equal(ret, 0)
 
-        str = "s/^\([[:space:]]*MOTR_HA_ADDR: *\).*/\\1\"{}\"/".format(self.ha_endpoint)
-        cmd = "sed -i \"{}\" {}".format(str, fname)
+        f_str = "s/^\([[:space:]]*MOTR_HA_ADDR: *\).*/\\1\"{}\"/".format(self.ha_endpoint)
+        cmd = "sed -i \"{}\" {}".format(f_str, fname)
         ret = os.system(cmd)
         assert_utils.assert_equal(ret, 0)
 
-        str = "s/^\([[:space:]]*PROF: *\).*/\\1\"{}\"/".format(self.profile_fid)
-        cmd = "sed -i \"{}\" {}".format(str, fname)
+        f_str = "s/^\([[:space:]]*PROF: *\).*/\\1\"{}\"/".format(self.profile_fid)
+        cmd = "sed -i \"{}\" {}".format(f_str, fname)
         ret = os.system(cmd)
         assert_utils.assert_equal(ret, 0)
 
-        str = "s/^\([[:space:]]*PROCESS_FID: *\).*/\\1\"{}\"/".format(self.process_fid)
-        cmd = "sed -i \"{}\" {}".format(str, fname)
+        f_str = "s/^\([[:space:]]*PROCESS_FID: *\).*/\\1\"{}\"/".format(self.process_fid)
+        cmd = "sed -i \"{}\" {}".format(f_str, fname)
         ret = os.system(cmd)
         assert_utils.assert_equal(ret, 0)
 
     def m0crate_parse_func(self, cmd_dict):
         """m0crate parse function"""
-        workload_file = self.get_workload_file_name(cmd_dict['params'])
+        workload_file = self.__get_workload_file_name(cmd_dict['params'])
         local_file_path = f'{motr_cons.WORKLOAD_FILES_DIR}/{workload_file}'
         self.update_workload_file(local_file_path)
         remote_file_path = f'{motr_cons.TEMP_PATH}{workload_file}'
@@ -209,7 +210,7 @@ class MotrTestLib():
         return cmd
 
     @staticmethod
-    def other_parse_func(cmd_dict):
+    def __other_parse_func(cmd_dict):
         """Other command like dd parse function"""
         params = cmd_dict['params'].split()
         cmd = cmd_dict['cmnd']
@@ -242,7 +243,6 @@ class MotrTestLib():
         param = ' '.join([str(elem) for elem in params])
         cmd = f'{cmd} {cluster_info} {param}'
         return cmd
-
 
     def get_command_str(self, cmd_dict):
         """get particular parse command function"""
@@ -452,4 +452,3 @@ class MotrTestLib():
                                                   self.passwd_list[node_num])
         logger.info("%s", result)
         assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
-

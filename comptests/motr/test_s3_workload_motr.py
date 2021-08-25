@@ -26,7 +26,8 @@ import time
 
 import pytest
 
-from commons import configmanager, commands
+from commons import commands
+from commons import configmanager
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
@@ -38,6 +39,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
 S3T_OBJ = S3TestLib()
+
 
 class TestWorkloadS3Bench:
     """
