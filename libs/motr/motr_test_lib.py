@@ -323,8 +323,8 @@ class MotrTestLib():
             assert_utils.assert_true(ret,
                                      "Not able to Fetch cluster INFO. Please check cluster status")
             endpoint = self.local_endpoint
-            ip = endpoint.split("@")
-            private_ip[host] = ip[0]
+            ip_add = endpoint.split("@")
+            private_ip[host] = ip_add[0]
         print("Private IPs of all host is: %s", private_ip)
         return private_ip
 

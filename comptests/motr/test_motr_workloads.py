@@ -38,6 +38,7 @@ class TestExecuteWorkload:
 
     @pytest.yield_fixture(autouse=True)
     def setup_class(self):
+        """ Setup class for running Motr tests"""
         LOGGER.info("STARTED: Setup Operation")
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
