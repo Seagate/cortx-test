@@ -19,10 +19,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import logging
-import random
 
 import pytest
 
+from random import SystemRandom
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import system_utils, assert_utils
@@ -38,6 +38,7 @@ class TestExecuteWorkload:
         LOGGER.info("STARTED: Setup Operation")
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
+        self.system_random = SystemRandom()
         LOGGER.info("ENDED: Setup Operation")
 
         yield
@@ -372,7 +373,8 @@ class TestExecuteWorkload:
                           '9', '9', '11', '11', '11', '11', '13', '9']
             last_endpoint = endpoints["l"]
             for b_size, count, layout in zip(bsize_list, count_list, layout_ids):
-                object_id = str(random.randint(1, 100)) + ":" + str(random.randint(1, 100))
+                object_id = str(self.system_random.randint(1, 100)) + ":" + \
+                            str(self.system_random.randint(1, 100))
                 self.motr_obj.dd_cmd(b_size, count, infile, node_num)
                 self.motr_obj.cp_cmd(b_size, count, object_id, layout, infile, node_num)
                 self.motr_obj.cat_cmd(b_size, count, object_id, layout, outfile, node_num)
@@ -393,4 +395,3 @@ class TestExecuteWorkload:
         self.motr_obj.verify_libfabric_version()
         self.motr_obj.fi_ping_pong()
         LOGGER.info("Stop: Verify object update operation")
-

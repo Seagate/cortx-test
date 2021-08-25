@@ -142,4 +142,3 @@ class TestWorkloadS3Bench:
                 cmd=commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name))
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Successfully downloaded object from bucket using awscli")
-

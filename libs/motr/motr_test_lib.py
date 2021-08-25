@@ -73,7 +73,8 @@ class MotrTestLib():
         self.utils_obj = node_helper.Node(
             hostname=self.host_list[0], username=self.uname_list[0], password=self.passwd_list[0])
 
-    def get_max_client_index(self, my_svcs_info):
+    @staticmethod
+    def get_max_client_index(my_svcs_info):
         """To calculate motr client number"""
         count = 0
         for temp in my_svcs_info:
@@ -81,7 +82,8 @@ class MotrTestLib():
                 count = count + 1
         return count - 1
 
-    def is_localhost(self, hostname: str) -> bool:
+    @staticmethod
+    def is_localhost(hostname: str) -> bool:
         """To Check provided host is local host or not"""
         name = CMN_CFG["nodes"][0]["hostname"]
         temp = hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
@@ -150,7 +152,8 @@ class MotrTestLib():
 
         return True
 
-    def get_workload_file_name(self, params):
+    @staticmethod
+    def get_workload_file_name(params):
         """To fetch workload file name from params"""
         params_list = params.split()
         workload_file = params_list[1].split('/')[-1]
@@ -161,7 +164,7 @@ class MotrTestLib():
         if self.files_to_delete:
             for file in self.files_to_delete:
                 logger.debug('Deleting file %s from node', file)
-                result = self.utils_obj.remove_file_remote(file)
+                result = self.utils_obj.remove_file(file)
                 logger.debug(result)
 
     def update_workload_file(self, fname):
@@ -205,7 +208,8 @@ class MotrTestLib():
         cmd = f'm0crate -S {remote_file_path}'
         return cmd
 
-    def other_parse_func(self, cmd_dict):
+    @staticmethod
+    def other_parse_func(cmd_dict):
         """Other command like dd parse function"""
         params = cmd_dict['params'].split()
         cmd = cmd_dict['cmnd']
@@ -348,6 +352,7 @@ class MotrTestLib():
             logger.info('Ping-pong testing of %s PASSED', protocol)
 
     def dd_cmd(self, b_size, count, file, node_num):
+        """DD command for creating new file"""
         cmd = commands.CREATE_FILE.format("/dev/urandom", file, b_size, count)
         if node_num is None:
             node_num = 0
@@ -360,11 +365,13 @@ class MotrTestLib():
             logger.info('"%s" Failed, Please check the log', cmd)
             assert False
         if (b"ERROR" or b"Error") in error1:
-            logger.error(f'"{cmd}" failed, please check the log')
+            logger.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
+    # pylint: disable=too-many-arguments
     def cp_cmd(self, b_size, count, obj, layout, file, node_num):
+        """M0CP command creation"""
         if node_num is None:
             node_num = 0
         endpoints = self.get_endpoints(self.host_list[node_num])
@@ -379,11 +386,13 @@ class MotrTestLib():
             logger.info('"%s" Failed, Please check the log', cmd)
             assert False
         if (b"ERROR" or b"Error") in error1:
-            logger.error(f'"{cmd}" failed, please check the log')
+            logger.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
+    # pylint: disable=too-many-arguments
     def cat_cmd(self, b_size, count, obj, layout, file, node_num):
+        """M0CAT command creation"""
         if node_num is None:
             node_num = 0
         endpoints = self.get_endpoints(self.host_list[node_num])
@@ -398,11 +407,12 @@ class MotrTestLib():
             logger.info('"%s" Failed, Please check the log', cmd)
             assert False
         if (b"ERROR" or b"Error") in error1:
-            logger.error(f'"{cmd}" failed, please check the log')
+            logger.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
     def unlink_cmd(self, obj, layout, node_num):
+        """M0UNLINK command creation"""
         if node_num is None:
             node_num = 0
         endpoints = self.get_endpoints(self.host_list[node_num])
@@ -417,11 +427,12 @@ class MotrTestLib():
             logger.info('"%s" Failed, Please check the log', cmd)
             assert False
         if (b"ERROR" or b"Error") in error1:
-            logger.error(f'"{cmd}" failed, please check the log')
+            logger.error('"%s" failed, please check the log', cmd)
             assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
                                        f'"{cmd}" Failed, Please check the log')
 
     def diff_cmd(self, file1, file2, node_num):
+        """DIFF command creation"""
         if node_num is None:
             node_num = 0
         cmd = commands.DIFF.format(file1, file2)
@@ -430,9 +441,9 @@ class MotrTestLib():
                                                   self.passwd_list[node_num])
         logger.info("%s", result)
         assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
-        #assert_utils.assert_not_in(result, b"Differ" or b"differ", f'"{cmd}" Failed, Please check the log')
 
     def md5sum_cmd(self, file1, file2, node_num):
+        """MD5SUM command creation"""
         if node_num is None:
             node_num = 0
         cmd = commands.MD5SUM.format(file1, file2)
