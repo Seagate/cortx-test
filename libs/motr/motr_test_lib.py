@@ -52,6 +52,7 @@ class MotrTestLib():
         self.process_fid = None
         self.local_endpoint = None
         self.ha_endpoint = None
+        self.endpoints = {}
         self.client_index = 0
         self.host_list = []
         self.uname_list = []
@@ -86,6 +87,24 @@ class MotrTestLib():
         temp = hostname in ('localhost', '127.0.0.1', name, f'{name}.local')
         return temp
 
+    def get_svcs_info(self, nodes_data, srvnode):
+        """Extract node svcs data from complete cluster data"""
+        for node in nodes_data:
+            nodename = node["name"]
+            nodename = nodename.split(".")[0]
+            if nodename.startswith("srvnode") is True:
+                cmd1 = 'salt-call pillar.get cluster:{}:hostname'.format(nodename)
+                cmd2 = 'cut -f 2 -d ":" | tr -d [:space:]'
+                cmd = ''.join([cmd1, ' | ', cmd2])
+                nodename = self.utils_obj.execute_cmd(cmd)
+            self.hosts.append(nodename)
+            self.per_host_services_pids_endps[nodename] = node["svcs"]
+        svcs_host = self.hosts[0]
+        if bytes(srvnode, 'utf-8') in self.hosts:
+            svcs_host = bytes(srvnode, 'utf-8')
+        my_svcs_info = self.per_host_services_pids_endps[svcs_host]
+        return my_svcs_info
+
     def get_cluster_info(self, hostname):
         """Get cluster related info like endpoints, fids"""
         srvnode = self.host_list[0]
@@ -98,20 +117,7 @@ class MotrTestLib():
             self.profile_fid = self.cluster_info["profiles"][0]
             self.profile_fid = self.profile_fid["fid"]
             nodes_data = self.cluster_info["nodes"]
-            for node in nodes_data:
-                nodename = node["name"]
-                nodename = nodename.split(".")[0]
-                if nodename.startswith("srvnode") == True:
-                    cmd1 = 'salt-call pillar.get cluster:{}:hostname'.format(nodename)
-                    cmd2 = 'cut -f 2 -d ":" | tr -d [:space:]'
-                    cmd = ''.join([cmd1, ' | ', cmd2])
-                    nodename = self.utils_obj.execute_cmd(cmd)
-                self.hosts.append(nodename)
-                self.per_host_services_pids_endps[nodename] = node["svcs"]
-            svcs_host = self.hosts[0]
-            if bytes(srvnode, 'utf-8') in self.hosts:
-                svcs_host = bytes(srvnode, 'utf-8')
-            my_svcs_info = self.per_host_services_pids_endps[svcs_host]
+            my_svcs_info = self.get_svcs_info(nodes_data, srvnode)
             if self.client_index < 0:
                 print("User provided client index = {}".format(self.client_index))
                 print("Setting user client index to 0(default)")
@@ -149,7 +155,6 @@ class MotrTestLib():
         params_list = params.split()
         workload_file = params_list[1].split('/')[-1]
         return workload_file
-
 
     def delete_remote_files(self):
         """Delete files from remote machine"""
@@ -255,7 +260,11 @@ class MotrTestLib():
         ret = self.get_cluster_info(hostname)
         assert_utils.assert_true(ret, "Not able to extract cluster details."
                                       "Please check cluster status.")
-        return self.local_endpoint, self.ha_endpoint, self.process_fid, self.profile_fid
+        self.endpoints["l"] = self.local_endpoint
+        self.endpoints["H"] = self.ha_endpoint
+        self.endpoints["P"] = self.process_fid
+        self.endpoints["p"] = self.profile_fid
+        return self.endpoints
 
     def verify_libfabric_version(self):
         """TO check libfabric version and protocol status"""
@@ -304,21 +313,21 @@ class MotrTestLib():
 
     def get_private_if_ip(self):
         """Obtain all private IP from a cluster"""
-        privateIP = {}
+        private_ip = {}
         for host in self.host_list:
             ret = self.get_cluster_info(host)
             assert_utils.assert_true(ret,
                                      "Not able to Fetch cluster INFO. Please check cluster status")
             endpoint = self.local_endpoint
             ip = endpoint.split("@")
-            privateIP[host] = ip[0]
-        print("Private IPs of all host is: %s", privateIP)
-        return privateIP
+            private_ip[host] = ip[0]
+        print("Private IPs of all host is: %s", private_ip)
+        return private_ip
 
     def fi_ping_pong(self):
         """Libfabric pingpong run with different protocol"""
         self.verify_libfabric_version()
-        privateIP = self.get_private_if_ip()
+        private_ip = self.get_private_if_ip()
         protocols = ["tcp", "socket", "verbs"]
         for protocol in protocols:
             logger.info('Testing ping pong for %s', protocol)
@@ -330,10 +339,106 @@ class MotrTestLib():
                 assert_utils.assert_true(ret, 'FI Server command Failed, Please check system')
                 logger.info('FI Server command Passed, \n Output is: %s \n', out)
                 ret, out = system_utils.run_remote_cmd(
-                    cmd=commands.FI_CLIENT_CMD.format(privateIP[self.host_list[0]], protocol),
+                    cmd=commands.FI_CLIENT_CMD.format(private_ip[self.host_list[0]], protocol),
                     hostname=self.host_list[i+1],
                     username=self.uname,
                     password=self.passwd)
                 assert_utils.assert_true(ret, 'FI Client command Failed, Please check system')
                 logger.info('FI Client command Passed, \n Output is: %s\n', out)
             logger.info('Ping-pong testing of %s PASSED', protocol)
+
+    def dd_cmd(self, b_size, count, file, node_num):
+        cmd = commands.CREATE_FILE.format("/dev/urandom", file, b_size, count)
+        if node_num is None:
+            node_num = 0
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.host_list[node_num],
+                                                                      self.uname_list[node_num],
+                                                                      self.passwd_list[node_num])
+        logger.info("%s , %s", result, error1)
+        if ret:
+            logger.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            logger.error(f'"{cmd}" failed, please check the log')
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def cp_cmd(self, b_size, count, obj, layout, file, node_num):
+        if node_num is None:
+            node_num = 0
+        endpoints = self.get_endpoints(self.host_list[node_num])
+        cmd = commands.M0CP.format(endpoints["l"], endpoints["H"], endpoints["P"],
+                                   endpoints["p"], b_size.lower(), count, obj, layout, file)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.host_list[node_num],
+                                                                      self.uname_list[node_num],
+                                                                      self.passwd_list[node_num])
+        logger.info("%s , %s", result, error1)
+        if ret:
+            logger.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            logger.error(f'"{cmd}" failed, please check the log')
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def cat_cmd(self, b_size, count, obj, layout, file, node_num):
+        if node_num is None:
+            node_num = 0
+        endpoints = self.get_endpoints(self.host_list[node_num])
+        cmd = commands.M0CAT.format(endpoints["l"], endpoints["H"], endpoints["P"],
+                                    endpoints["p"], b_size.lower(), count, obj, layout, file)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.host_list[node_num],
+                                                                      self.uname_list[node_num],
+                                                                      self.passwd_list[node_num])
+        logger.info("%s , %s", result, error1)
+        if ret:
+            logger.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            logger.error(f'"{cmd}" failed, please check the log')
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def unlink_cmd(self, obj, layout, node_num):
+        if node_num is None:
+            node_num = 0
+        endpoints = self.get_endpoints(self.host_list[node_num])
+        cmd = commands.M0UNLINK.format(endpoints["l"], endpoints["H"], endpoints["P"],
+                                       endpoints["p"], obj, layout)
+        result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                      self.host_list[node_num],
+                                                                      self.uname_list[node_num],
+                                                                      self.passwd_list[node_num])
+        logger.info("%s , %s", result, error1)
+        if ret:
+            logger.info('"%s" Failed, Please check the log', cmd)
+            assert False
+        if (b"ERROR" or b"Error") in error1:
+            logger.error(f'"{cmd}" failed, please check the log')
+            assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                       f'"{cmd}" Failed, Please check the log')
+
+    def diff_cmd(self, file1, file2, node_num):
+        if node_num is None:
+            node_num = 0
+        cmd = commands.DIFF.format(file1, file2)
+        ret, result = system_utils.run_remote_cmd(cmd, self.host_list[node_num],
+                                                  self.uname_list[node_num],
+                                                  self.passwd_list[node_num])
+        logger.info("%s", result)
+        assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
+        #assert_utils.assert_not_in(result, b"Differ" or b"differ", f'"{cmd}" Failed, Please check the log')
+
+    def md5sum_cmd(self, file1, file2, node_num):
+        if node_num is None:
+            node_num = 0
+        cmd = commands.MD5SUM.format(file1, file2)
+        ret, result = system_utils.run_remote_cmd(cmd, self.host_list[node_num],
+                                                  self.uname_list[node_num],
+                                                  self.passwd_list[node_num])
+        logger.info("%s", result)
+        assert_utils.assert_true(ret, f'"{cmd}" Failed, Please check the log')
+

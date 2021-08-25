@@ -19,14 +19,14 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 import logging
+import random
 
 import pytest
 
-from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import system_utils, assert_utils
-from libs.motr import motr_test_lib, WORKLOAD_CFG
+from libs.motr import motr_test_lib, WORKLOAD_CFG, TEMP_PATH
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,10 +38,6 @@ class TestExecuteWorkload:
         LOGGER.info("STARTED: Setup Operation")
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
-        self.host_list = self.motr_obj.host_list
-        self.uname_list = self.motr_obj.uname_list
-        self.passwd_list = self.motr_obj.passwd_list
-        self.last_endpoint = None
         LOGGER.info("ENDED: Setup Operation")
 
         yield
@@ -70,9 +66,9 @@ class TestExecuteWorkload:
                     LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
                     result, error1, ret = \
                         system_utils.run_remote_cmd_wo_decision(cmd,
-                                                                self.host_list[0],
-                                                                self.uname_list[0],
-                                                                self.passwd_list[0])
+                                                                self.motr_obj.host_list[0],
+                                                                self.motr_obj.uname_list[0],
+                                                                self.motr_obj.passwd_list[0])
                     if ret:
                         LOGGER.error(f'"{cmd}" failed, please check the log')
                         assert False
@@ -357,51 +353,33 @@ class TestExecuteWorkload:
         Verify different size object m0cp m0cat operation
         """
         LOGGER.info("Start: Verify multiple m0cp/cat operation")
-        infile = '/tmp/input'
-        outfile = '/tmp/output'
-        for j, host in enumerate(self.host_list):
+        last_endpoint = None
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        for node_num, host in enumerate(self.motr_obj.host_list):
             ret = self.motr_obj.get_cluster_info(host)
             assert_utils.assert_true(ret,
                                      "Not able to Fetch cluster INFO. Please check cluster status")
-            i = 1
-            l, H, P, p = self.motr_obj.get_endpoints(host)
-            if self.last_endpoint == l:
+            endpoints = self.motr_obj.get_endpoints(host)
+            if last_endpoint == endpoints["l"]:
                 LOGGER.info("Looks like cluster is not fully deployed. Exiting")
                 break
-            bsize = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K',
-                     '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M', '1M']
-            size = ['4k', '4k', '4k', '8k', '16k', '64k', '64k', '128k',
-                    '4k', '1m', '1m', '4m', '4m', '4m', '4m', '16m', '1m']
-            count = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
-                     '2', '4', '2', '3', '4', '8', '4', '1024']
-            layout = ['1', '1', '1', '2', '3', '5', '5', '6', '1',
-                      '9', '9', '11', '11', '11', '11', '11', '13']
-            self.last_endpoint = l
-            for bs, s, c, L in zip(bsize, size, count, layout):
-                o = str(i) + ":" + str(i)
-                ddCmd = commands.CREATE_FILE.format("/dev/urandom", infile, bs, c)
-                cpCmd = commands.M0CP.format(l, H, P, p, s, c, o, L, infile)
-                catCmd = commands.M0CAT.format(l, H, P, p, s, c, o, L, outfile)
-                diffCmd = commands.DIFF.format(infile, outfile)
-                mdCmd = commands.MD5SUM.format(infile, outfile)
-                unlinkCmd = commands.M0UNLINK.format(l, H, P, p, o, L)
-                i = i + 1
-                index = i
-                batch = [ddCmd, cpCmd, catCmd, diffCmd, mdCmd, unlinkCmd]
-                for cmd in batch:
-                    LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd,
-                                                                                  self.host_list[j],
-                                                                                  self.uname_list[j],
-                                                                                  self.passwd_list[j])
-                    LOGGER.info("%s , %s", result,error1)
-                    if ret:
-                        LOGGER.info('"%s" Failed, Please check the log', cmd)
-                        assert False
-                    if (b"ERROR" or b"Error") in error1:
-                        LOGGER.error(f'"{cmd}" failed, please check the log')
-                        assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
-                                                   f'"{cmd}" Failed, Please check the log')
+            count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
+                          '2', '4', '2', '3', '4', '8', '4', '1024']
+            bsize_list = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K',
+                          '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M', '1M']
+            layout_ids = ['1', '1', '1', '2', '3', '5', '5', '6', '1',
+                          '9', '9', '11', '11', '11', '11', '13', '9']
+            last_endpoint = endpoints["l"]
+            for b_size, count, layout in zip(bsize_list, count_list, layout_ids):
+                object_id = str(random.randint(1, 100)) + ":" + str(random.randint(1, 100))
+                self.motr_obj.dd_cmd(b_size, count, infile, node_num)
+                self.motr_obj.cp_cmd(b_size, count, object_id, layout, infile, node_num)
+                self.motr_obj.cat_cmd(b_size, count, object_id, layout, outfile, node_num)
+                self.motr_obj.diff_cmd(infile, outfile, node_num)
+                self.motr_obj.md5sum_cmd(infile, outfile, node_num)
+                self.motr_obj.unlink_cmd(object_id, layout, node_num)
+
             LOGGER.info("Stop: Verify multiple m0cp/cat operation")
 
     @pytest.mark.tags("TEST-22963")
@@ -415,3 +393,4 @@ class TestExecuteWorkload:
         self.motr_obj.verify_libfabric_version()
         self.motr_obj.fi_ping_pong()
         LOGGER.info("Stop: Verify object update operation")
+
