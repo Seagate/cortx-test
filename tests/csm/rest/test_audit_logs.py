@@ -41,6 +41,7 @@ from commons import cortxlogging
 from commons.exceptions import CTException
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_common_test_lib import perform_s3_io
 
 
 class TestAuditLogs:
@@ -416,7 +417,9 @@ class TestAuditLogs:
                                       f"Failed to create s3 bucket, resp: {resp}")
             s3obj_dict[s3ob] = self.s3_bkt
         self.log.info("Step 3: Perform Read and write operations on the above buckets.")
-        # TODO 
+        for s3obj in self.s3_objs:
+            resp = perform_s3_io(s3obj, self.s3_bkt, self.folder_path)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: Delete the bucket and associated S3 account.")
         for s3ob in s3obj_dict:
             resp = s3ob.delete_bucket(s3obj_dict[s3ob])
@@ -439,7 +442,7 @@ class TestAuditLogs:
         for user in self.s3_accounts:
             params = {"start_date": start_time, "end_date": end_time, "sortby": user}
             assert self.audit_logs.verify_audit_logs_s3_download(
-                params=params, validate_expected_response=True)
+                params=params, validate_expected_response=True, response_type=str)
         self.log.info("Step 7: Repeat the above steps for specified number of iterations.")
         self.log.info("ENDED: Test single sort by user parameters on view , download operation"
                       " on S3 audit log.")
@@ -468,8 +471,9 @@ class TestAuditLogs:
             assert_utils.assert_equal(resp[1], self.s3_bkt,
                                       f"Failed to create s3 bucket, resp: {resp}")
             bkt_create_time = int(time.time())
-            self.log.info("Step 3: Perform create a bucket after every 60 seconds for the specified"
-                          " number of mins. Make a note of the time stamp when the bucket was created.")
+            self.log.info(
+                "Step 3: Perform create a bucket after every 60 seconds for the specified"
+                "number of mins. Make a note of the time stamp when the bucket was created.")
             end_time = int(time.time()) + self.epoc_time_diff
             self.log.info("Parameters for the audit logs GET api")
             params = {"start_date": start_time, "end_date": end_time, 'sortby': "timestamp"}
@@ -480,7 +484,7 @@ class TestAuditLogs:
                                      f"Failed to find bucket {self.s3_valid_bkt} in s3 audit log")
             self.log.info("Step 5: Download CSM audit log is sorted by User.")
             assert self.audit_logs.verify_audit_logs_s3_download(
-                params=params, validate_expected_response=True)
+                params=params, validate_expected_response=True, response_type=str)
             time.sleep(60)
         self.log.info("ENDED: Test single sort by timestamp parameters on view , download "
                       "operation on S3 audit log.")
@@ -532,15 +536,15 @@ class TestAuditLogs:
             "specified parameters and in specified format ")
         resp = self.audit_logs.verify_audit_logs_s3_show(
             params=params, validate_expected_response=True, bucket=self.s3_valid_bkt)
-        #assert_utils.assert_true(resp, f"Failed to find bucket {self.s3_valid_bkt} in s3 audit log")
+        assert_utils.assert_true(resp, f"Failed to find bucket {self.s3_valid_bkt} in s3 audit log")
         resp = self.audit_logs.verify_audit_logs_s3_show(
             params=params, validate_expected_response=True, expected_status_code=400,
             bucket=self.s3_invalid_bkt)
-        assert_utils.assert_true(resp,
-                                  f"Failed to find invalid bucket {self.s3_invalid_bkt} in audit log")
+        assert_utils.assert_true(
+            resp, f"Failed to find invalid bucket {self.s3_invalid_bkt} in audit log")
         self.log.info("Step 4: Login using admin user and download S3 audit log")
-        # assert self.audit_logs.verify_audit_logs_s3_download(
-        #     params=params, validate_expected_response=True)
+        assert self.audit_logs.verify_audit_logs_s3_download(
+            params=params, validate_expected_response=True, response_type=str)
         self.log.info("ENDED: Test single sort by response code parameters on view , download "
                       "operation on S3 audit log")
 
@@ -569,7 +573,8 @@ class TestAuditLogs:
         assert_utils.assert_equal(resp[1], self.s3_valid_bkt,
                                   f"Failed to create s3 bucket, resp: {resp}")
         self.log.info("Step 3.2 Perform IO on the created bucket")
-        # TODO
+        resp = perform_s3_io(s3_obj, self.s3_bkt, self.folder_path)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3.3 Delete the created bucket.")
         resp = s3_obj.delete_bucket(self.s3_valid_bkt, force=True)
         assert_utils.assert_true(resp[0], f"Failed to delete s3 bucket, resp: {resp}")
@@ -591,7 +596,7 @@ class TestAuditLogs:
         assert_utils.assert_true(resp, f"Failed to find bucket {self.s3_valid_bkt} in s3 audit log")
         self.log.info("Step 6: Download CSM audit log is sorted by User")
         assert self.audit_logs.verify_audit_logs_s3_download(
-            params=params, validate_expected_response=True)
+            params=params, validate_expected_response=True, response_type=str)
         self.log.info("Step 7: Repeat the above operations for different s3 user.")
         self.log.info("ENDED: Test filtering by user parameters on view , download operation on"
                       " S3 audit log")
