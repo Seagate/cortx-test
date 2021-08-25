@@ -423,7 +423,7 @@ class Health(Host):
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
-            if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
+            if "stonith" in key:
                 for srvnode, status in val.items():
                     currentnode = "srvnode-{}".format(key.split("-")[2])
                     if srvnode != currentnode and status != "Started":
@@ -486,6 +486,10 @@ class Health(Host):
         json_format = json.loads(temp_dict)
         return json_format
 
+    # pylint: disable-msg=too-many-nested-blocks
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=broad-except
     @staticmethod
     def get_clone_set_status(crm_mon_res: dict, no_node: int):
         """
@@ -495,44 +499,70 @@ class Health(Host):
         return: dict
         """
         clone_set = {}
-        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node+1)]
-        for clone_elem_resp in crm_mon_res['clone']:
-            if clone_elem_resp["@id"] == 'monitor_group-clone':
-                if no_node != 1:
-                    resource = []
-                    for val in clone_elem_resp['group']:
-                        resource.append(val['resource'])
-                else:
-                    resource = clone_elem_resp['group']['resource']
-            else:
-                resource = clone_elem_resp['resource']
-            temp_dict = {}
-            clone_set[clone_elem_resp["@id"]] = {}
-            if no_node == 1:
-                if int(resource['@nodes_running_on']):
-                    node = resource['node']['@name']
-                    if resource['@blocked'] == 'true':
-                        temp_dict[node] = 'FAILED'
-                    else:
-                        temp_dict[node] = resource['@role']
-                else:
-                    temp_dict[node_dflt[0]] = resource['@role']
-                clone_set[clone_elem_resp["@id"]] = temp_dict
-            else:
-                temp_nodes = node_dflt[:]
-                for elem in resource:
-                    if int(elem['@nodes_running_on']):
-                        node = elem['node']['@name']
-                        if elem['@blocked'] == 'true':
+        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
+        setup_type = ''
+        try:
+            setup_type = CMN_CFG["setup_type"]
+        except Exception as error:
+            LOG.debug("setup_type not found %s", error)
+        if setup_type == "OVA":
+            for clone_elem_resp in crm_mon_res['clone']:
+                resources = []
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    resources.append(clone_elem_resp['group']['resource'])
+                elif clone_elem_resp["@id"] == 'io_group-clone':
+                    for resource_ele in clone_elem_resp['group']['resource']:
+                        resources.append(resource_ele)
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                for resource in resources:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
                             temp_dict[node] = 'FAILED'
                         else:
-                            temp_dict[node] = elem['@role']
-                        temp_nodes.remove(node)
+                            temp_dict[node] = resource['@role']
                     else:
-                        for node in temp_nodes:
-                            temp_dict[node] = elem['@role']
-                            clone_set[clone_elem_resp["@id"]] = temp_dict
+                        temp_dict[node_dflt[0]] = resource['@role']
+                clone_set[clone_elem_resp["@id"]] = temp_dict
+        else:
+            for clone_elem_resp in crm_mon_res['clone']:
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    if no_node != 1:
+                        resource = []
+                        for val in clone_elem_resp['group']:
+                            resource.append(val['resource'])
+                    else:
+                        resource = clone_elem_resp['group']['resource']
+                else:
+                    resource = clone_elem_resp['resource']
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                if no_node == 1:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
+                            temp_dict[node] = 'FAILED'
+                        else:
+                            temp_dict[node] = resource['@role']
+                    else:
+                        temp_dict[node_dflt[0]] = resource['@role']
                     clone_set[clone_elem_resp["@id"]] = temp_dict
+                else:
+                    temp_nodes = node_dflt[:]
+                    for elem in resource:
+                        if int(elem['@nodes_running_on']):
+                            node = elem['node']['@name']
+                            if elem['@blocked'] == 'true':
+                                temp_dict[node] = 'FAILED'
+                            else:
+                                temp_dict[node] = elem['@role']
+                            temp_nodes.remove(node)
+                        else:
+                            for node in temp_nodes:
+                                temp_dict[node] = elem['@role']
+                                clone_set[clone_elem_resp["@id"]] = temp_dict
+                        clone_set[clone_elem_resp["@id"]] = temp_dict
         return clone_set
 
     @staticmethod
