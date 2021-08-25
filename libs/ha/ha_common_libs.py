@@ -677,8 +677,8 @@ class HALibs:
     # pylint: disable=too-many-arguments
     def ha_s3_workload_operation(
             self,
-            log_prefix,
-            s3userinfo,
+            log_prefix: str,
+            s3userinfo: dict,
             skipread: bool = False,
             skipwrite: bool = False,
             skipcleanup: bool = False,
@@ -689,9 +689,9 @@ class HALibs:
         operations on VM/HW.
         :param log_prefix: Test number prefix for log file
         :param s3userinfo: S3 user info
-        :param skipread: Skip reading objects created in this run
-        :param skipwrite: Skip writing objects created in this run
-        :param skipcleanup: Skip deleting objects created in this run
+        :param skipread: Skip reading objects created in this run if True
+        :param skipwrite: Skip writing objects created in this run if True
+        :param skipcleanup: Skip deleting objects created in this run if True
         :param nsamples: Number of samples of object
         :param nclients: Number of clients/workers
         :return: bool/operation response
@@ -700,7 +700,7 @@ class HALibs:
             "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
             "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
         if self.setup_type == "HW":
-            workloads.extend(["1GB", "4GB", "5GB"])
+            workloads.extend(["1GB", "2GB", "3GB" "4GB", "5GB"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
