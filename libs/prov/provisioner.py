@@ -537,6 +537,7 @@ class Provisioner:
         else:
             return resp
 
+    # pylint:disable=too-many-locals,too-many-statements,too-many-branches
     @staticmethod
     def create_deployment_config_universal(
             cfg_template: str,
@@ -604,9 +605,9 @@ class Provisioner:
                 new_len = int(device_list_len - cvg_count)
                 final_disk_count, rem = divmod(new_len, cvg_count)
                 LOGGER.info("The no. of div_disk, new_len, input_disk "
-                            "are %s\n %s\n %s\n %s\n cvg %s",
+                            "are %s\n %s\n %s\n %s\n cvg %s %s",
                             device_list_len, final_disk_count,
-                            new_len, data_disk_per_cvg, cvg_count)
+                            new_len, data_disk_per_cvg, cvg_count, rem)
                 if data_disk_per_cvg <= device_list_len:
                     final_disk_count = data_disk_per_cvg
                     count_end = int(final_disk_count+cvg_count)
@@ -629,8 +630,7 @@ class Provisioner:
 
                 config_utils.update_config_ini(
                     config_file, node, key="hostname", value=hostname, add_section=False)
-                cvg_list = range(0, cvg_count-1)
-                for cvg in cvg_list:
+                for cvg in range(0, cvg_count):
                     LOGGER.info("cvg no is %s", cvg)
                     config_utils.update_config_ini(
                        config_file,
