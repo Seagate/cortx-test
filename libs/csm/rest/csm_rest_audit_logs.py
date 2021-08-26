@@ -296,12 +296,12 @@ class RestAuditLogs(RestTestLib):
                 for element in response["logs"]:
                     if bucket:
                         if bucket == element["bucket"]:
-                            if "SigV4" == element["signature_version"]:
+                            if "REST.PUT.BUCKET" == element["operation"]:
                                 self.log.info(
                                     "Verifying bucket specific parameters for"
                                     "bucket %s in the audit log", bucket)
                                 verification_status = True
-                                if "REST.PUT.BUCKET" != element["operation"]:
+                                if "SigV4" != element["signature_version"]:
                                     self.log.debug(
                                         "Operation parameter value returned is:"
                                         " %s", element)
@@ -496,7 +496,7 @@ class RestAuditLogs(RestTestLib):
                         #     self.log.error("Values does not match ")
                         #     return False
 
-            return verification_status
+            return True
         except BaseException as error:
             self.log.error("%s %s: %s",
                            const.EXCEPTION_ERROR,
