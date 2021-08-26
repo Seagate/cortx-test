@@ -134,10 +134,6 @@ class Preboarding:
     create_btn = "admin-createadminuser"
     err_msg = "admin-invalidmsg"
     userlogin_ip = "username"
-    change_password = "user-password"
-    confirm_password = "confirm-password"
-    reset_btn = "reset-password-button"
-    ok_btn ="confirmation-dialogbox-btn"
 
 
 class Onboarding:
