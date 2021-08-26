@@ -20,8 +20,8 @@
 #
 """Tests for performing load testing using Jmeter"""
 import logging
-import pytest
 import os
+import pytest
 from commons import cortxlogging
 from commons.utils import config_utils
 from libs.jmeter.jmeter_integration import JmeterInt
@@ -40,8 +40,8 @@ class TestCsmLoad():
         cls.system_stats = SystemStats()
         cls.config_chk = CSMConfigsCheck()
         cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
-       # cls.config_chk.delete_csm_users()
-       # cls.config_chk.delete_s3_users()
+        cls.config_chk.delete_csm_users()
+        cls.config_chk.delete_s3_users()
         user_already_present = cls.config_chk.check_predefined_csm_user_present()
         if not user_already_present:
             user_already_present = cls.config_chk.setup_csm_users()
@@ -81,13 +81,13 @@ class TestCsmLoad():
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
         content = []
         fieldnames = ["role","user","pswd"]
-        content.append({fieldnames[0]:"admin", 
+        content.append({fieldnames[0]:"admin",
                     fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
                     fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
-        content.append({fieldnames[0]:"manage", 
+        content.append({fieldnames[0]:"manage",
                     fieldnames[1]: CSM_REST_CFG["csm_user_manage"]["username"],
                     fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
-        content.append({fieldnames[0]:"monitor", 
+        content.append({fieldnames[0]:"monitor",
                     fieldnames[1]: CSM_REST_CFG["csm_user_monitor"]["username"],
                     fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
         content.append({fieldnames[0]:"s3",

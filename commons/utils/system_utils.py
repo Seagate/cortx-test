@@ -167,8 +167,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tup
     if chk_stderr:
         if error:
             return False, str(output)
-        else:
-            return True, str(output)
+        return True, str(output)
     if proc.returncode != 0:
         return False, str(error)
     if b"Number of key(s) added: 1" in output:
