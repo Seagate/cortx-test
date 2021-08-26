@@ -122,9 +122,7 @@ class RestCsmUser(RestTestLib):
 
             # Creating required payload to be added for request
             data = self.create_payload_for_new_csm_user(user_type, user_role)
-            user_data = const.USER_DATA
-            user_data = user_data.replace("testusername", data["username"]).replace(
-                "user_role", data["role"])
+            user_data = json.dumps(data)
             if user_type == "missing":
                 user_data = const.MISSING_USER_DATA
                 user_data = user_data.replace("testusername", data["username"]).replace(
