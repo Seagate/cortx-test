@@ -68,3 +68,26 @@ SERVER_PSU_FAULT_RESOLVED = {
         "Failure detected",
         "Power Supply AC lost"],
     "deassert": True}
+RAID_INTEGRITY_FAULT = {"count": 5, "timeout": 60}
+FAN_ALERT = {
+    "sensor_type": "FAN",
+    "sensor_states": [
+        "lnr",
+        "lcr",
+        "lnc",
+        "unc",
+        "ucr",
+        "unr"],
+    "deassert": False
+}
+FAN_ALERT_RESOLVED = {
+    "sensor_type": "FAN",
+    "sensor_states": [
+        "lnr",
+        "lcr",
+        "lnc",
+        "unc",
+        "ucr",
+        "unr"],
+    "deassert": True
+}

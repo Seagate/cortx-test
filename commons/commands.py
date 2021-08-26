@@ -340,6 +340,11 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
               "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
 
+#cortx_setup commands
+CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
+CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"
+CMD_RESOURCE_SHOW_HEALTH_RES = "cortx_setup resource show --health --resource_type"
+
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
                         ' -X PUT http://127.0.0.1:28081​'
@@ -365,6 +370,12 @@ CMD_INSTALL_TOOL = "yum install {0}"
 CMD_INCREASE_MEMORY = "stress --vm {0} --vm-bytes {1} --vm-keep -t {2}"
 CMD_MEMORY_UTILIZATION = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 JMX_CMD = "sh {}/jmeter.sh -n -t {} -l {} -f -e -o {}"
+SET_PIPEFAIL = "set -eu -o pipefail"
+
+# Expect utils
+CMD_PDU_POWER_ON = "expect scripts/expect_utils/expect_power_on.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_OFF = "expect scripts/expect_utils/expect_power_off.exp {0} {1} {2} {3}"
+CMD_PDU_POWER_CYCLE = "expect scripts/expect_utils/expect_power_cycle.exp {0} {1} {2} {3} {4}"
 
 # Ldap commands to fetch user, password.
 LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserver.properties " \
@@ -372,3 +383,17 @@ LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserv
 LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cortx/auth/resources/" \
            "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
            " --const_key cortx)"
+
+#Motr commands
+M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
+DIFF = "diff {} {}"
+MD5SUM = "md5sum {} {}"
+GETRPM = "rpm -qa| grep {}"
+LIBFAB_VERSION = "fi_info --version | grep libfabric: |cut -d ' ' -f 2 | tr -d [:space:]"
+LIBFAB_TCP = "fi_info -p tcp"
+LIBFAB_SOCKET = "fi_info -p sockets"
+LIBFAB_VERBS = "fi_info -p verbs"
+FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
+FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
