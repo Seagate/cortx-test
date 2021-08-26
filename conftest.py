@@ -778,7 +778,7 @@ def pytest_runtest_logstart(nodeid, location):
     :return:
     """
     current_suite = None
-    skip_health_check = False  # Skip health check for provisioner.
+    skip_health_check = True  # Skip health check for provisioner.
     breadcrumbs = os.path.split(location[0])
     for prefix in params.PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX:
         if breadcrumbs[-1].startswith(prefix):
