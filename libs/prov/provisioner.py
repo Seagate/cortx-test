@@ -536,3 +536,123 @@ class Provisioner:
                 return False, f"NTP Configuration Verification Failed for srvnode-{node_id}"
         else:
             return resp
+
+    @staticmethod
+    def create_deployment_config_universal(
+            cfg_template: str,
+            node_obj_list: list,
+            data_disk_per_cvg: int,
+            cvg_count: int = 2,
+            **kwargs) -> tuple:
+        """
+        This method will create config.ini for CORTX deployment
+        :param cfg_template: Local Path for config.ini template
+        :param node_obj_list: List of Host object of all the nodes in a cluster
+        :param data_disk_per_cvg: List of data disk to be part of cvg on all nodes in a cluster
+        :param cvg_count: List of cvg to be created on all the nodes in a cluster
+        :keyword mgmt_vip: mgmt_vip mandatory in case of multinode deployment
+        :return: True/False and path of created config
+        """
+        mgmt_vip = kwargs.get("mgmt_vip", None)
+        sns_data = kwargs.get("sns_data", "4")
+        sns_parity = kwargs.get("sns_parity", "2")
+        sns_spare = kwargs.get("sns_spare", "0")
+        dix_data = kwargs.get("dix_data", "1")
+        dix_parity = kwargs.get("dix_parity", "2")
+        dix_spare = kwargs.get("dix_spare", "0")
+        config_file = "deployment_config.ini"
+        shutil.copyfile(cfg_template, config_file)
+        try:
+            if mgmt_vip:
+                config_utils.update_config_ini(
+                    config_file,
+                    section="cluster",
+                    key="mgmt_vip",
+                    value=mgmt_vip,
+                    add_section=False)
+            elif not mgmt_vip and len(node_obj_list) > 1:
+                return False, "mgmt_vip is required for multinode deployment"
+            valid_disk_count = int(sns_data)+int(sns_parity)+int(sns_spare)
+            if valid_disk_count < data_disk_per_cvg:
+                return False, "The data disks count is less than N+K+S count"
+
+            sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
+            dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
+            for key, value in sns.items():
+                config_utils.update_config_ini(
+                    config_file,
+                    section="srvnode_default",
+                    key="storage.durability.sns.{}".format(key),
+                    value=value,
+                    add_section=False)
+            for key, value in dix.items():
+                config_utils.update_config_ini(
+                    config_file,
+                    section="srvnode_default",
+                    key="storage.durability.dix.{}".format(key),
+                    value=value,
+                    add_section=False)
+
+            for node_count, node_obj in enumerate(node_obj_list, start=1):
+                node = "srvnode-{}".format(node_count)
+                hostname = node_obj.hostname
+                device_list = node_obj.execute_cmd(
+                    cmd=common_cmd.CMD_LIST_DEVICES,
+                    read_lines=True)[0].split(",")
+                metadata_devices = device_list[0:cvg_count]
+                device_list_len = len(device_list)
+                new_len = int(device_list_len - cvg_count)
+                final_disk_count, rem = divmod(new_len, cvg_count)
+                LOGGER.info("The no. of div_disk, new_len, input_disk "
+                            "are %s\n %s\n %s\n %s\n cvg %s",
+                            device_list_len, final_disk_count,
+                            new_len, data_disk_per_cvg, cvg_count)
+                if data_disk_per_cvg <= device_list_len:
+                    final_disk_count = data_disk_per_cvg
+                    count_end = int(final_disk_count+cvg_count)
+                    LOGGER.info("the count end is %s", count_end)
+                    data_devices = list()
+                    data_devices.append(",".join(device_list[cvg_count:count_end]))
+                    count = cvg_count
+                    while count:
+                        count = cvg_count-1
+                        new_end = int(count_end+final_disk_count)
+                        LOGGER.info("The new end count is %s", new_end)
+                        if new_end > device_list_len:
+                            break
+                        data_devices_ad = ",".join(device_list[count_end:new_end])
+                        count_end = int(count_end+final_disk_count)
+                        data_devices.append(data_devices_ad)
+                else:
+                    data_devices = ",".join(device_list[cvg_count:])
+                LOGGER.info("The data_disk %s", data_devices)
+
+                config_utils.update_config_ini(
+                    config_file, node, key="hostname", value=hostname, add_section=False)
+                cvg_list = range(0, cvg_count-1)
+                for cvg in cvg_list:
+                    LOGGER.info("cvg no is %s", cvg)
+                    config_utils.update_config_ini(
+                       config_file,
+                       node,
+                       key="storage.cvg.{}.data_devices".format(cvg),
+                       value=data_devices[cvg],
+                       add_section=False)
+                    config_utils.update_config_ini(
+                       config_file,
+                       node,
+                       key="storage.cvg.{}.metadata_devices".format(cvg),
+                       value=metadata_devices[cvg],
+                       add_section=False)
+
+        except Exception as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                Provisioner.create_deployment_config_universal.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True, config_file
