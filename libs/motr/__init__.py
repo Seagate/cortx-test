@@ -23,6 +23,7 @@
 from commons.utils import config_utils
 
 """Motr package initializer."""
+CURR_LIB_VERSION=b"1.11.2"
 
 # dd tools commands.
 # Parameter in order: if:Source file path, of: Destination file path, bs(k, M, G) * count(number): Total size.
