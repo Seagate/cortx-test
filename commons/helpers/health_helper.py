@@ -423,7 +423,7 @@ class Health(Host):
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
-            if CMN_CFG["setup_type"] == "HW" and "stonith" in key:
+            if "stonith" in key:
                 for srvnode, status in val.items():
                     currentnode = "srvnode-{}".format(key.split("-")[2])
                     if srvnode != currentnode and status != "Started":
