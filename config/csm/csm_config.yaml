@@ -53,3 +53,4 @@ JMeterConfig:
   jmeter_path: "/root/apache-jmeter-5.4/bin"
   jmx_path: "scripts/jmx_files"
   jtl_log_path: "log/jmeter/"
+  test_data_csv: "test_config.csv"
