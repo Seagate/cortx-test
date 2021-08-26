@@ -1282,7 +1282,7 @@ class RASTestLib(RASCoreLib):
                         sensor_type)
                     output = super().get_ipmi_sensor_list(sensor_type)
                     sensor_list = [line.split("|")[0].strip()
-                                   for line in output]
+                                   for line in output if "ok" in line.split("|")[2]]
 
                     return True, sensor_list
 
