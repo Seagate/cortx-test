@@ -147,11 +147,12 @@ def run_remote_cmd_wo_decision(
     return output, error, exit_status
 
 
-def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
+def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
     :param flg: To get str(proc.communicate())
+    :param chk_stderr: Check if stderr is none.
     :return: bool, response.
     """
     if not cmd:
@@ -163,6 +164,10 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     LOGGER.debug("error = %s", str(error))
     if flg:
         return True, str((output, error))
+    if chk_stderr:
+        if error:
+            return False, str(output)
+        return True, str(output)
     if proc.returncode != 0:
         return False, str(error)
     if b"Number of key(s) added: 1" in output:
