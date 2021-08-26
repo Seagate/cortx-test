@@ -168,7 +168,7 @@ def run_robot_cmd(args,te_tag=None, logFile='main.log'):
     directory = " . "
     resource= " -v RESOURCES:" + str(cwd) + "/robot_gui/"
     timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-    reports = "reports_" + str(args.test_plan) + "_" + te_tag + str(timestamp)
+    reports = "reports_" + str(args.test_plan) + "_" + te_tag + "_" + str(timestamp)
     cmd_line = ""
     cmd_line = "cd robot_gui; robot --timestampoutputs -d "+ reports+url+resource+browser+ \
                username+headless+password+tag+directory+";cd .."
