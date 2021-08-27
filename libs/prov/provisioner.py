@@ -583,9 +583,9 @@ class Provisioner:
             elif not mgmt_vip and len(node_obj_list) > 1:
                 return False, "mgmt_vip is required for multinode deployment"
             valid_disk_count = int(sns_data)+int(sns_parity)+int(sns_spare)
-            if valid_disk_count < (data_disk_per_cvg*cvg_count):
+            if valid_disk_count > (data_disk_per_cvg*cvg_count):
                 return False, "The sum of data disks per cvg " \
-                              "is greater than N+K+S count"
+                              "is less than N+K+S count"
             sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
             for key, value in sns.items():
