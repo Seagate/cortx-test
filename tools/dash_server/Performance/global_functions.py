@@ -78,8 +78,8 @@ def round_off(value, base=1):
             (base) - round off to nearest base
     Returns: (int) - rounded off number
     """
-    if value < 1:
-        return round(value, 2)
+    if value < 10:
+        return round(value, 3)
     if value < 26:
         return int(value)
     return base * round(value / base)

@@ -59,6 +59,16 @@ statistics_layout = Card(
         html.Div(id="statistics_metadata_table"),
 
         html.Br(),
+        html.P("COSBench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("IOPath Performance Statistics (Mixed IO - Read 50%, Write 50%)",
+               style=dict_style_table_caption),
+        html.Div(id="statistics_cosbench_table"),
+
+        html.Br(),
         html.P("HSBench", style=style_perf_captions),
         Markdown('''
             ___
@@ -78,16 +88,6 @@ statistics_layout = Card(
             ), justify='center'),
         html.Div(id="statistics_bucketops_table",
                  style={'margin-top': '20px'}),
-
-        html.Br(),
-        html.P("COSBench", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
-
-        html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
-        html.Div(id="statistics_cosbench_table"),
     ]
     ),
     className="flex-sm-fill nav-link"

@@ -22,7 +22,8 @@
 from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 import pandas as pd
 from Performance.schemas import *
-from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list
+from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
+    sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list
 from Performance.mongodb_api import find_documents, count_documents
 from Performance.styles import style_dashtable_header, style_table_cell
 import dash_table
@@ -31,6 +32,20 @@ import plotly.graph_objs as go
 
 
 def get_average_data(count, data, stat, subparam, multiplier):
+    """
+    Returns subparam value (avg/min/max) from passed cursor by multiplying
+    with multiplier
+
+    Args:
+        count: count of documents available in database
+        data: cursor containing queried data
+        stat: perf metric to look after
+        subparam: to fetch avg/min/max param
+        multiplier: multiplies the datapoint with this value
+
+    returns:
+        rounded off value
+    """
     if count > 0 and keys_exists(data[0], stat):
         return round_off(data[0][stat][subparam] * multiplier)
     else:
@@ -38,13 +53,34 @@ def get_average_data(count, data, stat, subparam, multiplier):
 
 
 def get_data(count, data, stat, multiplier):
+    """
+    returns metric data without subparam
+
+    Args:
+        count: count of documents available in database
+        data: cursor containing queried data
+        stat: perf metric to look after
+        multiplier: multiplies the datapoint with this value
+
+    returns:
+        rounded off value
+    """
     if count > 0 and keys_exists(data[0], stat):
         return round_off(data[0][stat] * multiplier)
     else:
         return "NA"
 
 
-def get_data_from_database(data):
+def get_data_for_stats(data):
+    """
+    function for statistics tab to get data from database
+
+    Args:
+        data: dictionary needed for the query
+
+    Returns:
+        dataframe: Pandas dataframe with queried data
+    """
     data_needed_for_query = data
     query = get_statistics_schema(data_needed_for_query)
     objects = get_distinct_keys(
@@ -74,6 +110,17 @@ def get_data_from_database(data):
 
 
 def get_data_for_graphs(data, xfilter, xfilter_tag):
+    """
+    function for graphs tab to get data from database
+
+    Args:
+        data: dictionary needed for the query
+        xfilter: filter provided
+        xfilter_tag: internal tag needed for xfilter for data query
+
+    Returns:
+        dataframe: Pandas dataframe with queried data
+    """
     data_needed_for_query = data
     query = get_graphs_schema(data_needed_for_query, xfilter, xfilter_tag)
     if xfilter == 'Build':
@@ -119,6 +166,13 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
 
 def get_benchmark_data(data_needed_for_query, results):
+    """
+    Granularized function to query data from database for perf metrics
+
+    Args:
+        data: dictionary needed for the query
+        results: dictionary to append data for this particular instance
+    """
     temp_data = []
     added_objects = False
     operations = ["Write", "Read"]
@@ -152,12 +206,11 @@ def get_benchmark_data(data_needed_for_query, results):
             added_objects = True
 
         for stat in stats:
-            if data_needed_for_query["name"] == 'S3bench':
-                if stat in ["Latency", "TTFB"]:
-                    temp_data.append(get_average_data(
-                        count, db_data, stat, "Avg", 1000))
-                else:
-                    temp_data.append(get_data(count, db_data, stat, 1))
+            if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
+                temp_data.append(get_average_data(
+                    count, db_data, stat, "Avg", 1000))
+            elif data_needed_for_query["name"] == 'S3bench':
+                temp_data.append(get_data(count, db_data, stat, 1))
             else:
                 try:
                     temp_data.append(get_data(count, db_data, stat, 1))
@@ -165,17 +218,27 @@ def get_benchmark_data(data_needed_for_query, results):
                     temp_data.append(get_average_data(
                         count, db_data, stat, "Avg", 1))
 
-    if not check_empty_list(temp_data):
-        try:
-            if data_needed_for_query['xfilter'] == 'Build':
-                results[data_needed_for_query['objsize']] = temp_data
-            else:
-                results[data_needed_for_query['build']] = temp_data
-        except KeyError:
+    try:
+        if not check_empty_list(temp_data) and data_needed_for_query['xfilter'] == 'Build':
             results[data_needed_for_query['objsize']] = temp_data
+        else:
+            results[data_needed_for_query['build']] = temp_data
+    except KeyError:
+        results[data_needed_for_query['objsize']] = temp_data
 
 
 def get_dash_table_from_dataframe(df, bench, column_id):
+    """
+    functional to get dash table to show stats from dataframe
+
+    Args:
+        df: pandas dataframe containing data
+        bench: bench for which the data is
+        column_id: column id needed for the column to plot
+
+    Returns:
+        figure: dashtable figure with plotted plots
+    """
     if len(df) < 2:
         benchmark = html.P("Data is not Available.")
     else:
@@ -217,10 +280,28 @@ def get_dash_table_from_dataframe(df, bench, column_id):
 
 
 def get_workload_headings(data):
+    """
+    function to get workload headings
+
+    Args:
+        data: data dict with dropdown values
+
+    Returns:
+        H5: heading with workload string
+    """
     return html.H5(f"Data for {data['build']} build on branch {data['branch']} with {data['nodes']} nodes, {data['pfull']}% utilization having workload of {data['buckets']} bucket(s) and {data['sessions']} session(s).")
 
 
 def get_metadata_latencies(data_needed_for_query):
+    """
+    function to get metadata latencies for stats
+
+    Args:
+        data: datadict with data needed for the query
+
+    Returns:
+        dataframe: padas dataframe with fetched data
+    """
     objects = ['1KB']
 
     results = {
@@ -258,6 +339,15 @@ def get_metadata_latencies(data_needed_for_query):
 
 
 def get_bucktops(data_needed_for_query):
+    """
+    function to get bucketops table for stats
+
+    Args:
+        data: datadict with data needed for the query
+
+    Returns:
+        dataframe: padas dataframe with fetched data
+    """
     ops_modes = get_bucketops_modes()
     mode_indices = list(ops_modes.keys())
 
@@ -303,6 +393,17 @@ def get_bucktops(data_needed_for_query):
 
 
 def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
+    """
+    function to plot graphs
+
+    Args:
+        fig: plotly figure to add trace on it
+        fig_all: plotly figure to also add same trace on it
+        x_data: data to be plotted on x axis
+        y_data: data to be plotted on y axis
+        plot_data: data dict storing info related to graph
+        color: color to be given to the plot
+    """
     trace = go.Scatter(
         name='{} {} - {} {}'.format(
             plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
@@ -310,8 +411,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
         y=y_data,
         hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
             plot_data['operation'], plot_data['option'], plot_data['custom']),
-        mode='lines+markers',
-        connectgaps=True,
+        # mode='lines+markers',
+        # connectgaps=True,
         line={'color': color}
     )
 
@@ -320,6 +421,15 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
 
 
 def get_graph_layout(plot_data):
+    """
+    function to create a graph with predefined format
+
+    Args:
+        plot_data: data dict storing info related to graph
+
+    Returns:
+        figure: plotly figure with layout configured
+    """
     if plot_data['metric'] != 'all':
         title_string = '<b>{} Plot</b>'.format(plot_data['metric'])
     else:
@@ -335,7 +445,7 @@ def get_graph_layout(plot_data):
         title_font_color='#343a40',
         font_size=17,
         legend_font_size=13,
-        legend_title='Trend Details',
+        legend_title='Legend',
         xaxis=dict(
             title_text=plot_data['x_heading'],
             titlefont=dict(size=23),

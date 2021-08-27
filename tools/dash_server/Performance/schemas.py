@@ -24,6 +24,16 @@ Schemas to be used in backend of the dashboard
 
 
 def get_common_schema(data):
+    """
+    function for getting common performance schema wrt database
+    and provided data
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
     entry = {
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
@@ -37,6 +47,16 @@ def get_common_schema(data):
 
 
 def get_statistics_schema(data):
+    """
+    function for getting stats specific performance schema
+    wrt database and provided data
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
     entry = get_common_schema(data)
     entry['Build'] = data['build']
 
@@ -44,13 +64,33 @@ def get_statistics_schema(data):
 
 
 def get_graphs_schema(data, xfilter, xfilter_tag):
+    """
+    function for getting graphs specific performance schema
+    wrt database and provided data
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
     entry = get_common_schema(data)
     entry[xfilter] = data[xfilter_tag]
 
     return entry
 
-  
+
 def get_complete_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data
+
+    Args:
+        data: data needed for query
+
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
     entry = get_common_schema(data)
     entry['Build'] = data['build']
     entry['Object_Size'] = data['objsize']
@@ -75,6 +115,15 @@ bucketops_headings = [
 
 
 def get_dropdown_labels(dropdown_type):
+    """
+    function for getting label extensions wrt dropdown options
+
+    Args:
+        data: variable with dropdown name
+
+    Returns:
+        string: corresponding mapping for the input string
+    """
     mapping = {
         'nodes': ' Nodes',
         'pfill': '% Fill',
@@ -87,6 +136,12 @@ def get_dropdown_labels(dropdown_type):
 
 
 def get_bucketops_modes():
+    """
+    function to get bucketops mode mapping
+
+    Returns:
+        dict: dict of all bucketops modes
+    """
     modes = {
         '2': 'BINIT',
         '3': 'PUT',

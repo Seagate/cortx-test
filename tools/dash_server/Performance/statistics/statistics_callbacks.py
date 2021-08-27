@@ -62,7 +62,7 @@ def update_s3bench(release, branch, build, nodes, pfull, itrns,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
-        dataframe = get_data_from_database(data)
+        dataframe = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
             dataframe, 's3bench', 'Object Sizes')
 
@@ -128,7 +128,7 @@ def update_hsbench(release, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
-        dataframe = get_data_from_database(data)
+        dataframe = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
             dataframe, 'hsbench', 'Object Sizes')
 
@@ -195,7 +195,7 @@ def update_cosbench(release, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }
-        dataframe = get_data_from_database(data)
+        dataframe = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
             dataframe, 'cosbench', 'Object Sizes')
 

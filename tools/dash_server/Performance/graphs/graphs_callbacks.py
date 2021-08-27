@@ -12,15 +12,44 @@ pallete = {
 
 
 def get_yaxis_heading(metric):
+    """
+    function to get y axis heading
+
+    Args:
+        metric: performance metric
+
+    Returns:
+        string: heading string
+    """
+    return_val = ""
     if metric == "Throughput":
-        return "{} (MBps)".format(metric)
+        return_val = "{} (MBps)".format(metric)
     elif metric == "IOPS":
-        return "{}".format(metric)
+        return_val = "{}".format(metric)
     else:
-        return "{} (ms)".format(metric)
+        return_val = "{} (ms)".format(metric)
+
+    return return_val
 
 
-def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data_combined, x_actual_data, xfilter_tag, color):
+def get_graphs(fig, fig_all, data_frame, operations, plot_data, data,
+               metric, x_data_combined, x_actual_data, xfilter_tag, color):
+    """
+    wrapper function to get graphs plotted
+
+    Args:
+        fig: plotly fig to plot graphs on
+        fig_all: plotly fig to all plot graphs on
+        data_frame: pandas dataframe containing data
+        operations: operation list with perf operations
+        plot_data: data needed for plotting graphs
+        data: data needed for query (from dropdowns)
+        metric: performance metric specific to the graph
+        x_data_combined: list of combined x axis data with comparison plot
+        x_actual_data: current trace specific actual x axis list
+        x_filter_tag: internal tag to identify xfilter
+        color: trace color
+    """
     plot_data['option'] = data[xfilter_tag]
     plot_data['custom'] = data['custom']
     i = 0
@@ -28,9 +57,9 @@ def get_graphs(fig, fig_all, df, operations, plot_data, data, metric, x_data_com
     for operation in operations:
         y_data = []
         plot_data['operation'] = operation
-        for col in df.columns:
+        for col in data_frame.columns:
             if col.startswith(" ".join([operation, metric])):
-                y_actual_data = df[col]
+                y_actual_data = data_frame[col]
                 break
         data = dict(zip(x_actual_data, y_actual_data))
         for item in x_data_combined:
@@ -88,17 +117,20 @@ def update_Ttfb_Style(bench):
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1, nodes1, pfull1, itrns1, custom1, sessions1, buckets1,
-                  release2, branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
+def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
+                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
+                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
     return_val = [None] * 5
     if not n_clicks:
         raise PreventUpdate
     if not all([xfilter, bench, operation]):
         raise PreventUpdate
-    if not all([branch1, option1, nodes1, itrns1, custom1, sessions1, buckets1]) and pfull1 is None:
+    if not all([
+            branch1, option1, nodes1, itrns1, custom1, sessions1, buckets1]) and pfull1 is None:
         raise PreventUpdate
     if flag:
-        if not all([branch2, option2, nodes2, itrns2, custom2, sessions2, buckets2]) and pfull2 is None:
+        if not all([
+                branch2, option2, nodes2, itrns2, custom2, sessions2, buckets2]) and pfull2 is None:
             raise PreventUpdate
 
     if n_clicks > 0:
@@ -144,8 +176,8 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             plot_data['y_heading'] = get_yaxis_heading(metric)
 
             fig = get_graph_layout(plot_data)
-            df = get_data_for_graphs(data, xfilter, xfilter_tag)
-            x_data = list(df.iloc[:, 0])
+            data_Frame = get_data_for_graphs(data, xfilter, xfilter_tag)
+            x_data = list(data_Frame.iloc[:, 0])
 
             if flag:
                 df_optional = get_data_for_graphs(
@@ -158,14 +190,14 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 else:
                     x_data_final = sort_builds_list(x_data_final)
 
-                get_graphs(fig, fig_all, df, operations,
+                get_graphs(fig, fig_all, data_Frame, operations,
                            plot_data, data, metric, x_data_final, x_data, xfilter_tag, pallete['1'])
                 get_graphs(fig, fig_all, df_optional, operations, plot_data,
                            data_optional, metric, x_data_final, x_data_optional, xfilter_tag, pallete['2'])
                 not_plotted = False
 
             if not_plotted:
-                get_graphs(fig, fig_all, df, operations,
+                get_graphs(fig, fig_all, data_Frame, operations,
                            plot_data, data, metric, x_data, x_data, xfilter_tag, pallete['1'])
 
             figs.append(fig)
