@@ -609,7 +609,8 @@ class Provisioner:
                     read_lines=True)[0].split(",")
                 metadata_devices = device_list[0:cvg_count]
                 device_list_len = len(device_list)
-                if (data_disk_per_cvg*cvg_count) <= device_list_len:
+                new_device_lst_len = (device_list_len - cvg_count)
+                if (data_disk_per_cvg*cvg_count) < new_device_lst_len:
                     count_end = int(data_disk_per_cvg+cvg_count)
                     data_devices = list()
                     data_devices.append(",".join(device_list[cvg_count:count_end]))
