@@ -26,6 +26,7 @@ import logging
 import time
 import jenkins
 import re
+import numpy as np
 from commons import constants as common_cnst
 from commons import commands as common_cmd
 from commons import params as prm
@@ -559,8 +560,8 @@ class Provisioner:
         :return: True/False and path of created config
         """
         mgmt_vip = kwargs.get("mgmt_vip", None)
-        cvg = kwargs.get("cvg_count_per_node", "2")
-        data_disk = kwargs.get("data_disk_per_cvg", "1")
+        cvg_cnt = kwargs.get("cvg_count_per_node", "2")
+        data_disk = kwargs.get("data_disk_per_cvg", "0")
         sns_data = kwargs.get("sns_data", "4")
         sns_parity = kwargs.get("sns_parity", "2")
         sns_spare = kwargs.get("sns_spare", "0")
@@ -570,7 +571,7 @@ class Provisioner:
         config_file = "deployment_config.ini"
         shutil.copyfile(cfg_template, config_file)
         data_disk_per_cvg = int(data_disk)
-        cvg_count = int(cvg)
+        cvg_count = int(cvg_cnt)
         try:
             if mgmt_vip:
                 config_utils.update_config_ini(
@@ -604,27 +605,32 @@ class Provisioner:
             for node_count, node_obj in enumerate(node_obj_list, start=1):
                 node = "srvnode-{}".format(node_count)
                 hostname = node_obj.hostname
-                device_list = node_obj.execute_cmd(
-                    cmd=common_cmd.CMD_LIST_DEVICES,
-                    read_lines=True)[0].split(",")
+                device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
+                                                   read_lines=True)[0].split(",")
                 metadata_devices = device_list[0:cvg_count]
                 device_list_len = len(device_list)
                 new_device_lst_len = (device_list_len - cvg_count)
-                if (data_disk_per_cvg*cvg_count) < new_device_lst_len:
-                    count_end = int(data_disk_per_cvg+cvg_count)
-                    data_devices = list()
+                count = cvg_count
+                data_devices = list()
+                if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk != "0":
+                    count_end = int(data_disk_per_cvg + cvg_count)
                     data_devices.append(",".join(device_list[cvg_count:count_end]))
-                    count = cvg_count
                     while count:
-                        count = cvg_count-1
-                        new_end = int(count_end+data_disk_per_cvg)
-                        if new_end > device_list_len:
+                        count = count - 1
+                        new_end = int(count_end + data_disk_per_cvg)
+                        if new_end > new_device_lst_len:
                             break
                         data_devices_ad = ",".join(device_list[count_end:new_end])
-                        count_end = int(count_end+data_disk_per_cvg)
+                        count_end = int(count_end + data_disk_per_cvg)
                         data_devices.append(data_devices_ad)
                 else:
-                    data_devices = ",".join(device_list[cvg_count:])
+                    last_element = device_list.pop()
+                    last_element = last_element.replace("\n", "")
+                    device_list.append(last_element)
+                    data_devices_f = np.array_split(device_list, cvg_count)
+                    for count in range(0, count):
+                        data_devices.append(",".join(data_devices_f[count]))
+
                 config_utils.update_config_ini(
                     config_file, node, key="hostname", value=hostname, add_section=False)
                 for cvg in range(0, cvg_count):
