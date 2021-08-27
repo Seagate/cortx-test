@@ -77,6 +77,21 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
         os.environ['JIRA_PASSWORD'] = jira_pd
     return jira_id, jira_pd
 
+def get_db_credential() -> Tuple[str, Optional[str]]:
+    """ Function to get DB credentials from env or common config or secret.json."""
+    db_user = None
+    db_pwd = None
+    try:
+        db_user = os.environ['DB_USER']
+        db_pwd = os.environ['DB_PASSWORD']
+    except KeyError:
+        print("DB credentials not found in environment")
+        db_user = input("DB username: ")
+        db_pwd = getpass.getpass("DB password: ")
+        os.environ['DB_USER'] = db_user
+        os.environ['DB_PASSWORD'] = db_pwd
+    return db_user, db_pwd
+
 def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
     Get tests from given test execution
@@ -153,7 +168,7 @@ def run_robot_cmd(args,te_tag=None, logFile='main.log'):
     directory = " . "
     resource= " -v RESOURCES:" + str(cwd) + "/robot_gui/"
     timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-    reports = "reports_" + str(args.test_plan) + "_" + te_tag + str(timestamp)
+    reports = "reports_" + str(args.test_plan) + "_" + te_tag + "_" + str(timestamp)
     cmd_line = ""
     cmd_line = "cd robot_gui; robot --timestampoutputs -d "+ reports+url+resource+browser+ \
                username+headless+password+tag+directory+";cd .."

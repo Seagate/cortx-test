@@ -28,6 +28,7 @@ import logging
 import os
 import re
 import shutil
+import csv
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 
 import yaml
@@ -466,3 +467,23 @@ def convert_to_seconds(time_str:str):
     """
     seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
     return int(time_str[:-1]) * seconds_per_unit[time_str[-1]]
+
+def read_csv(fpath:str):
+    """Reads the csv file
+    :param fpath: file path
+    """
+    with open(fpath, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+    return reader
+
+def write_csv(fpath:str, fieldnames:list, rows:list):
+    """ Creates and writes the csv file
+    :param fpath: file path
+    :param fieldnames: list of header
+    :param row_dict: list of dictionary of [{fieldname1:value,fieldname2:value},{..}]
+    """
+    with open(fpath, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
