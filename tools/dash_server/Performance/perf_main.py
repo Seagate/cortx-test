@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from __future__ import absolute_impor
+from __future__ import absolute_import
 from Performance.graphs.graphs_layouts import graphs_perf_tabs, graphs_input_options
 import dash_html_components as html
 from Performance.statistics.statistics_layouts import statistics_perf_tabs, stats_input_options

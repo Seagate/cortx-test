@@ -20,12 +20,12 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+from builtins import round
 import yaml
 import sys
 from urllib.parse import quote_plus
 from Performance.mongodb_api import find_distinct_values
 from Performance.schemas import get_dropdown_labels
-from builtins import round
 
 config_path = 'Performance/configs.yml'
 

@@ -1,4 +1,4 @@
-"""Performance tab UI styles and formatting"""
+"""UI styles for Performance tab and formatting"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
