@@ -218,12 +218,12 @@ def get_benchmark_data(data_needed_for_query, results):  # pylint: disable=too-m
                     temp_data.append(get_average_data(
                         count, db_data, stat, "Avg", 1))
 
-    try:
-        if not check_empty_list(temp_data) and data_needed_for_query['xfilter'] == 'Build':
+    if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
+        if data_needed_for_query['xfilter'] == 'Build':
             results[data_needed_for_query['objsize']] = temp_data
         else:
             results[data_needed_for_query['build']] = temp_data
-    except KeyError:
+    else:
         results[data_needed_for_query['objsize']] = temp_data
 
 
