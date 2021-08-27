@@ -236,6 +236,7 @@ Verify unique username for csm and s3 account
     Verify message  S3_ACCOUNT_NAME_SAME_AS_CSM_USER_ID  ${S3_ACCOUNT_NAME_SAME_AS_CSM_USER_MESSAGE}
     click element  ${CLOSE_ALERT_BOX_FOR_DUPLICATE_USER_ID}
     Reload Page
+    wait for page or element to load
     Delete CSM User  ${user_name}
 
 verify the table headers for s3 account access key

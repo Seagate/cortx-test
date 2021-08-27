@@ -58,6 +58,13 @@ GRAPH_NODE_OK_ID = 'info-dialog-btn-ok'
 GRAPH_NODE_START_ID = 'rect_0000_start'
 GRAPH_NODE_POWEROFF_ID = 'rect_0000_poweroff'
 GRAPH_NODE_POWER_STORAGEOFF_ID = 'rect_0000_powerandstorageoff'
+GRAPH_NODE_ACTION_TABLE_CLASS = '//div[@class="cortx-icon-btn cortx-option-icon"]'
+GRAPH_NODE_STOP_TABLE_CLASS = '//span[@class="cortx-menu-icon cortx-stop-node-icon-online"]'
+GRAPH_NODE_START_TABLE_CLASS = '//span[@class="cortx-menu-icon cortx-start-node-icon-online"]'
+GRAPH_NODE_POWEROFF_TABLE_CLASS = '//span[@class="cortx-menu-icon' \
+                                    ' cortx-power-off-node-icon-online"]'
+GRAPH_NODE_POWER_STORAGEOFF_TABLE_CLASS = '//span[@class="cortx-menu-icon' \
+                                            ' cortx-power-storage-off-node-icon-online"]'
 
 # Settings
 SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
