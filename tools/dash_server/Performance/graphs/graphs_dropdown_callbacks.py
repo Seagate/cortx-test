@@ -1,10 +1,32 @@
+"""performance graph callbacks to handle dropdown values"""
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 
 from Performance.global_functions import get_dict_from_array,\
     get_distinct_keys, sort_builds_list, sort_object_sizes_list
-from common import app
 from Performance.styles import style_dropdown_small, style_dropdown_small_2, style_dropdown_medium
+from common import app
 
 # first dropdown
 
@@ -17,6 +39,7 @@ from Performance.styles import style_dropdown_small, style_dropdown_small_2, sty
     prevent_initial_call=True
 )
 def update_branches_dropdown(release):
+    """updates branches in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -50,6 +73,7 @@ def update_branches_dropdown(release):
     prevent_initial_call=True
 )
 def update_placeholder(xfilter):
+    """updates palceholder for builds in default select dropdown"""
     placeholder = ""
     if not xfilter:  # pylint: disable=no-else-raise
         raise PreventUpdate
@@ -71,6 +95,7 @@ def update_placeholder(xfilter):
     prevent_initial_call=True
 )
 def update_options_dropdown(xfilter, release, branch):
+    """updates builds/ object sizes in default select dropdown"""
     versions = None
     value = None
     disabled = False
@@ -108,6 +133,7 @@ def update_options_dropdown(xfilter, release, branch):
     prevent_initial_call=True
 )
 def update_nodes_first(xfilter, release, branch, option1, bench):
+    """updates nodes in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -141,6 +167,7 @@ def update_nodes_first(xfilter, release, branch, option1, bench):
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes):
+    """updates percentage fill in cluster in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -172,8 +199,9 @@ def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes)
     Input('graphs_nodes_dropdown', 'value'),
     Input('graphs_pfull_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, pfill):
+    """updates iterations of run in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -207,8 +235,9 @@ def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, 
     Input('graphs_pfull_dropdown', 'value'),
     Input('graphs_iteration_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns):
+    """updates custom field in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -243,8 +272,9 @@ def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfil
     Input('graphs_iteration_dropdown', 'value'),
     Input('graphs_custom_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns, custom):
+    """updates sessions in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -279,9 +309,10 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
     Input('graphs_custom_dropdown', 'value'),
     Input('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_buckets_dropdown(xfilter, release, branch, option1, bench,
                             nodes, pfill, itrns, custom, sessions):
+    """updates buckets in default select dropdown"""
     options = None
     value = None
     disabled = False
@@ -318,6 +349,7 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench,
     Input('compare_flag', 'value'),
 )
 def update_compare_dropdown_styles(flag):
+    """shows 2nd set of dropdowns of comparison only when button is toggled"""
     return_val = [{'display': 'None'}]*9
     if flag:
         return_val = [
@@ -338,6 +370,7 @@ def update_compare_dropdown_styles(flag):
     prevent_initial_call=True
 )
 def update_branches_dropdown_2(release, flag):
+    """updates branches in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -376,7 +409,8 @@ def update_branches_dropdown_2(release, flag):
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )
-def update_options_dropdown(xfilter, release, branch, flag):
+def update_options_dropdown_2(xfilter, release, branch, flag):
+    """updates build/ object sizes in comparison select dropdown"""
     versions = None
     value = None
     disabled = False
@@ -415,8 +449,9 @@ def update_options_dropdown(xfilter, release, branch, flag):
     Input('graphs_benchmark_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_nodes_first(xfilter, release, branch, option1, bench, flag):
+)  # pylint: disable=too-many-arguments
+def update_nodes_dropdown_2(xfilter, release, branch, option1, bench, flag):
+    """updates nodes in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -451,8 +486,9 @@ def update_nodes_first(xfilter, release, branch, option1, bench, flag):
     Input('graphs_nodes_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes, flag):
+)  # pylint: disable=too-many-arguments
+def update_percentfill_dropdown_2(xfilter, release, branch, option1, bench, nodes, flag):
+    """updates percent fill in cluster in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -487,8 +523,9 @@ def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes,
     Input('graphs_pfull_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, flag):
+)  # pylint: disable=too-many-arguments
+def update_iterations_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill, flag):
+    """updates iterations of run in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -525,8 +562,9 @@ def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, 
     Input('graphs_iteration_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns, flag):
+)  # pylint: disable=too-many-arguments
+def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill, itrns, flag):
+    """updates custom field in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -564,9 +602,10 @@ def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfil
     Input('graphs_custom_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_sessions_dropdown(xfilter, release, branch, option1, bench,
+)  # pylint: disable=too-many-arguments
+def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
                              nodes, pfill, itrns, custom, flag):
+    """updates sessions in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -604,9 +643,10 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench,
     Input('graphs_sessions_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
-)
-def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes,
+)  # pylint: disable=too-many-arguments
+def update_buckets_dropdown_2(xfilter, release, branch, option1, bench, nodes,
                             pfill, itrns, custom, sessions, flag):
+    """updates buckets in comparison select dropdown"""
     options = None
     value = None
     disabled = False
@@ -641,8 +681,9 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes,
     Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_object_size_dropdown(xfilter, release, branch, build, bench, sessions):
+    """updates a object size dropdown when sessions all is chosen"""
     options = None
     value = None
     disabled = False

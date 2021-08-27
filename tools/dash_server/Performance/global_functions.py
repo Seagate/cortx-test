@@ -1,3 +1,4 @@
+"""Global functions needed across Performance files"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -24,6 +25,7 @@ import sys
 from urllib.parse import quote_plus
 from Performance.mongodb_api import find_distinct_values
 from Performance.schemas import get_dropdown_labels
+from builtins import round
 
 config_path = 'Performance/configs.yml'
 

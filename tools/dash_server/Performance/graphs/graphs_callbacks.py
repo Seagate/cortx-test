@@ -1,3 +1,25 @@
+"""Graph callbacks file for handling data"""
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 
@@ -77,6 +99,7 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
     prevent_initial_call=True
 )
 def update_Ttfb_Style(bench):
+    """hides ttfb plot for non s3bench data"""
     style = None
     if bench != 'S3bench':
         style = {'display': 'none'}
@@ -118,6 +141,29 @@ def update_Ttfb_Style(bench):
 def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
                   nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
                   branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
+    """
+    updates graph plots for all 5 graphs based on input values
+
+    Args:
+        n_clicks: number of clicks user does on the button
+        xfilter: filter chosen in filterby dropdown
+        bench: benchmark to show plots for
+        operation: read/ write or both
+        flag: indicates it's a comparison or not
+        following fields are seperate for first or optional graph plots:
+        release1 / release: release of LR
+        branch1 / branch2: github branch
+        option1 / option2: build or objectsize chosen as per the filter
+        nodes1 / nodes2: nodes associated with the cluster
+        pfull1 / pfull2: percent fill of the cluster
+        itrns1 / itrns2: #iteration for current run
+        custom1 / custom2: run specific custom field
+        sessions1 / sessions2: number of sessions / concurrency values
+        buckets1 / buckets2: number of buckets
+
+    Returns:
+        5 plotly go figures with traces plotted
+    """
     return_val = [None] * 5
     if not n_clicks:
         raise PreventUpdate

@@ -1,3 +1,4 @@
+"""Performance schemas consumed by backend and essential for database"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -18,10 +19,6 @@
 #
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
-"""
-Schemas to be used in backend of the dashboard
-"""
-
 
 def get_common_schema(data):
     """

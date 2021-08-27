@@ -1,3 +1,4 @@
+"""Performance graphs UI layouts designs"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
