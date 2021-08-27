@@ -223,7 +223,7 @@ def get_benchmark_data(data_needed_for_query, results):  # pylint: disable=too-m
             results[data_needed_for_query['objsize']] = temp_data
         else:
             results[data_needed_for_query['build']] = temp_data
-    else:
+    elif not check_empty_list(temp_data):
         results[data_needed_for_query['objsize']] = temp_data
 
 
@@ -411,9 +411,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
         y=y_data,
         hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
             plot_data['operation'], plot_data['option'], plot_data['custom']),
-        # mode='lines+markers',
         # connectgaps=True,
-        line={'color': plot_data['color']}
+        # line={'color': plot_data['pallete'][plot_data['operation']]}
     )
 
     fig.add_trace(trace)

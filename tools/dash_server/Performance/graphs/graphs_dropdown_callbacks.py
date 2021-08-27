@@ -139,7 +139,7 @@ def update_nodes_first(xfilter, release, branch, option1, bench):
     Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_nodes_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes):
     options = None
     value = None
@@ -318,14 +318,15 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench,
     Input('compare_flag', 'value'),
 )
 def update_compare_dropdown_styles(flag):
+    return_val = [{'display': 'None'}]*9
     if flag:
-        return [
+        return_val = [
             style_dropdown_small, style_dropdown_small_2, style_dropdown_medium,
             style_dropdown_medium, style_dropdown_small_2, style_dropdown_small_2,
             style_dropdown_medium, style_dropdown_medium, style_dropdown_medium
         ]
-    else:
-        return [{'display': 'None'}]*9
+
+    return return_val
 
 
 @app.callback(

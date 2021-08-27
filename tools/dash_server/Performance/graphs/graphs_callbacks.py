@@ -6,8 +6,12 @@ from Performance.backend import get_graph_layout, plot_graphs_with_given_data, g
 from Performance.global_functions import sort_object_sizes_list, sort_builds_list
 
 pallete = {
-    '1': ['#0277BD', '#29B6F6'],
-    '2': ['#EF6C00', '#FFA726']
+    '1': {'Read': '#0277BD',
+          'Write': '#29B6F6'
+          },
+    '2': {'Read': '#EF6C00',
+          'Write': '#FFA726'
+          }
 }
 
 
@@ -32,8 +36,7 @@ def get_yaxis_heading(metric):
     return return_val
 
 
-def get_graphs(fig, fig_all, data_frame, plot_data, data,
-               x_data_combined, x_actual_data, xfilter_tag):
+def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
     """
     wrapper function to get graphs plotted
 
@@ -42,14 +45,8 @@ def get_graphs(fig, fig_all, data_frame, plot_data, data,
         fig_all: plotly fig to all plot graphs on
         data_frame: pandas dataframe containing data
         plot_data: data needed for plotting graphs
-        data: data needed for query (from dropdowns)
         x_data_combined: list of combined x axis data with comparison plot
-        x_actual_data: current trace specific actual x axis list
-        x_filter_tag: internal tag to identify xfilter
     """
-    plot_data['option'] = data[xfilter_tag]
-    plot_data['custom'] = data['custom']
-    colors = iter(plot_data['pallete'])
 
     if plot_data['ops_option'] == 'both':
         operations = ['Read', 'Write']
@@ -63,14 +60,13 @@ def get_graphs(fig, fig_all, data_frame, plot_data, data,
             if col.startswith(" ".join([operation, plot_data['metric']])):
                 y_actual_data = data_frame[col]
                 break
-        data = dict(zip(x_actual_data, y_actual_data))
+        data = dict(zip(plot_data['x_actual_data'], y_actual_data))
         for item in x_data_combined:
             try:
                 y_data.append(data[item])
             except KeyError:
                 y_data.append(None)
 
-        plot_data['color'] = next(colors)
         plot_graphs_with_given_data(
             fig, fig_all, x_data_combined, y_data, plot_data)
 
@@ -166,6 +162,9 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         plot_data['ops_option'] = operation
         plot_data['metric'] = 'all'
         plot_data['y_heading'] = 'Data'
+        plot_data['option'] = data[xfilter_tag]
+        plot_data['custom'] = data['custom']
+        plot_data['pallete'] = pallete['1']
         fig_all = get_graph_layout(plot_data)
 
         for metric in stats:
@@ -176,6 +175,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             fig = get_graph_layout(plot_data)
             data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
             x_data = list(data_frame.iloc[:, 0])
+            plot_data['x_actual_data'] = x_data
 
             if flag:
                 df_optional = get_data_for_graphs(
@@ -188,18 +188,17 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 else:
                     x_data_final = sort_builds_list(x_data_final)
 
-                plot_data['pallete'] =  pallete['1']
-                get_graphs(fig, fig_all, data_frame, plot_data, data, x_data_final,
-                 x_data, xfilter_tag)
-                plot_data['pallete'] =  pallete['2']
-                get_graphs(fig, fig_all, df_optional, plot_data, data_optional,
-                           x_data_final, x_data_optional, xfilter_tag)
+                get_graphs(fig, fig_all, data_frame, plot_data, x_data_final)
+
+                plot_data['pallete'] = pallete['2']
+                plot_data['option'] = data_optional[xfilter_tag]
+                plot_data['custom'] = data_optional['custom']
+                plot_data['x_actual_data'] = x_data_optional
+                get_graphs(fig, fig_all, df_optional, plot_data, x_data_final)
                 not_plotted = False
 
             if not_plotted:
-                plot_data['pallete'] =  pallete['1']
-                get_graphs(fig, fig_all, data_frame, plot_data, data,
-                 x_data, x_data, xfilter_tag)
+                get_graphs(fig, fig_all, data_frame, plot_data, x_data)
 
             figs.append(fig)
 
