@@ -85,7 +85,10 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
         data = dict(zip(plot_data['x_actual_data'], y_actual_data))
         for item in x_data_combined:
             try:
-                y_data.append(data[item])
+                if isinstance(data[item], str):
+                    y_data.append(data[item])
+                else:
+                    y_data.append(data[item]/int(plot_data['nodes']))
             except KeyError:
                 y_data.append(None)
 
@@ -211,6 +214,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         plot_data['option'] = data[xfilter_tag]
         plot_data['custom'] = data['custom']
         plot_data['pallete'] = pallete['1']
+        plot_data['nodes'] = nodes1
         fig_all = get_graph_layout(plot_data)
 
         for metric in stats:
@@ -240,6 +244,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 plot_data['option'] = data_optional[xfilter_tag]
                 plot_data['custom'] = data_optional['custom']
                 plot_data['x_actual_data'] = x_data_optional
+                plot_data['nodes'] = nodes2
                 get_graphs(fig, fig_all, df_optional, plot_data, x_data_final)
                 not_plotted = False
 

@@ -412,7 +412,7 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
         y=y_data,
         hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
             plot_data['operation'], plot_data['option'], plot_data['custom']),
-        # connectgaps=True,
+        connectgaps=True,
         # line={'color': plot_data['pallete'][plot_data['operation']]}
     )
 
