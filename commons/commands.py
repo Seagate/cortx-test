@@ -383,3 +383,17 @@ LDAP_USER = "s3confstore properties:///opt/seagate/cortx/auth/resources/authserv
 LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cortx/auth/resources/" \
            "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
            " --const_key cortx)"
+
+#Motr commands
+M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
+M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"
+DIFF = "diff {} {}"
+MD5SUM = "md5sum {} {}"
+GETRPM = "rpm -qa| grep {}"
+LIBFAB_VERSION = "fi_info --version | grep libfabric: |cut -d ' ' -f 2 | tr -d [:space:]"
+LIBFAB_TCP = "fi_info -p tcp"
+LIBFAB_SOCKET = "fi_info -p sockets"
+LIBFAB_VERBS = "fi_info -p verbs"
+FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
+FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
