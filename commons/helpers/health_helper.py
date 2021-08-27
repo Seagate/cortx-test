@@ -598,10 +598,13 @@ class Health(Host):
         clone_set = {}
         for group in crm_mon_res['group']:
             resource = []
-            if group['@id'] == 'ha_group':
+            if isinstance(group['resource'], dict):
                 resource.append(group['resource'])
-            else:
+            elif isinstance(group['resource'], list):
                 resource = group['resource']
+            else:
+                LOG.warning("Resource group info format is not as expected : %s",
+                            group['resource'])
 
             for group_elem in resource:
                 temp_dict = {'status': None, 'srvnode': None}
