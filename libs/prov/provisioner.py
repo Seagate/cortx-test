@@ -583,9 +583,6 @@ class Provisioner:
             elif not mgmt_vip and len(node_obj_list) > 1:
                 return False, "mgmt_vip is required for multinode deployment"
             valid_disk_count = int(sns_data)+int(sns_parity)+int(sns_spare)
-            if valid_disk_count > (data_disk_per_cvg*cvg_count*len(node_obj_list)):
-                return False, "The sum of data disks per cvg " \
-                              "is less than N+K+S count"
             sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
             for key, value in sns.items():
@@ -612,6 +609,11 @@ class Provisioner:
                 new_device_lst_len = (device_list_len - cvg_count)
                 count = cvg_count
                 data_devices = list()
+                if data_disk == "0":
+                    data_disk_per_cvg = len(device_list[cvg_count:])
+                if valid_disk_count > (data_disk_per_cvg*cvg_count*len(node_obj_list)):
+                    return False, "The sum of data disks per cvg " \
+                                 "is less than N+K+S count"
                 if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk != "0":
                     count_end = int(data_disk_per_cvg + cvg_count)
                     data_devices.append(",".join(device_list[cvg_count:count_end]))
@@ -627,7 +629,7 @@ class Provisioner:
                     last_element = device_list.pop()
                     last_element = last_element.replace("\n", "")
                     device_list.append(last_element)
-                    data_devices_f = np.array_split(device_list, cvg_count)
+                    data_devices_f = np.array_split(device_list[cvg_count:], cvg_count)
                     for count in range(0, count):
                         data_devices.append(",".join(data_devices_f[count]))
 
