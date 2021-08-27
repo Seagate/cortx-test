@@ -165,7 +165,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
     return df
 
 
-def get_benchmark_data(data_needed_for_query, results):
+def get_benchmark_data(data_needed_for_query, results):  # pylint: disable=too-many-branches
     """
     Granularized function to query data from database for perf metrics
 
@@ -392,7 +392,7 @@ def get_bucktops(data_needed_for_query):
     return data_frame
 
 
-def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
+def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
     """
     function to plot graphs
 
@@ -413,7 +413,7 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data, color):
             plot_data['operation'], plot_data['option'], plot_data['custom']),
         # mode='lines+markers',
         # connectgaps=True,
-        line={'color': color}
+        line={'color': plot_data['color']}
     )
 
     fig.add_trace(trace)

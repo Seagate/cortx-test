@@ -19,13 +19,13 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-dict_style_table_caption = {
+style_table_caption = {
     'font-size': '23px',
     'color': '#3131b0',
     'margin-top': '18px',
     'margin-bottom': '18px',
     'text-align': 'center'
-} # rename 
+}
 
 style_workload_captions = {
     'color': '#000000',

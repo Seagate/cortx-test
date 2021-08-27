@@ -68,8 +68,9 @@ def get_graphs(fig, fig_all, data_frame, operations, plot_data, data,
             except KeyError:
                 y_data.append(None)
 
+        plot_data['color'] = color[i]
         plot_graphs_with_given_data(
-            fig, fig_all, x_data_combined, y_data, plot_data, color[i])
+            fig, fig_all, x_data_combined, y_data, plot_data)
         i += 1
 
 
@@ -176,8 +177,8 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             plot_data['y_heading'] = get_yaxis_heading(metric)
 
             fig = get_graph_layout(plot_data)
-            data_Frame = get_data_for_graphs(data, xfilter, xfilter_tag)
-            x_data = list(data_Frame.iloc[:, 0])
+            data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
+            x_data = list(data_frame.iloc[:, 0])
 
             if flag:
                 df_optional = get_data_for_graphs(
@@ -190,14 +191,14 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 else:
                     x_data_final = sort_builds_list(x_data_final)
 
-                get_graphs(fig, fig_all, data_Frame, operations,
+                get_graphs(fig, fig_all, data_frame, operations,
                            plot_data, data, metric, x_data_final, x_data, xfilter_tag, pallete['1'])
-                get_graphs(fig, fig_all, df_optional, operations, plot_data,
-                           data_optional, metric, x_data_final, x_data_optional, xfilter_tag, pallete['2'])
+                get_graphs(fig, fig_all, df_optional, operations, plot_data, data_optional, metric,
+                           x_data_final, x_data_optional, xfilter_tag, pallete['2'])
                 not_plotted = False
 
             if not_plotted:
-                get_graphs(fig, fig_all, data_Frame, operations,
+                get_graphs(fig, fig_all, data_frame, operations,
                            plot_data, data, metric, x_data, x_data, xfilter_tag, pallete['1'])
 
             figs.append(fig)

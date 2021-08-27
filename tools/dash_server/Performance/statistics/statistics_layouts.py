@@ -22,7 +22,7 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
-from Performance.styles import style_sub_tab, dict_style_table_caption,\
+from Performance.styles import style_sub_tab, style_table_caption,\
     style_sub_label, style_perf_captions, style_workload_captions,\
     dict_Style_Stats_input_options, style_filters_captions, dict_button_style
 
@@ -51,11 +51,11 @@ statistics_layout = Card(
             '''),
 
         html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_s3bench_table"),
 
         html.P("Metadata Operations Latency (captured with 1KB object)",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_metadata_table"),
 
         html.Br(),
@@ -65,7 +65,7 @@ statistics_layout = Card(
             '''),
 
         html.P("IOPath Performance Statistics (Mixed IO - Read 50%, Write 50%)",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_cosbench_table"),
 
         html.Br(),
@@ -75,11 +75,11 @@ statistics_layout = Card(
             '''),
 
         html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_hsbench_table"),
 
         html.P("Bucket Operations Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         Row(
             Dropdown(
                 id="perf_bucketops_dropdown",

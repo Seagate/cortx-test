@@ -42,6 +42,7 @@ def update_branches_dropdown(release):
 
     return options, value, disabled
 
+
 @app.callback(
     Output('graphs_build_dropdown', 'placeholder'),
     Output('graphs_build_compare_dropdown', 'placeholder'),
@@ -50,13 +51,13 @@ def update_branches_dropdown(release):
 )
 def update_placeholder(xfilter):
     placeholder = ""
-    if not xfilter:
+    if not xfilter:  # pylint: disable=no-else-raise
         raise PreventUpdate
     elif xfilter == 'Build':
         placeholder = "Build"
     else:
         placeholder = "Object Size"
-    
+
     return [placeholder]*2
 
 
@@ -179,8 +180,9 @@ def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, 
     if not all([xfilter, branch, option1, bench, nodes]) and pfill is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
-        iterations = get_distinct_keys(release, 'Iteration', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill})
+        iterations = get_distinct_keys(release, 'Iteration',
+                                       {'Branch': branch, xfilter: option1, 'Name': bench,
+                                        'Count_of_Servers': nodes, 'Percentage_full': pfill})
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
             value = options[0]['value']
@@ -214,7 +216,8 @@ def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfil
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns})
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
@@ -249,7 +252,8 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
@@ -276,7 +280,8 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
     Input('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns, custom, sessions):
+def update_buckets_dropdown(xfilter, release, branch, option1, bench,
+                            nodes, pfill, itrns, custom, sessions):
     options = None
     value = None
     disabled = False
@@ -284,7 +289,8 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes, pfi
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
@@ -491,7 +497,8 @@ def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, 
         raise PreventUpdate
     else:
         iterations = get_distinct_keys(release, 'Iteration', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill})
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
             value = options[0]['value']
@@ -528,7 +535,8 @@ def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfil
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns})
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
@@ -556,7 +564,8 @@ def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfil
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )
-def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns, custom, flag):
+def update_sessions_dropdown(xfilter, release, branch, option1, bench,
+                             nodes, pfill, itrns, custom, flag):
     options = None
     value = None
     disabled = False
@@ -566,7 +575,8 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
         raise PreventUpdate
     else:
         sessions = get_distinct_keys(release, 'Sessions', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
@@ -594,7 +604,8 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )
-def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns, custom, sessions, flag):
+def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes,
+                            pfill, itrns, custom, sessions, flag):
     options = None
     value = None
     disabled = False
@@ -604,7 +615,8 @@ def update_buckets_dropdown(xfilter, release, branch, option1, bench, nodes, pfi
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
