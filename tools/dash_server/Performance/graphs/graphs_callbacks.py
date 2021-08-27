@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+from __future__ import division
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 
