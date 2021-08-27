@@ -534,6 +534,7 @@ class SystemHealth(RestTestLib):
             endpoint=endpoint,
             data=json.dumps(data),
             headers=self.headers)
+        # TODO: Need to add delay depending on setup for node operation to be completed
         if response.status_code != HTTPStatus.OK:
             self.log.error("%s operation on %s POST REST API response : %s",
                       operation,
