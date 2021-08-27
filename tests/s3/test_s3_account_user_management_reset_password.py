@@ -884,7 +884,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
@@ -917,7 +916,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
