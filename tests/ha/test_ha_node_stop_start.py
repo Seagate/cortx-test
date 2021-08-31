@@ -356,7 +356,7 @@ class TestHANodeStartStop:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-25221")
     @CTFailOn(error_handler)
-    def test_node_stop_unsafe_shutdown_one_by_one(self):
+    def test_node_stop_unsafe_shutdown(self):
         """
         Test to Check Stop services on node through cortx REST with admin or manage
         user and with unsafe shutdown
@@ -898,3 +898,159 @@ class TestHANodeStartStop:
         LOGGER.info("Step 7: Verified DI for IOs run.")
         LOGGER.info(
             "Completed: Test to Check node Stop/Start operation not supported by monitor user.")
+
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-25222")
+    @CTFailOn(error_handler)
+    def test_node_poweroff_external_power_on(self):
+        """
+        This test tests that node can be powered off alobgwith storage from CLI/REST and
+        started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.
+        """
+        LOGGER.info(
+            "Started: Node can be powered off alobgwith storage from CLI/REST and "
+            "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
+        node = self.system_random.choice(list(range(self.num_nodes)))
+        self.restored = False
+        opt_user = self.system_random.choice(self.user_data)
+        LOGGER.info(
+            "Step 1: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-25222')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_data = resp[2]
+        LOGGER.info("Step 1: IOs are started successfully.")
+        LOGGER.info("Step 2: Poweroff %s server and storage from cortx REST with %s user",
+                    self.srvnode_list[node], opt_user)
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='poweroff',
+            resource='node',
+            resource_id=node,
+            storage_off=True,
+            login_as={"username": opt_user, "password": self.csm_passwd})
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = system_utils.check_ping(host=self.host_list[node])
+        assert_utils.assert_false(
+            resp, f"{self.host_list[node]} is still pinging")
+        LOGGER.info("Step 2: %s server is poweroff and not pinging",
+                        self.srvnode_list[node])
+        LOGGER.info(
+            "Step 3: Check health status for %s is offline and "
+            "cluster/rack/site is degraded with REST",
+            self.srvnode_list[node])
+        resp = self.ha_rest.check_csr_health_status_rest("degraded")
+        assert_utils.assert_true(resp[0], resp[1])
+        check_rem_node = [
+            "offline" if num == node else "online" for num in range(
+                self.num_nodes)]
+        resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 3: Verified status for %s show offline and cluster/rack/site as degraded",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 4: Check for the %s down alert",
+            self.srvnode_list[node])
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime, self.alert_type["get"], False, "iem")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM")
+        LOGGER.info(
+                "Step 4: Verified the %s down alert",
+                self.srvnode_list[node])
+        LOGGER.info("Step 5: Check PCS status")
+        resp = self.ha_obj.check_pcs_status_resp(
+            node, self.node_list, self.hlt_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 6: Start storage for %s from PDU", self.srvnode_list[node])
+        if node == self.node_list[-1]:
+            nd_obj = self.node_list[0]
+        else:
+            nd_obj = self.node_list[node + 1]
+        resp_rpdu = nd_obj.toggle_apc_node_power(
+            pdu_ip=self.rpdu_encl_ip[node], pdu_user=self.rpdu_encl_user[node],
+            pdu_pwd=self.rpdu_encl_pwd[node], node_slot=self.rpdu_encl_port[node], status="on")
+        assert_utils.assert_true(resp_rpdu)
+        resp_lpdu = nd_obj.toggle_apc_node_power(
+            pdu_ip=self.lpdu_encl_ip[node], pdu_user=self.lpdu_encl_user[node],
+            pdu_pwd=self.lpdu_encl_pwd[node], node_slot=self.lpdu_encl_port[node], status="on")
+        assert_utils.assert_true(resp_lpdu)
+        # Need to check on exact time it should take to start enclosure
+        time.sleep(120)
+        LOGGER.info(
+            "Step 6: Storage for %s from PDU started", self.srvnode_list[node])
+        LOGGER.info(
+            "Step 7: Start the %s node server from BMC.",
+            self.srvnode_list[node])
+        resp = self.ha_obj.host_power_on(
+            host=self.host_list[node],
+            bmc_obj=self.bmc_list[node])
+        assert_utils.assert_true(
+            resp, f"{self.host_list[node]} has not powered on yet.")
+        LOGGER.info(
+            "Step 7: Node server from BMC is started.")
+        LOGGER.info(
+            "Step 8: Start %s from REST with %s user",
+            self.srvnode_list[node],
+            opt_user)
+        resp = self.ha_rest.perform_cluster_operation(
+            operation='start',
+            resource='node',
+            resource_id=node,
+            login_as={"username": opt_user, "password": self.csm_passwd})
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 8: Started the %s from REST with %s user",
+            self.srvnode_list[node],
+            opt_user)
+        LOGGER.info(
+            "Step 9: Check that the node server %s can ping enclosure.",
+            self.srvnode_list[node])
+        resp_encl1 = system_utils.run_remote_cmd(
+            cmd=cmds.CMD_PING.format("10.0.0.2"), hostname=self.host_list[node],
+            username=self.username[node],
+            password=self.password[node])
+        assert_utils.assert_true(resp_encl1[0], resp_encl1[1])
+        resp_encl2 = system_utils.run_remote_cmd(
+            cmd=cmds.CMD_PING.format("10.0.0.3"), hostname=self.host_list[node],
+            username=self.username[node],
+            password=self.password[node])
+        assert_utils.assert_true(resp_encl2[0], resp_encl2[1])
+        LOGGER.info(
+            "Step 9: Node server %s can ping enclosure.",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 9: Check health status for %s shows online with REST & PCS status clean",
+            self.srvnode_list[node])
+        resp = self.ha_rest.check_csr_health_status_rest("online")
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Checking PCS clean")
+        for hlt_obj in self.hlt_list:
+            resp = hlt_obj.check_node_health()
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 9: Verified %s health status shows online and PCS is clean",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 10: Check the IEM fault resolved alert for node up")
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime, self.alert_type["resolved"], True, "iem")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM")
+        self.starttime = time.time()
+        LOGGER.info(
+            "Step 10: Verified the IEM fault resolved alert for node up")
+        LOGGER.info("Step 11: Check DI for IOs run.")
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Verified DI for IOs run.")
+        self.restored = True
+
+        LOGGER.info(
+            "Completed: Node can be powered off alobgwith storage from CLI/REST and "
+            "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
