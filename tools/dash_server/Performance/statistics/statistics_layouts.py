@@ -1,3 +1,4 @@
+"""Performance statistics UI layout designs"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -22,8 +23,8 @@
 from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
-from Performance.styles import dict_style_sub_tab, dict_style_table_caption,\
-    dict_style_sub_label, style_perf_captions, style_workload_captions,\
+from Performance.styles import style_sub_tab, style_table_caption,\
+    style_sub_label, style_perf_captions, style_workload_captions,\
     dict_Style_Stats_input_options, style_filters_captions, dict_button_style
 
 
@@ -51,12 +52,22 @@ statistics_layout = Card(
             '''),
 
         html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_s3bench_table"),
 
         html.P("Metadata Operations Latency (captured with 1KB object)",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_metadata_table"),
+
+        html.Br(),
+        html.P("COSBench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("IOPath Performance Statistics (Mixed IO - Read 50%, Write 50%)",
+               style=style_table_caption),
+        html.Div(id="statistics_cosbench_table"),
 
         html.Br(),
         html.P("HSBench", style=style_perf_captions),
@@ -65,11 +76,11 @@ statistics_layout = Card(
             '''),
 
         html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         html.Div(id="statistics_hsbench_table"),
 
         html.P("Bucket Operations Statistics",
-               style=dict_style_table_caption),
+               style=style_table_caption),
         Row(
             Dropdown(
                 id="perf_bucketops_dropdown",
@@ -78,16 +89,6 @@ statistics_layout = Card(
             ), justify='center'),
         html.Div(id="statistics_bucketops_table",
                  style={'margin-top': '20px'}),
-
-        html.Br(),
-        html.P("COSBench", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
-
-        html.P("IOPath Performance Statistics",
-               style=dict_style_table_caption),
-        html.Div(id="statistics_cosbench_table"),
     ]
     ),
     className="flex-sm-fill nav-link"
@@ -165,6 +166,6 @@ stats_input_options = [
 
 statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
-        style=dict_style_sub_tab, label_style=dict_style_sub_label
+        style=style_sub_tab, label_style=style_sub_label
         )
 )

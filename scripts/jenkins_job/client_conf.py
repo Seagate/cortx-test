@@ -54,7 +54,8 @@ def run_cmd(cmd):
     return result
 
 
-def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_passwd):
+def create_db_entry(hostname, username, password, ip_addr,
+                    admin_user, admin_passwd, public_ip, private_ip):
     """
     Creation of new host entry in database.
     :param str hostname: hostname of the node
@@ -63,6 +64,8 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
     :param str ip_addr: management IP for the node
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
+    :param str public_ip: public data IP
+    :param str private_ip: private data IP
     :return: none
     """
     json_file = config['default']['setup_entry_json']
@@ -79,8 +82,8 @@ def create_db_entry(hostname, username, password, ip_addr, admin_user, admin_pas
         "ip": ip_addr,
         "username": username,
         "password": password,
-        "public_data_ip": "",
-        "private_data_ip": "",
+        "public_data_ip": public_ip,
+        "private_data_ip": private_ip,
         "mgmt_ip": ip_addr
     }
     nodes.append(node_info)
@@ -179,6 +182,8 @@ def main():
             mgmnt_ip = line.split( )[0]
         if "srvnode-1.data.public" in line:
             clstr_ip = line.split( )[0]
+        if "srvnode-1.data.private" in line:
+            private_ip = line.split( )[0]
     os.environ["CLUSTR_IP"] = clstr_ip
     os.environ["CSM_MGMT_IP"] = mgmnt_ip
     run_cmd("mkdir -p /etc/ssl/stx-s3-clients/s3/")
@@ -188,7 +193,8 @@ def main():
         run_cmd("rm -f {}".format(local_path))
     nd_obj_host.copy_file_to_local(remote_path=remote_path, local_path=local_path)
     set_s3_endpoints(clstr_ip)
-    setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip, admin_user, admin_passwd)
+    setupname = create_db_entry(host, uname, host_passwd, mgmnt_ip,
+                                admin_user, admin_passwd, clstr_ip, private_ip)
     run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)

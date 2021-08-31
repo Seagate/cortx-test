@@ -36,6 +36,7 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
 from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -672,3 +673,45 @@ class HALibs:
                          HALibs.perform_ios_ops.__name__,
                          error)
             return False, error
+
+    # pylint: disable=too-many-arguments
+    def ha_s3_workload_operation(
+            self,
+            log_prefix: str,
+            s3userinfo: dict,
+            skipread: bool = False,
+            skipwrite: bool = False,
+            skipcleanup: bool = False,
+            nsamples: int = 20,
+            nclients: int = 10):
+        """
+        This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
+        operations on VM/HW.
+        :param log_prefix: Test number prefix for log file
+        :param s3userinfo: S3 user info
+        :param skipread: Skip reading objects created in this run if True
+        :param skipwrite: Skip writing objects created in this run if True
+        :param skipcleanup: Skip deleting objects created in this run if True
+        :param nsamples: Number of samples of object
+        :param nclients: Number of clients/workers
+        :return: bool/operation response
+        """
+        workloads = [
+            "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
+            "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
+        if self.setup_type == "HW":
+            workloads.extend(["1GB", "2GB", "3GB" "4GB", "5GB"])
+
+        resp = s3bench.setup_s3bench()
+        if not resp:
+            return resp, "Couldn't setup s3bench on client machine."
+        for workload in workloads:
+            resp = s3bench.s3bench(
+                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
+                num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
+                obj_size=workload, skip_write=skipwrite, skip_read=skipread,
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}")
+            resp = s3bench.check_log_file_error(resp[1])
+            if resp:
+                return resp, f"s3bench operation failed with {resp[1]}"
+        return True, "Sucessfully completed s3bench operation"
