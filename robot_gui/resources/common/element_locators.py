@@ -47,6 +47,24 @@ GRAPHICAL_TAB_ID = 'tab-1'
 TABULAR_TAB_ID = 'tab-2'
 RESOURCE_TABLE_ROW_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr'
 RESOURCE_STATUS_XPATH = '//*[@class="v-data-table cortx-table theme--light"]//table//tbody//tr[{0}]//td[{1}]//div'
+GRAPH_NODE_ID = 'g_0000'
+GRAPH_NODE_ACTION_ID = 'show_actions_icon_0000'
+GRAPH_NODE_ACTION_MENU_ID = 'g_action_menu_0000'
+GRAPH_NODE_STOP_ID = 'rect_0000_stop'
+GRAPH_NODE_SUCCESS_MSG_ID = 'prompt-dialog-message-label'
+GRAPH_NODE_YES_ID = 'prompt-dialog-btn-yes'
+GRAPH_NODE_INFO_MSG_ID = 'info-dialog-message-label'
+GRAPH_NODE_OK_ID = 'info-dialog-btn-ok'
+GRAPH_NODE_START_ID = 'rect_0000_start'
+GRAPH_NODE_POWEROFF_ID = 'rect_0000_poweroff'
+GRAPH_NODE_POWER_STORAGEOFF_ID = 'rect_0000_powerandstorageoff'
+GRAPH_NODE_ACTION_TABLE_CLASS = '//div[@class="cortx-icon-btn cortx-option-icon"]'
+GRAPH_NODE_STOP_TABLE_CLASS = '//span[@class="cortx-menu-icon cortx-stop-node-icon-online"]'
+GRAPH_NODE_START_TABLE_CLASS = '//span[@class="cortx-menu-icon cortx-start-node-icon-online"]'
+GRAPH_NODE_POWEROFF_TABLE_CLASS = '//span[@class="cortx-menu-icon' \
+                                    ' cortx-power-off-node-icon-online"]'
+GRAPH_NODE_POWER_STORAGEOFF_TABLE_CLASS = '//span[@class="cortx-menu-icon' \
+                                            ' cortx-power-storage-off-node-icon-online"]'
 
 # Settings
 SETTINGS_NOTIFICATION_ID = 'menu-Email Notifications'
@@ -185,13 +203,15 @@ CSM_USER_SEARCH_ICON_ACTIVE_XPATH = '//div[@class="search-image active"]'
 CSM_USER_SEARCH_ICON_XPATH = '//div[@class="search-image"]'
 CSM_USER_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
 CSM_FILTER_LIST_BUTTON_XPATH = '//*[@class="v-select-list v-card theme--light"]/div'
+CSM_FILTER_LIST_CONTENT_XPATH = '//*[@class="v-list-item__title"]'
+CSM_FILTER_ROLE_SELECTED_XPATH = '//div[contains(@aria-labelledby,"role-list")]'
+CSM_FILTER_USERNAME_SELECTED_XPATH = '//div[contains(@aria-labelledby,"username-list")]'
 CSM_FILTER_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Role")]'
 CSM_FILTER_USERNAME_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "Username")]'
 
 # CFT
 CSM_STATS_CHART_ID = 'line_chart'
 DASHBOARD_ALERT_SECTION_ID = 'alertMediumContainer'
-DELETE_USER_BUTTON_ID = "localuser-deleteicon"
 INVALID_PASSWORD_MSG_ID = "localuser-password-invalid"
 CHANGE_PASSWORD_BUTTON_ID = "change-password-text"
 UPDATE_USER_BUTTON_ID = "lblLocalApplyInterface"
@@ -270,7 +290,7 @@ AUDIT_LOG_DOWNLOAD_BUTTON_ID = "auditlog-downlodbtn"
 AUDIT_LOG_COMPONENT_DROP_DOWN_ID = "auditlog-component"
 AUDIT_LOG_TIME_PERIOD_DROP_DOWN_ID = "auditlog-timeperiod"
 AUDIT_LOG_DATA_ID = "auditlog-data"
-CSM_AUDIT_LOG_TABLE_XPATH = "//*[@id='auditLog-datatable']//table//tr//td"
+CSM_AUDIT_LOG_TABLE_XPATH = "//*[@class='v-data-table__wrapper']//table//tr//td"
 CURRENT_DATE_IN_DATE_PICKER_XPATH = '//button[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
 AUDIT_LOG_SEARCH_BAR_XPATH = '//input[@placeholder="Search"]'
 AUDIT_LOG_SEARCH_ICON_XPATH = '//div[@class="search-image active"]'
@@ -278,6 +298,9 @@ AUDIT_LOG_FILTER_DROPDOWN_BUTTON_XPATH = '//div[@aria-haspopup="listbox"]'
 AUDIT_LOG_ROLE_SELECT_XPATH = '//div[contains(@id,"list-")]//div[contains(text(), "{0}")]'
 AUDIT_LOG_FETCH_ALL_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div'
 AUDIT_LOG_FETCH_SEARCHED_LOG_XPATH = '//tbody//tr//td[@class="data-cell"]//div[contains(text(),"{0}")]'
+AUDIT_LOG_CURRENT_DATE_XPATH = '//*[@class="v-btn v-btn--rounded v-btn--outlined theme--light"]'
+AUDIT_LOG_AVAILABLE_DATE_XPATH = '//*[@class="v-btn v-btn--active v-btn--text v-btn--rounded' \
+                                 ' theme--light"]//ancestor::table//tr//td//button//div'
 
 # Bucket
 ADD_BUCKET_FORM_ID = "bucket-addbucket-formbtn"

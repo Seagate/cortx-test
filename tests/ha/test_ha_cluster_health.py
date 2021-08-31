@@ -132,6 +132,12 @@ class TestHAClusterHealth:
                     resp = self.ha_obj.host_power_on(host=self.host_list[node], bmc_obj=self.bmc_list[node])
                     assert_utils.assert_true(
                         resp, f"Failed to power on {self.srvnode_list[node]}.")
+                    if self.setup_type == "HW":
+                        LOGGER.debug(
+                            "HW: Need to enable stonith on the node after node powered on")
+                        self.node_list[node].execute_cmd(
+                            common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node + 1),
+                            read_lines=True)
                 if self.nw_data:
                     resp = self.node_list[node].execute_cmd(
                         common_cmds.GET_IFCS_STATUS.format(self.nw_data[1][node]), read_lines=True)
@@ -172,7 +178,9 @@ class TestHAClusterHealth:
             if self.setup_type == "HW":
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(host=self.host_list[node],
                                                           node_obj=self.node_list[node],
                                                           is_safe=True)
@@ -230,6 +238,12 @@ class TestHAClusterHealth:
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
 
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
@@ -270,7 +284,9 @@ class TestHAClusterHealth:
             if self.setup_type == "HW":
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
@@ -332,6 +348,13 @@ class TestHAClusterHealth:
             self.restored = True
             # To get all the services up and running
             time.sleep(40)
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
+
             LOGGER.info("Check all nodes, cluster, rack, site are back online in CLI and REST.")
             self.ha_obj.status_cluster_resource_online(self.srvnode_list, self.sys_list,
                                                        nd_obj)
@@ -383,7 +406,9 @@ class TestHAClusterHealth:
             if self.setup_type == "HW":
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
@@ -435,11 +460,12 @@ class TestHAClusterHealth:
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
 
-            LOGGER.info("Checking PCS clean for all nodes")
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -447,6 +473,12 @@ class TestHAClusterHealth:
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             self.start_time = time.time()
+
+        LOGGER.info("Checking PCS clean for all nodes")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
 
         self.restored = True
         LOGGER.info(
@@ -482,7 +514,9 @@ class TestHAClusterHealth:
             if self.setup_type == "HW":
                 LOGGER.debug(
                     "HW: Need to disable stonith on the node before shutdown")
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node],
                 bmc_obj=self.bmc_list[node],
@@ -532,11 +566,12 @@ class TestHAClusterHealth:
             resp = self.ha_rest.check_csr_health_status_rest(cluster_status[count])
             assert_utils.assert_true(resp[0], resp[1])
 
-            LOGGER.info("Checking PCS clean for all nodes")
-            for hlt_obj in self.hlt_list:
-                res = hlt_obj.check_node_health()
-                assert_utils.assert_true(res[0], res[1])
-            LOGGER.info("All nodes are online and PCS looks clean.")
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node+1),
+                    read_lines=True)
 
             LOGGER.info("Check for the node back up alert.")
             resp = self.csm_alerts_obj.verify_csm_response(
@@ -544,6 +579,12 @@ class TestHAClusterHealth:
             assert_utils.assert_true(resp, "Failed to get alert in CSM")
             # TODO: If CSM REST getting changed, add alert check from msg bus
             self.start_time = time.time()
+
+        LOGGER.info("Checking PCS clean for all nodes")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        LOGGER.info("All nodes are online and PCS looks clean.")
 
         self.restored = True
         LOGGER.info(
@@ -575,7 +616,9 @@ class TestHAClusterHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the %s before shutdown",
                     self.srvnode_list[node_index])
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node_index].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node_index],
                 node_obj=self.node_list[node_index],
@@ -639,6 +682,13 @@ class TestHAClusterHealth:
 
             # To get all the services up and running
             time.sleep(40)
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node_index].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
+                    read_lines=True)
+
             LOGGER.info(
                 "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",
                 self.srvnode_list[node_index])
@@ -693,7 +743,9 @@ class TestHAClusterHealth:
                 LOGGER.debug(
                     "HW: Need to disable stonith on the %s before shutdown",
                     self.srvnode_list[node_index])
-                # TODO: Need to get the command once F-11A available.
+                self.node_list[node_index].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("disable", node_index+1),
+                    read_lines=True)
             resp = self.ha_obj.host_safe_unsafe_power_off(
                 host=self.host_list[node_index],
                 bmc_obj=self.bmc_list[node_index],
@@ -757,6 +809,12 @@ class TestHAClusterHealth:
 
             # To get all the services up and running
             time.sleep(40)
+            if self.setup_type == "HW":
+                LOGGER.debug(
+                    "HW: Need to enable stonith on the node after node came back up")
+                self.node_list[node_index].execute_cmd(
+                    common_cmds.PCS_RESOURCE_STONITH_CMD.format("enable", node_index+1),
+                    read_lines=True)
 
             LOGGER.info(
                 "Check all nodes, cluster, rack, site are back online in CLI and REST after power on %s",

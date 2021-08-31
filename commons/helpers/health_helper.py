@@ -31,6 +31,7 @@ from commons import commands
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
 from config import RAS_VAL
+from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -422,6 +423,12 @@ class Health(Host):
 
         clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
         for key, val in clone_set_dict.items():
+            if "stonith" in key:
+                for srvnode, status in val.items():
+                    currentnode = "srvnode-{}".format(key.split("-")[2])
+                    if srvnode != currentnode and status != "Started":
+                        pcs_failed_data[key] = val
+                continue
             for status in val.values():
                 if status != "Started":
                     pcs_failed_data[key] = val
@@ -479,6 +486,10 @@ class Health(Host):
         json_format = json.loads(temp_dict)
         return json_format
 
+    # pylint: disable-msg=too-many-nested-blocks
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=broad-except
     @staticmethod
     def get_clone_set_status(crm_mon_res: dict, no_node: int):
         """
@@ -488,44 +499,70 @@ class Health(Host):
         return: dict
         """
         clone_set = {}
-        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node+1)]
-        for clone_elem_resp in crm_mon_res['clone']:
-            if clone_elem_resp["@id"] == 'monitor_group-clone':
-                if no_node != 1:
-                    resource = []
-                    for val in clone_elem_resp['group']:
-                        resource.append(val['resource'])
-                else:
-                    resource = clone_elem_resp['group']['resource']
-            else:
-                resource = clone_elem_resp['resource']
-            temp_dict = {}
-            clone_set[clone_elem_resp["@id"]] = {}
-            if no_node == 1:
-                if int(resource['@nodes_running_on']):
-                    node = resource['node']['@name']
-                    if resource['@blocked'] == 'true':
-                        temp_dict[node] = 'FAILED'
-                    else:
-                        temp_dict[node] = resource['@role']
-                else:
-                    temp_dict[node_dflt[0]] = resource['@role']
-                clone_set[clone_elem_resp["@id"]] = temp_dict
-            else:
-                temp_nodes = node_dflt[:]
-                for elem in resource:
-                    if int(elem['@nodes_running_on']):
-                        node = elem['node']['@name']
-                        if elem['@blocked'] == 'true':
+        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
+        setup_type = ''
+        try:
+            setup_type = CMN_CFG["setup_type"]
+        except Exception as error:
+            LOG.debug("setup_type not found %s", error)
+        if setup_type == "OVA":
+            for clone_elem_resp in crm_mon_res['clone']:
+                resources = []
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    resources.append(clone_elem_resp['group']['resource'])
+                elif clone_elem_resp["@id"] == 'io_group-clone':
+                    for resource_ele in clone_elem_resp['group']['resource']:
+                        resources.append(resource_ele)
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                for resource in resources:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
                             temp_dict[node] = 'FAILED'
                         else:
-                            temp_dict[node] = elem['@role']
-                        temp_nodes.remove(node)
+                            temp_dict[node] = resource['@role']
                     else:
-                        for node in temp_nodes:
-                            temp_dict[node] = elem['@role']
-                            clone_set[clone_elem_resp["@id"]] = temp_dict
+                        temp_dict[node_dflt[0]] = resource['@role']
+                clone_set[clone_elem_resp["@id"]] = temp_dict
+        else:
+            for clone_elem_resp in crm_mon_res['clone']:
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    if no_node != 1:
+                        resource = []
+                        for val in clone_elem_resp['group']:
+                            resource.append(val['resource'])
+                    else:
+                        resource = clone_elem_resp['group']['resource']
+                else:
+                    resource = clone_elem_resp['resource']
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                if no_node == 1:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
+                            temp_dict[node] = 'FAILED'
+                        else:
+                            temp_dict[node] = resource['@role']
+                    else:
+                        temp_dict[node_dflt[0]] = resource['@role']
                     clone_set[clone_elem_resp["@id"]] = temp_dict
+                else:
+                    temp_nodes = node_dflt[:]
+                    for elem in resource:
+                        if int(elem['@nodes_running_on']):
+                            node = elem['node']['@name']
+                            if elem['@blocked'] == 'true':
+                                temp_dict[node] = 'FAILED'
+                            else:
+                                temp_dict[node] = elem['@role']
+                            temp_nodes.remove(node)
+                        else:
+                            for node in temp_nodes:
+                                temp_dict[node] = elem['@role']
+                                clone_set[clone_elem_resp["@id"]] = temp_dict
+                        clone_set[clone_elem_resp["@id"]] = temp_dict
         return clone_set
 
     @staticmethod
@@ -561,10 +598,13 @@ class Health(Host):
         clone_set = {}
         for group in crm_mon_res['group']:
             resource = []
-            if group['@id'] == 'ha_group':
+            if isinstance(group['resource'], dict):
                 resource.append(group['resource'])
-            else:
+            elif isinstance(group['resource'], list):
                 resource = group['resource']
+            else:
+                LOG.warning("Resource group info format is not as expected : %s",
+                            group['resource'])
 
             for group_elem in resource:
                 temp_dict = {'status': None, 'srvnode': None}
@@ -633,18 +673,19 @@ class Health(Host):
 
         return True
 
-    def check_nw_interface_status(self):
+    def check_nw_interface_status(self, nw_infcs: list = None):
         """
         Function to get status of all available network interfaces on node.
         """
         LOG.info("Getting all network interfaces on host")
-        LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
-        res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
-        nw_ifcs = list(filter(None, res.decode("utf-8").split('\n')))
-        LOG.debug(nw_ifcs)
+        if nw_infcs is None:
+            LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
+            res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
+            nw_infcs = list(filter(None, res.decode("utf-8").split('\n')))
+        LOG.debug(nw_infcs)
         LOG.info("Check status of all available network interfaces")
         status = {}
-        for nw in nw_ifcs:
+        for nw in nw_infcs:
             stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
             nw_st = self.execute_cmd(stat_cmd, exc=False)
             nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))
