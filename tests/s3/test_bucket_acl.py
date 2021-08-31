@@ -99,6 +99,7 @@ class TestBucketACL:
         self.log.info("Deleted buckets in default account")
         self.log.info("Account list: %s", self.account_list)
         self.delete_accounts(self.account_list)
+        del self.rest_obj
         self.log.info("ENDED: Teardown test operations")
 
     def delete_accounts(self, accounts):

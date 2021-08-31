@@ -84,6 +84,7 @@ def create_s3_acc(
         email_id)
     create_account = rest_obj.create_s3_account(
         account_name, email_id, password)
+    del rest_obj
     assert_utils.assert_true(create_account[0], create_account[1])
     access_key = create_account[1]["access_key"]
     secret_key = create_account[1]["secret_key"]
