@@ -26,7 +26,7 @@ from dash.exceptions import PreventUpdate
 
 from common import app
 from Performance.backend import get_graph_layout, plot_graphs_with_given_data, get_data_for_graphs
-from Performance.global_functions import sort_object_sizes_list, sort_builds_list, sort_sessions
+from Performance.global_functions import sort_object_sizes_list, sort_builds_list
 
 pallete = {
     '1': {'Read': '#0277BD',
@@ -78,7 +78,6 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
 
     for operation in operations:
         y_data = []
-        y_actual_data = []
         plot_data['operation'] = operation
         for col in data_frame.columns:
             if col.startswith(" ".join([operation, plot_data['metric']])):
@@ -141,13 +140,11 @@ def update_Ttfb_Style(bench):
     Input('graphs_sessions_compare_dropdown', 'value'),
     Input('graphs_buckets_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
-    Input('graphs_obj_size_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
                   nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
-                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2,
-                  buckets2, flag, obj_size):
+                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
     """
     updates graph plots for all 5 graphs based on input values
 
@@ -198,14 +195,13 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         data = {
             'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
             'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
-            'buckets': buckets1, 'sessions': sessions1, 'name': bench, 'all_sessions_plot': False
+            'buckets': buckets1, 'sessions': sessions1, 'name': bench
         }
         if flag:
             data_optional = {
                 'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
                 'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
-                'buckets': buckets2, 'sessions': sessions2, 'name': bench,
-                'all_sessions_plot': False
+                'buckets': buckets2, 'sessions': sessions2, 'name': bench
             }
 
         if bench == 'S3bench':
@@ -228,13 +224,6 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             plot_data['y_heading'] = get_yaxis_heading(metric)
 
             fig = get_graph_layout(plot_data)
-            if sessions1 == 'all':
-                data['all_sessions_plot'] = True
-                data['objsize'] = obj_size
-                if flag:
-                    data_optional['all_sessions_plot'] = True
-                    data_optional['objsize'] = obj_size
-
             data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
             x_data = list(data_frame.iloc[:, 0])
             plot_data['x_actual_data'] = x_data
@@ -245,9 +234,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 x_data_optional = list(df_optional.iloc[:, 0])
                 x_data_final = x_data + x_data_optional
 
-                if sessions1 == 'all':
-                    x_data_final = sort_sessions(x_data_final)
-                elif xfilter == 'Build':
+                if xfilter == 'Build':
                     x_data_final = sort_object_sizes_list(x_data_final)
                 else:
                     x_data_final = sort_builds_list(x_data_final)

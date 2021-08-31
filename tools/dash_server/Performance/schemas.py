@@ -77,26 +77,6 @@ def get_graphs_schema(data, xfilter, xfilter_tag):
     return entry
 
 
-def get_multi_concurrency_schema(data, xfilter, xfilter_tag):
-    """
-    function for getting graphs multi-concurrency specific performance schema
-    wrt database and provided data
-
-    Args:
-        data: data needed for query
-
-    Returns:
-        dict: data dict with db key mapped with given data
-    """
-    entry = get_common_schema(data)
-    del entry['Sessions']
-    entry['Object_Size'] = data['objsize']
-    entry[xfilter] = data[xfilter_tag]
-    entry['Name'] = data['name']
-
-    return entry
-
-
 def get_complete_schema(data):
     """
     function for getting complete performance schema
