@@ -1,79 +1,109 @@
+"""Graph callbacks file for handling data"""
+#
+# Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# For any questions about this software or licensing,
+# please email opensource@seagate.com or cortx-questions@seagate.com.
+#
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
+
+from __future__ import division
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
-import plotly.graph_objs as go
 
 from common import app
-from threading import Thread
+from Performance.backend import get_graph_layout, plot_graphs_with_given_data, get_data_for_graphs
+from Performance.global_functions import sort_object_sizes_list, sort_builds_list
 
-from Performance.graphs.graphs_functions import get_data_for_graphs, get_metrics, get_yaxis_heading,\
-    get_structure_trace, get_operations
+pallete = {
+    '1': {'Read': '#0277BD',
+          'Write': '#29B6F6'
+          },
+    '2': {'Read': '#EF6C00',
+          'Write': '#FFA726'
+          }
+}
 
 
-def graphs_global(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
-                  branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param):
-    yet_to_plot_traces = True
+def get_yaxis_heading(metric):
+    """
+    function to get y axis heading
 
-    for op in operations:
-        [x_axis_first, y_data_first] = get_data_for_graphs(xfilter, release1, branch1, option1, profile1, bench,
-                                                           config, op, metric, param)
+    Args:
+        metric: performance metric
 
-        if flag and release2 and branch2 and option2:
-            [x_axis_second, y_data_second] = get_data_for_graphs(xfilter, release2, branch2, option2, profile2, bench,
-                                                                 config, op, metric, param)
+    Returns:
+        string: heading string
+    """
+    return_val = ""
+    if metric == "Throughput":
+        return_val = "{} (MBps)".format(metric)
+    elif metric == "IOPS":
+        return_val = "{}".format(metric)
+    else:
+        return_val = "{} (ms)".format(metric)
 
-            if len(x_axis_first) > len(x_axis_second):
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
+    return return_val
 
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
-            else:
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option2, x_axis_second, y_data_second)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
 
-                trace = get_structure_trace(
-                    go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-                fig.add_trace(trace)
-                fig_all.add_trace(trace)
+def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
+    """
+    wrapper function to get graphs plotted
 
-            yet_to_plot_traces = False
+    Args:
+        fig: plotly fig to plot graphs on
+        fig_all: plotly fig to all plot graphs on
+        data_frame: pandas dataframe containing data
+        plot_data: data needed for plotting graphs
+        x_data_combined: list of combined x axis data with comparison plot
+    """
 
-        if yet_to_plot_traces:
-            trace = get_structure_trace(
-                        go.Scatter, op, metric, option1, x_axis_first, y_data_first)
-            fig.add_trace(trace)
-            fig_all.add_trace(trace)
+    if plot_data['ops_option'] == 'both':
+        operations = ['Read', 'Write']
+    else:
+        operations = [plot_data['ops_option']]
 
-    fig.update_layout(
-        autosize=True,
-        height=625,
-        showlegend=True,
-        title='<b>{} Plot</b>'.format(metric),
-        title_font_size=25,
-        title_font_color='#343a40',
-        legend_title='Glossary',
-        yaxis=dict(
-            title_text=y_axis_heading,
-            titlefont=dict(size=23)),
-        xaxis=dict(
-            title_text=x_axis_heading,
-            titlefont=dict(size=23)
-        ),
-    )
+    for operation in operations:
+        y_data = []
+        plot_data['operation'] = operation
+        for col in data_frame.columns:
+            if col.startswith(" ".join([operation, plot_data['metric']])):
+                y_actual_data = data_frame[col]
+                break
+        data = dict(zip(plot_data['x_actual_data'], y_actual_data))
+        for item in x_data_combined:
+            try:
+                if isinstance(data[item], str):
+                    y_data.append(data[item])
+                else:
+                    y_data.append(data[item]/int(plot_data['nodes']))
+            except KeyError:
+                y_data.append(None)
+
+        plot_graphs_with_given_data(
+            fig, fig_all, x_data_combined, y_data, plot_data)
 
 
 @app.callback(
     Output('plot_TTFB', 'style'),
-    Input('benchmark_dropdown_first', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_Ttfb_Style(bench):
+    """hides ttfb plot for non s3bench data"""
     style = None
     if bench != 'S3bench':
         style = {'display': 'none'}
@@ -87,88 +117,146 @@ def update_Ttfb_Style(bench):
     Output('plot_IOPS', 'figure'),
     Output('plot_TTFB', 'figure'),
     Output('plot_all', 'figure'),
-    Input('get_graphs', 'n_clicks'),
-    Input('filter_dropdown', 'value'),
-    Input('release_dropdown_first', 'value'),
-    Input('branch_dropdown_first', 'value'),
-    Input('dropdown_first', 'value'),
-    Input('profiles_options_first', 'value'),
-    Input('benchmark_dropdown_first', 'value'),
-    Input('configs_dropdown_first', 'value'),
-    Input('operations_dropdown_first', 'value'),
+    Input('graphs_submit_button', 'n_clicks'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_operations_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
+    Input('graphs_build_dropdown', 'value'),
+    Input('graphs_nodes_dropdown', 'value'),
+    Input('graphs_pfull_dropdown', 'value'),
+    Input('graphs_iteration_dropdown', 'value'),
+    Input('graphs_custom_dropdown', 'value'),
+    Input('graphs_sessions_dropdown', 'value'),
+    Input('graphs_buckets_dropdown', 'value'),
+    Input('graphs_release_compare_dropdown', 'value'),
+    Input('graphs_branch_compare_dropdown', 'value'),
+    Input('graphs_build_compare_dropdown', 'value'),
+    Input('graphs_nodes_compare_dropdown', 'value'),
+    Input('graphs_pfull_compare_dropdown', 'value'),
+    Input('graphs_iteration_compare_dropdown', 'value'),
+    Input('graphs_custom_compare_dropdown', 'value'),
+    Input('graphs_sessions_compare_dropdown', 'value'),
+    Input('graphs_buckets_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
-    Input('release_dropdown_second', 'value'),
-    Input('branch_dropdown_second', 'value'),
-    Input('dropdown_second', 'value'),
-    Input('profiles_options_second', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, release1, branch1, option1, profile1, bench, config, operation,
-                  flag, release2, branch2, option2, profile2):
+def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
+                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
+                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag):
+    """
+    updates graph plots for all 5 graphs based on input values
+
+    Args:
+        n_clicks: number of clicks user does on the button
+        xfilter: filter chosen in filterby dropdown
+        bench: benchmark to show plots for
+        operation: read/ write or both
+        flag: indicates it's a comparison or not
+        following fields are seperate for first or optional graph plots:
+        release1 / release: release of LR
+        branch1 / branch2: github branch
+        option1 / option2: build or objectsize chosen as per the filter
+        nodes1 / nodes2: nodes associated with the cluster
+        pfull1 / pfull2: percent fill of the cluster
+        itrns1 / itrns2: #iteration for current run
+        custom1 / custom2: run specific custom field
+        sessions1 / sessions2: number of sessions / concurrency values
+        buckets1 / buckets2: number of buckets
+
+    Returns:
+        5 plotly go figures with traces plotted
+    """
     return_val = [None] * 5
-    if n_clicks is None or xfilter is None or branch1 is None:
+    if not n_clicks:
         raise PreventUpdate
-
-    if bench is None or release1 is None or option1 is None or config is None:
+    if not all([xfilter, bench, operation]):
         raise PreventUpdate
-
+    if not all([
+            branch1, option1, nodes1, itrns1, custom1, sessions1, buckets1]) and pfull1 is None:
+        raise PreventUpdate
     if flag:
-        if release2 is None or branch2 is None or option2 is None:
+        if not all([
+                branch2, option2, nodes2, itrns2, custom2, sessions2, buckets2]) and pfull2 is None:
             raise PreventUpdate
 
     if n_clicks > 0:
+        plot_data = {}
         figs = []
-        fig_all = go.Figure()
-        param = None
+
         if xfilter == 'Build':
-            x_axis_heading = 'Object Sizes'
+            plot_data['x_heading'] = 'Object Sizes'
+            xfilter_tag = 'build'
         else:
-            x_axis_heading = 'Builds'
+            plot_data['x_heading'] = 'Builds'
+            xfilter_tag = 'objsize'
 
-        operations = get_operations(bench, operation)
-        metrics = get_metrics(bench)
-        threads = []
+        data = {
+            'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
+            'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
+            'buckets': buckets1, 'sessions': sessions1, 'name': bench
+        }
+        if flag:
+            data_optional = {
+                'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
+                'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
+                'buckets': buckets2, 'sessions': sessions2, 'name': bench
+            }
 
-        for metric in metrics:
-            fig = go.Figure()
-            y_axis_heading = get_yaxis_heading(metric)
+        if bench == 'S3bench':
+            stats = ["Throughput", "IOPS", "Latency", "TTFB"]
+        else:
+            stats = ["Throughput", "IOPS", "Latency"]
 
-            if metric in ['Latency', 'TTFB'] and bench != 'Hsbench':
-                param = 'Avg'
-            else:
-                param = None
+        plot_data['ops_option'] = operation
+        plot_data['metric'] = 'all'
+        plot_data['y_heading'] = 'Data'
+        plot_data['option'] = data[xfilter_tag]
+        plot_data['custom'] = data['custom']
+        plot_data['pallete'] = pallete['1']
+        plot_data['nodes'] = nodes1
+        fig_all = get_graph_layout(plot_data)
 
-            temp = Thread(target=graphs_global, args=(fig, fig_all, xfilter, release1, branch1, option1, profile1, bench, config, flag, release2,
-                                                      branch2, option2, profile2, operations, x_axis_heading, y_axis_heading, metric, param))
+        for metric in stats:
+            not_plotted = True
+            plot_data['metric'] = metric
+            plot_data['y_heading'] = get_yaxis_heading(metric)
 
-            temp.start()
-            threads.append(temp)
+            fig = get_graph_layout(plot_data)
+            data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
+            x_data = list(data_frame.iloc[:, 0])
+            plot_data['x_actual_data'] = x_data
+
+            if flag:
+                df_optional = get_data_for_graphs(
+                    data_optional, xfilter, xfilter_tag)
+                x_data_optional = list(df_optional.iloc[:, 0])
+                x_data_final = x_data + x_data_optional
+
+                if xfilter == 'Build':
+                    x_data_final = sort_object_sizes_list(x_data_final)
+                else:
+                    x_data_final = sort_builds_list(x_data_final)
+
+                get_graphs(fig, fig_all, data_frame, plot_data, x_data_final)
+
+                plot_data['pallete'] = pallete['2']
+                plot_data['option'] = data_optional[xfilter_tag]
+                plot_data['custom'] = data_optional['custom']
+                plot_data['x_actual_data'] = x_data_optional
+                plot_data['nodes'] = nodes2
+                get_graphs(fig, fig_all, df_optional, plot_data, x_data_final)
+                not_plotted = False
+
+            if not_plotted:
+                get_graphs(fig, fig_all, data_frame, plot_data, x_data)
+
             figs.append(fig)
-
-        for thread in threads:
-            thread.join()
-
-        fig_all.update_layout(
-            autosize=True,
-            height=625,
-            showlegend=True,
-            title='<b>All Plots in One</b>',
-            title_font_size=25,
-            title_font_color='#343a40',
-            legend_title='Glossary',
-            yaxis=dict(
-                title_text='Data',
-                titlefont=dict(size=23)),
-            xaxis=dict(
-                title_text=x_axis_heading,
-                titlefont=dict(size=23)
-            ),
-        )
 
         if bench != 'S3bench':
             figs.append(fig)
         figs.append(fig_all)
-
         return_val = figs
 
     return return_val

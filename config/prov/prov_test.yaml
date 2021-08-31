@@ -21,10 +21,9 @@ services:
     - "scsi-network-relay.service"
 service_ports:
   csm: ["28100"]
-  dhclient: ["68"]
   dns: ["53"]
   elasticsearch: ["9200", "9300"]
-  haproxy: ["443"]
+  https: ["443"]
   ntp: ["123"]
   ldap: ["389"]
   redis: ["6379"]
