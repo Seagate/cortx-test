@@ -69,6 +69,11 @@ class S3AccountOperations(S3Interface):
         self.cli_obj = CortxCliTestLib()
         self.rest_obj = S3AccountOperationsRestAPI()
 
+    def __del__(self):
+        """Destroy created objects"""
+        del self.cli_obj
+        del self.rest_obj
+
     def create_s3_account(self, acc_name=None,
                           email_id=None, passwd=None) -> tuple:
         """
