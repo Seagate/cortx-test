@@ -375,7 +375,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
 
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
-    LOGGER.debug(f"Executed tests {kafka_msg.test_list} on target {args.target}")
+    LOGGER.debug(f"Executed tests %s on target %s", kafka_msg.test_list, args.target)
 
 
 def read_selected_tests_csv():
@@ -474,7 +474,7 @@ def get_available_target(kafka_msg, client):
     lock_task = LockingServer()
     acquired_target = ""
     HealthCheck(runner.get_db_credential()).health_check(kafka_msg.target_list)
-    LOGGER.info(f"Acquiring available target for test execution.")
+    LOGGER.info("Acquiring available target for test execution.")
     while acquired_target == "":
         if kafka_msg.parallel:
             target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
@@ -492,7 +492,7 @@ def get_available_target(kafka_msg, client):
             if seq_target != "":
                 acquired_target = acquire_target(seq_target, client,
                                                  common_cnst.EXCLUSIVE_LOCK)
-    LOGGER.info(f"Acquired available target {acquired_target} for test execution.")
+    LOGGER.info("Acquired available target %s for test execution.", str(acquired_target))
     return acquired_target
 
 
