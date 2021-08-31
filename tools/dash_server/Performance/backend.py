@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+from __future__ import absolute_import
 import pandas as pd
 import dash_table
 import dash_html_components as html

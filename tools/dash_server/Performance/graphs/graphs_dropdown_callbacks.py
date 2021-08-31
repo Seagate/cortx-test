@@ -1,4 +1,4 @@
-"""performance graph callbacks to handle dropdown values"""
+"""graphs callbacks for performance for populating dropdown values"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
