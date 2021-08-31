@@ -140,7 +140,7 @@ class HALibs:
                 resp_table)
             for index, item in enumerate(resp_table):
                 if item[2] != status[index].lower():
-                    return False, f"Node-{int(item[1])+1}'s health status is {item[2]}"
+                    return False, f"Node-{int(item[1]) + 1}'s health status is {item[2]}"
                 LOGGER.info("Node-%s's health status is %s",
                             int(item[1]) + 1, item[2])
             return True, "All node status is as expected"
@@ -391,7 +391,7 @@ class HALibs:
                 self.num_nodes)]
         LOGGER.info(
             "Checking srvnode-%s status is %s via CortxCLI",
-            node_id+1, node_sts)
+            node_id + 1, node_sts)
         resp = self.verify_node_health_status(sys_obj, status=check_rem_node)
         if not resp[0]:
             return resp
@@ -400,7 +400,7 @@ class HALibs:
         resp = self.verify_csr_health_status(sys_obj, csr_sts)
         if not resp[0]:
             return resp
-        LOGGER.info("Checking srvnode-%s status is %s via REST", node_id+1, node_sts)
+        LOGGER.info("Checking srvnode-%s status is %s via REST", node_id + 1, node_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_node)
         if not resp[0]:
@@ -411,7 +411,7 @@ class HALibs:
             return resp
 
         return True, f"cluster/rack/site status is {csr_sts} and \
-        srvnode-{node_id+1} is {node_sts} in Cortx CLI/REST"
+        srvnode-{node_id + 1} is {node_sts} in Cortx CLI/REST"
 
     def get_csm_failover_node(self, srvnode_list: list, node_list: list, sys_list: list, node: int):
         """
@@ -528,7 +528,7 @@ class HALibs:
         :return: (bool, response/Dictionary for all the service which are not in expected state)
         """
         # Get the next node to check pcs and hctl status
-        checknode = f'srvnode-{(node+1)}.data.private'
+        checknode = f'srvnode-{(node + 1)}.data.private'
         up_node = 0 if node == self.num_nodes else node + 1
         host_details = {"hostname": CMN_CFG["nodes"][node]["hostname"],
                         "username": CMN_CFG["nodes"][node]["username"],
@@ -672,3 +672,25 @@ class HALibs:
                          HALibs.perform_ios_ops.__name__,
                          error)
             return False, error
+
+    @staticmethod
+    def cortx_start_cluster(node_obj, node: str = "--all"):
+        LOGGER.info("Start the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_START_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info(f"{common_cmd.CMD_START_CLSTR} {node} resp = {resp[0]}")
+        if "Cluster stop is in progress" in resp[0]:
+            return True, resp[0]
+        else:
+            return False, resp[0]
+
+    @staticmethod
+    def cortx_stop_cluster(node_obj, node: str = "--all"):
+        LOGGER.info("Stop the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info(f"{common_cmd.CMD_STOP_CLSTR} {node} resp = {resp[0]}")
+        if "Cluster start operation performed" in resp[0]:
+            return True, resp[0]
+        else:
+            return False, resp[0]
