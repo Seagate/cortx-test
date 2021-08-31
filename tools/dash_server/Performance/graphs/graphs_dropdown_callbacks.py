@@ -287,7 +287,7 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
-            options.append({'label': 'All', 'value': 'all', 'disabled': True})
+            options.append({'label': 'All', 'value': 'all'})
         else:
             raise PreventUpdate
 
@@ -307,21 +307,20 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
     Input('graphs_pfull_dropdown', 'value'),
     Input('graphs_iteration_dropdown', 'value'),
     Input('graphs_custom_dropdown', 'value'),
-    Input('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_buckets_dropdown(xfilter, release, branch, option1, bench,
-                            nodes, pfill, itrns, custom, sessions):
+                            nodes, pfill, itrns, custom):
     """updates buckets in default select dropdown"""
     options = None
     value = None
     disabled = False
-    if not all([xfilter, branch, option1, bench, nodes, itrns, custom, sessions]) and pfill is None:  # pylint: disable=no-else-raise
+    if not all([xfilter, branch, option1, bench, nodes, itrns, custom]) and pfill is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
-            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
@@ -620,7 +619,7 @@ def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
         if sessions:
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
-            options.append({'label': 'All', 'value': 'all'})
+            options.append({'label': 'All', 'value': 'all', 'disabled': True})
         else:
             raise PreventUpdate
 
@@ -696,6 +695,8 @@ def update_object_size_dropdown(xfilter, release, branch, build, bench, sessions
             style = style_dropdown_medium
             objsizes = get_distinct_keys(release, 'Object_Size', {
                 'Branch': branch, xfilter: build, 'Name': bench})
+            objsizes = sort_object_sizes_list(objsizes)
+
             if objsizes:
                 options = get_dict_from_array(objsizes, False)
                 value = options[0]['value']

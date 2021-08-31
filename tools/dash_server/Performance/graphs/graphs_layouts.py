@@ -67,6 +67,7 @@ graphs_input_options = [
                 id="graphs_benchmark_dropdown",
                 options=benchmarks,
                 placeholder="Benchmark",
+                value='S3bench',
                 style=style_dropdown_small_2
             ),
             Dropdown(
@@ -80,7 +81,6 @@ graphs_input_options = [
                 id="graphs_obj_size_dropdown",
                 options=operations,
                 placeholder="Operation",
-                value='both',
                 style={'display': 'none'}
             )
         ],

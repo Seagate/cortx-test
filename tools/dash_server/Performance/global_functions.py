@@ -213,6 +213,15 @@ def sort_object_sizes_list(obj_sizes):
     return data_sorted
 
 
+def sort_sessions(sessions):
+    sessions = list(dict.fromkeys(sessions))
+    new_sessions = []
+    for session in sessions:
+        new_sessions.append(int(session))
+    
+    return sorted(new_sessions)
+
+
 def check_empty_list(array):
     """
     Function to check given array is empty or not.
