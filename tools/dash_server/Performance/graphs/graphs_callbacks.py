@@ -199,13 +199,14 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         data = {
             'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
             'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
-            'buckets': buckets1, 'sessions': sessions1, 'name': bench
+            'buckets': buckets1, 'sessions': sessions1, 'name': bench, 'all_sessions_plot': False
         }
         if flag:
             data_optional = {
                 'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
                 'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
-                'buckets': buckets2, 'sessions': sessions2, 'name': bench
+                'buckets': buckets2, 'sessions': sessions2, 'name': bench,
+                'all_sessions_plot': False
             }
 
         if bench == 'S3bench':
