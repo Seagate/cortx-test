@@ -64,6 +64,8 @@ def create_db_entry(hostname, username, password, ip_addr,
     :param str ip_addr: management IP for the node
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
+    :param str public_ip: public data IP
+    :param str private_ip: private data IP
     :return: none
     """
     json_file = config['default']['setup_entry_json']
