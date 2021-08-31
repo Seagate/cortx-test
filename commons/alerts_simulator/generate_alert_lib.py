@@ -209,7 +209,7 @@ class GenerateAlertLib:
                 f'h_pwd="{h_pwd}", '
                 f'input_parameters={input_parameters})'},
             17: {
-                'cmd': 'create_resolve_bmc_ip_change_fault'},
+                'cmd': 'create_resolve_bmc_ip_change_fault',
             18: {
                 'cmd': 'create_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
