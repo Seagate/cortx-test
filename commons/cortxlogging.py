@@ -21,7 +21,7 @@ def init_loghandler(log) -> None:
                                           params.LOG_DIR_NAME,
                                           'latest',
                                           LOG_FILE),
-                             mode='w')
+                             mode='a')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
