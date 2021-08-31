@@ -19,6 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """Intel ISA workload suit."""
+from __future__ import absolute_import
+
 import logging
 import os
 import time
@@ -27,7 +29,6 @@ import pytest
 
 from commons import configmanager
 from commons.helpers.health_helper import Health
-from commons.helpers.host import Host
 from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
@@ -41,6 +42,10 @@ from scripts.s3_bench import s3bench
 
 
 class TestIntelISAIO:
+    """
+    Test suite for Intel ISA - IO tests.
+    """
+
     @classmethod
     def setup_class(cls):
         """Setup class"""
@@ -55,17 +60,13 @@ class TestIntelISAIO:
         cls.ha_obj = HALibs()
         cls.node_list = []
 
-        cls.host_list = []
         cls.hlt_list = []
-        cls.srvnode_list = []
-        cls.restored = True
+        cls.reset_s3config = False
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
             cls.passwd = CMN_CFG["nodes"][node]["password"]
-            cls.host_list.append(Host(hostname=cls.host, username=cls.uname, password=cls.passwd))
-            cls.srvnode_list.append(f"srvnode-{node + 1}")
             cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
                                        password=cls.passwd))
             cls.node_list.append(Node(hostname=cls.host,
@@ -89,6 +90,9 @@ class TestIntelISAIO:
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
+        """
+        This function will be invoked after each test case.
+        """
         self.log.info("STARTED: Teardown Operations")
         if self.reset_s3config:
             self.log.info("Set S3_MOTR_IS_READ_VERIFY to false on all the %s nodes", self.num_nodes)
@@ -125,15 +129,18 @@ class TestIntelISAIO:
 
     def restart_cluster(self):
         """
-        Perform following operations
+        Restart the cluster and check all nodes health.
+        Commands executed :
         cortx stop cluster --all
         cortx start cluster -all
         pcs resource cleanup
         """
         self.log.info("Stop the cluster")
-        self.ha_obj.cortx_stop_cluster(self.node_list[0])
+        resp = self.ha_obj.cortx_stop_cluster(self.node_list[0])
+        assert_utils.assert_true(resp[0])
         self.log.info("Start the cluster")
-        self.ha_obj.cortx_start_cluster(self.node_list[0])
+        resp = self.ha_obj.cortx_start_cluster(self.node_list[0])
+        assert_utils.assert_true(resp[0])
         time.sleep(self.test_config["cluster_start_delay"])
         self.log.info("Perform PCS resource cleanup")
         self.hlt_list[0].pcs_resource_cleanup()
@@ -146,7 +153,7 @@ class TestIntelISAIO:
     def write_read_file(self, bucket_name, test_file, count, block_size):
         """
         Create test_file with file_size and upload to bucket_name
-        validate checksum after download
+        validate checksum after download and deletes the file
         """
         file_path = os.path.join(self.test_dir_path, test_file)
 
@@ -192,7 +199,6 @@ class TestIntelISAIO:
         basic_io_config = self.test_config["test_basic_io"]
 
         self.log.info("Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
-        self.reset_s3config = True
         for node in range(self.num_nodes):
             S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
                                     parameter=basic_io_config["parity_check_flag"],
@@ -201,6 +207,7 @@ class TestIntelISAIO:
                                     username=CMN_CFG["nodes"][node]["username"],
                                     password=CMN_CFG["nodes"][node]["password"]
                                     )
+            self.reset_s3config = True
         self.log.info("Step 2: Restart the cluster")
         self.restart_cluster()
 
@@ -223,11 +230,14 @@ class TestIntelISAIO:
         assert_utils.assert_true(resp[0], resp[1])
 
     def io_workload(self, bucket_prefix):
+        """
+        S3 bench workload test executed for each of Erasure coding config
+        """
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
             "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
         ]
-        clients = self.test_config["test_io_workload"]
+        clients = self.test_config["test_io_workload"]["clients"]
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         access_key, secret_key = S3H_OBJ.get_local_keys()
@@ -236,14 +246,14 @@ class TestIntelISAIO:
             if "Kb" in workload:
                 samples = 50
             elif "Mb" in workload:
-                samples = 20
+                samples = 10
             else:
                 samples = 5
             resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name, num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
                                    obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
-            self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
+            self.log.info("json_resp %s\n Log Path %s", resp[0], resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
@@ -251,47 +261,99 @@ class TestIntelISAIO:
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26963")
     def test_26963(self):
+        """ Basic IO test
+            N+K+S: 8+2+0
+            CVG’s per node : 1
+            Data Devices per CVG: 7
+            Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26963")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26964")
     def test_26964(self):
+        """ Basic IO test
+            N+K+S: 3+2+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26964")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26967")
     def test_26967(self):
+        """ Basic IO test
+            N+K+S: 8+4+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26967")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26968")
     def test_26968(self):
+        """ Basic IO test
+            N+K+S: 10+5+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("269638")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26969")
     def test_26969(self):
+        """
+        S3bench IO workload test
+        N+K+S: 8+2+0
+        CVG’s per node : 1
+        Data Devices per CVG: 7
+        Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26969")
         self.io_workload(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26970")
     def test_26970(self):
+        """
+        S3bench IO workload test
+        N+K+S: 3+2+0
+        CVG’s per node : 2
+        Data Devices per CVG: 3
+        Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26970")
         self.io_workload(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26971")
     def test_26971(self):
+        """
+        S3bench IO workload test
+        N+K+S: 8+4+0
+        CVG’s per node : 2
+        Data Devices per CVG: 3
+        Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26971")
         self.io_workload(bucket_name)
 
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26972")
     def test_26972(self):
+        """
+        S3bench IO workload test
+        N+K+S: 10+5+0
+        CVG’s per node : 2
+        Data Devices per CVG: 3
+        Metadata Device per CVG : 1
+        """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26972")
         self.io_workload(bucket_name)

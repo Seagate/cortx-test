@@ -675,22 +675,30 @@ class HALibs:
 
     @staticmethod
     def cortx_start_cluster(node_obj, node: str = "--all"):
+        """
+        This function starts the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be started, default : --all
+        """
         LOGGER.info("Start the cluster")
         resp = node_obj.execute_cmd(f"{common_cmd.CMD_START_CLSTR} {node}", read_lines=True,
                                     exc=False)
-        LOGGER.info(f"{common_cmd.CMD_START_CLSTR} {node} resp = {resp[0]}")
-        if "Cluster stop is in progress" in resp[0]:
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_START_CLSTR, node, resp[0])
+        if "Cluster start operation performed" in resp[0]:
             return True, resp[0]
-        else:
-            return False, resp[0]
+        return False, resp[0]
 
     @staticmethod
     def cortx_stop_cluster(node_obj, node: str = "--all"):
+        """
+        This function stops the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be stopped, default : --all
+        """
         LOGGER.info("Stop the cluster")
         resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
                                     exc=False)
-        LOGGER.info(f"{common_cmd.CMD_STOP_CLSTR} {node} resp = {resp[0]}")
-        if "Cluster start operation performed" in resp[0]:
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_STOP_CLSTR, node, resp[0])
+        if "Cluster stop is in progress" in resp[0]:
             return True, resp[0]
-        else:
-            return False, resp[0]
+        return False, resp[0]
