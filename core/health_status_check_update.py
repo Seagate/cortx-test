@@ -23,6 +23,8 @@ Utility Class for health status check and update to database
 
 
 import logging
+import socket
+import paramiko
 from urllib.parse import quote_plus
 from pymongo import MongoClient
 from commons.helpers.health_helper import Health
@@ -94,12 +96,15 @@ class HealthCheck:
                         username=node['username'],
                         password=node['password'])
         result = True
-        try:
-            result = health.check_node_health(node)
-        except IOError:
-            result = False
-        finally:
-            health.disconnect()
+        iteration = 1
+        while iteration <= 2:
+            try:
+                result = health.check_node_health(node)
+                health.disconnect()
+                break
+            except (socket.error, IOError, paramiko.SSHException):
+                result = False
+                iteration += 1
         return result
 
     @staticmethod
@@ -108,19 +113,21 @@ class HealthCheck:
             check target storage status
             :return True/False
         """
-
         hostname = node['hostname']
         health = Health(hostname=hostname,
                         username=node['username'],
                         password=node['password'])
-        try:
-            ha_result = health.get_sys_capacity()
-            ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
-            result = ha_used_percent < 98.0
-        except IOError:
-            result = False
-        finally:
-            health.disconnect()
+        iteration = 1
+        while iteration <= 2:
+            try:
+                ha_result = health.get_sys_capacity()
+                ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
+                result = ha_used_percent < 98.0
+                health.disconnect()
+                break
+            except (socket.error, IOError, paramiko.SSHException):
+                result = False
+                iteration += 1
         return result
 
     def health_check(self, targets):
