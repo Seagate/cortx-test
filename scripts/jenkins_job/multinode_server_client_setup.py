@@ -51,6 +51,7 @@ def create_db_entry(
     :param str mgmt_vip: csm mgmt vip
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
+    :param node_obj: node helper object to run cmd and get IPs
     :return: Target name
     """
     json_file = config['default']['setup_entry_json']
