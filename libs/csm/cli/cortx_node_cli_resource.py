@@ -1,5 +1,6 @@
 import logging
-
+from commons import commands
+from commons.helpers import node_helper
 from config import CMN_CFG
 from libs.csm.cli.cortx_node_cli import CortxNodeCli
 
@@ -37,35 +38,140 @@ class CortxNodeCLIResourceOps(CortxNodeCli):
             session_obj=session_obj,
             port=port)
 
-    def resource_discover_node_cli(self, timeout: int):
-        # ToDo: Complete function
-        default_patterns = [
-            "Error",
-            "exception",
-            "usage:",
-            "command not found"]
-        res = super().execute_cli_commands(cmd="resource discover",
-                                           patterns=default_patterns, time_out=timeout)
-        return res[1]
+    def resource_discover_node_cli(self):
+        """"
+        This functions executes the cortx_setup command
+        to create the Health map
+        """
+        node_utils = node_helper.Node(hostname=self.host,
+                                      username=self.username,
+                                      password=self.password)
+        res = node_utils.execute_cmd(cmd=commands.CMD_RESOURCE_DISCOVER)
+        if not res:
+            LOGGER.info("Command executed \n")
+            return True, res
+        LOGGER.error("Failed to execute the command %s", res)
+        return False, res
 
     def resource_health_show_node_cli(self, timeout: int):
-        # ToDo: Complete function
+        """"
+        This functions executes the cortx_setup command
+        to show health of the various components in Server
+        """
         default_patterns = [
-            "Error",
             "exception",
             "usage:",
+            "storage",
+            "argument",
+            "Error",
             "command not found"]
-        res = super().execute_cli_commands(cmd="resource health --show",
+        res = super().execute_cli_commands(cmd=commands.CMD_RESOURCE_SHOW_HEALTH,
                                            patterns=default_patterns, time_out=timeout)
-        return res[1]
+        return res
 
-    def resource_health_show_rpath_node_cli(self, timeout: int, rpath: str):
-        # ToDo: Complete function
+    def resource_show_disk_health(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        to fetch the OS disk health status
+        """
         default_patterns = [
             "Error",
             "exception",
             "usage:",
+            "last_updated",
             "command not found"]
-        res = super().execute_cli_commands(cmd=f"resource health --show rpath {rpath}",
+        cmd = (commands.CMD_RESOURCE_SHOW_HEALTH_RES + " " + " 'node>server[0]>sw>raid'")
+        self.log.info("The command to be executed is %s", cmd)
+        res = super().execute_cli_commands(cmd=cmd,
                                            patterns=default_patterns, time_out=timeout)
-        return res[1]
+        return res
+
+    def resource_show_cont_health(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        to fetch the controller health
+        """
+        default_patterns = [
+            "Error",
+            "exception",
+            "usage:",
+            "last_updated",
+            "location",
+            "command not found"]
+        cmd = commands.CMD_RESOURCE_SHOW_HEALTH_RES + " " + "'node>storage[0]>hw>controller'"
+        self.log.info("The command to be executed is %s", cmd)
+        res = super().execute_cli_commands(cmd=cmd,
+                                           patterns=default_patterns, time_out=timeout)
+        return res
+
+    def resource_show_psu_health(self, timeout: int):
+        """"
+        This functions fetch the health of the storage PSU's
+        using cortx_setup.
+        """
+        default_patterns = [
+            "Error",
+            "exception",
+            "usage:",
+            "Plugged",
+            "last_updated",
+            "Location",
+            "command not found"]
+        cmd = commands.CMD_RESOURCE_SHOW_HEALTH_RES + " " + "'node>storage[0]>hw>psu'"
+        self.log.info("The command to be executed is %s", cmd)
+        res = super().execute_cli_commands(cmd=cmd,
+                                           patterns=default_patterns, time_out=timeout)
+        return res
+
+    def resource_health_show_invalid_param(self, timeout: int):
+        """"
+        This functions executes the cortx_setup command
+        with wrong resource_path
+        """
+        default_patterns = [
+            "usage:",
+            "command not found",
+            "Error",
+            "exception",
+            "storage",
+            "Failed",
+            "argument"]
+        cmd = commands.CMD_RESOURCE_SHOW_HEALTH_RES + " " + "'node>storage[0]>hw>psus'"
+        res = super().execute_cli_commands(cmd=cmd,
+                                           patterns=default_patterns, time_out=timeout)
+        return res
+
+    def split_str_to_list(self, input_str: str, sep: str):
+        """
+        This Function formats the string to list
+        to alternate index value
+        """
+        out = input_str.split(sep)
+        i = 0
+        num = len(out)
+        while i < num - 1:
+            out[i] = out[i] + "}" + "}" + "]" + "}" + "}"
+            result = super().format_str_to_dict(out[i])
+            LOGGER.info(result["health"]["status"])
+            LOGGER.info(result["health"]["description"])
+            i = i + 2
+        return result
+
+    def convert_to_list_format(self, input_str: str, sep: str):
+        """
+        This Function formats the string
+         to list to index value 1
+        """
+        out = input_str.split(sep)
+        i = 0
+        num = len(out)
+        while i < num - 1:
+            out[i] = out[i] + "}"
+            result = super().format_str_to_dict(out[i])
+            LOGGER.info(result["health"]["status"])
+            LOGGER.info(result["health"]["description"])
+            i = i + 1
+        result = super().format_str_to_dict(out[i])
+        LOGGER.info(result["health"]["status"])
+        LOGGER.info(result["health"]["description"])
+        return result

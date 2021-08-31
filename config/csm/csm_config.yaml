@@ -35,6 +35,8 @@ Restcall:
   capacity_endpoint: "/api/v2/capacity"
   health_component_endpoint: "/api/v2/system/health/components"
   health_resource_endpoint: "/api/v2/system/health/{}"
+  cluster_operation_endpoint: "/api/v2/system/management"
+  cluster_status_endpoint: "/api/v2/system/management/cluster_status"
 
 CliConfig:
   iam_user:
@@ -51,3 +53,4 @@ JMeterConfig:
   jmeter_path: "/root/apache-jmeter-5.4/bin"
   jmx_path: "scripts/jmx_files"
   jtl_log_path: "log/jmeter/"
+  test_data_csv: "test_config.csv"

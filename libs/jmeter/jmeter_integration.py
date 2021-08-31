@@ -27,7 +27,7 @@ import logging
 import re
 from commons.commands import JMX_CMD
 from commons.utils import system_utils
-from config import JMETER_CFG
+from config import JMETER_CFG, CSM_REST_CFG
 
 
 class JmeterInt():
@@ -41,6 +41,7 @@ class JmeterInt():
         self.jmeter_path = JMETER_CFG["jmeter_path"]
         self.jmx_path = JMETER_CFG["jmx_path"]
         self.jtl_log_path = JMETER_CFG["jtl_log_path"]
+        self.test_data_csv = JMETER_CFG["test_data_csv"]
 
     def append_log(self, log_file: str):
         """Append and verify log to the log file.
@@ -51,17 +52,23 @@ class JmeterInt():
             content = file.read()
         self.log.debug(content)
 
-    def run_jmx(self, jmx_file: str):
+    def run_jmx(self, jmx_file: str, threads:int=25, rampup:int=1, loop:int=1, test_cfg:str=None):
         """Set the user properties and run the jmx file and verify the logs
 
         :param jmx_file: jmx file located in the JMX_PATH
         :return [tuple]: boolean, Error message
         """
+        if test_cfg is None:
+            test_cfg = os.path.join(self.jmeter_path, self.test_data_csv)
         content = {"test.environment.hostname": JMETER_CFG["mgmt_vip"],
-                   "test.environment.port": JMETER_CFG["port"],
+                   "test.environment.port": CSM_REST_CFG["port"],
                    "test.environment.protocol": "https",
                    "test.environment.adminuser": JMETER_CFG["csm_admin_user"]["username"],
-                   "test.environment.adminpswd": JMETER_CFG["csm_admin_user"]["password"]}
+                   "test.environment.adminpswd": JMETER_CFG["csm_admin_user"]["password"],
+                   "test.environment.threads": threads,
+                   "test.environment.rampup": rampup,
+                   "test.environment.loop": loop,
+                   "test.environment.config":test_cfg }
         self.log.info("Updating : %s ", content)
         resp = self.update_user_properties(content)
         if not resp:
@@ -75,11 +82,13 @@ class JmeterInt():
         self.log.info("Log file name : %s ", log_file_path)
         cmd = JMX_CMD.format(self.jmeter_path, jmx_file_path, log_file_path, self.jtl_log_path)
         self.log.info("Executing JMeter command : %s", cmd)
-        result, resp = system_utils.run_local_cmd(cmd)
+        result, resp = system_utils.run_local_cmd(cmd, chk_stderr=True)
         self.log.info("Verify if any errors are reported...")
         if result:
             self.log.info("Jmeter execution completed.")
             result = re.match(r"Err:\s*0\s*.*", resp) is not None
+        else:
+            assert result, "Failed to execute command."
         self.log.info("No Errors are reported in the Jmeter execution.")
         self.append_log(log_file_path)
         return resp

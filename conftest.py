@@ -28,6 +28,7 @@ import logging
 import os
 import pathlib
 import random
+import shutil
 import string
 import tempfile
 import time
@@ -74,6 +75,7 @@ BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinationa
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 Globals.ALL_RESULT = None
+Globals.CSM_LOGS = None
 
 
 def _get_items_from_cache():
@@ -609,8 +611,13 @@ def pytest_runtest_makereport(item, call):
     current_file = 'other_test_calls.log'
     jira_update = ast.literal_eval(str(item.config.option.jira_update))
     db_update = ast.literal_eval(str(item.config.option.db_update))
+    test_id = CACHE.lookup(report.nodeid)
+    if report.when == 'setup':
+        Globals.CSM_LOGS = f"{LOG_DIR}/latest/{test_id}_Gui_Logs/"
+        if os.path.exists(Globals.CSM_LOGS):
+            shutil.rmtree(Globals.CSM_LOGS)
+        os.mkdir(Globals.CSM_LOGS)
     if not _local:
-        test_id = CACHE.lookup(report.nodeid)
         if report.when == 'setup' and item.rep_setup.failed:
             # Fail eagerly in Jira, when you know setup failed.
             # The status is again anyhow updated in teardown as it was earlier.
@@ -868,7 +875,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = getattr(report, 'logpath')
+        remote_path = getattr(report, 'logpath').replace(":", "_")
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -984,7 +991,7 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def get_db_cfg(request):
     from config import S3_CFG
     if request.config.getoption('--target'):
