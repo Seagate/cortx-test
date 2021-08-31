@@ -111,8 +111,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         is_distributed = "--distributed=" + str(True)
 
     is_parallel = "--is_parallel=" + str(parallel_exe)
-    # log_level = "--log-cli-level=" + str(args.log_level)
-    log_level = "--log-level=" + str(args.log_level)
+    log_level = "--log-cli-level=" + str(args.log_level)
+    # we intend to use --log-level instead of cli
 
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"

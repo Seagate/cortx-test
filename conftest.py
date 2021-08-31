@@ -446,7 +446,7 @@ def reset_imported_module_log_level(session):
     """Reset logging level of imported modules.
     Add check for imported module logger.
     """
-    log_level = session.config.option.log_level
+    log_level = session.config.option.log_cli_level
     log_level = int(log_level)
     log_level = logging.getLevelName(log_level)
     Globals.LOG_LEVEL = log_level
