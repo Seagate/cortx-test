@@ -72,7 +72,7 @@ TEST-1239
     Re-login  ${new_user_name}  ${changed_password}  ${page_name}
     Validate CSM Login Success  ${new_user_name}
     Delete Logged In CSM User  ${new_user_name}
-    Re-login  ${username}  ${password}  ${page_name}
+    Re-login  ${username}  ${password}  ${page_name}  False
     Verify Deleted User  ${new_user_name}
 
 TEST-1838
