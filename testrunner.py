@@ -375,7 +375,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
 
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
-    LOGGER.debug(f"Executed tests %s on target %s", kafka_msg.test_list, args.target)
+    LOGGER.debug("Executed tests %s on target %s", kafka_msg.test_list, args.target)
 
 
 def read_selected_tests_csv():
