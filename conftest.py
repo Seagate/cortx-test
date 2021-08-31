@@ -447,8 +447,8 @@ def reset_imported_module_log_level(session):
     Add check for imported module logger.
     """
     log_level = session.config.option.log_cli_level
-    if not log_level:
-        log_level = logging.DEBUG  # default=10 for pytest direct invocation without log cli level
+    log_level = int(log_level)
+    log_level = logging.getLevelName(log_level)
     Globals.LOG_LEVEL = log_level
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
@@ -458,9 +458,8 @@ def reset_imported_module_log_level(session):
             continue
         if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
-
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
-        logging.getLogger(pkg).setLevel(logging.WARNING)
+        logging.getLogger(pkg).setLevel(log_level)
 
 
 @pytest.hookimpl(tryfirst=True)
