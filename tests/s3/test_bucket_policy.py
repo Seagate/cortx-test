@@ -113,6 +113,7 @@ class TestBucketPolicy:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
         self.delete_accounts(self.account_list)
+        del self.rest_obj
         self.log.info("ENDED: Test teardown operations.")
 
     def delete_accounts(self, accounts):
