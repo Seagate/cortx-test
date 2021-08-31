@@ -13,9 +13,9 @@ from commons import params
 LOG_FILE = 'cortx-test.log'
 
 
-def init_loghandler(log) -> None:
+def init_loghandler(log, level=logging.DEBUG) -> None:
     """Initialize logging with stream and file handlers."""
-    log.setLevel(logging.DEBUG)
+    log.setLevel(level)
     make_log_dir(params.LOG_DIR_NAME)
     fh = logging.FileHandler(os.path.join(os.getcwd(),
                                           params.LOG_DIR_NAME,
@@ -32,12 +32,12 @@ def init_loghandler(log) -> None:
     log.addHandler(ch)
 
 
-def set_log_handlers(log, name, mode='w'):
+def set_log_handlers(log, name, mode='w', level=logging.DEBUG):
     """Set stream and file handlers."""
     fh = logging.FileHandler(name, mode=mode)
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(level)
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(level)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
