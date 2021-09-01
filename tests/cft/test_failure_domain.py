@@ -238,7 +238,6 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
-
         assert_utils.assert_length(sns_config, 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,

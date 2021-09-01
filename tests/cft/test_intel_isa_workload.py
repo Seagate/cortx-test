@@ -191,25 +191,26 @@ class TestIntelISAIO:
         self.log.info("Delete downloaded file")
         system_utils.remove_file(file_path)
 
-    def basic_io_with_parity_check_enabled(self, bucket_name):
+    def basic_io_with_parity_check_enabled(self, bucket_name, skip_parity_check: bool = True):
         """
         Set the read verify flag to true
         Restart the S3 and motr services
         """
         basic_io_config = self.test_config["test_basic_io"]
 
-        self.log.info("Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
-        for node in range(self.num_nodes):
-            S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
-                                    parameter=basic_io_config["parity_check_flag"],
-                                    value=True,
-                                    host=CMN_CFG["nodes"][node]["hostname"],
-                                    username=CMN_CFG["nodes"][node]["username"],
-                                    password=CMN_CFG["nodes"][node]["password"]
-                                    )
-            self.reset_s3config = True
-        self.log.info("Step 2: Restart the cluster")
-        self.restart_cluster()
+        if skip_parity_check:
+            self.log.info("Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
+            for node in range(self.num_nodes):
+                S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
+                                        parameter=basic_io_config["parity_check_flag"],
+                                        value=True,
+                                        host=CMN_CFG["nodes"][node]["hostname"],
+                                        username=CMN_CFG["nodes"][node]["username"],
+                                        password=CMN_CFG["nodes"][node]["password"]
+                                        )
+                self.reset_s3config = True
+            self.log.info("Step 2: Restart the cluster")
+            self.restart_cluster()
 
         self.log.info("Step 3: Creating bucket %s", bucket_name)
         resp = self.s3t_obj.create_bucket(bucket_name)
