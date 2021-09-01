@@ -557,6 +557,7 @@ class Provisioner:
         :keyword dix_data: data units value for metadata pool
         :keyword dix_parity: parity units value for metadata pool
         :keyword dix_spare: spare units value for metadata pool
+        :keyword skip_disk_count_check: Skip the validation for N+K+S should be less than overall data disks
         :return: True/False and path of created config
         """
         mgmt_vip = kwargs.get("mgmt_vip", None)
@@ -568,6 +569,7 @@ class Provisioner:
         dix_data = kwargs.get("dix_data", "1")
         dix_parity = kwargs.get("dix_parity", "2")
         dix_spare = kwargs.get("dix_spare", "0")
+        skip_disk_count_check = kwargs.get("skip_disk_count_check",False)
         config_file = "deployment_config.ini"
         shutil.copyfile(cfg_template, config_file)
         data_disk_per_cvg = int(data_disk)
@@ -611,7 +613,7 @@ class Provisioner:
                 data_devices = list()
                 if data_disk == "0":
                     data_disk_per_cvg = len(device_list[cvg_count:])
-                if valid_disk_count > (data_disk_per_cvg*cvg_count*len(node_obj_list)):
+                if not skip_disk_count_check and valid_disk_count > (data_disk_per_cvg*cvg_count*len(node_obj_list)):
                     return False, "The sum of data disks per cvg " \
                                  "is less than N+K+S count"
                 if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk != "0":

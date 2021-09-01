@@ -111,7 +111,7 @@ class TestIntelISAIO:
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3t_obj.bucket_list()
         for bucket_name in resp[1]:
-            if self.test_config["test_bucket_prefix"] in resp[1]:
+            if self.test_config["test_bucket_prefix"] in bucket_name:
                 resp = self.s3t_obj.delete_bucket(bucket_name, force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Teardown Operations")
@@ -258,6 +258,7 @@ class TestIntelISAIO:
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
 
+    @pytest.mark.run(order=6)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26963")
     def test_26963(self):
@@ -270,6 +271,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26963")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
+    @pytest.mark.run(order=9)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26964")
     def test_26964(self):
@@ -282,6 +284,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26964")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
+    @pytest.mark.run(order=13)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26967")
     def test_26967(self):
@@ -294,6 +297,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26967")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
+    @pytest.mark.run(order=17)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26968")
     def test_26968(self):
@@ -306,6 +310,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("269638")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
+    @pytest.mark.run(order=7)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26969")
     def test_26969(self):
@@ -319,6 +324,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26969")
         self.io_workload(bucket_name)
 
+    @pytest.mark.run(order=10)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26970")
     def test_26970(self):
@@ -332,6 +338,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26970")
         self.io_workload(bucket_name)
 
+    @pytest.mark.run(order=14)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26971")
     def test_26971(self):
@@ -345,6 +352,7 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26971")
         self.io_workload(bucket_name)
 
+    @pytest.mark.run(order=18)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26972")
     def test_26972(self):
