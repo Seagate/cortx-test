@@ -57,14 +57,17 @@ class TestFailureDomain:
         """Setup method: to be executed before each test"""
 
         # Revert VM snapshot for each of the vm nodes
+        '''
         for node in self.node_list:
             self.revert_vm_snapshot(node.hostname)
-
+        '''
+        
     def revert_vm_snapshot(self, vm_hostname):
         cmd_line = self.cft_test_cfg["revert_vm_command"]
         self.log.info("Reverting snapshot of VM %s", vm_hostname)
         cmd_line = cmd_line + " -u=" + str(self.vm_username)
         cmd_line = cmd_line + " -p=" + str(self.vm_passwd)
+        cmd_line = cmd_line + vm_hostname
         resp = system_utils.execute_cmd(cmd_line)
         assert_utils.assert_true(resp[0], resp[1])
 
