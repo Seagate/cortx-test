@@ -389,6 +389,7 @@ class TestAuditLogs:
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.skip(reason="EOS-24246 open against F-44A feature.")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22361')
@@ -442,6 +443,7 @@ class TestAuditLogs:
         self.log.info("ENDED: Test single sort by user parameters on view , download operation"
                       " on S3 audit log.")
 
+    @pytest.mark.skip(reason="EOS-24246 open against F-44A feature.")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22360')
@@ -482,6 +484,7 @@ class TestAuditLogs:
         self.log.info("ENDED: Test single sort by timestamp parameters on view , download "
                       "operation on S3 audit log.")
 
+    @pytest.mark.skip(reason="EOS-24246 open against F-44A feature.")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22359')
@@ -541,6 +544,7 @@ class TestAuditLogs:
         self.log.info("ENDED: Test single sort by response code parameters on view , download "
                       "operation on S3 audit log")
 
+    @pytest.mark.skip(reason="EOS-24246 open against F-44A feature.")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22358')
