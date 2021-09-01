@@ -41,7 +41,8 @@ def create_db_entry(
     password: str,
     mgmt_vip: str,
     admin_user: str,
-        admin_passwd: str) -> str:
+    admin_passwd: str,
+    node_obj) -> str:
     """
     Creation of new host entry in database.
     :param str hostname: hostnames of all the nodes
@@ -50,10 +51,13 @@ def create_db_entry(
     :param str mgmt_vip: csm mgmt vip
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
+    :param node_obj: node helper object to run cmd and get IPs
     :return: Target name
     """
     json_file = config['default']['setup_entry_json']
     new_setupname = os.getenv("Target_Node")
+    cmd = "cat /etc/hosts"
+    output_host = node_obj.execute_cmd(cmd, read_lines=True)
     LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
     with open(json_file, 'r') as file:
         json_data = json.load(file)
@@ -76,6 +80,14 @@ def create_db_entry(
         node_info["hostname"] = host
         node_info["username"] = username
         node_info["password"] = password
+        for line in output_host:
+            if f"srvnode-{count}.mgmt.public" in line:
+                node_info["ip"] = line.split()[0]
+                node_info["mgmt_ip"] = line.split()[0]
+            if f"srvnode-{count}.data.public" in line:
+                node_info["public_data_ip"] = line.split()[0]
+            if f"srvnode-{count}.data.private" in line:
+                node_info["private_data_ip"] = line.split()[0]
         node.update(node_info)
         nodes.append(node)
 
@@ -176,7 +188,8 @@ def main():
         password=args.password,
         mgmt_vip=args.mgmt_vip,
         admin_user=admin_user,
-        admin_passwd=admin_passwd)
+        admin_passwd=admin_passwd,
+        node_obj=nd_obj_host)
     print("target_name: %s", setupname)
     client_conf.run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:

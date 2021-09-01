@@ -107,7 +107,7 @@ def logger():
     """
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(Globals.LOG_LEVEL)
     cortxlogging.init_loghandler(logger)
     return logger
 
@@ -439,23 +439,30 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    reset_imported_module_log_level()
+    reset_imported_module_log_level(session)
 
 
-def reset_imported_module_log_level():
+def reset_imported_module_log_level(session):
     """Reset logging level of imported modules.
     Add check for imported module logger.
     """
+    log_level = session.config.option.log_cli_level
+    if not log_level:
+        log_level = 10  # default=10 for pytest direct invocation without log cli level
+    else:
+        log_level = int(log_level)
+    log_level = logging.getLevelName(log_level)
+    Globals.LOG_LEVEL = log_level
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
+        # Handle Place holders logging
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
         if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
-    # Handle Place holders logging
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
-        logging.getLogger(pkg).setLevel(logging.WARNING)
+        logging.getLogger(pkg).setLevel(log_level)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -991,7 +998,7 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def get_db_cfg(request):
     from config import S3_CFG
     if request.config.getoption('--target'):

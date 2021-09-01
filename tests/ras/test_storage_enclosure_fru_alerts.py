@@ -183,7 +183,8 @@ class TestStorageAlerts:
 
         LOGGER.info(
             "Removing file %s", self.cm_cfg["file"]["sspl_log_file"])
-        self.node_obj.remove_file(filename=self.cm_cfg["file"]["sspl_log_file"])
+        self.node_obj.remove_remote_file(
+            filename=self.cm_cfg["file"]["sspl_log_file"])
 
         if self.start_msg_bus:
             LOGGER.info("Terminating the process read_message_bus.py")
@@ -193,7 +194,7 @@ class TestStorageAlerts:
                      self.cm_cfg["file"]["screen_log"]]
             for file in files:
                 LOGGER.info("Removing log file %s from the Node", file)
-                self.node_obj.remove_file(filename=file)
+                self.node_obj.remove_remote_file(filename=file)
 
         LOGGER.info("Restarting SSPL service")
         service = self.cm_cfg["service"]

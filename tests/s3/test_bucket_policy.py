@@ -113,6 +113,7 @@ class TestBucketPolicy:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
         self.delete_accounts(self.account_list)
+        del self.rest_obj
         self.log.info("ENDED: Test teardown operations.")
 
     def delete_accounts(self, accounts):
@@ -2593,7 +2594,7 @@ class TestBucketPolicy:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.tags("TEST-6075")
+    @pytest.mark.tags("TEST-6057")
     @CTFailOn(error_handler)
     def test_691(self):
         """Test principal arn combination with account-id."""
