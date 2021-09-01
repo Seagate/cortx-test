@@ -32,16 +32,16 @@ from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from config import S3_CFG
+from commons import cortxlogging
 from commons import configmanager
 from commons.constants import Rest as const
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons import cortxlogging
 from commons.exceptions import CTException
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_common_test_lib import perform_s3_io
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 
 class TestAuditLogs:
@@ -398,7 +398,7 @@ class TestAuditLogs:
                       " on S3 audit log.")
         start_time = int(time.time()) - self.epoc_time_diff
         self.log.info("Step 1: Create 10 S3 users.")
-        for i in range(10):
+        for _ in range(10):
             s3_user = self.s3_account_prefix.format(perf_counter_ns())
             resp = create_s3_acc(s3_user, self.s3_email_prefix.format(s3_user), self.s3acc_passwd)
             assert_utils.assert_true(resp[0], f"Failed to create s3 account, resp: {resp[1]}")
@@ -461,8 +461,9 @@ class TestAuditLogs:
             s3_bkt = self.s3_bucket_prefix.format(perf_counter_ns())
             self.log.info("Step 2: Login using S3 user and create bucket.")
             resp = s3_obj.create_bucket(s3_bkt)
-            assert_utils.assert_true(resp[0], f"Failed to create s3 bucket, resp: {resp}")
             bkt_create_time = int(time.time())
+            self.log.info(bkt_create_time)
+            assert_utils.assert_true(resp[0], f"Failed to create s3 bucket, resp: {resp}")
             self.log.info(
                 "Step 3: Perform create a bucket after every 60 seconds for the specified"
                 "number of mins. Make a note of the time stamp when the bucket was created.")
@@ -580,7 +581,7 @@ class TestAuditLogs:
         params = {"start_date": start_time, "end_date": end_time, 'sortby': "user"}
         resp = self.audit_logs.verify_audit_logs_s3_show(
             params=params, validate_expected_response=True)
-        assert_utils.assert_true(resp, f"Failed to sort s3 audit log by user.")
+        assert_utils.assert_true(resp, "Failed to sort s3 audit log by user.")
         self.log.info("Step 6: Download CSM audit log is sorted by User")
         assert self.audit_logs.verify_audit_logs_csm_download(
             params=params, validate_expected_response=True, response_type=str)

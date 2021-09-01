@@ -296,12 +296,12 @@ class RestAuditLogs(RestTestLib):
                 for element in response["logs"]:
                     if bucket:
                         if bucket == element["bucket"]:
-                            if "REST.PUT.BUCKET" == element["operation"]:
+                            if element["operation"] == "REST.PUT.BUCKET":
                                 self.log.info(
                                     "Verifying bucket specific parameters for"
                                     "bucket %s in the audit log", bucket)
                                 verification_status = True
-                                if "SigV4" != element["signature_version"]:
+                                if element["signature_version"] != "SigV4":
                                     self.log.debug(
                                         "Operation parameter value returned is:"
                                         " %s", element)
@@ -313,7 +313,7 @@ class RestAuditLogs(RestTestLib):
                                     self.log.info(
                                         "Operation parameter value matched with"
                                         " the expected Operation")
-                                if f"{bucket}/" != element["key"]:
+                                if element["key"] != f"{bucket}/":
                                     self.log.debug(
                                         "Key parameter value returned is: %s", element["key"])
                                     self.log.error(
@@ -334,10 +334,11 @@ class RestAuditLogs(RestTestLib):
                                     self.log.info(
                                         "Request URI parameter value matched "
                                         "with the expected Request URI")
-                                if verification_status and element["http_status"] == expected_status_code:
+                                if (verification_status
+                                        and element["http_status"] == expected_status_code):
                                     return verification_status
 
-                                # Commenting below code till EOS-14998 is resolved #----------------#
+                                # Commenting below code till EOS-14998 is resolved #--------------#
                                 # if item[10] != 200:
                                 #     self.log.debug(
                                 #         "HTTP status parameter value returned"
