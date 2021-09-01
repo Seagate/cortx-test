@@ -24,15 +24,16 @@ import logging
 import os
 import time
 import pytest
+import time
 from commons import cortxlogging
 from commons.utils import config_utils
 from commons.constants import SwAlerts as const
 from commons import constants as cons
-from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.csm.rest.csm_rest_alert import SystemAlerts
+from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.ras.sw_alerts import SoftwareAlert
 
 
@@ -65,8 +66,6 @@ class TestCsmLoad():
         cls.default_cpu_usage = False
 
     def teardown_method(self):
-        """Teardown method
-        """
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -192,19 +191,19 @@ class TestCsmLoad():
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+                                    url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         self.log.info("\nCPU usage fault is created successfully.\n")
 
         self.log.info("\nStep 2: Keep the CPU usage above threshold for %s seconds.",
-                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         time.sleep(RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         self.log.info("\nStep 2: CPU usage was above threshold for %s seconds.\n",
-                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
-        resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
+        resp = self.csm_alert_obj.wait_for_alert(60,
                                                  starttime,
                                                  const.AlertType.FAULT,
                                                  False,
@@ -214,7 +213,7 @@ class TestCsmLoad():
 
         jmx_file = "CSM_Concurrent_alert.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        resp = self.jmx_obj.run_jmx(jmx_file,
+        resp = self.jmx_obj.run_jmx(jmx_file, 
                                     threads=test_cfg["threads"],
                                     rampup=test_cfg["rampup"],
                                     loop=test_cfg["loop"])
@@ -230,13 +229,13 @@ class TestCsmLoad():
         self.default_cpu_usage = False
 
         self.log.info("\nStep 2: Keep the CPU usage above threshold for %s seconds.",
-                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         time.sleep(RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         self.log.info("\nStep 2: CPU usage was above threshold for %s seconds.\n",
-                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
-        resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
+        resp = self.csm_alert_obj.wait_for_alert(60,
                                                  starttime,
                                                  const.AlertType.FAULT,
                                                  True,
