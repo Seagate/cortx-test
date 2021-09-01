@@ -27,13 +27,13 @@ import logging
 import shutil
 import subprocess
 from time import perf_counter_ns, time, sleep
+from multiprocessing import Process
 from commons import pswdmanager
 from commons.helpers.node_helper import Node
-from commons.utils import  config_utils
+from commons.utils import config_utils
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
-from multiprocessing import Process
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -123,7 +123,9 @@ def test_preboarding():
     """
     Test for verifying csm pre-boarding using restapi
     """
-    admin_user = os.getenv('ADMIN_USR', pswdmanager.decrypt(config['csmboarding']['username']))
+    admin_user = os.getenv(
+        'ADMIN_USR', pswdmanager.decrypt(
+            config['csmboarding']['username']))
     old_passwd = pswdmanager.decrypt(config['csmboarding']['password'])
     new_passwd = os.getenv('ADMIN_PWD', old_passwd)
     resp = config_chk.preboarding(admin_user, old_passwd, new_passwd)
@@ -145,26 +147,38 @@ def create_support_bundle(node, username, password, remote_dir, local_dir):
         node_obj.remove_dir(remote_dir)
     node_obj.create_dir_sftp(remote_dir)
     LOGGER.info("Generating support bundle on node %s", node)
-    node_obj.execute_cmd("/usr/bin/sspl_bundle_generate support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("/usr/bin/manifest_support_bundle support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("/opt/seagate/cortx/motr/libexec/m0reportbug-bundler support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("/opt/seagate/cortx/hare/bin/hare_setup support_bundle support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("/opt/seagate/cortx/provisioner/cli/provisioner-bundler support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("cortx support_bundle create support_bundle {}".format(remote_dir))
-    node_obj.execute_cmd("cortxcli csm_bundle_generate csm support_bundle {}".format(remote_dir))
+    node_obj.execute_cmd(
+        "/usr/bin/sspl_bundle_generate support_bundle {}".format(remote_dir))
+    node_obj.execute_cmd(
+        "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh support_bundle {}".format(
+            remote_dir))
+    node_obj.execute_cmd(
+        "/usr/bin/manifest_support_bundle support_bundle {}".format(remote_dir))
+    node_obj.execute_cmd(
+        "/opt/seagate/cortx/motr/libexec/m0reportbug-bundler support_bundle {}".format(remote_dir))
+    node_obj.execute_cmd(
+        "/opt/seagate/cortx/hare/bin/hare_setup support_bundle support_bundle {}".format(
+            remote_dir))
+    node_obj.execute_cmd(
+        "/opt/seagate/cortx/provisioner/cli/provisioner-bundler support_bundle {}".format(
+            remote_dir))
+    node_obj.execute_cmd(
+        "cortx support_bundle create support_bundle {}".format(remote_dir))
+    node_obj.execute_cmd(
+        "cortxcli csm_bundle_generate csm support_bundle {}".format(remote_dir))
 
     LOGGER.info("Copying generated support bundle to local")
     dir_list = node_obj.list_dir(remote_dir)
-    for dir in dir_list:
-        files = node_obj.list_dir(os.path.join(remote_dir, dir))
+    for directory in dir_list:
+        files = node_obj.list_dir(os.path.join(remote_dir, directory))
         for file in files:
             if not os.path.exists(local_dir):
                 os.mkdir(local_dir)
-            if file.endswith(".tar.gz") or file.endswith(".tar.xz") or file.endswith(".tar"):
-                remote_file = os.path.join(remote_dir, dir, file)
+            if file.endswith(".tar.gz") or file.endswith(
+                    ".tar.xz") or file.endswith(".tar"):
+                remote_file = os.path.join(remote_dir, directory, file)
                 local_file = os.path.join(local_dir, file)
-                LOGGER.debug("copying {}".format(remote_file))
+                LOGGER.debug("copying %s", remote_file)
                 node_obj.copy_file_to_local(remote_file, local_file)
 
 
@@ -176,7 +190,10 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
     :param bundle_name: Name of bundle
     :return: None
     """
-    primary_node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"], username=CMN_CFG["nodes"][0]["username"], password=CMN_CFG["nodes"][0]["password"])
+    primary_node_obj = Node(
+        hostname=CMN_CFG["nodes"][0]["hostname"],
+        username=CMN_CFG["nodes"][0]["username"],
+        password=CMN_CFG["nodes"][0]["password"])
     shared_path = "glusterfs://{}".format(remote_dir)
     remote_dir = os.path.join(remote_dir, "support_bundle")
     if primary_node_obj.path_exists(remote_dir):
@@ -195,7 +212,8 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
         node_obj.copy_file_to_remote(temp_conf, cortx_conf)
 
     LOGGER.info("Starting support bundle creation")
-    primary_node_obj.execute_cmd("support_bundle generate {}".format(bundle_name))
+    primary_node_obj.execute_cmd(
+        "support_bundle generate {}".format(bundle_name))
     start_time = time()
     timeout = 1800
     bundle_id = primary_node_obj.list_dir(remote_dir)[0]
@@ -204,8 +222,12 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
     success_msg = "Support bundle generation completed."
     while timeout > time() - start_time:
         sleep(180)
-        status = primary_node_obj.execute_cmd("support_bundle get_status -b {}".format(bundle_id))
-        if status.count(success_msg) == len(CMN_CFG["nodes"]):
+        LOGGER.info("Checking Support Bundle status")
+        status = primary_node_obj.execute_cmd(
+            "support_bundle get_status -b {}".format(bundle_id))
+        if str(status).count(success_msg) == len(CMN_CFG["nodes"]):
+            LOGGER.info(success_msg)
+            LOGGER.info("Archiving and copying Support bundle from server")
             sb_tar_file = "".join([bundle_id, ".tar"])
             remote_sb_path = os.path.join(remote_dir, sb_tar_file)
             local_sb_path = os.path.join(local_dir, sb_tar_file)
@@ -230,9 +252,16 @@ def test_collect_support_bundle():
     for node in CMN_CFG["nodes"]:
         remote_dir = os.path.join("/root", node["host"], "")
         local_dir = os.path.join(bundle_dir, node["host"], "")
-        p = Process(target=create_support_bundle, args=(node["hostname"], node["username"], node["password"], remote_dir, local_dir))
-        p.start()
-        prcs.append(p)
+        proc = Process(
+            target=create_support_bundle,
+            args=(
+                node["hostname"],
+                node["username"],
+                node["password"],
+                remote_dir,
+                local_dir))
+        proc.start()
+        prcs.append(proc)
 
     for prc in prcs:
         prc.join()
