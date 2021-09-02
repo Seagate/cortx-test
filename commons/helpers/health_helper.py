@@ -751,16 +751,17 @@ class Health(Host):
 
         return True
 
-    def check_cortx_cluster_health(self, node, retry=3):
+    @staticmethod
+    def check_cortx_cluster_health(node, retry=3):
         r_try = 1
         hostname = node['hostname']
-        Health(hostname=hostname,
+        health = Health(hostname=hostname,
                username=node['username'],
                password=node['password'])
         while r_try <= retry:
             try:
-                health_result = self.check_node_health(node)
-                ha_result = self.get_sys_capacity()
+                health_result = health.check_node_health(node)
+                ha_result = health.get_sys_capacity()
                 ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
                 capacity_result = ha_used_percent < 98.0
                 if health_result and capacity_result:
