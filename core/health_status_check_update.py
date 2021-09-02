@@ -23,8 +23,6 @@ Utility Class for health status check and update to database
 
 
 import logging
-import socket
-import paramiko
 from urllib.parse import quote_plus
 from pymongo import MongoClient
 from commons.helpers.health_helper import Health
