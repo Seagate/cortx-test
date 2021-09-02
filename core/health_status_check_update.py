@@ -148,9 +148,8 @@ class HealthCheck:
                     continue
             nodes = setup["nodes"]
             for node in nodes:
-                health_result = self.check_cortx_cluster_health(node)
-                storage_result = self.check_cluster_storage(node)
-                if health_result and storage_result:
+                result = Health.check_cortx_cluster_health(node)
+                if result:
                     target_status_dict[setupname] = True
                 else:
                     target_status_dict[setupname] = False
