@@ -215,7 +215,7 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
     primary_node_obj.execute_cmd(
         "support_bundle generate {}".format(bundle_name))
     start_time = time()
-    timeout = 1800
+    timeout = 2700
     bundle_id = primary_node_obj.list_dir(remote_dir)[0]
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)

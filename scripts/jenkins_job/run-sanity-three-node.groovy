@@ -169,7 +169,7 @@ deactivate
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
         		  }
-        		  /* if ( currentBuild.currentResult == "FAILURE" or currentBuild.currentResult == "UNSTABLE" ) {
+        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		      sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
@@ -184,7 +184,7 @@ deactivate
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'cortx.automation@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
@@ -205,7 +205,7 @@ def createJiraIssue() {
                                     "\n h4. Test Details \n"+
                                     "|Cortx build|${CORTX_BUILD}|\n"+
                                     "|Jenkins build|[${JOB_BASE_NAME}#${BUILD_NUMBER} |${BUILD_URL}]|\n"+
-                                    "|Test Plan |${Current_TP}|\n"+
+                                    "|Test Plan |${env.Current_TP}|\n"+
                                     "|Test Results|[${JOB_BASE_NAME}/${BUILD_NUMBER}/testReport|${BUILD_URL}testReport]|\n"+
                                     "|Client Node|${NODE_NAME}|\n"+
                                     "\n\n"+
