@@ -776,7 +776,7 @@ class Health(Host):
                 break
             except BaseException as exec:
                 LOG.warning("{} exception occurred while performing Health check".format(exec))
-                delay = r_try * 2 * 2 * 2
+                delay = pow(r_try, 4)
                 LOG.info("Retrying in {} seconds".format(delay))
                 time.sleep(delay)
                 r_try += 1
