@@ -764,6 +764,7 @@ class Health(Host):
                 ha_result = health.get_sys_capacity()
                 ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
                 capacity_result = ha_used_percent < 98.0
+                health.disconnect()
                 if health_result and capacity_result:
                     return True
                 return False
