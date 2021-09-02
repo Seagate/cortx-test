@@ -84,7 +84,7 @@ class TestAuditLogs:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Test setup and teardown."""
-        self.epoc_time_diff = 6400 # 86400
+        self.epoc_time_diff = self.csm_conf["epoc_time_diff"]
         self.s3_account_prefix = "s3audit-user{}"
         self.s3_email_prefix = "{}@seagate.com"
         self.s3_bucket_prefix = "s3audi-bkt{}"
@@ -436,9 +436,11 @@ class TestAuditLogs:
             params=params, validate_expected_response=True)
         assert_utils.assert_true(resp, "Failed sort s3 audit log by user.")
         self.log.info("Step 6: View, Download CSM audit log is sorted by User.")
+        resp = self.audit_logs.audit_logs_csm_show(params=params)
+        assert_utils.assert_true(resp, "Failed view csm log by user.")
         resp = self.audit_logs.verify_audit_logs_csm_download(
             params=params, validate_expected_response=True, response_type=str)
-        assert_utils.assert_true(resp, "Failed sort s3 audit log by user.")
+        assert_utils.assert_true(resp, "Failed sort csm audit log by user.")
         self.log.info("Step 7: Repeat the above steps for specified number of iterations.")
         self.log.info("ENDED: Test single sort by user parameters on view , download operation"
                       " on S3 audit log.")
