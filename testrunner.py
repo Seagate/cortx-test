@@ -81,7 +81,7 @@ def initialize_loghandler(log, level=logging.DEBUG) -> None:
         os.makedirs(dir_path, exist_ok=True)
     name = os.path.splitext(os.path.basename(__file__))[0]
     name = os.path.join(dir_path, name + '.log')
-    cortxlogging.set_log_handlers(log, name, mode='a')
+    cortxlogging.set_log_handlers(log, name, mode='w')
 
 
 def str_to_bool(val):

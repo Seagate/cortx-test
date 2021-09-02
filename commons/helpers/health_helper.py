@@ -771,13 +771,13 @@ class Health(Host):
                 ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
                 capacity_result = ha_used_percent < 98.0
                 health.disconnect()
-                if health_result and capacity_result:
-                    return True
-                return False
+                break
             except BaseException as exec:
                 LOG.warning("{} exception occurred while performing Health check".format(exec))
-                delay = r_try * 2 * 2
+                delay = r_try * 2 * 2 * 2
                 time.sleep(delay)
                 LOG.info("Retrying in {} seconds".format(delay))
                 r_try += 1
+        if health_result and capacity_result:
+            return True
         return False
