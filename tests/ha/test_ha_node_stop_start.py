@@ -904,11 +904,11 @@ class TestHANodeStartStop:
     @CTFailOn(error_handler)
     def test_node_poweroff_external_power_on(self):
         """
-        This test tests that node can be powered off alobgwith storage from CLI/REST and
+        This test tests that node can be powered off along with storage from REST and
         started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.
         """
         LOGGER.info(
-            "Started: Node can be powered off alobgwith storage from CLI/REST and "
+            "Started: Node can be powered off along with storage from REST and "
             "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
         node = self.system_random.choice(list(range(self.num_nodes)))
         self.restored = False
@@ -1052,5 +1052,5 @@ class TestHANodeStartStop:
         self.restored = True
 
         LOGGER.info(
-            "Completed: Node can be powered off alobgwith storage from CLI/REST and "
+            "Completed: Node can be powered off along with storage from REST and "
             "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
