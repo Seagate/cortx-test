@@ -137,6 +137,19 @@ class TestHANodeFailure:
                         operation='start', resource='node', resource_id=node, login_as={
                             "username": self.csm_user, "password": self.csm_passwd})
                     assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Perform hare reset to reset data and restart cluster.")
+        resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_HARE_RESET,
+                                           hostname=self.host_list[0],
+                                           username=self.username[0],
+                                           password=self.password[0])
+        assert_utils.assert_true(resp, "Hare reset didn't execute.")
+        # TODO: Need to check is any sleep required
+        resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_START_CLSTR,
+                                           hostname=self.host_list[0],
+                                           username=self.username[0],
+                                           password=self.password[0])
+        assert_utils.assert_true(resp, "Cluster did not start.")
+        LOGGER.info("Check cluster is online and all services are started.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
@@ -162,18 +175,6 @@ class TestHANodeFailure:
                 self.s3user_info)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Cleanup: Deleted s3 user accounts.")
-        LOGGER.info("Reset data and check IOs running fine.")
-        resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_HARE_RESET,
-                                    hostname=self.host_list[0],
-                                    username=self.username[0],
-                                    password=self.password[0])
-        assert_utils.assert_true(resp, "Hare reset didn't execute.")
-        # TODO: Need to check is any sleep required
-        resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_START_CLSTR,
-                                           hostname=self.host_list[0],
-                                           username=self.username[0],
-                                           password=self.password[0])
-        assert_utils.assert_true(resp, "Cluster did not start")
         LOGGER.info("COMPLETED: Teardown Operations.")
 
     # pylint: disable-msg=too-many-statements
