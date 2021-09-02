@@ -181,7 +181,7 @@ class TestHANodeFailure:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-26435")
     @CTFailOn(error_handler)
-    def test_node_down_degraded_reads(self):
+    def test_node_poweroff_degraded_reads(self):
         """
         Test to Verify degraded READs after node down - node poweroff (server only)
         """
@@ -301,7 +301,7 @@ class TestHANodeFailure:
     @pytest.mark.ha
     @pytest.mark.tags("TEST-26437")
     @CTFailOn(error_handler)
-    def test_node_down_degraded_reads(self):
+    def test_node_unsafe_shutdown_degraded_reads(self):
         """
         Test to Verify degraded READs after node down - node unsafe shutdown.
         """
