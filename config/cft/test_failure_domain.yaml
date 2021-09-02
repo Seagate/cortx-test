@@ -1,9 +1,7 @@
 deployment_template: "config/prov/three_node_config.ini"
-revert_vm_command: "python3 -u /scripts/ssc_cloud/ssc_vm_ops.py -a revert_vm_snap"
-vm_username: '535790'
-vm_password: 'xyz'
+revert_vm_command: "python3 -u scripts/ssc_cloud/ssc_vm_ops.py -a revert_vm_snap"
+ssc_auth_token: "6028658296b8decc09c0b89c2df21c56"
 test_deployment:
-  config_path_local: 'prov_config.ini'
   jenkins_job_name: 'QA-testing-EC-deployment'
   jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA'
   jenkins_token: 'e0EzNMlS53'

@@ -44,30 +44,27 @@ class TestFailureDomain:
         cls.setup_type = CMN_CFG["setup_type"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
+        cls.host_list = []
         for node in range(cls.num_nodes):
+            cls.host_list.append(CMN_CFG["nodes"][node]["host"])
             cls.node_list.append(Node(hostname=CMN_CFG["nodes"][node]["hostname"],
                                       username=CMN_CFG["nodes"][node]["username"],
                                       password=CMN_CFG["nodes"][node]["password"]))
-        cls.test_config_template = cls.cft_test_cfg["deployment_template"]
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
-        cls.vm_username = cls.cft_test_cfg['vm_username']
-        cls.vm_passwd = cls.cft_test_cfg['vm_password']
+        cls.test_config_template = cls.cft_test_cfg["deployment_template"]
+        cls.ssc_auth_token = cls.cft_test_cfg["ssc_auth_token"]
 
     def setup_method(self):
         """Setup method: to be executed before each test"""
+        self.log.info("Reverting all the VM before deployment")
+        for host in self.host_list:
+            self.revert_vm_snapshot(host)
 
-        # Revert VM snapshot for each of the vm nodes
-        '''
-        for node in self.node_list:
-            self.revert_vm_snapshot(node.hostname)
-        '''
-
-    def revert_vm_snapshot(self, vm_hostname):
+    def revert_vm_snapshot(self, host):
         cmd_line = self.cft_test_cfg["revert_vm_command"]
-        self.log.info("Reverting snapshot of VM %s", vm_hostname)
-        cmd_line = cmd_line + " -u=" + str(self.vm_username)
-        cmd_line = cmd_line + " -p=" + str(self.vm_passwd)
-        cmd_line = cmd_line + vm_hostname
+        self.log.info("Reverting snapshot of VM %s", host)
+        cmd_line = cmd_line + " --host " + str(host)
+        cmd_line = cmd_line + " --token " + str(self.ssc_auth_token)
         resp = system_utils.execute_cmd(cmd_line)
         assert_utils.assert_true(resp[0], resp[1])
 
