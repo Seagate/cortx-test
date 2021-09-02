@@ -50,7 +50,13 @@ def parse_args():
     parser.add_argument("-tg", "--target", type=str,
                         default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
-                        help="log level value")
+                        help="log level value as defined below" +
+                             "CRITICAL = 50" +
+                             "FATAL = CRITICAL" +
+                             "ERROR = 40" +
+                             "WARNING = 30 WARN = WARNING" +
+                             "INFO = 20 DEBUG = 10"
+                        )
     parser.add_argument("-p", "--prc_cnt", type=int, default=2,
                         help="number of parallel processes")
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
@@ -66,9 +72,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def initialize_loghandler(log) -> None:
+def initialize_loghandler(log, level=logging.DEBUG) -> None:
     """Initialize test runner logging with stream and file handlers."""
-    log.setLevel(logging.DEBUG)
+    log.setLevel(level)
     cwd = os.getcwd()
     dir_path = os.path.join(os.path.join(cwd, params.LOG_DIR_NAME, params.LATEST_LOG_FOLDER))
     if not os.path.exists(dir_path):
@@ -107,6 +113,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     is_parallel = "--is_parallel=" + str(parallel_exe)
     log_level = "--log-cli-level=" + str(args.log_level)
+    # we intend to use --log-level instead of cli
+
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
     force_serial_run = force_serial_run + serial_run
@@ -282,7 +290,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         test_meta = list()
         tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
-        tp_meta['environment'] = tp_resp.fields.environment # deprecated
+        tp_meta['environment'] = tp_resp.fields.environment  # deprecated
         c_fields = dict(build=tp_resp.fields.customfield_22980,
                         branch=tp_resp.fields.customfield_22981,
                         plat_type=tp_resp.fields.customfield_22982,
@@ -296,7 +304,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         tp_meta['enclosure_type'] = c_fields['enc_type'][0] if c_fields['enc_type'] else '5U84'
 
         te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
-        te_components = 'Automation' # default
+        te_components = 'Automation'  # default
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -340,7 +348,7 @@ def trigger_runner_process(args, kafka_msg, client):
     lock_task = LockingServer()
     trigger_tests_from_kafka_msg(args, kafka_msg)
     # rerun unexecuted tests in case of parallel execution
-    if kafka_msg.parallel:
+    if kafka_msg.parallel and args.force_serial_run != "True":
         trigger_unexecuted_tests(args, kafka_msg.test_list)
     # Release lock on acquired target.
     lock_released = lock_task.unlock_target(args.target, client)
@@ -367,6 +375,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
 
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
+    LOGGER.debug("Executed tests %s on target %s", kafka_msg.test_list, args.target)
 
 
 def read_selected_tests_csv():
@@ -465,6 +474,7 @@ def get_available_target(kafka_msg, client):
     lock_task = LockingServer()
     acquired_target = ""
     HealthCheck(runner.get_db_credential()).health_check(kafka_msg.target_list)
+    LOGGER.info("Acquiring available target for test execution.")
     while acquired_target == "":
         if kafka_msg.parallel:
             target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
@@ -482,6 +492,7 @@ def get_available_target(kafka_msg, client):
             if seq_target != "":
                 acquired_target = acquire_target(seq_target, client,
                                                  common_cnst.EXCLUSIVE_LOCK)
+    LOGGER.info("Acquired available target %s for test execution.", str(acquired_target))
     return acquired_target
 
 
@@ -587,6 +598,8 @@ def main(args):
 
 if __name__ == '__main__':
     runner.cleanup()
-    initialize_loghandler(LOGGER)
     opts = parse_args()
+    level = opts.log_level
+    level = logging.getLevelName(level)
+    initialize_loghandler(LOGGER, level=level)
     main(opts)
