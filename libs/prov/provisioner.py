@@ -574,6 +574,7 @@ class Provisioner:
         shutil.copyfile(cfg_template, config_file)
         data_disk_per_cvg = int(data_disk)
         cvg_count = int(cvg_cnt)
+
         try:
             if mgmt_vip:
                 config_utils.update_config_ini(
@@ -587,6 +588,7 @@ class Provisioner:
             valid_disk_count = int(sns_data)+int(sns_parity)+int(sns_spare)
             sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
+            LOGGER.info("Configuring SNS pool : %s",sns)
             for key, value in sns.items():
                 config_utils.update_config_ini(
                     config_file,
@@ -594,6 +596,7 @@ class Provisioner:
                     key="storage.durability.sns.{}".format(key),
                     value=value,
                     add_section=False)
+            LOGGER.info("Configuring DIX pool  : %s", dix)
             for key, value in dix.items():
                 config_utils.update_config_ini(
                     config_file,
@@ -602,6 +605,7 @@ class Provisioner:
                     value=value,
                     add_section=False)
             for node_count, node_obj in enumerate(node_obj_list, start=1):
+                LOGGER.info("Configuring CVG for %s",node_obj.hostname)
                 node = "srvnode-{}".format(node_count)
                 hostname = node_obj.hostname
                 device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
@@ -638,13 +642,15 @@ class Provisioner:
                 config_utils.update_config_ini(
                     config_file, node, key="hostname", value=hostname, add_section=False)
                 for cvg in range(0, cvg_count):
-                    LOGGER.info("cvg no is %s", cvg)
+                    LOGGER.info("CVG : %s", cvg)
+                    LOGGER.info("Updating Data Devices: %s",data_devices[cvg])
                     config_utils.update_config_ini(
                         config_file,
                         node,
                         key="storage.cvg.{}.data_devices".format(cvg),
                         value=data_devices[cvg],
                         add_section=False)
+                    LOGGER.info("Updating Metadata Devices: %s",metadata_devices[cvg])
                     config_utils.update_config_ini(
                         config_file,
                         node,

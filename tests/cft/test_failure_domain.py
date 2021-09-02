@@ -61,7 +61,7 @@ class TestFailureDomain:
         for node in self.node_list:
             self.revert_vm_snapshot(node.hostname)
         '''
-        
+
     def revert_vm_snapshot(self, vm_hostname):
         cmd_line = self.cft_test_cfg["revert_vm_command"]
         self.log.info("Reverting snapshot of VM %s", vm_hostname)
@@ -140,15 +140,15 @@ class TestFailureDomain:
         Perform deployment with Invalid config and expect failure
         datapool : N+K+S : 6+2+0, data device per cvg: 1
         """
-        assert_utils.assert_length(sns_config, 3)
+        assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               cvg_count_per_node=cvg_count_per_node,
                                                               data_disk_per_cvg=data_disk_per_cvg,
-                                                              sns_data=sns_config[0],
-                                                              sns_parity=sns_config[1],
-                                                              sns_spare=sns_config[2],
+                                                              sns_data=str(sns_config[0]),
+                                                              sns_parity=str(sns_config[1]),
+                                                              sns_spare=str(sns_config[2]),
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
@@ -166,16 +166,17 @@ class TestFailureDomain:
         Data Devices per CVG: 7
         Metadata Device per CVG : 1
         """
-        assert_utils.assert_length(sns_config, 3)
+        assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               cvg_count_per_node=cvg_count_per_node,
                                                               data_disk_per_cvg=data_disk_per_cvg,
-                                                              sns_data=sns_config[0],
-                                                              sns_parity=sns_config[1],
-                                                              sns_spare=sns_config[2])
+                                                              sns_data=str(sns_config[0]),
+                                                              sns_parity=str(sns_config[1]),
+                                                              sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(resp[1])
         self.deploy_3node_vm(resp[1])
 
     @pytest.mark.run(order=8)
@@ -191,15 +192,15 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
-        assert_utils.assert_length(sns_config, 3)
+        assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               cvg_count_per_node=cvg_count_per_node,
                                                               data_disk_per_cvg=data_disk_per_cvg,
-                                                              sns_data=sns_config[0],
-                                                              sns_parity=sns_config[1],
-                                                              sns_spare=sns_config[2])
+                                                              sns_data=str(sns_config[0]),
+                                                              sns_parity=str(sns_config[1]),
+                                                              sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.deploy_3node_vm(resp[1])
 
@@ -216,15 +217,15 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
-        assert_utils.assert_length(sns_config, 3)
+        assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               cvg_count_per_node=cvg_count_per_node,
                                                               data_disk_per_cvg=data_disk_per_cvg,
-                                                              sns_data=sns_config[0],
-                                                              sns_parity=sns_config[1],
-                                                              sns_spare=sns_config[2])
+                                                              sns_data=str(sns_config[0]),
+                                                              sns_parity=str(sns_config[1]),
+                                                              sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.deploy_3node_vm(resp[1])
 
@@ -241,14 +242,14 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
-        assert_utils.assert_length(sns_config, 3)
+        assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               cvg_count_per_node=cvg_count_per_node,
                                                               data_disk_per_cvg=data_disk_per_cvg,
-                                                              sns_data=sns_config[0],
-                                                              sns_parity=sns_config[1],
-                                                              sns_spare=sns_config[2])
+                                                              sns_data=str(sns_config[0]),
+                                                              sns_parity=str(sns_config[1]),
+                                                              sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.deploy_3node_vm(resp[1])
