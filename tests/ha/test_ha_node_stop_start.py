@@ -909,7 +909,8 @@ class TestHANodeStartStop:
         """
         LOGGER.info(
             "Started: Node can be powered off along with storage from REST and "
-            "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
+            "started back from BMC/ssc-cloud/PDU and node comes "
+            "back online with admin/manage user.")
         node = self.system_random.choice(list(range(self.num_nodes)))
         self.restored = False
         opt_user = self.system_random.choice(self.user_data)
@@ -993,7 +994,16 @@ class TestHANodeStartStop:
         LOGGER.info(
             "Step 7: Node server from BMC is started.")
         LOGGER.info(
-            "Step 8: Start %s from REST with %s user",
+            "Step 8: Check PCS status and make sure powering on server "
+            "doesn't start services")
+        resp = self.ha_obj.check_pcs_status_resp(
+            node, self.node_list, self.hlt_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 8: PCS shows services stopped for %s, services on other nodes shows started",
+            self.srvnode_list[node])
+        LOGGER.info(
+            "Step 9: Start %s from REST with %s user",
             self.srvnode_list[node],
             opt_user)
         resp = self.ha_rest.perform_cluster_operation(
@@ -1003,11 +1013,11 @@ class TestHANodeStartStop:
             login_as={"username": opt_user, "password": self.csm_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
-            "Step 8: Started the %s from REST with %s user",
+            "Step 9: Started the %s from REST with %s user",
             self.srvnode_list[node],
             opt_user)
         LOGGER.info(
-            "Step 9: Check that the node server %s can ping enclosure.",
+            "Step 10: Check that the node server %s can ping enclosure.",
             self.srvnode_list[node])
         resp_encl1 = system_utils.run_remote_cmd(
             cmd=cmds.CMD_PING.format("10.0.0.2"), hostname=self.host_list[node],
@@ -1020,10 +1030,10 @@ class TestHANodeStartStop:
             password=self.password[node])
         assert_utils.assert_true(resp_encl2[0], resp_encl2[1])
         LOGGER.info(
-            "Step 9: Node server %s can ping enclosure.",
+            "Step 10: Node server %s can ping enclosure.",
             self.srvnode_list[node])
         LOGGER.info(
-            "Step 9: Check health status for %s shows online with REST & PCS status clean",
+            "Step 11: Check health status for %s shows online with REST & PCS status clean",
             self.srvnode_list[node])
         resp = self.ha_rest.check_csr_health_status_rest("online")
         assert_utils.assert_true(resp[0], resp[1])
@@ -1034,23 +1044,24 @@ class TestHANodeStartStop:
             resp = hlt_obj.check_node_health()
             assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
-            "Step 9: Verified %s health status shows online and PCS is clean",
+            "Step 11: Verified %s health status shows online and PCS is clean",
             self.srvnode_list[node])
         LOGGER.info(
-            "Step 10: Check the IEM fault resolved alert for node up")
+            "Step 12: Check the IEM fault resolved alert for node up")
         resp = self.csm_alerts_obj.verify_csm_response(
             self.starttime, self.alert_type["resolved"], True, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
         self.starttime = time.time()
         LOGGER.info(
-            "Step 10: Verified the IEM fault resolved alert for node up")
-        LOGGER.info("Step 11: Check DI for IOs run.")
+            "Step 12: Verified the IEM fault resolved alert for node up")
+        LOGGER.info("Step 13: Check DI for IOs run.")
         resp = self.ha_obj.perform_ios_ops(
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: Verified DI for IOs run.")
+        LOGGER.info("Step 13: Verified DI for IOs run.")
         self.restored = True
 
         LOGGER.info(
             "Completed: Node can be powered off along with storage from REST and "
-            "started back from BMC/ssc-cloud/PDU and node comes back online with admin/manage user.")
+            "started back from BMC/ssc-cloud/PDU and node comes "
+            "back online with admin/manage user.")
