@@ -22,17 +22,17 @@
 
 import logging
 import os
-import pytest
 import time
+import pytest
 from commons import cortxlogging
 from commons.utils import config_utils
 from commons.constants import SwAlerts as const
 from commons import constants as cons
+from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.jmeter.jmeter_integration import JmeterInt
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_stats import SystemStats
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from config import CSM_REST_CFG, CMN_CFG, RAS_VAL
 from libs.ras.sw_alerts import SoftwareAlert
 
 
@@ -65,6 +65,8 @@ class TestCsmLoad():
         cls.default_cpu_usage = False
 
     def teardown_method(self):
+        """Teardown method
+        """
         if self.default_cpu_usage:
             self.log.info("\nStep 4: Resolving CPU usage fault. ")
             self.log.info("Updating default CPU usage threshold value")
@@ -88,7 +90,6 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -101,17 +102,17 @@ class TestCsmLoad():
         test_cfg = self.test_cfgs["test_22203"]
         fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
         content = []
-        fieldnames = ["role","user","pswd"]
-        content.append({fieldnames[0]:"admin",
-                    fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
-                    fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
-        content.append({fieldnames[0]:"manage",
-                    fieldnames[1]: CSM_REST_CFG["csm_user_manage"]["username"],
-                    fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
-        content.append({fieldnames[0]:"monitor",
-                    fieldnames[1]: CSM_REST_CFG["csm_user_monitor"]["username"],
-                    fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
-        content.append({fieldnames[0]:"s3",
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "manage",
+                        fieldnames[1]: CSM_REST_CFG["csm_user_manage"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
+        content.append({fieldnames[0]: "monitor",
+                        fieldnames[1]: CSM_REST_CFG["csm_user_monitor"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
+        content.append({fieldnames[0]: "s3",
                         fieldnames[1]: CSM_REST_CFG["s3account_user"]["username"],
                         fieldnames[2]: CSM_REST_CFG["s3account_user"]["password"]})
         self.log.info("Test data file path : %s", fpath)
@@ -119,7 +120,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -136,10 +141,13 @@ class TestCsmLoad():
         test_cfg = self.test_cfgs["test_22204"]
         jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
-
 
     @pytest.mark.jmeter
     @pytest.mark.csmrest
@@ -163,7 +171,11 @@ class TestCsmLoad():
         config_utils.write_csv(fpath, fieldnames, content)
         jmx_file = "CSM_Concurrent_Performance.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -180,16 +192,16 @@ class TestCsmLoad():
         self.log.info("\nGenerate CPU usage fault.")
         starttime = time.time()
         self.default_cpu_usage = self.sw_alert_obj.get_conf_store_vals(
-                                    url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
+            url=cons.SSPL_CFG_URL, field=cons.CONF_CPU_USAGE)
         resp = self.sw_alert_obj.gen_cpu_usage_fault_thres(test_cfg["delta_cpu_usage"])
         assert resp[0], resp[1]
         self.log.info("\nCPU usage fault is created successfully.\n")
 
         self.log.info("\nStep 2: Keep the CPU usage above threshold for %s seconds.",
-                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         time.sleep(RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         self.log.info("\nStep 2: CPU usage was above threshold for %s seconds.\n",
-                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(60,
@@ -202,7 +214,7 @@ class TestCsmLoad():
 
         jmx_file = "CSM_Concurrent_alert.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
-        resp = self.jmx_obj.run_jmx(jmx_file, 
+        resp = self.jmx_obj.run_jmx(jmx_file,
                                     threads=test_cfg["threads"],
                                     rampup=test_cfg["rampup"],
                                     loop=test_cfg["loop"])
@@ -218,10 +230,10 @@ class TestCsmLoad():
         self.default_cpu_usage = False
 
         self.log.info("\nStep 2: Keep the CPU usage above threshold for %s seconds.",
-                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         time.sleep(RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
         self.log.info("\nStep 2: CPU usage was above threshold for %s seconds.\n",
-                    RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
+                      RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
         resp = self.csm_alert_obj.wait_for_alert(60,
