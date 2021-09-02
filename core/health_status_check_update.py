@@ -85,51 +85,6 @@ class HealthCheck:
                 collection_obj.update_one(setup_query, {'$set': setup_details})
                 LOGGER.info("Updated health status for target %s", setupname)
 
-    @staticmethod
-    def check_cortx_cluster_health(node):
-        """
-            check target node health status
-            :return True/False
-        """
-        hostname = node['hostname']
-        health = Health(hostname=hostname,
-                        username=node['username'],
-                        password=node['password'])
-        result = True
-        iteration = 1
-        while iteration <= 2:
-            try:
-                result = health.check_node_health(node)
-                health.disconnect()
-                break
-            except (socket.error, IOError, paramiko.SSHException):
-                result = False
-                iteration += 1
-        return result
-
-    @staticmethod
-    def check_cluster_storage(node):
-        """
-            check target storage status
-            :return True/False
-        """
-        hostname = node['hostname']
-        health = Health(hostname=hostname,
-                        username=node['username'],
-                        password=node['password'])
-        iteration = 1
-        while iteration <= 2:
-            try:
-                ha_result = health.get_sys_capacity()
-                ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
-                result = ha_used_percent < 98.0
-                health.disconnect()
-                break
-            except (socket.error, IOError, paramiko.SSHException):
-                result = False
-                iteration += 1
-        return result
-
     def health_check(self, targets):
         """
             accept targets

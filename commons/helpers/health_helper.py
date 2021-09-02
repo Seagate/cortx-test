@@ -753,6 +753,12 @@ class Health(Host):
 
     @staticmethod
     def check_cortx_cluster_health(node, retry=3):
+        """
+        :param node: node of a cluster
+        :param retry: number of attempts to perform health check
+        :return bool
+        :True for healthy
+        """
         r_try = 1
         hostname = node['hostname']
         health = Health(hostname=hostname,
