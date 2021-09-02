@@ -162,10 +162,10 @@ test_5018:
     message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
   invalid_password_role_resp_1:
     error_code: "4099"
-    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
   invalid_password_role_resp_2:
     error_code: "4099"
-    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
 test_1173:
   data: 
     - "Testuser@12345"
