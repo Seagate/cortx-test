@@ -764,6 +764,8 @@ class Health(Host):
         health = Health(hostname=hostname,
                username=node['username'],
                password=node['password'])
+        health_result = False
+        capacity_result = False
         while r_try <= retry:
             try:
                 health_result = health.check_node_health(node)
@@ -775,8 +777,8 @@ class Health(Host):
             except BaseException as exec:
                 LOG.warning("{} exception occurred while performing Health check".format(exec))
                 delay = r_try * 2 * 2 * 2
-                time.sleep(delay)
                 LOG.info("Retrying in {} seconds".format(delay))
+                time.sleep(delay)
                 r_try += 1
         if health_result and capacity_result:
             return True
