@@ -179,8 +179,8 @@ deactivate
                         jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
                         echo "${jira_issue}"
-                      }
-                  } */
+                      } */
+                  }
 		     }
 
 			catchError(stageResult: 'FAILURE') {
