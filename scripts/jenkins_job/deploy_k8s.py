@@ -22,21 +22,17 @@
 Script to deploy k8s on VM
 """
 
-
 import configparser
-import logging
 import argparse
 import time
-from commons import commands as common_cmds
 from commons.helpers.node_helper import Node
+from commons import commands as cmn_cmd
 
 
 # Global Constants
-config_file = 'scripts/jenkins_job/config.ini'
-config = configparser.ConfigParser()
-config.read(config_file)
-LOGGER = logging.getLogger(__name__)
-encoding = "utf-8"
+CONFIG_FILE = 'scripts/jenkins_job/config.ini'
+CONFIG = configparser.ConfigParser()
+CONFIG.read(CONFIG_FILE)
 
 
 def configure_k8s_repo(*hostname, username, password):
@@ -45,14 +41,15 @@ def configure_k8s_repo(*hostname, username, password):
     """
     for host in hostname:
         nd_obj = Node(hostname=host, username=username, password=password)
-        LOGGER.info("Disabling SELINUX \n")
+        print("Disabling SELINUX \n")
         resp = nd_obj.execute_cmd(cmd="setenforce 0", read_lines=True, exc=False)
         if resp:
-            LOGGER.info("The selinux is already disabled \n")
-        cmd = "sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux"
-        LOGGER.info("Setting selinux 0 \n")
+            print("The selinux is already disabled \n")
+        cmd = "sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g'" \
+              " /etc/sysconfig/selinux"
+        print("Setting selinux 0 \n")
         nd_obj.execute_cmd(cmd=cmd, read_lines=False)
-        LOGGER.info("Configuring the yum repo for k8s \n")
+        print("Configuring the yum repo for k8s \n")
         cmd = "cat <<EOF > /etc/yum.repos.d/kubernetes.repo \n"\
               "[kubernetes]\n"\
               "name=Kubernetes\n"\
@@ -64,17 +61,17 @@ def configure_k8s_repo(*hostname, username, password):
               " https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \n"\
               "EOF"
         nd_obj.execute_cmd(cmd=cmd, read_lines=False)
-        LOGGER.info("Installing kubeadm \n")
+        print("Installing kubeadm \n")
         nd_obj.execute_cmd(cmd="yum install kubeadm docker -y", read_lines=True)
-        LOGGER.info("enabling kubelet \n")
+        print("enabling kubelet \n")
         nd_obj.execute_cmd(cmd="systemctl enable kubelet", read_lines=True)
-        LOGGER.info("starting kubelet \n")
+        print("starting kubelet \n")
         nd_obj.execute_cmd(cmd="systemctl start kubelet", read_lines=True)
-        LOGGER.info("enabling docker \n")
+        print("enabling docker \n")
         nd_obj.execute_cmd(cmd="systemctl enable docker", read_lines=True)
-        LOGGER.info("starting docker \n")
+        print("starting docker \n")
         nd_obj.execute_cmd(cmd="systemctl start docker", read_lines=True)
-        LOGGER.info("Disabling the swap")
+        print("Disabling the swap")
         nd_obj.execute_cmd(cmd="swapoff -a", read_lines=True)
 
 
@@ -84,16 +81,16 @@ def initialize_k8s(host, username, password):
     """
     nd_obj = Node(hostname=host, username=username, password=password)
     cmd = "kubeadm init"
-    LOGGER.info("Initialize the kubeadm\n")
+    print("Initialize the kubeadm\n")
     result = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
     out = str("".join(result[-2:]))
     out_list = "".join(out.split("\\")).split("--")
     join_cmd = [x.strip() for x in out_list]
     join_cmd = " --".join(join_cmd)
-    LOGGER.info("The final o/p is %s", join_cmd)
-    LOGGER.info("Creating the dir .kube")
+    print("The final o/p is %s", join_cmd)
+    print("Creating the dir .kube")
     nd_obj.execute_cmd(cmd="mkdir -p $HOME/.kube", read_lines=False, exc=False)
-    LOGGER.info("Copying file to the dir .kube")
+    print("Copying file to the dir .kube")
     nd_obj.execute_cmd(cmd="\\cp -i /etc/kubernetes/admin.conf $HOME/.kube/config",
                        read_lines=False, exc=False)
     nd_obj.execute_cmd(cmd="chown $(id -u):$(id -g) $HOME/.kube/config",
@@ -106,16 +103,21 @@ def create_network(host, username, password):
     Test function to create the pod network
     """
     nd_obj = Node(hostname=host, username=username, password=password)
-    resp = nd_obj.execute_cmd(cmd="export kubever=$(kubectl version | base64 | tr -d '\n') && echo $kubever",
+    resp = nd_obj.execute_cmd(cmd="export kubever=$(kubectl version | base64 | tr -d '\n')"
+                                  " && echo $kubever",
                               read_lines=True, exc=False)
 
     if resp[0]:
-        cmd = "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version={}".format(resp[0])
+        cmd = "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version={}"\
+            .format(resp[0])
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=False, exc=False)
-        LOGGER.info("The o/p of network cmd is %s", resp)
+        print("The o/p of network cmd is %s", resp)
 
 
 def get_node_status(host, username, password):
+    """
+    This function fetches the node status
+    """
     nd_obj = Node(hostname=host, username=username, password=password)
     count = 1
     while count <= 6:
@@ -124,11 +126,11 @@ def get_node_status(host, username, password):
                                        exc=False)
         resp_node = resp_node.decode() if isinstance(resp_node, bytes) else resp_node
         nodes_status = resp_node.strip().split("\n")
-        LOGGER.info("The output of get nodes is %s", nodes_status)
-        if "NotReady" in nodes_status:
-            count += 1
-            time.sleep(10)
-        return nodes_status
+        print("The output of get nodes is %s", nodes_status)
+        if "Ready" in nodes_status:
+            return nodes_status
+        count += 1
+        time.sleep(10)
 
 
 def join_cluster(*hostname, username, password, cmd):
@@ -138,7 +140,7 @@ def join_cluster(*hostname, username, password, cmd):
     for host in hostname[1:]:
         nd_obj = Node(hostname=host, username=username, password=password)
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
-        LOGGER.info("The join cmd o/p is %s", resp)
+        print("The join cmd o/p is %s", resp)
 
 
 def main(args):
@@ -150,8 +152,8 @@ def main(args):
     username = args.username
     password = args.password
 
-    remote_hosts_org = config['default']['etc_host']
-    local_copy_hosts = config['default']['etc_host_tmp']
+    remote_hosts_org = CONFIG['default']['etc_host']
+    local_copy_hosts = CONFIG['default']['etc_host_tmp']
     host_ip_dict = {}
 
     if not hosts_ip:
@@ -160,7 +162,6 @@ def main(args):
             result = nd_obj.execute_cmd(cmd="ifconfig eth0", read_lines=True)
             test_list = result[1].split(" ")
             test_list = [i for i in test_list if i]
-            LOGGER.info(test_list[1])
             host_ip_n = {test_list[1]: host}
             host_ip_dict.update(host_ip_n)
 
@@ -172,26 +173,28 @@ def main(args):
     for host in nodes:
         nd_obj = Node(hostname=host, username=username, password=password)
         nd_obj.copy_file_to_local(remote_hosts_org, local_copy_hosts)
-        with open(local_copy_hosts, "a") as f:
+        with open(local_copy_hosts, "a") as file:
             for key, value in host_ip_dict.items():
                 line = " ".join([key, value])
-                f.write(line)
-                f.write("\n")
-                nd_obj.execute_cmd(common_cmds.CMD_PING.format(key), read_lines=True)
+                file.write(line)
+                file.write("\n")
+                nd_obj.execute_cmd(cmn_cmd.CMD_PING.format(key), read_lines=True)
         nd_obj.copy_file_to_remote(local_copy_hosts, remote_hosts_org)
     configure_k8s_repo(*nodes, username=username, password=password)
     result = initialize_k8s(nodes[0], username=username, password=password)
-    LOGGER.info("The token is %s", result[1])
+    print("The token is %s", result[1])
     create_network(nodes[0], username=username, password=password)
     status = get_node_status(nodes[0], username=username, password=password)
-    LOGGER.info("The stat is %s", status)
+    print("The stat is %s", status)
     if "Ready" in status:
-        LOGGER.info("Adding the worker node to master node")
+        print("Adding the worker node to master node")
         join_cluster(*nodes, username=username, password=password, cmd=result[1])
     status_all = get_node_status(nodes[0], username=username, password=password)
     if "NotReady" in status_all:
-        LOGGER.info("Please check after some time, the nodes status is %s", status_all)
-    LOGGER.info("Successfully deployed the k8s , Please run \"kubectl get nodes cmd\"")
+        print("Please check after some time,"
+              "the nodes status is %s", status_all)
+    print("Successfully deployed the k8s ,"
+          "Please run \"kubectl get nodes cmd\"")
 
 
 def parse_args():
@@ -200,7 +203,8 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(
         description="Multinode server and k8s configuration")
-    parser.add_argument("-nodes", "--nodes", help="hostnames for each node", nargs="+")
+    parser.add_argument("-nodes", "--nodes",
+                        help="hostnames for each node", nargs="+")
     parser.add_argument("-username", "--username", type=str,
                         help="username for nodes", required=True)
     parser.add_argument("-password", "--password", type=str,
@@ -213,4 +217,3 @@ def parse_args():
 if __name__ == '__main__':
     opts = parse_args()
     main(opts)
-
