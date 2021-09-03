@@ -27,9 +27,9 @@ import pytest
 from commons import configmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from libs.prov.provisioner import Provisioner
-from commons.utils import system_utils
 
 
 class TestFailureDomain:
@@ -55,12 +55,14 @@ class TestFailureDomain:
         cls.ssc_auth_token = cls.cft_test_cfg["ssc_auth_token"]
 
     def setup_method(self):
-        """Setup method: to be executed before each test"""
+        """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
         for host in self.host_list:
             self.revert_vm_snapshot(host)
 
     def revert_vm_snapshot(self, host):
+        """Revert VM snapshot
+           host: VM name """
         cmd_line = self.cft_test_cfg["revert_vm_command"]
         self.log.info("Reverting snapshot of VM %s", host)
         cmd_line = cmd_line + " --host " + str(host)
@@ -69,6 +71,9 @@ class TestFailureDomain:
         assert_utils.assert_true(resp[0], resp[1])
 
     def deploy_3node_vm(self, config_file_path: str = None, expect_failure: bool = False):
+        """
+        Deploy 3 node using jenkins job
+        """
         test_cfg = self.cft_test_cfg["test_deployment"]
         self.log.info("Adding data required for the jenkins job execution")
         parameters = dict()

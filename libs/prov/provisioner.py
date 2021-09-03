@@ -33,7 +33,6 @@ from commons import params as prm
 from commons import pswdmanager
 from commons.utils import config_utils
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -557,7 +556,7 @@ class Provisioner:
         :keyword dix_data: data units value for metadata pool
         :keyword dix_parity: parity units value for metadata pool
         :keyword dix_spare: spare units value for metadata pool
-        :keyword skip_disk_count_check: Skip the validation for N+K+S should be less than overall data disks
+        :keyword skip_disk_count_check: Skip the validation for N+K+S < data disks
         :return: True/False and path of created config
         """
         mgmt_vip = kwargs.get("mgmt_vip", None)
@@ -569,7 +568,7 @@ class Provisioner:
         dix_data = kwargs.get("dix_data", "1")
         dix_parity = kwargs.get("dix_parity", "2")
         dix_spare = kwargs.get("dix_spare", "0")
-        skip_disk_count_check = kwargs.get("skip_disk_count_check",False)
+        skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         config_file = "deployment_config.ini"
         shutil.copyfile(cfg_template, config_file)
         data_disk_per_cvg = int(data_disk)
@@ -585,10 +584,10 @@ class Provisioner:
                     add_section=False)
             elif not mgmt_vip and len(node_obj_list) > 1:
                 return False, "mgmt_vip is required for multinode deployment"
-            valid_disk_count = int(sns_data)+int(sns_parity)+int(sns_spare)
+            valid_disk_count = int(sns_data) + int(sns_parity) + int(sns_spare)
             sns = {"data": sns_data, "parity": sns_parity, "spare": sns_spare}
             dix = {"data": dix_data, "parity": dix_parity, "spare": dix_spare}
-            LOGGER.info("Configuring SNS pool : %s",sns)
+            LOGGER.info("Configuring SNS pool : %s", sns)
             for key, value in sns.items():
                 config_utils.update_config_ini(
                     config_file,
@@ -605,7 +604,7 @@ class Provisioner:
                     value=value,
                     add_section=False)
             for node_count, node_obj in enumerate(node_obj_list, start=1):
-                LOGGER.info("Configuring CVG for %s",node_obj.hostname)
+                LOGGER.info("Configuring CVG for %s", node_obj.hostname)
                 node = "srvnode-{}".format(node_count)
                 hostname = node_obj.hostname
                 device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
@@ -617,9 +616,10 @@ class Provisioner:
                 data_devices = list()
                 if data_disk == "0":
                     data_disk_per_cvg = len(device_list[cvg_count:])
-                if not skip_disk_count_check and valid_disk_count > (data_disk_per_cvg*cvg_count*len(node_obj_list)):
+                if not skip_disk_count_check and valid_disk_count > \
+                        (data_disk_per_cvg * cvg_count * len(node_obj_list)):
                     return False, "The sum of data disks per cvg " \
-                                 "is less than N+K+S count"
+                                  "is less than N+K+S count"
                 if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk != "0":
                     count_end = int(data_disk_per_cvg + cvg_count)
                     data_devices.append(",".join(device_list[cvg_count:count_end]))
@@ -643,14 +643,14 @@ class Provisioner:
                     config_file, node, key="hostname", value=hostname, add_section=False)
                 for cvg in range(0, cvg_count):
                     LOGGER.info("CVG : %s", cvg)
-                    LOGGER.info("Updating Data Devices: %s",data_devices[cvg])
+                    LOGGER.info("Updating Data Devices: %s", data_devices[cvg])
                     config_utils.update_config_ini(
                         config_file,
                         node,
                         key="storage.cvg.{}.data_devices".format(cvg),
                         value=data_devices[cvg],
                         add_section=False)
-                    LOGGER.info("Updating Metadata Devices: %s",metadata_devices[cvg])
+                    LOGGER.info("Updating Metadata Devices: %s", metadata_devices[cvg])
                     config_utils.update_config_ini(
                         config_file,
                         node,
