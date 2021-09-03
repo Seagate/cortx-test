@@ -252,10 +252,10 @@ CMD_KRNL_VER = "uname -r"
 CMD_PRVSNR_VER = "provisioner --version"
 CMD_LIST_DEVICES = "lsblk -nd -o NAME -e 11|grep -v sda|sed 's|sd|/dev/sd|g'|paste -s -d, -"
 CMD_SETUP_PRVSNR = "provisioner setup_provisioner --logfile " \
-    "--logfile-filename /var/log/seagate/provisioner/setup.log --source rpm " \
-    "--config-path {0} " \
-    "--dist-type bundle " \
-    "--target-build {1} "
+                   "--logfile-filename /var/log/seagate/provisioner/setup.log --source rpm " \
+                   "--config-path {0} " \
+                   "--dist-type bundle " \
+                   "--target-build {1} "
 CMD_CONFIGURE_SETUP = "provisioner configure_setup {0} {1}"
 CMD_CONFSTORE_EXPORT = "provisioner confstore_export"
 CMD_DEPLOY_VM = "provisioner deploy_vm --setup-type {} --states {}"
@@ -341,7 +341,7 @@ CMD_KEYTOOL2 = "`keytool -import -trustcacerts -alias s3server -noprompt -file {
 CMD_S3BENCH = "go run s3bench -accessKey={} -accessSecret={} -bucket={} -endpoint={} " \
               "-numClients={} -numSamples={} -objectNamePrefix={} -objectSize={}"
 
-#cortx_setup commands
+# cortx_setup commands
 CMD_RESOURCE_DISCOVER = "cortx_setup resource discover"
 CMD_RESOURCE_SHOW_HEALTH = "cortx_setup resource show --health"
 CMD_RESOURCE_SHOW_HEALTH_RES = "cortx_setup resource show --health --resource_type"
@@ -354,9 +354,11 @@ UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_ob
 CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_POWER_OFF = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_off\" " \
-                  "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+                   "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 CMD_VM_INFO = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"get_vm_info\" " \
               "-u \"{0}\" -p \"{1}\" -v \"{2}\""
+CMD_VM_REVERT = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"revert_vm_snap\" " \
+                "-u \"{0}\" -p \"{1}\" -v \"{2}\""
 
 CPU_COUNT = "cat /sys/devices/system/cpu/online"
 CPU_FAULT = "echo 0 > /sys/devices/system/cpu/cpu{}/online"
@@ -385,7 +387,7 @@ LDAP_PWD = "s3cipher decrypt --data $(s3confstore properties:///opt/seagate/cort
            "authserver.properties getkey --key ldapLoginPW) --key $(s3cipher generate_key" \
            " --const_key cortx)"
 
-#Motr commands
+# Motr commands
 M0CP = "m0cp -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0CAT = "m0cat -l {} -H {} -P {} -p {} -s {} -c {} -o {} -L {} {}"
 M0UNLINK = "m0unlink -l {} -H {} -P {} -p {} -o {} -L {}"

@@ -25,10 +25,12 @@ import os
 import pytest
 
 from commons import configmanager
+from commons import pswdmanager
+from commons import commands as common_cmd
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG
+from config import CMN_CFG, HA_CFG
 from libs.prov.provisioner import Provisioner
 
 
@@ -52,7 +54,13 @@ class TestFailureDomain:
                                       password=CMN_CFG["nodes"][node]["password"]))
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.test_config_template = cls.cft_test_cfg["deployment_template"]
-        cls.ssc_auth_token = cls.cft_test_cfg["ssc_auth_token"]
+
+        cls.vm_username = os.getenv(
+            "QA_VM_POOL_ID", pswdmanager.decrypt(
+                HA_CFG["vm_params"]["uname"]))
+        cls.vm_password = os.getenv(
+            "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
+                HA_CFG["vm_params"]["passwd"]))
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -63,11 +71,10 @@ class TestFailureDomain:
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
            host: VM name """
-        cmd_line = self.cft_test_cfg["revert_vm_command"]
-        self.log.info("Reverting snapshot of VM %s", host)
-        cmd_line = cmd_line + " --host " + str(host)
-        cmd_line = cmd_line + " --token " + str(self.ssc_auth_token)
-        resp = system_utils.execute_cmd(cmd_line)
+        resp = system_utils.execute_cmd(
+            common_cmd.CMD_VM_REVERT.format(
+                self.vm_username, self.vm_password, host))
+
         assert_utils.assert_true(resp[0], resp[1])
 
     def deploy_3node_vm(self, config_file_path: str = None, expect_failure: bool = False):
