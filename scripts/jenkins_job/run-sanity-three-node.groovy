@@ -163,17 +163,58 @@ deactivate
     }
 	post {
 		always {
+		    junit allowEmptyResults: true, testResults: 'log/*report.xml'
 		    script {
         		  if ( fileExists('cloned_tp_info.csv') ) {
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
         		  }
+        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		      sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${HOSTNAME}"
+pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
+deactivate
+'''
+                      if ( "${CREATE_JIRA_ISSUE}" ) {
+                        jiraIssue = createJiraIssue(env.Current_TP)
+                        env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
+                        echo "${jira_issue}"
+                      }
+                  } */
 		     }
 			catchError(stageResult: 'FAILURE') {
-			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, *.png', followSymlinks: false
-			    junit allowEmptyResults: true, testResults: 'log/*report.xml'
+			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar', followSymlinks: false
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
+}
+
+def createJiraIssue(String Current_TP) {
+
+    def issue = [
+                    fields: [
+                        project: [key: 'EOS'],
+                        issuetype: [name: 'Bug'],
+                        priority: [name: "High"],
+                        versions: [[name: "CORTX-R2"]],
+                        labels: ["CORTX_QA", "Sanity"],
+                        components: [[name: "Automation"]],
+                        summary: "${JOB_BASE_NAME} Failed on Build ${CORTX_BUILD}",
+                        description: "{panel}${JOB_BASE_NAME} is failed for the build ${CORTX_BUILD}. Please check Jenkins console log and deployment log for more info.\n"+
+                                    "\n h4. Test Details \n"+
+                                    "|Cortx build|${CORTX_BUILD}|\n"+
+                                    "|Jenkins build|[${JOB_BASE_NAME}#${BUILD_NUMBER} |${BUILD_URL}]|\n"+
+                                    "|Test Plan |${Current_TP}|\n"+
+                                    "|Test Results|[${JOB_BASE_NAME}/${BUILD_NUMBER}/testReport|${BUILD_URL}testReport]|\n"+
+                                    "|Client Node|${NODE_NAME}|\n"+
+                                    "\n\n"+
+                                    "Please find test and support bundle logs at below location: \n"+
+                                    "[${JOB_BASE_NAME}/${BUILD_NUMBER}/artifact|${BUILD_URL}artifact] \n {panel}"
+                    ]
+                ]
+
+
+    def newIssue = jiraNewIssue issue: issue, failOnError: false, site: 'SEAGATE_QA_JIRA'
+    return newIssue.data.key
 }
