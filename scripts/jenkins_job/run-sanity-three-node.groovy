@@ -176,7 +176,7 @@ pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_
 deactivate
 '''
                       if ( "${CREATE_JIRA_ISSUE}" ) {
-                        jiraIssue = createJiraIssue()
+                        jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
                         echo "${jira_issue}"
                       }
@@ -190,7 +190,7 @@ deactivate
 	}
 }
 
-def createJiraIssue() {
+def createJiraIssue(String Current_TP) {
 
     def issue = [
                     fields: [
@@ -205,7 +205,7 @@ def createJiraIssue() {
                                     "\n h4. Test Details \n"+
                                     "|Cortx build|${CORTX_BUILD}|\n"+
                                     "|Jenkins build|[${JOB_BASE_NAME}#${BUILD_NUMBER} |${BUILD_URL}]|\n"+
-                                    "|Test Plan |${env.Current_TP}|\n"+
+                                    "|Test Plan |${Current_TP}|\n"+
                                     "|Test Results|[${JOB_BASE_NAME}/${BUILD_NUMBER}/testReport|${BUILD_URL}testReport]|\n"+
                                     "|Client Node|${NODE_NAME}|\n"+
                                     "\n\n"+
