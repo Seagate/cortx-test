@@ -775,9 +775,9 @@ class Health(Host):
                 health.disconnect()
                 break
             except BaseException as exec:
-                LOG.warning("{} exception occurred while performing Health check".format(exec))
+                LOG.warning("%s exception occurred while performing Health check", exec)
                 delay = pow(r_try, 4)
-                LOG.info("Retrying in {} seconds".format(delay))
+                LOG.info("Retrying in %s seconds", delay)
                 time.sleep(delay)
                 r_try += 1
         if health_result and capacity_result:
