@@ -65,7 +65,6 @@ class HALibs:
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
         self.s3_rest_obj = S3AccountOperationsRestAPI()
-        self.parallel_ios = None
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
