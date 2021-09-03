@@ -36,6 +36,7 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class HALibs:
         self.t_power_off = HA_CFG["common_params"]["power_off_time"]
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
+        self.s3_rest_obj = S3AccountOperationsRestAPI()
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -599,10 +601,10 @@ class HALibs:
 
         return True, f"Check node health status is as expected for {checknode}"
 
-    @staticmethod
-    def delete_s3_acc_buckets_objects(s3_data: dict):
+    def delete_s3_acc_buckets_objects(self, s3_data: dict):
         """
-        This function deletes s3 all buckets objects for all the s3 account
+        This function deletes all s3 buckets objects for the s3 account
+        and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
         :return: (bool, response)
         """
@@ -611,11 +613,12 @@ class HALibs:
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
                                    access_key=details['accesskey'],
                                    secret_key=details['secretkey'])
-                s3_user_data = {'user_name': details['user_name'], 'password': details['password']}
-                response = s3_del.delete_s3_acc_buckets(s3_user_data)
+                response = s3_del.delete_all_buckets()
                 if not response[0]:
                     return response
-
+                response = self.s3_rest_obj.delete_s3_account(details['user_name'])
+                if not response[0]:
+                    return response
             return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
