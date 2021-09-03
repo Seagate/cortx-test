@@ -24,9 +24,13 @@ AWS configuration file with access key and secret key
 import os
 import configparser
 import logging
+import shutil
 import subprocess
 from time import perf_counter_ns
+from multiprocessing import Process
 from commons import pswdmanager
+from commons.utils import support_bundle_utils as sb
+from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
@@ -87,19 +91,6 @@ def configure_awscli(access_key, secret_key):
     run_cmd("aws configure set ca_bundle {}".format(local_s3_cert_path))
 
 
-def test_create_acc_aws_conf():
-    LOGGER.info("Getting access and secret key for configuring AWS")
-    acc_name = "nightly_s3acc{}".format(perf_counter_ns())
-    acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())
-    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
-    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
-    print("Response for account creation: {}".format(resp))
-    access_key = resp[1]["access_key"]
-    secret_key = resp[1]["secret_key"]
-    configure_awscli(access_key, secret_key)
-    cortx_obj.close_connection()
-
-
 def create_s3_account():
     LOGGER.info("Getting access and secret key for configuring AWS")
     acc_name = "switch_setup_s3acc{}".format(perf_counter_ns())
@@ -114,15 +105,71 @@ def create_s3_account():
         ptr.write(access_key + ' ' + secret_key)
 
 
+def test_create_acc_aws_conf():
+    LOGGER.info("Getting access and secret key for configuring AWS")
+    acc_name = "nightly_s3acc{}".format(perf_counter_ns())
+    acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())
+    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
+    resp = cortx_obj.create_account_cortxcli(acc_name, acc_email, acc_passwd)
+    print("Response for account creation: {}".format(resp))
+    access_key = resp[1]["access_key"]
+    secret_key = resp[1]["secret_key"]
+    configure_awscli(access_key, secret_key)
+    cortx_obj.close_connection()
+
+
 def test_preboarding():
     """
     Test for verifying csm pre-boarding using restapi
     """
-    admin_user = os.getenv('ADMIN_USR', pswdmanager.decrypt(config['csmboarding']['username']))
+    admin_user = os.getenv(
+        'ADMIN_USR', pswdmanager.decrypt(
+            config['csmboarding']['username']))
     old_passwd = pswdmanager.decrypt(config['csmboarding']['password'])
     new_passwd = os.getenv('ADMIN_PWD', old_passwd)
     resp = config_chk.preboarding(admin_user, old_passwd, new_passwd)
     assert resp, "Preboarding Failed"
+
+
+def test_collect_support_bundle_individual_cmds():
+    """
+    Collect support bundles from various components on all the nodes
+    """
+    prcs = list()
+    bundle_dir = os.path.join(os.getcwd(), "support_bundle")
+    if os.path.exists(bundle_dir):
+        LOGGER.info("Removing existing directory %s", bundle_dir)
+        shutil.rmtree(bundle_dir)
+    os.mkdir(bundle_dir)
+    for node in CMN_CFG["nodes"]:
+        remote_dir = os.path.join("/root", node["host"], "")
+        proc = Process(
+            target=sb.create_support_bundle_individual_cmd,
+            args=(
+                node["hostname"],
+                node["username"],
+                node["password"],
+                remote_dir,
+                bundle_dir))
+        proc.start()
+        prcs.append(proc)
+
+    for prc in prcs:
+        prc.join()
+
+
+def test_collect_support_bundle_single_cmd():
+    """
+    Collect support bundles from various components using single support bundle cmd
+    """
+    bundle_dir = os.path.join(os.getcwd(), "support_bundle")
+    bundle_name = "sanity"
+    if os.path.exists(bundle_dir):
+        LOGGER.info("Removing existing directory %s", bundle_dir)
+        shutil.rmtree(bundle_dir)
+    os.mkdir(bundle_dir)
+    remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
+    sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
 
 
 if __name__ == '__main':
