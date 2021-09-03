@@ -266,3 +266,76 @@ class S3AuthServerRestAPI(RestS3user):
         LOGGER.debug(response)
 
         return True, response
+
+    def create_user(self, user_name, password, access_key, secret_key):
+        """
+        Reset s3/iam account using s3authserver rest api.
+
+        :param user_name: Name of the s3 account user.
+        :param password: Password of the s3/iam account user.
+        :param access_key: s3 access_key or Ldap username.
+        :param secret_key: s3 secret_key or Ldap password.
+        :return: bool, response of create s3/iam account.
+        """
+        payload = {"Action": "CreateUser"}
+        if user_name:
+            payload["AccountName"] = user_name
+        if password:
+            payload["Password"] = password
+        # Fetching headers.
+        headers = get_headers(
+            "post",
+            self.endpoint,
+            payload,
+            service="s3",
+            region="US",
+            access_key=access_key,
+            secret_key=secret_key)
+        LOGGER.debug(headers)
+        # Input data.
+        payload = urllib.parse.urlencode(payload)
+        LOGGER.debug(payload)
+        # Fetching api response.
+        response = self.restapi.s3auth_rest_call(
+            "post", data=payload, endpoint=self.endpoint,
+            headers=headers)
+        if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            return False, f"Failed to create user '{user_name}', reason: {response.text}"
+        LOGGER.debug(response)
+
+        return True, response
+
+    def delete_user(self, user_name, access_key, secret_key):
+        """
+        Delete s3/iam account using s3authserver rest api.
+
+        :param user_name: Name of the s3 account user.
+        :param access_key: s3 access_key or Ldap username.
+        :param secret_key: s3 secret_key or Ldap password.
+        :return: bool, response of delete s3/iam account.
+        """
+        payload = {"Action": "DeleteUser"}
+        if user_name:
+            payload["AccountName"] = user_name
+        # Fetching headers.
+        headers = get_headers(
+            "post",
+            self.endpoint,
+            payload,
+            service="s3",
+            region="US",
+            access_key=access_key,
+            secret_key=secret_key)
+        LOGGER.debug(headers)
+        # Input data.
+        payload = urllib.parse.urlencode(payload)
+        LOGGER.debug(payload)
+        # Fetching api response.
+        response = self.restapi.s3auth_rest_call(
+            "post", data=payload, endpoint=self.endpoint,
+            headers=headers)
+        if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            return False, f"Failed to create user '{user_name}', reason: {response.text}"
+        LOGGER.debug(response)
+
+        return True, response
