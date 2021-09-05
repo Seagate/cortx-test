@@ -232,11 +232,11 @@ class S3AuthServerRestAPI(RestS3user):
     def execute_restapi_on_s3authserver(
             self, payload, access_key, secret_key, request="post", endpoint=None) -> tuple:
         """
-        Create harder by calculate AuthV4 signature and execute rest api on s3 authserver.
+        Create header by calculate AuthV4 signature and execute rest api on s3 auth server.
 
         :param payload: payload data used in execution.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
         :param request: s3auth restapi request.
         :param endpoint: s3auth restapi endpoint.
         """
@@ -263,7 +263,7 @@ class S3AuthServerRestAPI(RestS3user):
         self.log.debug(response_data)
         if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
             LOGGER.error(f"s3auth restapi request failed, reason: {response_data}")
-            return False, response_data
+            return False, response_data["ErrorResponse"]["Error"]["Message"]
 
         return True, response_data
 
@@ -274,9 +274,9 @@ class S3AuthServerRestAPI(RestS3user):
 
         :param user_name: Name of the s3 account user.
         :param new_password: New password of the s3 account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :return: bool, response of reset access key for s3account.
+        :param access_key: access_key of s3 user or ldap user of s3authserver.
+        :param secret_key: secret_key of s3 user or ldap password of s3authserver.
+        :return: bool, response of update account password for s3account.
         """
         payload = {"Action": "UpdateAccountLoginProfile"}
         if user_name:
@@ -284,20 +284,18 @@ class S3AuthServerRestAPI(RestS3user):
         if new_password:
             payload["Password"] = new_password
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
 
         return status, response
 
-    def create_user(self, user_name, password, access_key, secret_key) -> tuple:
+    def create_iam_user(self, user_name, password, access_key, secret_key) -> tuple:
         """
         Reset s3/iam account using s3authserver rest api.
 
-        :param user_name: Name of the s3 account user.
-        :param password: Password of the s3/iam account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :return: bool, response of create s3/iam account.
+        :param user_name: Name of iam user.
+        :param password: Password of iam user.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of create iam user.
         """
         payload = {"Action": "CreateUser"}
         if user_name:
@@ -305,39 +303,47 @@ class S3AuthServerRestAPI(RestS3user):
         if password:
             payload["Password"] = password
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
+        # Create account login profile.
+        payload["Action"] = "CreateLoginProfile"
+        self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            response = response["CreateUserResponse"]["CreateUserResult"]["User"]
+            self.log.debug("Create user response: %s", response)
+            status = True if user_name == response["UserName"] else False
 
         return status, response
 
-    def list_users(self, access_key, secret_key) -> tuple:
+    def list_iam_users(self, access_key, secret_key) -> tuple:
         """
         List iam users of s3 account using s3authserver rest api.
 
-        :param access_key: access_key of the s3 account.
-        :param secret_key: secret_key of the s3 account user.
-        :return: bool, response of create s3/iam account.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of list iam user for s3 account.
         """
+        user_list = []
         payload = {"Action": "ListUsers"}
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
-        user_list = [resp["UserName"]
-                     for resp in response["ListUsersResponse"]["ListUsersResult"]["Users"]["member"]
-                     ]
+        if status:
+            member = response["ListUsersResponse"]["ListUsersResult"]["Users"]["member"]
+            user_list = [
+                member["UserName"]] if isinstance(
+                member, dict) else [
+                mem["UserName"] for mem in member] if isinstance(
+                    member, list) else []
 
         return status, user_list
 
-    def update_user(
+    def update_iam_user(
             self, user_name=None, new_password=None, access_key=None, secret_key=None) -> tuple:
         """
         Reset s3 iam user password using s3authserver rest api.
 
-        :param user_name: Name of the iam user.
-        :param new_password: New password of the iam user.
-        :param access_key: access_key of the s3 user.
-        :param secret_key: secret_key of the s3 user.
-        :return: bool, response of reset access key for s3account.
+        :param user_name: Name of iam user.
+        :param new_password: New password of iam user.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of update iam user for s3account.
         """
         payload = {"Action": "UpdateLoginProfile"}
         if user_name:
@@ -345,102 +351,101 @@ class S3AuthServerRestAPI(RestS3user):
         if new_password:
             payload["Password"] = new_password
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
 
         return status, response
 
-    def delete_user(self, user_name, access_key, secret_key) -> tuple:
+    def delete_iam_user(self, user_name, access_key, secret_key) -> tuple:
         """
         Delete s3/iam account using s3authserver rest api.
 
         :param user_name: Name of the s3 account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :return: bool, response of delete s3/iam account.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of delete iam user.
         """
         payload = {"Action": "DeleteUser"}
         if user_name:
             payload["UserName"] = user_name
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
 
         return status, response
 
-    def create_accesskey(self, user_name, access_key, secret_key) -> tuple:
+    def create_iam_accesskey(self, user_name, access_key, secret_key) -> tuple:
         """
         Create s3/iam account user accesskey using s3authserver rest api.
 
-        :param user_name: Name of the s3 account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :return: bool, response of create accesskey of s3/iam account.
+        :param user_name: Name of s3 iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of create accesskey of iam user.
         """
         payload = {"Action": "CreateAccessKey"}
         if user_name:
             payload["UserName"] = user_name
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
+        if status:
+            response = response["CreateAccessKeyResponse"]["CreateAccessKeyResult"]["AccessKey"]
+        self.log.debug("Create acesskey response: %s", response)
 
         return status, response
 
-    def delete_accesskey(self, user_name, access_key, secret_key) -> tuple:
+    def delete_iam_accesskey(self, user_name, access_key_id, access_key, secret_key) -> tuple:
         """
         Delete s3/iam account user accesskey using s3authserver rest api.
 
-        :param user_name: Name of the s3 account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :return: bool, response of delete accesskey of s3/iam account.
+        :param user_name: Name of s3 iam user.
+        :param access_key_id: Access key of the iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of delete accesskey of iam account.
         """
         payload = {"Action": "DeleteAccessKey"}
         if user_name:
             payload["UserName"] = user_name
+        if access_key_id:
+            payload["AccessKeyId"] = access_key_id
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
 
         return status, response
 
-    def list_accesskey(
+    def list_iam_accesskey(
             self, user_name, access_key, secret_key) -> tuple:
         """
         List iam user accesskey using s3authserver rest api.
 
-        :param user_name: Name of the s3 iam user.
-        :param access_key: s3 access_key.
-        :param secret_key: s3 secret_key.
-        :return: bool, response of list accesskey of iam account.
+        :param user_name: Name of s3 iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of list accesskey of iam user.
         """
         payload = {"Action": "ListAccessKeys"}
         if user_name:
             payload["UserName"] = user_name
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
+        if status:
+            response = response["ListAccessKeysResponse"]["ListAccessKeysResult"][
+                "AccessKeyMetadata"]["member"]
+        self.log.debug("List access key response: %s", response)
 
         return status, response
 
-    def update_accesskey(
-            self, user_name, user_accessk_key, access_key, secret_key, status="Active") -> tuple:
+    def update_iam_accesskey(
+            self, user_name, user_access_key, access_key, secret_key, status="Active") -> tuple:
         """
         Update iam account user accesskey using s3authserver rest api.
 
-        :param user_name: Name of the s3 account user.
-        :param access_key: s3 access_key or Ldap username.
-        :param secret_key: s3 secret_key or Ldap password.
-        :param status: accesskey status.
-        :return: bool, response of delete accesskey of s3/iam account.
+        :param user_name: Name of s3 iam user.
+        :param user_access_key: Access key of the iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :param status: accesskey status may be Active/Inactive.
+        :return: bool, response of update accesskey of iam user.
         """
         payload = {"Action": "UpdateAccessKey"}
         if user_name:
             payload["UserName"] = user_name
         payload["Status"] = status
-        payload["AccessKeyId"] = user_accessk_key
+        payload["AccessKeyId"] = user_access_key
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
-        if not status:
-            return status, response["ErrorResponse"]["Error"]["Message"]
 
         return status, response
