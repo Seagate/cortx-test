@@ -502,6 +502,7 @@ class SystemHealth(RestTestLib):
 
     # pylint: disable=too-many-arguments
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def perform_cluster_operation(
             self,
             operation: str,
@@ -548,6 +549,7 @@ class SystemHealth(RestTestLib):
         return True, response
 
     @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
     def check_on_cluster_effect(self, resource_id: int):
         """
         This method Get the effect of node stop/poweroff operation on cluster with rest API

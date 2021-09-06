@@ -24,6 +24,7 @@ HA utility methods
 import logging
 import os
 import time
+from multiprocessing import Process
 
 from commons import commands as common_cmd
 from commons import errorcodes as err
@@ -64,6 +65,7 @@ class HALibs:
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
         self.s3_rest_obj = S3AccountOperationsRestAPI()
+        self.parallel_ios = None
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -676,6 +678,31 @@ class HALibs:
                          HALibs.perform_ios_ops.__name__,
                          error)
             return False, error
+
+    def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
+        """
+        This function runs parallel async stop_io function until called again with
+        start_read with False.
+        :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
+        WRITEs call
+        :param is_di: IF DI check is required on READ objects
+        :param start_read: Stop the parallel process and clean up
+        s3 user and objects
+        :return: delete_s3_acc_buckets_objects function call's response
+        """
+        if start_read:
+            self.parallel_ios = Process(
+                target=di_data[0].stop_io, args=(di_data[1], is_di))
+            self.parallel_ios.start()
+        else:
+            if self.parallel_ios.is_alive():
+                self.parallel_ios.join()
+                LOGGER.info(
+                    "Parallel IOs stopped: %s",
+                    not self.parallel_ios.is_alive())
+                del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
+                if not del_resp[0]:
+                    return del_resp
 
     # pylint: disable=too-many-arguments
     def ha_s3_workload_operation(

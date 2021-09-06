@@ -73,7 +73,7 @@ class TestHANodeFailure:
         cls.username = []
         cls.password = []
         cls.restored = True
-        cls.starttime = cls.s3user_info = cls.iss3cleanup = None
+        cls.starttime = cls.s3user_info = cls.iss3cleanup = cls.stop_io_process = None
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -119,6 +119,8 @@ class TestHANodeFailure:
         """
         LOGGER.info("STARTED: Teardown Operations.")
         if not self.restored:
+            if self.stop_io_process or self.stop_io_process.is_alive():
+                self.stop_io_process.join()
             for node in range(self.num_nodes):
                 # Check if node needs to be start.
                 resp = self.ha_rest.verify_node_health_status_rest(
@@ -278,3 +280,106 @@ class TestHANodeFailure:
         self.restored = True
         LOGGER.info(
             "Completed: Test to check degraded READs after node down - node poweroff.")
+
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.tags("TEST-26438")
+    @CTFailOn(error_handler)
+    def test_node_unsafe_shutdown_continues_degraded_reads(self):
+        """
+        Test to Verify Continuous READs in loop during node unsafe shutdown
+        """
+        LOGGER.info(
+            "Started: Test to check continuous READs in loop during node unsafe shutdown.")
+        self.restored = False
+        node = self.system_random.choice(list(range(self.num_nodes)))
+        LOGGER.info(
+            "Step 1: Perform multiple WRITEs with variable object sizes.")
+        resp = self.ha_obj.perform_ios_ops(
+            prefix_data='TEST-26438',
+            nusers=10,
+            nbuckets=50,
+            files_count=200)
+        assert_utils.assert_true(resp[0], "Failed to perform Write IOs")
+        di_check_data = (resp[1], resp[2])
+        LOGGER.info("Step 1: Successfully performed WRITEs with variable object sizes.")
+        LOGGER.info("Step 2: Start parallel READs and verify DI on the written data")
+        resp = self.ha_obj.perform_io_read_parallel(di_data=di_check_data)
+        assert_utils.assert_true(resp[0], "Failed to start parallel READ IOs")
+        self.stop_io_process = resp[1]
+        LOGGER.info("Step 3: Unsafe(shutdown -P now) Shutdown %s server and verify its not pinging",
+            self.srvnode_list[node])
+        resp = self.ha_obj.host_safe_unsafe_power_off(
+            host=self.host_list[node],
+            bmc_obj=self.bmc_list[node],
+            is_safe=True)
+        assert_utils.assert_true(resp, "Node is not shutdown and still pinging.")
+        LOGGER.info("Step 3: %s server is shutdown and not pinging",
+                    self.srvnode_list[node])
+        LOGGER.info("Step 4: Check for the %s down alert",
+            self.srvnode_list[node])
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime, self.alert_type["get"], False, "iem")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM")
+        LOGGER.info("Step 4: Verified the %s down alert",
+                    self.srvnode_list[node])
+        LOGGER.info(
+            "Step 4: Check health status for %s is offline and "
+            "cluster/rack/site is degraded with REST",
+            self.srvnode_list[node])
+        resp = self.ha_rest.check_csr_health_status_rest("degraded")
+        assert_utils.assert_true(resp[0], resp[1])
+        check_rem_node = [
+            "offline" if num == node else "online" for num in range(
+                self.num_nodes)]
+        resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 4: Verified status for %s show offline and cluster/rack/site as degraded",
+            self.srvnode_list[node])
+        LOGGER.info("Step 5: Check PCS status")
+        resp = self.ha_obj.check_pcs_status_resp(
+            node, self.node_list, self.hlt_list)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
+            self.srvnode_list[node])
+        LOGGER.info("Step 7: Start %s server from ssc-cloud/BMC",
+            self.srvnode_list[node])
+        resp = self.ha_obj.host_power_on(
+            host=self.host_list[node],
+            bmc_obj=self.bmc_list[node])
+        assert_utils.assert_true(resp, "Node is still down and not pinging.")
+        LOGGER.info("Step 7: %s server started successfully",
+                    self.srvnode_list[node])
+        LOGGER.info(
+            "Step 8: Check health status for %s shows online with REST & PCS status clean",
+            self.srvnode_list[node])
+        resp = self.ha_rest.check_csr_health_status_rest("online")
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
+        assert_utils.assert_true(resp[0], resp[1])
+        # To get all the services up and running
+        time.sleep(40)
+        for hlt_obj in self.hlt_list:
+            resp = hlt_obj.check_node_health()
+            assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 8: Verified %s health status shows online and PCS is clean",
+            self.srvnode_list[node])
+        self.ha_obj.perform_io_read_parallel(di_data=di_check_data, start_read=False)
+        assert_utils.assert_true(resp, "Failed to DELETE S3 objects")
+        LOGGER.info("Step 2: Stopped parallel READs and delete the s3 users and buckets")
+        self.stop_io_process = None
+        LOGGER.info(
+            "Step 9: Check the IEM fault resolved alert for node up")
+        resp = self.csm_alerts_obj.verify_csm_response(
+            self.starttime, self.alert_type["resolved"], True, "iem")
+        assert_utils.assert_true(resp, "Failed to get alert in CSM")
+        self.starttime = time.time()
+        LOGGER.info(
+            "Step 9: Verified the IEM fault resolved alert for node up")
+        self.restored = True
+        LOGGER.info(
+            "Completed: Test to check continuous READs in loop during node unsafe shutdown.")
