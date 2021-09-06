@@ -22,7 +22,7 @@
 Script to deploy k8s on VM
 """
 
-import configparser
+
 import argparse
 import time
 from commons.helpers.node_helper import Node
@@ -30,9 +30,8 @@ from commons import commands as cmn_cmd
 
 
 # Global Constants
-CONFIG_FILE = 'scripts/jenkins_job/config.ini'
-CONFIG = configparser.ConfigParser()
-CONFIG.read(CONFIG_FILE)
+remote_hosts_org = "/etc/hosts"
+local_copy_hosts = "/tmp/hosts"
 
 
 def configure_k8s_repo(*hostname, username, password):
@@ -153,8 +152,7 @@ def main(args):
     k8s_input['hosts_ip'] = args.ip
     k8s_input['username'] = args.username
     k8s_input['password'] = args.password
-    remote_hosts_org = CONFIG['default']['etc_host']
-    local_copy_hosts = CONFIG['default']['etc_host_tmp']
+
     host_ip_dict = {}
 
     if not k8s_input['hosts_ip']:
