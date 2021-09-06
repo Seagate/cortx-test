@@ -147,10 +147,17 @@ def main(args):
     """
     main function to deploy Kubernetes
     """
-    nodes = args.nodes
-    hosts_ip = args.ip
-    username = args.username
-    password = args.password
+    k8s_input = dict()
+
+    k8s_input['nodes'] = args.nodes
+    k8s_input['hosts_ip'] = args.ip
+    k8s_input['username'] = args.username
+    k8s_input['password'] = args.password
+
+    nodes = k8s_input['nodes']
+    hosts_ip = k8s_input['hosts_ip']
+    username = k8s_input['username']
+    password = k8s_input['password']
 
     remote_hosts_org = CONFIG['default']['etc_host']
     local_copy_hosts = CONFIG['default']['etc_host_tmp']
@@ -166,8 +173,8 @@ def main(args):
             host_ip_dict.update(host_ip_n)
 
     else:
-        for ip, host in hosts_ip, nodes:
-            host_ip_s = {ip: host}
+        for node_ip, host in hosts_ip, nodes:
+            host_ip_s = {node_ip: host}
             host_ip_dict.update(host_ip_s)
 
     for host in nodes:
