@@ -496,7 +496,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
-    @pytest.mark.tag("TEST-22150")
+    @pytest.mark.tags("TEST-22150")
     def test_22150(self):
         """use REST API call to create s3iamuser with special characters."""
         self.log.info("STARTED: use REST API call to create s3iamuser with special characters.")
@@ -521,7 +521,7 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to create s3iamuser with special characters.")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tag("TEST-22148")
+    @pytest.mark.tags("TEST-22148")
     def test_22148(self):
         """REST API to Update Login Profile without mentioning new Password for the s3iamuser."""
         self.log.info(
@@ -552,7 +552,7 @@ class TestIAMUserManagement:
             "ENDED: Update Login Profile without mentioning new Password for the s3iamuser.")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tag("TEST-27277")
+    @pytest.mark.tags("TEST-27277")
     def test_27277(self):
         """use REST API call to perform CRUD operations on s3iamuser."""
         self.log.info("STARTED: use REST API call to perform CRUD operations on s3iamuser.")
@@ -584,7 +584,7 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to perform CRUD operations on s3iamuser.")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tag("TEST-27278")
+    @pytest.mark.tags("TEST-27278")
     def test_27278(self):
         """use REST API call to perform accesskey CRUD operations for s3iamuser."""
         self.log.info(
@@ -632,7 +632,7 @@ class TestIAMUserManagement:
             "ENDED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tag("TEST-21644")
+    @pytest.mark.tags("TEST-21644")
     def test_21644(self):
         """use REST API call to create more than 2 Accesskeys for s3iamuser."""
         self.log.info("STARTED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
