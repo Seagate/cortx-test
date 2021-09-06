@@ -98,6 +98,7 @@ class TestIAMUserManagement:
         self.parallel_ios = None
         self.account_dict = dict()
         self.resources_dict = dict()
+        self.account_dict[self.s3acc_name] = self.acc_password
         self.account_prefix = "acc-reset-passwd-{}"
         self.io_bucket_name = "io-bkt1-reset-{}".format(perf_counter_ns())
         self.object_name = "obj-reset-object-{}".format(perf_counter_ns())
@@ -136,20 +137,15 @@ class TestIAMUserManagement:
                 resp = resource.delete_bucket(
                     self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
-
-        accounts = self.cli_test_obj.list_accounts_cortxcli()
-        all_accounts = [acc["account_name"] for acc in accounts]
-        self.log.info("setup %s", all_accounts)
         for acc in self.account_dict:
-            if acc in all_accounts:
-                self.cli_test_obj.login_cortx_cli(
-                    username=acc, password=self.account_dict[acc])
-                self.cli_test_obj.delete_iam_user(self.user_name)
-                self.cli_test_obj.logout_cortx_cli()
-                resp = self.cli_test_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.account_dict[acc])
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deleted %s account successfully", acc)
+            self.cli_test_obj.login_cortx_cli(
+                username=acc, password=self.account_dict[acc])
+            self.cli_test_obj.delete_iam_user(self.user_name)
+            self.cli_test_obj.logout_cortx_cli()
+            resp = self.cli_test_obj.delete_account_cortxcli(
+                account_name=acc, password=self.account_dict[acc])
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Deleted %s account successfully", acc)
         del self.cli_test_obj
         self.log.info("ENDED : Teardown operations for test function")
 
