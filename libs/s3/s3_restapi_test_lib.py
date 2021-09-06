@@ -230,7 +230,7 @@ class S3AuthServerRestAPI(RestS3user):
         self.endpoint = S3_CFG["s3auth_endpoint"].format(host)
 
     def execute_restapi_on_s3authserver(
-            self, payload, access_key, secret_key, request="post", endpoint=None) -> tuple:
+            self, payload, access_key, secret_key, **kwargs) -> tuple:
         """
         Create header by calculate AuthV4 signature and execute rest api on s3 auth server.
 
@@ -240,6 +240,8 @@ class S3AuthServerRestAPI(RestS3user):
         :param request: s3auth restapi request.
         :param endpoint: s3auth restapi endpoint.
         """
+        request = kwargs.get("request", "post")
+        endpoint = kwargs.get("endpoint", None)
         # S3auth server endpoint.
         endpoint = endpoint if endpoint else self.endpoint
         # Create harder by calculate AuthV4 signature.
@@ -260,9 +262,9 @@ class S3AuthServerRestAPI(RestS3user):
             "post", data=payload, endpoint=endpoint,
             headers=headers)
         response_data = convert_xml_to_dict(response)
-        self.log.debug(response_data)
+        LOGGER.debug(response_data)
         if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
-            LOGGER.error(f"s3auth restapi request failed, reason: {response_data}")
+            LOGGER.error("s3auth restapi request failed, reason: %s", response_data)
             return False, response_data["ErrorResponse"]["Error"]["Message"]
 
         return True, response_data
@@ -308,8 +310,8 @@ class S3AuthServerRestAPI(RestS3user):
         self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
         if status:
             response = response["CreateUserResponse"]["CreateUserResult"]["User"]
-            self.log.debug("Create user response: %s", response)
-            status = True if user_name == response["UserName"] else False
+            LOGGER.debug("Create user response: %s", response)
+            status = bool(user_name == response["UserName"])
 
         return status, response
 
@@ -328,9 +330,9 @@ class S3AuthServerRestAPI(RestS3user):
             member = response["ListUsersResponse"]["ListUsersResult"]["Users"]["member"]
             user_list = [
                 member["UserName"]] if isinstance(
-                member, dict) else [
-                mem["UserName"] for mem in member] if isinstance(
-                    member, list) else []
+                    member, dict) else [
+                        mem["UserName"] for mem in member] if isinstance(
+                            member, list) else []
 
         return status, user_list
 
@@ -385,7 +387,7 @@ class S3AuthServerRestAPI(RestS3user):
         status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
         if status:
             response = response["CreateAccessKeyResponse"]["CreateAccessKeyResult"]["AccessKey"]
-        self.log.debug("Create acesskey response: %s", response)
+        LOGGER.debug("Create acesskey response: %s", response)
 
         return status, response
 
@@ -425,12 +427,12 @@ class S3AuthServerRestAPI(RestS3user):
         if status:
             response = response["ListAccessKeysResponse"]["ListAccessKeysResult"][
                 "AccessKeyMetadata"]["member"]
-        self.log.debug("List access key response: %s", response)
+        LOGGER.debug("List access key response: %s", response)
 
         return status, response
 
     def update_iam_accesskey(
-            self, user_name, user_access_key, access_key, secret_key, status="Active") -> tuple:
+            self, user_name, user_access_key, access_key, secret_key, **kwargs) -> tuple:
         """
         Update iam account user accesskey using s3authserver rest api.
 
@@ -441,6 +443,7 @@ class S3AuthServerRestAPI(RestS3user):
         :param status: accesskey status may be Active/Inactive.
         :return: bool, response of update accesskey of iam user.
         """
+        status = kwargs.get("status", "Active")
         payload = {"Action": "UpdateAccessKey"}
         if user_name:
             payload["UserName"] = user_name

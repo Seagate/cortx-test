@@ -19,7 +19,6 @@
 
 """S3 utility Library."""
 
-import re
 import urllib
 import hmac
 import datetime
