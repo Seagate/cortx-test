@@ -30,8 +30,8 @@ from commons import commands as cmn_cmd
 
 
 # Global Constants
-remote_hosts_org = "/etc/hosts"
-local_copy_hosts = "/tmp/hosts"
+REMOTE_HOSTS_ORG = "/etc/hosts"
+LOCAL_COPY_HOSTS = "/tmp/hosts"
 
 
 def configure_k8s_repo(*hostname, username, password):
@@ -147,12 +147,10 @@ def main(args):
     main function to deploy Kubernetes
     """
     k8s_input = dict()
-
     k8s_input['nodes'] = args.nodes
     k8s_input['hosts_ip'] = args.ip
     k8s_input['username'] = args.username
     k8s_input['password'] = args.password
-
     host_ip_dict = {}
 
     if not k8s_input['hosts_ip']:
@@ -174,14 +172,14 @@ def main(args):
     for host in k8s_input['nodes']:
         nd_obj = Node(hostname=host, username=k8s_input['username'],
                       password=k8s_input['password'])
-        nd_obj.copy_file_to_local(remote_hosts_org, local_copy_hosts)
-        with open(local_copy_hosts, "a") as file:
+        nd_obj.copy_file_to_local(REMOTE_HOSTS_ORG, LOCAL_COPY_HOSTS)
+        with open(LOCAL_COPY_HOSTS, "a") as file:
             for key, value in host_ip_dict.items():
                 line = " ".join([key, value])
                 file.write(line)
                 file.write("\n")
                 nd_obj.execute_cmd(cmn_cmd.CMD_PING.format(key), read_lines=True)
-        nd_obj.copy_file_to_remote(local_copy_hosts, remote_hosts_org)
+        nd_obj.copy_file_to_remote(LOCAL_COPY_HOSTS, REMOTE_HOSTS_ORG)
     configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
