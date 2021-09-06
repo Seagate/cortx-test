@@ -153,19 +153,14 @@ def main(args):
     k8s_input['hosts_ip'] = args.ip
     k8s_input['username'] = args.username
     k8s_input['password'] = args.password
-
-    nodes = k8s_input['nodes']
-    hosts_ip = k8s_input['hosts_ip']
-    username = k8s_input['username']
-    password = k8s_input['password']
-
     remote_hosts_org = CONFIG['default']['etc_host']
     local_copy_hosts = CONFIG['default']['etc_host_tmp']
     host_ip_dict = {}
 
-    if not hosts_ip:
-        for host in nodes:
-            nd_obj = Node(hostname=host, username=username, password=password)
+    if not k8s_input['hosts_ip']:
+        for host in k8s_input['nodes']:
+            nd_obj = Node(hostname=host, username=k8s_input['username'],
+                          password=k8s_input['password'])
             result = nd_obj.execute_cmd(cmd="ifconfig eth0", read_lines=True)
             test_list = result[1].split(" ")
             test_list = [i for i in test_list if i]
@@ -173,12 +168,14 @@ def main(args):
             host_ip_dict.update(host_ip_n)
 
     else:
-        for node_ip, host in hosts_ip, nodes:
+        for node_ip, host in zip(k8s_input['hosts_ip'], k8s_input['nodes']):
             host_ip_s = {node_ip: host}
             host_ip_dict.update(host_ip_s)
+        print("The hostname and ip dict is %s", host_ip_dict)
 
-    for host in nodes:
-        nd_obj = Node(hostname=host, username=username, password=password)
+    for host in k8s_input['nodes']:
+        nd_obj = Node(hostname=host, username=k8s_input['username'],
+                      password=k8s_input['password'])
         nd_obj.copy_file_to_local(remote_hosts_org, local_copy_hosts)
         with open(local_copy_hosts, "a") as file:
             for key, value in host_ip_dict.items():
@@ -187,16 +184,22 @@ def main(args):
                 file.write("\n")
                 nd_obj.execute_cmd(cmn_cmd.CMD_PING.format(key), read_lines=True)
         nd_obj.copy_file_to_remote(local_copy_hosts, remote_hosts_org)
-    configure_k8s_repo(*nodes, username=username, password=password)
-    result = initialize_k8s(nodes[0], username=username, password=password)
+    configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
+                       password=k8s_input['password'])
+    result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
+                            password=k8s_input['password'])
     print("The token is %s", result[1])
-    create_network(nodes[0], username=username, password=password)
-    status = get_node_status(nodes[0], username=username, password=password)
+    create_network(k8s_input['nodes'][0], username=k8s_input['username'],
+                   password=k8s_input['password'])
+    status = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
+                             password=k8s_input['password'])
     print("The stat is %s", status)
     if "Ready" in status:
         print("Adding the worker node to master node")
-        join_cluster(*nodes, username=username, password=password, cmd=result[1])
-    status_all = get_node_status(nodes[0], username=username, password=password)
+        join_cluster(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], cmd=result[1])
+    status_all = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
+                                 password=k8s_input['password'])
     if "NotReady" in status_all:
         print("Please check after some time,"
               "the nodes status is %s", status_all)
