@@ -478,7 +478,6 @@ class HALibs:
             hlt_obj,
             host_data: dict,
             hctl_srvs: dict,
-            node: int,
             checknode: str):
         """
         This function will check hctl status and if cluster is clean
@@ -487,8 +486,7 @@ class HALibs:
         :param hlt_obj: Health class object
         :param host_data: Dictionary of host data info
         :param hctl_srvs: Dictionary of not expected status service state
-        :param node: Node ID which has been stopped
-        :param checknode: Node to be check
+        :param checknode: String for node to be check i.e "srvnode-x.data.private"
         :return: (bool, Response)
         """
         # Get hctl status response for stopped node (Cluster not running)
@@ -522,14 +520,14 @@ class HALibs:
         return True, "HCTL status updated successfully in dictionary"
 
     # pylint: disable-msg=too-many-locals
-    def check_pcs_status_resp(self, node, node_obj, hlt_obj, up_node):
+    def check_pcs_status_resp(self, node, node_obj, hlt_obj, csm_node):
         """
         This will get pcs status xml and hctl status response and
         check all nodes health status after performing node stop operation on one node.
         :param node: Node ID for which health check is required
         :param node_obj: Node object List
         :param hlt_obj: Health class object List
-        :param up_node: Node which is up and CSM is running
+        :param csm_node: Node which is up and CSM is running
         :return: (bool, response/Dictionary for all the service which are not in expected state)
         """
         # Get the next node to check pcs and hctl status
@@ -553,12 +551,12 @@ class HALibs:
             exc=False)
         if isinstance(response, bytes):
             response = str(response, 'UTF-8')
-        json_format = hlt_obj[up_node].get_node_health_xml(
+        json_format = hlt_obj[csm_node].get_node_health_xml(
             pcs_response=response)
         crm_mon_res = json_format['crm_mon']['resources']
         hctl_services_failed = {}
         # Get the clone set resource state from PCS status
-        clone_set_dict = hlt_obj[up_node].get_clone_set_status(
+        clone_set_dict = hlt_obj[csm_node].get_clone_set_status(
             crm_mon_res, self.num_nodes)
         svcs_elem = {'node': None, 'status': None}
         for pcs_key, pcs_value in clone_set_dict.items():
@@ -575,23 +573,22 @@ class HALibs:
                     temp_svc['status'] = status
                     hctl_services_failed[f'{pcs_key}'].append(temp_svc)
         # Extract data for PCS resource group elements
-        resource_dict = hlt_obj[up_node].get_resource_status(crm_mon_res)
+        resource_dict = hlt_obj[csm_node].get_resource_status(crm_mon_res)
         for pcs_key, pcs_value in resource_dict.items():
             hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
                 hctl_services_failed[f'{pcs_key}'].append(pcs_value)
         # Extract data for PCS group elements
-        group_dict = hlt_obj[up_node].get_group_status(crm_mon_res)
+        group_dict = hlt_obj[csm_node].get_group_status(crm_mon_res)
         for pcs_key, pcs_value in group_dict.items():
             hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
                 hctl_services_failed[f'{pcs_key}'].append(pcs_value)
 
         resp = self.check_hctl_status_resp(
-            hlt_obj[up_node],
+            hlt_obj[csm_node],
             host_data=host_details,
             hctl_srvs=hctl_services_failed,
-            node=node,
             checknode=checknode)
         if not resp:
             return resp
@@ -655,10 +652,10 @@ class HALibs:
         before starting stop_io_async
         :return: (bool, response)
         """
+        io_data = None
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
-                io_data = None
                 users = self.mgnt_ops.create_account_users(nusers=nusers)
                 io_data = self.mgnt_ops.create_buckets(
                     nbuckets=nbuckets, users=users)

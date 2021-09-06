@@ -337,15 +337,15 @@ class TestHANodeStartStop:
                 "Step 4: Verified the %s down alert",
                 self.srvnode_list[node])
             LOGGER.info("Step 5: Check PCS status")
-            resp = self.ha_obj.get_csm_failover_node(
+            csm_resp = self.ha_obj.get_csm_failover_node(
                 srvnode_list=self.srvnode_list,
                 node_list=self.node_list,
                 sys_list=self.sys_list,
                 node=node)
             assert_utils.assert_true(
-                resp[0], "Failed to get CSM failover node")
+                csm_resp[0], "Failed to get CSM failover node")
             resp = self.ha_obj.check_pcs_status_resp(
-                node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+                node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
@@ -453,14 +453,15 @@ class TestHANodeStartStop:
             "Step 4: Verified the %s down alert",
             self.srvnode_list[node])
         LOGGER.info("Step 5: Check PCS status")
-        resp = self.ha_obj.get_csm_failover_node(
+        csm_resp = self.ha_obj.get_csm_failover_node(
             srvnode_list=self.srvnode_list,
             node_list=self.node_list,
             sys_list=self.sys_list,
             node=node)
-        assert_utils.assert_true(resp[0], "Failed to get CSM failover node")
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 5: PCS shows services stopped for %s, services on other nodes are online",
@@ -511,14 +512,15 @@ class TestHANodeStartStop:
         LOGGER.info(
             "Step 7: Verified %s is powered on and pinging.",
             self.host_list[node])
-        resp = self.ha_obj.get_csm_failover_node(
+        csm_resp = self.ha_obj.get_csm_failover_node(
             srvnode_list=self.srvnode_list,
             node_list=self.node_list,
             sys_list=self.sys_list,
             node=node)
-        assert_utils.assert_true(resp[0], "Failed to get CSM failover node")
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.ha_rest.check_csr_health_status_rest("degraded")
         assert_utils.assert_true(resp[0], resp[1])
@@ -636,15 +638,15 @@ class TestHANodeStartStop:
                 "Step 4: Verified the %s down alert",
                 self.srvnode_list[node])
             LOGGER.info("Step 5: Check PCS status")
-            resp = self.ha_obj.get_csm_failover_node(
+            csm_resp = self.ha_obj.get_csm_failover_node(
                 srvnode_list=self.srvnode_list,
                 node_list=self.node_list,
                 sys_list=self.sys_list,
                 node=node)
             assert_utils.assert_true(
-                resp[0], "Failed to get CSM failover node")
+                csm_resp[0], "Failed to get CSM failover node")
             resp = self.ha_obj.check_pcs_status_resp(
-                node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+                node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
@@ -757,15 +759,15 @@ class TestHANodeStartStop:
                 "Step 4: Verified the %s down alert",
                 self.srvnode_list[node])
             LOGGER.info("Step 5: Check PCS status")
-            resp = self.ha_obj.get_csm_failover_node(
+            csm_resp = self.ha_obj.get_csm_failover_node(
                 srvnode_list=self.srvnode_list,
                 node_list=self.node_list,
                 sys_list=self.sys_list,
                 node=node)
             assert_utils.assert_true(
-                resp[0], "Failed to get CSM failover node")
+                csm_resp[0], "Failed to get CSM failover node")
             resp = self.ha_obj.check_pcs_status_resp(
-                node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+                node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info(
                 "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
@@ -933,14 +935,15 @@ class TestHANodeStartStop:
                 self.num_nodes)]
         resp = self.ha_rest.verify_node_health_status_rest(check_rem_node)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_obj.get_csm_failover_node(
+        csm_resp = self.ha_obj.get_csm_failover_node(
             srvnode_list=self.srvnode_list,
             node_list=self.node_list,
             sys_list=self.sys_list,
             node=node)
-        assert_utils.assert_true(resp[0], "Failed to get CSM failover node")
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: PCS services stopped for %s, health status is offline but still pinging",
@@ -1052,14 +1055,15 @@ class TestHANodeStartStop:
             "Step 4: Verified the %s down alert",
             self.srvnode_list[node])
         LOGGER.info("Step 5: Check PCS status")
-        resp = self.ha_obj.get_csm_failover_node(
+        csm_resp = self.ha_obj.get_csm_failover_node(
             srvnode_list=self.srvnode_list,
             node_list=self.node_list,
             sys_list=self.sys_list,
             node=node)
-        assert_utils.assert_true(resp[0], "Failed to get CSM failover node")
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
@@ -1101,14 +1105,15 @@ class TestHANodeStartStop:
         LOGGER.info(
             "Step 8: Check PCS status and make sure powering on server "
             "doesn't start services")
-        resp = self.ha_obj.get_csm_failover_node(
+        csm_resp = self.ha_obj.get_csm_failover_node(
             srvnode_list=self.srvnode_list,
             node_list=self.node_list,
             sys_list=self.sys_list,
             node=node)
-        assert_utils.assert_true(resp[0], "Failed to get CSM failover node")
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, resp[2], self.hlt_list, up_node=self.node_list.index(resp[2]))
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 8: PCS shows services stopped for %s, services on other nodes shows started",
