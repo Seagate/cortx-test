@@ -29,7 +29,8 @@ import plotly.graph_objs as go
 from Performance.schemas import statistics_column_headings, multiple_buckets_headings
 from Performance.schemas import *
 from Performance.global_functions import get_distinct_keys, sort_object_sizes_list, \
-    sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list
+    sort_builds_list, get_db_details, keys_exists, round_off, check_empty_list, \
+    sort_sessions
 from Performance.mongodb_api import find_documents, count_documents
 from Performance.styles import style_dashtable_header, style_table_cell
 
@@ -101,7 +102,9 @@ def get_data_for_stats(data):
 
     for obj in objects:
         data_needed_for_query['objsize'] = obj
-        get_benchmark_data(data_needed_for_query, results)
+        temp_data = get_benchmark_data(data_needed_for_query)
+        if not check_empty_list(temp_data):
+            results[obj] = temp_data
 
     df = pd.DataFrame(results)
     df = df.T
@@ -125,8 +128,30 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
         dataframe: Pandas dataframe with queried data
     """
     data_needed_for_query = data
-    query = get_graphs_schema(data_needed_for_query, xfilter, xfilter_tag)
-    if xfilter == 'Build':
+
+    if data_needed_for_query['sessions'] == 'all' or data_needed_for_query['all_sessions_plot']:
+        query = get_multi_concurrency_schema(data, xfilter, xfilter_tag)
+        sessions = get_distinct_keys(
+            data_needed_for_query['release'], 'Sessions', query)
+        sessions = sort_sessions(sessions)
+
+        if data_needed_for_query['name'] == 'S3bench':
+            results = {
+                'Sessions': statistics_column_headings
+            }
+        else:
+            results = {
+                'Sessions': multiple_buckets_headings
+            }
+
+        for session in sessions:
+            data_needed_for_query['sessions'] = session
+            temp_data = get_benchmark_data(data_needed_for_query)
+            if not check_empty_list(temp_data):
+                results[session] = temp_data
+
+    elif xfilter == 'Build':
+        query = get_graphs_schema(data_needed_for_query, xfilter, xfilter_tag)
         objects = get_distinct_keys(
             data_needed_for_query['release'], 'Object_Size', query)
         objects = sort_object_sizes_list(objects)
@@ -142,8 +167,11 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         for obj in objects:
             data_needed_for_query['objsize'] = obj
-            get_benchmark_data(data_needed_for_query, results)
+            temp_data = get_benchmark_data(data_needed_for_query)
+            if not check_empty_list(temp_data):
+                results[obj] = temp_data
     else:
+        query = get_graphs_schema(data_needed_for_query, xfilter, xfilter_tag)
         builds = get_distinct_keys(
             data_needed_for_query['release'], 'Build', query)
         builds = sort_builds_list(builds)
@@ -158,7 +186,9 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             }
         for build in builds:
             data_needed_for_query['build'] = build
-            get_benchmark_data(data_needed_for_query, results)
+            temp_data = get_benchmark_data(data_needed_for_query)
+            if not check_empty_list(temp_data):
+                results[build] = temp_data
 
     df = pd.DataFrame(results)
     df = df.T
@@ -168,7 +198,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
     return df
 
 
-def get_benchmark_data(data_needed_for_query, results):  # pylint: disable=too-many-branches
+def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branches
     """
     Granularized function to query data from database for perf metrics
 
@@ -221,13 +251,14 @@ def get_benchmark_data(data_needed_for_query, results):  # pylint: disable=too-m
                     temp_data.append(get_average_data(
                         count, db_data, stat, "Avg", 1))
 
-    if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
-        if data_needed_for_query['xfilter'] == 'Build':
-            results[data_needed_for_query['objsize']] = temp_data
-        else:
-            results[data_needed_for_query['build']] = temp_data
-    elif not check_empty_list(temp_data):
-        results[data_needed_for_query['objsize']] = temp_data
+    return temp_data
+    # if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
+    #     if data_needed_for_query['xfilter'] == 'Build':
+    #         results[data_needed_for_query['objsize']] = temp_data
+    #     else:
+    #         results[data_needed_for_query['build']] = temp_data
+    # elif not check_empty_list(temp_data):
+    #     results[data_needed_for_query['objsize']] = temp_data
 
 
 def get_dash_table_from_dataframe(df, bench, column_id):
@@ -412,7 +443,7 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
             plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
         x=x_data,
         y=y_data,
-        hovertemplate='<br>%{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
+        hovertemplate='<br>%{x}, %{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
             plot_data['operation'], plot_data['option'], plot_data['custom']),
         connectgaps=True,
         # line={'color': plot_data['pallete'][plot_data['operation']]}
