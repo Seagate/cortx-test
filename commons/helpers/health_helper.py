@@ -750,3 +750,36 @@ class Health(Host):
         time.sleep(wait_time)
 
         return True
+
+    @staticmethod
+    def check_cortx_cluster_health(node, retry=3):
+        """
+        :param node: node of a cluster
+        :param retry: number of attempts to perform health check
+        :return bool
+        :True for healthy
+        """
+        r_try = 1
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+               username=node['username'],
+               password=node['password'])
+        health_result = False
+        capacity_result = False
+        while r_try <= retry:
+            try:
+                health_result = health.check_node_health(node)
+                ha_result = health.get_sys_capacity()
+                ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
+                capacity_result = ha_used_percent < 98.0
+                health.disconnect()
+                break
+            except BaseException as exec:
+                LOG.warning("%s exception occurred while performing Health check", exec)
+                delay = pow(r_try, 4)
+                LOG.info("Retrying in %s seconds", delay)
+                time.sleep(delay)
+                r_try += 1
+        if health_result and capacity_result:
+            return True
+        return False
