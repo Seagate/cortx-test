@@ -694,6 +694,7 @@ class HALibs:
             self.parallel_ios = Process(
                 target=di_data[0].stop_io, args=(di_data[1], is_di))
             self.parallel_ios.start()
+            return True, self.parallel_ios
         else:
             if self.parallel_ios.is_alive():
                 self.parallel_ios.join()
