@@ -24,12 +24,16 @@ Script to deploy k8s on VM
 from __future__ import absolute_import
 import argparse
 import time
+import configparser
 from commons.helpers.node_helper import Node
 from commons import commands as cmn_cmd
 
 # Global Constants
-REMOTE_HOSTS_ORG = "/etc/hosts"
-LOCAL_COPY_HOSTS = "/var/tmp/hosts"
+CONFIG_FILE = 'scripts/jenkins_job/config.ini'
+CONFIG = configparser.ConfigParser()
+CONFIG.read(CONFIG_FILE)
+REMOTE_HOSTS_ORG = CONFIG['default']['etc_host']
+LOCAL_COPY_HOSTS = CONFIG['default']['etc_host_tmp']
 
 
 def configure_k8s_repo(*hostname, username, password):
