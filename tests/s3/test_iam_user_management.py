@@ -38,14 +38,21 @@ from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 
 
 class TestIAMUserManagement:
-    """IAM user Testsuite for CLI"""
+    """IAM user Testsuite for CLI/Rest"""
 
     @classmethod
     def setup_class(cls):
         cls.log = logging.getLogger(__name__)
+        cls.rest_obj = S3AccountOperationsRestAPI()
+        cls.auth_obj = S3AuthServerRestAPI()
+        cls.s3_user = "s3user_{}"
+        cls.iam_user = "iamuser_{}"
+        cls.email = "{}@seagate.com"
         cls.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.log.info("Setup s3 bench tool")
         cls.log.info("Check s3 bench tool installed.")
@@ -91,6 +98,7 @@ class TestIAMUserManagement:
         self.parallel_ios = None
         self.account_dict = dict()
         self.resources_dict = dict()
+        self.account_dict[self.s3acc_name] = self.acc_password
         self.account_prefix = "acc-reset-passwd-{}"
         self.io_bucket_name = "io-bkt1-reset-{}".format(perf_counter_ns())
         self.object_name = "obj-reset-object-{}".format(perf_counter_ns())
@@ -129,20 +137,15 @@ class TestIAMUserManagement:
                 resp = resource.delete_bucket(
                     self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
-
-        accounts = self.cli_test_obj.list_accounts_cortxcli()
-        all_accounts = [acc["account_name"] for acc in accounts]
-        self.log.info("setup %s", all_accounts)
         for acc in self.account_dict:
-            if acc in all_accounts:
-                self.cli_test_obj.login_cortx_cli(
-                    username=acc, password=self.account_dict[acc])
-                self.cli_test_obj.delete_iam_user(self.user_name)
-                self.cli_test_obj.logout_cortx_cli()
-                resp = self.cli_test_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.account_dict[acc])
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Deleted %s account successfully", acc)
+            self.cli_test_obj.login_cortx_cli(
+                username=acc, password=self.account_dict[acc])
+            self.cli_test_obj.delete_iam_user(self.user_name)
+            self.cli_test_obj.logout_cortx_cli()
+            resp = self.cli_test_obj.delete_account_cortxcli(
+                account_name=acc, password=self.account_dict[acc])
+            assert_utils.assert_true(resp[0], resp[1])
+            self.log.info("Deleted %s account successfully", acc)
         del self.cli_test_obj
         self.log.info("ENDED : Teardown operations for test function")
 
@@ -487,3 +490,177 @@ class TestIAMUserManagement:
             "Step 9. Check cluster status, all services are running after completing test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22150")
+    def test_22150(self):
+        """use REST API call to create s3iamuser with special characters."""
+        self.log.info("STARTED: use REST API call to create s3iamuser with special characters.")
+        self.log.info("Step 1: Create Account.")
+        self.acc_name = self.s3_user.format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.acc_name)
+        resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id, self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: create s3iamuser with special character using REST API call.")
+        for schar in ["_", "-", "@"]:
+            self.iam_user = "iamuser{}{}".format(schar, perf_counter_ns())
+            resp = self.auth_obj.create_iam_user(
+                self.iam_user, self.iam_password, access_key, secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+            resp = self.auth_obj.delete_iam_user(self.iam_user, access_key, secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Delete s3 account.")
+        resp = self.rest_obj.delete_s3_account(self.acc_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: use REST API call to create s3iamuser with special characters.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-22148")
+    def test_22148(self):
+        """REST API to Update Login Profile without mentioning new Password for the s3iamuser."""
+        self.log.info(
+            "STARTED: Update Login Profile without mentioning new Password for the s3iamuser.")
+        self.log.info("Step 1: Create Account.")
+        self.acc_name = self.s3_user.format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.acc_name)
+        resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id, self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: create s3iamuser.")
+        self.iam_user = "iamuser-{}".format(perf_counter_ns())
+        resp = self.auth_obj.create_iam_user(
+            self.iam_user, self.iam_password, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: update password for user using REST API.")
+        resp = self.auth_obj.update_iam_user(
+            self.iam_user, access_key=secret_key, secret_key=access_key)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 4: Delete iam user.")
+        resp = self.auth_obj.delete_iam_user(self.iam_user, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Delete s3 account.")
+        resp = self.rest_obj.delete_s3_account(self.acc_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "ENDED: Update Login Profile without mentioning new Password for the s3iamuser.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-27277")
+    def test_27277(self):
+        """use REST API call to perform CRUD operations on s3iamuser."""
+        self.log.info("STARTED: use REST API call to perform CRUD operations on s3iamuser.")
+        self.log.info("Step 1: Create s3 Account")
+        self.acc_name = self.s3_user.format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.acc_name)
+        resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id, self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Create s3iamuser using access/secret key using direct REST API call")
+        self.iam_user = "iamuser-{}".format(perf_counter_ns())
+        resp = self.auth_obj.create_iam_user(
+            self.iam_user, self.iam_password, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: list s3iamusers using access/secret key using direct REST API call.")
+        resp = self.auth_obj.list_iam_users(access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: updateloginprofile for s3iamuser using rest-api call.")
+        resp = self.auth_obj.update_iam_user(
+            self.iam_user, self.acc_password, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Delete s3iamuser using access/secret key using direct REST API call")
+        resp = self.auth_obj.delete_iam_user(self.iam_user, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: Delete s3 Account")
+        resp = self.rest_obj.delete_s3_account(self.acc_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: use REST API call to perform CRUD operations on s3iamuser.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-27278")
+    def test_27278(self):
+        """use REST API call to perform accesskey CRUD operations for s3iamuser."""
+        self.log.info(
+            "STARTED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
+        self.log.info("Step 1: Create s3 Account")
+        self.acc_name = self.s3_user.format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.acc_name)
+        resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id, self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: Create s3iamuser using access/secret key using direct REST API call")
+        self.iam_user = "iamuser-{}".format(perf_counter_ns())
+        resp = self.auth_obj.create_iam_user(
+            self.iam_user, self.iam_password, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: Create 2 Accesskey/secret key for s3iamuser using REST API call.")
+        iam_access_key = []
+        for _ in range(2):
+            resp = self.auth_obj.create_iam_accesskey(self.iam_user, access_key, secret_key)
+            iam_access_key.append(resp[1]["AccessKeyId"])
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 4: Now list 2 acceeskey/secret keys for s3iamuser using REST API call.")
+        resp = self.auth_obj.list_iam_accesskey(self.iam_user, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Update accesskey for s3iamuser.")
+        resp = self.auth_obj.update_iam_accesskey(
+            self.iam_user, iam_access_key[0], access_key, secret_key, status="Inactive")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: Delete accesskey for s3iamuser.")
+        resp = self.auth_obj.update_iam_accesskey(
+            self.iam_user, iam_access_key[0], access_key, secret_key, status="Active")
+        assert_utils.assert_true(resp[0], resp[1])
+        for accesskeyid in iam_access_key:
+            resp = self.auth_obj.delete_iam_accesskey(
+                self.iam_user, accesskeyid, access_key, secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 7: Delete s3iamuser using access/secret key using direct REST API call")
+        resp = self.auth_obj.delete_iam_user(self.iam_user, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 8: Delete s3 Account")
+        resp = self.rest_obj.delete_s3_account(self.acc_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info(
+            "ENDED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-21644")
+    def test_21644(self):
+        """use REST API call to create more than 2 Accesskeys for s3iamuser."""
+        self.log.info("STARTED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
+        self.log.info("Step 1: Create Account.")
+        self.acc_name = self.s3_user.format(perf_counter_ns())
+        self.email_id = "{}@seagate.com".format(self.acc_name)
+        resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id, self.acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("Step 2: create s3iamuser.")
+        self.iam_user = "iamuser-{}".format(perf_counter_ns())
+        resp = self.auth_obj.create_iam_user(
+            self.iam_user, self.iam_password, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 3: List 2 accesskeys/secrets for s3iamuser using REST API.")
+        access_key_id = []
+        for _ in range(2):
+            resp = self.auth_obj.create_iam_accesskey(self.iam_user, access_key, secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+            access_key_id.append(resp[1]["AccessKeyId"])
+        self.log.info("Step 4: Now create another accesskey/secretkey for same s3iamuser.")
+        resp = self.auth_obj.create_iam_accesskey(self.iam_user, access_key, secret_key)
+        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 5: Delete iam user.")
+        for accesskeyid in access_key_id:
+            resp = self.auth_obj.delete_iam_accesskey(
+                self.iam_user, accesskeyid, access_key, secret_key)
+            assert_utils.assert_true(resp[0], resp[1])
+        resp = self.auth_obj.delete_iam_user(self.iam_user, access_key, secret_key)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6: Delete s3 account.")
+        resp = self.rest_obj.delete_s3_account(self.acc_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
