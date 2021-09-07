@@ -32,7 +32,9 @@ from commons.helpers.controller_helper import ControllerLib
 from commons.utils.system_utils import toggle_nw_infc_status
 from commons import commands
 from commons.helpers.node_helper import Node
+from commons.helpers.bmc_helper import Bmc
 from config import RAS_VAL
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -915,7 +917,10 @@ class GenerateAlertWrapper:
         ras_test_obj = RASTestLib(host=host, username=h_user, password=h_pwd)
         LOGGER.info("Getting all available sensors for sensor type: %s", sensor_type)
         resp = ras_test_obj.get_ipmi_sensor_list(sensor_type)
-        sensor_name = random.SystemRandom().choice(seq=resp[1])
+        if resp[0]:
+            sensor_name = resp[1][0]
+        else:
+            return resp
         resp_list = list()
         for state in sensor_states:
             resp = ras_test_obj.assert_deassert_sensor_state(sensor_name=sensor_name,
@@ -925,3 +930,29 @@ class GenerateAlertWrapper:
             resp_list.append(resp[1])
 
         return True, resp[1]
+
+    @staticmethod
+    def create_resolve_bmc_ip_change_fault(host, h_user, h_pwd, input_parameters):
+        """
+        Create or resolve bmc ip change fault by updating non ping-able valid
+        ip.
+
+        :param host: hostname or IP of the host
+        :param h_user: Username of the host
+        :param h_pwd: Password of the host
+        :param input_parameters: This contains the input parameters required
+        to generate the fault
+        :return: Returns boolean
+        """
+        bmc_ip = input_parameters['bmc_ip']
+        bmc_obj = Bmc(hostname=host, username=h_user, password=h_pwd)
+        try:
+            LOGGER.info("Change bmc ip to %s on node %s", bmc_ip, host)
+            bmc_obj.set_bmc_ip(bmc_ip=bmc_ip)
+            return True, bmc_ip
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cons.EXCEPTION_ERROR,
+                         GenerateAlertWrapper.
+                         create_resolve_bmc_ip_change_fault.__name__,
+                         error)
+            return False, error

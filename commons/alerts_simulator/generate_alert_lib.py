@@ -70,8 +70,13 @@ class AlertType(Enum, settings=NoAlias):
     OS_DISK_ENABLE = 14
     SERVER_PSU_FAULT = 15
     SERVER_PSU_FAULT_RESOLVED = 16
+    BMC_CHANGE_FAULT = 17
+    BMC_CHANGE_FAULT_RESOLVE = 17
     RAID_INTEGRITY_FAULT = 18
     RAID_INTEGRITY_RESOLVED = 19
+    FAN_ALERT = 20
+    FAN_ALERT_RESOLVED = 21
+
 
 class GenerateAlertLib:
     """
@@ -203,6 +208,8 @@ class GenerateAlertLib:
                 'args': f'(host="{host}", h_user="{h_user}", '
                 f'h_pwd="{h_pwd}", '
                 f'input_parameters={input_parameters})'},
+            17: {
+                'cmd': 'create_resolve_bmc_ip_change_fault'},
             18: {
                 'cmd': 'create_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
@@ -212,7 +219,15 @@ class GenerateAlertLib:
                 'cmd': 'resolve_raid_integrity_faults',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
-                        f'input_parameters={input_parameters})'}
+                        f'input_parameters={input_parameters})'},
+            20: {'cmd': 'ipmi_alerts',
+                 'args': f'(host="{host}", h_user="{h_user}", '
+                 f'h_pwd="{h_pwd}", '
+                 f'input_parameters={input_parameters})'},
+            21: {'cmd': 'ipmi_alerts',
+                 'args': f'(host="{host}", h_user="{h_user}", '
+                 f'h_pwd="{h_pwd}", '
+                 f'input_parameters={input_parameters})'},
         }
 
         arguments = (switcher[alert_type.value]['args'])
