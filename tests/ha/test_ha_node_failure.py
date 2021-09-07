@@ -137,13 +137,22 @@ class TestHANodeFailure:
                         operation='start', resource='node', resource_id=node, login_as={
                             "username": self.csm_user, "password": self.csm_passwd})
                     assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Perform hare reset to reset data and restart cluster.")
+        LOGGER.info("Perform reset data and start cluster.")
+        LOGGER.debug("Stopping cluster before hare reset....")
+        resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_STOP_CLSTR,
+                                           hostname=self.host_list[0],
+                                           username=self.username[0],
+                                           password=self.password[0])
+        assert_utils.assert_true(resp, "Cluster did not stop.")
+        # TODO: Need to check is any sleep required
+        LOGGER.debug("Perform hare reset....")
         resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_HARE_RESET,
                                            hostname=self.host_list[0],
                                            username=self.username[0],
                                            password=self.password[0])
         assert_utils.assert_true(resp, "Hare reset didn't execute.")
         # TODO: Need to check is any sleep required
+        LOGGER.debug("Start the cluster again....")
         resp = system_utils.run_remote_cmd(cmd=Cmds.CMD_START_CLSTR,
                                            hostname=self.host_list[0],
                                            username=self.username[0],
