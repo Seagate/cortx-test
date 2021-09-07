@@ -340,13 +340,15 @@ class RestS3Bucket(RestTestLib):
             # Fetching api response
             response = self.restapi.rest_call("post", endpoint=endpoint, data=user_data,
                                               headers=headers)
-            if response.status_code != const.SUCCESS_STATUS:
-                self.log.error(f"POST on {endpoint} request failed.\n"
-                               f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
-                raise CTException(err.CSM_REST_POST_REQUEST_FAILED)
+            if bucket_type == "valid":
+                if response.status_code != const.SUCCESS_STATUS:
+                    self.log.error(f"POST on {endpoint} request failed.\n"
+                                   f"Response code : {response.status_code}")
+                    self.log.error(f"Response content: {response.content}")
+                    self.log.error(f"Request headers : {response.request.headers}\n"
+                                   f"Request body : {response.request.body}")
+                    raise CTException(err.CSM_REST_POST_REQUEST_FAILED)
+
             return response
         except BaseException as error:
             self.log.error("{0} {1}: {2}".format(
