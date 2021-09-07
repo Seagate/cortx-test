@@ -737,3 +737,63 @@ class HALibs:
             if resp:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
+
+    @staticmethod
+    def cortx_start_cluster(node_obj, node: str = "--all"):
+        """
+        This function starts the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be started, default : --all
+        """
+        LOGGER.info("Start the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_START_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_START_CLSTR, node, resp[0])
+        if "Cluster start operation performed" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    @staticmethod
+    def cortx_stop_cluster(node_obj, node: str = "--all"):
+        """
+        This function stops the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be stopped, default : --all
+        """
+        LOGGER.info("Stop the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_STOP_CLSTR, node, resp[0])
+        if "Cluster stop is in progress" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    def restart_cluster(self, node_obj, hlt_obj_list):
+        """
+        Restart the cluster and check all nodes health.
+        Commands executed :
+        cortx stop cluster --all
+        cortx start cluster -all
+        pcs resource cleanup
+        Validate health of all the nodes.
+        :param node_obj: node object for stop/start cluster
+        :param hlt_obj_list: health object list for all the nodes.
+        """
+        LOGGER.info("Stop the cluster")
+        resp = self.cortx_stop_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Stopping cluster"
+        LOGGER.info("Start the cluster")
+        resp = self.cortx_start_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Starting cluster"
+        time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Perform PCS resource cleanup")
+        hlt_obj_list[0].pcs_resource_cleanup()
+        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
+        for hlt_obj in hlt_obj_list:
+            res = hlt_obj.check_node_health()
+            if not res[0]:
+                return False, f"Error during health check of {hlt_obj}"
+        LOGGER.info("All nodes are reachable and PCS looks clean.")
+        return True, "Cluster Restarted successfully."
