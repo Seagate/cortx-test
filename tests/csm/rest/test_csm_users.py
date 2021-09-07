@@ -3003,8 +3003,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verify create admin user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
-        assert(response.status_code == const.FORBIDDEN, 
-                    "Status code check failed.")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
         assert response.json()["error_code"] == str(test_cfg["error_code"]), (
             "Error code check failed.")
         assert response.json()["message"] == test_cfg["message"].format("admin",
