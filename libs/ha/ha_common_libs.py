@@ -705,25 +705,22 @@ class HALibs:
         :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
         WRITEs call
         :param is_di: IF DI check is required on READ objects
-        :param start_read: Stop the parallel process and clean up
-        s3 user and objects
-        :return: bool/delete_s3_acc_buckets_objects function call's response
-        or Process object
+        :param start_read: If True, function will start the parallel READs
+        and if False function will Stop the parallel READs
+        :return: bool/Process object or stop process status
         """
-        return_val = (False, "Failed to Stop Parallel READ IO")
         if start_read:
             self.parallel_ios = Process(
                 target=di_data[0].stop_io, args=(di_data[1], is_di))
             self.parallel_ios.start()
             return_val = (True, self.parallel_ios)
-
-        if self.parallel_ios.is_alive():
-            self.parallel_ios.join()
+        else:
+            if self.parallel_ios.is_alive():
+                self.parallel_ios.join()
             LOGGER.info(
                 "Parallel IOs stopped: %s",
                 not self.parallel_ios.is_alive())
-            del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
-            return_val = del_resp
+            return_val = (not self.parallel_ios.is_alive(), "Failed to stop parallel READ IOs.")
         return return_val
 
     # pylint: disable=too-many-arguments
