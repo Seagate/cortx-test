@@ -23,7 +23,6 @@ from __future__ import absolute_import
 
 import logging
 import os
-import time
 
 import pytest
 
@@ -59,7 +58,6 @@ class TestIntelISAIO:
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.ha_obj = HALibs()
         cls.node_list = []
-
         cls.hlt_list = []
         cls.reset_s3config = False
 
@@ -106,7 +104,7 @@ class TestIntelISAIO:
                                         password=CMN_CFG["nodes"][node]["password"]
                                         )
             self.log.info("Restart the cluster")
-            self.restart_cluster()
+            self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
 
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3t_obj.bucket_list()
@@ -127,32 +125,9 @@ class TestIntelISAIO:
                 self.test_dir_path,
                 resp)
 
-    def restart_cluster(self):
+    def write_read_validate_file(self, bucket_name, test_file, count, block_size):
         """
-        Restart the cluster and check all nodes health.
-        Commands executed :
-        cortx stop cluster --all
-        cortx start cluster -all
-        pcs resource cleanup
-        """
-        self.log.info("Stop the cluster")
-        resp = self.ha_obj.cortx_stop_cluster(self.node_list[0])
-        assert_utils.assert_true(resp[0])
-        self.log.info("Start the cluster")
-        resp = self.ha_obj.cortx_start_cluster(self.node_list[0])
-        assert_utils.assert_true(resp[0])
-        time.sleep(self.test_config["cluster_start_delay"])
-        self.log.info("Perform PCS resource cleanup")
-        self.hlt_list[0].pcs_resource_cleanup()
-        self.log.info("Checking if all nodes are reachable and PCS clean.")
-        for hlt_obj in self.hlt_list:
-            res = hlt_obj.check_node_health()
-            assert_utils.assert_true(res[0], res[1])
-        self.log.info("All nodes are reachable and PCS looks clean.")
-
-    def write_read_file(self, bucket_name, test_file, count, block_size):
-        """
-        Create test_file with file_size and upload to bucket_name
+        Create test_file with file_size(count*blocksize) and upload to bucket_name
         validate checksum after download and deletes the file
         """
         file_path = os.path.join(self.test_dir_path, test_file)
@@ -210,7 +185,7 @@ class TestIntelISAIO:
                                         )
                 self.reset_s3config = True
             self.log.info("Step 2: Restart the cluster")
-            self.restart_cluster()
+            self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
 
         self.log.info("Step 3: Creating bucket %s", bucket_name)
         resp = self.s3t_obj.create_bucket(bucket_name)
@@ -224,7 +199,7 @@ class TestIntelISAIO:
                     block_size = "1K"
                 else:
                     block_size = "1M"
-                self.write_read_file(bucket_name, test_file, count, block_size)
+                self.write_read_validate_file(bucket_name, test_file, count, block_size)
 
         self.log.info("Step 5: Delete bucket %s", bucket_name)
         resp = self.s3t_obj.delete_bucket(bucket_name)

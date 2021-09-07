@@ -748,3 +748,33 @@ class HALibs:
         if "Cluster stop is in progress" in resp[0]:
             return True, resp[0]
         return False, resp[0]
+
+    def restart_cluster(self, node_obj, hlt_obj_list):
+        """
+        Restart the cluster and check all nodes health.
+        Commands executed :
+        cortx stop cluster --all
+        cortx start cluster -all
+        pcs resource cleanup
+        Validate health of all the nodes.
+        :param node_obj: node object for stop/start cluster
+        :param hlt_obj_list: health object list for all the nodes.
+        """
+        LOGGER.info("Stop the cluster")
+        resp = self.cortx_stop_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Stopping cluster"
+        LOGGER.info("Start the cluster")
+        resp = self.cortx_start_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Starting cluster"
+        time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Perform PCS resource cleanup")
+        hlt_obj_list[0].pcs_resource_cleanup()
+        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
+        for hlt_obj in hlt_obj_list:
+            res = hlt_obj.check_node_health()
+            if not res[0]:
+                return False, f"Error during health check of {hlt_obj}"
+        LOGGER.info("All nodes are reachable and PCS looks clean.")
+        return True, "Cluster Restarted successfully."
