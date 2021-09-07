@@ -1015,8 +1015,10 @@ class TestHANodeStartStop:
         di_check_data = (resp[1], resp[2])
         self.s3_data = resp[2]
         LOGGER.info("Step 1: IOs are started successfully.")
-        LOGGER.info("Step 2: Poweroff %s server and storage from cortx REST with %s user",
-                    self.srvnode_list[node], opt_user)
+        LOGGER.info(
+            "Step 2: Poweroff %s server and storage from cortx REST with %s user",
+            self.srvnode_list[node],
+            opt_user)
         resp = self.ha_rest.perform_cluster_operation(
             operation='poweroff',
             resource='node',
@@ -1028,7 +1030,7 @@ class TestHANodeStartStop:
         assert_utils.assert_false(
             resp, f"{self.host_list[node]} is still pinging")
         LOGGER.info("Step 2: %s server is poweroff and not pinging",
-                        self.srvnode_list[node])
+                    self.srvnode_list[node])
         LOGGER.info(
             "Step 3: Check health status for %s is offline and "
             "cluster/rack/site is degraded with REST",
@@ -1050,11 +1052,18 @@ class TestHANodeStartStop:
             self.starttime, self.alert_type["get"], False, "iem")
         assert_utils.assert_true(resp, "Failed to get alert in CSM")
         LOGGER.info(
-                "Step 4: Verified the %s down alert",
-                self.srvnode_list[node])
+            "Step 4: Verified the %s down alert",
+            self.srvnode_list[node])
         LOGGER.info("Step 5: Check PCS status")
+        csm_resp = self.ha_obj.get_csm_failover_node(
+            srvnode_list=self.srvnode_list,
+            node_list=self.node_list,
+            sys_list=self.sys_list,
+            node=node)
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, self.node_list, self.hlt_list)
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 5: PCS shows services stopped for %s, services on other nodes shows started",
@@ -1066,12 +1075,18 @@ class TestHANodeStartStop:
         else:
             nd_obj = self.node_list[node + 1]
         resp_rpdu = nd_obj.toggle_apc_node_power(
-            pdu_ip=self.rpdu_encl_ip[node], pdu_user=self.rpdu_encl_user[node],
-            pdu_pwd=self.rpdu_encl_pwd[node], node_slot=self.rpdu_encl_port[node], status="on")
+            pdu_ip=self.rpdu_encl_ip[node],
+            pdu_user=self.rpdu_encl_user[node],
+            pdu_pwd=self.rpdu_encl_pwd[node],
+            node_slot=self.rpdu_encl_port[node],
+            status="on")
         assert_utils.assert_true(resp_rpdu)
         resp_lpdu = nd_obj.toggle_apc_node_power(
-            pdu_ip=self.lpdu_encl_ip[node], pdu_user=self.lpdu_encl_user[node],
-            pdu_pwd=self.lpdu_encl_pwd[node], node_slot=self.lpdu_encl_port[node], status="on")
+            pdu_ip=self.lpdu_encl_ip[node],
+            pdu_user=self.lpdu_encl_user[node],
+            pdu_pwd=self.lpdu_encl_pwd[node],
+            node_slot=self.lpdu_encl_port[node],
+            status="on")
         assert_utils.assert_true(resp_lpdu)
         # Need to check on exact time it should take to start enclosure
         time.sleep(120)
@@ -1090,8 +1105,15 @@ class TestHANodeStartStop:
         LOGGER.info(
             "Step 8: Check PCS status and make sure powering on server "
             "doesn't start services")
+        csm_resp = self.ha_obj.get_csm_failover_node(
+            srvnode_list=self.srvnode_list,
+            node_list=self.node_list,
+            sys_list=self.sys_list,
+            node=node)
+        assert_utils.assert_true(
+            csm_resp[0], "Failed to get CSM failover node")
         resp = self.ha_obj.check_pcs_status_resp(
-            node, self.node_list, self.hlt_list)
+            node, csm_resp[2], self.hlt_list, csm_node=self.node_list.index(csm_resp[2]))
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 8: PCS shows services stopped for %s, services on other nodes shows started",
@@ -1114,12 +1136,14 @@ class TestHANodeStartStop:
             "Step 10: Check that the node server %s can ping enclosure.",
             self.srvnode_list[node])
         resp_encl1 = system_utils.run_remote_cmd(
-            cmd=cmds.CMD_PING.format("10.0.0.2"), hostname=self.host_list[node],
+            cmd=cmds.CMD_PING.format("10.0.0.2"),
+            hostname=self.host_list[node],
             username=self.username[node],
             password=self.password[node])
         assert_utils.assert_true(resp_encl1[0], resp_encl1[1])
         resp_encl2 = system_utils.run_remote_cmd(
-            cmd=cmds.CMD_PING.format("10.0.0.3"), hostname=self.host_list[node],
+            cmd=cmds.CMD_PING.format("10.0.0.3"),
+            hostname=self.host_list[node],
             username=self.username[node],
             password=self.password[node])
         assert_utils.assert_true(resp_encl2[0], resp_encl2[1])
@@ -1131,7 +1155,8 @@ class TestHANodeStartStop:
             self.srvnode_list[node])
         resp = self.ha_rest.check_csr_health_status_rest("online")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = self.ha_rest.verify_node_health_status_rest(['online'] * self.num_nodes)
+        resp = self.ha_rest.verify_node_health_status_rest(
+            ['online'] * self.num_nodes)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Checking PCS clean")
         for hlt_obj in self.hlt_list:
