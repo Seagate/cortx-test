@@ -218,7 +218,7 @@ def sort_sessions(sessions):
     new_sessions = []
     for session in sessions:
         new_sessions.append(int(session))
-    
+
     return sorted(new_sessions)
 
 

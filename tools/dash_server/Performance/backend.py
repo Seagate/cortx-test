@@ -143,7 +143,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             results = {
                 'Sessions': multiple_buckets_headings
             }
-        
+
         for session in sessions:
             data_needed_for_query['sessions'] = session
             temp_data = get_benchmark_data(data_needed_for_query)

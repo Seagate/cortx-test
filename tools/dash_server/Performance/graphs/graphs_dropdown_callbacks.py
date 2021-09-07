@@ -604,7 +604,7 @@ def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pf
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
-                             nodes, pfill, itrns, custom, flag, sessions_first):
+                               nodes, pfill, itrns, custom, flag, sessions_first):
     """updates sessions in comparison select dropdown"""
     options = None
     value = None
@@ -649,7 +649,7 @@ def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_buckets_dropdown_2(xfilter, release, branch, option1, bench, nodes,
-                            pfill, itrns, custom, flag):
+                              pfill, itrns, custom, flag):
     """updates buckets in comparison select dropdown"""
     options = None
     value = None
@@ -726,5 +726,5 @@ def update_objsize_style(sessions):
 
     if sessions == 'all':
         style = style_dropdown_medium
-    
+
     return style

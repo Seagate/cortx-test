@@ -233,7 +233,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 if flag:
                     data_optional['all_sessions_plot'] = True
                     data_optional['objsize'] = obj_size
-                
+
             data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
             x_data = list(data_frame.iloc[:, 0])
             plot_data['x_actual_data'] = x_data
