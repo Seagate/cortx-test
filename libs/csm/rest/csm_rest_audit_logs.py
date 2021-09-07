@@ -33,7 +33,7 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 class RestAuditLogs(RestTestLib):
     """RestAuditLogs contains all the Rest Api calls for audit logs operations"""
 
-    def __init__(self, component_csm= "csm", component_s3= "s3"):
+    def __init__(self, component_csm="csm", component_s3="s3"):
         super(RestAuditLogs, self).__init__()
         self.component_csm = component_csm
         self.component_s3 = component_s3
@@ -61,14 +61,14 @@ class RestAuditLogs(RestTestLib):
             self.log.info("Params for csm show audit logs is %s", params)
             self.headers.update(self.config["Login_headers"])
             return self.restapi.rest_call("get",
-                endpoint=endpoint,
-                headers=self.headers,
-                params=params)
+                                          endpoint=endpoint,
+                                          headers=self.headers,
+                                          params=params)
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.audit_logs_csm_show.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.audit_logs_csm_show.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
@@ -97,7 +97,7 @@ class RestAuditLogs(RestTestLib):
             if response.status_code != expected_status_code:
                 self.log.error(
                     "Response is not 200, Response=%s",
-                        response.status_code)
+                    response.status_code)
                 return False
 
             # Validating response value
@@ -140,9 +140,9 @@ class RestAuditLogs(RestTestLib):
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.verify_audit_logs_csm_show.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.verify_audit_logs_csm_show.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
@@ -170,14 +170,14 @@ class RestAuditLogs(RestTestLib):
 
             self.headers.update(self.config["Login_headers"])
             return self.restapi.rest_call("get",
-                                            endpoint=endpoint,
-                                            headers=self.headers,
-                                            params=params)
+                                          endpoint=endpoint,
+                                          headers=self.headers,
+                                          params=params)
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.audit_logs_csm_download.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.audit_logs_csm_download.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
@@ -209,7 +209,7 @@ class RestAuditLogs(RestTestLib):
             if response.status_code != expected_status_code:
                 self.log.error(
                     "Response is not 200, Response=%s",
-                        response.status_code)
+                    response.status_code)
                 return False
 
             # Validating response value
@@ -226,9 +226,9 @@ class RestAuditLogs(RestTestLib):
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.verify_audit_logs_csm_download.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.verify_audit_logs_csm_download.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
@@ -250,14 +250,14 @@ class RestAuditLogs(RestTestLib):
 
             self.headers.update(self.config["Login_headers"])
             return self.restapi.rest_call("get",
-                                            endpoint=endpoint,
-                                            headers=self.headers,
-                                            params=params)
+                                          endpoint=endpoint,
+                                          headers=self.headers,
+                                          params=params)
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.audit_logs_s3_show.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.audit_logs_s3_show.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
@@ -280,31 +280,31 @@ class RestAuditLogs(RestTestLib):
         :return: Success(True/False)
         """
         try:
+            verification_status = False
             response = self.audit_logs_s3_show(
                 login_as=login_as, params=params)
-            if response.status_code != expected_status_code:
+            if response.status_code != const.SUCCESS_STATUS:
                 self.log.error(
                     "Response is not 200, Response=%s",
-                        response.status_code)
-                return False
+                    response.status_code)
+                return verification_status
 
             # Validating response value
             if validate_expected_response:
                 self.log.info("Reading Audit log show API response...")
                 response = response.json()
-                for element in response:
-                    if "SigV4" in element:
-                        item = element.split(" ")
-                        if bucket:
-                            if item[1] == bucket:
+                for element in response["logs"]:
+                    if bucket:
+                        if bucket == element["bucket"]:
+                            if element["operation"] == "REST.PUT.BUCKET":
                                 self.log.info(
                                     "Verifying bucket specific parameters for"
                                     "bucket %s in the audit log", bucket)
                                 verification_status = True
-                                if item[6] != "REST.PUT.BUCKET":
+                                if element["signature_version"] != "SigV4":
                                     self.log.debug(
                                         "Operation parameter value returned is:"
-                                        " %s", item[6])
+                                        " %s", element)
                                     self.log.error(
                                         "Operation parameter value does not "
                                         "match with the expected Operation")
@@ -313,9 +313,9 @@ class RestAuditLogs(RestTestLib):
                                     self.log.info(
                                         "Operation parameter value matched with"
                                         " the expected Operation")
-                                if item[7] != f"{bucket}/":
+                                if element["key"] != f"{bucket}/":
                                     self.log.debug(
-                                        "Key parameter value returned is: %s", item[7])
+                                        "Key parameter value returned is: %s", element["key"])
                                     self.log.error(
                                         "Key parameter value does not match with"
                                         " the expected Key")
@@ -323,9 +323,9 @@ class RestAuditLogs(RestTestLib):
                                 else:
                                     self.log.info(
                                         "Key parameter value matched with the expected Key")
-                                if item[8] != "PUT" and item[9] != f"/{bucket}":
+                                if f"PUT /{bucket}" not in element["request_uri"]:
                                     self.log.debug("Request URI parameter value"
-                                    " returned is: %s %s", item[8], item[9])
+                                                   " returned is: %s %s", element["request_uri"])
                                     self.log.error(
                                         "Request URI parameter value does not "
                                         "match with the expected Request URI")
@@ -334,11 +334,11 @@ class RestAuditLogs(RestTestLib):
                                     self.log.info(
                                         "Request URI parameter value matched "
                                         "with the expected Request URI")
-                                if not verification_status:
-                                    self.log.error("Values does not match ")
-                                    return False
+                                if (verification_status
+                                        and element["http_status"] == expected_status_code):
+                                    return verification_status
 
-                        #------# Commenting below code till EOS-14998 is resolved #----------------#
+                                # Commenting below code till EOS-14998 is resolved #--------------#
                                 # if item[10] != 200:
                                 #     self.log.debug(
                                 #         "HTTP status parameter value returned"
@@ -496,13 +496,13 @@ class RestAuditLogs(RestTestLib):
                         # if not verification_status:
                         #     self.log.error("Values does not match ")
                         #     return False
-            return True
 
+            return True
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.verify_audit_logs_s3_show.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.verify_audit_logs_s3_show.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
@@ -524,14 +524,14 @@ class RestAuditLogs(RestTestLib):
 
             self.headers.update(self.config["Login_headers"])
             return self.restapi.rest_call("get",
-                endpoint=endpoint,
-                headers=self.headers,
-                params=params)
+                                          endpoint=endpoint,
+                                          headers=self.headers,
+                                          params=params)
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.audit_logs_s3_download.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.audit_logs_s3_download.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR,
                 error) from error
@@ -560,7 +560,7 @@ class RestAuditLogs(RestTestLib):
             if response.status_code != expected_status_code:
                 self.log.error(
                     "Response is not 200, Response=%s",
-                        response.status_code)
+                    response.status_code)
                 return False
 
             # Validating response value
@@ -577,9 +577,9 @@ class RestAuditLogs(RestTestLib):
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.verify_audit_logs_s3_download.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.verify_audit_logs_s3_download.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
@@ -644,9 +644,9 @@ class RestAuditLogs(RestTestLib):
             text_file.close()
 
             self.log.info("audit_log_show_response.json() length is: %s",
-                audit_log_show_response.json()['total_records'])
+                          audit_log_show_response.json()['total_records'])
             self.log.info("extracted_file_content length is: %s",
-                len(extracted_file_content))
+                          len(extracted_file_content))
 
             self.log.info(
                 "Comparing the contents of audit log show api and audit log download api response")
@@ -664,14 +664,14 @@ class RestAuditLogs(RestTestLib):
                         "Ignoring the first 2 and that last 2 records from show"
                         " api response and verifying if the remaining ones match")
                     log_content = audit_log_show_response.json(
-                    )['logs'][2:audit_log_show_response.json()['total_records']-3]
-                    result=True
+                    )['logs'][2:audit_log_show_response.json()['total_records'] - 3]
+                    result = True
                     for x in log_content:
                         if x['request_id'] not in extracted_file_content:
                             self.log.error("Couldnt find %s from json in downloaded file", x)
                             result = False
 
-                    #if all(x in extracted_file_content for x in log_content):
+                    # if all(x in extracted_file_content for x in log_content):
                     if result:
                         self.log.info(
                             "The audit log show api content and audit log"
@@ -682,9 +682,9 @@ class RestAuditLogs(RestTestLib):
                         return True
                     else:
                         self.log.debug("Audit log show API response is: %s",
-                            audit_log_show_response.json())
+                                       audit_log_show_response.json())
                         self.log.debug("Audit log download API response is: %s",
-                            extracted_file_content)
+                                       extracted_file_content)
                         self.log.error("Error: Logs did not match!!")
                         self.log.info(
                             "Deleting the files and the temporary directory...")
@@ -701,10 +701,10 @@ class RestAuditLogs(RestTestLib):
                     for i in range(0, len(extracted_file_content)):
                         for j in range(0, audit_log_show_response.json()['total_records']):
                             if extracted_file_content[i] == audit_log_show_response.json()[j]:
-                                val = i+1
+                                val = i + 1
                                 break
                     if (val == len(extracted_file_content) or
-                        val == audit_log_show_response.json()['total_records']):
+                            val == audit_log_show_response.json()['total_records']):
                         self.log.info(
                             "The audit log download content match with the "
                             "audit log show api content")
@@ -714,9 +714,9 @@ class RestAuditLogs(RestTestLib):
                         return True
                     else:
                         self.log.debug("Audit log show API response is: %s",
-                            audit_log_show_response.json())
+                                       audit_log_show_response.json())
                         self.log.debug("Audit log download API response is: %s",
-                            extracted_file_content)
+                                       extracted_file_content)
                         self.log.error("Error: Logs did not match!!")
                         self.log.info(
                             "Deleting the files and the temporary directory...")
@@ -731,10 +731,10 @@ class RestAuditLogs(RestTestLib):
                     for i in range(0, audit_log_show_response.json()['total_records']):
                         for j in range(0, len(extracted_file_content)):
                             if extracted_file_content[j] == audit_log_show_response.json()[i]:
-                                val = i+1
+                                val = i + 1
                                 break
                     if (val == len(extracted_file_content) or
-                        val == audit_log_show_response.json()['total_records']):
+                            val == audit_log_show_response.json()['total_records']):
                         self.log.info(
                             "The audit log show api content match with the "
                             "audit log download api content")
@@ -744,9 +744,9 @@ class RestAuditLogs(RestTestLib):
                         return True
                     else:
                         self.log.debug("Audit log show API response is: %s",
-                            audit_log_show_response.json())
+                                       audit_log_show_response.json())
                         self.log.debug("Audit log download API response is: %s",
-                            extracted_file_content)
+                                       extracted_file_content)
                         self.log.error("Error: Logs did not match!!")
                         self.log.info(
                             "Deleting the files and the temporary directory...")
@@ -754,9 +754,9 @@ class RestAuditLogs(RestTestLib):
                         return False
         except BaseException as error:
             self.log.error("%s %s: %s",
-                const.EXCEPTION_ERROR,
-                RestAuditLogs.verify_audit_logs_show_download.__name__,
-                error)
+                           const.EXCEPTION_ERROR,
+                           RestAuditLogs.verify_audit_logs_show_download.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED,
                 error) from error
