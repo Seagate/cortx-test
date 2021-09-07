@@ -2989,7 +2989,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info("##### Test completed -  %s #####", test_case_name)
   
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25275')
@@ -3003,7 +3003,8 @@ class TestCsmUser():
         self.log.info("Step 1: Verify create admin user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
-        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert(response.status_code == const.FORBIDDEN, 
+                    "Status code check failed.")
         assert response.json()["error_code"] == str(test_cfg["error_code"]), (
             "Error code check failed.")
         assert response.json()["message"] == test_cfg["message"].format("admin",
@@ -3011,7 +3012,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25279')
     def test_25279(self):
@@ -3036,7 +3037,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.skip(reason="Bug EOS-23254")
     @pytest.mark.tags('TEST-25281')
     def test_25281(self):
@@ -3060,7 +3061,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25277')
@@ -3095,7 +3096,7 @@ class TestCsmUser():
         self.log.info(
                 "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25286')
@@ -3117,7 +3118,7 @@ class TestCsmUser():
         self.log.info(
                 "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25283')
@@ -3140,7 +3141,7 @@ class TestCsmUser():
         self.log.info(
                 "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25285')
@@ -3186,7 +3187,7 @@ class TestCsmUser():
         self.log.info(
                 "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25276')
@@ -3197,7 +3198,6 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_25276"]
         self.log.info("Step 1: Verify create admin user functionality for monitor user")
         response = self.csm_user.create_csm_user(login_as="csm_user_monitor",
                                                  user_type="valid", user_role="admin")
