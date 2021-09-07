@@ -124,7 +124,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         te_id = str(args.te_ticket) + "_"
     if re_execution:
         te_tag = None
-        report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
+        report_name = "--html=log/re_non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')\
+                      + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
     else:
@@ -138,7 +139,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
         else:
-            report_name = "--html=log/non_parallel_" + te_id + args.html_report
+            report_name = "--html=log/non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f') \
+                          + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
 
