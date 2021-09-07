@@ -53,6 +53,9 @@ GET_RAID_ARRAY_DETAILS_CMD = "grep -P '\\bmd[0-9]\\b' /proc/mdstat"
 FDISK_RAID_PARTITION_CMD = "fdisk -l {} | grep -i raid | awk '{{print $1}}' > {}"
 GET_DRIVE_HOST_NUM_CMD = "lsscsi | grep 'ATA' | grep {}: | awk '{{print $NF}}'"
 FILE_COMPARE_CMD = "diff {} {}"
+CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
+                 "--config \'json:///opt/seagate/cortx_configs/provisioner_cluster.json\' " \
+                 "--file /var/lib/hare/cluster.yaml"
 
 # S3IAMCLI Commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -296,6 +299,7 @@ CMD_SALT_GET_NODE_ID = "salt '*' grains.get node_id"
 CMD_SALT_GET_CLUSTER_ID = "salt '*' grains.get cluster_id"
 CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
+CMD_STOP_CLSTR = "cortx cluster stop"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
 CMD_PCS_SERV = "pcs status | grep {}"
