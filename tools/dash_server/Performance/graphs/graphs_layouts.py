@@ -61,12 +61,14 @@ graphs_input_options = [
                 id="graphs_filter_dropdown",
                 options=Xfilter,
                 placeholder="Filter by",
+                value='Build',
                 style=style_dropdown_medium
             ),
             Dropdown(
                 id="graphs_benchmark_dropdown",
                 options=benchmarks,
                 placeholder="Benchmark",
+                value='S3bench',
                 style=style_dropdown_small_2
             ),
             Dropdown(
