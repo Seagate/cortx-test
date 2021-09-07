@@ -214,6 +214,14 @@ def sort_object_sizes_list(obj_sizes):
 
 
 def sort_sessions(sessions):
+    """
+    Function to sort sessions array
+    Args:
+        sessions: list of all sessions
+
+    Returns:
+        sessions: list of sorted sessions
+    """
     sessions = list(dict.fromkeys(sessions))
     new_sessions = []
     for session in sessions:

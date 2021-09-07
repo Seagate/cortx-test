@@ -146,7 +146,8 @@ def update_Ttfb_Style(bench):
 )
 def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
                   nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
-                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2, buckets2, flag, obj_size):
+                  branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2,
+                  buckets2, flag, obj_size):
     """
     updates graph plots for all 5 graphs based on input values
 
