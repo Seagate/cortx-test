@@ -394,7 +394,10 @@ class TestAuditLogs:
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22361')
     def test_22361(self):
-        """Test single sort by user parameters on view , download operation on S3 audit log."""
+        """
+        Test single sort by user parameters on view , download operation on S3 audit log.
+        TODO: Once EOS-24246 inplace we need improvement in s3/csm log validation.
+        """
         self.log.info("STARTED: Test single sort by user parameters on view , download operation"
                       " on S3 audit log.")
         start_time = int(time.time()) - self.epoc_time_diff
@@ -450,7 +453,10 @@ class TestAuditLogs:
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22360')
     def test_22360(self):
-        """Test single sort by timestamp parameters on view , download operation on S3 audit log."""
+        """
+        Test single sort by timestamp parameters on view , download operation on S3 audit log.
+        TODO: Once EOS-24246 inplace we need improvement in s3/csm log validation.
+        """
         self.log.info("STARTED: Test single sort by timestamp parameters on view , download "
                       "operation on S3 audit log.")
         s3_user = self.s3_account_prefix.format(perf_counter_ns())
@@ -495,6 +501,7 @@ class TestAuditLogs:
         Sort, view and download s3 audit logs.
 
         Test single sort by response code parameters on view, download operation on S3 audit log.
+        TODO: Once EOS-24246 inplace we need improvement in s3/csm log validation.
         """
         self.log.info("STARTED: Test single sort by response code parameters on view, download"
                       " operation on S3 audit log")
@@ -551,7 +558,10 @@ class TestAuditLogs:
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-22358')
     def test_22358(self):
-        """Test filtering by user parameters on view , download operation on S3 audit log."""
+        """
+        Test filtering by user parameters on view , download operation on S3 audit log.
+        TODO: Once EOS-24246 inplace we need improvement in s3/csm log validation.
+        """
         self.log.info("STARTED: Test filtering by user parameters on view , download operation on"
                       " S3 audit log")
         start_time = int(time.time()) - self.epoc_time_diff
