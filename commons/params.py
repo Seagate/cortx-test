@@ -65,6 +65,7 @@ TEST_EXEC_TOPIC = 'cortx-test-execution-topic1'
 # Read by all semantics
 TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
+
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
@@ -111,4 +112,4 @@ DOWNLOAD_HOME = '/var/log/'
 
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']

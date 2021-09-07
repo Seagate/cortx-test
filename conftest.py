@@ -28,6 +28,7 @@ import logging
 import os
 import pathlib
 import random
+import shutil
 import string
 import tempfile
 import time
@@ -74,6 +75,7 @@ BASE_COMPONENTS_MARKS = ('csm', 's3', 'ha', 'ras', 'di', 'stress', 'combinationa
 SKIP_DBG_LOGGING = ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']
 
 Globals.ALL_RESULT = None
+Globals.CSM_LOGS = None
 
 
 def _get_items_from_cache():
@@ -105,7 +107,7 @@ def logger():
     """
     logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(Globals.LOG_LEVEL)
     cortxlogging.init_loghandler(logger)
     return logger
 
@@ -437,23 +439,30 @@ def pytest_sessionstart(session: Session) -> None:
     global REPORT_CLIENT
     report_client.ReportClient.init_instance()
     REPORT_CLIENT = report_client.ReportClient.get_instance()
-    reset_imported_module_log_level()
+    reset_imported_module_log_level(session)
 
 
-def reset_imported_module_log_level():
+def reset_imported_module_log_level(session):
     """Reset logging level of imported modules.
     Add check for imported module logger.
     """
+    log_level = session.config.option.log_cli_level
+    if not log_level:
+        log_level = 10  # default=10 for pytest direct invocation without log cli level
+    else:
+        log_level = int(log_level)
+    log_level = logging.getLevelName(log_level)
+    Globals.LOG_LEVEL = log_level
     loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
     for _logger in loggers:
+        # Handle Place holders logging
         if isinstance(_logger, logging.PlaceHolder):
             LOGGER.info("Skipping placeholder to reset logging level")
             continue
         if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
-    # Handle Place holders logging
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
-        logging.getLogger(pkg).setLevel(logging.WARNING)
+        logging.getLogger(pkg).setLevel(log_level)
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -609,8 +618,13 @@ def pytest_runtest_makereport(item, call):
     current_file = 'other_test_calls.log'
     jira_update = ast.literal_eval(str(item.config.option.jira_update))
     db_update = ast.literal_eval(str(item.config.option.db_update))
+    test_id = CACHE.lookup(report.nodeid)
+    if report.when == 'setup':
+        Globals.CSM_LOGS = f"{LOG_DIR}/latest/{test_id}_Gui_Logs/"
+        if os.path.exists(Globals.CSM_LOGS):
+            shutil.rmtree(Globals.CSM_LOGS)
+        os.mkdir(Globals.CSM_LOGS)
     if not _local:
-        test_id = CACHE.lookup(report.nodeid)
         if report.when == 'setup' and item.rep_setup.failed:
             # Fail eagerly in Jira, when you know setup failed.
             # The status is again anyhow updated in teardown as it was earlier.
@@ -868,7 +882,7 @@ def pytest_runtest_logreport(report: "TestReport") -> None:
             for rec in logs:
                 fp.write(rec + '\n')
         LOGGER.info("Uploading test log file to NFS server")
-        remote_path = getattr(report, 'logpath')
+        remote_path = getattr(report, 'logpath').replace(":", "_")
         resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
@@ -984,7 +998,7 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)
 def get_db_cfg(request):
     from config import S3_CFG
     if request.config.getoption('--target'):

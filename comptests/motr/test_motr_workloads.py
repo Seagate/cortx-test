@@ -18,33 +18,35 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-import pytest
 import logging
+from random import SystemRandom
+
+import pytest
+
 from commons.ct_fail_on import CTFailOn
-from libs.motr import motr_test_lib
 from commons.errorcodes import error_handler
+from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG
+from libs.motr import WORKLOAD_CFG, TEMP_PATH
+from libs.motr import motr_test_lib
 
 LOGGER = logging.getLogger(__name__)
+
 
 class TestExecuteWorkload:
     """Execute Workload Test suite"""
 
     @pytest.yield_fixture(autouse=True)
-    def setup(self):
+    def setup_class(self):
+        """ Setup class for running Motr tests"""
         LOGGER.info("STARTED: Setup Operation")
-
-        self.host = CMN_CFG["nodes"][0]["hostname"]
-        self.uname = CMN_CFG["nodes"][0]["username"]
-        self.passwd = CMN_CFG["nodes"][0]["password"]
         self.workload_config = WORKLOAD_CFG[1]
         self.motr_obj = motr_test_lib.MotrTestLib()
+        self.system_random = SystemRandom()
         LOGGER.info("ENDED: Setup Operation")
 
         yield
-        #Perform the clean up for each test.
-
+        # Perform the clean up for each test.
         LOGGER.info("STARTED: Teardown Operation")
         LOGGER.info("Deleting temp files on node")
         self.motr_obj.delete_remote_files()
@@ -58,21 +60,27 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def execute_test(self, tc_num):
         batches, runs = self.get_batches_runs(tc_num)
-        LOGGER.info(f' batches: "{batches}", runs: "{runs}"')
+        LOGGER.info('batches: "%s", runs: "%s"', batches, runs)
         for run in range(runs):
-            LOGGER.info(f'Executing run {run + 1}:')
-            for index in range(len(batches)):
+            LOGGER.info('Executing run : %s', run + 1)
+            for index, cnt in enumerate(batches):
+                LOGGER.info("%s", cnt)
                 cmd = self.motr_obj.get_command_str(batches[index])
                 if cmd:
-                    LOGGER.info(f'Step {index + 1}: Executing command - "{cmd}"')
-                    result, error1, ret = system_utils.run_remote_cmd_wo_decision(cmd, self.host, self.uname, self.passwd)
+                    LOGGER.info('Step %s: Executing command - "%s"', index + 1, cmd)
+                    result, error1, ret = \
+                        system_utils.run_remote_cmd_wo_decision(cmd,
+                                                                self.motr_obj.host_list[0],
+                                                                self.motr_obj.uname_list[0],
+                                                                self.motr_obj.passwd_list[0])
                     if ret:
-                        LOGGER.error(f'"{cmd}" failed, please check the log')
+                        LOGGER.error('"%s" failed, please check the log', cmd)
                         assert False
                     if (b"ERROR" or b"Error") in error1:
-                        LOGGER.error(f'"{cmd}" failed, please check the log')
-                        assert_not_in(error1, b"ERROR" or b"Error", '"{cmd}" Failed, Please check the log')
-                    LOGGER.info(f"{result},{error1}")
+                        LOGGER.error('"%s" failed, please check the log', cmd)
+                        assert_utils.assert_not_in(error1, b"ERROR" or b"Error",
+                                                   '"{cmd}" Failed, Please check the log')
+                    LOGGER.info("%s, %s", result, error1)
 
     @pytest.mark.tags("TEST-14882")
     @pytest.mark.motr_io_load
@@ -255,7 +263,8 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def test_23198(self):
         """
-        Verify m0kv command (for motr meta data) to generate file with several FID using option "genf"
+        Verify m0kv command (for motr meta data) to
+        generate file with several FID using option "genf"
         """
         LOGGER.info("Start: Verify m0kv command to generate file with several FID using option genf")
         self.execute_test('test_23198')
@@ -266,7 +275,8 @@ class TestExecuteWorkload:
     @CTFailOn(error_handler)
     def test_23199(self):
         """
-        Verify motr meta data using the m0kv command to create index using single FID using option "index create"
+        Verify motr meta data using the m0kv command to
+        create index using single FID using option "index create"
         """
         LOGGER.info("Start: Verify motr meta data using the m0kv command to create index using single FID using option index create")
         self.execute_test('test_23199')
@@ -338,3 +348,53 @@ class TestExecuteWorkload:
         self.execute_test('test_23207')
         LOGGER.info("Stop: Verify object update operation")
 
+
+    @pytest.mark.tags("TEST-23036")
+    @pytest.mark.motr_io_load
+    @CTFailOn(error_handler)
+    def test_23036(self):
+        """
+        Verify different size object m0cp m0cat operation
+        """
+        LOGGER.info("Start: Verify multiple m0cp/cat operation")
+        last_endpoint = None
+        infile = TEMP_PATH + 'input'
+        outfile = TEMP_PATH + 'output'
+        for node_num, host in enumerate(self.motr_obj.host_list):
+            ret = self.motr_obj.get_cluster_info(host)
+            assert_utils.assert_true(ret,
+                                     "Not able to Fetch cluster INFO. Please check cluster status")
+            endpoints = self.motr_obj.get_endpoints(host)
+            if last_endpoint == endpoints["l"]:
+                LOGGER.info("Looks like cluster is not fully deployed. Exiting")
+                break
+            count_list = ['1', '2', '4', '4', '4', '2', '4', '4', '250',
+                          '2', '4', '2', '3', '4', '8', '4', '1024']
+            bsize_list = ['4K', '4K', '4K', '8K', '16K', '64K', '64K', '128K',
+                          '4K', '1M', '1M', '4M', '4M', '4M', '4M', '16M', '1M']
+            layout_ids = ['1', '1', '1', '2', '3', '5', '5', '6', '1',
+                          '9', '9', '11', '11', '11', '11', '13', '9']
+            last_endpoint = endpoints["l"]
+            for b_size, count, layout in zip(bsize_list, count_list, layout_ids):
+                object_id = str(self.system_random.randint(1, 100)) + ":" + \
+                            str(self.system_random.randint(1, 100))
+                self.motr_obj.dd_cmd(b_size, count, infile, node_num)
+                self.motr_obj.cp_cmd(b_size, count, object_id, layout, infile, node_num)
+                self.motr_obj.cat_cmd(b_size, count, object_id, layout, outfile, node_num)
+                self.motr_obj.diff_cmd(infile, outfile, node_num)
+                self.motr_obj.md5sum_cmd(infile, outfile, node_num)
+                self.motr_obj.unlink_cmd(object_id, layout, node_num)
+
+            LOGGER.info("Stop: Verify multiple m0cp/cat operation")
+
+    @pytest.mark.tags("TEST-22963")
+    @pytest.mark.motr_io_load
+    @CTFailOn(error_handler)
+    def test_22963(self):
+        """
+        Verify Libfabric is presented on system and basic ping pong operation
+        """
+        LOGGER.info("Start: Verify object update operation")
+        self.motr_obj.verify_libfabric_version()
+        self.motr_obj.fi_ping_pong()
+        LOGGER.info("Stop: Verify object update operation")

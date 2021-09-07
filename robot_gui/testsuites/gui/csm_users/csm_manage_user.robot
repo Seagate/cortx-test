@@ -261,23 +261,26 @@ TEST-23052
     Re-login  ${user_name}  ${password}  MANAGE_MENU_ID
     Delete CSM User  ${manage_user_name}
 
-TEST-23044
-    [Documentation]  Test that CSM user with role manage cannot create user with admin role.
-    [Tags]  Priority_High  user_role  TEST-23044
-    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
-    wait for page or element to load
-    Click On Add User Button
-    Page Should Not Contain Element  ${ADD_ADMIN_USER_RADIO_BUTTON_ID}
-    Click On Cancel Button
-    Re-login  ${username}  ${password}  ${page_name}
-    wait for page or element to load
-    Delete CSM User  ${new_user_name}
-
 TEST-23609
     [Documentation]  Test that User should able to clean the search operation properly 
     ...  Reference : https://jts.seagate.com/browse/TEST-23609
     [Tags]  Priority_High  TEST-23609
     ${new_user_name}  ${new_password}=  Create and login with CSM manage user
     Verify Clean Search operation
+    Re-login  ${username}  ${password}  ${page_name}
+    Delete CSM User  ${new_user_name}
+
+TEST-23048
+    [Documentation]  Test that manage user should not able to delete users with admin role from csm UI
+    ...  Reference : https://jts.seagate.com/browse/TEST-23048
+    [Tags]  Priority_High  TEST-23048
+    ${new_user_name}  ${new_password}=  Create and login with CSM manage user
+    Select The Number of Rows To Display  ${CSM_MAX_ROW_VALUE}
+    wait for page or element to load  20s
+    ${admin_users}=  Read Selective Table Data  ${CSM_TABLE_COLUMN_XPATH}  admin  ${CSM_ROLE_COLUMN}  ${CSM_USERNAME_COLUMN}
+    Log To Console And Report  ${admin_users}
+    FOR  ${user}  IN  @{admin_users}
+        Verify Delete Action Disabled On The Table Element  ${user}
+    END
     Re-login  ${username}  ${password}  ${page_name}
     Delete CSM User  ${new_user_name}

@@ -21,10 +21,9 @@ services:
     - "scsi-network-relay.service"
 service_ports:
   csm: ["28100"]
-  dhclient: ["68"]
   dns: ["53"]
   elasticsearch: ["9200", "9300"]
-  haproxy: ["443"]
+  https: ["443"]
   ntp: ["123"]
   ldap: ["389"]
   redis: ["6379"]
@@ -55,7 +54,7 @@ single-node:
 
 3-node-vm:
   prereq:
-    min_disks: 8
+    min_disks: 4
     os_release: "CentOS Linux release 7.8.2003 (Core)"
     kernel: "3.10.0-1127.el7.x86_64"
     cpu_cores: 4

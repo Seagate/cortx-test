@@ -59,9 +59,6 @@ def get_yaxis_heading(metric):
     return return_val
 
 
-def multi_concurrency(data):
-    return
-
 def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
     """
     wrapper function to get graphs plotted
@@ -237,7 +234,6 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                     data_optional['all_sessions_plot'] = True
                     data_optional['objsize'] = obj_size
                 
-
             data_frame = get_data_for_graphs(data, xfilter, xfilter_tag)
             x_data = list(data_frame.iloc[:, 0])
             plot_data['x_actual_data'] = x_data

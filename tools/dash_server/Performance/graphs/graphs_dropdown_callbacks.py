@@ -1,4 +1,4 @@
-"""performance graph callbacks to handle dropdown values"""
+"""graphs callbacks for performance for populating dropdown values"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -392,7 +392,6 @@ def update_branches_dropdown_2(release, flag):
                 value = options[0]['value']
             if len(options) == 1:
                 disabled = True
-
         else:
             raise PreventUpdate
 

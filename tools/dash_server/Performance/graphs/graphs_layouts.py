@@ -82,6 +82,7 @@ graphs_input_options = [
                 id="graphs_obj_size_dropdown",
                 options=operations,
                 placeholder="Operation",
+                value='both',
                 style={'display': 'none'}
             )
         ],

@@ -19,21 +19,41 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Tests for performing load testing using Jmeter"""
+
 import logging
+import os
 import pytest
 from commons import cortxlogging
+from commons.utils import config_utils
 from libs.jmeter.jmeter_integration import JmeterInt
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_stats import SystemStats
+from config import CSM_REST_CFG
 
 class TestCsmLoad():
     """Test cases for performing CSM REST API load testing using jmeter"""
     @classmethod
     def setup_class(cls):
         """ This is method is for test suite set-up """
-        cls.log.info("[STARTED]: Setup class")
         cls.log = logging.getLogger(__name__)
+        cls.log.info("[STARTED]: Setup class")
         cls.jmx_obj = JmeterInt()
+        cls.system_stats = SystemStats()
+        cls.config_chk = CSMConfigsCheck()
+        cls.test_cfgs = config_utils.read_yaml('config/csm/test_jmeter.yaml')[1]
+        cls.config_chk.delete_csm_users()
+        cls.config_chk.delete_s3_users()
+        user_already_present = cls.config_chk.check_predefined_csm_user_present()
+        if not user_already_present:
+            user_already_present = cls.config_chk.setup_csm_users()
+            assert user_already_present
+        s3acc_already_present = cls.config_chk.check_predefined_s3account_present()
+        if not s3acc_already_present:
+            s3acc_already_present = cls.config_chk.setup_csm_s3()
+        assert s3acc_already_present
         cls.log.info("[Completed]: Setup class")
 
+    @pytest.mark.skip("Dummy test")
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -45,5 +65,101 @@ class TestCsmLoad():
         jmx_file = "CSM_Login.jmx"
         self.log.info("Running jmx script: %s", jmx_file)
         resp = self.jmx_obj.run_jmx(jmx_file)
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22203')
+    def test_22203(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_22203"]
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["role","user","pswd"]
+        content.append({fieldnames[0]:"admin",
+                    fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                    fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]:"manage",
+                    fieldnames[1]: CSM_REST_CFG["csm_user_manage"]["username"],
+                    fieldnames[2]: CSM_REST_CFG["csm_user_manage"]["password"]})
+        content.append({fieldnames[0]:"monitor",
+                    fieldnames[1]: CSM_REST_CFG["csm_user_monitor"]["username"],
+                    fieldnames[2]: CSM_REST_CFG["csm_user_monitor"]["password"]})
+        content.append({fieldnames[0]:"s3",
+                        fieldnames[1]: CSM_REST_CFG["s3account_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["s3account_user"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22204')
+    def test_22204(self):
+        """Test maximum number of different users which can login using CSM REST per second
+        using CSM REST
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_22204"]
+        jmx_file = "CSM_Concurrent_Different_User_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22207')
+    def test_22207(self):
+        """Test with maximum number of GET performance stats request using CSM REST"""
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_22207"]
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        resp = self.system_stats.get_stats()
+        assert resp.status_code == 200
+        unit_list = resp.json()['unit_list']
+        content = []
+        fieldnames = ["metric"]
+        for metric in unit_list:
+            content.append({fieldnames[0]: metric})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Performance.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22208')
+    def test_22208(self):
+        """Test maximum number of get , patch, post operations on alerts per second using CSM REST
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        #TODO: random alert pipeline
+        test_cfg = self.test_cfgs["test_22203"]
+        jmx_file = "CSM_Concurrent_alert.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(jmx_file, threads=test_cfg["threads"], rampup=test_cfg["rampup"], loop=test_cfg["loop"])
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
