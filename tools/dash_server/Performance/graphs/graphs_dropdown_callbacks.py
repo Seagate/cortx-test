@@ -722,6 +722,7 @@ def update_object_size_dropdown(xfilter, release, branch, build, bench, sessions
     Input('graphs_sessions_dropdown', 'value'),
 )
 def update_objsize_style(sessions):
+    """hides the dropdown of obj size if sessions is not all"""
     style = {'display': 'None'}
 
     if sessions == 'all':
