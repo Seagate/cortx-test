@@ -484,7 +484,7 @@ class TestHANodeFailure:
         resp = self.ha_obj.perform_io_read_parallel(di_data=di_check_data)
         assert_utils.assert_true(resp[0], "Failed to start parallel READ IOs.")
         self.stop_io_process = resp[1]
-        LOGGER.info("Step 3: Unsafe(shutdown -P now) Shutdown %s server and verify its not pinging",
+        LOGGER.info("Step 3: Unsafe Shutdown %s server and verify its not pinging",
             self.srvnode_list[node])
         resp = self.ha_obj.host_safe_unsafe_power_off(
             host=self.host_list[node],
