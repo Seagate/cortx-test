@@ -21,7 +21,7 @@
 """
 Script to deploy k8s on VM
 """
-
+from __future__ import absolute_import
 import argparse
 import time
 from commons.helpers.node_helper import Node
@@ -29,7 +29,7 @@ from commons import commands as cmn_cmd
 
 # Global Constants
 REMOTE_HOSTS_ORG = "/etc/hosts"
-LOCAL_COPY_HOSTS = "/home/hosts"
+LOCAL_COPY_HOSTS = "/var/tmp/hosts"
 
 
 def configure_k8s_repo(*hostname, username, password):
@@ -138,6 +138,8 @@ def join_cluster(*hostname, username, password, cmd):
         nd_obj = Node(hostname=host, username=username, password=password)
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
         print("The join cmd o/p is %s", resp)
+
+# pylint: disable-msg=too-many-locals
 
 
 def main(args):
