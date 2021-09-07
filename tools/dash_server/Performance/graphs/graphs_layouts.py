@@ -32,8 +32,8 @@ from Performance.styles import style_sub_tab, style_sub_label,\
 
 # Variable declarations
 Xfilter = [
-    {'label': 'Object Size', 'value': 'Object_Size'},
     {'label': 'Build', 'value': 'Build'},
+    {'label': 'Object Size', 'value': 'Object_Size'},
 ]
 
 release = [
@@ -49,8 +49,8 @@ benchmarks = [  # get from database
 
 operations = [  # write a function for this
     {'label': 'Read & Write', 'value': 'both'},
-    {'label': 'Read', 'value': 'read'},
-    {'label': 'Write', 'value': 'write'},
+    {'label': 'Read', 'value': 'Read'},
+    {'label': 'Write', 'value': 'Write'},
 ]
 
 
@@ -61,6 +61,7 @@ graphs_input_options = [
                 id="graphs_filter_dropdown",
                 options=Xfilter,
                 placeholder="Filter by",
+                value='Build',
                 style=style_dropdown_medium
             ),
             Dropdown(

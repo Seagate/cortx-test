@@ -24,7 +24,7 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 
 from Performance.global_functions import get_dict_from_array,\
-    get_distinct_keys, sort_builds_list, sort_object_sizes_list
+    get_distinct_keys, sort_builds_list, sort_object_sizes_list, sort_sessions
 from Performance.styles import style_dropdown_small, style_dropdown_small_2, style_dropdown_medium
 from common import app
 
@@ -285,6 +285,7 @@ def update_sessions_dropdown(xfilter, release, branch, option1, bench, nodes, pf
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
             'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if sessions:
+            sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
             options.append({'label': 'All', 'value': 'all'})
@@ -600,10 +601,11 @@ def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pf
     Input('graphs_iteration_compare_dropdown', 'value'),
     Input('graphs_custom_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    Input('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
-                             nodes, pfill, itrns, custom, flag):
+                             nodes, pfill, itrns, custom, flag, sessions_first):
     """updates sessions in comparison select dropdown"""
     options = None
     value = None
@@ -617,8 +619,13 @@ def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
             'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if sessions:
+            sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            value = options[0]['value']
+            if sessions_first == 'all':
+                value = 'all'
+                disabled = True
+            else:
+                value = options[0]['value']
             options.append({'label': 'All', 'value': 'all', 'disabled': True})
         else:
             raise PreventUpdate
@@ -639,24 +646,23 @@ def update_sessions_dropdown_2(xfilter, release, branch, option1, bench,
     Input('graphs_pfull_compare_dropdown', 'value'),
     Input('graphs_iteration_compare_dropdown', 'value'),
     Input('graphs_custom_compare_dropdown', 'value'),
-    Input('graphs_sessions_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_buckets_dropdown_2(xfilter, release, branch, option1, bench, nodes,
-                            pfill, itrns, custom, sessions, flag):
+                            pfill, itrns, custom, flag):
     """updates buckets in comparison select dropdown"""
     options = None
     value = None
     disabled = False
     if not flag:
         raise PreventUpdate
-    if not all([xfilter, branch, option1, bench, nodes, itrns, custom, sessions]) and pfill is None:  # pylint: disable=no-else-raise
+    if not all([xfilter, branch, option1, bench, nodes, itrns, custom]) and pfill is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         buckets = get_distinct_keys(release, 'Buckets', {
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
-            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions})
+            'Percentage_full': pfill, 'Iteration': itrns, 'Custom': custom})
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
@@ -672,7 +678,6 @@ def update_buckets_dropdown_2(xfilter, release, branch, option1, bench, nodes,
     Output('graphs_obj_size_dropdown', 'options'),
     Output('graphs_obj_size_dropdown', 'value'),
     Output('graphs_obj_size_dropdown', 'disabled'),
-    Output('graphs_obj_size_dropdown', 'style'),
     Input('graphs_filter_dropdown', 'value'),
     Input('graphs_release_dropdown', 'value'),
     Input('graphs_branch_dropdown', 'value'),
@@ -683,28 +688,44 @@ def update_buckets_dropdown_2(xfilter, release, branch, option1, bench, nodes,
 )  # pylint: disable=too-many-arguments
 def update_object_size_dropdown(xfilter, release, branch, build, bench, sessions):
     """updates a object size dropdown when sessions all is chosen"""
-    options = None
+    dict_options = None
     value = None
     disabled = False
-    style = {'display': 'None'}
 
     if not all([xfilter, release, branch, build, bench, sessions]):  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         if sessions == 'all':
-            style = style_dropdown_medium
-            objsizes = get_distinct_keys(release, 'Object_Size', {
-                'Branch': branch, xfilter: build, 'Name': bench})
-            objsizes = sort_object_sizes_list(objsizes)
+            if xfilter == 'Build':
+                options = get_distinct_keys(release, 'Object_Size', {
+                    'Branch': branch, xfilter: build, 'Name': bench})
+                options = sort_object_sizes_list(options)
+            else:
+                options = get_distinct_keys(release, 'Build', {
+                    'Branch': branch, xfilter: build, 'Name': bench})
+                options = sort_builds_list(options)
 
-            if objsizes:
-                options = get_dict_from_array(objsizes, False)
-                value = options[0]['value']
-                if len(objsizes) == 1:
+            if options:
+                dict_options = get_dict_from_array(options, False)
+                value = dict_options[0]['value']
+                if len(options) == 1:
                     disabled = True
             else:
                 raise PreventUpdate
         else:
             raise PreventUpdate
 
-    return options, value, disabled, style
+    return dict_options, value, disabled
+
+
+@app.callback(
+    Output('graphs_obj_size_dropdown', 'style'),
+    Input('graphs_sessions_dropdown', 'value'),
+)
+def update_objsize_style(sessions):
+    style = {'display': 'None'}
+
+    if sessions == 'all':
+        style = style_dropdown_medium
+    
+    return style

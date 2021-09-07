@@ -24,7 +24,8 @@ from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from common import app
 
-from Performance.global_functions import get_dict_from_array, get_distinct_keys, sort_builds_list, sort_object_sizes_list
+from Performance.global_functions import get_dict_from_array, get_distinct_keys, \
+        sort_builds_list, sort_object_sizes_list, sort_sessions
 
 
 @app.callback(
@@ -237,6 +238,7 @@ def update_sessions_dropdown(release, branch, build, nodes, pfull, itrns, custom
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
         if sessions:
+            sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
             value = options[0]['value']
             if len(sessions) == 1:

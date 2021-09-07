@@ -81,6 +81,7 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
 
     for operation in operations:
         y_data = []
+        y_actual_data = []
         plot_data['operation'] = operation
         for col in data_frame.columns:
             if col.startswith(" ".join([operation, plot_data['metric']])):
@@ -246,7 +247,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                     data_optional, xfilter, xfilter_tag)
                 x_data_optional = list(df_optional.iloc[:, 0])
                 x_data_final = x_data + x_data_optional
-                print(x_data_final)
+
                 if sessions1 == 'all':
                     x_data_final = sort_sessions(x_data_final)
                 elif xfilter == 'Build':
