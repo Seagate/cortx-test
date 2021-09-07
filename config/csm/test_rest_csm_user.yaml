@@ -194,7 +194,6 @@ test_25282:
 test_25275:
     error_code: 4101
     message: "Only {} user can create other {} users"
-    message_id: "user_permission_denied"
 test_25279:
     error_code: 4101
     message: "{} can not update the password for {}"
