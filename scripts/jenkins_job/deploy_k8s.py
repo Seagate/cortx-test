@@ -22,16 +22,14 @@
 Script to deploy k8s on VM
 """
 
-
 import argparse
 import time
 from commons.helpers.node_helper import Node
 from commons import commands as cmn_cmd
 
-
 # Global Constants
 REMOTE_HOSTS_ORG = "/etc/hosts"
-LOCAL_COPY_HOSTS = "/tmp/hosts"
+LOCAL_COPY_HOSTS = "/home/hosts"
 
 
 def configure_k8s_repo(*hostname, username, password):
