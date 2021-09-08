@@ -204,7 +204,7 @@ class TestCsmLoad():
                       RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
-        resp = self.csm_alert_obj.wait_for_alert(60,
+        resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
                                                  const.AlertType.FAULT,
                                                  False,
@@ -236,7 +236,7 @@ class TestCsmLoad():
                       RAS_VAL["ras_sspl_alert"]["alert_wait_threshold"])
 
         self.log.info("\nStep 3: Checking CPU usage fault alerts on CSM REST API ")
-        resp = self.csm_alert_obj.wait_for_alert(60,
+        resp = self.csm_alert_obj.wait_for_alert(test_cfg["wait_for_alert"],
                                                  starttime,
                                                  const.AlertType.FAULT,
                                                  True,
