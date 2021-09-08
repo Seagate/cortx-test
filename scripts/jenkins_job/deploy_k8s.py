@@ -50,6 +50,17 @@ def configure_k8s_repo(*hostname, username, password):
               " /etc/sysconfig/selinux"
         print("Setting selinux 0 \n")
         nd_obj.execute_cmd(cmd=cmd, read_lines=False)
+        print("Disabling firewalld \n")
+        response = nd_obj.execute_cmd(cmd="systemctl status firewalld",
+                                      read_lines=True, exc=False)
+        response = response.decode() if isinstance(response, bytes) else response
+        print("The firewall status is %s", response)
+        if "inactive" in response:
+            print("The Firewall is disabled \n")
+        else:
+            print("Disabling the firewall \n")
+            nd_obj.execute_cmd(cmd="systemctl disable firewalld",
+                               read_lines=True, exc=False)
         print("Configuring the yum repo for k8s \n")
         cmd = "cat <<EOF > /etc/yum.repos.d/kubernetes.repo \n"\
               "[kubernetes]\n"\
