@@ -46,8 +46,8 @@ def install_docker(*hostname, username, password):
     for host in hostname:
         nd_obj = Node(hostname=host, username=username, password=password)
         print("Installing docker on host\n")
-        cmd = "yum install -y yum-utils &&" \
-              "yum-config-manager -y --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&" \
+        cmd = "yum install -y yum-utils && " \
+              "yum-config-manager -y --add-repo https://download.docker.com/linux/centos/docker-ce.repo && " \
               "yum install -y docker-ce docker-ce-cli containerd.io"
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
         if resp:
