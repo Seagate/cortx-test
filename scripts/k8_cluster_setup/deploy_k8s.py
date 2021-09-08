@@ -190,7 +190,8 @@ def get_node_status(host, username, password):
         resp_node = resp_node.decode() if isinstance(resp_node, bytes) else resp_node
         nodes_status = resp_node.strip().split("\n")
         print("The output of get nodes is %s", nodes_status)
-        if "Ready" in nodes_status:
+        status = all(element == nodes_status[0] for element in nodes_status)
+        if status:
             return nodes_status
         count += 1
         time.sleep(10)
