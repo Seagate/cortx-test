@@ -66,6 +66,7 @@ class Test3PSvcMonitoring:
         cls.intrmdt_state_timeout = RAS_VAL["ras_sspl_alert"]["os_lvl_monitor_timeouts"]["intrmdt_state"]
         cls.sspl_thrs_inact_time = CONF_SSPL_SRV_THRS_INACT_TIME
         cls.thrs_inact_time_org = None
+        cls.reboot = False
         if CMN_CFG["setup_type"] == "VM":
             cls.external_svcs = const.SVCS_3P_ENABLED_VM
             LOGGER.info("External service list : %s", cls.external_svcs)
@@ -81,7 +82,7 @@ class Test3PSvcMonitoring:
         services = self.cm_cfg["service"]
         sspl_svc = services["sspl_service"]
         self.timeouts = common_cfg["os_lvl_monitor_timeouts"]
-
+        self.reboot = False
         LOGGER.info("Check SSPL status")
         res = self.sw_alert_obj.get_svc_status([sspl_svc])[sspl_svc]
         LOGGER.info("SSPL status response %s : ", res)
@@ -166,8 +167,9 @@ class Test3PSvcMonitoring:
                 update=True)
             assert_true(res)
 
-        LOGGER.info("Terminating the process of reading sspl.log")
-        self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
+        if self.reboot = False:
+            LOGGER.info("Terminating the process of reading sspl.log")
+            self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
 
         LOGGER.debug("Copying contents of sspl.log")
         read_resp = self.node_obj.read_file(
@@ -588,6 +590,7 @@ class Test3PSvcMonitoring:
             LOGGER.info("Step 6: Reboot system started..")
             resp = self.sw_alert_obj.restart_node()
             assert resp, "Restart node failed"
+            self.reboot = True
 
             LOGGER.info("Step 6: Reboot system completed.")
 
@@ -639,8 +642,6 @@ class Test3PSvcMonitoring:
         svcs = list(set(self.external_svcs) - set(ignore_svc))
         for svc in svcs:
             LOGGER.info("----- Started verifying operations on service:  %s ------", svc)
-            import pdb 
-            pdb.set_trace()
             thrs_inact_time_tmp = 20
             LOGGER.info("Step 1: Configure threshold_inactive_time to {}".format(thrs_inact_time_tmp))
             self.ras_test_obj.set_conf_store_vals(
