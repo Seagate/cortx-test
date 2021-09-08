@@ -50,7 +50,7 @@ def configure_k8s_repo(*hostname, username, password):
               " /etc/sysconfig/selinux"
         print("Setting selinux 0 \n")
         nd_obj.execute_cmd(cmd=cmd, read_lines=False)
-        print("Disabling firewalld \n")
+        print("Check firewall status\n")
         response = nd_obj.execute_cmd(cmd="systemctl status firewalld",
                                       read_lines=True, exc=False)
         response = response.decode() if isinstance(response, bytes) else response
