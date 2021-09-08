@@ -1,16 +1,19 @@
 test_22203:
-  threads: 5
+  threads: 25
   rampup: 1
-  loop: 1
+  loop: 10
 test_22204:
   threads: 5
-  rampup: 1
-  loop: 1
+  rampup: 3
+  loop: 10
 test_22207:
   threads: 5
   rampup: 1
-  loop: 1
+  loop: 10
 test_22208:
-  threads: 5
-  rampup: 1
-  loop: 1
+  wait_for_alert: 60
+  threads: 25
+  rampup: 8
+  loop: 10
+  delta_cpu_usage: -80
+  resource_type: node:os:cpu_usage
