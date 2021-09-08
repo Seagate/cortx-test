@@ -167,7 +167,7 @@ class Test3PSvcMonitoring:
                 update=True)
             assert_true(res)
 
-        if self.reboot = False:
+        if self.reboot == False:
             LOGGER.info("Terminating the process of reading sspl.log")
             self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
 
