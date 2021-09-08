@@ -24,6 +24,7 @@ Script to deploy k8s on VM
 from __future__ import absolute_import
 import argparse
 import time
+import json
 import configparser
 from commons.helpers.node_helper import Node
 from commons import commands as cmn_cmd
@@ -34,6 +35,64 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read(CONFIG_FILE)
 REMOTE_HOSTS_ORG = CONFIG['default']['etc_host']
 LOCAL_COPY_HOSTS = CONFIG['default']['etc_host_tmp']
+DAEMON_JSON_FILE = CONFIG['default']['daemon_json_file']
+DAEMON_JSON_FILE_LOCAL = CONFIG['default']['daemon_json_file_tmp']
+
+
+def install_docker(*hostname, username, password):
+    """
+    Function to install docker
+    """
+    for host in hostname:
+        nd_obj = Node(hostname=host, username=username, password=password)
+        print("Installing docker on host\n")
+        cmd = "yum install -y yum-utils &&" \
+              "yum-config-manager -y --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&" \
+              "yum install -y docker-ce docker-ce-cli containerd.io"
+        resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+        if resp:
+            print("docker is Installed on host\n")
+            print("enabling docker \n")
+            nd_obj.execute_cmd(cmd="systemctl enable docker", read_lines=True)
+            print("starting docker \n")
+            nd_obj.execute_cmd(cmd="systemctl start docker", read_lines=True)
+
+
+def configure_iptables(*hostname, username, password):
+    """
+    Configure iptables
+    """
+    for host in hostname:
+        nd_obj = Node(hostname=host, username=username, password=password)
+        print("Configuring iptables \n")
+        cmd = "cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf\n"\
+              "br_netfilter\n"\
+              "EOF"
+        cmd2 = "cat <<EOF > /etc/sysctl.d/k8s.conf\n"\
+               "net.bridge.bridge-nf-call-ip6tables = 1\n"\
+               "net.bridge.bridge-nf-call-iptables = 1\n"\
+               "EOF"
+        nd_obj.execute_cmd(cmd=cmd, read_lines=False)
+        nd_obj.execute_cmd(cmd=cmd2, read_lines=False)
+
+
+def create_daemon_file(*hostname, username, password):
+    """
+    Create file etc/docker/daemon.json
+    """
+    for host in hostname:
+        nd_obj = Node(hostname=host, username=username, password=password)
+        print("Creating daemon.json \n")
+
+        daemon_json = {
+            "exec-opts": ["native.cgroupdriver=systemd"]
+        }
+        json_object = json.dumps(daemon_json, indent=1)
+        with open(DAEMON_JSON_FILE_LOCAL, "w") as outfile:
+            outfile.write(json_object)
+        nd_obj.copy_file_to_remote(DAEMON_JSON_FILE_LOCAL, DAEMON_JSON_FILE)
+        print("restarting docker \n")
+        nd_obj.execute_cmd(cmd="systemctl restart docker", read_lines=True)
 
 
 def configure_k8s_repo(*hostname, username, password):
@@ -74,15 +133,11 @@ def configure_k8s_repo(*hostname, username, password):
               "EOF"
         nd_obj.execute_cmd(cmd=cmd, read_lines=False)
         print("Installing kubeadm \n")
-        nd_obj.execute_cmd(cmd="yum install kubeadm docker -y", read_lines=True)
+        nd_obj.execute_cmd(cmd="yum install -y kubelet kubeadm kubectl", read_lines=True)
         print("enabling kubelet \n")
         nd_obj.execute_cmd(cmd="systemctl enable kubelet", read_lines=True)
         print("starting kubelet \n")
         nd_obj.execute_cmd(cmd="systemctl start kubelet", read_lines=True)
-        print("enabling docker \n")
-        nd_obj.execute_cmd(cmd="systemctl enable docker", read_lines=True)
-        print("starting docker \n")
-        nd_obj.execute_cmd(cmd="systemctl start docker", read_lines=True)
         print("Disabling the swap")
         nd_obj.execute_cmd(cmd="swapoff -a", read_lines=True)
 
@@ -92,7 +147,7 @@ def initialize_k8s(host, username, password):
     Test function to initialize the kubeadm
     """
     nd_obj = Node(hostname=host, username=username, password=password)
-    cmd = "kubeadm init"
+    cmd = "kubeadm init --pod-network-cidr=192.168.0.0/16"
     print("Initialize the kubeadm\n")
     result = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
     out = str("".join(result[-2:]))
@@ -115,15 +170,10 @@ def create_network(host, username, password):
     Test function to create the pod network
     """
     nd_obj = Node(hostname=host, username=username, password=password)
-    resp = nd_obj.execute_cmd(cmd="export kubever=$(kubectl version | base64 | tr -d '\n')"
-                                  " && echo $kubever",
-                              read_lines=True, exc=False)
-
-    if resp[0]:
-        cmd = "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version={}"\
-            .format(resp[0])
-        resp = nd_obj.execute_cmd(cmd=cmd, read_lines=False, exc=False)
-        print("The o/p of network cmd is %s", resp)
+    cmd = "curl https://docs.projectcalico.org/manifests/calico.yaml -O &&"\
+          "kubectl apply -f calico.yaml"
+    resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+    print("The o/p of network cmd is %s", resp)
 
 
 def get_node_status(host, username, password):
@@ -195,6 +245,12 @@ def main(args):
                 file.write("\n")
                 nd_obj.execute_cmd(cmn_cmd.CMD_PING.format(key), read_lines=True)
         nd_obj.copy_file_to_remote(LOCAL_COPY_HOSTS, REMOTE_HOSTS_ORG)
+    install_docker(*k8s_input['nodes'], username=k8s_input['username'],
+                   password=k8s_input['password'])
+    configure_iptables(*k8s_input['nodes'], username=k8s_input['username'],
+                       password=k8s_input['password'])
+    create_daemon_file(*k8s_input['nodes'], username=k8s_input['username'],
+                          password=k8s_input['password'])
     configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
