@@ -462,7 +462,7 @@ def reset_imported_module_log_level(session):
         if _logger.name in SKIP_DBG_LOGGING:
             _logger.setLevel(logging.WARNING)
     for pkg in ['boto', 'boto3', 'botocore', 'nose', 'paramiko', 's3transfer', 'urllib3']:
-        logging.getLogger(pkg).setLevel(log_level)
+        logging.getLogger(pkg).setLevel(logging.WARNING)  # Changes to fix EOS-24337
 
 
 @pytest.hookimpl(tryfirst=True)
