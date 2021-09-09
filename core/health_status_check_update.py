@@ -83,46 +83,6 @@ class HealthCheck:
                 collection_obj.update_one(setup_query, {'$set': setup_details})
                 LOGGER.info("Updated health status for target %s", setupname)
 
-    @staticmethod
-    def check_cortx_cluster_health(node):
-        """
-            check target node health status
-            :return True/False
-        """
-        hostname = node['hostname']
-        health = Health(hostname=hostname,
-                        username=node['username'],
-                        password=node['password'])
-        result = True
-        try:
-            result = health.check_node_health(node)
-        except IOError:
-            result = False
-        finally:
-            health.disconnect()
-        return result
-
-    @staticmethod
-    def check_cluster_storage(node):
-        """
-            check target storage status
-            :return True/False
-        """
-
-        hostname = node['hostname']
-        health = Health(hostname=hostname,
-                        username=node['username'],
-                        password=node['password'])
-        try:
-            ha_result = health.get_sys_capacity()
-            ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
-            result = ha_used_percent < 98.0
-        except IOError:
-            result = False
-        finally:
-            health.disconnect()
-        return result
-
     def health_check(self, targets):
         """
             accept targets
@@ -141,9 +101,8 @@ class HealthCheck:
                     continue
             nodes = setup["nodes"]
             for node in nodes:
-                health_result = self.check_cortx_cluster_health(node)
-                storage_result = self.check_cluster_storage(node)
-                if health_result and storage_result:
+                result = Health.check_cortx_cluster_health(node)
+                if result:
                     target_status_dict[setupname] = True
                 else:
                     target_status_dict[setupname] = False
