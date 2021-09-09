@@ -93,7 +93,7 @@ class S3TaggingTestLib(Tagging):
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["set_bkt_tag"])
+            # sleep(S3_CFG["delay"]["set_bkt_tag"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,

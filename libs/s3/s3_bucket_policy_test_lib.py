@@ -97,7 +97,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             LOGGER.info(response)
-            sleep(S3_CFG["delay"]["put_bkt_policy"])
+            # sleep(S3_CFG["delay"]["put_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
