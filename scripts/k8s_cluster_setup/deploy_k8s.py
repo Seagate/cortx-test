@@ -148,8 +148,8 @@ def initialize_k8s(host, username, password):
     Test function to initialize the kubeadm
     """
     nd_obj = Node(hostname=host, username=username, password=password)
-    cmd = "kubeadm init --pod-network-cidr=192.168.0.0/16"
     print("Initialize the kubeadm\n")
+    cmd = "kubeadm init --pod-network-cidr=192.168.0.0/16"
     result = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
     out = str("".join(result[-2:]))
     out_list = "".join(out.split("\\")).split("--")
@@ -252,7 +252,7 @@ def main(args):
     configure_iptables(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     create_daemon_file(*k8s_input['nodes'], username=k8s_input['username'],
-                          password=k8s_input['password'])
+                       password=k8s_input['password'])
     configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
