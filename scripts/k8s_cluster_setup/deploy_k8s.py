@@ -30,7 +30,7 @@ from commons.helpers.node_helper import Node
 from commons import commands as cmn_cmd
 
 # Global Constants
-CONFIG_FILE = 'scripts/jenkins_job/config.ini'
+CONFIG_FILE = 'scripts/k8s_cluster_setup/config.ini'
 CONFIG = configparser.ConfigParser()
 CONFIG.read(CONFIG_FILE)
 REMOTE_HOSTS_ORG = CONFIG['default']['etc_host']
