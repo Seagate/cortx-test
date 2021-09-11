@@ -56,4 +56,4 @@ CliConfig:
 # s3autherver.
 s3auth_endpoint: "http://{}:9080"
 # Workaround for EOS-21382; delay for S3 operations in seconds
-sync_delay = 60
+sync_delay: 60

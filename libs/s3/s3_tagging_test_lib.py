@@ -25,13 +25,13 @@
 import os
 import base64
 import logging
-from time import sleep
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Tagging
+from commons.utils.s3_utils import poll
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ class S3TaggingTestLib(Tagging):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        self.sync_delay = S3_CFG["sync_delay"]
         super().__init__(
             access_key,
             secret_key,
@@ -93,7 +94,6 @@ class S3TaggingTestLib(Tagging):
             response = super().set_bucket_tags(
                 bucket_name, tag_set={'TagSet': tag_set})
             LOGGER.info(response)
-            # sleep(S3_CFG["delay"]["set_bkt_tag"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_bucket_tag.__name__,
@@ -111,7 +111,7 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting bucket tagging")
-            bucket_tagging = self.get_bucket_tagging(bucket_name)
+            bucket_tagging = poll(self.get_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.debug(bucket_tagging)
             tag_set = bucket_tagging["TagSet"]
             for tag in tag_set:
@@ -133,7 +133,7 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Deleting bucket tagging")
-            response = super().delete_bucket_tagging(bucket_name)
+            response = poll(super().delete_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
@@ -191,8 +191,8 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting object tags")
-            obj_tagging = self.get_object_tagging(
-                bucket_name, obj_name)
+            obj_tagging = poll(self.get_object_tagging,
+                               bucket_name, obj_name, timeout=self.sync_delay)
             LOGGER.debug(obj_tagging)
             tag_set = obj_tagging["TagSet"]
             LOGGER.info(tag_set)
@@ -217,8 +217,8 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Deleting object tagging")
-            response = super().delete_object_tagging(
-                bucket_name, obj_name)
+            response = poll(super().delete_object_tagging,
+                            bucket_name, obj_name, timeout=self.sync_delay)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -457,7 +457,7 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting object with tag key: %s", key)
-            response = self.s3_client.get_object(Bucket=bucket_name, Key=key)
+            response = poll(self.s3_client.get_object, bucket_name, key, timeout=self.sync_delay)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
