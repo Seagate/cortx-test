@@ -140,7 +140,6 @@ class S3AclTestLib(Acl):
             )
 
             LOGGER.debug(response)
-            # sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.copy_object_acl.__name__,

@@ -457,7 +457,8 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting object with tag key: %s", key)
-            response = poll(self.s3_client.get_object, bucket_name, key, timeout=self.sync_delay)
+            response = poll(
+                self.s3_client.get_object, Bucket=bucket_name, Key=key, timeout=self.sync_delay)
             LOGGER.info(response)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",

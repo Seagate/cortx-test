@@ -194,14 +194,14 @@ def poll(target, *args, **kwargs) -> dict:
     timeout = kwargs.pop("timeout", 60)
     step = kwargs.pop("step", 10)
     expected = kwargs.pop("expected", dict)
-    end_time, response = time.time() + timeout, expected()
+    end_time = time.time() + timeout
     while time.time() <= end_time:
         try:
             response = target(*args, **kwargs)
-            if isinstance(response, expected):
+            if isinstance(response, expected) or response:
                 return response
         except Exception as response:
             LOGGER.error(response)
-            time.sleep(step)
+        time.sleep(step)
 
-    raise Exception(response)
+    return target(*args, **kwargs)
