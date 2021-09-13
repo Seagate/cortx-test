@@ -11,6 +11,7 @@ test_22207:
   rampup: 1
   loop: 10
 test_22208:
+  wait_for_alert: 60
   threads: 25
   rampup: 8
   loop: 10
