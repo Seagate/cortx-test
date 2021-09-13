@@ -51,18 +51,20 @@ class IamLib:
         :param debug: debug mode.
         """
         debug = kwargs.get("debug", False)
-
+        use_ssl = kwargs.get("use_ssl", True)
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
         try:
-            self.iam = boto3.client("iam", verify=iam_cert_path,
+            self.iam = boto3.client("iam", use_ssl=use_ssl,
+                                    verify=iam_cert_path,
                                     aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_key,
                                     endpoint_url=endpoint_url)
             self.iam_resource = boto3.resource(
                 "iam",
+                use_ssl=use_ssl,
                 verify=iam_cert_path,
                 aws_access_key_id=access_key,
                 aws_secret_access_key=secret_key,
