@@ -28,6 +28,7 @@ import logging
 import argparse
 from scripts.jenkins_job import client_conf
 from commons.helpers.node_helper import Node
+from commons.utils import system_utils as sysutils
 
 config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
@@ -118,6 +119,9 @@ def configure_haproxy_lb(*hostname, username: str, password: str):
     authinstance = "    server s3authserver-instance{0} srvnode-{1}.data.private:28050\n"
     total_s3_instances = list()
     total_auth_instances = list()
+    if os.path.exists(local_haproxy_cfg):
+        cmd = "rm -f {}".format(local_haproxy_cfg)
+        sysutils.run_local_cmd(cmd)
     for node in range(len(hostname)):
         start_inst = (node * instance_per_node)
         end_inst = ((node + 1) * instance_per_node)
