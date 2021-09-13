@@ -111,7 +111,7 @@ class S3TaggingTestLib(Tagging):
         """
         try:
             LOGGER.info("Getting bucket tagging")
-            bucket_tagging = poll(self.get_bucket_tagging, bucket_name, retry=3)
+            bucket_tagging = poll(self.get_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.debug(bucket_tagging)
             tag_set = bucket_tagging["TagSet"]
             for tag in tag_set:

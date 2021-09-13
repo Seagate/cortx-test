@@ -447,6 +447,9 @@ class S3AclTestLib(Acl):
                 access_control_policy,
                 **kwargs)
             LOGGER.info(response)
+            if acl == "private":
+                bucket_acl = poll(super().get_bucket_acl, bucket_name, timeout=self.sync_delay)
+                LOGGER.debug(bucket_acl)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
