@@ -63,7 +63,7 @@ class RestS3user(RestTestLib):
                     "new_s3_account_user",
                     user_data["account_name"],
                     user_data["password"])
-
+            user_data = json.dumps(user_data)
             # Fetching api response
             return self.restapi.rest_call(
                 "post", endpoint=endpoint, data=user_data, headers=self.headers)
@@ -118,6 +118,7 @@ class RestS3user(RestTestLib):
 
             # Collecting payload
             patch_payload = self.edit_user_payload(payload_type=payload)
+            patch_payload = json.dumps(patch_payload)
             self.log.debug(
                 "Payload for edit s3 accounts is %s", patch_payload)
 

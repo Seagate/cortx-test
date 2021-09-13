@@ -46,6 +46,7 @@ class TestS3user():
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -62,6 +63,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -77,6 +79,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -92,6 +95,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -108,6 +112,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -123,6 +128,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -140,6 +146,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -155,6 +162,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -174,6 +182,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -189,6 +198,7 @@ class TestS3user():
             user_payload="unchanged_access")
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
 
     @pytest.mark.skip("Test is invalid for R2")
     @pytest.mark.parallel
@@ -209,6 +219,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -225,6 +236,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -241,6 +253,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -257,6 +270,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -273,6 +287,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -288,6 +303,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -321,6 +337,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -339,6 +356,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -376,6 +394,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

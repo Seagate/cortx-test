@@ -48,8 +48,9 @@ class RestClient:
             self._config["mgmt_vip"], str(self._config["port"]))
         self._json_file_path = self._config[
             "jsonfile"] if 'jsonfile' in self._config else const.JOSN_FILE
+        self.secure_connection = self._config["secure"]
 
-    def rest_call(self, request_type, endpoint, secure_connection=True,
+    def rest_call(self, request_type, endpoint=None,
                   data=None, headers=None, params=None, json_dict=None,
                   save_json=False):
         """
@@ -64,8 +65,11 @@ class RestClient:
         :return: response of the request
         """
         # Building final endpoint request url
-        set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
-        request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
+        set_secure = const.SSL_CERTIFIED if self.secure_connection else const.NON_SSL
+        if endpoint is None:
+            request_url = "{}{}".format(set_secure, self._base_url)
+        else:
+            request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
         self.log.debug("Request URL : %s", request_url)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)

@@ -1,7 +1,7 @@
 # Configurations for Rest API
 Restcall:
-  secure: True
-  port : 443
+  secure: False
+  port : 32101
   jsonfile : 'rest_call.json'
   csm_user_manage:
     username: "csm_user_manage"
