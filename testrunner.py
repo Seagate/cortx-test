@@ -603,5 +603,6 @@ if __name__ == '__main__':
     opts = parse_args()
     level = opts.log_level
     level = logging.getLevelName(level)
+    opts.log_level = level
     initialize_loghandler(LOGGER, level=level)
     main(opts)
