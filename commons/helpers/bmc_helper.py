@@ -147,7 +147,8 @@ class Bmc(Host):
         """
         try:
             LOGGER.info(
-                "Update bmc ip on primary node and set to '%s'.", bmc_ip)
+                "Update bmc ip on %s node and set to '%s'.", self.hostname,
+                bmc_ip)
             cmd = "ipmitool lan set 1 ipaddr {}".format(bmc_ip)
             LOGGER.info("Running command %s", cmd)
             response = self.execute_cmd(cmd=cmd, read_nbytes=8000)

@@ -162,10 +162,10 @@ test_5018:
     message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.']}"
   invalid_password_role_resp_1:
     error_code: "4099"
-    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
   invalid_password_role_resp_2:
     error_code: "4099"
-    message: "Invalid request body: {'role': ['Must be one of: admin, manage, monitor.'], 'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    message: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
 test_1173:
   data: 
     - "Testuser@12345"
@@ -191,3 +191,37 @@ test_25282:
     message: "{} can not update the email id for {}"
     message_id: "update_not_allowed"
     email_id: "testuser@seagate.com"
+test_25275:
+    error_code: 4101
+    message: "Only {} user can create other {} users"
+test_25279:
+    error_code: 4101
+    message: "{} can not update the password for {}"
+    message_id: "update_not_allowed"
+    current_password: "Seagate@123"
+test_25281:
+    error_code: 4101
+    message: "{} can not update the email id for {}"
+    message_id: "update_not_allowed"
+    email_id: "testuser@seagate.com"
+test_25277:
+    error_code: 4101
+    message: "Cannot change role for the last {} user"
+    message_id: "update_not_allowed"
+test_25276:
+    error_code: 4101
+    message: "Only {} user can create other {} users"
+    message_id: "user_permission_denied"
+test_25286:
+    error_code: 4101
+    message: "Cannot delete the last {} user"
+    message_id: "user_permission_denied"
+test_25283:
+    error_code: 4101 
+    message: "Cannot delete the last {} user"
+    message_id: "user_permission_denied"
+test_25285:
+    error_code: 4101
+    message1: "Cannot delete the last {} user"
+    message2: "Normal user cannot delete other user"
+    message_id: "user_permission_denied"
