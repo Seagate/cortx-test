@@ -24,6 +24,7 @@ HA utility methods
 import logging
 import os
 import time
+from multiprocessing import Process
 
 from commons import commands as common_cmd
 from commons import errorcodes as err
@@ -64,6 +65,7 @@ class HALibs:
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
         self.s3_rest_obj = S3AccountOperationsRestAPI()
+        self.parallel_ios = None
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -696,6 +698,31 @@ class HALibs:
                     return False, (error, del_resp[1])
             return False, error
 
+    def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
+        """
+        This function runs parallel async stop_io function until called again with
+        start_read with False.
+        :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
+        WRITEs call
+        :param is_di: IF DI check is required on READ objects
+        :param start_read: If True, function will start the parallel READs
+        and if False function will Stop the parallel READs
+        :return: bool/Process object or stop process status
+        """
+        if start_read:
+            self.parallel_ios = Process(
+                target=di_data[0].stop_io, args=(di_data[1], is_di))
+            self.parallel_ios.start()
+            return_val = (True, self.parallel_ios)
+        else:
+            if self.parallel_ios.is_alive():
+                self.parallel_ios.join()
+            LOGGER.info(
+                "Parallel IOs stopped: %s",
+                not self.parallel_ios.is_alive())
+            return_val = (not self.parallel_ios.is_alive(), "Failed to stop parallel READ IOs.")
+        return return_val
+
     # pylint: disable=too-many-arguments
     def ha_s3_workload_operation(
             self,
@@ -737,3 +764,63 @@ class HALibs:
             if resp:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
+
+    @staticmethod
+    def cortx_start_cluster(node_obj, node: str = "--all"):
+        """
+        This function starts the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be started, default : --all
+        """
+        LOGGER.info("Start the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_START_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_START_CLSTR, node, resp[0])
+        if "Cluster start operation performed" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    @staticmethod
+    def cortx_stop_cluster(node_obj, node: str = "--all"):
+        """
+        This function stops the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be stopped, default : --all
+        """
+        LOGGER.info("Stop the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_STOP_CLSTR, node, resp[0])
+        if "Cluster stop is in progress" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    def restart_cluster(self, node_obj, hlt_obj_list):
+        """
+        Restart the cluster and check all nodes health.
+        Commands executed :
+        cortx stop cluster --all
+        cortx start cluster -all
+        pcs resource cleanup
+        Validate health of all the nodes.
+        :param node_obj: node object for stop/start cluster
+        :param hlt_obj_list: health object list for all the nodes.
+        """
+        LOGGER.info("Stop the cluster")
+        resp = self.cortx_stop_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Stopping cluster"
+        LOGGER.info("Start the cluster")
+        resp = self.cortx_start_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Starting cluster"
+        time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Perform PCS resource cleanup")
+        hlt_obj_list[0].pcs_resource_cleanup()
+        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
+        for hlt_obj in hlt_obj_list:
+            res = hlt_obj.check_node_health()
+            if not res[0]:
+                return False, f"Error during health check of {hlt_obj}"
+        LOGGER.info("All nodes are reachable and PCS looks clean.")
+        return True, "Cluster Restarted successfully."
