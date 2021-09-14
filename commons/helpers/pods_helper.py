@@ -17,7 +17,10 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Module to maintain all common functions across component."""
+"""Pods helper impl. Command builder should not be part of this class.
+However validation of sub commands and options can be done in command issuing functions
+like send_k8s_cmd.
+"""
 
 import logging
 import os
