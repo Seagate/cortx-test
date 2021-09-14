@@ -25,6 +25,7 @@ from __future__ import absolute_import
 import argparse
 import time
 import json
+import re
 import configparser
 from commons.helpers.node_helper import Node
 from commons import commands as cmn_cmd
@@ -45,14 +46,14 @@ def install_docker(*hostname, username, password):
     """
     for host in hostname:
         nd_obj = Node(hostname=host, username=username, password=password)
-        print("Installing docker on host\n")
+        print("Installing docker on host\n", host)
         cmd = "yum install -y yum-utils && " \
               "yum-config-manager -y" \
               " --add-repo https://download.docker.com/linux/centos/docker-ce.repo && " \
               "yum install -y docker-ce docker-ce-cli containerd.io"
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
         if resp:
-            print("docker is Installed on host\n")
+            print("docker is Installed on host\n", host)
             print("enabling docker \n")
             nd_obj.execute_cmd(cmd="systemctl enable docker", read_lines=True)
             print("starting docker \n")
@@ -195,6 +196,32 @@ def get_node_status(host, username, password):
             return nodes_status
         count += 1
         time.sleep(10)
+        if "NotReady" in nodes_status:
+            cmd = "kubectl get pods -n kube-system"
+            result = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=True)
+            for x in result:
+                print(x.strip())
+                if re.search(r'ImagePullBackOff', x):
+                    print(x)
+                    return nodes_status
+
+
+def troubleshoot(*hostname, username, password, status):
+    """
+    This Functions troubleshoots the calico network issue
+    """
+    if "NotReady" in status:
+        for host in hostname:
+            nd_obj = Node(hostname=host, username=username, password=password)
+            cmd = "wget https://github.com/projectcalico/calico/releases/download/v3.20.0/release-v3.20.0.tgz && "\
+                  "tar -xvf release-v3.20.0.tgz && "\
+                  "cd release-v3.20.0/images && "\
+                  "docker load -i calico-node.tar && "\
+                  "docker load -i calico-kube-controllers.tar && "\
+                  "docker load -i calico-cni.tar && "\
+                  "docker load -i calico-pod2daemon-flexvol.tar \n"
+            result = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
+            print("The result is", result)
 
 
 def join_cluster(*hostname, username, password, cmd):
@@ -252,28 +279,35 @@ def main(args):
     configure_iptables(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     create_daemon_file(*k8s_input['nodes'], username=k8s_input['username'],
-                          password=k8s_input['password'])
+                       password=k8s_input['password'])
     configure_k8s_repo(*k8s_input['nodes'], username=k8s_input['username'],
                        password=k8s_input['password'])
     result = initialize_k8s(k8s_input['nodes'][0], username=k8s_input['username'],
                             password=k8s_input['password'])
-    print("The token is %s", result[1])
+    print("The token is ", result[1])
     create_network(k8s_input['nodes'][0], username=k8s_input['username'],
                    password=k8s_input['password'])
     status = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
                              password=k8s_input['password'])
-    print("The stat is %s", status)
+    print("The stat is ", status)
     if "Ready" in status:
         print("Adding the worker node to master node")
         join_cluster(*k8s_input['nodes'], username=k8s_input['username'],
                      password=k8s_input['password'], cmd=result[1])
+    else:
+        print("To troubleshoot run cmd: kubectl get pods -n kube-system \n")
+        troubleshoot(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], status=status)
+        join_cluster(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], cmd=result[1])
+
     status_all = get_node_status(k8s_input['nodes'][0], username=k8s_input['username'],
                                  password=k8s_input['password'])
     if "NotReady" in status_all:
         print("Please check after some time,"
-              "the nodes status is %s", status_all)
+              "the nodes status is", status_all)
     print("Successfully deployed the k8s ,"
-          "Please run \"kubectl get nodes cmd\"")
+          "Please run \"kubectl get nodes cmd\" on ", k8s_input['nodes'][0])
 
 
 def parse_args():
