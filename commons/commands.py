@@ -475,3 +475,13 @@ DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
 
 # instead of md5 hash of the object stores md5 hash of empty string.
 DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
+
+# Kubernetes commands to interact with service/pods.
+
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {}"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Restart pod/ service in a namespace.
+RESTART_POD_CMD = ""
