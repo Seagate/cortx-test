@@ -1,12 +1,12 @@
 {
-"setupname":"T2",
+"setupname":"LC_Setup",
 "setup_type":"VM",
 "setup_in_useby": "",
 "in_use_for_parallel": false,
 "parallel_client_cnt": 0,
 "is_setup_free": true,
-"product_family":"LR",
-"product_type":"LR",
+"product_family":"LC",
+"product_type":"k8s",
 "lb": "FQDN without protocol(http/s)",
 "nodes":[
     {
@@ -18,6 +18,7 @@
         "password": "node 0 password",
         "public_data_ip":"",
         "private_data_ip":"",
+        "node_type":"master",
         "lpdu": {
             "ip": "",
             "port": "",
@@ -54,11 +55,12 @@
         "host": "srv-node-1",
         "hostname": "node 1 hostname",
         "ip": "node 1 ip address",
-        "fqdn": "node 1 fqdn",
+        "fqdn": "node 0 fqdn",
         "username": "node 1 username",
         "password": "node 1 password",
         "public_data_ip":"",
         "private_data_ip":"",
+        "node_type":"master",
         "lpdu": {
             "ip": "",
             "port": "",
@@ -90,6 +92,48 @@
             "port1": "",
             "port2": ""
             }
+    },
+    {
+        "host": "srv-node-2",
+        "hostname": "node 2 hostname",
+        "ip": "node 2 ip address",
+        "fqdn": "node 0 fqdn",
+        "username": "node 2 username",
+        "password": "node 2 password",
+        "public_data_ip":"",
+        "private_data_ip":"",
+        "node_type":"master",
+        "lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_lpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "encl_rpdu": {
+            "ip": "",
+            "port": "",
+            "user": "",
+            "pwd": ""
+        },
+        "gem_controller": {
+            "ip": "",
+            "user": "",
+            "pwd": "",
+            "port1": "",
+            "port2": ""
+        }
     }
 ],
 
