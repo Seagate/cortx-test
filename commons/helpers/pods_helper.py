@@ -33,7 +33,9 @@ namespace_map = {}
 
 
 class LogicalNode(Host):
-    """Pods helper."""
+    """Pods helper class. The Command builder should be written separately and will be
+    using this class.
+    """
 
     kube_commands = ('create', 'apply', 'config', 'get', 'explain',
                  'autoscale', 'patch', 'scale')
