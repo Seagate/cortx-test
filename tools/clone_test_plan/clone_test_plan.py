@@ -39,13 +39,13 @@ ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19
 vm_hw_skip_tes = ['TEST-19713']
 
 
-def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes):
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes, solution):
     """
     Process existing te and create new te
     """
     # create new te
     jt = JiraTask()
-    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes)
+    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes, solution)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
         response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
@@ -81,6 +81,7 @@ def main(args):
     tp_info['enclosure_type'] = args.enclosure_type
     tp_info['affect_version'] = args.affect_version
     tp_info['fix_version'] = args.fix_version
+    tp_info['solution'] = args.solution
 
     new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
@@ -97,6 +98,10 @@ def main(args):
         tp_info['platform'] = 'VM'
     else:
         te_keys = [te for te in te_keys_all if te not in vm_hw_skip_tes]
+
+    if args.skip_te_clone:
+        te_keys = [te for te in te_keys if te not in args.skip_te_clone]
+
     print("test executions of existing test plan {}".format(te_keys))
 
     skip_tes = []
@@ -115,7 +120,8 @@ def main(args):
         old_tes = manager.list()
         for te in te_keys:
             p = Process(target=process_te, args=(te, tp_info, skip_tes, new_tp_key,
-                                                 new_skipped_te, new_te_keys, old_tes))
+                                                 new_skipped_te, new_te_keys, old_tes,
+                                                 args.solution))
             p.start()
             prcs.append(p)
 
@@ -169,6 +175,9 @@ def parse_args():
                         help="Affects Versions: LR-R2 or LR1.0 or LR1.0.1​")
     parser.add_argument("-f", "--fix_version", type=str, default='LR-R2',
                         help="Fix Versions: LR-R2 or LR1.0 or LR1.0.1​")
+    parser.add_argument("-sl", "--solution", type=str, default='LR', help="LR or K8")
+    parser.add_argument("-sc", "--skip_te_clone", nargs='+', type=str,
+                        help="Space separated te tickets to skip from cloning")
     return parser.parse_args()
 
 

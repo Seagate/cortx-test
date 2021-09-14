@@ -123,7 +123,7 @@ class JiraTask:
                 print("{} is not valid for this test plan".format(test_id))
         return valid_tests
 
-    def create_new_test_exe(self, te, tp_info, skip_te):
+    def create_new_test_exe(self, te, tp_info, skip_te, solution):
         """
         create new test execution using existing te
         """
@@ -152,12 +152,21 @@ class JiraTask:
             if te in skip_te:
                 is_te_skipped = True
 
+            affect_ver = []
+            affect_ver_dict = dict()
+            if solution == 'LR':
+                affect_ver_dict['name'] = 'LR-R2'
+            else:
+                affect_ver_dict['name'] = 'CORTX-R2'
+            affect_ver.append(affect_ver_dict)
+
             te_dict = {'project': 'TEST',
                        'summary': summary,
                        'description': description,
                        'issuetype': {'name': 'Test Execution'},
                        'components': components,
                        'labels': labels,
+                       'versions': affect_ver,
                        'environment': env_field,
                        'customfield_21006': test_eve_labels}
             issue_key = self.create_issue(te_dict)
@@ -171,8 +180,9 @@ class JiraTask:
         test_plan_details = self.get_issue_details(test_plan)
 
         # description = test_plan_details.fields.description
-        description = "Test Plan for Build : {}, Build Branch: {}, Setup type: {}".format(
-            tp_info['build'], tp_info['build_branch'], tp_info['setup_type'])
+        description = "Test Plan for Build : {}, Build Branch: {}, Setup type: {}, Nodes: {}".\
+            format(tp_info['build'], tp_info['build_branch'], tp_info['setup_type'],
+                   tp_info['nodes'])
         components = []
         for i in range(len(test_plan_details.fields.components)):
             d = dict()
@@ -182,23 +192,10 @@ class JiraTask:
         # labels = test_plan_details.fields.labels
         labels = [tp_info['setup_type']]
 
-        env_field = ''
-        if int(tp_info['nodes']) > 1:
-            env_field = 'MultiNode'
-        else:
-            env_field = str(tp_info['nodes']) + 'Node'
-
-        # TP LR2 {Environment}_{Platform Type}_{Branch}_{Build}
-        summary = "TP LR2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" + tp_info[
-            'build_branch'] + "_" + tp_info['build']
-
         fix_versions = []
         fix_dict = dict()
         for i in range(len(test_plan_details.fields.fixVersions)):
             fix_dict['name'] = test_plan_details.fields.fixVersions[i].name
-            fix_versions.append(fix_dict)
-        if not fix_versions:
-            fix_dict['name'] = tp_info['fix_version']
             fix_versions.append(fix_dict)
 
         affect_ver = []
@@ -206,9 +203,37 @@ class JiraTask:
         for i in range(len(test_plan_details.fields.versions)):
             affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
             affect_ver.append(affect_ver_dict)
-        if not affect_ver:
-            affect_ver_dict['name'] = tp_info['affect_version']
-            affect_ver.append(affect_ver_dict)
+
+        if tp_info['solution'] == 'LR':
+            if not fix_versions:
+                fix_dict['name'] = tp_info['fix_version']
+                fix_versions.append(fix_dict)
+
+            if not affect_ver:
+                affect_ver_dict['name'] = tp_info['affect_version']
+                affect_ver.append(affect_ver_dict)
+
+            if int(tp_info['nodes']) > 1:
+                env_field = 'MultiNode'
+            else:
+                env_field = str(tp_info['nodes']) + 'Node'
+
+            # TP LR2 {Environment}_{Platform Type}_{Branch}_{Build}
+            summary = "TP LR2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" + tp_info[
+                'build_branch'] + "_" + tp_info['build']
+        else:
+            if not fix_versions:
+                fix_dict['name'] = 'CORTX-R2'
+                fix_versions.append(fix_dict)
+
+            if not affect_ver:
+                affect_ver_dict['name'] = 'CORTX-R2'
+                affect_ver.append(affect_ver_dict)
+
+            env_field = 'K8'
+            # TP CORTX-R2 {Environment}_{Platform Type}_{Branch}_{Build}
+            summary = "TP CORTX-R2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" \
+                      + tp_info['build_branch'] + "_" + tp_info['build']
 
         tp_dict = {'project': 'TEST',
                    'summary': summary,
