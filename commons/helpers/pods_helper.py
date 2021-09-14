@@ -23,18 +23,8 @@ like send_k8s_cmd.
 """
 
 import logging
-import os
-import posixpath
-import re
-import shutil
-import stat
-import time
-import mdstat
 from typing import Tuple
-from typing import List
-from typing import Union
-from typing import Any
-from commons import commands, const
+from commons import commands
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
