@@ -40,7 +40,7 @@ namespace_map = {}
 
 
 class LogicalNode(Host):
-    """Class to maintain all common functions across component."""
+    """Pods helper."""
 
     kube_commands = ('create', 'apply', 'config', 'get', 'explain',
                  'autoscale', 'patch', 'scale')
