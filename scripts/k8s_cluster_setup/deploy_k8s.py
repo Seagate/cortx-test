@@ -202,7 +202,6 @@ def get_node_status(host, username, password):
             for x in result:
                 print(x.strip())
                 if re.search(r'ImagePullBackOff', x):
-                    print(x)
                     return nodes_status
 
 
