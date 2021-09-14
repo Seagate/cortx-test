@@ -123,7 +123,7 @@ class JiraTask:
                 print("{} is not valid for this test plan".format(test_id))
         return valid_tests
 
-    def create_new_test_exe(self, te, tp_info, skip_te, solution):
+    def create_new_test_exe(self, te, tp_info, skip_te, product_family):
         """
         create new test execution using existing te
         """
@@ -154,7 +154,7 @@ class JiraTask:
 
             affect_ver = []
             affect_ver_dict = dict()
-            if solution == 'LR':
+            if product_family == 'LR':
                 affect_ver_dict['name'] = 'LR-R2'
             else:
                 affect_ver_dict['name'] = 'CORTX-R2'
@@ -204,7 +204,7 @@ class JiraTask:
             affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
             affect_ver.append(affect_ver_dict)
 
-        if tp_info['solution'] == 'LR':
+        if tp_info['product_family'] == 'LR':
             if not fix_versions:
                 fix_dict['name'] = tp_info['fix_version']
                 fix_versions.append(fix_dict)
