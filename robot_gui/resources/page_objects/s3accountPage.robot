@@ -236,6 +236,7 @@ Verify unique username for csm and s3 account
     Verify message  S3_ACCOUNT_NAME_SAME_AS_CSM_USER_ID  ${S3_ACCOUNT_NAME_SAME_AS_CSM_USER_MESSAGE}
     click element  ${CLOSE_ALERT_BOX_FOR_DUPLICATE_USER_ID}
     Reload Page
+    wait for page or element to load
     Delete CSM User  ${user_name}
 
 verify the table headers for s3 account access key
@@ -248,7 +249,7 @@ verify the table headers for s3 account access key
     wait until element is visible  ${ACCESS_KEY_TABLE_HEADERS_XPATH}  timeout=30
     ${access_key_table_headers} =  Read Table Data   ${ACCESS_KEY_TABLE_HEADERS_XPATH}
     log to console and report  ${access_key_table_headers}
-    ${expected_headers} =	Create List  ${S3_TABLE_HEADER_ACCOUNTNAME}  ${S3_TABLE_HEADER_SECRET_KEY}  ${S3_TABLE_HEADER_ACTION}
+    ${expected_headers} =  Create List  ${S3_TABLE_HEADER_ACCOUNTNAME}  ${S3_TABLE_HEADER_SECRET_KEY}  ${S3_TABLE_HEADER_ACTION}
     log to console and report  ${expected_headers}
     Lists Should Be Equal  ${access_key_table_headers}  ${expected_headers}
     Delete S3 Account  ${S3_account_name}  ${password}  True
@@ -401,6 +402,10 @@ Verify that s3 url on s3 account creation
 Delete s3 account using csm user
     [Documentation]  Delete s3 account using csm user and very it.
     [Arguments]  ${S3_account_name}
+    wait until element is visible  ${SELECT_FROM_PAGINATION_XPATH}  timeout=30
+    click element  ${SELECT_FROM_PAGINATION_XPATH}
+    click element  ${SELECT_ALL_RECORDS_FROM_PAGINATION_XPATH}
+    wait for page or element to load
     Action On The Table Element  ${DELETE_S3_ACCOUNT_BY_CSM_USER_XPATH}  ${S3_account_name}
     click button  ${CONFIRM_S3_ACCOUNT_DELETE_ID}
     wait for page or element to load

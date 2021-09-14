@@ -147,11 +147,12 @@ def run_remote_cmd_wo_decision(
     return output, error, exit_status
 
 
-def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
+def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
     :param flg: To get str(proc.communicate())
+    :param chk_stderr: Check if stderr is none.
     :return: bool, response.
     """
     if not cmd:
@@ -163,6 +164,10 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     LOGGER.debug("error = %s", str(error))
     if flg:
         return True, str((output, error))
+    if chk_stderr:
+        if error:
+            return False, str(output)
+        return True, str(output)
     if proc.returncode != 0:
         return False, str(error)
     if b"Number of key(s) added: 1" in output:
@@ -969,7 +974,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
-        shutil.copy(local_path, new_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, new_path)
+        else:
+            shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
         log_path = os.path.join(host_dir, remote_path)
     except Exception as error:
         LOGGER.error(error)
@@ -979,7 +987,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             LOGGER.info("Creating local log directory")
             resp = make_dirs(dpath=log_path)
 
-        shutil.copy(local_path, log_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, log_path)
+        else:
+            shutil.copytree(local_path, os.path.join(log_path, os.path.basename(local_path)))
 
     return True, log_path
 

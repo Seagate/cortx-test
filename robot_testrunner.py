@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-""Test Runner for robot test-cases"""
+"""Test Runner for robot test-cases"""
 import os
 import subprocess
 import argparse
@@ -76,6 +76,21 @@ def get_jira_credential() -> Tuple[str, Optional[str]]:
         os.environ['JIRA_ID'] = jira_id
         os.environ['JIRA_PASSWORD'] = jira_pd
     return jira_id, jira_pd
+
+def get_db_credential() -> Tuple[str, Optional[str]]:
+    """ Function to get DB credentials from env or common config or secret.json."""
+    db_user = None
+    db_pwd = None
+    try:
+        db_user = os.environ['DB_USER']
+        db_pwd = os.environ['DB_PASSWORD']
+    except KeyError:
+        print("DB credentials not found in environment")
+        db_user = input("DB username: ")
+        db_pwd = getpass.getpass("DB password: ")
+        os.environ['DB_USER'] = db_user
+        os.environ['DB_PASSWORD'] = db_pwd
+    return db_user, db_pwd
 
 def get_tests_from_te(jira_obj, args, test_type='ALL'):
     """
@@ -153,7 +168,7 @@ def run_robot_cmd(args,te_tag=None, logFile='main.log'):
     directory = " . "
     resource= " -v RESOURCES:" + str(cwd) + "/robot_gui/"
     timestamp = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-    reports = "reports_" + str(args.test_plan) + "_" + te_tag + str(timestamp)
+    reports = "reports_" + str(args.test_plan) + "_" + te_tag + "_" + str(timestamp)
     cmd_line = ""
     cmd_line = "cd robot_gui; robot --timestampoutputs -d "+ reports+url+resource+browser+ \
                username+headless+password+tag+directory+";cd .."
@@ -222,6 +237,9 @@ def trigger_tests_from_te(args):
         # update jira for status and log file
         test_status = 'EXECUTING'
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status)
+        #Clear main.log from previous Test.
+        if os.path.exists("main.log"):
+            os.remove("main.log")
 
         log_dir = run_robot_cmd(args, test_id, logFile='main.log')
         end_time = datetime.datetime.now()
@@ -234,16 +252,15 @@ def trigger_tests_from_te(args):
 
         # move all log files to nfs share
         log_dir =glob.glob(log_dir + "/*")
+        remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
+                                   args.te_ticket, test_id)
         for log_file in log_dir:
-            print("Uploading test log file to NFS server ", log_file)
-            remote_path = os.path.join(params.NFS_BASE_DIR, build_number, args.test_plan,
-                                       args.te_ticket, test_id)
             resp = system_utils.mount_upload_to_server(host_dir=params.NFS_SERVER_DIR,
                                                        mnt_dir=params.MOUNT_DIR,
                                                        remote_path=remote_path,
                                                        local_path=log_file)
             if resp[0]:
-                print("Output file is uploaded at location : %s", resp[1])
+                print("Log file is uploaded at location : %s", resp[1])
             else:
                 print("Failed to upload log file at location : %s", resp[1])
         #upload main.log file to NFS share
@@ -251,6 +268,10 @@ def trigger_tests_from_te(args):
                                                    mnt_dir=params.MOUNT_DIR,
                                                    remote_path=remote_path,
                                                    local_path=logFile)
+        if resp[0]:
+            print("Log file is uploaded at location : %s", resp[1])
+        else:
+            print("Failed to upload log file at location : %s", resp[1])
         # update jira for status and log file
         jira_obj.update_test_jira_status(args.te_ticket, test_id, test_status, remote_path)
 

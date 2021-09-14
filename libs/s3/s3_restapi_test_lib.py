@@ -22,13 +22,18 @@
 """S3 REST API operation Library."""
 
 import logging
+import urllib
 
 from commons import errorcodes as err
 from commons.constants import Rest
 from commons.exceptions import CTException
+from commons.utils.s3_utils import get_headers
+from commons.utils.s3_utils import convert_xml_to_dict
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from config import CSM_REST_CFG
+from config import S3_CFG
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -212,3 +217,238 @@ class S3AccountOperationsRestAPI(RestS3user):
                 error)
             raise CTException(
                 err.S3_REST_PATCH_REQUEST_FAILED, error) from error
+
+
+class S3AuthServerRestAPI(RestS3user):
+    """S3 Auth service rest api operations."""
+
+    def __init__(self, host=None):
+        """S3AutheServer operations constructor."""
+        super().__init__()
+        nodes = CMN_CFG.get("nodes")
+        host = host if host else nodes[0]["public_data_ip"] if nodes else None
+        self.endpoint = S3_CFG["s3auth_endpoint"].format(host)
+
+    def execute_restapi_on_s3authserver(
+            self, payload, access_key, secret_key, **kwargs) -> tuple:
+        """
+        Create header by calculate AuthV4 signature and execute rest api on s3 auth server.
+
+        :param payload: payload data used in execution.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :param request: s3auth restapi request.
+        :param endpoint: s3auth restapi endpoint.
+        """
+        request = kwargs.get("request", "post")
+        endpoint = kwargs.get("endpoint", None)
+        # S3auth server endpoint.
+        endpoint = endpoint if endpoint else self.endpoint
+        # Create harder by calculate AuthV4 signature.
+        headers = get_headers(
+            request,
+            self.endpoint,
+            payload,
+            service="s3",
+            region="US",
+            access_key=access_key,
+            secret_key=secret_key)
+        LOGGER.debug(headers)
+        # Input data.
+        payload = urllib.parse.urlencode(payload)
+        LOGGER.debug(payload)
+        # Fetching api response.
+        response = self.restapi.s3auth_rest_call(
+            "post", data=payload, endpoint=endpoint,
+            headers=headers)
+        response_data = convert_xml_to_dict(response)
+        LOGGER.debug(response_data)
+        if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            LOGGER.error("s3auth restapi request failed, reason: %s", response_data)
+            return False, response_data["ErrorResponse"]["Error"]["Message"]
+
+        return True, response_data
+
+    def update_account_login_profile(
+            self, user_name=None, new_password=None, access_key=None, secret_key=None) -> tuple:
+        """
+        Reset s3 account password using s3authserver rest api.
+
+        :param user_name: Name of the s3 account user.
+        :param new_password: New password of the s3 account user.
+        :param access_key: access_key of s3 user or ldap user of s3authserver.
+        :param secret_key: secret_key of s3 user or ldap password of s3authserver.
+        :return: bool, response of update account password for s3account.
+        """
+        payload = {"Action": "UpdateAccountLoginProfile"}
+        if user_name:
+            payload["AccountName"] = user_name
+        if new_password:
+            payload["Password"] = new_password
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+
+        return status, response
+
+    def create_iam_user(self, user_name, password, access_key, secret_key) -> tuple:
+        """
+        Reset s3/iam account using s3authserver rest api.
+
+        :param user_name: Name of iam user.
+        :param password: Password of iam user.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of create iam user.
+        """
+        payload = {"Action": "CreateUser"}
+        if user_name:
+            payload["UserName"] = user_name
+        if password:
+            payload["Password"] = password
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        # Create account login profile.
+        payload["Action"] = "CreateLoginProfile"
+        self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            response = response["CreateUserResponse"]["CreateUserResult"]["User"]
+            LOGGER.debug("Create user response: %s", response)
+            status = bool(user_name == response["UserName"])
+
+        return status, response
+
+    def list_iam_users(self, access_key, secret_key) -> tuple:
+        """
+        List iam users of s3 account using s3authserver rest api.
+
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of list iam user for s3 account.
+        """
+        user_list = []
+        payload = {"Action": "ListUsers"}
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            member = response["ListUsersResponse"]["ListUsersResult"]["Users"]["member"]
+            user_list = [
+                member["UserName"]] if isinstance(
+                    member, dict) else [
+                        mem["UserName"] for mem in member] if isinstance(
+                            member, list) else []
+
+        return status, user_list
+
+    def update_iam_user(
+            self, user_name=None, new_password=None, access_key=None, secret_key=None) -> tuple:
+        """
+        Reset s3 iam user password using s3authserver rest api.
+
+        :param user_name: Name of iam user.
+        :param new_password: New password of iam user.
+        :param access_key: access_key of s3 user.
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of update iam user for s3account.
+        """
+        payload = {"Action": "UpdateLoginProfile"}
+        if user_name:
+            payload["UserName"] = user_name
+        if new_password:
+            payload["Password"] = new_password
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+
+        return status, response
+
+    def delete_iam_user(self, user_name, access_key, secret_key) -> tuple:
+        """
+        Delete s3/iam account using s3authserver rest api.
+
+        :param user_name: Name of the s3 account user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of delete iam user.
+        """
+        payload = {"Action": "DeleteUser"}
+        if user_name:
+            payload["UserName"] = user_name
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+
+        return status, response
+
+    def create_iam_accesskey(self, user_name, access_key, secret_key) -> tuple:
+        """
+        Create s3/iam account user accesskey using s3authserver rest api.
+
+        :param user_name: Name of s3 iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of create accesskey of iam user.
+        """
+        payload = {"Action": "CreateAccessKey"}
+        if user_name:
+            payload["UserName"] = user_name
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            response = response["CreateAccessKeyResponse"]["CreateAccessKeyResult"]["AccessKey"]
+        LOGGER.debug("Create acesskey response: %s", response)
+
+        return status, response
+
+    def delete_iam_accesskey(self, user_name, access_key_id, access_key, secret_key) -> tuple:
+        """
+        Delete s3/iam account user accesskey using s3authserver rest api.
+
+        :param user_name: Name of s3 iam user.
+        :param access_key_id: Access key of the iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of delete accesskey of iam account.
+        """
+        payload = {"Action": "DeleteAccessKey"}
+        if user_name:
+            payload["UserName"] = user_name
+        if access_key_id:
+            payload["AccessKeyId"] = access_key_id
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+
+        return status, response
+
+    def list_iam_accesskey(
+            self, user_name, access_key, secret_key) -> tuple:
+        """
+        List iam user accesskey using s3authserver rest api.
+
+        :param user_name: Name of s3 iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :return: bool, response of list accesskey of iam user.
+        """
+        payload = {"Action": "ListAccessKeys"}
+        if user_name:
+            payload["UserName"] = user_name
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+        if status:
+            response = response["ListAccessKeysResponse"]["ListAccessKeysResult"][
+                "AccessKeyMetadata"]["member"]
+        LOGGER.debug("List access key response: %s", response)
+
+        return status, response
+
+    def update_iam_accesskey(
+            self, user_name, user_access_key, access_key, secret_key, **kwargs) -> tuple:
+        """
+        Update iam account user accesskey using s3authserver rest api.
+
+        :param user_name: Name of s3 iam user.
+        :param user_access_key: Access key of the iam user.
+        :param access_key: access_key of s3 user..
+        :param secret_key: secret_key of s3 user.
+        :param status: accesskey status may be Active/Inactive.
+        :return: bool, response of update accesskey of iam user.
+        """
+        status = kwargs.get("status", "Active")
+        payload = {"Action": "UpdateAccessKey"}
+        if user_name:
+            payload["UserName"] = user_name
+        payload["Status"] = status
+        payload["AccessKeyId"] = user_access_key
+        status, response = self.execute_restapi_on_s3authserver(payload, access_key, secret_key)
+
+        return status, response

@@ -24,6 +24,7 @@ HA utility methods
 import logging
 import os
 import time
+from multiprocessing import Process
 
 from commons import commands as common_cmd
 from commons import errorcodes as err
@@ -36,6 +37,8 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +64,8 @@ class HALibs:
         self.t_power_off = HA_CFG["common_params"]["power_off_time"]
         self.mgnt_ops = ManagementOPs()
         self.num_nodes = len(CMN_CFG["nodes"])
+        self.s3_rest_obj = S3AccountOperationsRestAPI()
+        self.parallel_ios = None
 
     @staticmethod
     def check_csm_service(node_object, srvnode_list, sys_list):
@@ -439,6 +444,7 @@ class HALibs:
             operation: str,
             resource_id: int,
             f_opt: bool = False,
+            s_off: bool = False,
             user: str = None,
             pswd: str = None):
         """
@@ -447,6 +453,8 @@ class HALibs:
         :param sys_obj: System object
         :param resource_id: Resource ID for the operation
         :param f_opt: If true, enables force start on node
+        :param s_off: If true, The poweroff operation will be performed along
+        with powering off the storage. (Valid only with poweroff operation on node.)
         :param user: Manage user name
         :param pswd: Manage user password
         :return: (bool, Command Response)
@@ -455,7 +463,7 @@ class HALibs:
             sys_obj.open_connection()
             sys_obj.login_cortx_cli(username=user, password=pswd)
             resp = sys_obj.node_operation(
-                operation=operation, resource_id=resource_id, force_op=f_opt)
+                operation=operation, resource_id=resource_id, force_op=f_opt, storage_off=s_off)
             return resp
         except Exception as error:
             LOGGER.error("%s %s: %s",
@@ -472,7 +480,7 @@ class HALibs:
             hlt_obj,
             host_data: dict,
             hctl_srvs: dict,
-            node: int):
+            checknode: str):
         """
         This function will check hctl status and if cluster is clean
         it will get the json data and check for the service's not expected status
@@ -480,19 +488,18 @@ class HALibs:
         :param hlt_obj: Health class object
         :param host_data: Dictionary of host data info
         :param hctl_srvs: Dictionary of not expected status service state
-        :param node: Node ID which has been stopped
+        :param checknode: String for node to be check i.e "srvnode-x.data.private"
         :return: (bool, Response)
         """
         # Get hctl status response for stopped node (Cluster not running)
-        checknode = host_data["hostname"]
         resp = system_utils.run_remote_cmd(
             cmd=common_cmd.MOTR_STATUS_CMD,
             hostname=host_data["hostname"],
             username=host_data["username"],
             password=host_data["password"],
             read_lines=True)
-        if resp[0]:
-            return False, f"HCTL status: {resp[1]} for srvnode-{node + 1}"
+        if not resp[0]:
+            return False, f"HCTL status: {resp[1]}"
         # Get hctl status --json response for all node hctl services
         resp = hlt_obj.hctl_status_json()
         svcs_elem = {'service': None, 'status': None}
@@ -515,21 +522,21 @@ class HALibs:
         return True, "HCTL status updated successfully in dictionary"
 
     # pylint: disable-msg=too-many-locals
-    def check_pcs_status_resp(self, node, node_obj, hlt_obj):
+    def check_pcs_status_resp(self, node, node_obj, hlt_obj, csm_node):
         """
         This will get pcs status xml and hctl status response and
         check all nodes health status after performing node stop operation on one node.
         :param node: Node ID for which health check is required
         :param node_obj: Node object List
         :param hlt_obj: Health class object List
+        :param csm_node: Node which is up and CSM is running
         :return: (bool, response/Dictionary for all the service which are not in expected state)
         """
         # Get the next node to check pcs and hctl status
         checknode = f'srvnode-{(node+1)}.data.private'
-        up_node = 0 if node == self.num_nodes else node + 1
-        host_details = {"hostname": CMN_CFG["nodes"][node]["hostname"],
-                        "username": CMN_CFG["nodes"][node]["username"],
-                        "password": CMN_CFG["nodes"][node]["password"]}
+        host_details = {"hostname": node_obj.hostname,
+                        "username": node_obj.username,
+                        "password": node_obj.password}
         # Get the pcs status for stopped node (Cluster not running)
         resp = system_utils.run_remote_cmd(
             cmd=common_cmd.PCS_STATUS_CMD,
@@ -537,21 +544,21 @@ class HALibs:
             username=host_details["username"],
             password=host_details["password"],
             read_lines=True)
-        if resp[0]:
+        if not resp[0]:
             return False, f"PCS status is {resp[1]} for srvnode-{node + 1}"
         # Get the pcs status xml to check service status for all nodes
-        response = node_obj[up_node].execute_cmd(
+        response = node_obj.execute_cmd(
             cmd=common_cmd.CMD_PCS_GET_XML,
             read_lines=False,
             exc=False)
         if isinstance(response, bytes):
             response = str(response, 'UTF-8')
-        json_format = hlt_obj[up_node].get_node_health_xml(
+        json_format = hlt_obj[csm_node].get_node_health_xml(
             pcs_response=response)
         crm_mon_res = json_format['crm_mon']['resources']
         hctl_services_failed = {}
         # Get the clone set resource state from PCS status
-        clone_set_dict = hlt_obj[up_node].get_clone_set_status(
+        clone_set_dict = hlt_obj[csm_node].get_clone_set_status(
             crm_mon_res, self.num_nodes)
         svcs_elem = {'node': None, 'status': None}
         for pcs_key, pcs_value in clone_set_dict.items():
@@ -568,23 +575,23 @@ class HALibs:
                     temp_svc['status'] = status
                     hctl_services_failed[f'{pcs_key}'].append(temp_svc)
         # Extract data for PCS resource group elements
-        resource_dict = hlt_obj[up_node].get_resource_status(crm_mon_res)
+        resource_dict = hlt_obj[csm_node].get_resource_status(crm_mon_res)
         for pcs_key, pcs_value in resource_dict.items():
             hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
                 hctl_services_failed[f'{pcs_key}'].append(pcs_value)
         # Extract data for PCS group elements
-        group_dict = hlt_obj[up_node].get_group_status(crm_mon_res)
+        group_dict = hlt_obj[csm_node].get_group_status(crm_mon_res)
         for pcs_key, pcs_value in group_dict.items():
             hctl_services_failed[f'{pcs_key}'] = list()
             if pcs_value['status'] == 'Stopped':
                 hctl_services_failed[f'{pcs_key}'].append(pcs_value)
 
         resp = self.check_hctl_status_resp(
-            hlt_obj[up_node],
+            hlt_obj[csm_node],
             host_data=host_details,
             hctl_srvs=hctl_services_failed,
-            node=node)
+            checknode=checknode)
         if not resp:
             return resp
         # if hctl_services_failed list value is not empty get the details of
@@ -595,10 +602,10 @@ class HALibs:
 
         return True, f"Check node health status is as expected for {checknode}"
 
-    @staticmethod
-    def delete_s3_acc_buckets_objects(s3_data: dict):
+    def delete_s3_acc_buckets_objects(self, s3_data: dict):
         """
-        This function deletes s3 all buckets objects for all the s3 account
+        This function deletes all s3 buckets objects for the s3 account
+        and all s3 accounts
         :param s3_data: Dictionary for s3 operation info
         :return: (bool, response)
         """
@@ -607,11 +614,12 @@ class HALibs:
                 s3_del = S3TestLib(endpoint_url=S3_CFG["s3_url"],
                                    access_key=details['accesskey'],
                                    secret_key=details['secretkey'])
-                s3_user_data = {'user_name': details['user_name'], 'password': details['password']}
-                response = s3_del.delete_s3_acc_buckets(s3_user_data)
+                response = s3_del.delete_all_buckets()
                 if not response[0]:
                     return response
-
+                response = self.s3_rest_obj.delete_s3_account(details['user_name'])
+                if not response[0]:
+                    return response
             return True, "Successfully performed S3 operation clean up"
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
@@ -628,7 +636,9 @@ class HALibs:
             nbuckets: int = 2,
             files_count: int = 10,
             di_data: tuple = None,
-            is_di: bool = False):
+            is_di: bool = False,
+            async_io: bool = False,
+            stop_upload_time: int = 60):
         """
         This function creates s3 acc, buckets and performs IO.
         This will perform DI check if is_di True and once done,
@@ -639,8 +649,12 @@ class HALibs:
         :param files_count: NUmber of files to be uploaded per bucket
         :param di_data: Data for DI check operation
         :param is_di: To perform DI check operation
+        :param async_io: To perform parallel IO operation
+        :param stop_upload_time: Approx time allowed for write operation to be finished
+        before starting stop_io_async
         :return: (bool, response)
         """
+        io_data = None
         try:
             if not is_di:
                 LOGGER.info("create s3 acc, buckets and upload objects.")
@@ -649,14 +663,24 @@ class HALibs:
                     nbuckets=nbuckets, users=users)
                 run_data_chk_obj = RunDataCheckManager(users=io_data)
                 pref_dir = {"prefix_dir": prefix_data}
-                star_res = run_data_chk_obj.start_io(
-                    users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
-                if not star_res:
-                    raise CTException(err.S3_START_IO_FAILED, star_res)
+                if async_io:
+                    run_data_chk_obj.start_io_async(
+                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
+                    run_data_chk_obj.event.set()
+                    time.sleep(stop_upload_time)
+                    run_data_chk_obj.event.is_set()
+                else:
+                    star_res = run_data_chk_obj.start_io(
+                        users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
+                    if not star_res:
+                        raise CTException(err.S3_START_IO_FAILED, star_res)
                 return True, run_data_chk_obj, io_data
 
             LOGGER.info("Checking DI for IOs run.")
-            stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
+            if async_io:
+                stop_res = di_data[0].stop_io_async(users=di_data[1], di_check=is_di)
+            else:
+                stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
                 raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
@@ -668,4 +692,135 @@ class HALibs:
                          Const.EXCEPTION_ERROR,
                          HALibs.perform_ios_ops.__name__,
                          error)
+            if io_data:
+                del_resp = self.delete_s3_acc_buckets_objects(io_data)
+                if not del_resp[0]:
+                    return False, (error, del_resp[1])
             return False, error
+
+    def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
+        """
+        This function runs parallel async stop_io function until called again with
+        start_read with False.
+        :param di_data: Tuple of RunDataCheckManager obj and User-bucket info from
+        WRITEs call
+        :param is_di: IF DI check is required on READ objects
+        :param start_read: If True, function will start the parallel READs
+        and if False function will Stop the parallel READs
+        :return: bool/Process object or stop process status
+        """
+        if start_read:
+            self.parallel_ios = Process(
+                target=di_data[0].stop_io, args=(di_data[1], is_di))
+            self.parallel_ios.start()
+            return_val = (True, self.parallel_ios)
+        else:
+            if self.parallel_ios.is_alive():
+                self.parallel_ios.join()
+            LOGGER.info(
+                "Parallel IOs stopped: %s",
+                not self.parallel_ios.is_alive())
+            return_val = (not self.parallel_ios.is_alive(), "Failed to stop parallel READ IOs.")
+        return return_val
+
+    # pylint: disable=too-many-arguments
+    def ha_s3_workload_operation(
+            self,
+            log_prefix: str,
+            s3userinfo: dict,
+            skipread: bool = False,
+            skipwrite: bool = False,
+            skipcleanup: bool = False,
+            nsamples: int = 20,
+            nclients: int = 10):
+        """
+        This function creates s3 acc, buckets and performs WRITEs/READs/DELETEs
+        operations on VM/HW.
+        :param log_prefix: Test number prefix for log file
+        :param s3userinfo: S3 user info
+        :param skipread: Skip reading objects created in this run if True
+        :param skipwrite: Skip writing objects created in this run if True
+        :param skipcleanup: Skip deleting objects created in this run if True
+        :param nsamples: Number of samples of object
+        :param nclients: Number of clients/workers
+        :return: bool/operation response
+        """
+        workloads = [
+            "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
+            "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
+        if self.setup_type == "HW":
+            workloads.extend(["1GB", "2GB", "3GB" "4GB", "5GB"])
+
+        resp = s3bench.setup_s3bench()
+        if not resp:
+            return resp, "Couldn't setup s3bench on client machine."
+        for workload in workloads:
+            resp = s3bench.s3bench(
+                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
+                num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
+                obj_size=workload, skip_write=skipwrite, skip_read=skipread,
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}")
+            resp = s3bench.check_log_file_error(resp[1])
+            if resp:
+                return resp, f"s3bench operation failed with {resp[1]}"
+        return True, "Sucessfully completed s3bench operation"
+
+    @staticmethod
+    def cortx_start_cluster(node_obj, node: str = "--all"):
+        """
+        This function starts the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be started, default : --all
+        """
+        LOGGER.info("Start the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_START_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_START_CLSTR, node, resp[0])
+        if "Cluster start operation performed" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    @staticmethod
+    def cortx_stop_cluster(node_obj, node: str = "--all"):
+        """
+        This function stops the cluster
+        :param node_obj : Node object from which the command should be triggered
+        :param node: Node which should be stopped, default : --all
+        """
+        LOGGER.info("Stop the cluster")
+        resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
+                                    exc=False)
+        LOGGER.info("%s %s resp = %s", common_cmd.CMD_STOP_CLSTR, node, resp[0])
+        if "Cluster stop is in progress" in resp[0]:
+            return True, resp[0]
+        return False, resp[0]
+
+    def restart_cluster(self, node_obj, hlt_obj_list):
+        """
+        Restart the cluster and check all nodes health.
+        Commands executed :
+        cortx stop cluster --all
+        cortx start cluster -all
+        pcs resource cleanup
+        Validate health of all the nodes.
+        :param node_obj: node object for stop/start cluster
+        :param hlt_obj_list: health object list for all the nodes.
+        """
+        LOGGER.info("Stop the cluster")
+        resp = self.cortx_stop_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Stopping cluster"
+        LOGGER.info("Start the cluster")
+        resp = self.cortx_start_cluster(node_obj)
+        if not resp[0]:
+            return False, "Error during Starting cluster"
+        time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Perform PCS resource cleanup")
+        hlt_obj_list[0].pcs_resource_cleanup()
+        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
+        for hlt_obj in hlt_obj_list:
+            res = hlt_obj.check_node_health()
+            if not res[0]:
+                return False, f"Error during health check of {hlt_obj}"
+        LOGGER.info("All nodes are reachable and PCS looks clean.")
+        return True, "Cluster Restarted successfully."

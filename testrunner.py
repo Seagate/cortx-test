@@ -12,6 +12,7 @@ from jira import JIRA
 from core import runner
 from core import kafka_consumer
 from core.health_status_check_update import HealthCheck
+from core.client_config import ClientConfig
 from core.locking_server import LockingServer
 from commons.utils.jira_utils import JiraTask
 from commons import configmanager
@@ -49,7 +50,13 @@ def parse_args():
     parser.add_argument("-tg", "--target", type=str,
                         default='', help="Target setup details")
     parser.add_argument("-ll", "--log_level", type=int, default=10,
-                        help="log level value")
+                        help="log level value as defined below" +
+                             "CRITICAL = 50" +
+                             "FATAL = CRITICAL" +
+                             "ERROR = 40" +
+                             "WARNING = 30 WARN = WARNING" +
+                             "INFO = 20 DEBUG = 10"
+                        )
     parser.add_argument("-p", "--prc_cnt", type=int, default=2,
                         help="number of parallel processes")
     parser.add_argument("-f", "--force_serial_run", type=str_to_bool,
@@ -65,9 +72,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def initialize_loghandler(log) -> None:
+def initialize_loghandler(log, level=logging.DEBUG) -> None:
     """Initialize test runner logging with stream and file handlers."""
-    log.setLevel(logging.DEBUG)
+    log.setLevel(level)
     cwd = os.getcwd()
     dir_path = os.path.join(os.path.join(cwd, params.LOG_DIR_NAME, params.LATEST_LOG_FOLDER))
     if not os.path.exists(dir_path):
@@ -106,6 +113,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
 
     is_parallel = "--is_parallel=" + str(parallel_exe)
     log_level = "--log-cli-level=" + str(args.log_level)
+    # we intend to use --log-level instead of cli
+
     force_serial_run = "--force_serial_run="
     serial_run = "True" if args.force_serial_run else "False"
     force_serial_run = force_serial_run + serial_run
@@ -115,7 +124,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         te_id = str(args.te_ticket) + "_"
     if re_execution:
         te_tag = None
-        report_name = "--html=log/re_non_parallel_" + te_id + args.html_report
+        report_name = "--html=log/re_non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')\
+                      + args.html_report
         cmd_line = ["pytest", "--continue-on-collection-errors", is_parallel, is_distributed,
                     log_level, report_name]
     else:
@@ -129,7 +139,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
         else:
-            report_name = "--html=log/non_parallel_" + te_id + args.html_report
+            report_name = "--html=log/non_parallel_" + te_id + datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f') \
+                          + args.html_report
             cmd_line = ["pytest", is_parallel, is_distributed,
                         log_level, report_name, force_serial_run]
 
@@ -226,9 +237,12 @@ def get_tests_from_te(jira_obj, args, test_type=None):
     if test_type is None:
         test_type = ['ALL']
     test_tuple, tag = jira_obj.get_test_ids_from_te(args.te_ticket, test_type)
-    test_list = list(list(zip(*test_tuple))[0])
-    if len(test_list) == 0 or tag == "":
-        raise EnvironmentError("Please check TE provided, tests or tag is missing")
+    if test_tuple:
+        test_list = list(list(zip(*test_tuple))[0])
+        if len(test_list) == 0 or tag == "":
+            raise EnvironmentError("Please check TE provided, tests or tag is missing")
+    else:
+        test_list = []
     return test_list, tag
 
 
@@ -278,7 +292,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         test_meta = list()
         tp_resp = jira_obj.get_issue_details(args.test_plan, auth_jira=auth_jira)  # test plan id
         tp_meta['test_plan_label'] = tp_resp.fields.labels
-        tp_meta['environment'] = tp_resp.fields.environment # deprecated
+        tp_meta['environment'] = tp_resp.fields.environment  # deprecated
         c_fields = dict(build=tp_resp.fields.customfield_22980,
                         branch=tp_resp.fields.customfield_22981,
                         plat_type=tp_resp.fields.customfield_22982,
@@ -292,7 +306,7 @@ def create_test_meta_data_file(args, test_list, jira_obj=None):
         tp_meta['enclosure_type'] = c_fields['enc_type'][0] if c_fields['enc_type'] else '5U84'
 
         te_resp = jira_obj.get_issue_details(args.te_ticket, auth_jira=auth_jira)  # test exec id
-        te_components = 'Automation' # default
+        te_components = 'Automation'  # default
         if te_resp.fields.components:
             te_components = te_resp.fields.components[0].name
         tp_meta['te_meta'] = dict(te_id=args.te_ticket,
@@ -336,7 +350,7 @@ def trigger_runner_process(args, kafka_msg, client):
     lock_task = LockingServer()
     trigger_tests_from_kafka_msg(args, kafka_msg)
     # rerun unexecuted tests in case of parallel execution
-    if kafka_msg.parallel:
+    if kafka_msg.parallel and args.force_serial_run != "True":
         trigger_unexecuted_tests(args, kafka_msg.test_list)
     # Release lock on acquired target.
     lock_released = lock_task.unlock_target(args.target, client)
@@ -363,6 +377,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
 
     # First execute all tests with parallel tag which are mentioned in given tag.
     run_pytest_cmd(args, te_tag=None, parallel_exe=kafka_msg.parallel, env=_env)
+    LOGGER.debug("Executed tests %s on target %s", kafka_msg.test_list, args.target)
 
 
 def read_selected_tests_csv():
@@ -399,39 +414,40 @@ def trigger_tests_from_te(args):
 
     test_list, te_tag = get_tests_from_te(jira_obj, args, test_types)
 
-    # writing the data into the file
-    with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
-            as test_file:
-        write = csv.writer(test_file)
-        for test in test_list:
-            write.writerow([test])
+    if test_list:
+        # writing the data into the file
+        with open(os.path.join(os.getcwd(), params.LOG_DIR_NAME, params.JIRA_TEST_LIST), 'w') \
+                as test_file:
+            write = csv.writer(test_file)
+            for test in test_list:
+                write.writerow([test])
 
-    tp_metadata = create_test_meta_data_file(args, test_list)
-    if not args.build and not args.build_type:
-        args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
+        tp_metadata = create_test_meta_data_file(args, test_list)
+        if not args.build and not args.build_type:
+            args.build, args.build_type = tp_metadata['build'], tp_metadata['branch']
 
-    if args.data_integrity_chk:
-        thread_io, event = runner.start_parallel_io(args)
+        if args.data_integrity_chk:
+            thread_io, event = runner.start_parallel_io(args)
 
-    _env = os.environ.copy()
-    if not args.force_serial_run:
-        # First execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, True, env=_env)
+        _env = os.environ.copy()
+        if not args.force_serial_run:
+            # First execute all tests with parallel tag which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, True, env=_env)
 
-        # Sequentially executes test which didn't execute during parallel execution
-        test_list = read_selected_tests_csv()
-        trigger_unexecuted_tests(args, test_list)
+            # Sequentially executes test which didn't execute during parallel execution
+            test_list = read_selected_tests_csv()
+            trigger_unexecuted_tests(args, test_list)
 
-        # Execute all tests having no parallel tag and which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, False, env=_env)
-    else:
-        # Sequentially execute all tests with parallel tag which are mentioned in given tag.
-        run_pytest_cmd(args, te_tag, True, env=_env)
-        # Execute all other tests not having parallel tag with given component tag.
-        run_pytest_cmd(args, te_tag, False, env=_env)
+            # Execute all tests having no parallel tag and which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, False, env=_env)
+        else:
+            # Sequentially execute all tests with parallel tag which are mentioned in given tag.
+            run_pytest_cmd(args, te_tag, True, env=_env)
+            # Execute all other tests not having parallel tag with given component tag.
+            run_pytest_cmd(args, te_tag, False, env=_env)
 
-    if args.data_integrity_chk:
-        runner.stop_parallel_io(thread_io, event)
+        if args.data_integrity_chk:
+            runner.stop_parallel_io(thread_io, event)
 
 
 def acquire_target(target, client, lock_type, convert_to_shared=False):
@@ -460,6 +476,7 @@ def get_available_target(kafka_msg, client):
     lock_task = LockingServer()
     acquired_target = ""
     HealthCheck(runner.get_db_credential()).health_check(kafka_msg.target_list)
+    LOGGER.info("Acquiring available target for test execution.")
     while acquired_target == "":
         if kafka_msg.parallel:
             target = lock_task.find_free_target(kafka_msg.target_list, common_cnst.SHARED_LOCK)
@@ -477,6 +494,7 @@ def get_available_target(kafka_msg, client):
             if seq_target != "":
                 acquired_target = acquire_target(seq_target, client,
                                                  common_cnst.EXCLUSIVE_LOCK)
+    LOGGER.info("Acquired available target %s for test execution.", str(acquired_target))
     return acquired_target
 
 
@@ -511,18 +529,22 @@ def check_kafka_msg_trigger_test(args):
                 current_time_ms = datetime.utcnow().strftime('%Y-%m-%d_%H:%M:%S.%f')
                 client = system_utils.get_host_name() + "_" + current_time_ms
                 acquired_target = get_available_target(kafka_msg, client)
+                ClientConfig(runner.get_db_credential()).client_configure_for_given_target(acquired_target)
                 args.te_ticket = kafka_msg.te_ticket
                 args.parallel_exe = kafka_msg.parallel
                 args.build = kafka_msg.build
                 args.build_type = kafka_msg.build_type
                 args.test_plan = kafka_msg.test_plan
                 args.target = acquired_target
+                # force serial run within testrunner till xdist issue is fixed
+                args.force_serial_run = "True"
                 p = Process(target=trigger_runner_process, args=(args, kafka_msg, client))
                 p.start()
                 p.join()
         except KeyboardInterrupt:
             break
-        except BaseException:
+        except BaseException as exce:
+            print(exce)
             received_stop_signal = True
     consumer.close()
 
@@ -578,6 +600,9 @@ def main(args):
 
 if __name__ == '__main__':
     runner.cleanup()
-    initialize_loghandler(LOGGER)
     opts = parse_args()
+    level = opts.log_level
+    level = logging.getLevelName(level)
+    opts.log_level = level
+    initialize_loghandler(LOGGER, level=level)
     main(opts)

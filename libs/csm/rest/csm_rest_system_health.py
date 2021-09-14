@@ -21,6 +21,9 @@
 """Test library for System Health related operations.
    Author: Divya Kachhwaha
 """
+import json
+import time
+from http import HTTPStatus
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -407,7 +410,7 @@ class SystemHealth(RestTestLib):
                 headers=self.headers,
                 params=parameters,
                 save_json=True)
-            if response.status_code != 200:
+            if response.status_code != HTTPStatus.OK:
                 self.log.error(f'Response ={response.text}\n'
                                f'Request Headers={response.request.headers}\n'
                                f'Request Body={response.request.body}')
@@ -497,3 +500,87 @@ class SystemHealth(RestTestLib):
         if rack_resp[0] and site_resp[0] and cls_resp[0]:
             return True, f"Cluster, site and rack health status is {exp_status}"
         return False, f"Cluster, site and rack health status is not as expected"
+
+    # pylint: disable=too-many-arguments
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def perform_cluster_operation(
+            self,
+            operation: str,
+            resource: str,
+            resource_id: int,
+            storage_off: bool = False,
+            force_op: bool = False,
+            sleep_time: int = 300):
+        """
+        This method performs cluster operation like stop/start/poweroff with rest API
+        :param operation: Operation to be performed on cluster resource
+        :param resource: resource type like cluster, node etc
+        :param resource_id: Resource ID for the operation
+        :param storage_off: If true, The poweroff operation will be performed along
+        with powering off the storage. (Valid only with poweroff operation on node.)
+        :param force_op: Specifying this enables force operation.
+        :param sleep_time: Sleep time for stop/start/poweroff operation to be completed
+        :return: bool/cluster operation POST API response
+        """
+        # Building request url to perform cluster operation
+        self.log.info("Performing %s operation on %s ...", operation, resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info(
+            "Endpoint for cluster operation is %s", endpoint)
+        data_val = {"operation": operation,
+                "arguments": {"resource_id": f"{resource_id}"}}
+        if operation == "stop":
+            data_val['arguments']['force'] = force_op
+        elif operation == "poweroff":
+            data_val['arguments']["storageoff"] = storage_off
+            data_val['arguments']['force'] = force_op
+        # Fetching api response
+        response = self.restapi.rest_call(
+            "post",
+            endpoint=endpoint,
+            data=json.dumps(data_val),
+            headers=headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response)
+            return False, response
+        self.log.info("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response)
+        self.log.info("Sleep for node to %s for %s sec", operation, sleep_time)
+        time.sleep(sleep_time)
+        return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def check_on_cluster_effect(self, resource_id: int):
+        """
+        This method Get the effect of node stop/poweroff operation on cluster with rest API
+        :param resource_id: Id of the node for which cluster status is to be checked.
+        :return: bool/GET effect status of node operation on cluster rest API response
+        """
+        # Building request url to perform cluster status operation
+        self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
+                      resource_id)
+        endpoint = "{}/{}".format(self.config["cluster_status_endpoint"], resource_id)
+        self.log.info(
+            "Endpoint for cluster status operation is %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(
+            request_type="get",
+            endpoint=endpoint,
+            headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("cluster status operation response = %s",
+                           response.json())
+            return False, response
+        self.log.info("cluster status operation response = %s",
+                      response.json())
+        return True, response

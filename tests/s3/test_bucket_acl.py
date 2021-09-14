@@ -99,6 +99,7 @@ class TestBucketACL:
         self.log.info("Deleted buckets in default account")
         self.log.info("Account list: %s", self.account_list)
         self.delete_accounts(self.account_list)
+        del self.rest_obj
         self.log.info("ENDED: Teardown test operations")
 
     def delete_accounts(self, accounts):
@@ -437,6 +438,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'private' along with 'READ' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5737")
@@ -452,6 +454,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'private' along with 'FULL_CONTROL' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5732")
@@ -467,6 +470,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'public-read' along with 'READ_ACP' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5731")
@@ -482,6 +486,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'public-read' along with 'WRITE_ACP' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5729")
@@ -497,6 +502,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'public-read-write' along with 'WRITE_ACP' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5730")
@@ -527,6 +533,7 @@ class TestBucketACL:
         self.log.info(
             "Add canned ACL 'authenticate-read' along with 'READ' ACL grant permission")
 
+    @pytest.mark.skip("EOS-9547 Incorrect Header Grants ACL")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5738")
