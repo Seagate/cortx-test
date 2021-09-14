@@ -69,7 +69,7 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
-    parser.add_argument("-pt", "--product_family", type=str, default='LC',
+    parser.add_argument("-pf", "--product_family", type=str, default='LC',
                         help="Product family LR or LC.")
     return parser.parse_args()
 
