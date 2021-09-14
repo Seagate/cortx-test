@@ -137,33 +137,19 @@
     }
 ],
 
-"enclosure":
-{
-    "primary_enclosure_ip": "10.0.0.2",
-    "secondary_enclosure_ip": "10.0.0.3",
-    "enclosure_user": "",
-    "enclosure_pwd": ""
-},
-
-"bmc":
-{
-    "username": "",
-    "password": ""
-},
-
-"ldap":
-{
-    "username": "",
-    "password": "",
-    "sspl_pass": ""
-},
-
 "csm":
 {
-  "mgmt_vip": "",
+  "csm_endpoint": "fqdn:port",
   "csm_admin_user":{
     "username": "",
     "password": ""
   }
+},
+"s3endpoints":
+{
+    "s3_io": "fqdn:port",
+    "s3_auth": "fqdn:port"
 }
+
+
 }

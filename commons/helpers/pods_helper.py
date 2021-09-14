@@ -57,9 +57,9 @@ class LogicalNode(Host):
         """send/execute command on logical node/pods."""
         if operation not in LogicalNode.kube_commands:
             raise ValueError(
-                "command parameter must be one of %r." % LogicalNode.kube_commands)
+                "command parameter must be one of %r." % str(LogicalNode.kube_commands))
         out = []
-        log.debug("Performing %s on service %s...", operation, pod, namespace)
+        log.debug("Performing %s on service %s in namespace %s...", operation, pod, namespace)
         cmd = commands.KUBECTL_CMD.format(operation, pod, namespace, command_suffix)
         resp = self.execute_cmd(cmd, **kwargs)
         if decode:
@@ -77,7 +77,7 @@ class LogicalNode(Host):
                 cmd)
             resp = self.execute_cmd(cmd, shell=False)
             log.debug(resp)
-        except BaseException as error:
+        except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.shutdown_node.__name__, error)
             return False, error
