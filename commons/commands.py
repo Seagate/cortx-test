@@ -57,7 +57,7 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--config \'json:///opt/seagate/cortx_configs/provisioner_cluster.json\' " \
                  "--file /var/lib/hare/cluster.yaml"
 
-# S3IAMCLI Commands
+# aws s3 commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
 CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
 S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
