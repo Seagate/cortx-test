@@ -97,6 +97,11 @@ class TestS3fs:
         tool = S3FS_CNF["s3fs_cfg"]["s3fs_tool"]
         cmd_elements.append(tool)
         cmd_elements.append(operation)
+        if S3_CFG["use_ssl"]:
+            cmd_arguments.append(
+                S3FS_CNF["s3fs_cfg"]["no_check_certificate"],
+                S3FS_CNF["s3fs_cfg"]["ssl_verify_hostname"],
+                S3FS_CNF["s3fs_cfg"]["nosscache"])
         if cmd_arguments:
             for argument in cmd_arguments:
                 cmd_elements.append(argument)
