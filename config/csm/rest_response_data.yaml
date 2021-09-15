@@ -1,0 +1,42 @@
+error_codes:
+  code_4101: 4101
+  code_4099: 4099
+  code_4103: 4103
+  code_12288: 12288
+messages:
+  message_1: "{} can not update the role for {}"
+  message_2: "{} can not update the password for {}"
+  message_3: "{} can not update the email id for {}"
+  message_4: "Only {} user can create other {} users"
+  message_5: "Cannot change role for the last {} user"
+  message_6: "Cannot delete the last {} user"
+  message_7: "Normal user cannot delete other user"
+  message_8: "Access denied. Verify account name."
+  message_9: "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
+  message_10: "Invalid Parameter for user"
+  message_11: "Non super user cannot change roles for self"
+  message_12: "Cannot change roles for super user"
+  message_13: "username cannot be modified"
+  message_14: "User already exists:"
+  message_15: "The request was rejected because it attempted to create an account that already exists."
+  message_16: "User Deleted Successfully."
+  message_17: "Invalid parameter for user"
+  message_18: "Insufficient information in request body"
+  message_19: "User does not exist:"
+  message_20: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+  message_21: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+  message_22: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+  message_23: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
+  message_24: "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must include !@#$%^&*()_+-=[]{}|'.\"], 'role': ['Must be one of: admin, manage, monitor.']}"
+  message_25: "Access denied. Cannot modify another S3 account."
+message_ids:
+  message_id_1: "user_permission_denied"
+  message_id_2: "update_not_allowed"
+  message_id_3: "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time.']}"
+  message_id_4: "invalid request parameter"
+  message_id_5: "users_already_exists"
+  message_id_6: "EntityAlreadyExists"
+  message_id_7: "{'dir': ['Must be one of: desc, asc.']}"
+  message_id_8: "{'sort_by': ['Must be one of: user_id, username, user_type, alert_notification, email, created_time, updated_time.']}"
+  message_id_9: "users_not_found"
+  message_id_10: "invalid request parameter"

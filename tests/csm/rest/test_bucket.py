@@ -119,7 +119,9 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         bucketname = self.csm_conf["test_578"]["bucket_name"]
-        resp_msg = self.csm_conf["test_578"]["response_msg"]
+        #resp_msg = self.csm_conf["test_578"]["response_msg"]
+        resp_error_code = self.rest_resp_conf["error_codes"]
+        resp_msg = self.rest_resp_conf["messages"]
 
         self.log.info(
             "Step 1: Verifying creating bucket with bucket name containing special characters")
@@ -132,8 +134,10 @@ class TestS3Bucket():
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(),
-                                   resp_msg)
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code["code_4099"]))
+        assert_utils.assert_equals(response.json()["message"],
+                                  resp_msg["message_9"])
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing special characters")
@@ -147,8 +151,10 @@ class TestS3Bucket():
             response.status_code, response.json())
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
-        assert_utils.assert_equals(response.json(),
-                                   resp_msg)
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code["code_4099"]))
+        assert_utils.assert_equals(response.json()["message"],
+                                  resp_msg["message_9"])
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing alphanumeric characters")
