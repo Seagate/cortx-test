@@ -199,20 +199,21 @@ def get_node_status(host, username, password):
         if "NotReady" in nodes_status:
             cmd = "kubectl get pods -n kube-system"
             result = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=True)
-            for x in result:
-                print(x.strip())
-                if re.search(r'ImagePullBackOff', x):
+            for res in result:
+                print(res.strip())
+                if re.search(r'ImagePullBackOff', res):
                     return nodes_status
 
 
 def troubleshoot(*hostname, username, password, status):
     """
-    This Functions troubleshoots the calico network issue
+    This Functions troubleshoots the calico issue
     """
     if "NotReady" in status:
         for host in hostname:
             nd_obj = Node(hostname=host, username=username, password=password)
-            cmd = "wget https://github.com/projectcalico/calico/releases/download/v3.20.0/release-v3.20.0.tgz && "\
+            cmd = "wget https://github.com/projectcalico/calico/releases/" \
+                  "download/v3.20.0/release-v3.20.0.tgz && "\
                   "tar -xvf release-v3.20.0.tgz && "\
                   "cd release-v3.20.0/images && "\
                   "docker load -i calico-node.tar && "\
