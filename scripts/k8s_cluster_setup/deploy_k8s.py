@@ -306,6 +306,8 @@ def main(args):
     if "NotReady" in status_all:
         print("Please check after some time,"
               "the nodes status is", status_all)
+        troubleshoot(*k8s_input['nodes'], username=k8s_input['username'],
+                     password=k8s_input['password'], status=status_all)
     print("Successfully deployed the k8s ,"
           "Please run \"kubectl get nodes cmd\" on ", k8s_input['nodes'][0])
 
