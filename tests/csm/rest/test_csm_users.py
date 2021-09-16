@@ -35,7 +35,7 @@ from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.csm_setup import CSMConfigsCheck
-from config import CSM_REST_CFG
+from config import CSM_REST_CFG, CMN_CFG
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -47,7 +47,7 @@ class TestCsmUser():
         cls.log.info("Initializing test setups ......")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_user.yaml")
         cls.config = CSMConfigsCheck()
-        if PROD_FAMILY != "LC":
+        if PROD_FAMILY == CMN_CFG["product_family"]:
             user_already_present = cls.config.check_predefined_csm_user_present()
             if not user_already_present:
                 user_already_present = cls.config.setup_csm_users()
