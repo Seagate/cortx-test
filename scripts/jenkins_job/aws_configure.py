@@ -30,6 +30,7 @@ from time import perf_counter_ns
 from multiprocessing import Process
 from commons import pswdmanager
 from commons.utils import support_bundle_utils as sb
+from commons.utils import system_utils
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
@@ -168,8 +169,11 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
-    sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
+    # remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
+    remote_dir = "/var/log/cortx/support_bundle/"
+    bundle_path = sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
+    cmd = "tar -cvf {} {}".format("sb", bundle_path)
+    system_utils.run_local_cmd(cmd)
 
 
 if __name__ == '__main':

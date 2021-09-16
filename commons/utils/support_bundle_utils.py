@@ -87,6 +87,7 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
     :param bundle_name: Name of bundle
     :return: True/False and local sb path
     """
+    """
     primary_node_obj = Node(
         hostname=CMN_CFG["nodes"][0]["hostname"],
         username=CMN_CFG["nodes"][0]["username"],
@@ -107,30 +108,47 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
     for node in CMN_CFG["nodes"]:
         node_obj = Node(node["hostname"], node["username"], node["password"])
         node_obj.copy_file_to_remote(temp_conf, cortx_conf)
+        
+    """
+    node_list = []
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        host = CMN_CFG["nodes"][node]["hostname"]
+        uname = CMN_CFG["nodes"][node]["username"]
+        passwd = CMN_CFG["nodes"][node]["password"]
+        node_list.append(Node(hostname=host,
+                                  username=uname, password=passwd))
+    for node in range(num_nodes):
+        if node_list[node].path_exists(remote_dir):
+            node_list[node].remove_dir(remote_dir)
+
 
     LOGGER.info("Starting support bundle creation")
-    primary_node_obj.execute_cmd(
+    node_list[0].execute_cmd(
         "support_bundle generate {}".format(bundle_name))
+
     start_time = time.time()
     timeout = 2700
-    bundle_id = primary_node_obj.list_dir(remote_dir)[0]
+    bundle_id = node_list[0].list_dir(remote_dir)[0]
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
+    
     while timeout > time.time() - start_time:
         time.sleep(180)
         LOGGER.info("Checking Support Bundle status")
-        status = primary_node_obj.execute_cmd(
+        status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
         if str(status).count(success_msg) == len(CMN_CFG["nodes"]):
             LOGGER.info(success_msg)
-            LOGGER.info("Archiving and copying Support bundle from server")
-            sb_tar_file = "".join([bundle_id, ".tar"])
-            remote_sb_path = os.path.join(remote_dir, sb_tar_file)
-            local_sb_path = os.path.join(local_dir, sb_tar_file)
-            tar_sb_cmd = "tar -cvf {} {}".format(remote_sb_path, bundle_dir)
-            primary_node_obj.execute_cmd(tar_sb_cmd)
-            primary_node_obj.copy_file_to_local(remote_sb_path, local_sb_path)
+            for node in range(num_nodes):
+                LOGGER.info("Archiving and copying Support bundle from server")
+                sb_tar_file = "".join([bundle_id, "{}.tar"]).format(node)
+                remote_sb_path = os.path.join(remote_dir, sb_tar_file)
+                local_sb_path = os.path.join(local_dir, sb_tar_file)
+                tar_sb_cmd = "tar -cvf {} {}".format(remote_sb_path, bundle_dir)
+                node_list[0].execute_cmd(tar_sb_cmd)
+                node_list[0].copy_file_to_local(remote_sb_path, local_sb_path)
             break
     else:
         LOGGER.error("Timeout while generating support bundle")
