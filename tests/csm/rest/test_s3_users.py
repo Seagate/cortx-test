@@ -28,7 +28,7 @@ from commons import cortxlogging
 from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils import assert_utils, config_utils
+from commons.utils import assert_utils
 
 class TestS3user():
     """S3 user test class"""

@@ -37,6 +37,7 @@ class TestS3Bucket():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
+        cls.rest_resp_conf = configmanager.get_config_wrapper(fpath="config/csm/rest_response_data.yaml")
         setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
             setup_ready = cls.config.setup_csm_s3()

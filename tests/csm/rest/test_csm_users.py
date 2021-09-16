@@ -444,7 +444,6 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        #resp_msg = self.csm_conf["test_5005"]["response_msg"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
         resp_msg_id = self.rest_resp_conf["message_ids"]
@@ -3066,10 +3065,8 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        #test_cfg = self.csm_conf["test_25275"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
-        resp_msg_id = self.rest_resp_conf["message_ids"]
         self.log.info("Step 1: Verify create admin user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
@@ -3147,7 +3144,6 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        #test_cfg = self.csm_conf["test_25277"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
         resp_msg_id = self.rest_resp_conf["message_ids"]
@@ -3185,7 +3181,6 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        #test_cfg = self.csm_conf["test_25286"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
         resp_msg_id = self.rest_resp_conf["message_ids"]
