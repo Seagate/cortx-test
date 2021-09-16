@@ -76,9 +76,9 @@ class TestFailureDomain:
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
-        self.log.info("Reverting all the VM before deployment")
-        for host in self.host_list:
-            self.revert_vm_snapshot(host)
+        # self.log.info("Reverting all the VM before deployment")
+        # for host in self.host_list:
+        #     self.revert_vm_snapshot(host)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -353,7 +353,7 @@ class TestFailureDomain:
                 "Kernel Version is different than expected.")
 
             self.log.info("Checking network interfaces")
-            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL, read_lines=True)
+            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETWORK_INTERFACE, read_lines=True)
             assert_utils.assert_greater_equal(len(resp), 3,
                                               "Network Interfaces should be more than 3")
 
