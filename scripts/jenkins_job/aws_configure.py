@@ -30,7 +30,6 @@ from time import perf_counter_ns
 from multiprocessing import Process
 from commons import pswdmanager
 from commons.utils import support_bundle_utils as sb
-from commons.utils import system_utils
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
