@@ -230,6 +230,10 @@ def pytest_addoption(parser):
         "--health_check", action="store", default=True,
         help="Decide whether to do health check in local mode."
     )
+    parser.addoption(
+        "--product_family", action="store", default='LC',
+        help="Product Type LR or LC."
+    )
 
 
 def read_test_list_csv() -> List:

@@ -69,6 +69,8 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
+    parser.add_argument("-pf", "--product_family", type=str, default='LC',
+                        help="Product family LR or LC.")
     return parser.parse_args()
 
 
@@ -173,7 +175,8 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
             cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
-                           '--tp_ticket=' + args.test_plan]
+                           '--tp_ticket=' + args.test_plan,
+                           '--product_family=' + args.product_family]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
