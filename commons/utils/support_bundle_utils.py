@@ -83,34 +83,12 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     """
     Collect support bundles from various components using single support bundle cmd
-    :param remote_dir: Directory on node where support bundles will be collected
     :param local_dir: Local directory where support bundles will be copied
     :param bundle_name: Name of bundle
-    :return: True/False and local sb path
+    :param comp_list: List of components for SB collection
+    :return: boolean
     """
-    """
-    primary_node_obj = Node(
-        hostname=CMN_CFG["nodes"][0]["hostname"],
-        username=CMN_CFG["nodes"][0]["username"],
-        password=CMN_CFG["nodes"][0]["password"])
-    shared_path = "glusterfs://{}".format(remote_dir)
-    remote_dir = os.path.join(remote_dir, "support_bundle")
-    if primary_node_obj.path_exists(remote_dir):
-        primary_node_obj.remove_dir(remote_dir)
-    primary_node_obj.create_dir_sftp(remote_dir)
 
-    LOGGER.info("Updating shared path for support bundle %s", shared_path)
-    cortx_conf = "/etc/cortx/cortx.conf"
-    temp_conf = os.path.join(os.getcwd(), "cortx.conf")
-    primary_node_obj.copy_file_to_local(cortx_conf, temp_conf)
-    conf = config_utils.read_content_json(temp_conf)
-    conf["support"]["shared_path"] = shared_path
-    config_utils.create_content_json(temp_conf, conf)
-    for node in CMN_CFG["nodes"]:
-        node_obj = Node(node["hostname"], node["username"], node["password"])
-        node_obj.copy_file_to_remote(temp_conf, cortx_conf)
-        
-    """
     remote_dir = "/var/log/cortx/support_bundle/"
     node_list = []
     num_nodes = len(CMN_CFG["nodes"])
@@ -134,7 +112,6 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     resp = node_list[0].execute_cmd(cmd=command)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))
     assert_utils.assert_true(resp[0], resp[1])
-    #bundle_id = resp[1].split("|")[1].strip()
     start_time = time.time()
     timeout = 2700
     bundle_id = node_list[0].list_dir(remote_dir)[0]

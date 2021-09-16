@@ -175,11 +175,11 @@ export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
 deactivate
 '''
-                      if ( "${CREATE_JIRA_ISSUE}" ) {
+                      /* if ( "${CREATE_JIRA_ISSUE}" ) {
                         jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
                         echo "${jira_issue}"
-                      }
+                      } */
                   }
 		     }
 
