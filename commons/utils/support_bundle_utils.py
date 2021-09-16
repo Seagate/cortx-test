@@ -26,7 +26,8 @@ import os
 import logging
 import time
 from commons.helpers.node_helper import Node
-from commons.utils import config_utils
+from commons import commands as cm_cmd
+from commons.utils import assert_utils
 from config import CMN_CFG
 
 # Global Constants
@@ -79,7 +80,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
     return True, local_sb_path
 
 
-def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
+def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     """
     Collect support bundles from various components using single support bundle cmd
     :param remote_dir: Directory on node where support bundles will be collected
@@ -110,6 +111,7 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
         node_obj.copy_file_to_remote(temp_conf, cortx_conf)
         
     """
+    remote_dir = "/var/log/cortx/support_bundle/"
     node_list = []
     num_nodes = len(CMN_CFG["nodes"])
     for node in range(num_nodes):
@@ -124,12 +126,18 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
 
 
     LOGGER.info("Starting support bundle creation")
-    node_list[0].execute_cmd(
-        "support_bundle generate {}".format(bundle_name))
-
+    command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
+    # Form the command if component list is provided in parameters
+    if comp_list is not None:
+        command = command + " -c"
+        command = command + " ".join(comp_list)
+    resp = node_list[0].execute_cmd(cmd=command)
+    LOGGER.debug("Response for support bundle generate: {}".format(resp))
+    assert_utils.assert_true(resp[0], resp[1])
+    bundle_id = resp[1].split("|")[1].strip()
     start_time = time.time()
     timeout = 2700
-    bundle_id = node_list[0].list_dir(remote_dir)[0]
+    #bundle_id = node_list[0].list_dir(remote_dir)[0]
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
@@ -154,4 +162,4 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
         LOGGER.error("Timeout while generating support bundle")
         return False, "Timeout while generating support bundle"
 
-    return True, local_sb_path
+    return True, "Support bundle generated successfully."
