@@ -171,10 +171,7 @@ def test_collect_support_bundle_single_cmd():
     os.mkdir(bundle_dir)
     # remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
     remote_dir = "/var/log/cortx/support_bundle/"
-    bundle_path = sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
-    cmd = "tar -cvf {} {}".format("sb", bundle_path)
-    system_utils.run_local_cmd(cmd)
-
-
+    sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
+    
 if __name__ == '__main':
     create_s3_account()

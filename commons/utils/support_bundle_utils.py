@@ -143,7 +143,7 @@ def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
             LOGGER.info(success_msg)
             for node in range(num_nodes):
                 LOGGER.info("Archiving and copying Support bundle from server")
-                sb_tar_file = "".join([bundle_id, "{}.tar"]).format(node)
+                sb_tar_file = "".join([bundle_id, ".node{}.tar"]).format(node)
                 remote_sb_path = os.path.join(remote_dir, sb_tar_file)
                 local_sb_path = os.path.join(local_dir, sb_tar_file)
                 tar_sb_cmd = "tar -cvf {} {}".format(remote_sb_path, bundle_dir)
