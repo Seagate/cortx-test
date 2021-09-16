@@ -152,9 +152,8 @@ class TestFailureDomain:
             PROV_CFG["test_deployment_ff"]["network_trans"]), read_lines=True)
 
         self.log.info("Configure Management Interface")
-        nd_obj.execute_cmd(cmd=
-                           common_cmd.NETWORK_CFG_INTERFACE.format(CMN_CFG["nodes"][nd_no]["ip"],
-                                                                   "management"), read_lines=True)
+        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
+            CMN_CFG["nodes"][nd_no]["ip"],"management"), read_lines=True)
 
         self.log.info("Configure Data Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
@@ -354,6 +353,7 @@ class TestFailureDomain:
 
             self.log.info("Checking network interfaces")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETWORK_INTERFACE, read_lines=True)
+            self.log.info("No of Network Interfaces: %s",resp)
             assert_utils.assert_greater_equal(len(resp), 3,
                                               "Network Interfaces should be more than 3")
 
@@ -366,12 +366,14 @@ class TestFailureDomain:
                                read_lines=True)
 
             self.log.info("Download the install.sh script to the node")
-            nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(self.build_branch),
+            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(self.build_branch),
                                read_lines=True)
+            self.log.debug("Downloaded install.sh : %s",resp)
 
             self.log.info("Installs CORTX packages (RPM) and their dependencies ")
-            nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(self.build_url),
+            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(self.build_url),
                                read_lines=True)
+            self.log.debug("Installed RPM's : %s",resp)
 
             self.log.info("Perform Factory Manufacturing")
             self.factory_manufacturing(nd_obj, nd_no, deploy_cfg["srvnode-" + str(nd_no)])

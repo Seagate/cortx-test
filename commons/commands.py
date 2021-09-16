@@ -408,7 +408,7 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 #Deployment using Factory and Field
 CMD_GET_PROV_INSTALL = "curl -O https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
                    "/components/provisioner/scripts/install.sh; chmod +x ./install.sh "
-CMD_INSTALL_CORTX_RPM = "sh install.sh - t {}"
+CMD_INSTALL_CORTX_RPM = "sh install.sh -t {}"
 CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}" #server name, type - VM/HW
 CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
 PUPPET_SERV = "puppet.service"
