@@ -134,10 +134,10 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     resp = node_list[0].execute_cmd(cmd=command)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))
     assert_utils.assert_true(resp[0], resp[1])
-    bundle_id = resp[1].split("|")[1].strip()
+    #bundle_id = resp[1].split("|")[1].strip()
     start_time = time.time()
     timeout = 2700
-    #bundle_id = node_list[0].list_dir(remote_dir)[0]
+    bundle_id = node_list[0].list_dir(remote_dir)[0]
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
