@@ -21,7 +21,7 @@
 """Constants
 """
 import os
-
+from commons.constants import PROD_FAMILY
 LOG_FILE = 'cortx-test.log'
 
 SCRIPT_HOME = os.getcwd()  # Fetches you CWD of the pytest or runner process.
@@ -67,8 +67,8 @@ TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
-product_type = "LC"
-if product_type == "LC":
+
+if PROD_FAMILY == "LC":
     CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config_lc.yaml')
 else:
     CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
