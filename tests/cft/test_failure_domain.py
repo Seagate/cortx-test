@@ -252,7 +252,7 @@ class TestFailureDomain:
         self.log.info("Node Finalize")
         nd_obj.execute_cmd(cmd=common_cmd.NODE_PREP_FINALIZE, read_lines=True)
 
-    def deploy_vm(self, node_obj, setup_type: str) -> tuple:
+    def config_cluster(self, node_obj, setup_type: str) -> tuple:
         """
         This method deploys cortx and 3rd party software components on given VM setup
         :param node_obj: Host object of the primary node
@@ -273,7 +273,7 @@ class TestFailureDomain:
             except Exception as error:
                 self.log.error(
                     "An error occurred in %s:",
-                    TestFailureDomain.deploy_vm.__name__)
+                    TestFailureDomain.config_cluster.__name__)
                 if isinstance(error.args[0], list):
                     self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
                 else:
@@ -394,7 +394,7 @@ class TestFailureDomain:
         self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
 
         self.log.info("Configure Cluster")
-        resp = self.deploy_vm(self.nd1_obj, test_cfg["setup-type"])
+        resp = self.config_cluster(self.nd1_obj, test_cfg["setup-type"])
         assert_utils.assert_true(resp[0], "Deploy Failed")
 
         self.log.info("Starting Cluster")
@@ -432,7 +432,7 @@ class TestFailureDomain:
                                                               mgmt_vip=self.mgmt_vip,
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
 
     @pytest.mark.run(order=4)
     @pytest.mark.data_durability
@@ -456,7 +456,7 @@ class TestFailureDomain:
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
 
     @pytest.mark.run(order=5)
     @pytest.mark.data_durability
@@ -481,7 +481,7 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
 
     @pytest.mark.run(order=8)
     @pytest.mark.data_durability
@@ -506,7 +506,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
 
     @pytest.mark.run(order=12)
     @pytest.mark.data_durability
@@ -531,7 +531,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
 
     @pytest.mark.run(order=16)
     @pytest.mark.data_durability
@@ -556,4 +556,4 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_3node_vm_ff(resp[1])
