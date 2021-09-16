@@ -394,54 +394,47 @@ class HALibs:
         :return: Boolean, response
         """
         LOGGER.info("Start the cluster")
-        resp = pod_obj.execute_cmd(common_cmd., read_lines=True,
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD, read_lines=True,
                                     exc=False)
-        LOGGER.info("%s %s resp = %s", common_cmd.CMD_START_CLSTR, node, resp[0])
-        if "Cluster start operation performed" in resp[0]:
+        LOGGER.info("Cluster start response: {}".format(resp[0]))
+        if "message to be checked" in resp[0]:
             return True, resp[0]
         return False, resp[0]
 
     @staticmethod
-    def cortx_stop_cluster(node_obj, node: str = "--all"):
+    def cortx_stop_cluster(pod_obj):
         """
         This function stops the cluster
-        :param node_obj : Node object from which the command should be triggered
-        :param node: Node which should be stopped, default : --all
+        :param pod_obj : Pod object from which the command should be triggered
+        :return: Boolean, response
         """
         LOGGER.info("Stop the cluster")
-        resp = node_obj.execute_cmd(f"{common_cmd.CMD_STOP_CLSTR} {node}", read_lines=True,
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD, read_lines=True,
                                     exc=False)
-        LOGGER.info("%s %s resp = %s", common_cmd.CMD_STOP_CLSTR, node, resp[0])
-        if "Cluster stop is in progress" in resp[0]:
+        LOGGER.info("Cluster start response: {}".format(resp[0]))
+        if "message to be checked" in resp[0]:
             return True, resp[0]
         return False, resp[0]
 
-    def restart_cluster(self, node_obj, hlt_obj_list):
+    def restart_cluster(self, pod_obj):
         """
         Restart the cluster and check all nodes health.
-        Commands executed :
-        cortx stop cluster --all
-        cortx start cluster -all
-        pcs resource cleanup
         Validate health of all the nodes.
-        :param node_obj: node object for stop/start cluster
-        :param hlt_obj_list: health object list for all the nodes.
+        :param pod_obj: pod object for stop/start cluster
         """
         LOGGER.info("Stop the cluster")
-        resp = self.cortx_stop_cluster(node_obj)
+        resp = self.cortx_stop_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Stopping cluster"
         LOGGER.info("Start the cluster")
-        resp = self.cortx_start_cluster(node_obj)
+        resp = self.cortx_start_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Starting cluster"
         time.sleep(CMN_CFG["delay_60sec"])
-        LOGGER.info("Perform PCS resource cleanup")
-        hlt_obj_list[0].pcs_resource_cleanup()
-        LOGGER.info("Checking if all nodes are reachable and PCS clean.")
-        for hlt_obj in hlt_obj_list:
-            res = hlt_obj.check_node_health()
-            if not res[0]:
-                return False, f"Error during health check of {hlt_obj}"
-        LOGGER.info("All nodes are reachable and PCS looks clean.")
+        # TODO: just a placeholder for cluster status
+        LOGGER.info("Check the cluster status.")
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True,
+                                    exc=False)
+        if not resp[0]:
+            return False, "Cluster is not started"
         return True, "Cluster Restarted successfully."
