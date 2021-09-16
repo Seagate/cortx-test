@@ -26,11 +26,12 @@ Sample command: python tools/setup_update/setup_entry.py --dbuser <username> --d
 """
 import os
 import logging
-from urllib.parse import quote_plus
 import json
-from pymongo import MongoClient
 import argparse
 import ast
+from pymongo import MongoClient
+from urllib.parse import quote_plus
+
 
 parser = argparse.ArgumentParser(description='Update the setup entry')
 parser.add_argument('--fpath',
@@ -80,14 +81,22 @@ def insert_new_setup():
         LOG.error("%s already exists", setup_query)
         print("Entry already exits")
     elif new_entry_check and not entry_exist:
-        rdata = collection_obj.insert_one(data)
-        print("Data is inserted successfully")
+        try:
+            rdata = collection_obj.insert_one(data)
+            print(f"Record entry {rdata.inserted_id} is inserted successfully")
+        except Exception as err:
+            print("An exception occurred ::", err)
+        return None
     else:
-        rdata = collection_obj.update_one(setup_query, {'$set': data})
-        print("Data is updated successfully")
-        LOG.debug("Data is updated successfully")
+        try:
+            rdata = collection_obj.update_one(setup_query, {'$set': data})
+            print(f"Record entry {rdata} is updated successfully")
+            LOG.debug("Data is updated successfully")
+        except Exception as err:
+            print("An exception occurred ::", err)
+        return None
     setup_details = collection_obj.find_one(setup_query)
-    print(setup_details)
+    print(f'Modified or inserted setup details {setup_details} ')
     return setup_details
 
 
