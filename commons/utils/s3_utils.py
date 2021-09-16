@@ -24,6 +24,8 @@ import hmac
 import datetime
 import hashlib
 import logging
+import json
+import xmltodict
 
 
 LOGGER = logging.getLogger(__name__)
@@ -171,3 +173,16 @@ def get_headers(request=None, endpoint=None, payload=None, **kwargs) -> dict:
     headers['X-Amz-Date'] = get_timestamp(epoch_t)
 
     return headers
+
+
+def convert_xml_to_dict(xml_response) -> dict:
+    """Convert xml string to json data."""
+    try:
+        xml_response = xml_response if isinstance(xml_response, str) else xml_response.text
+        temp_dict = json.dumps(xmltodict.parse(xml_response))
+        json_format = json.loads(temp_dict)
+
+        return json_format
+    except Exception as error:
+        LOGGER.error(error)
+        return xml_response

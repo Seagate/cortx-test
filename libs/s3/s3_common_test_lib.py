@@ -21,13 +21,17 @@
 #
 """Python library contains methods for s3 tests."""
 
+import os
 import logging
+from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
+from commons.utils import system_utils
+from commons.utils.system_utils import calculate_checksum
 from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -84,6 +88,7 @@ def create_s3_acc(
         email_id)
     create_account = rest_obj.create_s3_account(
         account_name, email_id, password)
+    del rest_obj
     assert_utils.assert_true(create_account[0], create_account[1])
     access_key = create_account[1]["access_key"]
     secret_key = create_account[1]["secret_key"]
@@ -100,3 +105,47 @@ def create_s3_acc(
         secret_key)
 
     return response
+
+
+def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_sample=3):
+    """
+    Perform s3 read, write, verify object operations on the s3_bucket.
+
+    :param s3_obj: s3 object.
+    :param s3_bucket: Name of the s3 bucket.
+    :param dir_path: Directory path where files getting created.
+    :param obj_prefix: Prefix of the s3 object.
+    :param size: size of the object multiple of 1MB.
+    :param num_sample: Number of object getting created.
+    """
+    buckets = s3_obj.bucket_list()[1]
+    if s3_bucket not in buckets:
+        resp = s3_obj.create_bucket(s3_bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+    resp = system_utils.path_exists(dir_path)
+    assert_utils.assert_true(resp, f"Path not exists: {dir_path}")
+    LOG.info("S3 IO started....")
+    for _ in range(num_sample):
+        f1name = f"{obj_prefix}-{perf_counter_ns()}.txt"
+        f2name = f"{obj_prefix}-{perf_counter_ns()}.txt"
+        f1path = os.path.join(dir_path, f1name)
+        f2path = os.path.join(dir_path, f2name)
+        resp = system_utils.create_file(f1path, count=size)
+        assert_utils.assert_true(resp[0], resp[1])
+        before_checksum = calculate_checksum(f1path)
+        resp = s3_obj.put_object(s3_bucket, f1name, f1path)
+        assert_utils.assert_true(resp[0], resp[1])
+        resp = s3_obj.object_download(s3_bucket, f1name, f2path)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOG.info("Verify uploaded and downloaded s3 file.")
+        after_checksum = calculate_checksum(f2path)
+        assert_utils.assert_equal(before_checksum, after_checksum,
+                                  f"Failed to match checksum: {before_checksum}, {after_checksum}")
+        LOG.info("Checksum verified successfully.")
+        resp = system_utils.remove_file(f1path)
+        assert_utils.assert_true(resp, f"Failed to delete {f1path}.")
+        resp = system_utils.remove_file(f2path)
+        assert_utils.assert_true(resp, f"Failed to delete {f2path}.")
+    LOG.info("S3 IO completed successfully...")
+
+    return True, f"S3 IO's completed successfully on {s3_bucket}"

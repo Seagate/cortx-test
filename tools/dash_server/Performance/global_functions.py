@@ -1,3 +1,4 @@
+"""Global functions needed across Performance files"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,6 +20,8 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+from __future__ import absolute_import
+from builtins import round
 import yaml
 import sys
 from urllib.parse import quote_plus
@@ -78,8 +81,8 @@ def round_off(value, base=1):
             (base) - round off to nearest base
     Returns: (int) - rounded off number
     """
-    if value < 1:
-        return round(value, 2)
+    if value < 10:
+        return round(value, 3)
     if value < 26:
         return int(value)
     return base * round(value / base)
@@ -130,7 +133,7 @@ def sort_builds_list(builds):
     Returns:
         list: a list of builds with higher build number first
     """
-    temp_builds = builds
+    temp_builds = list(dict.fromkeys(builds))
     data_sorted = []
     for key in builds:
         if key.startswith('cortx'):
@@ -175,6 +178,7 @@ def sort_object_sizes_list(obj_sizes):
     """
     # Remove any space in object size string, it should only have number and two letter unit without space
     obj_sizes = [s.replace(' ', '') for s in obj_sizes]
+    obj_sizes = list(dict.fromkeys(obj_sizes))
 
     sizes_sorted = {
         'KB': [], 'MB': [], 'GB': [],
@@ -209,38 +213,21 @@ def sort_object_sizes_list(obj_sizes):
     return data_sorted
 
 
-def get_profiles(release, branch, build):
+def sort_sessions(sessions):
     """
-    A function to get profiles for PKEY (outdated)
+    Function to sort sessions array
+    Args:
+        sessions: list of all sessions
+
+    Returns:
+        sessions: list of sorted sessions
     """
-    pkeys = get_distinct_keys(release, 'PKey', {
-        'Branch': branch, 'Build': build
-    })
+    sessions = list(dict.fromkeys(sessions))
+    new_sessions = []
+    for session in sessions:
+        new_sessions.append(int(session))
 
-    reference = ('ITR1', '2N', '1C', '0PC', 'NA')
-    pkey_split = {}
-    options = []
-
-    for key in pkeys:
-        pkey_split[key] = key.split("_")[3:]
-
-    for profile_list in list(pkey_split.values()):
-        tag = 'Nodes {}, '.format(profile_list[1][:-1])
-
-        if profile_list[2] != reference[2]:
-            tag = tag + 'Clients {}, '.format(profile_list[2][:-1])
-
-        tag = tag + 'Filled {}%, '.format(profile_list[3][:-2])
-        tag = tag + 'Iteration {}'.format(profile_list[0][3:])
-        if profile_list[4] != reference[4]:
-            tag = tag + ', {}'.format(profile_list[4])
-
-        option = {'label': tag, 'value': '_'.join(
-            [profile_list[0], profile_list[1], profile_list[2], profile_list[3], profile_list[4]])}
-        if option not in options:
-            options.append(option)
-
-    return options
+    return sorted(new_sessions)
 
 
 def check_empty_list(array):

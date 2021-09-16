@@ -177,6 +177,7 @@ TEST-22768
     Navigate To Page  CSM_S3_ACCOUNTS_TAB_ID
     wait for page or element to load
     Delete s3 account using csm user  ${S3_account_name}
+    Reload Page
     Navigate To Page  ADMINISTRATIVE_USER_TAB_ID
     Delete CSM User  ${new_user_name}
 
