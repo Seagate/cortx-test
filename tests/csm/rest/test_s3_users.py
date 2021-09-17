@@ -28,7 +28,7 @@ from commons import cortxlogging
 from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils import assert_utils
+from commons.utils import assert_utils     # pylint: disable=ungrouped-imports
 from config import CSM_REST_CFG
 
 class TestS3user():
