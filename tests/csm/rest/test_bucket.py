@@ -157,7 +157,7 @@ class TestS3Bucket():
         assert_utils.assert_equals(response.json()["error_code"],
                                    str(resp_error_code["code_4099"]))
         if CSM_REST_CFG["msg_check"] == "enable":
-           assert_utils.assert_equals(response.json()["message"],
+            assert_utils.assert_equals(response.json()["message"],
                                   resp_msg["message_9"])
 
         self.log.info(

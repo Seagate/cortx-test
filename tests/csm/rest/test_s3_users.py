@@ -40,7 +40,8 @@ class TestS3user():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
-        cls.rest_resp_conf = configmanager.get_config_wrapper(fpath="config/csm/rest_response_data.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+                            fpath="config/csm/rest_response_data.yaml")
         user_already_present = cls.config.check_predefined_s3account_present()
         if not user_already_present:
             user_already_present = cls.config.setup_csm_s3()
@@ -417,7 +418,7 @@ class TestS3user():
         assert_utils.assert_equals(response.json()["error_code"],
                                    str(resp_error_code["code_4101"]))
         if CSM_REST_CFG["msg_check"] == "enable":
-           assert_utils.assert_equals(response.json()["message"],
+            assert_utils.assert_equals(response.json()["message"],
                                   resp_msg["message_25"])
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())
