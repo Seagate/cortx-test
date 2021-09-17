@@ -506,8 +506,8 @@ class IamTestLib(IamLib):
             err.S3_CLIENT_ERROR,
             "Failed to create given accounts/users")
 
+    @staticmethod
     def list_accounts(
-            self,
             ldap_user_id: str = None,
             ldap_password: str = None) -> tuple:
         """
@@ -530,8 +530,8 @@ class IamTestLib(IamLib):
 
         return status, format_iam_resp(response)
 
+    @staticmethod
     def create_account(
-            self,
             account_name: str = None,
             email_id: str = None,
             ldap_user_id: str = None,
@@ -592,8 +592,8 @@ class IamTestLib(IamLib):
 
         return status, acc_dict
 
+    @staticmethod
     def delete_account(
-            self,
             account_name: str = None,
             access_key: str = None,
             secret_key: str = None,
@@ -620,8 +620,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def create_account_login_profile(
-            self,
             acc_name: str = None,
             password: str = None,
             access_key: str = None,
@@ -652,8 +652,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def update_account_login_profile(
-            self,
             acc_name: str = None,
             password: str = None,
             access_key: str = None,
@@ -661,6 +661,7 @@ class IamTestLib(IamLib):
             **kwargs) -> tuple:
         """
         Update account login profile.
+
         :param acc_name: Account user name.
         :param password: Account password.
         :param access_key: Account access key.
@@ -681,8 +682,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def get_account_login_profile(
-            self,
             acc_name: str = None,
             access_key: str = None,
             secret_key: str = None) -> tuple:
@@ -706,8 +707,8 @@ class IamTestLib(IamLib):
 
         return status, format_iam_resp(response)
 
+    @staticmethod
     def create_user_login_profile_with_both_reset_options(
-            self,
             user_name: str = None,
             password: str = None,
             access_key: str = None,
@@ -738,8 +739,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def reset_account_access_key(
-            self,
             account_name: str = None,
             ldap_user_id: str = None,
             ldap_password: str = None) -> tuple:
@@ -771,8 +772,8 @@ class IamTestLib(IamLib):
 
         return status, acc_dict
 
+    @staticmethod
     def create_account_login_profile_both_reset_options(
-            self,
             acc_name: str = None,
             password: str = None,
             access_key: str = None,
@@ -798,9 +799,12 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def create_account_login_profile_without_both_reset_options(
-            self, acc_name: str = None, password: str = None,
-            access_key: str = None, secret_key: str = None) -> tuple:
+            acc_name: str = None,
+            password: str = None,
+            access_key: str = None,
+            secret_key: str = None) -> tuple:
         """
         Create account login profile.
 
@@ -822,8 +826,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def update_account_login_profile_both_reset_options(
-            self,
             acc_name: str = None,
             access_key: str = None,
             secret_key: str = None,
@@ -848,8 +852,8 @@ class IamTestLib(IamLib):
             raise CTException(err.S3_CLIENT_ERROR, response)
         return status, response
 
+    @staticmethod
     def update_user_login_profile_without_passowrd_and_reset_option(
-            self,
             user_name: str = None,
             access_key: str = None,
             secret_key: str = None) -> tuple:
@@ -875,8 +879,8 @@ class IamTestLib(IamLib):
 
         return status, response
 
+    @staticmethod
     def get_temp_auth_credentials_account(
-            self,
             account_name: str = None,
             account_password: str = None,
             duration: int = None) -> tuple:
@@ -924,8 +928,8 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
+    @staticmethod
     def get_temp_auth_credentials_user(
-            self,
             account_name: str = None,
             user_name: str = None,
             password: str = None,
@@ -975,8 +979,8 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
+    @staticmethod
     def change_user_password(
-            self,
             old_pwd: str = None,
             new_pwd: str = None,
             access_key: str = None,
@@ -1001,8 +1005,9 @@ class IamTestLib(IamLib):
 
         return status, result
 
+    @staticmethod
     def update_user_login_profile_with_both_reset_options(
-            self, user_name: str = None, password: str = None,
+            user_name: str = None, password: str = None,
             access_key: str = None, secret_key: str = None) -> tuple:
         """
         Update user login profile using both password reset options.
@@ -1187,8 +1192,8 @@ class IamTestLib(IamLib):
 
         return True, acc_li
 
+    @staticmethod
     def delete_account_using_temp_creds(
-            self,
             account_name: str = None,
             access_key: str = None,
             secret_key: str = None,
