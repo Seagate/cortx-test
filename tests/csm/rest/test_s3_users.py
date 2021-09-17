@@ -29,6 +29,7 @@ from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from commons.utils import assert_utils
+from config import CSM_REST_CFG
 
 class TestS3user():
     """S3 user test class"""
@@ -393,7 +394,6 @@ class TestS3user():
         self.log.info(
             "Verifying that error should be returned when s3 user enters some"
             " other s3 user's account name")
-        #response_msg = self.csm_conf["test_1915"]["response_msg"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
         self.log.info("Creating new S3 account for test purpose")
@@ -414,10 +414,10 @@ class TestS3user():
 
         self.log.debug("Verifying the response returned %s", response)
         assert response.status_code, const.FORBIDDEN
-        #assert response.json(), response_msg
         assert_utils.assert_equals(response.json()["error_code"],
                                    str(resp_error_code["code_4101"]))
-        assert_utils.assert_equals(response.json()["message"],
+        if CSM_REST_CFG["msg_check"] == "enable":
+           assert_utils.assert_equals(response.json()["message"],
                                   resp_msg["message_25"])
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())

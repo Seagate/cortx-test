@@ -29,6 +29,8 @@ from commons import configmanager
 from commons.utils import assert_utils
 from commons import cortxlogging
 from commons.constants import Rest as const
+from config import CSM_REST_CFG
+
 class TestS3Bucket():
     """ S3 bucket test cases"""
     @classmethod
@@ -37,7 +39,8 @@ class TestS3Bucket():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
-        cls.rest_resp_conf = configmanager.get_config_wrapper(fpath="config/csm/rest_response_data.yaml")
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+                              fpath="config/csm/rest_response_data.yaml")
         setup_ready = cls.config.check_predefined_s3account_present()
         if not setup_ready:
             setup_ready = cls.config.setup_csm_s3()
@@ -120,7 +123,6 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         bucketname = self.csm_conf["test_578"]["bucket_name"]
-        #resp_msg = self.csm_conf["test_578"]["response_msg"]
         resp_error_code = self.rest_resp_conf["error_codes"]
         resp_msg = self.rest_resp_conf["messages"]
 
@@ -154,7 +156,8 @@ class TestS3Bucket():
                                    const.BAD_REQUEST)
         assert_utils.assert_equals(response.json()["error_code"],
                                    str(resp_error_code["code_4099"]))
-        assert_utils.assert_equals(response.json()["message"],
+        if CSM_REST_CFG["msg_check"] == "enable":
+           assert_utils.assert_equals(response.json()["message"],
                                   resp_msg["message_9"])
 
         self.log.info(
