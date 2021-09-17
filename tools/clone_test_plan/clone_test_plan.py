@@ -39,17 +39,19 @@ ova_skip_tes = ['TEST-21365', 'TEST-21133', 'TEST-19721', 'TEST-19720', 'TEST-19
 vm_hw_skip_tes = ['TEST-19713']
 
 
-def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes, product_family):
+def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, old_tes,
+               product_family):
     """
     Process existing te and create new te
     """
     # create new te
     jt = JiraTask()
-    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes, product_family)
+    new_te_id, is_te_skipped, test_list = jt.create_new_test_exe(te, tp_info, skip_tes,
+                                                                 product_family)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
         response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
-                                                tp_info['platform'], test_list)
+                                         tp_info['platform'], test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
