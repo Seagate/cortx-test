@@ -29,9 +29,9 @@ import logging
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
+from commons.utils.s3_utils import poll
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Tagging
-from commons.utils.s3_utils import poll
 
 LOGGER = logging.getLogger(__name__)
 

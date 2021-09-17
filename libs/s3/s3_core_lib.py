@@ -27,9 +27,11 @@ import logging
 import boto3
 import boto3.s3
 
-from commons import commands
 from botocore.config import Config
-from commons.utils.system_utils import run_local_cmd, create_file
+from commons import commands
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import create_file
+
 
 LOGGER = logging.getLogger(__name__)
 

@@ -19,6 +19,7 @@
 
 """S3 utility Library."""
 
+import time
 import urllib
 import hmac
 import datetime
@@ -26,7 +27,6 @@ import hashlib
 import logging
 import json
 import xmltodict
-import time
 
 
 LOGGER = logging.getLogger(__name__)
