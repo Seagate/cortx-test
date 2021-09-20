@@ -70,17 +70,3 @@ system_ntp:
   ntp_data: [ 'time_server:', 'time_zone:' ]
   timeserver: [ '10.30.127.102', 'time.seagate.com' ]
   timezone: [ 'Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam' ]
-
-test_deployment_ff:
-  build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.9.2009/{1}/"
-  build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
-  network_trans: "lnet"
-  security_path: "/opt/seagate/cortx/provisioner/srv/components/misc_pkgs/ssl_certs/files/stx.pem"
-  feature_config:
-    'cortx>software>s3>service>instances': 1
-    'cortx>software>s3>io>max_units': 8
-    'cortx>software>motr>service>client_instances': 2
-  dns_servers: "10.230.240.51 10.230.240.52"
-  search_domains: "colo.seagate.com cortx.colo.seagate.com"
-  firewall_url: "yaml:///opt/seagate/cortx_configs/firewall_config.yaml"
-  storage_set_name: "storage-set-1"

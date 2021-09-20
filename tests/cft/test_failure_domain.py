@@ -32,7 +32,7 @@ from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG, PROV_CFG
+from config import CMN_CFG, HA_CFG
 from libs.prov.provisioner import Provisioner
 
 
@@ -71,8 +71,11 @@ class TestFailureDomain:
                 cls.build = "{}/{}".format(cls.build, "prod")
         else:
             cls.build = "last_successful_prod"
-        cls.build_url = PROV_CFG["test_deployment_ff"]["build_url"].format(
-            cls.build_branch, cls.build)
+        os_version = cls.nd1_obj.execute_cmd(cmd=common_cmd.CMD_OS_REL,
+                                      read_lines=True)[0].strip()
+        version = "centos-" + str(os_version.split()[3])
+        cls.build_url = cls.cft_test_cfg["test_deployment_ff"]["build_url"].format(
+            cls.build_branch, version, cls.build)
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -83,8 +86,7 @@ class TestFailureDomain:
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
            host: VM name """
-        resp = system_utils.execute_cmd(cmd=
-        common_cmd.CMD_VM_REVERT.format(
+        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
             self.vm_username, self.vm_password, host), read_lines=True)
 
         assert_utils.assert_true(resp[0], resp[1])
@@ -149,19 +151,18 @@ class TestFailureDomain:
         self.log.info("Configure Network ")
         self.log.info("Configure Network transport")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_TRANSPORT.format(
-            PROV_CFG["test_deployment_ff"]["network_trans"]), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["network_trans"]), read_lines=True)
 
         self.log.info("Configure Management Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            CMN_CFG["nodes"][nd_no]["ip"],"management"), read_lines=True)
+            CMN_CFG["nodes"][nd_no]["ip"], "management"), read_lines=True)
 
         self.log.info("Configure Data Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
             CMN_CFG["nodes"][nd_no]["public_data_ip"], "data"), read_lines=True)
 
         self.log.info("Configure Private Interface")
-        nd_obj.execute_cmd(cmd=
-        common_cmd.NETWORK_CFG_INTERFACE.format(
+        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
             CMN_CFG["nodes"][nd_no]["private_data_ip"], "private"),
             read_lines=True)
 
@@ -172,13 +173,13 @@ class TestFailureDomain:
 
     def configure_storage(self, nd_obj, node_no, node_config):
         self.log.info("Configure Storage")
-        self.log.info("Configure Storage name")
-        encl_name = "Enclosure" + str(node_no)
-        nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_NAME.format(encl_name), read_lines=True)
-
         self.log.info("Configure Storage Config")
         for cnt_type in ["primary", "secondary"]:
             nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CONT.format(cnt_type), read_lines=True)
+
+        self.log.info("Configure Storage name")
+        encl_name = "Enclosure" + str(node_no)
+        nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_NAME.format(encl_name), read_lines=True)
 
         self.log.info("Configure CVG")
         for key in node_config.keys():
@@ -186,9 +187,9 @@ class TestFailureDomain:
                 cvg_no = key.split(".")[2]
                 data_devices = node_config[f"storage.cvg.{cvg_no}.data_devices"]
                 meta_devices = node_config[f"storage.cvg.{cvg_no}.metadata_devices"]
-                nd_obj.execute_cmd(cmd=
-                                   common_cmd.STORAGE_CFG_CVG.format(cvg_no, data_devices,
-                                                                     meta_devices), read_lines=True)
+                nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CVG.format(cvg_no, data_devices,
+                                                                         meta_devices),
+                                   read_lines=True)
 
     def factory_manufacturing(self, nd_obj, nd_no, node_config):
         self.configure_server(nd_obj, nd_no)
@@ -197,10 +198,10 @@ class TestFailureDomain:
         self.log.info("Configure Security")
         nd_obj.execute_cmd(cmd=
         common_cmd.SECURITY_CFG.format(
-            PROV_CFG["test_deployment_ff"]["security_path"]), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["security_path"]), read_lines=True)
 
         self.log.info("Configure Feature")
-        for key, val in PROV_CFG["test_deployment_ff"]["feature_config"].items():
+        for key, val in self.cft_test_cfg["test_deployment_ff"]["feature_config"].items():
             nd_obj.execute_cmd(cmd=common_cmd.FEATURE_CFG.format(key, val), read_lines=True)
 
         self.log.info("Initialize Node")
@@ -222,8 +223,8 @@ class TestFailureDomain:
         self.log.info("Prepare Network")
         nd_obj.execute_cmd(cmd=
         common_cmd.PREPARE_NETWORK.format(
-            PROV_CFG["test_deployment_ff"]["dns_servers"],
-            PROV_CFG["test_deployment_ff"]["search_domains"]), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["dns_servers"],
+            self.cft_test_cfg["test_deployment_ff"]["search_domains"]), read_lines=True)
 
         self.log.info("Configure Network")
         ips = {"management": CMN_CFG["nodes"][nd_no]["ip"],
@@ -243,7 +244,7 @@ class TestFailureDomain:
         self.log.info("Configure Firewall")
         nd_obj.execute_cmd(cmd=
         common_cmd.CFG_FIREWALL.format(
-            PROV_CFG["test_deployment_ff"]["firewall_url"]), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["firewall_url"]), read_lines=True)
 
         self.log.info("Configure Network Time Server")
         nd_obj.execute_cmd(cmd=common_cmd.CFG_NTP.format("UTC"), read_lines=True)
@@ -288,21 +289,24 @@ class TestFailureDomain:
         self.log.info("Create Storage Set")
         nd1_obj.execute_cmd(cmd=
         common_cmd.STORAGE_SET_CREATE.format(
-            PROV_CFG["test_deployment_ff"]["storage_set_name"],
+            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"],
             self.num_nodes), read_lines=True)
         self.log.info("Add nodes to Storage Set")
         nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_NODE.format(
-            PROV_CFG["test_deployment_ff"]["storage_set_name"], hostnames), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], hostnames),
+            read_lines=True)
         self.log.info("Add Enclosure to Storage Set")
         nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_ENCL.format(
-            PROV_CFG["test_deployment_ff"]["storage_set_name"], hostnames), read_lines=True)
+            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], hostnames),
+            read_lines=True)
         self.log.info("Add Durability Config")
         for cfg_type in ["sns", "dix"]:
             data = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.data"]
             parity = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
             spare = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
             nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_CONFIG.format(
-                PROV_CFG["test_deployment_ff"]["storage_set_name"], cfg_type, data, parity, spare),
+                self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], cfg_type, data, parity,
+                spare),
                 read_lines=True)
 
     def deploy_3node_vm_ff(self, deploy_config_file):
@@ -312,7 +316,7 @@ class TestFailureDomain:
         self.log.info(
             "Starting Deployment on nodes:%s", self.host_list)
         self.log.info("Starting Deployment with Build:\n %s", self.build_url)
-        test_cfg = PROV_CFG["3-node-vm"]
+        test_cfg = self.cft_test_cfg["3-node-vm"]
         deploy_cfg = configparser.ConfigParser()
         deploy_cfg.read(deploy_config_file)
 
@@ -322,9 +326,7 @@ class TestFailureDomain:
                 nd_obj.hostname)
             self.log.info("Check that the host is pinging")
             nd_obj.execute_cmd(cmd=
-            common_cmd.CMD_PING.format(
-                nd_obj.hostname),
-                read_lines=True)
+                               common_cmd.CMD_PING.format(nd_obj.hostname), read_lines=True)
 
             self.log.info("Checking number of volumes present")
             count = nd_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
@@ -338,7 +340,7 @@ class TestFailureDomain:
                                       common_cmd.CMD_OS_REL,
                                       read_lines=True)[0].strip()
             self.log.info("OS Release Version: %s", resp)
-            assert_utils.assert_equal(resp, test_cfg["prereq"]["os_release"],
+            assert_utils.assert_in(resp, test_cfg["prereq"]["os_release"],
                                       "OS version is different than expected.")
 
             self.log.info("Checking kernel version")
@@ -346,14 +348,14 @@ class TestFailureDomain:
                                       common_cmd.CMD_KRNL_VER,
                                       read_lines=True)[0].strip()
             self.log.info("Kernel Version: %s", resp)
-            assert_utils.assert_equal(
+            assert_utils.assert_in(
                 resp,
                 test_cfg["prereq"]["kernel"],
                 "Kernel Version is different than expected.")
 
             self.log.info("Checking network interfaces")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETWORK_INTERFACE, read_lines=True)
-            self.log.info("Network Interfaces: %s",resp)
+            self.log.info("Network Interfaces: %s", resp)
             assert_utils.assert_greater_equal(len(resp), 3,
                                               "Network Interfaces should be more than 3")
 
@@ -367,13 +369,13 @@ class TestFailureDomain:
 
             self.log.info("Download the install.sh script to the node")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(self.build_branch),
-                               read_lines=True)
-            self.log.debug("Downloaded install.sh : %s",resp)
+                                      read_lines=True)
+            self.log.debug("Downloaded install.sh : %s", resp)
 
             self.log.info("Installs CORTX packages (RPM) and their dependencies ")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(self.build_url),
-                               read_lines=True)
-            self.log.debug("Installed RPM's : %s",resp)
+                                      read_lines=True)
+            self.log.debug("Installed RPM's : %s", resp)
 
             self.log.info("Perform Factory Manufacturing")
             self.factory_manufacturing(nd_obj, nd_no, deploy_cfg["srvnode-" + str(nd_no)])
@@ -403,11 +405,11 @@ class TestFailureDomain:
         resp = self.nd1_obj.execute_cmd(
             cmd=common_cmd.CMD_START_CLSTR,
             read_lines=True)[0].strip()
-        assert_utils.assert_exact_string(resp, PROV_CFG["cluster_start_msg"])
+        assert_utils.assert_exact_string(resp, self.cft_test_cfg["cluster_start_msg"])
         time.sleep(test_cfg["cluster_start_delay"])
 
         self.log.info("Starting the post deployment checks")
-        test_cfg = PROV_CFG["system"]
+        test_cfg = self.cft_test_cfg["system"]
         self.log.info("Check that all the services are up in hctl")
         resp = self.nd1_obj.execute_cmd(
             cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)

@@ -1,4 +1,9 @@
 deployment_template: "config/prov/three_node_config.ini"
+system:
+  offline: "offline"
+  stopped: "Stopped"
+  active: "active"
+
 test_deployment:
   jenkins_job_name: 'QA-testing-EC-deployment'
   jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA'
@@ -7,3 +12,24 @@ test_deployment:
   skip_preboarding: false
   skip_onboarding: true
   skip_s3_configure: false
+
+test_deployment_ff:
+  prereq:
+    min_disks: 4
+    os_release: ["CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)"]
+    kernel: ["3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64"]
+    cpu_cores: 4
+    memory: 8
+    prvsnr_version: 0.36.0
+  build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
+  network_trans: "lnet"
+  security_path: "/opt/seagate/cortx/provisioner/srv/components/misc_pkgs/ssl_certs/files/stx.pem"
+  feature_config:
+    "'cortx>software>s3>service>instances'": 1
+    "'cortx>software>s3>io>max_units'": 8
+    "'cortx>software>motr>service>client_instances'": 2
+  dns_servers: "10.230.240.51 10.230.240.52"
+  search_domains: "colo.seagate.com cortx.colo.seagate.com"
+  firewall_url: "yaml:///opt/seagate/cortx_configs/firewall_config.yaml"
+  storage_set_name: "storage-set-1"
+  cluster_start_msg: "Cluster start operation performed"
