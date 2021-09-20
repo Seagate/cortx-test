@@ -23,6 +23,7 @@ import configparser
 import logging
 import os
 import time
+from multiprocessing import Process
 
 import pytest
 
@@ -80,8 +81,13 @@ class TestFailureDomain:
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
+        revert_proc = []
         for host in self.host_list:
-            self.revert_vm_snapshot(host)
+            p = Process(target=self.revert_vm_snapshot(host))
+            p.start()
+            revert_proc.append(p)
+        for p in revert_proc:
+            p.join()
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
