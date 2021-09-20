@@ -88,6 +88,8 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.info("uploading object using cli")
             status, response = self.upload_object_cli(
                 bucket_name, object_name, file_path)
+            if "error occurred" in response or "failed:" in response:
+                raise Exception(response) from BaseException
             upload_res = response.split("b'")[1].split("\\r")
             LOGGER.debug(upload_res)
             LOGGER.info("output = %s", upload_res)
@@ -129,6 +131,8 @@ class S3CmdTestLib(S3LibCmd):
                 bucket_name, folder_path, S3_CFG["aws_cred_section"])
             shutil.rmtree(folder_path)
             LOGGER.debug(response)
+            if "error occurred" in response or "failed:" in response:
+                raise Exception(response) from BaseException
             upload_cnt = response.count(b"upload:") if isinstance(
                 response, bytes) else str(response).count("upload:")
             LOGGER.debug(upload_cnt)
@@ -159,6 +163,9 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.info("Downloading folder from bucket using cli.")
             status, response = super().download_bucket_cli(
                 bucket_name, folder_path, profile_name)
+            if "error occurred" in response or "failed:" in response:
+                raise Exception(response) from BaseException
+
             LOGGER.info(response)
 
             return status, response
