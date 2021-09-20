@@ -52,8 +52,7 @@ class S3Helper:
         """Virtually private constructor."""
         if S3Helper.__instance:
             raise ImportError(
-                "S3Helper is a singleton!, "
-                "use S3Helper.get_instance() to access existing object.")
+                "S3Helper is a singleton!, use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
         cm_cfg = CMN_CFG.get("nodes", None)
         self.host = cm_cfg[0]["hostname"] if cm_cfg else None
@@ -87,15 +86,12 @@ class S3Helper:
         status, resp = run_local_cmd("s3cmd --version")
         LOGGER.info(resp)
         if status:
-            res1 = config_utils.update_config_ini(
-                path, "default", "access_key", access)
-            res2 = config_utils.update_config_ini(
-                path, "default", "secret_key", secret)
+            res1 = config_utils.update_config_ini(path, "default", "access_key", access)
+            res2 = config_utils.update_config_ini(path, "default", "secret_key", secret)
             status = res1 and res2 and status
         else:
             LOGGER.warning(
-                "S3cmd is not present, please install it and then run the "
-                "configuration.")
+                "S3cmd is not present, please install it and then run the configuration.")
 
         return status
 
@@ -118,9 +114,7 @@ class S3Helper:
             with open(path, "w+") as f_write:
                 f_write.write(f"{access}:{secret}")
         else:
-            LOGGER.warning(
-                "S3fs is not present, please install it and then run the "
-                "configuration.")
+            LOGGER.warning("S3fs is not present, please install it and then run the configuration.")
 
         return status
 
@@ -140,8 +134,7 @@ class S3Helper:
         pwd = pwd if pwd else self.pwd
         try:
             if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
-                status, output = run_remote_cmd(commands.MOTR_STATUS_CMD,
-                                                host, user, pwd,
+                status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host, user, pwd,
                                                 read_lines=True)
                 if not status:
                     return status, output
@@ -158,13 +151,11 @@ class S3Helper:
                         return False, service
                 return status, output
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.check_s3services_online.__name__,
-                str(error))
+                "Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
             return False, error
 
     def get_s3server_service_status(self, service: str = None,
@@ -186,8 +177,8 @@ class S3Helper:
         try:
             if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
                 status, result = run_remote_cmd(
-                     commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user,
-                     pwd, read_lines=True)
+                     commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
+                     read_lines=True)
                 if not status:
                     return status, result
                 result_ = ''.join(result)
@@ -198,13 +189,11 @@ class S3Helper:
 
                 return status, result_
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.get_s3server_service_status.__name__,
-                str(error))
+                "Error in %s: %s", S3Helper.get_s3server_service_status.__name__, str(error))
             return False, error
 
     def start_s3server_service(self,
@@ -238,14 +227,12 @@ class S3Helper:
 
                 return response
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
 
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.start_s3server_service.__name__,
-                str(error))
+                "Error in %s: %s", S3Helper.start_s3server_service.__name__, str(error))
             return False, error
 
     def stop_s3server_service(self,
@@ -268,24 +255,20 @@ class S3Helper:
         try:
             if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
                 status, result = run_remote_cmd(
-                     commands.SYSTEM_CTL_STOP_CMD.format(service), host, user,
-                     pwd, read_lines=True)
+                     commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
                 LOGGER.debug(result)
                 time.sleep(10)
-                status, resp = self.get_s3server_service_status(
-                    service, host, user, pwd)
+                status, resp = self.get_s3server_service_status(service, host, user, pwd)
                 # True if service successfully stopped.
                 status = bool('inactive' in str(resp))
 
                 return status, resp
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.stop_s3server_service.__name__,
-                error)
+                "Error in %s: %s", S3Helper.stop_s3server_service.__name__, error)
             return False, error
 
     def restart_s3server_service(self,
@@ -314,18 +297,15 @@ class S3Helper:
                 if not status:
                     return status, result
                 time.sleep(10)
-                response = self.get_s3server_service_status(service, host, user,
-                                                            pwd)
+                response = self.get_s3server_service_status(service, host, user, pwd)
 
                 return response
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.restart_s3server_service.__name__,
-                error)
+                "Error in %s: %s", S3Helper.restart_s3server_service.__name__, error)
             return False, error
 
     def restart_s3server_processes(self,
@@ -359,25 +339,22 @@ class S3Helper:
                     LOGGER.debug(response)
                     time.sleep(wait_time)
                 LOGGER.info("Is motr online.")
-                status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host,
-                                                user, pwd, read_lines=True)
+                status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host, user, pwd,
+                                                read_lines=True)
                 LOGGER.debug(output)
                 fail_list = ['failed', 'not running', 'offline']
                 LOGGER.debug(fail_list)
                 for line in output:
                     if any(
-                            fail_str in line for fail_str in fail_list) and \
-                            "s3server" in line:
+                            fail_str in line for fail_str in fail_list) and "s3server" in line:
                         return False, output
                 return status, output
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.restart_s3server_processes.__name__,
-                error)
+                "Error in %s: %s", S3Helper.restart_s3server_processes.__name__, error)
             return False, error
 
     def get_s3server_resource(self, host: str = None,
@@ -396,8 +373,7 @@ class S3Helper:
         pwd = pwd if pwd else self.pwd
         try:
             if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
-                status, output = run_remote_cmd(commands.PCS_RESOURCE_SHOW_CMD,
-                                                host, user, pwd,
+                status, output = run_remote_cmd(commands.PCS_RESOURCE_SHOW_CMD, host, user, pwd,
                                                 read_lines=True)
                 LOGGER.info("Response: %s", str(output))
                 s3_rcs = []
@@ -410,13 +386,11 @@ class S3Helper:
 
                 return status, s3_rcs
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.get_s3server_resource.__name__,
-                error)
+                "Error in %s: %s", S3Helper.get_s3server_resource.__name__, error)
             return False, error
 
     def restart_s3server_resources(self,
@@ -438,9 +412,7 @@ class S3Helper:
         pwd = pwd if pwd else self.pwd
         try:
             if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
-                status, resources = self.get_s3server_resource(host=host,
-                                                               user=user,
-                                                               pwd=pwd)
+                status, resources = self.get_s3server_resource(host=host, user=user, pwd=pwd)
                 if not status:
                     return status, resources
                 for resource in resources:
@@ -458,19 +430,16 @@ class S3Helper:
                 LOGGER.debug(fail_list)
                 for line in output:
                     if any(
-                            fail_str in line for fail_str in fail_list) and \
-                            "s3server" in line:
+                            fail_str in line for fail_str in fail_list) and "s3server" in line:
                         return False, output
 
                 return status, output
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.restart_s3server_resources.__name__,
-                error)
+                "Error in %s: %s", S3Helper.restart_s3server_resources.__name__, error)
             return False, error
 
     def is_s3_server_path_exists(self, path: str = None,
@@ -498,9 +467,7 @@ class S3Helper:
             return status, path
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.is_s3_server_path_exists.__name__,
-                error)
+                "Error in %s: %s", S3Helper.is_s3_server_path_exists.__name__, error)
             return False, error
 
     def get_s3server_fids(self, host: str = None,
@@ -531,13 +498,11 @@ class S3Helper:
 
                 return status, fids
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.get_s3server_fids.__name__,
-                error)
+                "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
             return False, error
 
     def copy_s3server_file(self, file_path: str = None,
@@ -568,9 +533,7 @@ class S3Helper:
             return resp
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.copy_s3server_file.__name__,
-                error)
+                "Error in %s: %s", S3Helper.copy_s3server_file.__name__, error)
             return False, error
 
     def is_string_in_s3server_file(self,
@@ -606,19 +569,14 @@ class S3Helper:
                 self.copy_s3server_file(
                     file_path + '.' + str(num), local_path, host, user, pwd)
                 if string in open(local_path).read():
-                    LOGGER.info(
-                        "Match '%s' found in : %s",
-                        string,
-                        file_path + '.' + str(num))
+                    LOGGER.info("Match '%s' found in : %s", string, file_path + '.' + str(num))
                     return True, file_path
                 num = num + 1
                 if num > 6:
                     break
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.is_string_in_s3server_file.__name__,
-                error)
+                "Error in %s: %s", S3Helper.is_string_in_s3server_file.__name__, error)
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -682,13 +640,11 @@ class S3Helper:
 
                 return status, output
             elif CMN_CFG["product_family"] == "LC":
-                LOGGER.info("Product family: LC")
+                LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "Error in %s: %s",
-                S3Helper.enable_disable_s3server_instances.__name__,
-                error)
+                "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
             return False, error
 
     @staticmethod
@@ -712,8 +668,7 @@ class S3Helper:
                 path=path, data=data, ensure_ascii=False)
         else:
             LOGGER.warning(
-                "Minio is not installed please install and then run the "
-                "configuration.")
+                "Minio is not installed please install and then run the configuration.")
 
         return os.path.isfile(path) and res
 
@@ -733,17 +688,13 @@ class S3Helper:
                 raise FileNotFoundError("{} file is not present. Please "
                                         "configure aws in the system if you are"
                                         " running s3 test".format(path))
-            access_key = config_utils.get_config(
-                path, section, "aws_access_key_id")
-            secret_key = config_utils.get_config(
-                path, section, "aws_secret_access_key")
+            access_key = config_utils.get_config(path, section, "aws_access_key_id")
+            secret_key = config_utils.get_config(path, section, "aws_secret_access_key")
 
             return access_key, secret_key
         except (FileNotFoundError, KeyError, NoSectionError) as error:
             LOGGER.warning(
-                "%s: %s",
-                S3Helper.get_local_keys.__name__,
-                str(error))
+                "%s: %s", S3Helper.get_local_keys.__name__, str(error))
             return None, None
 
     def is_string_in_file(self,
@@ -777,9 +728,7 @@ class S3Helper:
                 return True, file_path
         except (SSHException, OSError) as error:
             LOGGER.error(
-                "An exception occurred in %s: %s",
-                S3Helper.is_string_in_file.__name__,
-                str(error))
+                "An exception occurred in %s: %s", S3Helper.is_string_in_file.__name__, str(error))
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)
@@ -801,15 +750,14 @@ class S3Helper:
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
         if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
-            command = commands.UPDATE_FAULTTOLERANCE.format(
-                "enable" if enable else "disable")
+            command = commands.UPDATE_FAULTTOLERANCE.format("enable" if enable else "disable")
             status, response = run_remote_cmd(cmd=command, hostname=host,
                                               username=user, password=password)
             status = True if "200" in response else status
 
             return status, response
         elif CMN_CFG["product_family"] == "LC":
-            LOGGER.info("Product family: LC")
+            LOGGER.critical("Product family: LC")
             # TODO: Add LC related calls
 
     def verify_and_validate_created_object_fragement(self, object_name) -> tuple:
