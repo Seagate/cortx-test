@@ -29,9 +29,11 @@ from config import CMN_CFG
 from config import S3_CFG
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
+from libs.s3 import PROD_FLG
 from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -43,23 +45,31 @@ def check_cluster_health() -> None:
     LOG.info("Check cluster status, all services are running.")
     nodes = CMN_CFG["nodes"]
     LOG.info(nodes)
-    for _, node in enumerate(nodes):
-        health_obj = Health(hostname=node["hostname"],
-                            username=node["username"],
-                            password=node["password"])
-        resp = health_obj.check_node_health()
-        LOG.info(resp)
-        health_obj.disconnect()
-        assert_utils.assert_true(resp[0], resp[1])
+    if PROD_FLG:
+        for _, node in enumerate(nodes):
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
+            resp = health_obj.check_node_health()
+            LOG.info(resp)
+            health_obj.disconnect()
+            assert_utils.assert_true(resp[0], resp[1])
+    else:
+        pass  # TODO: will update as per health helper changes for LC/k8s.
     LOG.info("Cluster is healthy, all services are running.")
 
 
 def get_ldap_creds() -> tuple:
     """Get the ldap credentials from node."""
     nodes = CMN_CFG["nodes"]
-    node_hobj = Node(hostname=nodes[0]["hostname"],
-                     username=nodes[0]["username"],
-                     password=nodes[0]["password"])
+    if PROD_FLG:
+        node_hobj = Node(hostname=nodes[0]["hostname"],
+                         username=nodes[0]["username"],
+                         password=nodes[0]["password"])
+    else:
+        node_hobj = LogicalNode(hostname=nodes[0]["hostname"],
+                                username=nodes[0]["username"],
+                                password=nodes[0]["password"])
     node_hobj.connect()
     resp = node_hobj.get_ldap_credential()
     node_hobj.disconnect()
