@@ -31,6 +31,7 @@ NGREENLETS = 32
 
 # Product Family and versions
 PROD_FAMILY = 'LC'
+PROD_TYPE = 'k8s'
 
 # RAS Paths
 BYTES_TO_READ = 8000
