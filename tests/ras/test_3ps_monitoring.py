@@ -167,7 +167,7 @@ class Test3PSvcMonitoring:
                 update=True)
             assert_true(res)
 
-        if self.reboot == False:
+        if not self.reboot:
             LOGGER.info("Terminating the process of reading sspl.log")
             self.ras_test_obj.kill_remote_process("/sspl/sspl.log")
 
@@ -562,11 +562,11 @@ class Test3PSvcMonitoring:
             assert result, f"Failed in disabling {svc} service"
             LOGGER.info("Step 1: Disabled %s service...", svc)
 
-            LOGGER.info("Step 2: Fail %s service...", svc)
+            LOGGER.info("Step 2: Stop %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", [], timeout=60)
             assert result, f"Failed in stopping {svc} service"
-            LOGGER.info("Step 2: Failed %s service...", svc)
+            LOGGER.info("Step 2: Stopped %s service...", svc)
             time.sleep(200)
 
             if svc not in ["elasticsearch.service"]:
@@ -601,12 +601,12 @@ class Test3PSvcMonitoring:
             assert result, f"Failed in enabling {svc} service"
             LOGGER.info("Step 7: Enable %s service...", svc)
 
-            LOGGER.info("Step 8: Fail %s service...", svc)
+            LOGGER.info("Step 8: Stop %s service...", svc)
             starttime = time.time()
             result = self.sw_alert_obj.run_verify_svc_state(svc, "stop", [],
                                                             timeout=60)
-            assert result, f"Failed in failing {svc} service"
-            LOGGER.info("Step 8: Failed %s service...", svc)
+            assert result, f"Failed in stopping {svc} service"
+            LOGGER.info("Step 8: Stopped %s service...", svc)
             time.sleep(200)
 
             if svc not in ["elasticsearch.service"]:
@@ -627,7 +627,7 @@ class Test3PSvcMonitoring:
             assert self.csm_alert_obj.verify_csm_response(
                 starttime, const.ResourceType.SW_SVC, True)
             LOGGER.info("Step 11: Verified fault resolved alert on CSM")
-            
+
 
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
