@@ -405,6 +405,16 @@ FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
 FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 
 
+# Kubernetes commands to interact with service/pods.
+
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {}"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Restart pod/ service in a namespace.
+RESTART_POD_CMD = ""
+
 # LC commands
 CLSTR_START_CMD = ""
 CLSTR_STOP_CMD = ""
