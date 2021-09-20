@@ -138,6 +138,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
             break
     else:
         LOGGER.error("Timeout while generating support bundle")
-        return False, "Timeout while generating support bundle"
+        return False, bundle_id
 
-    return True, "Support bundle generated successfully."
+    LOGGER.info("Support bundle generated successfully.")
+    return True, bundle_id
