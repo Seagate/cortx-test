@@ -22,7 +22,6 @@
 """
 import os
 from commons.constants import PROD_FAMILY
-from config import CMN_CFG
 
 LOG_FILE = 'cortx-test.log'
 
@@ -70,10 +69,8 @@ TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 
-if PROD_FAMILY == CMN_CFG["product_family"]:
-    CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config_lc.yaml')
-else:
-    CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
+CSM_CONFIG_LC = os.path.join(CSM_DIR, 'csm_config_lc.yaml')
+CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
 
