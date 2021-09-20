@@ -46,6 +46,7 @@ class TestFailureDomain:
         cls.log = logging.getLogger(__name__)
         test_config = "config/cft/test_failure_domain.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
+        cls.deplymt_cfg = cls.cft_test_cfg["test_deployment_ff"]
         cls.setup_type = CMN_CFG["setup_type"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
@@ -57,7 +58,7 @@ class TestFailureDomain:
                                       password=CMN_CFG["nodes"][node]["password"]))
         cls.nd1_obj = cls.node_list[0]
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
-        cls.test_config_template = cls.cft_test_cfg["deployment_template"]
+        cls.test_config_template = cls.deplymt_cfg["deployment_template"]
 
         cls.vm_username = os.getenv(
             "QA_VM_POOL_ID", pswdmanager.decrypt(
@@ -75,19 +76,19 @@ class TestFailureDomain:
         os_version = cls.nd1_obj.execute_cmd(cmd=common_cmd.CMD_OS_REL,
                                       read_lines=True)[0].strip()
         version = "centos-" + str(os_version.split()[3])
-        cls.build_url = cls.cft_test_cfg["test_deployment_ff"]["build_url"].format(
+        cls.build_url = cls.deplymt_cfg["build_url"].format(
             cls.build_branch, version, cls.build)
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        revert_proc = []
-        for host in self.host_list:
-            p = Process(target=self.revert_vm_snapshot(host))
-            p.start()
-            revert_proc.append(p)
-        for p in revert_proc:
-            p.join()
+        # revert_proc = []
+        # for host in self.host_list:
+        #     p = Process(target=self.revert_vm_snapshot, args=host)
+        #     p.start()
+        #     revert_proc.append(p)
+        # for p in revert_proc:
+        #     p.join()
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -157,7 +158,7 @@ class TestFailureDomain:
         self.log.info("Configure Network ")
         self.log.info("Configure Network transport")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_TRANSPORT.format(
-            self.cft_test_cfg["test_deployment_ff"]["network_trans"]), read_lines=True)
+            self.deplymt_cfg["network_trans"]), read_lines=True)
 
         self.log.info("Configure Management Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
@@ -204,10 +205,10 @@ class TestFailureDomain:
         self.log.info("Configure Security")
         nd_obj.execute_cmd(cmd=
         common_cmd.SECURITY_CFG.format(
-            self.cft_test_cfg["test_deployment_ff"]["security_path"]), read_lines=True)
+            self.deplymt_cfg["security_path"]), read_lines=True)
 
         self.log.info("Configure Feature")
-        for key, val in self.cft_test_cfg["test_deployment_ff"]["feature_config"].items():
+        for key, val in self.deplymt_cfg["feature_config"].items():
             nd_obj.execute_cmd(cmd=common_cmd.FEATURE_CFG.format(key, val), read_lines=True)
 
         self.log.info("Initialize Node")
@@ -229,8 +230,8 @@ class TestFailureDomain:
         self.log.info("Prepare Network")
         nd_obj.execute_cmd(cmd=
         common_cmd.PREPARE_NETWORK.format(
-            self.cft_test_cfg["test_deployment_ff"]["dns_servers"],
-            self.cft_test_cfg["test_deployment_ff"]["search_domains"]), read_lines=True)
+            self.deplymt_cfg["dns_servers"],
+            self.deplymt_cfg["search_domains"]), read_lines=True)
 
         self.log.info("Configure Network")
         ips = {"management": CMN_CFG["nodes"][nd_no]["ip"],
@@ -250,7 +251,7 @@ class TestFailureDomain:
         self.log.info("Configure Firewall")
         nd_obj.execute_cmd(cmd=
         common_cmd.CFG_FIREWALL.format(
-            self.cft_test_cfg["test_deployment_ff"]["firewall_url"]), read_lines=True)
+            self.deplymt_cfg["firewall_url"]), read_lines=True)
 
         self.log.info("Configure Network Time Server")
         nd_obj.execute_cmd(cmd=common_cmd.CFG_NTP.format("UTC"), read_lines=True)
@@ -295,15 +296,15 @@ class TestFailureDomain:
         self.log.info("Create Storage Set")
         nd1_obj.execute_cmd(cmd=
         common_cmd.STORAGE_SET_CREATE.format(
-            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"],
+            self.deplymt_cfg["storage_set_name"],
             self.num_nodes), read_lines=True)
         self.log.info("Add nodes to Storage Set")
         nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_NODE.format(
-            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], hostnames),
+            self.deplymt_cfg["storage_set_name"], hostnames),
             read_lines=True)
         self.log.info("Add Enclosure to Storage Set")
         nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_ENCL.format(
-            self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], hostnames),
+            self.deplymt_cfg["storage_set_name"], hostnames),
             read_lines=True)
         self.log.info("Add Durability Config")
         for cfg_type in ["sns", "dix"]:
@@ -311,7 +312,7 @@ class TestFailureDomain:
             parity = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
             spare = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
             nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_CONFIG.format(
-                self.cft_test_cfg["test_deployment_ff"]["storage_set_name"], cfg_type, data, parity,
+                self.deplymt_cfg["storage_set_name"], cfg_type, data, parity,
                 spare),
                 read_lines=True)
 
@@ -322,7 +323,6 @@ class TestFailureDomain:
         self.log.info(
             "Starting Deployment on nodes:%s", self.host_list)
         self.log.info("Starting Deployment with Build:\n %s", self.build_url)
-        test_cfg = self.cft_test_cfg["3-node-vm"]
         deploy_cfg = configparser.ConfigParser()
         deploy_cfg.read(deploy_config_file)
 
@@ -338,7 +338,7 @@ class TestFailureDomain:
             count = nd_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
             self.log.info("No. of disks : %s", count[0])
             assert_utils.assert_greater_equal(int(
-                count[0]), test_cfg["prereq"]["min_disks"],
+                count[0]), self.deplymt_cfg["prereq"]["min_disks"],
                 "Need at least 4 disks for deployment")
 
             self.log.info("Checking OS release version")
@@ -346,7 +346,7 @@ class TestFailureDomain:
                                       common_cmd.CMD_OS_REL,
                                       read_lines=True)[0].strip()
             self.log.info("OS Release Version: %s", resp)
-            assert_utils.assert_in(resp, test_cfg["prereq"]["os_release"],
+            assert_utils.assert_in(resp, self.deplymt_cfg["prereq"]["os_release"],
                                       "OS version is different than expected.")
 
             self.log.info("Checking kernel version")
@@ -356,7 +356,7 @@ class TestFailureDomain:
             self.log.info("Kernel Version: %s", resp)
             assert_utils.assert_in(
                 resp,
-                test_cfg["prereq"]["kernel"],
+                self.deplymt_cfg["prereq"]["kernel"],
                 "Kernel Version is different than expected.")
 
             self.log.info("Checking network interfaces")
@@ -404,25 +404,25 @@ class TestFailureDomain:
         self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
 
         self.log.info("Configure Cluster")
-        resp = self.config_cluster(self.nd1_obj, test_cfg["setup-type"])
+        resp = self.config_cluster(self.nd1_obj, self.deplymt_cfg["setup-type"])
         assert_utils.assert_true(resp[0], "Deploy Failed")
 
         self.log.info("Starting Cluster")
         resp = self.nd1_obj.execute_cmd(
             cmd=common_cmd.CMD_START_CLSTR,
             read_lines=True)[0].strip()
-        assert_utils.assert_exact_string(resp, self.cft_test_cfg["cluster_start_msg"])
-        time.sleep(test_cfg["cluster_start_delay"])
+        assert_utils.assert_exact_string(resp, self.deplymt_cfg["cluster_start_msg"])
+        time.sleep(self.deplymt_cfg["cluster_start_delay"])
 
         self.log.info("Starting the post deployment checks")
-        test_cfg = self.cft_test_cfg["system"]
+        sys_state = self.deplymt_cfg["system"]
         self.log.info("Check that all the services are up in hctl")
         resp = self.nd1_obj.execute_cmd(
             cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)
         self.log.info("hctl status: %s", resp)
         for line in resp:
             assert_utils.assert_not_in(
-                test_cfg["offline"], line, "Some services look offline")
+                sys_state["offline"], line, "Some services look offline")
 
         self.log.info("Check that all services are up in pcs")
         resp = self.nd1_obj.execute_cmd(
@@ -430,7 +430,7 @@ class TestFailureDomain:
         self.log.info("PCS status: %s", resp)
         for line in resp:
             assert_utils.assert_not_in(
-                test_cfg["stopped"], line, "Some services are not up")
+                sys_state["stopped"], line, "Some services are not up")
 
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability
