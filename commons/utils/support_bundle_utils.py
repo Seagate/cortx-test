@@ -27,6 +27,7 @@ import logging
 import time
 from commons.helpers.node_helper import Node
 from commons import commands as cm_cmd
+from commons import constants as cm_const
 from commons.utils import assert_utils
 from config import CMN_CFG
 
@@ -89,7 +90,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     :return: boolean
     """
 
-    remote_dir = "/var/log/cortx/support_bundle/"
+    remote_dir = cm_const.R2_SUPPORT_BUNDLE_PATH
     node_list = []
     num_nodes = len(CMN_CFG["nodes"])
     for node in range(num_nodes):
@@ -107,8 +108,8 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
     # Form the command if component list is provided in parameters
     if comp_list is not None:
-        command = command + " -c"
-        command = command + " ".join(comp_list)
+        command = command + ''.join(" -c ")
+        command = command + ''.join(comp_list)
     resp = node_list[0].execute_cmd(cmd=command)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))
     assert_utils.assert_true(resp[0], resp[1])
@@ -124,7 +125,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         LOGGER.info("Checking Support Bundle status")
         status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
-        if str(status).count(success_msg) == len(CMN_CFG["nodes"]):
+        if str(status).count(success_msg) == num_nodes:
             LOGGER.info(success_msg)
             for node in range(num_nodes):
                 LOGGER.info("Archiving and copying Support bundle from server")
