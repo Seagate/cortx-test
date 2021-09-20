@@ -72,6 +72,7 @@ system_ntp:
   timezone: [ 'Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam' ]
 
 test_deployment_ff:
+  build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.9.2009/{1}/"
   build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
   network_trans: "lnet"
   security_path: "/opt/seagate/cortx/provisioner/srv/components/misc_pkgs/ssl_certs/files/stx.pem"

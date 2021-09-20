@@ -71,14 +71,14 @@ class TestFailureDomain:
                 cls.build = "{}/{}".format(cls.build, "prod")
         else:
             cls.build = "last_successful_prod"
-        cls.build_url = PROV_CFG["build_url"].format(
+        cls.build_url = PROV_CFG["test_deployment_ff"]["build_url"].format(
             cls.build_branch, cls.build)
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
-        # self.log.info("Reverting all the VM before deployment")
-        # for host in self.host_list:
-        #     self.revert_vm_snapshot(host)
+        self.log.info("Reverting all the VM before deployment")
+        for host in self.host_list:
+            self.revert_vm_snapshot(host)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
