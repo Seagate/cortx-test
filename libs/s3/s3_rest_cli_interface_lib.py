@@ -23,9 +23,9 @@
 
 import logging
 from abc import ABC, abstractmethod
-from config import CMN_CFG
 
 from commons.exceptions import CTException
+from libs.s3 import PROD_FLG
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
@@ -67,7 +67,7 @@ class S3AccountOperations(S3Interface):
 
     def __init__(self):
         """S3 account operations constructor."""
-        self.cli_obj = CortxCliTestLib() if CMN_CFG["product_type"] == "node" else None
+        self.cli_obj = CortxCliTestLib() if PROD_FLG else None
         self.rest_obj = S3AccountOperationsRestAPI()
 
     def __del__(self):

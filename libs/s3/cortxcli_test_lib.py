@@ -39,7 +39,7 @@ import time
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from config import CMN_CFG
+from libs.s3 import PROD_FLG
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
@@ -54,7 +54,7 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def __init__(self, session_obj: object = None):
         """Constructor for s3 account operations."""
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
@@ -374,7 +374,7 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
     def __init__(
             self, session_obj: object = None):
         """Constructor for s3 account operations."""
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
@@ -514,7 +514,7 @@ class _IamUser(CortxCliIamUser):
 
         :param object session_obj: session object of host connection if already established
         """
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
@@ -620,7 +620,7 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
 
         :param object session_obj: session object of host connection if already established
         """
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
@@ -762,7 +762,7 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
 
         :param object session_obj: session object of host connection if already established.
         """
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
@@ -837,7 +837,7 @@ class CortxCliTestLib(_S3AccountOperations,
         :param object session_obj: session object of host connection if already established.
         This class establish the session as soon as object is created.
         """
-        if CMN_CFG["product_family"] != "LR" or CMN_CFG["product_type"] != "node":
+        if PROD_FLG:
             raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
