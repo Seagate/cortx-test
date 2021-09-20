@@ -83,3 +83,7 @@ class LogicalNode(Host):
             return False, error
 
         return True, "Node shutdown successfully"
+
+    def get_ldap_credential(self):
+        """Get the ldap credential from node."""
+        pass  # TODO: Will be implemented once k8s environment ready with s3 server.
