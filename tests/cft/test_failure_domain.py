@@ -228,7 +228,7 @@ class TestFailureDomain:
 
         self.log.info("Prepare Network")
         nd_obj.execute_cmd(cmd=
-        common_cmd.PREPARE_NETWORK.format('srvnode-'+str(nd_no),
+        common_cmd.PREPARE_NETWORK.format(CMN_CFG["nodes"][nd_no]["hostname"],
             self.deplymt_cfg["dns_servers"],
             self.deplymt_cfg["search_domains"]), read_lines=True)
 
