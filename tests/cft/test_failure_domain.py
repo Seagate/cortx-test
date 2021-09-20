@@ -162,16 +162,15 @@ class TestFailureDomain:
 
         self.log.info("Configure Management Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            CMN_CFG["nodes"][nd_no]["ip"], "management"), read_lines=True)
+            "eth0", "management"), read_lines=True)
 
         self.log.info("Configure Data Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            CMN_CFG["nodes"][nd_no]["public_data_ip"], "data"), read_lines=True)
+            "eth1", "data"), read_lines=True)
 
         self.log.info("Configure Private Interface")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            CMN_CFG["nodes"][nd_no]["private_data_ip"], "private"),
-            read_lines=True)
+            "eth3", "private"), read_lines=True)
 
         self.log.info("Configure BMC Interface")
         # default details for VM
