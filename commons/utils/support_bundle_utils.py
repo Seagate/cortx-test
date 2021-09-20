@@ -33,7 +33,7 @@ from config import CMN_CFG
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-arguments
 def create_support_bundle_individual_cmd(node, username, password, remote_dir, local_dir, component="all"):
     """
     Collect support bundles from various components
@@ -79,7 +79,7 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
     return True, local_sb_path
 
-
+# pylint: disable=too-many-arguments
 def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     """
     Collect support bundles from various components using single support bundle cmd
@@ -107,7 +107,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
     # Form the command if component list is provided in parameters
     if comp_list is not None:
-        command = command + " -c"
+        command = command + " -c" 
         command = command + " ".join(comp_list)
     resp = node_list[0].execute_cmd(cmd=command)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))
@@ -118,7 +118,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
-    
+
     while timeout > time.time() - start_time:
         time.sleep(180)
         LOGGER.info("Checking Support Bundle status")
