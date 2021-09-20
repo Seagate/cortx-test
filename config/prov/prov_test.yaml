@@ -55,8 +55,8 @@ single-node:
 3-node-vm:
   prereq:
     min_disks: 4
-    os_release: "CentOS Linux release 7.8.2003 (Core)"
-    kernel: "3.10.0-1127.el7.x86_64"
+    os_release: "CentOS Linux release 7.9.2009 (Core)"
+    kernel: "3.10.0-1160.el7.x86_64"
     cpu_cores: 4
     memory: 8
     prvsnr_version: 0.36.0

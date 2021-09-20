@@ -353,7 +353,7 @@ class TestFailureDomain:
 
             self.log.info("Checking network interfaces")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETWORK_INTERFACE, read_lines=True)
-            self.log.info("No of Network Interfaces: %s",resp)
+            self.log.info("Network Interfaces: %s",resp)
             assert_utils.assert_greater_equal(len(resp), 3,
                                               "Network Interfaces should be more than 3")
 
