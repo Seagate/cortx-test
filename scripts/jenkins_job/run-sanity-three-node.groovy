@@ -169,18 +169,18 @@ deactivate
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
         		  }
-        		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		      sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
 deactivate
 '''
-                      /* if ( "${CREATE_JIRA_ISSUE}" ) {
+                      if ( "${CREATE_JIRA_ISSUE}" ) {
                         jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
                         echo "${jira_issue}"
-                      } */
-                  }
+                      }
+                  } */
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar', followSymlinks: false
