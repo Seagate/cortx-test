@@ -82,14 +82,9 @@ class TestFailureDomain:
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        revert_proc = []
         for host in self.host_list:
-            p = Process(target=self.revert_vm_snapshot, args=host)
-            p.start()
-            revert_proc.append(p)
-        for p in revert_proc:
-            p.join()
-
+            self.revert_vm_snapshot(host)
+            
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
            host: VM name """
