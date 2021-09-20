@@ -54,8 +54,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def __init__(self, session_obj: object = None):
         """Constructor for s3 account operations."""
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 
@@ -374,8 +374,8 @@ class _S3AccountOperations(CortxCliS3AccountOperations):
     def __init__(
             self, session_obj: object = None):
         """Constructor for s3 account operations."""
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
     def create_account_cortxcli(self,
@@ -514,8 +514,8 @@ class _IamUser(CortxCliIamUser):
 
         :param object session_obj: session object of host connection if already established
         """
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
     def create_user_cortxcli(self,
@@ -620,8 +620,8 @@ class _S3AccessKeys(CortxCliS3AccessKeys):
 
         :param object session_obj: session object of host connection if already established
         """
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
     def create_s3_user_access_key(self, user_name: str, passwd: str, s3user: str) -> tuple:
@@ -762,8 +762,8 @@ class _S3BucketOperations(CortxCliS3BucketOperations):
 
         :param object session_obj: session object of host connection if already established.
         """
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
 
     def create_bucket_cortx_cli(
@@ -837,8 +837,8 @@ class CortxCliTestLib(_S3AccountOperations,
         :param object session_obj: session object of host connection if already established.
         This class establish the session as soon as object is created.
         """
-        if PROD_FLG:
-            raise Exception("cortxcli command not supported in the LR. Please, use rest api.")
+        if not PROD_FLG:
+            raise Exception("cortxcli command not supported in the LC/K8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 
