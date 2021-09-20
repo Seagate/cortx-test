@@ -21,7 +21,6 @@
 """Constants
 """
 import os
-from commons.constants import PROD_FAMILY
 
 LOG_FILE = 'cortx-test.log'
 

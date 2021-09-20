@@ -82,8 +82,7 @@ elif proc_name in ["testrunner.py", "testrunner"]:
         target = os.environ.get("TARGET") if os.environ.get("TARGET") else None
 else:
     target = None
-import pdb
-pdb.set_trace()
+
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
