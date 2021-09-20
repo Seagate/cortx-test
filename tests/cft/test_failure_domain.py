@@ -82,13 +82,13 @@ class TestFailureDomain:
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        # revert_proc = []
-        # for host in self.host_list:
-        #     p = Process(target=self.revert_vm_snapshot, args=host)
-        #     p.start()
-        #     revert_proc.append(p)
-        # for p in revert_proc:
-        #     p.join()
+        revert_proc = []
+        for host in self.host_list:
+            p = Process(target=self.revert_vm_snapshot, args=host)
+            p.start()
+            revert_proc.append(p)
+        for p in revert_proc:
+            p.join()
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -149,10 +149,22 @@ class TestFailureDomain:
                                       "Job is successful, expected to fail")
 
     def configure_server(self, nd_obj, node_no):
-        self.log.info("Configure Server")
-        srvnode = "srvnode-{}".format(node_no)
-        nd_obj.execute_cmd(cmd=common_cmd.CMD_SERVER_CFG.format(srvnode, CMN_CFG["setup_type"]),
-                           read_lines=True)
+        try :
+            self.log.info("Configure Server")
+            srvnode = "srvnode-{}".format(node_no)
+            nd_obj.execute_cmd(cmd=common_cmd.CMD_SERVER_CFG.format(srvnode, CMN_CFG["setup_type"]),
+                               read_lines=True)
+        except Exception as error:
+            self.log.error(
+                "An error occurred in %s:",
+                TestFailureDomain.configure_server.__name__)
+            if isinstance(error.args[0], list):
+                self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                self.log.error(error.args[0])
+            return False, error
+
+        return True, "Deployment Completed"
 
     def configure_network(self, nd_obj, nd_no):
         self.log.info("Configure Network ")
@@ -228,17 +240,18 @@ class TestFailureDomain:
 
         self.log.info("Prepare Network")
         nd_obj.execute_cmd(cmd=
-        common_cmd.PREPARE_NETWORK.format(CMN_CFG["nodes"][nd_no]["hostname"],
-            self.deplymt_cfg["dns_servers"],
-            self.deplymt_cfg["search_domains"]), read_lines=True)
+        common_cmd.PREPARE_NETWORK.format(CMN_CFG["nodes"][nd_no-1]["hostname"],
+            self.deplymt_cfg["search_domains"],
+            self.deplymt_cfg["dns_servers"]), read_lines=True)
 
         self.log.info("Configure Network")
-        ips = {"management": CMN_CFG["nodes"][nd_no]["ip"],
-               "data": CMN_CFG["nodes"][nd_no]["public_data_ip"],
-               "private": CMN_CFG["nodes"][nd_no]["private_data_ip"]}
+        ips = {"management": CMN_CFG["nodes"][nd_no-1]["ip"],
+               "data": CMN_CFG["nodes"][nd_no-1]["public_data_ip"],
+               "private": CMN_CFG["nodes"][nd_no-1]["private_data_ip"]}
 
         for network_type, ip_addr in ips.items():
             netmask = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETMASK.format(ip_addr))
+            netmask = netmask.strip().decode("utf-8")
             gateway = "0.0.0.0"
             if network_type == "management":
                 gateway = "10.230.240.1"
@@ -315,6 +328,42 @@ class TestFailureDomain:
                 spare),
                 read_lines=True)
 
+    def cluster_definition(self,hostnames,timeout: int = 600):
+        self.log.info("Hostname : %s", hostnames)
+        self.nd1_obj.connect(shell=True)
+        channel = self.nd1_obj.shell_obj
+        output = ""
+        current_output = ""
+        start_time = time.time()
+        cmd = "".join([common_cmd.CLUSTER_CREATE.format(hostnames, self.mgmt_vip,self.build_url), "\n"])
+        self.log.info("Command : %s",cmd)
+        self.log.info("no of nodes: %s", self.num_nodes)
+        channel.send(cmd)
+        passwd_counter = 0
+        while (time.time() - start_time) < timeout:
+            time.sleep(30)
+            if channel.recv_ready():
+                current_output = channel.recv(9999).decode("utf-8")
+                output = output + current_output
+                self.log.info(current_output)
+            if "Enter root user password for srvnode" in current_output and passwd_counter < self.num_nodes:
+                pswd = "".join([self.node_list[passwd_counter].password, "\n"])
+                channel.send(pswd)
+                passwd_counter += 1
+            elif "cortx_setup command Failed" in output :
+                self.log.error(current_output)
+                break
+            elif "Cluster created with node" in output:
+                self.log.info("Cluster created")
+                break
+        else:
+            return False, "Cortx Definition Failed"
+
+        if "cortx_setup command Failed" in output:
+            return False, output
+
+        return True, output
+
     def deploy_3node_vm_ff(self, deploy_config_file):
         """
         Using factory and field method
@@ -325,7 +374,10 @@ class TestFailureDomain:
         deploy_cfg = configparser.ConfigParser()
         deploy_cfg.read(deploy_config_file)
 
+        hostnames_list = []
         for nd_no, nd_obj in enumerate(self.node_list, start=1):
+            hostnames_list.append(CMN_CFG["nodes"][nd_no-1]["hostname"])
+
             self.log.info(
                 "Starting the prerequisite checks on node %s",
                 nd_obj.hostname)
@@ -389,12 +441,9 @@ class TestFailureDomain:
             self.field_deployment_node(nd_obj, nd_no)
 
         self.log.info("Cluster Definition")
-        hostnames = ""
-        for node in range(self.num_nodes):
-            hostnames = " ".join(CMN_CFG["nodes"][node]["hostname"])
-        self.nd1_obj.execute_cmd(cmd=
-                                 common_cmd.CLUSTER_CREATE.format(hostnames, self.mgmt_vip,
-                                                                  self.build_url), read_lines=True)
+        hostnames = " ".join(hostnames_list)
+        resp = self.cluster_definition(hostnames)
+        assert_utils.assert_true(resp[0],resp[1])
 
         self.log.info("Configure Storage Set")
         self.config_storage_set(self.nd1_obj, hostnames, deploy_cfg)
