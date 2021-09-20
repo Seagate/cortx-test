@@ -139,7 +139,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD,
                                                 host, user, pwd,
                                                 read_lines=True)
@@ -157,7 +157,7 @@ class S3Helper:
                         LOGGER.error("S3 service down: %s", s3services)
                         return False, service
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -185,7 +185,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user,
                      pwd, read_lines=True)
@@ -198,7 +198,7 @@ class S3Helper:
                     return True, result_
 
                 return status, result_
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -227,7 +227,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_START_CMD.format(service), host, user,
                      pwd, read_lines=True)
@@ -239,7 +239,7 @@ class S3Helper:
                     service, host, user, pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -269,7 +269,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STOP_CMD.format(service), host, user,
                      pwd, read_lines=True)
@@ -281,7 +281,7 @@ class S3Helper:
                 status = bool('inactive' in str(resp))
 
                 return status, resp
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -310,7 +310,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, result = run_remote_cmd(
                     commands.SYSTEM_CTL_RESTART_CMD.format(service), host, user,
                     pwd, read_lines=True)
@@ -322,7 +322,7 @@ class S3Helper:
                                                             pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -351,7 +351,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, fids = self.get_s3server_fids()
                 LOGGER.debug(fids)
                 if not status:
@@ -375,7 +375,7 @@ class S3Helper:
                             "s3server" in line:
                         return False, output
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -401,7 +401,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, output = run_remote_cmd(commands.PCS_RESOURCE_SHOW_CMD,
                                                 host, user, pwd,
                                                 read_lines=True)
@@ -415,7 +415,7 @@ class S3Helper:
                 LOGGER.debug(s3_rcs)
 
                 return status, s3_rcs
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -444,7 +444,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, resources = self.get_s3server_resource(host=host,
                                                                user=user,
                                                                pwd=pwd)
@@ -470,7 +470,7 @@ class S3Helper:
                         return False, output
 
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -526,7 +526,7 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host,
                                                 user, pwd, read_lines=True)
                 fids = []
@@ -538,7 +538,7 @@ class S3Helper:
                 LOGGER.info("Fids: %s", str(fids))
 
                 return status, fids
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -652,7 +652,7 @@ class S3Helper:
             host = kwargs.get("host", self.host)
             user = kwargs.get("user", self.user)
             pwd = kwargs.get("password", self.pwd)
-            if CMN_CFG["product_family"] == "LR":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status, resources = self.get_s3server_resource()
                 if not status:
                     return status, resources
@@ -690,7 +690,7 @@ class S3Helper:
                 LOGGER.debug("s3server instances: %s", str(resources))
 
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY:
                 status = True
                 output = "Product Family: LC"
                 return status, output
@@ -810,7 +810,7 @@ class S3Helper:
         host = kwargs.get("host", self.host)
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
-        if CMN_CFG["product_family"] == "LR":
+        if CMN_CFG["product_family"] == const.PROD_FAMILY:
             command = commands.UPDATE_FAULTTOLERANCE.format(
                 "enable" if enable else "disable")
             status, response = run_remote_cmd(cmd=command, hostname=host,
@@ -818,7 +818,7 @@ class S3Helper:
             status = True if "200" in response else status
 
             return status, response
-        elif CMN_CFG["product_family"] == "LC":
+        elif CMN_CFG["product_family"] == const.PROD_FAMILY:
             status = True
             output = "Product Family: LC"
             return status, output
