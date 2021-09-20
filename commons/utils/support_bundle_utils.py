@@ -107,7 +107,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
     # Form the command if component list is provided in parameters
     if comp_list is not None:
-        command = command + " -c" 
+        command = command + " -c"
         command = command + " ".join(comp_list)
     resp = node_list[0].execute_cmd(cmd=command)
     LOGGER.debug("Response for support bundle generate: {}".format(resp))

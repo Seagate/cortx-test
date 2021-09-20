@@ -406,4 +406,3 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 
 # Support Bundle
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
-
