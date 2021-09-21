@@ -23,7 +23,6 @@ from __future__ import absolute_import
 
 import os
 import logging
-import shutil
 import pytest
 
 from commons import constants
@@ -49,19 +48,19 @@ class TestR2SupportBundle:
         """Create test data directory"""
         self.LOGGER.info("STARTED: Test Setup")
 
-        if os.path.exists(self.bundle_dir):
+        if system_utils.path_exists(self.bundle_dir):
             self.LOGGER.info("Removing existing directory %s", self.bundle_dir)
-            shutil.rmtree(self.bundle_dir)
-        os.mkdir(self.bundle_dir)
+            system_utils.remove_dirs(self.bundle_dir)
+        system_utils.make_dirs(self.bundle_dir)
 
     def teardown_method(self):
         """Delete test data file"""
         self.LOGGER.info("STARTED: Test Teardown")
 
         cleanup_dir = os.path.join(self.bundle_dir, "var")
-        if os.path.exists(cleanup_dir):
+        if system_utils.path_exists(cleanup_dir):
             self.LOGGER.info("Removing existing directory %s", cleanup_dir)
-            shutil.rmtree(cleanup_dir)
+            system_utils.remove_dirs(cleanup_dir)
         self.LOGGER.info("ENDED : Teardown operations at test function level")
 
     def r2_extract_support_bundle(self, tar_file_name, dest_dir: str = None):
@@ -73,12 +72,12 @@ class TestR2SupportBundle:
         """
         self.LOGGER.info("Extracting support bundle files")
         # Check if file exists
-        if not os.path.exists(tar_file_name):
+        if not system_utils.path_exists(tar_file_name):
             self.LOGGER.error("File not found : %s", tar_file_name)
             return False
         # Check if folder exists
-        if not os.path.exists(dest_dir):
-            os.mkdir(dest_dir)
+        if not system_utils.path_exists(dest_dir):
+            system_utils.make_dirs(dest_dir)
         # Extract support bundle
         tar_sb_cmd = "tar -xvf {} -C {}".format(tar_file_name, dest_dir)
         system_utils.execute_cmd(tar_sb_cmd)
@@ -117,7 +116,7 @@ class TestR2SupportBundle:
                         "component_dir found %s", component_dir_name)
                 else:
                     self.LOGGER.error(
-                        "component_dir found %s", component_dir_name)
+                        "component_dir not found %s", component_dir_name)
                     assert_utils.assert_true(
                         found, 'Component Directory in support bundle not found')
             self.LOGGER.debug(
@@ -135,6 +134,7 @@ class TestR2SupportBundle:
         self.LOGGER.info("Step 1: Generating support bundle through cli")
         resp = sb.create_support_bundle_single_cmd(
             self.bundle_dir, bundle_name="test_20114")
+        assert_utils.assert_true(resp[0], resp[1])
         self.LOGGER.info("Step 1: Generated support bundle through cli")
 
         test_comp_list = constants.SUPPORT_BUNDLE_COMPONENT_LIST
