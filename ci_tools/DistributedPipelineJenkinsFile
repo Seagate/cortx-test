@@ -1,0 +1,126 @@
+pipeline {
+    agent none
+    stages{
+        stage('SCM checkout'){
+            parallel{
+                stage('client 1'){
+                    agent {   label client_1  }
+                    steps {
+                        checkout([
+                    $class: 'GitSCM',
+                    userRemoteConfigs: [[credentialsId: 'cortx-admin-github',url: 'https://github.com/Seagate/cortx-test']],
+                    branches: [[name: "${Git_Branch_Name}"]]])
+                    }    
+                }
+                stage('client 2'){
+                    agent {  label client_2  }
+                    steps {
+                        checkout([
+                    $class: 'GitSCM',
+                    userRemoteConfigs: [[credentialsId: 'cortx-admin-github',
+                    url: 'https://github.com/Seagate/cortx-test']],
+                    branches: [[name: "${Git_Branch_Name}"]]])
+                    }
+                }
+            }
+        }
+		stage('Preparing Environment') {
+			parallel {
+				stage('client 1'){
+					agent {   label client_1  }
+					environment {
+						JIRA_CREDS = credentials('JIRA_CRED')
+					}
+					steps {
+						script {
+							env.JIRA_ID = JIRA_CREDS_USR
+							env.JIRA_PASSWORD = JIRA_CREDS_PSW
+							withCredentials([file(credentialsId: 'qa_secrets_json_new', variable: 'secrets_json_path')]) {
+								sh "cp /$secrets_json_path $WORKSPACE/secrets.json"
+							} 
+						}
+						sh '''
+							python3.7 -m venv venv
+							source venv/bin/activate
+							pip install --upgrade pip
+							if ${Need_pip_source}; then
+							pip3 install -r requirements.txt -i https://pypi.python.org/simple/
+							else
+							pip3 install -r requirements.txt
+							fi
+							export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+							deactivate
+							if ${Need_s3_tools}; then
+							make all --makefile=scripts/s3_tools/Makefile
+							fi
+						'''
+					}
+				}
+				stage('client 2'){
+                    agent {  label client_2  }
+                    environment {
+						JIRA_CREDS = credentials('JIRA_CRED')
+					}
+					steps {
+						script {
+							env.JIRA_ID = JIRA_CREDS_USR
+							env.JIRA_PASSWORD = JIRA_CREDS_PSW
+							withCredentials([file(credentialsId: 'qa_secrets_json_new', variable: 'secrets_json_path')]) {
+								sh "cp /$secrets_json_path $WORKSPACE/secrets.json"
+							}
+						}
+						sh '''
+							python3.7 -m venv venv
+							source venv/bin/activate
+							pip install --upgrade pip
+							if ${Need_pip_source}; then
+							pip3 install -r requirements.txt -i https://pypi.python.org/simple/
+							else
+							pip3 install -r requirements.txt
+							fi
+							export PYTHONPATH=$WORKSPACE:$PYTHONPATH
+							deactivate
+							if ${Need_s3_tools}; then
+							make all --makefile=scripts/s3_tools/Makefile
+							fi
+						'''
+					}
+                }
+			}
+		}
+		stage('Producer'){
+			build job: 'QA-R2-producer-pipeline', parameters: [
+                                		[$class: 'StringParameterValue', name: 'client_1', value: client_1],
+										[$class: 'StringParameterValue', name: 'TestPlan', value: TestPlan],
+										[$class: 'StringParameterValue', name: 'TestExecutionsTickets', value: TestExecutionsTickets],
+										[$class: 'StringParameterValue', name: 'Targets', value: Targets],
+										[$class: 'StringParameterValue', name: 'Build', value: Build],
+                                		], wait: false
+		}
+		stage('Executing Consumers'){
+            parallel{
+                stage('client 1'){
+                    agent {   label client_1  }
+                    steps {
+						sh '''
+						source venv/bin/activate
+						python testrunner.py
+						deactivate
+						'''
+                    }    
+                }
+                stage('client 2'){
+                    agent {  label client_2  }
+                    steps {
+                        sh '''
+						source venv/bin/activate
+						python testrunner.py
+						deactivate
+						'''
+                    }
+                }
+            }
+        }
+		
+    }
+}
