@@ -4,6 +4,7 @@ import time
 import logging
 import pytest
 import pandas as pd
+from time import perf_counter_ns
 from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
@@ -27,6 +28,7 @@ class TestNodeHealth:
     @classmethod
     def setup_class(cls):
         """  Setup module  """
+        cls.log = logging.getLogger(__name__)
         cls.cm_cfg = RAS_VAL["ras_sspl_alert"]
         cls.node_cnt = len(CMN_CFG["nodes"])
         LOGGER.info("Total number of nodes in cluster: %s", cls.node_cnt)
@@ -39,6 +41,7 @@ class TestNodeHealth:
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
         cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
         cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
+        cls.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
         cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
@@ -66,7 +69,6 @@ class TestNodeHealth:
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
             cls.hostname.split('.')[0] in node_d.keys() else assert_utils.assert_true(
             False, "Node name not found")
-
         LOGGER.info("Creating objects for all the nodes in cluster")
         objs = cls.ras_test_obj.create_obj_for_nodes(ras_c=RASTestLib,
                                                      node_c=Node,
@@ -75,7 +77,6 @@ class TestNodeHealth:
 
         for i, key in enumerate(objs.keys()):
             globals()[f"srv{i+1}_hlt"] = objs[key]['hlt_obj']
-
         cls.md_device = RAS_VAL["raid_param"]["md0_path"]
         cls.disable_disk = False
         cls.starttime = time.time()
@@ -163,6 +164,41 @@ class TestNodeHealth:
         time.sleep(self.cm_cfg["sleep_val"])
         self.resource_cli.close_connection()
         LOGGER.info("Successfully performed Teardown operation")
+
+    def s3_ios(self, bucket=None, log_file_prefix="ios", duration="0h1m", obj_size="24Kb", **kwargs):
+        """
+        Perform io's for specific durations.
+
+        1. Create bucket.
+        2. perform io's for specified durations.
+        3. Check executions successful.
+        """
+        kwargs.setdefault("num_clients", 2)
+        kwargs.setdefault("num_sample", 5)
+        kwargs.setdefault("obj_name_pref", "load_gen_")
+        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        self.log.info("STARTED: s3 io's operations.")
+        bucket = bucket if bucket else self.io_bucket_name
+        resp = self.s3_obj.create_bucket(bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key, secret_key = S3H_OBJ.get_local_keys()
+        resp = s3bench.s3bench(
+            access_key,
+            secret_key,
+            bucket=bucket,
+            end_point=kwargs["end_point"],
+            num_clients=kwargs["num_clients"],
+            num_sample=kwargs["num_sample"],
+            obj_name_pref=kwargs["obj_name_pref"],
+            obj_size=obj_size,
+            duration=duration,
+            log_file_prefix=log_file_prefix)
+        self.log.info(resp)
+        assert_utils.assert_true(
+            os.path.exists(
+                resp[1]),
+            f"failed to generate log: {resp[1]}")
+        self.log.info("ENDED: s3 io's operations.")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22520")
@@ -387,3 +423,65 @@ class TestNodeHealth:
         assert_utils.assert_that(resp[1], error_msg)
         LOGGER.info("Requesting resource health failed with wrong rpath with error %s",
                     resp[1])
+
+    @pytest.mark.tags("TEST-26848")
+    def test_26848(self):
+        """
+        Verify "cortx_setup cluster reset --type data" command works fine
+        """
+        self.log.info("Step 1: Check cluster status, all services are running before starting test.")
+
+        self.check_cluster_health()
+        self.log.info("Step 2: Start S3 IO.")
+        io_bucket_name = "test-26848-pre-reset-{}".format(perf_counter_ns())
+        self.s3_ios(bucket=io_bucket_name, log_prefix="test_26848_ios", duration="0h1m")
+        #time.sleep(120)
+        self.log.info("Step 3: Verify cortx_setup cluster reset --type all command.")
+        status, result = run_remote_cmd(
+            cmd=commands.CORTX_DATA_CLEANUP,
+            hostname=self.host,
+            username=self.username,
+            password=self.password,
+            read_lines=True)
+
+        self.log.info(" ********* Cortx setup cleanup command response for %s ********* \n %s \n", self.host, result)
+        time.sleep(120)
+        self.log.info("Step 4: Check cluster status, all services are running before starting test.")
+        self.check_cluster_health()
+
+        self.log.info("Step 5: Verify if log and other files are cleaned from all nodes.")
+
+        nodes = CMN_CFG["nodes"]
+        for _, node in enumerate(nodes):
+
+            self.log.info(node)
+            status, result = run_remote_cmd(
+                cmd="cat /var/log/haproxy.log",
+                hostname=node["hostname"],
+                username=node["username"],
+                password=node["password"],
+                read_lines=True)
+
+            self.log.info(" ********* path exists %s ********* \n %s \n", node["hostname"], result)
+            if "No such file" in str(result):
+                self.log.info("reset worked fine")
+            else:
+                self.log.info("we missed")
+        """
+        if not os.path.exists(const.HAPROXY_LOG_PATH):
+            self.log.info("haproxy log is cleaned")
+        if not os.path.exists(const.CORTX_PROVISIONER):
+            self.log.info("provisioner_cluster json is deleted")
+        """
+        self.log.info("Step 6: Start S3 IO.")
+        io_bucket_name = "test-26848-post-reset-{}".format(perf_counter_ns())
+        try:
+            self.s3_ios(bucket=io_bucket_name, log_prefix="test_26848_ios_post_reset", duration="0h1m")
+        except CTException as response:
+            self.log.info(f"Response = {response}")
+            if "InvalidAccessKeyId" in str(response):
+                self.log.info("S3 account got deleted as expected")
+            else:
+                self.log.error("S3 account not deleted")
+
+        self.log.info("Step 7: Test Completed.")
