@@ -18,17 +18,20 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
+"""New R2 Support Bundle test suit."""
+from __future__ import absolute_import
+
 import os
 import logging
 import shutil
+import pytest
+
+from commons import constants
 from commons.params import LOG_DIR
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons import constants
-from config import CMN_CFG
 from commons.utils import support_bundle_utils as sb
-
-import pytest
+from config import CMN_CFG
 
 
 class TestR2SupportBundle:
@@ -50,6 +53,16 @@ class TestR2SupportBundle:
             self.LOGGER.info("Removing existing directory %s", self.bundle_dir)
             shutil.rmtree(self.bundle_dir)
         os.mkdir(self.bundle_dir)
+
+    def teardown_method(self):
+        """Delete test data file"""
+        self.LOGGER.info("STARTED: Test Teardown")
+
+        cleanup_dir = os.path.join(self.bundle_dir, "var")
+        if os.path.exists(cleanup_dir):
+            self.LOGGER.info("Removing existing directory %s", cleanup_dir)
+            shutil.rmtree(cleanup_dir)
+        self.LOGGER.info("ENDED : Teardown operations at test function level")
 
     def r2_extract_support_bundle(self, tar_file_name, dest_dir: str = None):
         """
