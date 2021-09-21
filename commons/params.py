@@ -68,7 +68,6 @@ TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
 
-CSM_CONFIG_LC = os.path.join(CSM_DIR, 'csm_config_lc.yaml')
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
 
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")

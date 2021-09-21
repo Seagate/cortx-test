@@ -25,7 +25,10 @@ import re
 import munch
 from typing import List
 from commons import configmanager
-from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG, CSM_CONFIG_LC
+from commons.params import COMMON_CONFIG
+from commons.params import CSM_CONFIG
+from commons.params import CSM_CONFIG_LC
+from commons.params import S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
@@ -90,7 +93,7 @@ JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMet
                                                 target=target, target_key="csm")
 
 if PROD_FAMILY == CMN_CFG["product_family"]:
-    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG_LC, config_key="Restcall",
+    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall_LC",
                                                 target=target, target_key="csm")
 else:
     CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
