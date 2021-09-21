@@ -27,7 +27,6 @@ from typing import List
 from commons import configmanager
 from commons.params import COMMON_CONFIG
 from commons.params import CSM_CONFIG
-from commons.params import CSM_CONFIG_LC
 from commons.params import S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import RAS_CONFIG_PATH
