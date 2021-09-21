@@ -446,3 +446,4 @@ STORAGE_SET_ADD_ENCL = "cortx_setup storageset add enclosure {} {}"
 STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --data {} " \
                      "--parity {} --spare {}"
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
+CORTX_SETUP_HELP = "cortx_setup -h"

@@ -19,10 +19,8 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """Failure Domain Test Suite."""
-import configparser
 import logging
 import os
-import time
 
 import pytest
 
@@ -33,6 +31,7 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
+from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
 
 
@@ -77,6 +76,7 @@ class TestFailureDomain:
         version = "centos-" + str(os_version.split()[3])
         cls.build_url = cls.deplymt_cfg["build_url"].format(
             cls.build_branch, version, cls.build)
+        cls.deploy_ff_obj = ProvDeployFFLib()
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -142,368 +142,6 @@ class TestFailureDomain:
             assert_utils.assert_equal(output['result'], "FAILURE",
                                       "Job is successful, expected to fail")
 
-    def configure_server(self, nd_obj, node_no):
-        """
-        Configure Server
-        param: nd_obj: node object for commands to be executed on
-        param: node_no : Node number
-        """
-        self.log.info("Configure Server")
-        srvnode = "srvnode-{}".format(node_no)
-        nd_obj.execute_cmd(cmd=common_cmd.CMD_SERVER_CFG.format(srvnode, CMN_CFG["setup_type"]),
-                           read_lines=True)
-
-    def configure_network(self, nd_obj):
-        """
-        Configure  Network Interfaces
-        param: nd_obj: node object for commands to be executed on
-        """
-        self.log.info("Configure Network ")
-        self.log.info("Configure Network transport")
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_TRANSPORT.format(
-            self.deplymt_cfg["network_trans"]), read_lines=True)
-
-        self.log.info("Configure Management Interface")
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            "eth0", "management"), read_lines=True)
-
-        self.log.info("Configure Data Interface")
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            "eth1", "data"), read_lines=True)
-
-        self.log.info("Configure Private Interface")
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
-            "eth3", "private"), read_lines=True)
-
-        self.log.info("Configure BMC Interface")
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_BMC.format("127.0.0.1",
-                                                                 CMN_CFG["bmc"]["username"],
-                                                                 CMN_CFG["bmc"]["password"]),
-                           read_lines=True)
-
-    def configure_storage(self, nd_obj, node_no, node_config):
-        """
-        Configure Storage
-        param: nd_obj: node object for commands to be executed on
-        param: node_no: Node number
-        param: node_config: Section of Node from config.ini
-        """
-        self.log.info("Configure Storage")
-        self.log.info("Configure Storage Config")
-        for cnt_type in ["primary", "secondary"]:
-            nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CONT.format(cnt_type), read_lines=True)
-
-        self.log.info("Configure Storage name")
-        encl_name = "Enclosure" + str(node_no)
-        nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_NAME.format(encl_name), read_lines=True)
-
-        self.log.info("Configure CVG")
-        for key in node_config.keys():
-            if ".data_devices" in key:
-                cvg_no = key.split(".")[2]
-                data_devices = node_config[f"storage.cvg.{cvg_no}.data_devices"]
-                meta_devices = node_config[f"storage.cvg.{cvg_no}.metadata_devices"]
-                nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CVG.format(cvg_no, data_devices,
-                                                                         meta_devices),
-                                   read_lines=True)
-
-    def factory_manufacturing(self, nd_obj, nd_no, node_config):
-        """
-        Perform Factory Manufacturing Procedure
-        param: nd_obj: node object for commands to be executed on
-        param: node_no: Node number
-        param: node_config: Section of Node from config.ini
-        """
-        self.configure_server(nd_obj, nd_no)
-        self.configure_network(nd_obj)
-        self.configure_storage(nd_obj, nd_no, node_config)
-        self.log.info("Configure Security")
-        nd_obj.execute_cmd(cmd=
-        common_cmd.SECURITY_CFG.format(
-            self.deplymt_cfg["security_path"]), read_lines=True)
-
-        self.log.info("Configure Feature")
-        for key, val in self.deplymt_cfg["feature_config"].items():
-            nd_obj.execute_cmd(cmd=common_cmd.FEATURE_CFG.format(key, val), read_lines=True)
-
-        self.log.info("Initialize Node")
-        nd_obj.execute_cmd(cmd=common_cmd.INITIALIZE_NODE, read_lines=True)
-
-        self.log.info("Setup Node signature")
-        nd_obj.execute_cmd(cmd=common_cmd.SET_NODE_SIGN.format("srvnode-" + str(nd_no)),
-                           read_lines=True)
-
-        self.log.info("Finalize Node Configuration")
-        nd_obj.execute_cmd(cmd=common_cmd.NODE_FINALIZE, read_lines=True)
-
-    def field_deployment_node(self, nd_obj, nd_no):
-        """
-        Perform Field Deployment Procedure
-        param: nd_obj: node object for commands to be executed on
-        param: node_no: Node number
-        """
-        self.log.info("Field Deployment")
-        self.log.info("Prepare Node")
-        self.log.info("Configure Server Identification")
-        nd_obj.execute_cmd(cmd=common_cmd.PREPARE_NODE.format(1, 1, nd_no), read_lines=True)
-
-        self.log.info("Prepare Network")
-        nd_obj.execute_cmd(cmd=
-        common_cmd.PREPARE_NETWORK.format(
-            CMN_CFG["nodes"][nd_no - 1]["hostname"],
-            self.deplymt_cfg["search_domains"],
-            self.deplymt_cfg["dns_servers"]), read_lines=True)
-
-        self.log.info("Configure Network")
-        ips = {"management": CMN_CFG["nodes"][nd_no - 1]["ip"],
-               "data": CMN_CFG["nodes"][nd_no - 1]["public_data_ip"],
-               "private": CMN_CFG["nodes"][nd_no - 1]["private_data_ip"]}
-
-        for network_type, ip_addr in ips.items():
-            netmask = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETMASK.format(ip_addr))
-            netmask = netmask.strip().decode("utf-8")
-            gateway = "0.0.0.0"
-            if network_type == "management":
-                gateway = "10.230.240.1"
-            nd_obj.execute_cmd(cmd=common_cmd.PREPARE_NETWORK_TYPE.format(network_type,
-                                                                          ip_addr, netmask,
-                                                                          gateway),
-                               read_lines=True)
-
-        self.log.info("Configure Firewall")
-        nd_obj.execute_cmd(cmd=
-        common_cmd.CFG_FIREWALL.format(
-            self.deplymt_cfg["firewall_url"]), read_lines=True)
-
-        self.log.info("Configure Network Time Server")
-        nd_obj.execute_cmd(cmd=common_cmd.CFG_NTP.format("UTC"), read_lines=True)
-
-        self.log.info("Node Finalize")
-        nd_obj.execute_cmd(cmd=common_cmd.NODE_PREP_FINALIZE, read_lines=True)
-
-    def config_cluster(self, node_obj) -> tuple:
-        """
-        This method deploys cortx and 3rd party software components on given VM setup
-        :param node_obj: Host object of the primary node
-        :return: True/False and deployment status
-        """
-        components = [
-            "foundation",
-            "iopath",
-            "controlpath",
-            "ha"]
-        for comp in components:
-            self.log.info("Deploying %s component", comp)
-            try:
-                node_obj.execute_cmd(
-                    cmd=common_cmd.CLUSTER_CFG_COMP.format(comp), read_lines=True)
-            except Exception as error:
-                self.log.error(
-                    "An error occurred in %s:",
-                    TestFailureDomain.config_cluster.__name__)
-                if isinstance(error.args[0], list):
-                    self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
-                else:
-                    self.log.error(error.args[0])
-                return False, error
-
-        return True, "Deployment Completed"
-
-    def config_storage_set(self, nd1_obj, hostnames: str, deploy_config):
-        """
-        Configure Storage Set
-        param: nd1_obj: Primary node object
-        param: hostnames: String of hostnames for all nodes
-        param: deploy_config: Config.ini path
-        """
-        self.log.info("Create Storage Set")
-        nd1_obj.execute_cmd(cmd=
-        common_cmd.STORAGE_SET_CREATE.format(
-            self.deplymt_cfg["storage_set_name"],
-            self.num_nodes), read_lines=True)
-        self.log.info("Add nodes to Storage Set")
-        nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_NODE.format(
-            self.deplymt_cfg["storage_set_name"], hostnames),
-            read_lines=True)
-        self.log.info("Add Enclosure to Storage Set")
-        nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_ENCL.format(
-            self.deplymt_cfg["storage_set_name"], hostnames),
-            read_lines=True)
-        self.log.info("Add Durability Config")
-        for cfg_type in ["sns", "dix"]:
-            data = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.data"]
-            parity = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
-            spare = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.spare"]
-            nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_CONFIG.format(
-                self.deplymt_cfg["storage_set_name"], cfg_type, data, parity,
-                spare),
-                read_lines=True)
-
-    def cluster_definition(self, hostnames, timeout: int = 600):
-        """
-        Cluster Definition
-        param: hostnames: String of hostnames for all nodes
-        param: timeout: timeout for command completion
-        """
-        self.log.info("Hostname : %s", hostnames)
-        self.nd1_obj.connect(shell=True)
-        channel = self.nd1_obj.shell_obj
-        output = ""
-        current_output = ""
-        start_time = time.time()
-        cmd = "".join(
-            [common_cmd.CLUSTER_CREATE.format(hostnames, self.mgmt_vip, self.build_url), "\n"])
-        self.log.info("Command : %s", cmd)
-        self.log.info("no of nodes: %s", self.num_nodes)
-        channel.send(cmd)
-        passwd_counter = 0
-        while (time.time() - start_time) < timeout:
-            time.sleep(30)
-            if channel.recv_ready():
-                current_output = channel.recv(9999).decode("utf-8")
-                output = output + current_output
-                self.log.info(current_output)
-            if "Enter root user password for srvnode" in current_output \
-                    and passwd_counter < self.num_nodes:
-                pswd = "".join([self.node_list[passwd_counter].password, "\n"])
-                channel.send(pswd)
-                passwd_counter += 1
-            elif "cortx_setup command Failed" in output:
-                self.log.error(current_output)
-                break
-            elif "Environment set up!" in output:
-                self.log.info("Cluster created")
-                break
-        else:
-            return False, "Cortx Definition Failed"
-
-        if "cortx_setup command Failed" in output:
-            return False, output
-
-        return True, output
-
-    def deploy_cluster(self, hostnames, srvnodes, deploy_cfg):
-        self.log.info("Cluster Definition")
-        resp = self.cluster_definition(hostnames)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Configure Storage Set")
-        self.config_storage_set(self.nd1_obj, srvnodes, deploy_cfg)
-
-        self.log.info("Prepare Cluster")
-        self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
-
-        self.log.info("Configure Cluster")
-        resp = self.config_cluster(self.nd1_obj)
-        assert_utils.assert_true(resp[0], "Deploy Failed")
-
-        self.log.info("Starting Cluster")
-        resp = self.nd1_obj.execute_cmd(
-            cmd=common_cmd.CMD_START_CLSTR,
-            read_lines=True)[0].strip()
-        assert_utils.assert_exact_string(resp, self.deplymt_cfg["cluster_start_msg"])
-        time.sleep(self.deplymt_cfg["cluster_start_delay"])
-
-    def deploy_3node_vm_ff(self, deploy_config_file):
-        """
-        Perform Deployment Using factory and field method
-        """
-        self.log.info(
-            "Starting Deployment on nodes:%s", self.host_list)
-        self.log.info("Starting Deployment with Build:\n %s", self.build_url)
-        deploy_cfg = configparser.ConfigParser()
-        deploy_cfg.read(deploy_config_file)
-
-        hostnames_list = []
-        srvnodes_list = []
-        for nd_no, nd_obj in enumerate(self.node_list, start=1):
-            hostnames_list.append(CMN_CFG["nodes"][nd_no - 1]["hostname"])
-            srvnodes_list.append("srvnode-" + str(nd_no))
-            self.log.info(
-                "Starting the prerequisite checks on node %s",
-                nd_obj.hostname)
-            self.log.info("Check that the host is pinging")
-            nd_obj.execute_cmd(cmd=
-                               common_cmd.CMD_PING.format(nd_obj.hostname), read_lines=True)
-
-            self.log.info("Checking number of volumes present")
-            count = nd_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
-            self.log.info("No. of disks : %s", count[0])
-            assert_utils.assert_greater_equal(int(
-                count[0]), self.deplymt_cfg["prereq"]["min_disks"],
-                "Need at least 4 disks for deployment")
-
-            self.log.info("Checking OS release version")
-            resp = nd_obj.execute_cmd(cmd=
-                                      common_cmd.CMD_OS_REL,
-                                      read_lines=True)[0].strip()
-            self.log.info("OS Release Version: %s", resp)
-            assert_utils.assert_in(resp, self.deplymt_cfg["prereq"]["os_release"],
-                                   "OS version is different than expected.")
-
-            self.log.info("Checking kernel version")
-            resp = nd_obj.execute_cmd(cmd=
-                                      common_cmd.CMD_KRNL_VER,
-                                      read_lines=True)[0].strip()
-            self.log.info("Kernel Version: %s", resp)
-            assert_utils.assert_in(
-                resp,
-                self.deplymt_cfg["prereq"]["kernel"],
-                "Kernel Version is different than expected.")
-
-            self.log.info("Checking network interfaces")
-            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETWORK_INTERFACE, read_lines=True)
-            self.log.info("Network Interfaces: %s", resp)
-            assert_utils.assert_greater_equal(len(resp), 3,
-                                              "Network Interfaces should be more than 3")
-
-            self.log.info("Stopping Puppet service")
-            nd_obj.execute_cmd(cmd=common_cmd.SYSTEM_CTL_STOP_CMD.format(common_cmd.PUPPET_SERV),
-                               read_lines=True)
-
-            self.log.info("Disabling Puppet service")
-            nd_obj.execute_cmd(cmd=common_cmd.SYSTEM_CTL_DISABLE_CMD.format(common_cmd.PUPPET_SERV),
-                               read_lines=True)
-
-            self.log.info("Download the install.sh script to the node")
-            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(self.build_branch),
-                                      read_lines=True)
-            self.log.debug("Downloaded install.sh : %s", resp)
-
-            self.log.info("Installs CORTX packages (RPM) and their dependencies ")
-            resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(self.build_url),
-                                      read_lines=True)
-            self.log.debug("Installed RPM's : %s", resp)
-
-            self.log.info("Perform Factory Manufacturing")
-            self.factory_manufacturing(nd_obj, nd_no, deploy_cfg["srvnode-" + str(nd_no)])
-
-            self.log.info("Perform Field Deployment")
-            self.field_deployment_node(nd_obj, nd_no)
-
-        hostnames = " ".join(hostnames_list)
-        srvnodes = " ".join(srvnodes_list)
-        self.log.info("Deploy Cluster")
-        self.deploy_cluster(hostnames, srvnodes, deploy_cfg)
-
-        self.log.info("Starting the post deployment checks")
-        sys_state = self.deplymt_cfg["system"]
-        self.log.info("Check that all the services are up in hctl")
-        resp = self.nd1_obj.execute_cmd(
-            cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)
-        self.log.info("hctl status: %s", resp)
-        for line in resp:
-            assert_utils.assert_not_in(
-                sys_state["offline"], line, "Some services look offline")
-
-        self.log.info("Check that all services are up in pcs")
-        resp = self.nd1_obj.execute_cmd(
-            cmd=common_cmd.PCS_STATUS_CMD, read_lines=True)
-        self.log.info("PCS status: %s", resp)
-        for line in resp:
-            assert_utils.assert_not_in(
-                sys_state["stopped"], line, "Some services are not up")
-
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-23540")
@@ -514,7 +152,7 @@ class TestFailureDomain:
                                                               mgmt_vip=self.mgmt_vip,
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=4)
     @pytest.mark.data_durability
@@ -538,7 +176,7 @@ class TestFailureDomain:
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=5)
     @pytest.mark.data_durability
@@ -563,7 +201,7 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=8)
     @pytest.mark.data_durability
@@ -588,7 +226,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=12)
     @pytest.mark.data_durability
@@ -613,7 +251,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=16)
     @pytest.mark.data_durability
@@ -638,4 +276,4 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm_ff(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])

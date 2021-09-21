@@ -70,3 +70,27 @@ system_ntp:
     ntp_data: ['time_server:', 'time_zone:']
     timeserver: ['10.30.127.102', 'time.seagate.com']
     timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
+
+deploy_ff:
+  deployment_template: "config/prov/three_node_config.ini"
+  build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
+  prereq:
+    min_disks: 4
+    os_release: ["CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)"]
+    kernel: ["3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64"]
+    cpu_cores: 4
+    memory: 8
+  network_trans: "lnet"
+  security_path: "/opt/seagate/cortx/provisioner/srv/components/misc_pkgs/ssl_certs/files/stx.pem"
+  feature_config:
+    "'cortx>software>s3>service>instances'": 1
+    "'cortx>software>s3>io>max_units'": 8
+    "'cortx>software>motr>service>client_instances'": 2
+  dns_servers: "10.230.240.51 10.230.240.52"
+  search_domains: "colo.seagate.com cortx.colo.seagate.com"
+  firewall_url: "yaml:///opt/seagate/cortx_configs/firewall_config.yaml"
+  storage_set_name: "storage-set-1"
+  cluster_start_msg: "Cluster start operation performed"
+  setup-type: "3_node"
+  cluster_start_delay: 180
+  gateway_lco: "10.230.240.1"
