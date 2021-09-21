@@ -354,6 +354,7 @@ LIBFAB_VERBS = "fi_info -p verbs"
 FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
 FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 
+
 # Support Bundle
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 
@@ -431,3 +432,8 @@ FETCH_LOGS = ""
 
 # Restart pod/ service in a namespace.
 RESTART_POD_CMD = ""
+
+# LC commands
+CLSTR_START_CMD = ""
+CLSTR_STOP_CMD = ""
+CLSTR_STATUS_CMD = ""
