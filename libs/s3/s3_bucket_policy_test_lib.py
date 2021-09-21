@@ -117,6 +117,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Deletes any policy applied to the bucket")
             response = super().delete_bucket_policy(bucket_name)
             LOGGER.info(response["BucketName"])
+            sleep(S3_CFG["delay"]["del_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,

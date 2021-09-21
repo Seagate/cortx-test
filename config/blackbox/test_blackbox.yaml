@@ -73,3 +73,9 @@ s3fs_cfg:
   create_file_cmd: "touch"
   file_name: "file1{}"
   ls_mnt_dir_cmd: "ls"
+  #server certificate won't be checked against the available certificate authorities.
+  no_check_certificate: False
+  #When ssl_verify_hostname 0, do not verify the SSL certificate against the hostname,default="2".
+  ssl_verify_hostname: True
+  #s3fs is always using SSL session cache, this option make SSL session cache disable.
+  nosscache: False

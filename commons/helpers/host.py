@@ -43,7 +43,7 @@ LOGGER = logging.getLogger(__name__)
 
 class AbsHost:
 
-    """Interface class for establishing connections."""
+    """Abstract class for establishing connections."""
 
     def __init__(self, hostname: str, username: str, password: str) -> None:
         """Initializer for AbsHost."""
