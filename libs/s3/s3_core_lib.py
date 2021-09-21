@@ -24,9 +24,10 @@
 
 import os
 import logging
+from typing import Optional
 import boto3
 import boto3.s3
-from typing import Optional
+
 from commons import commands
 from commons.utils.system_utils import run_local_cmd, create_file
 
