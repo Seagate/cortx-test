@@ -13,6 +13,8 @@
     - "Cannot change role for the last {} user"
   Cannot create other users:
     - "Only {} user can create other {} users"
+  Access denied for account:
+    - "Access denied. Cannot modify another S3 account."
 4099:
   invalid body msg_id:
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"

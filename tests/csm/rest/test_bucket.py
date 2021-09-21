@@ -123,9 +123,11 @@ class TestS3Bucket():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         bucketname = self.csm_conf["test_578"]["bucket_name"]
-        resp_error_code = self.rest_resp_conf["error_codes"]
-        resp_msg = self.rest_resp_conf["messages"]
-
+        test_cfg = self.csm_conf["test_578"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg_id = test_cfg["message_id"]
+        data = self.rest_resp_conf[resp_error_code][resp_msg]
+        msg = data[0]
         self.log.info(
             "Step 1: Verifying creating bucket with bucket name containing special characters")
         response = self.s3_buckets.create_invalid_s3_bucket(
@@ -138,9 +140,9 @@ class TestS3Bucket():
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
         assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code["code_4099"]))
-        assert_utils.assert_equals(response.json()["message"],
-                                  resp_msg["message_9"])
+                                   str(resp_error_code))
+        assert_utils.assert_equals(response.json()["message_id"],
+                                  resp_msg_id)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing special characters")
@@ -155,10 +157,12 @@ class TestS3Bucket():
         assert_utils.assert_equals(response.status_code,
                                    const.BAD_REQUEST)
         assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code["code_4099"]))
+                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["message"],
-                                  resp_msg["message_9"])
+                                  msg)
+        assert_utils.assert_equals(response.json()["message_id"],
+                                  resp_msg_id)
 
         self.log.info(
             "Step 1: Verified creating bucket with bucket name containing alphanumeric characters")

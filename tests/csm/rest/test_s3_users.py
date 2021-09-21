@@ -395,8 +395,11 @@ class TestS3user():
         self.log.info(
             "Verifying that error should be returned when s3 user enters some"
             " other s3 user's account name")
-        resp_error_code = self.rest_resp_conf["error_codes"]
-        resp_msg = self.rest_resp_conf["messages"]
+        test_cfg = self.csm_conf["test_1915"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg = test_cfg["message_id"]
+        data = self.rest_resp_conf[resp_error_code][resp_msg]
+        msg = data[0]
         self.log.info("Creating new S3 account for test purpose")
         response = self.s3user.create_s3_account()
 
@@ -416,10 +419,10 @@ class TestS3user():
         self.log.debug("Verifying the response returned %s", response)
         assert response.status_code, const.FORBIDDEN
         assert_utils.assert_equals(response.json()["error_code"],
-                                   str(resp_error_code["code_4101"]))
+                                   str(resp_error_code))
         if CSM_REST_CFG["msg_check"] == "enable":
             assert_utils.assert_equals(response.json()["message"],
-                                  resp_msg["message_25"])
+                                 msg)
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())
 
