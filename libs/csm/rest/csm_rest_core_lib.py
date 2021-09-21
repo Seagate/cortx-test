@@ -50,6 +50,7 @@ class RestClient:
             "jsonfile"] if 'jsonfile' in self._config else const.JOSN_FILE
         self.secure_connection = self._config["secure"]
 
+    # pylint: disable=too-many-arguments
     def rest_call(self, request_type, endpoint=None,
                   data=None, headers=None, params=None, json_dict=None,
                   save_json=False):
