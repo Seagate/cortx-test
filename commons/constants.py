@@ -324,8 +324,3 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
-
-# Support Bundle
-R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
-SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
-                "manifest", "uds", "elasticsearch", "utils", "HA"]

@@ -49,7 +49,7 @@ HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
-
+CSM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'csm', 'csm_config.yaml')
 JIRA_TEST_META_JSON = 'test_meta_data.json'
 JIRA_TEST_COLLECTION = 'test_collection.csv'
 JIRA_SELECTED_TESTS = 'selected_test_lists.csv'
@@ -67,9 +67,7 @@ TEST_ABORT_TOPIC = 'cortx-test-abort-topic'
 
 
 CSM_DIR = os.path.join(CONFIG_DIR, 'csm')
-
 CSM_CONFIG = os.path.join(CSM_DIR, 'csm_config.yaml')
-
 SETUPS_FPATH = os.path.join(LOG_DIR_NAME, "setups.json")
 
 NFS_SERVER_DIR = "cftic2.pun.seagate.com:/cftshare_temp"
