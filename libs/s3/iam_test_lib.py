@@ -24,6 +24,7 @@
 
 import time
 import logging
+import boto3
 import boto3.exceptions
 from botocore.exceptions import ClientError
 from commons import errorcodes as err
