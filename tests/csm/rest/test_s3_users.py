@@ -28,6 +28,8 @@ from commons import cortxlogging
 from commons import configmanager
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from commons.utils import assert_utils     # pylint: disable=ungrouped-imports
+from config import CSM_REST_CFG
 
 class TestS3user():
     """S3 user test class"""
@@ -38,6 +40,8 @@ class TestS3user():
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
+        cls.rest_resp_conf = configmanager.get_config_wrapper(
+                            fpath="config/csm/rest_response_data.yaml")
         user_already_present = cls.config.check_predefined_s3account_present()
         if not user_already_present:
             user_already_present = cls.config.setup_csm_s3()
@@ -411,8 +415,11 @@ class TestS3user():
         self.log.info(
             "Verifying that error should be returned when s3 user enters some"
             " other s3 user's account name")
-        response_msg = self.csm_conf["test_1915"]["response_msg"]
-
+        test_cfg = self.csm_conf["test_1915"]["response_msg"]
+        resp_error_code = test_cfg["error_code"]
+        resp_msg = test_cfg["message_id"]
+        data = self.rest_resp_conf[resp_error_code][resp_msg]
+        msg = data[0]
         self.log.info("Creating new S3 account for test purpose")
         response = self.s3user.create_s3_account()
 
@@ -431,7 +438,11 @@ class TestS3user():
 
         self.log.debug("Verifying the response returned %s", response)
         assert response.status_code, const.FORBIDDEN
-        assert response.json(), response_msg
+        assert_utils.assert_equals(response.json()["error_code"],
+                                   str(resp_error_code))
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json()["message"],
+                                 msg)
         self.log.debug("Verified that expected status code %s and expected response "
                        "message %s was returned", response.status_code, response.json())
 
