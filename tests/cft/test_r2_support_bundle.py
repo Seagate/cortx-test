@@ -34,7 +34,7 @@ from config import CMN_CFG
 
 
 class TestR2SupportBundle:
-    """Class for system limit testing"""
+    """Class for R2 Support Bundle testing"""
 
     @classmethod
     def setup_class(cls):
