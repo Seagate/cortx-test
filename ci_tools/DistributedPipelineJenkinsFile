@@ -88,16 +88,6 @@ pipeline {
                 }
 			}
 		}
-		stage('Producer'){
-			agent {   label client_1  }
-			steps {
-				sh '''
-					source venv/bin/activate
-					python3 -u drunner.py -tp=${TestPlan} -te ${TestExecutionsTickets} -t ${Targets} -b=${Build}
-					deactivate
-				'''
-			}
-		}
 		stage('Executing Consumers'){
             parallel{
                 stage('Executing consumer on client 1'){
@@ -122,6 +112,15 @@ pipeline {
                 }
             }
         }
-
+        stage('Producer'){
+			agent {   label client_1  }
+			steps {
+				sh '''
+					source venv/bin/activate
+					python3 -u drunner.py -tp=${TestPlan} -te ${TestExecutionsTickets} -t ${Targets} -b=${Build}
+					deactivate
+				'''
+			}
+		}
     }
 }
