@@ -87,10 +87,7 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
         data = dict(zip(plot_data['x_actual_data'], y_actual_data))
         for item in x_data_combined:
             try:
-                if isinstance(data[item], str):
-                    y_data.append(data[item])
-                else:
-                    y_data.append(data[item]/int(plot_data['nodes']))
+                y_data.append(data[item]) # /int(plot_data['nodes']))
             except KeyError:
                 y_data.append(None)
 
