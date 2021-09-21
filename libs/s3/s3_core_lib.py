@@ -28,8 +28,11 @@ from typing import Optional
 import boto3
 import boto3.s3
 
+from botocore.config import Config
 from commons import commands
-from commons.utils.system_utils import run_local_cmd, create_file
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import create_file
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +61,7 @@ class S3Lib:
         use_ssl = kwargs.get("use_ssl", True)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", False)
+        config = Config(retries={'max_attempts': 6})
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
@@ -70,14 +74,16 @@ class S3Lib:
                 aws_secret_access_key=secret_key,
                 endpoint_url=endpoint_url,
                 region_name=region,
-                aws_session_token=aws_session_token)
+                aws_session_token=aws_session_token,
+                config=config)
             self.s3_client = boto3.client("s3", use_ssl=use_ssl,
                                           verify=s3_cert_path,
                                           aws_access_key_id=access_key,
                                           aws_secret_access_key=secret_key,
                                           endpoint_url=endpoint_url,
                                           region_name=region,
-                                          aws_session_token=aws_session_token)
+                                          aws_session_token=aws_session_token,
+                                          config=config)
         except Exception as Err:
             if "unreachable network" not in str(Err):
                 LOGGER.critical(Err)
