@@ -273,7 +273,7 @@ def get_dash_table_from_dataframe(df, bench, column_id):
     Returns:
         figure: dashtable figure with plotted plots
     """
-    if len(df) < 2:
+    if len(df) < 1:
         benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
