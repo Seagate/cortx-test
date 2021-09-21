@@ -168,7 +168,9 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+    remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
+    sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
+
 
 if __name__ == '__main':
     create_s3_account()
