@@ -30,7 +30,7 @@ from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
 
@@ -44,7 +44,7 @@ class TestFailureDomain:
         cls.log = logging.getLogger(__name__)
         test_config = "config/cft/test_failure_domain.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
-        cls.deplymt_cfg = cls.cft_test_cfg["test_deployment_ff"]
+        cls.deplymt_cfg = PROV_CFG["test_deployment_ff"]
         cls.setup_type = CMN_CFG["setup_type"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []

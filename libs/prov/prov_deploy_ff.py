@@ -100,7 +100,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"deployment_prereq Successful!!"
+        return True, "deployment_prereq Successful!!"
 
     @staticmethod
     def cortx_prepare(nd_obj: Node, build_branch: str, build_url: str):
@@ -133,7 +133,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"cortx_prepare Successful!!"
+        return True, "cortx_prepare Successful!!"
 
     @staticmethod
     def configure_server(nd_obj: Node, node_no: int):
@@ -156,7 +156,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"configure_server Successful!!"
+        return True, "configure_server Successful!!"
 
     @staticmethod
     def configure_network(nd_obj: Node, network_trans: str):
@@ -197,7 +197,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"configure_network Successful!!"
+        return True, "configure_network Successful!!"
 
     @staticmethod
     def configure_storage(nd_obj: Node, node_no: int, node_config: SectionProxy):
@@ -211,7 +211,8 @@ class ProvDeployFFLib:
             LOGGER.info("Configure Storage")
             LOGGER.info("Configure Storage Config")
             for cnt_type in ["primary", "secondary"]:
-                nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CONT.format(cnt_type), read_lines=True)
+                nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CONT.format(cnt_type),
+                                   read_lines=True)
 
             LOGGER.info("Configure Storage name")
             encl_name = "Enclosure" + str(node_no)
@@ -235,7 +236,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"configure_storage Successful!!"
+        return True, "configure_storage Successful!!"
 
     @staticmethod
     def configure_security(nd_obj: Node, cert_path: str):
@@ -256,7 +257,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"configure_security Successful!!"
+        return True, "configure_security Successful!!"
 
     @staticmethod
     def configure_feature(nd_obj: Node, feature_conf: dict):
@@ -278,7 +279,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"configure_feature Successful!!"
+        return True, "configure_feature Successful!!"
 
     @staticmethod
     def setup_node(nd_obj: Node, nd_no: int):
@@ -306,7 +307,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"setup_node Successful!!"
+        return True, "setup_node Successful!!"
 
     def factory_manufacturing(self, nd_obj: Node, nd_no: int, node_config: SectionProxy, **kwargs):
         """
@@ -331,7 +332,7 @@ class ProvDeployFFLib:
                         "'cortx>software>motr>service>client_instances'": motr_client_instances}
 
         resp = self.configure_server(nd_obj, nd_no)
-        assert_utils.assert_true(resp[0],resp[1])
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.configure_network(nd_obj, network_trans)
         assert_utils.assert_true(resp[0], resp[1])
         resp = self.configure_storage(nd_obj, nd_no, node_config)
@@ -343,7 +344,7 @@ class ProvDeployFFLib:
         resp = self.setup_node(nd_obj, nd_no)
         assert_utils.assert_true(resp[0], resp[1])
 
-        return True,"factory_manufacturing successful!!"
+        return True, "factory_manufacturing successful!!"
 
     @staticmethod
     def field_deployment_node(nd_obj: Node, nd_no: int):
@@ -383,7 +384,8 @@ class ProvDeployFFLib:
 
             LOGGER.info("Configure Firewall")
             nd_obj.execute_cmd(cmd=
-                               common_cmd.CFG_FIREWALL.format(PROV_CFG["deploy_ff"]["firewall_url"]),
+                               common_cmd.CFG_FIREWALL.format(
+                                   PROV_CFG["deploy_ff"]["firewall_url"]),
                                read_lines=True)
 
             LOGGER.info("Configure Network Time Server")
@@ -400,8 +402,7 @@ class ProvDeployFFLib:
             else:
                 LOGGER.error(error.args[0])
             return False, error
-        return True,"field_deployment_node Successful!!"
-
+        return True, "field_deployment_node Successful!!"
 
     @staticmethod
     def cluster_definition(nd1_obj: Node, hostnames: str, build_url: str, timeout: int = 600):
@@ -505,7 +506,7 @@ class ProvDeployFFLib:
                 LOGGER.error(error.args[0])
             return False, error
 
-        return True,"define_storage_set Successful!!"
+        return True, "define_storage_set Successful!!"
 
     @staticmethod
     def config_cluster(nd_obj1: Node) -> tuple:
@@ -646,7 +647,7 @@ class ProvDeployFFLib:
 
         for nd_no, nd_obj in enumerate(node_list, start=1):
             resp = self.deployment_prereq(nd_obj)
-            assert_utils.assert_true(resp[0],resp[1])
+            assert_utils.assert_true(resp[0], resp[1])
 
             resp = self.cortx_prepare(nd_obj, build_branch, build_url)
             assert_utils.assert_true(resp[0], resp[1])
@@ -668,3 +669,4 @@ class ProvDeployFFLib:
         assert_utils.assert_true(resp[0], resp[1])
 
         LOGGER.info("Deployment Successful!!")
+
