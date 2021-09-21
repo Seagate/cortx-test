@@ -350,6 +350,7 @@ LIBFAB_VERBS = "fi_info -p verbs"
 FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
 FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 
+
 # Kubernetes commands to interact with service/pods.
 
 # Kubectl command prefix
@@ -359,3 +360,8 @@ FETCH_LOGS = ""
 
 # Restart pod/ service in a namespace.
 RESTART_POD_CMD = ""
+
+# LC commands
+CLSTR_START_CMD = ""
+CLSTR_STOP_CMD = ""
+CLSTR_STATUS_CMD = ""
