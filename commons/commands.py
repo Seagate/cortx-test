@@ -413,3 +413,5 @@ FETCH_LOGS = ""
 
 # Restart pod/ service in a namespace.
 RESTART_POD_CMD = ""
+# Support Bundle
+R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
