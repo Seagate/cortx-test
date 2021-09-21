@@ -27,7 +27,7 @@ import time
 import json
 import re
 import configparser
-from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons import commands as cmn_cmd
 
 # Global Constants
@@ -45,7 +45,7 @@ def install_docker(*hostname, username, password):
     Function to install docker
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Installing docker on host\n", host)
         cmd = "yum install -y yum-utils && " \
               "yum-config-manager -y" \
@@ -65,7 +65,7 @@ def configure_iptables(*hostname, username, password):
     Configure iptables
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Configuring iptables \n")
         cmd = "cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf\n"\
               "br_netfilter\n"\
@@ -83,7 +83,7 @@ def create_daemon_file(*hostname, username, password):
     Create file etc/docker/daemon.json
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Creating daemon.json \n")
 
         daemon_json = {
@@ -102,7 +102,7 @@ def configure_k8s_repo(*hostname, username, password):
     test configure repo
     """
     for host in hostname:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         print("Disabling SELINUX \n")
         resp = nd_obj.execute_cmd(cmd="setenforce 0", read_lines=True, exc=False)
         if resp:
@@ -148,7 +148,7 @@ def initialize_k8s(host, username, password):
     """
     Test function to initialize the kubeadm
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     cmd = "kubeadm init --pod-network-cidr=192.168.0.0/16"
     print("Initialize the kubeadm\n")
     result = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
@@ -171,7 +171,7 @@ def create_network(host, username, password):
     """
     Test function to create the pod network
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     cmd = "curl https://docs.projectcalico.org/manifests/calico.yaml -O &&"\
           "kubectl apply -f calico.yaml"
     resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True, exc=False)
@@ -182,7 +182,7 @@ def get_node_status(host, username, password):
     """
     This function fetches the node status
     """
-    nd_obj = Node(hostname=host, username=username, password=password)
+    nd_obj = LogicalNode(hostname=host, username=username, password=password)
     count = 1
     while count <= 6:
         resp_node = nd_obj.execute_cmd(cmd="kubectl get nodes |cut -d ' ' -f 4",
@@ -211,7 +211,7 @@ def troubleshoot(*hostname, username, password, status):
     """
     if "NotReady" in status:
         for host in hostname:
-            nd_obj = Node(hostname=host, username=username, password=password)
+            nd_obj = LogicalNode(hostname=host, username=username, password=password)
             cmd = "wget https://github.com/projectcalico/calico/releases/" \
                   "download/v3.20.0/release-v3.20.0.tgz && "\
                   "tar -xvf release-v3.20.0.tgz && "\
@@ -229,7 +229,7 @@ def join_cluster(*hostname, username, password, cmd):
     Test function to join the worker nodes to master node
     """
     for host in hostname[1:]:
-        nd_obj = Node(hostname=host, username=username, password=password)
+        nd_obj = LogicalNode(hostname=host, username=username, password=password)
         resp = nd_obj.execute_cmd(cmd=cmd, read_lines=True)
         print("The join cmd o/p is %s", resp)
 
@@ -249,7 +249,7 @@ def main(args):
 
     if not k8s_input['hosts_ip']:
         for host in k8s_input['nodes']:
-            nd_obj = Node(hostname=host, username=k8s_input['username'],
+            nd_obj = LogicalNode(hostname=host, username=k8s_input['username'],
                           password=k8s_input['password'])
             result = nd_obj.execute_cmd(cmd="ifconfig eth0", read_lines=True)
             test_list = result[1].split(" ")
@@ -264,7 +264,7 @@ def main(args):
         print("The hostname and ip dict is %s", host_ip_dict)
 
     for host in k8s_input['nodes']:
-        nd_obj = Node(hostname=host, username=k8s_input['username'],
+        nd_obj = LogicalNode(hostname=host, username=k8s_input['username'],
                       password=k8s_input['password'])
         nd_obj.copy_file_to_local(REMOTE_HOSTS_ORG, LOCAL_COPY_HOSTS)
         with open(LOCAL_COPY_HOSTS, "a") as file:

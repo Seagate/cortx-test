@@ -66,20 +66,3 @@ class LogicalNode(Host):
             resp = resp.decode("utf8").strip()
         out.append(resp)
         return out
-
-    def shutdown_node(self, options=None):
-        """Function to shutdown any of the node."""
-        try:
-            cmd = "shutdown {}".format(options if options else "")
-            log.debug(
-                "Shutting down %s node using cmd: %s.",
-                self.hostname,
-                cmd)
-            resp = self.execute_cmd(cmd, shell=False)
-            log.debug(resp)
-        except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.shutdown_node.__name__, error)
-            return False, error
-
-        return True, "Node shutdown successfully"

@@ -166,7 +166,7 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tup
         return True, str((output, error))
     if chk_stderr:
         if error:
-            return False, str(output)
+            return False, str((error, output))
         return True, str(output)
     if proc.returncode != 0:
         return False, str(error)

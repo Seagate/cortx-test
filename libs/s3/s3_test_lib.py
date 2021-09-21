@@ -32,7 +32,9 @@ from botocore.client import Config
 from commons import commands
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, run_local_cmd
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.s3_utils import poll
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
@@ -63,6 +65,8 @@ class S3TestLib(S3Lib):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        kwargs["use_ssl"] = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else S3_CFG["validate_certs"]
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
@@ -359,7 +363,10 @@ class S3TestLib(S3Lib):
         try:
             LOGGER.info("You have opted to delete buckets.")
             start_time = perf_counter()
-            response = super().delete_bucket(bucket_name, force)
+            if force:
+                response = poll(super().delete_bucket, bucket_name, force)
+            else:
+                response = super().delete_bucket(bucket_name, force)
             end_time = perf_counter()
             LOGGER.debug(response)
             LOGGER.info(

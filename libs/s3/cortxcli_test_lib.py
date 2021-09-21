@@ -37,9 +37,9 @@ S3AccessKey
 import logging
 import time
 
+from config import CMN_CFG
 from commons import errorcodes as err
 from commons.exceptions import CTException
-
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3_buckets import CortxCliS3BucketOperations
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
@@ -54,6 +54,8 @@ class CSMAccountOperations(CortxCliCsmUser, CortxCliS3AccountOperations):
 
     def __init__(self, session_obj: object = None):
         """Constructor for s3 account operations."""
+        if CMN_CFG["product_type"] != "node":
+            raise Exception("cortxcli command not supported in the k8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 
@@ -827,6 +829,8 @@ class CortxCliTestLib(_S3AccountOperations,
         :param object session_obj: session object of host connection if already established.
         This class establish the session as soon as object is created.
         """
+        if CMN_CFG["product_type"] != "node":
+            raise Exception("cortxcli command not supported in the k8s. Please, use rest api.")
         super().__init__(session_obj=session_obj)
         self.open_connection()
 
