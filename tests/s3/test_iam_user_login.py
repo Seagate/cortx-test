@@ -385,7 +385,7 @@ class TestUserLoginProfileTests:
         resp = self.iam_test_obj.create_user_login_profile(
             self.user_name, self.test_cfg["test_9834"]["password"])
         assert_true(resp[0], resp[1])
-        resp = self.iam_test_obj.update_user_login_profile_s3iamcli_with_both_reset_options(
+        resp = self.iam_test_obj.update_user_login_profile_with_both_reset_options(
             self.user_name,
             self.test_cfg["test_9834"]["password"],
             S3H_OBJ.get_local_keys()[0],
@@ -682,7 +682,7 @@ class TestUserLoginProfileTests:
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         self.users_list.append(self.user_name)
-        resp = self.iam_test_obj.create_user_login_profile_s3iamcli_with_both_reset_options(
+        resp = self.iam_test_obj.create_user_login_profile_with_both_reset_options(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
             S3H_OBJ.get_local_keys()[0],
@@ -1004,7 +1004,7 @@ class TestUserLoginProfileTests:
         self.log.info(
             "Creating account with name %s and email id %s",
             self.account_name, email_id)
-        resp = self.iam_test_obj.create_account_s3iamcli(
+        resp = self.iam_test_obj.create_account(
             self.account_name,
             email_id,
             self.ldap_user,
@@ -1015,7 +1015,7 @@ class TestUserLoginProfileTests:
         self.log.info(
             "Creating account login profile for account %s",
             self.account_name)
-        resp = self.iam_test_obj.create_account_login_profile_s3iamcli(
+        resp = self.iam_test_obj.create_account_login_profile(
             self.account_name,
             self.test_cfg["test_9923"]["account_password"],
             access_key,
@@ -1025,13 +1025,13 @@ class TestUserLoginProfileTests:
             "Creating user %s for account %s",
             self.user_name,
             self.account_name)
-        resp = self.iam_test_obj.create_user_using_s3iamcli(
+        resp = self.iam_test_obj.create_user(
             self.user_name, access_key, secret_key)
         assert_true(resp[0], resp[1])
         self.log.info(
             "Creating user login profile for user %s",
             self.user_name)
-        resp = self.iam_test_obj.create_user_login_profile_s3iamcli(
+        resp = self.iam_test_obj.create_user_login_profile(
             self.user_name,
             self.test_cfg["test_9832"]["password"],
             False,
@@ -1063,7 +1063,7 @@ class TestUserLoginProfileTests:
             self.email_id)
         self.log.info("Creating account with name %s and email id %s",
                       self.account_name, email_id)
-        res = self.iam_test_obj.create_account_s3iamcli(
+        res = self.iam_test_obj.create_account(
             self.account_name,
             email_id,
             self.ldap_user,
@@ -1099,7 +1099,7 @@ class TestUserLoginProfileTests:
             self.email_id)
         self.log.info("Creating account with name %s and email id %s",
                       self.account_name, email_id)
-        res = self.iam_test_obj.create_account_s3iamcli(
+        res = self.iam_test_obj.create_account(
             self.account_name,
             email_id,
             self.ldap_user,
@@ -1109,7 +1109,7 @@ class TestUserLoginProfileTests:
         acc_secret_key = res[1]["secret_key"]
         self.log.info("Creating user with name %s",
                       self.user_name)
-        res = self.iam_test_obj.create_user_using_s3iamcli(
+        res = self.iam_test_obj.create_user(
             self.user_name, acc_access_key, acc_secret_key)
         assert_true(res[0], res[1])
         new_iam_obj = iam_test_lib.IamTestLib(
