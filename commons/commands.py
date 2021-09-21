@@ -403,3 +403,13 @@ LIBFAB_SOCKET = "fi_info -p sockets"
 LIBFAB_VERBS = "fi_info -p verbs"
 FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
 FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
+
+# Kubernetes commands to interact with service/pods.
+
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {}"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Restart pod/ service in a namespace.
+RESTART_POD_CMD = ""

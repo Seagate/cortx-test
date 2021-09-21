@@ -135,6 +135,7 @@ class S3TaggingTestLib(Tagging):
             LOGGER.info("Deleting bucket tagging")
             response = poll(super().delete_bucket_tagging, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["del_bkt_tag"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_bucket_tagging.__name__,
@@ -172,6 +173,7 @@ class S3TaggingTestLib(Tagging):
             tags = {"TagSet": tag_set}
             response = self.put_object_tagging(bucket_name, obj_name, tags)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["set_obj_tag"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.set_object_tag.__name__,
@@ -220,6 +222,7 @@ class S3TaggingTestLib(Tagging):
             response = poll(super().delete_object_tagging,
                             bucket_name, obj_name, timeout=self.sync_delay)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["del_obj_tag"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3TaggingTestLib.delete_object_tagging.__name__,
