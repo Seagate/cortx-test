@@ -84,7 +84,7 @@ class TestFailureDomain:
         self.log.info("Reverting all the VM before deployment")
         for host in self.host_list:
             self.revert_vm_snapshot(host)
-            
+
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
            host: VM name """
@@ -159,7 +159,7 @@ class TestFailureDomain:
                 self.log.error(error.args[0])
             return False, error
 
-        return True, "Deployment Completed"
+        return True, "Configured Server"
 
     def configure_network(self, nd_obj, nd_no):
         self.log.info("Configure Network ")
@@ -282,8 +282,7 @@ class TestFailureDomain:
             self.log.info("Deploying %s component", comp)
             try:
                 node_obj.execute_cmd(
-                    cmd=common_cmd.CMD_DEPLOY_VM.format(
-                        setup_type, comp), read_lines=True)
+                    cmd=common_cmd.CLUSTER_CFG_COMP.format(comp), read_lines=True)
             except Exception as error:
                 self.log.error(
                     "An error occurred in %s:",
@@ -317,7 +316,7 @@ class TestFailureDomain:
         for cfg_type in ["sns", "dix"]:
             data = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.data"]
             parity = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
-            spare = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.parity"]
+            spare = deploy_config["srvnode_default"][f"storage.durability.{cfg_type}.spare"]
             nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_CONFIG.format(
                 self.deplymt_cfg["storage_set_name"], cfg_type, data, parity,
                 spare),
@@ -348,7 +347,7 @@ class TestFailureDomain:
             elif "cortx_setup command Failed" in output :
                 self.log.error(current_output)
                 break
-            elif "Cluster created with node" in output:
+            elif "Environment set up!" in output:
                 self.log.info("Cluster created")
                 break
         else:
@@ -370,9 +369,10 @@ class TestFailureDomain:
         deploy_cfg.read(deploy_config_file)
 
         hostnames_list = []
+        srvnodes_list = []
         for nd_no, nd_obj in enumerate(self.node_list, start=1):
             hostnames_list.append(CMN_CFG["nodes"][nd_no-1]["hostname"])
-
+            srvnodes_list.append("srvnode-"+str(nd_no))
             self.log.info(
                 "Starting the prerequisite checks on node %s",
                 nd_obj.hostname)
@@ -437,11 +437,12 @@ class TestFailureDomain:
 
         self.log.info("Cluster Definition")
         hostnames = " ".join(hostnames_list)
+        srvnodes = " ".join(srvnodes_list)
         resp = self.cluster_definition(hostnames)
         assert_utils.assert_true(resp[0],resp[1])
 
         self.log.info("Configure Storage Set")
-        self.config_storage_set(self.nd1_obj, hostnames, deploy_cfg)
+        self.config_storage_set(self.nd1_obj, srvnodes, deploy_cfg)
 
         self.log.info("Prepare Cluster")
         self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
