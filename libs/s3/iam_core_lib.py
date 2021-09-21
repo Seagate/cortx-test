@@ -23,6 +23,7 @@
 """Python Library using boto3 module to perform account and user operations."""
 
 import logging
+from typing import Optional
 import boto3
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class IamLib:
             access_key: str = None,
             secret_key: str = None,
             endpoint_url: str = None,
-            iam_cert_path: str = None,
+            iam_cert_path: Optional[str, bool] = None,
             **kwargs) -> None:
         """
         Method initializes members of IamLib.
@@ -48,18 +49,20 @@ class IamLib:
         :param debug: debug mode.
         """
         debug = kwargs.get("debug", False)
-
+        use_ssl = kwargs.get("use_ssl", True)
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
         try:
-            self.iam = boto3.client("iam", verify=iam_cert_path,
+            self.iam = boto3.client("iam", use_ssl=use_ssl,
+                                    verify=iam_cert_path,
                                     aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_key,
                                     endpoint_url=endpoint_url)
             self.iam_resource = boto3.resource(
                 "iam",
+                use_ssl=use_ssl,
                 verify=iam_cert_path,
                 aws_access_key_id=access_key,
                 aws_secret_access_key=secret_key,

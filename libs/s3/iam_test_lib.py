@@ -58,12 +58,15 @@ class IamTestLib(IamLib):
         :param debug: debug mode.
         """
         debug = kwargs.get("debug", S3_CFG["debug"])
+        use_ssl = S3_CFG["use_ssl"]
+        iam_cert_path = iam_cert_path if S3_CFG["validate_certs"] else False
         super().__init__(
             access_key=access_key,
             secret_key=secret_key,
             endpoint_url=endpoint_url,
             iam_cert_path=iam_cert_path,
-            debug=debug)
+            debug=debug,
+            use_ssl=use_ssl)
 
     def create_user(self, user_name: str = None) -> tuple:
         """
