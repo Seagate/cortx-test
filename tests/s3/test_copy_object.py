@@ -259,7 +259,7 @@ class TestCopyObjects:
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
-        LOGGER.info("Step Successfully created the s3iamcli account")
+        LOGGER.info("Step Successfully created the account")
         s3_obj = s3_test_lib.S3TestLib(
             access_key,
             secret_key,
