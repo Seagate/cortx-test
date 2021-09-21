@@ -24,6 +24,7 @@
 
 import os
 import logging
+from typing import Optional
 import boto3
 import boto3.s3
 
@@ -40,7 +41,7 @@ class S3Lib:
                  access_key: str = None,
                  secret_key: str = None,
                  endpoint_url: str = None,
-                 s3_cert_path: str = None,
+                 s3_cert_path: Optional[str, bool] = None,
                  **kwargs) -> None:
         """
         method initializes members of S3Lib.
@@ -54,6 +55,7 @@ class S3Lib:
         :param debug: debug mode.
         """
         region = kwargs.get("region", None)
+        use_ssl = kwargs.get("use_ssl", True)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", False)
         if debug:
@@ -62,13 +64,15 @@ class S3Lib:
         try:
             self.s3_resource = boto3.resource(
                 "s3",
+                use_ssl=use_ssl,
                 verify=s3_cert_path,
                 aws_access_key_id=access_key,
                 aws_secret_access_key=secret_key,
                 endpoint_url=endpoint_url,
                 region_name=region,
                 aws_session_token=aws_session_token)
-            self.s3_client = boto3.client("s3", verify=s3_cert_path,
+            self.s3_client = boto3.client("s3", use_ssl=use_ssl,
+                                          verify=s3_cert_path,
                                           aws_access_key_id=access_key,
                                           aws_secret_access_key=secret_key,
                                           endpoint_url=endpoint_url,
