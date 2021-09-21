@@ -26,7 +26,6 @@ import logging
 import pytest
 from commons import configmanager
 from commons.constants import Rest as const
-from commons.constants import PROD_FAMILY
 from commons.utils import assert_utils, config_utils
 from commons import cortxlogging
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
@@ -47,7 +46,7 @@ class TestCsmUser():
         cls.log.info("Initializing test setups ......")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_user.yaml")
         cls.config = CSMConfigsCheck()
-        if PROD_FAMILY == CMN_CFG["product_family"]:
+        if CMN_CFG["product_family"] != "LC":
             user_already_present = cls.config.check_predefined_csm_user_present()
             if not user_already_present:
                 user_already_present = cls.config.setup_csm_users()
