@@ -38,8 +38,9 @@ statistics_layout = Card(
     CardBody([
         html.P(html.U("Performance Metrics Statistics Summary"),
                style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data. Data is displayed for the builds on which PerfPro has run.",  style={
-            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+        html.P("Note: Each data point represents PER CLUSTER data. \
+            Data is displayed for the builds on which PerfPro has run.",
+               style={"font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
         html.P("Run Details", style=style_perf_captions),
         Markdown('''
             ___
