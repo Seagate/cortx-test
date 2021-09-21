@@ -24,8 +24,8 @@
 import logging
 from abc import ABC, abstractmethod
 
-from commons.exceptions import CTException
 from config import CMN_CFG
+from commons.exceptions import CTException
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
