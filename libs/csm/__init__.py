@@ -25,4 +25,5 @@
 from config import CMN_CFG
 from commons import constants as const
 
-PROD_FLG = CMN_CFG["product_family"] != const.PROD_FAMILY or CMN_CFG["product_type"] != const.PROD_TYPE
+PROD_FLG = CMN_CFG.get("product_family", None) != const.PROD_FAMILY or CMN_CFG.get(
+        "product_type", None) != const.PROD_TYPE
