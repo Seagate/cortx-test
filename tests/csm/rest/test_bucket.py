@@ -126,7 +126,7 @@ class TestS3Bucket():
         test_cfg = self.csm_conf["test_578"]["response_msg"]
         resp_error_code = test_cfg["error_code"]
         resp_msg_id = test_cfg["message_id"]
-        data = self.rest_resp_conf[resp_error_code][resp_msg]
+        data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         msg = data[0]
         self.log.info(
             "Step 1: Verifying creating bucket with bucket name containing special characters")
