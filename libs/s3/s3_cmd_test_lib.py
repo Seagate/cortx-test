@@ -160,6 +160,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.info("Downloading folder from bucket using cli.")
             status, response = super().download_bucket_cli(
                 bucket_name, folder_path, profile_name)
+
             LOGGER.info(response)
 
             return status, response
