@@ -33,7 +33,6 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
-from libs.s3 import PROD_FLG
 from libs.s3 import s3_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -45,7 +44,7 @@ def check_cluster_health() -> None:
     LOG.info("Check cluster status, all services are running.")
     nodes = CMN_CFG["nodes"]
     LOG.info(nodes)
-    if PROD_FLG:
+    if CMN_CFG["product_type"] == "node":
         for _, node in enumerate(nodes):
             health_obj = Health(hostname=node["hostname"],
                                 username=node["username"],
@@ -62,17 +61,15 @@ def check_cluster_health() -> None:
 def get_ldap_creds() -> tuple:
     """Get the ldap credentials from node."""
     nodes = CMN_CFG["nodes"]
-    if PROD_FLG:
+    if CMN_CFG["product_type"] == "node":
         node_hobj = Node(hostname=nodes[0]["hostname"],
                          username=nodes[0]["username"],
                          password=nodes[0]["password"])
+        node_hobj.connect()
+        resp = node_hobj.get_ldap_credential()
+        node_hobj.disconnect()
     else:
-        node_hobj = LogicalNode(hostname=nodes[0]["hostname"],
-                                username=nodes[0]["username"],
-                                password=nodes[0]["password"])
-    node_hobj.connect()
-    resp = node_hobj.get_ldap_credential()
-    node_hobj.disconnect()
+        resp = (None, None)  # TODO: will create method for LC/k8s once available.
 
     return resp
 

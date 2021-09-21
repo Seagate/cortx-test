@@ -38,5 +38,3 @@ ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
 ldap = CMN_CFG.get("ldap", None)
 LDAP_USERNAME = ldap["username"] if ldap else None  # Ldap username.
 LDAP_PASSWD = ldap["password"] if ldap else None  # Ldap password.
-PROD_FLG = CMN_CFG.get("product_family", None) != const.PROD_FAMILY and CMN_CFG.get(
-        "product_type", None) != const.PROD_TYPE
