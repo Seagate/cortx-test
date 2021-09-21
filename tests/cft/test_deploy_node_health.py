@@ -67,7 +67,6 @@ class TestNodeHealth:
         cls.resource_cli.open_connection()
         cls.alert_types = RAS_TEST_CFG["alert_types"]
         cls.sspl_resource_id = cls.cm_cfg["sspl_resource_id"]
-        """
         LOGGER.info("Check cluster health")
         node_d = cls.health_obj.get_current_srvnode()
         cls.current_srvnode = node_d[cls.hostname.split('.')[0]] if \
@@ -92,7 +91,6 @@ class TestNodeHealth:
         cls.drive_name = resp[1].split("/")[2]
         cls.host_num = resp[2]
         cls.drive_count = resp[3]
-        """
         LOGGER.info("Successfully ran setup_class")
 
     def setup_method(self):
@@ -446,6 +444,7 @@ class TestNodeHealth:
         LOGGER.info("Requesting resource health failed with wrong rpath with error %s",
                     resp[1])
 
+    @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-26848")
     def test_26848(self):
         """
@@ -474,7 +473,7 @@ class TestNodeHealth:
         LOGGER.info("Step 4: Check cluster status, all services are running before starting test.")
         self.check_cluster_health()
 
-        LOGGER.info("Step 5: Verify if log and other files are cleaned from all nodes.")
+        LOGGER.info("Step 5: Verify if log files got cleaned from all nodes.")
 
         nodes = CMN_CFG["nodes"]
         for _, node in enumerate(nodes):
@@ -503,4 +502,4 @@ class TestNodeHealth:
             else:
                 LOGGER.error("S3 account not deleted")
 
-        LOGGER.info("Step 7: Test Completed.")
+        LOGGER.info("Test Completed.")
