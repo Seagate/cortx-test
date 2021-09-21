@@ -23,7 +23,6 @@ import configparser
 import logging
 import os
 import time
-from multiprocessing import Process
 
 import pytest
 
@@ -74,7 +73,7 @@ class TestFailureDomain:
         else:
             cls.build = "last_successful_prod"
         os_version = cls.nd1_obj.execute_cmd(cmd=common_cmd.CMD_OS_REL,
-                                      read_lines=True)[0].strip()
+                                             read_lines=True)[0].strip()
         version = "centos-" + str(os_version.split()[3])
         cls.build_url = cls.deplymt_cfg["build_url"].format(
             cls.build_branch, version, cls.build)
@@ -144,24 +143,21 @@ class TestFailureDomain:
                                       "Job is successful, expected to fail")
 
     def configure_server(self, nd_obj, node_no):
-        try :
-            self.log.info("Configure Server")
-            srvnode = "srvnode-{}".format(node_no)
-            nd_obj.execute_cmd(cmd=common_cmd.CMD_SERVER_CFG.format(srvnode, CMN_CFG["setup_type"]),
-                               read_lines=True)
-        except Exception as error:
-            self.log.error(
-                "An error occurred in %s:",
-                TestFailureDomain.configure_server.__name__)
-            if isinstance(error.args[0], list):
-                self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                self.log.error(error.args[0])
-            return False, error
+        """
+        Configure Server
+        param: nd_obj: node object for commands to be executed on
+        param: node_no : Node number
+        """
+        self.log.info("Configure Server")
+        srvnode = "srvnode-{}".format(node_no)
+        nd_obj.execute_cmd(cmd=common_cmd.CMD_SERVER_CFG.format(srvnode, CMN_CFG["setup_type"]),
+                           read_lines=True)
 
-        return True, "Configured Server"
-
-    def configure_network(self, nd_obj, nd_no):
+    def configure_network(self, nd_obj):
+        """
+        Configure  Network Interfaces
+        param: nd_obj: node object for commands to be executed on
+        """
         self.log.info("Configure Network ")
         self.log.info("Configure Network transport")
         nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_TRANSPORT.format(
@@ -180,11 +176,18 @@ class TestFailureDomain:
             "eth3", "private"), read_lines=True)
 
         self.log.info("Configure BMC Interface")
-        # default details for VM
-        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_BMC.format("127.0.0.1", "admin", "admin"),
+        nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_BMC.format("127.0.0.1",
+                                                                 CMN_CFG["bmc"]["username"],
+                                                                 CMN_CFG["bmc"]["password"]),
                            read_lines=True)
 
     def configure_storage(self, nd_obj, node_no, node_config):
+        """
+        Configure Storage
+        param: nd_obj: node object for commands to be executed on
+        param: node_no: Node number
+        param: node_config: Section of Node from config.ini
+        """
         self.log.info("Configure Storage")
         self.log.info("Configure Storage Config")
         for cnt_type in ["primary", "secondary"]:
@@ -205,8 +208,14 @@ class TestFailureDomain:
                                    read_lines=True)
 
     def factory_manufacturing(self, nd_obj, nd_no, node_config):
+        """
+        Perform Factory Manufacturing Procedure
+        param: nd_obj: node object for commands to be executed on
+        param: node_no: Node number
+        param: node_config: Section of Node from config.ini
+        """
         self.configure_server(nd_obj, nd_no)
-        self.configure_network(nd_obj, nd_no)
+        self.configure_network(nd_obj)
         self.configure_storage(nd_obj, nd_no, node_config)
         self.log.info("Configure Security")
         nd_obj.execute_cmd(cmd=
@@ -228,6 +237,11 @@ class TestFailureDomain:
         nd_obj.execute_cmd(cmd=common_cmd.NODE_FINALIZE, read_lines=True)
 
     def field_deployment_node(self, nd_obj, nd_no):
+        """
+        Perform Field Deployment Procedure
+        param: nd_obj: node object for commands to be executed on
+        param: node_no: Node number
+        """
         self.log.info("Field Deployment")
         self.log.info("Prepare Node")
         self.log.info("Configure Server Identification")
@@ -235,14 +249,15 @@ class TestFailureDomain:
 
         self.log.info("Prepare Network")
         nd_obj.execute_cmd(cmd=
-        common_cmd.PREPARE_NETWORK.format(CMN_CFG["nodes"][nd_no-1]["hostname"],
+        common_cmd.PREPARE_NETWORK.format(
+            CMN_CFG["nodes"][nd_no - 1]["hostname"],
             self.deplymt_cfg["search_domains"],
             self.deplymt_cfg["dns_servers"]), read_lines=True)
 
         self.log.info("Configure Network")
-        ips = {"management": CMN_CFG["nodes"][nd_no-1]["ip"],
-               "data": CMN_CFG["nodes"][nd_no-1]["public_data_ip"],
-               "private": CMN_CFG["nodes"][nd_no-1]["private_data_ip"]}
+        ips = {"management": CMN_CFG["nodes"][nd_no - 1]["ip"],
+               "data": CMN_CFG["nodes"][nd_no - 1]["public_data_ip"],
+               "private": CMN_CFG["nodes"][nd_no - 1]["private_data_ip"]}
 
         for network_type, ip_addr in ips.items():
             netmask = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_NETMASK.format(ip_addr))
@@ -266,11 +281,10 @@ class TestFailureDomain:
         self.log.info("Node Finalize")
         nd_obj.execute_cmd(cmd=common_cmd.NODE_PREP_FINALIZE, read_lines=True)
 
-    def config_cluster(self, node_obj, setup_type: str) -> tuple:
+    def config_cluster(self, node_obj) -> tuple:
         """
         This method deploys cortx and 3rd party software components on given VM setup
         :param node_obj: Host object of the primary node
-        :param setup_type: Type of setup e.g., single, 3_node etc
         :return: True/False and deployment status
         """
         components = [
@@ -298,6 +312,9 @@ class TestFailureDomain:
     def config_storage_set(self, nd1_obj, hostnames: str, deploy_config):
         """
         Configure Storage Set
+        param: nd1_obj: Primary node object
+        param: hostnames: String of hostnames for all nodes
+        param: deploy_config: Config.ini path
         """
         self.log.info("Create Storage Set")
         nd1_obj.execute_cmd(cmd=
@@ -322,15 +339,21 @@ class TestFailureDomain:
                 spare),
                 read_lines=True)
 
-    def cluster_definition(self,hostnames,timeout: int = 600):
+    def cluster_definition(self, hostnames, timeout: int = 600):
+        """
+        Cluster Definition
+        param: hostnames: String of hostnames for all nodes
+        param: timeout: timeout for command completion
+        """
         self.log.info("Hostname : %s", hostnames)
         self.nd1_obj.connect(shell=True)
         channel = self.nd1_obj.shell_obj
         output = ""
         current_output = ""
         start_time = time.time()
-        cmd = "".join([common_cmd.CLUSTER_CREATE.format(hostnames, self.mgmt_vip,self.build_url), "\n"])
-        self.log.info("Command : %s",cmd)
+        cmd = "".join(
+            [common_cmd.CLUSTER_CREATE.format(hostnames, self.mgmt_vip, self.build_url), "\n"])
+        self.log.info("Command : %s", cmd)
         self.log.info("no of nodes: %s", self.num_nodes)
         channel.send(cmd)
         passwd_counter = 0
@@ -340,11 +363,12 @@ class TestFailureDomain:
                 current_output = channel.recv(9999).decode("utf-8")
                 output = output + current_output
                 self.log.info(current_output)
-            if "Enter root user password for srvnode" in current_output and passwd_counter < self.num_nodes:
+            if "Enter root user password for srvnode" in current_output \
+                    and passwd_counter < self.num_nodes:
                 pswd = "".join([self.node_list[passwd_counter].password, "\n"])
                 channel.send(pswd)
                 passwd_counter += 1
-            elif "cortx_setup command Failed" in output :
+            elif "cortx_setup command Failed" in output:
                 self.log.error(current_output)
                 break
             elif "Environment set up!" in output:
@@ -358,9 +382,31 @@ class TestFailureDomain:
 
         return True, output
 
+    def deploy_cluster(self, hostnames, srvnodes, deploy_cfg):
+        self.log.info("Cluster Definition")
+        resp = self.cluster_definition(hostnames)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Configure Storage Set")
+        self.config_storage_set(self.nd1_obj, srvnodes, deploy_cfg)
+
+        self.log.info("Prepare Cluster")
+        self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
+
+        self.log.info("Configure Cluster")
+        resp = self.config_cluster(self.nd1_obj)
+        assert_utils.assert_true(resp[0], "Deploy Failed")
+
+        self.log.info("Starting Cluster")
+        resp = self.nd1_obj.execute_cmd(
+            cmd=common_cmd.CMD_START_CLSTR,
+            read_lines=True)[0].strip()
+        assert_utils.assert_exact_string(resp, self.deplymt_cfg["cluster_start_msg"])
+        time.sleep(self.deplymt_cfg["cluster_start_delay"])
+
     def deploy_3node_vm_ff(self, deploy_config_file):
         """
-        Using factory and field method
+        Perform Deployment Using factory and field method
         """
         self.log.info(
             "Starting Deployment on nodes:%s", self.host_list)
@@ -371,8 +417,8 @@ class TestFailureDomain:
         hostnames_list = []
         srvnodes_list = []
         for nd_no, nd_obj in enumerate(self.node_list, start=1):
-            hostnames_list.append(CMN_CFG["nodes"][nd_no-1]["hostname"])
-            srvnodes_list.append("srvnode-"+str(nd_no))
+            hostnames_list.append(CMN_CFG["nodes"][nd_no - 1]["hostname"])
+            srvnodes_list.append("srvnode-" + str(nd_no))
             self.log.info(
                 "Starting the prerequisite checks on node %s",
                 nd_obj.hostname)
@@ -393,7 +439,7 @@ class TestFailureDomain:
                                       read_lines=True)[0].strip()
             self.log.info("OS Release Version: %s", resp)
             assert_utils.assert_in(resp, self.deplymt_cfg["prereq"]["os_release"],
-                                      "OS version is different than expected.")
+                                   "OS version is different than expected.")
 
             self.log.info("Checking kernel version")
             resp = nd_obj.execute_cmd(cmd=
@@ -435,28 +481,10 @@ class TestFailureDomain:
             self.log.info("Perform Field Deployment")
             self.field_deployment_node(nd_obj, nd_no)
 
-        self.log.info("Cluster Definition")
         hostnames = " ".join(hostnames_list)
         srvnodes = " ".join(srvnodes_list)
-        resp = self.cluster_definition(hostnames)
-        assert_utils.assert_true(resp[0],resp[1])
-
-        self.log.info("Configure Storage Set")
-        self.config_storage_set(self.nd1_obj, srvnodes, deploy_cfg)
-
-        self.log.info("Prepare Cluster")
-        self.nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
-
-        self.log.info("Configure Cluster")
-        resp = self.config_cluster(self.nd1_obj, self.deplymt_cfg["setup-type"])
-        assert_utils.assert_true(resp[0], "Deploy Failed")
-
-        self.log.info("Starting Cluster")
-        resp = self.nd1_obj.execute_cmd(
-            cmd=common_cmd.CMD_START_CLSTR,
-            read_lines=True)[0].strip()
-        assert_utils.assert_exact_string(resp, self.deplymt_cfg["cluster_start_msg"])
-        time.sleep(self.deplymt_cfg["cluster_start_delay"])
+        self.log.info("Deploy Cluster")
+        self.deploy_cluster(hostnames, srvnodes, deploy_cfg)
 
         self.log.info("Starting the post deployment checks")
         sys_state = self.deplymt_cfg["system"]

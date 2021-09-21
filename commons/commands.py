@@ -248,7 +248,7 @@ CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
 CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
 CMD_HOSTS = "cat /etc/hosts"
-CMD_GET_NETMASK  =  "ifconfig | grep \"{}\" | awk '{{print $4}}'"
+CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
 CMD_OS_REL = "cat /etc/redhat-release"
@@ -408,17 +408,19 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 # Support Bundle
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 
-#Deployment using Factory and Field
-CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
-                   "/components/provisioner/scripts/install.sh; chmod +x /mnt/cortx/install.sh "
+# Deployment using Factory and Field
+CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh" \
+                       " https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
+                       "/components/provisioner/scripts/install.sh; chmod +x /mnt/cortx/install.sh "
 CMD_INSTALL_CORTX_RPM = "sh /mnt/cortx/install.sh -t {}"
-CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}" #server name, type - VM/HW
+CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}"  # server name, type - VM/HW
 CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
 PUPPET_SERV = "puppet.service"
-NETWORK_CFG_TRANSPORT = "cortx_setup network config --transport {} --mode tcp" #lnet
-NETWORK_CFG_INTERFACE = "cortx_setup network config --interfaces {} --type {}" #eth0, management/data/private
-NETWORK_CFG_BMC = "cortx_setup network config --bmc {} --user {} --password {}" #bmc ip,username,pswd
-STORAGE_CFG_CONT = "cortx_setup storage config --controller virtual --mode {} --ip 127.0.0.1 --port 80 --user 'admin' --password 'admin'"
+NETWORK_CFG_TRANSPORT = "cortx_setup network config --transport {} --mode tcp"
+NETWORK_CFG_INTERFACE = "cortx_setup network config --interfaces {} --type {}"
+NETWORK_CFG_BMC = "cortx_setup network config --bmc {} --user {} --password {}"
+STORAGE_CFG_CONT = "cortx_setup storage config --controller virtual --mode {} " \
+                   "--ip 127.0.0.1 --port 80 --user 'admin' --password 'admin'"
 STORAGE_CFG_NAME = "cortx_setup storage config --name {} --type virtual"
 STORAGE_CFG_CVG = "cortx_setup storage config --cvg {} --data-devices {} --metadata-devices {}"
 SECURITY_CFG = "cortx_setup security config --certificate {}"
@@ -427,16 +429,20 @@ INITIALIZE_NODE = "cortx_setup node initialize"
 SET_NODE_SIGN = "cortx_setup signature set --key LR_SIGNATURE --value {}"
 NODE_FINALIZE = "cortx_setup node finalize"
 PREPARE_NODE = "cortx_setup node prepare server --site_id {} --rack_id {} --node_id {}"
-PREPARE_NETWORK = "cortx_setup node prepare network --hostname {} --search_domains {} --dns_servers {}"
-PREPARE_NETWORK_TYPE= "cortx_setup node prepare network --type {} --ip_address {} --netmask {} --gateway {}"
+PREPARE_NETWORK = "cortx_setup node prepare network --hostname {} --search_domains {} " \
+                  "--dns_servers {}"
+PREPARE_NETWORK_TYPE = "cortx_setup node prepare network --type {} --ip_address {} --netmask {} " \
+                       "--gateway {}"
 CFG_FIREWALL = "cortx_setup node prepare firewall --config {}"
 CFG_NTP = "cortx_setup node prepare time --server time.seagate.com --timezone {}"
 NODE_PREP_FINALIZE = "cortx_setup node prepare finalize"
-CLUSTER_CREATE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 --storageset_count 1 --virtual_host {} --target_build {}"
+CLUSTER_CREATE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
+                 "--storageset_count 1 --virtual_host {} --target_build {}"
 CLUSTER_PREPARE = "cortx_setup cluster prepare"
 
 STORAGE_SET_CREATE = "cortx_setup storageset create --name {} --count {}"
 STORAGE_SET_ADD_NODE = "cortx_setup storageset add node {} {}"
 STORAGE_SET_ADD_ENCL = "cortx_setup storageset add enclosure {} {}"
-STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --data {} --parity {} --spare {}"
+STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --data {} " \
+                     "--parity {} --spare {}"
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
