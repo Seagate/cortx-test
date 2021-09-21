@@ -72,7 +72,7 @@ class HALibsLc:
                      max_timeout: int,
                      host: str,
                      exp_resp: bool,
-                     bmc_obj):
+                     bmc_obj=None):
         """
         Helper function to poll for host ping response.
         :param max_timeout: Max timeout allowed for expected response from ping
@@ -139,17 +139,17 @@ class HALibsLc:
         return resp
 
     def host_safe_unsafe_power_off(self, host: str, bmc_obj=None,
-                                   node_obj=None, is_safe: bool = False):
+                                   pod_obj=None, is_safe: bool = False):
         """
         Helper function for safe/unsafe host power off
         :param host: Host to be power off
         :param bmc_obj: BMC object
-        :param node_obj: Node object
+        :param pod_obj: Pod object
         :param is_safe: Power off host with safe/unsafe shutdown
         :rtype: boolean from polling_host() response
         """
         if is_safe:
-            resp = node_obj.execute_cmd(cmd="shutdown -P now", exc=False)
+            resp = pod_obj.execute_cmd(cmd="shutdown -P now", exc=False)
             LOGGER.debug("Response for shutdown: {}".format(resp))
         else:
             if self.setup_type == "VM":
@@ -177,11 +177,11 @@ class HALibsLc:
         """
         # Future: Right now system health api is not available but will be implemented after M0
         try:
-            check_rem_node = ["online" for _ in range(no_pods)]
-            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_node)
+            check_rem_pod = ["online" for _ in range(no_pods)]
+            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
             if not rest_resp[0]:
                 raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
-            LOGGER.info("REST response for nodes health status. %s", rest_resp[1])
+            LOGGER.info("REST response for pods health status. %s", rest_resp[1])
         except Exception as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
@@ -190,29 +190,29 @@ class HALibsLc:
 
     def status_cluster_resource_online(self):
         """
-        Check cluster/rack/site/nodes are shown online in Cortx REST
+        Check cluster/rack/site/pods are shown online in Cortx REST
         :return: none
         """
-        LOGGER.info("Check the node which is running CSM service and login to CSM on that node.")
+        LOGGER.info("Check luster/rack/site/pods health status.")
         resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
         if not resp[0]:
             raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
-        LOGGER.info("cluster/rack/site/nodes health status is online in REST")
+        LOGGER.info("cluster/rack/site/pods health status is online in REST")
 
     def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
         """
-        Check cluster/rack/site/node status with expected status using REST
+        Check cluster/rack/site/pod status with expected status using REST
         :param csr_sts: cluster/rack/site's expected status
         :param pod_sts: Pod's expected status
         :param pod_id: Pod ID to check for expected status
         :return: (bool, response)
         """
-        check_rem_node = [
+        check_rem_pod = [
             pod_sts if num == pod_id else "online" for num in range(
-                self.num_nodes)]
+                self.num_pods)]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
-            check_rem_node)
+            check_rem_pod)
         if not resp[0]:
             return resp
         LOGGER.info("Checking Cluster/Site/Rack status is %s via REST", csr_sts)
@@ -426,6 +426,8 @@ class HALibsLc:
         resp = self.cortx_stop_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Stopping cluster"
+        # TODO: will need to check if delay needed when stopping or starting cluster
+        time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Start the cluster")
         resp = self.cortx_start_cluster(pod_obj)
         if not resp[0]:
