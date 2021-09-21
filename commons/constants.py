@@ -32,7 +32,10 @@ NWORKERS = 32
 NGREENLETS = 32
 
 # Product Family and versions
-PROD_FAMILY = 'LC'
+PROD_FAMILY_LC = "LC"
+PROD_FAMILY_LR = "LR"
+PROD_TYPE_K8S = "k8s"
+PROD_TYPE_NODE = "node"
 
 # Product Family and versions
 PROD_FAMILY_LC = "LC"

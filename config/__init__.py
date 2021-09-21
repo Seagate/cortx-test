@@ -40,7 +40,7 @@ from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3CMD_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
-from commons.constants import PROD_FAMILY
+from commons.constants import PROD_FAMILY_LC
 
 
 def split_args(sys_cmd: List):
@@ -89,7 +89,7 @@ CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
                                                 target=target, target_key="csm")
 
-if PROD_FAMILY == CMN_CFG["product_family"]:
+if PROD_FAMILY_LC == CMN_CFG["product_family"]:
     CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall_LC",
                                                 target=target, target_key="csm")
 else:
