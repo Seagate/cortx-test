@@ -29,6 +29,7 @@ import boto3
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import format_iam_resp
+from commons.utils.s3_utils import poll
 from libs.s3 import S3_CFG, LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib
@@ -142,7 +143,7 @@ class IamTestLib(IamLib):
                 "Deleting %s user access key %s.",
                 user_name,
                 access_key_id)
-            response = super().delete_access_key(user_name, access_key_id)
+            response = poll(super().delete_access_key, user_name, access_key_id)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -161,7 +162,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Delete user %s.", user_name)
-            response = super().delete_user(user_name)
+            response = poll(super().delete_user, user_name)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -205,7 +206,7 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Update access key.")
-            response = super().update_access_key(access_key_id, status, user_name)
+            response = poll(super().update_access_key, access_key_id, status, user_name)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -229,7 +230,7 @@ class IamTestLib(IamLib):
                 "Update existing %s user name to %s.",
                 user_name,
                 new_user_name)
-            response = super().update_user(new_user_name, user_name)
+            response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -291,8 +292,8 @@ class IamTestLib(IamLib):
                 "Update %s user login profile with password reset %s.",
                 user_name,
                 password_reset)
-            response = super().update_user_login_profile(
-                user_name, password, password_reset)
+            response = poll(super().update_user_login_profile,
+                            user_name, password, password_reset)
             LOGGER.debug(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
@@ -315,7 +316,7 @@ class IamTestLib(IamLib):
             LOGGER.info(
                 "Update %s user login profile with no password reset.",
                 user_name)
-            response = super().update_user_login_profile_no_pwd_reset(user_name, password)
+            response = poll(super().update_user_login_profile_no_pwd_reset, user_name, password)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error(
@@ -336,7 +337,7 @@ class IamTestLib(IamLib):
         try:
             LOGGER.info("Get %s user login profile details", user_name)
             user_dict = {}
-            login_profile = super().get_user_login_profile(user_name)
+            login_profile = poll(super().get_user_login_profile, user_name)
             user_dict['user_name'] = login_profile.user_name
             user_dict['create_date'] = login_profile.create_date.strftime(
                 "%Y-%m-%d %H:%M:%S")
@@ -408,14 +409,13 @@ class IamTestLib(IamLib):
             response = user_acckey
             acc_key = response["AccessKey"]["AccessKeyId"]
             LOGGER.info("Updating the access key")
-            upd_acc_key = super().update_access_key(acc_key, status, user_name)
+            upd_acc_key = poll(super().update_access_key, acc_key, status, user_name)
             LOGGER.debug(upd_acc_key)
             LOGGER.info("Deleting the access key")
-            delete_acc_key = super().delete_access_key(user_name, acc_key)
+            delete_acc_key = poll(super().delete_access_key, user_name, acc_key)
             LOGGER.debug(delete_acc_key)
-            LOGGER.info(
-                "Listing and Verifying the access key for particular user")
-            verify_acc_key = super().list_access_keys(user_name)
+            LOGGER.info("Listing and Verifying the access key for particular user")
+            verify_acc_key = poll(super().list_access_keys, user_name)
             LOGGER.debug(verify_acc_key)
         except BaseException as error:
             LOGGER.error("Error in %s: %s",

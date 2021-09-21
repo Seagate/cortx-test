@@ -19,6 +19,7 @@
 
 """S3 utility Library."""
 
+import time
 import urllib
 import hmac
 import datetime
@@ -186,3 +187,21 @@ def convert_xml_to_dict(xml_response) -> dict:
     except Exception as error:
         LOGGER.error(error)
         return xml_response
+
+
+def poll(target, *args, **kwargs) -> dict:
+    """Method to wait for a function/target to return a certain expected condition."""
+    timeout = kwargs.pop("timeout", 60)
+    step = kwargs.pop("step", 10)
+    expected = kwargs.pop("expected", dict)
+    end_time = time.time() + timeout
+    while time.time() <= end_time:
+        try:
+            response = target(*args, **kwargs)
+            if isinstance(response, expected) and response:
+                return response
+        except Exception as response:
+            LOGGER.error(response)
+        time.sleep(step)
+
+    return target(*args, **kwargs)
