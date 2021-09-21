@@ -24,7 +24,7 @@
 
 import logging
 import boto3
-
+from typing import Optional
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
 
@@ -39,7 +39,7 @@ class IamLib:
             access_key: str = None,
             secret_key: str = None,
             endpoint_url: str = None,
-            iam_cert_path: str = None,
+            iam_cert_path: Optional[str, bool] = None,
             **kwargs) -> None:
         """
         Method initializes members of IamLib.

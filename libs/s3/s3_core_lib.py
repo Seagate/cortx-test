@@ -26,7 +26,7 @@ import os
 import logging
 import boto3
 import boto3.s3
-
+from typing import Optional
 from commons import commands
 from commons.utils.system_utils import run_local_cmd, create_file
 
@@ -40,7 +40,7 @@ class S3Lib:
                  access_key: str = None,
                  secret_key: str = None,
                  endpoint_url: str = None,
-                 s3_cert_path: str = None,
+                 s3_cert_path: Optional[str, bool] = None,
                  **kwargs) -> None:
         """
         method initializes members of S3Lib.

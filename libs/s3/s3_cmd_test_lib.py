@@ -57,7 +57,7 @@ class S3CmdTestLib(S3LibCmd):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else S3_CFG["validate_certs"]
+        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else False
         super().__init__(
             access_key,
             secret_key,
