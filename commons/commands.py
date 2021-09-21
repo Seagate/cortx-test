@@ -405,6 +405,9 @@ LIBFAB_VERBS = "fi_info -p verbs"
 FI_SERVER_CMD = "fi_pingpong -e msg -p {}"
 FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 
+# Support Bundle
+R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
+
 #Deployment using Factory and Field
 CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
                    "/components/provisioner/scripts/install.sh; chmod +x /mnt/cortx/install.sh "
