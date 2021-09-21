@@ -254,12 +254,13 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
 
                 get_graphs(fig, fig_all, data_frame, plot_data, x_data_final)
 
-                plot_data['pallete'] = pallete['2']
-                plot_data['option'] = data_optional[xfilter_tag]
-                plot_data['custom'] = data_optional['custom']
-                plot_data['x_actual_data'] = x_data_optional
-                plot_data['nodes'] = nodes2
-                get_graphs(fig, fig_all, df_optional, plot_data, x_data_final)
+                plot_data_optional = plot_data.copy()
+                plot_data_optional['pallete'] = pallete['2']
+                plot_data_optional['option'] = data_optional[xfilter_tag]
+                plot_data_optional['custom'] = data_optional['custom']
+                plot_data_optional['x_actual_data'] = x_data_optional
+                plot_data_optional['nodes'] = nodes2
+                get_graphs(fig, fig_all, df_optional, plot_data_optional, x_data_final)
                 not_plotted = False
 
             if not_plotted:
