@@ -133,7 +133,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host, user, pwd,
                                                 read_lines=True)
                 if not status:
@@ -150,7 +151,7 @@ class S3Helper:
                         LOGGER.error("S3 service down: %s", s3services)
                         return False, service
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -175,7 +176,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
                      read_lines=True)
@@ -188,7 +190,7 @@ class S3Helper:
                     return True, result_
 
                 return status, result_
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -214,7 +216,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_START_CMD.format(service), host, user,
                      pwd, read_lines=True)
@@ -226,7 +229,7 @@ class S3Helper:
                     service, host, user, pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
 
@@ -253,7 +256,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
                 LOGGER.debug(result)
@@ -263,7 +267,7 @@ class S3Helper:
                 status = bool('inactive' in str(resp))
 
                 return status, resp
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -289,7 +293,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                     commands.SYSTEM_CTL_RESTART_CMD.format(service), host, user,
                     pwd, read_lines=True)
@@ -300,7 +305,7 @@ class S3Helper:
                 response = self.get_s3server_service_status(service, host, user, pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -326,7 +331,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, fids = self.get_s3server_fids()
                 LOGGER.debug(fids)
                 if not status:
@@ -349,7 +355,7 @@ class S3Helper:
                             fail_str in line for fail_str in fail_list) and "s3server" in line:
                         return False, output
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -372,7 +378,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.PCS_RESOURCE_SHOW_CMD, host, user, pwd,
                                                 read_lines=True)
                 LOGGER.info("Response: %s", str(output))
@@ -385,7 +392,7 @@ class S3Helper:
                 LOGGER.debug(s3_rcs)
 
                 return status, s3_rcs
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -411,7 +418,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, resources = self.get_s3server_resource(host=host, user=user, pwd=pwd)
                 if not status:
                     return status, resources
@@ -434,7 +442,7 @@ class S3Helper:
                         return False, output
 
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -485,7 +493,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host,
                                                 user, pwd, read_lines=True)
                 fids = []
@@ -497,7 +506,7 @@ class S3Helper:
                 LOGGER.info("Fids: %s", str(fids))
 
                 return status, fids
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -601,7 +610,8 @@ class S3Helper:
             host = kwargs.get("host", self.host)
             user = kwargs.get("user", self.user)
             pwd = kwargs.get("password", self.pwd)
-            if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
                 status, resources = self.get_s3server_resource()
                 if not status:
                     return status, resources
@@ -639,7 +649,7 @@ class S3Helper:
                 LOGGER.debug("s3server instances: %s", str(resources))
 
                 return status, output
-            elif CMN_CFG["product_family"] == "LC":
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -749,14 +759,15 @@ class S3Helper:
         host = kwargs.get("host", self.host)
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
-        if CMN_CFG["product_family"] == "LR" and CMN_CFG["product_type"] == "node":
+        if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
             command = commands.UPDATE_FAULTTOLERANCE.format("enable" if enable else "disable")
             status, response = run_remote_cmd(cmd=command, hostname=host,
                                               username=user, password=password)
             status = True if "200" in response else status
 
             return status, response
-        elif CMN_CFG["product_family"] == "LC":
+        elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
             LOGGER.critical("Product family: LC")
             # TODO: Add LC related calls
 
