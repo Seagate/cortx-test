@@ -768,7 +768,7 @@ class HALibs:
         return True, "Sucessfully completed s3bench operation"
 
     @staticmethod
-    def check_cluster_health(self):
+    def check_cluster_health():
         """Check the cluster health"""
         LOGGER.info("Check cluster status for all nodes.")
         nodes = CMN_CFG["nodes"]
