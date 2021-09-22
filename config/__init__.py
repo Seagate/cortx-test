@@ -25,7 +25,9 @@ import re
 import munch
 from typing import List
 from commons import configmanager
-from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
+from commons.params import COMMON_CONFIG
+from commons.params import CSM_CONFIG
+from commons.params import S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
@@ -38,6 +40,7 @@ from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3CMD_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
+from commons.constants import PROD_FAMILY_LC
 
 
 def split_args(sys_cmd: List):
@@ -83,9 +86,14 @@ else:
     target = None
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
-CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
-                                                target=target, target_key="csm")
 JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
+                                                target=target, target_key="csm")
+
+if PROD_FAMILY_LC == CMN_CFG["product_family"]:
+    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall_LC",
+                                                target=target, target_key="csm")
+else:
+    CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)

@@ -22,6 +22,7 @@
 
 """S3 package initializer."""
 
+from commons import constants as const
 from commons.helpers.s3_helper import S3Helper
 from commons.utils import config_utils
 from commons.params import S3_CONFIG

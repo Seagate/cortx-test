@@ -29,6 +29,7 @@ ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 APACHE_J_METER=apache-jmeter-5.4.1.tgz
+VERIFY_SSL = True # for aws
 
 
 aws-install:
@@ -51,6 +52,7 @@ aws-configure:
 	aws configure set aws_secret_access_key $(SECRET)
 	aws configure set region "US"
 	aws configure set output "json"
+	aws configure set default.no-verify-ssl $(!VERIFY_SSL)
 	@echo "### configured awscli. ###"
 
 
@@ -65,7 +67,11 @@ s3cmd-configure:
 
 	@echo "###Configure s3cmd in current machine###"
 	rm -rf /root/.s3cfg
-	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --dump-config >/root/.s3cfg
+	ifeq($VERIFY_SSL, True)
+		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --ssl --dump-config >/root/.s3cfg
+	else
+		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --no-ssl --dump-config >/root/.s3cfg
+	endif
 	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
 	sed -i 's|^progress_meter =.*|	progress_meter = True|g' /root/.s3cfg
 	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg

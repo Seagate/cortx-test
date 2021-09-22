@@ -51,13 +51,13 @@ class TestDeleteAccountTempCred():
         """
         LOGGER.info(
             "Step 1: Creating an account with name %s", account_name)
-        acc_create = IAM_TEST_OBJ.create_account_s3iamcli(
+        acc_create = IAM_TEST_OBJ.create_account(
             account_name, email_id, self.ldap_user, self.ldap_pwd)
         assert_true(acc_create[0], acc_create[1])
         LOGGER.info(
             "Step 1: Created an account with name %s", account_name)
         LOGGER.info("Step 2: Listing accounts to verify account is created")
-        acc_list = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        acc_list = IAM_TEST_OBJ.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_true(acc_list[0], acc_list[1])
         all_accounts = [acc["AccountName"] for acc in acc_list[1]]
@@ -68,7 +68,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info("Step 2: Verified that account is created")
         LOGGER.info(
             "Step 3: Creating a login profile for an account %s", account_name)
-        acc_profile = IAM_TEST_OBJ.create_account_login_profile_s3iamcli(
+        acc_profile = IAM_TEST_OBJ.create_account_login_profile(
             account_name,
             self.cfg["password"],
             acc_create[1]["access_key"],
@@ -127,13 +127,13 @@ class TestDeleteAccountTempCred():
         It will perform clean up activities such as deleting an IAM accounts.
         """
         LOGGER.info("STARTED: Teardown operations")
-        all_accounts = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        all_accounts = IAM_TEST_OBJ.list_accounts(
             self.ldap_user, self.ldap_pwd)[1]
         my_accounts = [acc["AccountName"]
                        for acc in all_accounts if self.cfg["account_name"] in acc["AccountName"]]
         LOGGER.info(my_accounts)
         if my_accounts:
-            resp = IAM_TEST_OBJ.reset_account_access_key_s3iamcli(
+            resp = IAM_TEST_OBJ.reset_account_access_key(
                 self.account_name, self.ldap_user, self.ldap_pwd)
             assert_true(resp[0], resp[1])
             access_key = resp[1]["AccessKeyId"]
@@ -149,7 +149,7 @@ class TestDeleteAccountTempCred():
                 LOGGER.info("Deleted all buckets")
             LOGGER.info("Deleting IAM accounts...")
             for acc in my_accounts:
-                resp = IAM_TEST_OBJ.reset_access_key_and_delete_account_s3iamcli(
+                resp = IAM_TEST_OBJ.reset_access_key_and_delete_account(
                     acc)
                 assert_true(resp[0], resp[1])
         LOGGER.info("Deleted accounts successfully")
@@ -164,7 +164,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info("STARTED: Delete account with valid temp credentials")
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info("Step 5: Deleting account using temporary credentials")
-        resp = IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+        resp = IAM_TEST_OBJ.delete_account_using_temp_creds(
             self.account_name,
             self.temp_creds["access_key"],
             self.temp_creds["secret_key"],
@@ -175,7 +175,7 @@ class TestDeleteAccountTempCred():
             "Step 5: Deleted account using temporary credentials successfully")
         LOGGER.info(
             "Step 6: Listing accounts to check if account is deleted")
-        resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        resp = IAM_TEST_OBJ.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
@@ -194,7 +194,7 @@ class TestDeleteAccountTempCred():
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info("Step 5: Deleting account using invalid credentials")
         try:
-            IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+            IAM_TEST_OBJ.delete_account_using_temp_creds(
                 self.account_name,
                 test_4519_cfg["temp_access_key"],
                 test_4519_cfg["temp_secret_key"],
@@ -222,7 +222,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 4: Deleting non existing account with temp credentials.")
         try:
-            IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+            IAM_TEST_OBJ.delete_account_using_temp_creds(
                 test_4520_cfg["account_name"],
                 test_4520_cfg["temp_access_key"],
                 test_4520_cfg["temp_secret_key"],
@@ -260,7 +260,7 @@ class TestDeleteAccountTempCred():
             "Step 5: Deleting account %s using temporary credentials after expiry of time limit",
                 self.account_name)
         try:
-            IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+            IAM_TEST_OBJ.delete_account_using_temp_creds(
                 self.account_name,
                 self.temp_creds["access_key"],
                 self.temp_creds["secret_key"],
@@ -290,7 +290,7 @@ class TestDeleteAccountTempCred():
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info(
             "Step 5: Deleting an account using temporary credentials")
-        resp = IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+        resp = IAM_TEST_OBJ.delete_account_using_temp_creds(
             self.account_name,
             self.temp_creds["access_key"],
             self.temp_creds["secret_key"],
@@ -300,7 +300,7 @@ class TestDeleteAccountTempCred():
             "Step 5: Deleted an account using temporary credentials successfully")
         LOGGER.info(
             "Step 6: Verifying that account is deleted using temporary credentials")
-        resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        resp = IAM_TEST_OBJ.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
@@ -340,7 +340,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 5: Deleting account using temporary credentials of an account %s",
                 self.account_name)
-        resp = IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+        resp = IAM_TEST_OBJ.delete_account_using_temp_creds(
             self.account_name,
             self.temp_creds["access_key"],
             self.temp_creds["secret_key"],
@@ -351,7 +351,7 @@ class TestDeleteAccountTempCred():
                 self.account_name)
         LOGGER.info(
             "Step 6: Verifying that account is deleted by listing accounts")
-        resp = IAM_TEST_OBJ.list_accounts_s3iamcli(
+        resp = IAM_TEST_OBJ.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_true(resp[0], resp[1])
         all_accounts = [acc["AccountName"] for acc in resp[1]]
@@ -361,7 +361,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 7: Deleting account using temp credentials of deleted account")
         try:
-            IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+            IAM_TEST_OBJ.delete_account_using_temp_creds(
                 self.account_name,
                 self.temp_creds["access_key"],
                 self.temp_creds["secret_key"],
@@ -464,7 +464,7 @@ class TestDeleteAccountTempCred():
         LOGGER.info(
             "Step 6: Deleting an account forcefully using temp credentials")
         try:
-            IAM_TEST_OBJ.delete_account_s3iamcli_using_temp_creds(
+            IAM_TEST_OBJ.delete_account_using_temp_creds(
                 self.account_name,
                 self.temp_creds["access_key"],
                 self.temp_creds["secret_key"],

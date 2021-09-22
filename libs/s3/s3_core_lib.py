@@ -24,11 +24,15 @@
 
 import os
 import logging
+from typing import Optional
 import boto3
 import boto3.s3
 
+from botocore.config import Config
 from commons import commands
-from commons.utils.system_utils import run_local_cmd, create_file
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import create_file
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +44,7 @@ class S3Lib:
                  access_key: str = None,
                  secret_key: str = None,
                  endpoint_url: str = None,
-                 s3_cert_path: str = None,
+                 s3_cert_path: Optional[str, bool] = None,
                  **kwargs) -> None:
         """
         method initializes members of S3Lib.
@@ -54,26 +58,32 @@ class S3Lib:
         :param debug: debug mode.
         """
         region = kwargs.get("region", None)
+        use_ssl = kwargs.get("use_ssl", True)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", False)
+        config = Config(retries={'max_attempts': 6})
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
         try:
             self.s3_resource = boto3.resource(
                 "s3",
+                use_ssl=use_ssl,
                 verify=s3_cert_path,
                 aws_access_key_id=access_key,
                 aws_secret_access_key=secret_key,
                 endpoint_url=endpoint_url,
                 region_name=region,
-                aws_session_token=aws_session_token)
-            self.s3_client = boto3.client("s3", verify=s3_cert_path,
+                aws_session_token=aws_session_token,
+                config=config)
+            self.s3_client = boto3.client("s3", use_ssl=use_ssl,
+                                          verify=s3_cert_path,
                                           aws_access_key_id=access_key,
                                           aws_secret_access_key=secret_key,
                                           endpoint_url=endpoint_url,
                                           region_name=region,
-                                          aws_session_token=aws_session_token)
+                                          aws_session_token=aws_session_token,
+                                          config=config)
         except Exception as Err:
             if "unreachable network" not in str(Err):
                 LOGGER.critical(Err)
@@ -1172,7 +1182,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1192,7 +1202,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1214,7 +1224,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
