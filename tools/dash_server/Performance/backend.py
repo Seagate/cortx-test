@@ -85,7 +85,7 @@ def get_data_for_stats(data):
     Returns:
         dataframe: Pandas dataframe with queried data
     """
-    data_needed_for_query = data
+    data_needed_for_query = data.copy()
     query = get_statistics_schema(data_needed_for_query)
     objects = get_distinct_keys(
         data_needed_for_query['release'], 'Object_Size', query)
@@ -127,7 +127,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
     Returns:
         dataframe: Pandas dataframe with queried data
     """
-    data_needed_for_query = data
+    data_needed_for_query = data.copy()
 
     if data_needed_for_query['sessions'] == 'all' or data_needed_for_query['all_sessions_plot']:
         query = get_multi_concurrency_schema(data, xfilter, xfilter_tag)
@@ -273,7 +273,7 @@ def get_dash_table_from_dataframe(df, bench, column_id):
     Returns:
         figure: dashtable figure with plotted plots
     """
-    if len(df) < 2:
+    if len(df) < 1:
         benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
