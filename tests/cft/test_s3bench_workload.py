@@ -20,13 +20,14 @@
 
 """S3bench test workload suit."""
 import logging
+from multiprocessing import Pool
 
 import pytest
 
 from commons import configmanager
+from config import CMN_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 from scripts.s3_bench import s3bench
-from config import CMN_CFG
 
 
 class TestWorkloadS3Bench:
@@ -173,3 +174,50 @@ class TestWorkloadS3Bench:
             self.log.info("Log Path %s", resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
+
+    def s3bench_workload(self, bucket_name):
+        """S3bench Workload worker"""
+        object_size = "2Mb"
+        client = 32
+        resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=f"{bucket_name}",
+                               num_clients=client, num_sample=400, obj_name_pref="loadgen_test_",
+                               obj_size=object_size, skip_cleanup=False, duration=None,
+                               log_file_prefix="TEST-28376")
+        self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
+        assert not s3bench.check_log_file_error(resp[1]), \
+            f"S3bench workload on bucket {bucket_name} with {client} client failed. " \
+            f"Please read log file {resp[1]}"
+
+    @pytest.mark.tags("TEST-28376")
+    @pytest.mark.data_durability
+    def test_28376(self):
+        """Parallel S3bench workloads on multiple buckets"""
+        resp = s3bench.setup_s3bench()
+        assert (resp, resp), "Could not setup s3bench."
+        pool = Pool(processes=3)
+        pool.map(self.s3bench_workload, ["test-bucket-1", "test-bucket-2", "test-bucket-3"])
+
+    @pytest.mark.tags("TEST-28377")
+    @pytest.mark.data_durability
+    def test_28377(self):
+        """S3bench workloads with varying object size and varying clients"""
+        bucket_prefix = "test-bucket"
+        object_sizes = [
+            "1Kb", "4Kb", "16Kb", "64Kb", "256Kb",
+            "1Mb", "5Mb", "20Mb", "64Mb", "128Mb", "256Mb", "512Mb"
+        ]
+        clients = [64, 128, 256]
+        resp = s3bench.setup_s3bench()
+        assert (resp, resp), "Could not setup s3bench."
+        for object_size in object_sizes:
+            for client in clients:
+                resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY,
+                                       bucket=f"{bucket_prefix}-{object_size.lower()}-{client}",
+                                       num_clients=client, num_sample=1024,
+                                       obj_name_pref="loadgen_test_", obj_size=object_size,
+                                       skip_cleanup=False, duration=None,
+                                       log_file_prefix="TEST-28377")
+                self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
+                assert not s3bench.check_log_file_error(resp[1]), \
+                    f"S3bench workload for object size {object_size} with client {client} failed." \
+                    f" Please read log file {resp[1]}"
