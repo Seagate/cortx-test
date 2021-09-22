@@ -2,23 +2,30 @@ import os
 import secrets
 import time
 import logging
+from time import perf_counter_ns
 import pytest
 import pandas as pd
 from commons.utils import assert_utils
+from commons.utils.system_utils import run_remote_cmd
 from commons.helpers.node_helper import Node
 from commons.helpers.health_helper import Health
 from commons.helpers.controller_helper import ControllerLib
+from commons.exceptions import CTException
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from commons import constants as cons
+from commons.constants import const
+from commons import commands
 from libs.ras.ras_test_lib import RASTestLib
+from libs.ha.ha_common_libs import HALibs
 from libs.csm.cli.cortx_node_cli_resource import CortxNodeCLIResourceOps
 from libs.csm.rest.csm_rest_alert import SystemAlerts
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
-
+from libs.s3 import S3H_OBJ, s3_test_lib
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG, S3_CFG
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
-
+S3_OBJ = s3_test_lib.S3TestLib()
 
 class TestNodeHealth:
     """
@@ -39,6 +46,7 @@ class TestNodeHealth:
         cls.uname = CMN_CFG["nodes"][cls.test_node-1]["username"]
         cls.passwd = CMN_CFG["nodes"][cls.test_node-1]["password"]
         cls.hostname = CMN_CFG["nodes"][cls.test_node-1]["hostname"]
+        cls.io_bucket_name = "iobkt1-copyobject-{}".format(perf_counter_ns())
         cls.ras_test_obj = RASTestLib(host=cls.hostname, username=cls.uname,
                                       password=cls.passwd)
         cls.node_obj = Node(hostname=cls.hostname, username=cls.uname,
@@ -163,6 +171,42 @@ class TestNodeHealth:
         time.sleep(self.cm_cfg["sleep_val"])
         self.resource_cli.close_connection()
         LOGGER.info("Successfully performed Teardown operation")
+
+    def s3_ios(self, bucket=None, log_file_prefix="ios", duration="0h1m",
+               obj_size="24Kb", **kwargs):
+        """
+        Perform io's for specific durations.
+
+        1. Create bucket.
+        2. perform io's for specified durations.
+        3. Check executions successful.
+        """
+        kwargs.setdefault("num_clients", 2)
+        kwargs.setdefault("num_sample", 5)
+        kwargs.setdefault("obj_name_pref", "load_gen_")
+        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        LOGGER.info("STARTED: s3 io's operations.")
+        bucket = bucket if bucket else self.io_bucket_name
+        resp = S3_OBJ.create_bucket(bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key, secret_key = S3H_OBJ.get_local_keys()
+        resp = s3bench.s3bench(
+            access_key,
+            secret_key,
+            bucket=bucket,
+            end_point=kwargs["end_point"],
+            num_clients=kwargs["num_clients"],
+            num_sample=kwargs["num_sample"],
+            obj_name_pref=kwargs["obj_name_pref"],
+            obj_size=obj_size,
+            duration=duration,
+            log_file_prefix=log_file_prefix)
+        LOGGER.info(resp)
+        assert_utils.assert_true(
+            os.path.exists(
+                resp[1]),
+            f"failed to generate log: {resp[1]}")
+        LOGGER.info("ENDED: s3 io's operations.")
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22520")
@@ -387,3 +431,65 @@ class TestNodeHealth:
         assert_utils.assert_that(resp[1], error_msg)
         LOGGER.info("Requesting resource health failed with wrong rpath with error %s",
                     resp[1])
+
+    @pytest.mark.cluster_management_ops
+    @pytest.mark.tags("TEST-26848")
+    def test_26848(self):
+        """
+        Verify "cortx_setup cluster reset --type data" command works fine
+        """
+        LOGGER.info("Step 1: Check cluster status, all services are running before starting test.")
+
+        HALibs.check_cluster_health()
+        LOGGER.info("Step 2: Start S3 IO.")
+        io_bucket_name = "test-26848-pre-reset-{}".format(perf_counter_ns())
+        self.s3_ios(bucket=io_bucket_name, log_prefix="test_26848_ios", duration="0h1m")
+
+        username = CMN_CFG["nodes"][0]["username"]
+        password = CMN_CFG["nodes"][0]["password"]
+        host = CMN_CFG["nodes"][0]["hostname"]
+        LOGGER.info("Step 3: Verify cortx_setup cluster reset --type data command.")
+        _, result = run_remote_cmd(
+            cmd=commands.CORTX_DATA_CLEANUP,
+            hostname=host,
+            username=username,
+            password=password,
+            read_lines=True)
+
+        LOGGER.info(" ********* Cortx setup cleanup command response for %s ********* "
+                    "\n %s \n", self.host, result)
+        time.sleep(120)
+        LOGGER.info("Step 4: Check cluster status, all services are running before starting test.")
+        HALibs.check_cluster_health()
+
+        LOGGER.info("Step 5: Verify if log files got cleaned from all nodes.")
+
+        nodes = CMN_CFG["nodes"]
+        for _, node in enumerate(nodes):
+
+            LOGGER.info(node)
+            _, result = run_remote_cmd(
+                cmd="cat " + const.HAPROXY_LOG_PATH,
+                hostname=node["hostname"],
+                username=node["username"],
+                password=node["password"],
+                read_lines=True)
+
+            LOGGER.info(" ********* path exists %s ********* \n %s \n",
+                        node["hostname"], result)
+            if "No such file" in str(result):
+                LOGGER.info("reset worked fine")
+            else:
+                LOGGER.error("after reset also haproxy.log file exists")
+        LOGGER.info("Step 6: Create bucket to verify s3 account got deleted")
+        bucket = "test-26848-post-reset-{}".format(perf_counter_ns())
+        try:
+            S3_OBJ.create_bucket(bucket)
+        except CTException as response:
+            LOGGER.info("Response = %s", response)
+            if "InvalidAccessKeyId" in str(response):
+                LOGGER.info("S3 account got deleted as expected")
+            else:
+                LOGGER.error("S3 account not deleted")
+
+        LOGGER.info("Test Completed.")
