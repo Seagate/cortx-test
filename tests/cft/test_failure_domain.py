@@ -24,13 +24,14 @@ import os
 
 import pytest
 
+from commons import commands as common_cmd
 from commons import configmanager
 from commons import pswdmanager
-from commons import commands as common_cmd
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG, HA_CFG, PROV_CFG
+from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
 
 
@@ -43,7 +44,7 @@ class TestFailureDomain:
         cls.log = logging.getLogger(__name__)
         test_config = "config/cft/test_failure_domain.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
-        cls.setup_type = CMN_CFG["setup_type"]
+        cls.deplymt_cfg = PROV_CFG["deploy_ff"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
         cls.host_list = []
@@ -52,8 +53,9 @@ class TestFailureDomain:
             cls.node_list.append(Node(hostname=CMN_CFG["nodes"][node]["hostname"],
                                       username=CMN_CFG["nodes"][node]["username"],
                                       password=CMN_CFG["nodes"][node]["password"]))
+        cls.nd1_obj = cls.node_list[0]
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
-        cls.test_config_template = cls.cft_test_cfg["deployment_template"]
+        cls.test_config_template = cls.deplymt_cfg["deployment_template"]
 
         cls.vm_username = os.getenv(
             "QA_VM_POOL_ID", pswdmanager.decrypt(
@@ -61,6 +63,19 @@ class TestFailureDomain:
         cls.vm_password = os.getenv(
             "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
                 HA_CFG["vm_params"]["passwd"]))
+        cls.build = os.getenv("Build", None)
+        cls.build_branch = os.getenv("Build_Branch", "stable")
+        if cls.build:
+            if cls.build_branch == "stable" or cls.build_branch == "main":
+                cls.build = "{}/{}".format(cls.build, "prod")
+        else:
+            cls.build = "last_successful_prod"
+        os_version = cls.nd1_obj.execute_cmd(cmd=common_cmd.CMD_OS_REL,
+                                             read_lines=True)[0].strip()
+        version = "centos-" + str(os_version.split()[3])
+        cls.build_url = cls.deplymt_cfg["build_url"].format(
+            cls.build_branch, version, cls.build)
+        cls.deploy_ff_obj = ProvDeployFFLib()
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -71,9 +86,8 @@ class TestFailureDomain:
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
            host: VM name """
-        resp = system_utils.execute_cmd(
-            common_cmd.CMD_VM_REVERT.format(
-                self.vm_username, self.vm_password, host))
+        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
+            self.vm_username, self.vm_password, host), read_lines=True)
 
         assert_utils.assert_true(resp[0], resp[1])
 
@@ -138,7 +152,7 @@ class TestFailureDomain:
                                                               mgmt_vip=self.mgmt_vip,
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=4)
     @pytest.mark.lr
@@ -163,7 +177,7 @@ class TestFailureDomain:
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=5)
     @pytest.mark.lr
@@ -189,7 +203,7 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=8)
     @pytest.mark.lr
@@ -215,7 +229,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=12)
     @pytest.mark.lr
@@ -241,7 +255,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
 
     @pytest.mark.run(order=16)
     @pytest.mark.lr
@@ -267,4 +281,4 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_3node_vm(resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])

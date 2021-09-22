@@ -1,4 +1,3 @@
-deployment_template: "config/prov/three_node_config.ini"
 test_deployment:
   jenkins_job_name: 'QA-testing-EC-deployment'
   jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA'
