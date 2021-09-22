@@ -20,25 +20,35 @@
 #
 """Tests Audit logs using REST API."""
 
+from __future__ import absolute_import
+from __future__ import division
+
+import logging
 import os
 import time
-import logging
+from builtins import round
 from time import perf_counter_ns
 
 import pytest
-from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
-from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
-from libs.csm.rest.csm_rest_bucket import RestS3Bucket
-from libs.csm.rest.csm_rest_s3user import RestS3user
-from config import S3_CFG
-from commons import cortxlogging
+
 from commons import configmanager
+from commons import cortxlogging
 from commons.constants import Rest as const
+from commons.exceptions import CTException
+from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons.exceptions import CTException
+from config import CMN_CFG
+from config import S3_CFG
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_alert import SystemAlerts
+from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
+from libs.csm.rest.csm_rest_bucket import RestS3Bucket
+from libs.csm.rest.csm_rest_capacity import SystemCapacity
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_common_test_lib import perform_s3_io
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -59,6 +69,9 @@ class TestAuditLogs:
         cls.end_time = int(time.time())
         cls.start_time = cls.end_time - ((7 * 24) * 60 * 60)
         cls.csm_user = RestCsmUser()
+        cls.iam_user = RestIamUser()
+        cls.system_capacity = SystemCapacity()
+        cls.csm_alerts = SystemAlerts()
         cls.config = CSMConfigsCheck()
         cls.log.info("Verifying if pre-defined CSM users are present...")
         user_already_present = cls.config.check_predefined_csm_user_present()
@@ -80,6 +93,9 @@ class TestAuditLogs:
         if not system_utils.path_exists(cls.folder_path):
             system_utils.make_dirs(cls.folder_path)
         cls.log.info("Test setup initialized...")
+        cls.health_helper = Health(CMN_CFG["nodes"][0]["hostname"],
+                                   CMN_CFG["nodes"][0]["username"],
+                                   CMN_CFG["nodes"][0]["password"])
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -604,3 +620,182 @@ class TestAuditLogs:
         self.log.info("Step 7: Repeat the above operations for different s3 user.")
         self.log.info("ENDED: Test filtering by user parameters on view , download operation on"
                       " S3 audit log")
+
+    @pytest.mark.skip(reason="Verification of sort audit logs is blocked refer EOS-24930,EOS-24931")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22332')
+    def test_22332(self):
+        """Test sort by user parameters on view , download operation on CSM audit log
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info(
+            "Test purpose: Verifying sort operation by user parameters on view,"
+            " download operation on CSM audit log")
+        data = self.csm_conf["test_22332"]["duration"]
+        end_time = int(time.time())
+        start_time = end_time - data
+        self.log.info(
+            "Step 1: Login using manage user and perform GET users operation")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=const.SUCCESS_STATUS,
+            return_actual_response=True,
+            login_as="csm_user_manage")
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verified that status code %s was returned along "
+                      "with response: %s for the get request for csm "
+                      "manage user", response.status_code,
+                      response.json())
+        self.log.info(
+            "Step 2: Login using monitor user and perform GET /users operation")
+        response = self.csm_user.list_csm_users(
+            expect_status_code=const.SUCCESS_STATUS,
+            return_actual_response=True,
+            login_as="csm_user_monitor")
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verified that status code %s was returned along "
+                      "with response: %s for the get request for csm "
+                      "monitor user", response.status_code,
+                      response.json())
+        self.log.info(
+            "Step 3: Login using S3 account and perform GET /iamusers operation")
+        self.log.info("Creating IAM user")
+        status, response = self.iam_user.create_and_verify_iam_user_response_code()
+        print(status)
+        self.log.info("Verifying status code returned is 200 and response is not null")
+        response = self.iam_user.list_iam_users(login_as="s3account_user")
+        self.log.info("Verifying response code 200 was returned")
+        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verified that status code %s was returned along "
+                      "with response: %s for the get request for csm "
+                      "s3account user", response.status_code,
+                      response.json())
+        self.log.info("Step4: View CSM Audit logs sorted by user")
+        params = {
+            "start_date": start_time,
+            "end_date": end_time,
+            "sortby": "user",
+            "dir": "asc"}
+        audit_log_show_response = self.audit_logs.audit_logs_csm_show(
+            params=params, invalid_component=False)
+        self.log.info("Verifying if success response was returned")
+        assert_utils.assert_equals(audit_log_show_response.status_code,
+                                   const.SUCCESS_STATUS)
+        self.log.info(
+            "Verified that audit log show request returned status: %s",
+            audit_log_show_response.status_code)
+        all_user = [usr['user']
+                    for usr in audit_log_show_response.json()['logs']]
+        self.log.info(all_user)
+        assert_utils.assert_equals(
+            sorted(all_user),
+            all_user,
+            "Failed to sort audit log by user.")
+        self.log.info("Step 5: Download CSM Audit logs sorted by user")
+        params = {
+            "start_date": start_time,
+            "end_date": end_time,
+            "sortby": "user",
+            "dir": "asc"}
+        audit_log_download_response = self.audit_logs.audit_logs_csm_download(
+            params=params, invalid_component=False)
+        self.log.info("Verifying if success response was returned")
+        assert_utils.assert_equals(audit_log_download_response.status_code,
+                                   const.SUCCESS_STATUS)
+        self.log.info(
+            "Verified that audit log show request returned status: %s",
+            audit_log_download_response.status_code)
+        # TODO: "Verification of sort audit logs is blocked refer EOS-24930,EOS-24931"
+        self.log.info(
+            "TODO: Verification of sort audit log for Download audit logs is blocked "
+            "refer EOS-24930,EOS-24931")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.skip(reason="Verification of sort audit logs is blocked refer EOS-24930,EOS-24931")
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22334')
+    def test_22334(self):
+        """Test sort by user parameters on view , download operation on CSM audit log
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Test purpose: Verifying sort operation by user parameters on view,"
+            " download operation on CSM audit log")
+        data = self.csm_conf["test_22334"]["duration"]
+        end_time = int(time.time())
+        start_time = end_time - data
+        self.log.info(
+            "Step 1: Login using manage user and perform GET capacity / GET alerts users operation")
+        self.log.info("GET capacity . . .")
+        results = self.system_capacity.parse_capacity_usage()
+        csm_total, csm_avail, csm_used, csm_used_percent, csm_unit = results
+        ha_total, ha_avail, ha_used = self.health_helper.get_sys_capacity()
+        ha_used_percent = round((ha_used / ha_total) * 100, 1)
+        csm_used_percent = round(csm_used_percent, 1)
+        assert_utils.assert_equals(
+            csm_total, ha_total, "Total capacity check failed.")
+        assert_utils.assert_equals(
+            csm_avail, ha_avail, "Available capacity check failed.")
+        assert_utils.assert_equals(
+            csm_used, ha_used, "Used capacity check failed.")
+        assert_utils.assert_equals(
+            csm_used_percent,
+            ha_used_percent,
+            "Used capacity percentage check failed.")
+        assert_utils.assert_equals(
+            csm_unit, 'BYTES', "Capacity unit check failed.")
+        self.log.info("Capacity reported by CSM matched HCTL response.")
+        self.log.info("Login with manage user and GET Alerts . . .")
+        response = self.csm_alerts.get_alerts(login_as="csm_user_manage")
+        self.log.info("Verifying the status code %s and response %s returned",
+                      response.status_code, response.json())
+        assert_utils.assert_equals(response.status_code,
+                                   const.SUCCESS_STATUS)
+        self.log.info("Manage user and Get alerts completed")
+        self.log.info("Step 2: View CSM Audit logs sorted by timestamp")
+        params = {
+            "start_date": start_time,
+            "end_date": end_time,
+            "sortby": "timestamp",
+            "dir": "asc"}
+        audit_log_show_response = self.audit_logs.audit_logs_csm_show(
+            params=params, invalid_component=False)
+        self.log.info("Verifying if success response was returned")
+        assert_utils.assert_equals(audit_log_show_response.status_code,
+                                   const.SUCCESS_STATUS)
+        self.log.info(
+            "Verified that audit log show request returned status: %s",
+            audit_log_show_response.status_code)
+        all_timestamp = [temp_timestamp['timestamp']
+                         for temp_timestamp in audit_log_show_response.json()['logs']]
+        self.log.info(all_timestamp)
+        assert_utils.assert_equals(
+            sorted(all_timestamp),
+            all_timestamp,
+            "Failed to sort audit log by timestamp.")
+        self.log.info("Step 3: Download CSM Audit logs sorted by timestamp")
+        params = {
+            "start_date": start_time,
+            "end_date": end_time,
+            "sortby": "timestamp",
+            "dir": "asc"}
+        audit_log_download_response = self.audit_logs.audit_logs_csm_download(
+            params=params, invalid_component=False)
+        self.log.info("Verifying if success response was returned")
+        assert_utils.assert_equals(audit_log_download_response.status_code,
+                                   const.SUCCESS_STATUS)
+        self.log.info(
+            "Verified that audit log show request returned status: %s",
+            audit_log_download_response.status_code)
+        # TODO: "Verification of sort audit logs is blocked refer EOS-24930,EOS-24931"
+        self.log.info(
+            "Verification of sort audit log for "
+            "Download audit logs is blocked refer EOS-24930,EOS-24931")
+        self.log.info("##### Test ended -  %s #####", test_case_name)
