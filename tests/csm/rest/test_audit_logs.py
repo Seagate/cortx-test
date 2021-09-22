@@ -20,9 +20,12 @@
 #
 """Tests Audit logs using REST API."""
 
+from __future__ import absolute_import
+
 import logging
 import os
 import time
+from builtins import round
 from time import perf_counter_ns
 
 import pytest
