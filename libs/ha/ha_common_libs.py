@@ -767,7 +767,8 @@ class HALibs:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
 
-    def check_cluster_health():
+    @staticmethod
+    def check_cluster_health(self):
         """Check the cluster health"""
         LOGGER.info("Check cluster status for all nodes.")
         nodes = CMN_CFG["nodes"]
@@ -778,7 +779,7 @@ class HALibs:
                         password=node['password'])
             result = health.check_node_health()
             assert_utils.assert_true(result[0],
-                                 f'Cluster Node {hostname} failed in health check. Reason: {result}')
+                    f'Cluster Node {hostname} failed in health check. Reason: {result}')
             health.disconnect()
         LOGGER.info("Cluster status is healthy.")
 

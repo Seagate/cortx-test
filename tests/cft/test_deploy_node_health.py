@@ -14,6 +14,7 @@ from commons.exceptions import CTException
 from commons.alerts_simulator.generate_alert_lib import \
      GenerateAlertLib, AlertType
 from commons import constants as cons
+from commons.constants import const
 from commons import commands
 from libs.ras.ras_test_lib import RASTestLib
 from libs.ha.ha_common_libs import HALibs
@@ -467,8 +468,8 @@ class TestNodeHealth:
         for _, node in enumerate(nodes):
 
             LOGGER.info(node)
-            status, result = run_remote_cmd(
-                cmd="cat /var/log/haproxy.log",
+            _, result = run_remote_cmd(
+                cmd="cat " + const.HAPROXY_LOG_PATH,
                 hostname=node["hostname"],
                 username=node["username"],
                 password=node["password"],
