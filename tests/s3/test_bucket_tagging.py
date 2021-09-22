@@ -564,9 +564,6 @@ class TestBucketTagging:
             resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
-            for tags in resp[1]:
-                if tag_key in tags["Key"]:
-                    resp[1][0] = tags
             assert_utils.assert_equal(
                 resp[1][0]["Key"], f"{tag_key}{0}", f"{tag_key}{0}")
             assert_utils.assert_equal(

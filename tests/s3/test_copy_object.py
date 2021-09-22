@@ -636,7 +636,7 @@ class TestCopyObjects:
                 status, f"copied object greater than 5GB: {response}")
         except CTException as error:
             LOGGER.info(error.message)
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (InvalidRequest) when calling the CopyObject operation:"
                 " The specified copy source is larger than the maximum allowable size for a"
                 " copy source: 5368709120", error.message, error)
@@ -1580,7 +1580,7 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied", error.message, error)
         LOGGER.info("8. Stop and validate parallel S3 IOs")
@@ -1645,7 +1645,7 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied", error.message, error)
         LOGGER.info("8. Stop and validate parallel S3 IOs")
@@ -1720,7 +1720,7 @@ class TestCopyObjects:
                 resp[1],
                 f"copied object {self.object_name2}")
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (AccessDenied) when calling the CopyObject operation: "
                 "Access Denied", error.message, error)
         resp = s3_acl_obj1.put_bucket_acl(
@@ -1875,7 +1875,7 @@ class TestCopyObjects:
                 self.bucket_name1, self.object_name1, self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (InvalidRequest) when calling the "
                 "CopyObject operation: This copy request is illegal because "
                 "it is trying to copy an object to itself without changing "
@@ -1925,7 +1925,7 @@ class TestCopyObjects:
                 self.bucket_name1, "*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (NoSuchKey) when calling the CopyObject operation:"
                 " The specified key does not exist.", error.message, error.message)
         LOGGER.info(
@@ -1936,7 +1936,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}*", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (NoSuchKey) when calling the CopyObject operation:"
                 " The specified key does not exist.", error.message, error.message)
         LOGGER.info(
@@ -1947,7 +1947,7 @@ class TestCopyObjects:
                 self.bucket_name1, f"{self.object_name1}?", self.bucket_name1, self.object_name1)
             assert_utils.assert_false(status, response)
         except CTException as error:
-            assert_utils.assert_in(
+            assert_utils.assert_equal(
                 "An error occurred (NoSuchKey) when calling the CopyObject operation:"
                 " The specified key does not exist.", error.message, error.message)
         LOGGER.info("Step 7: Stop and validate parallel S3 IOs")
