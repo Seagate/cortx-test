@@ -46,6 +46,7 @@ class ProvDeployFFLib:
         param: nd_obj : node object for command to be executed.
         """
         try:
+            prereq_cfg = PROV_CFG["deploy_ff"]["prereq"]
             LOGGER.info(
                 "Starting the prerequisite checks on node %s",
                 nd_obj.hostname)
@@ -57,7 +58,7 @@ class ProvDeployFFLib:
             count = nd_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
             LOGGER.info("No. of disks : %s", count[0])
             assert_utils.assert_greater_equal(int(
-                count[0]), PROV_CFG["deploy_ff"]["prereq"]["min_disks"],
+                count[0]), prereq_cfg["min_disks"],
                 "Need at least 4 disks for deployment")
 
             LOGGER.info("Checking OS release version")
@@ -65,7 +66,7 @@ class ProvDeployFFLib:
                                       common_cmd.CMD_OS_REL,
                                       read_lines=True)[0].strip()
             LOGGER.info("OS Release Version: %s", resp)
-            assert_utils.assert_in(resp, PROV_CFG["deploy_ff"]["prereq"]["os_release"],
+            assert_utils.assert_in(resp, prereq_cfg["os_release"],
                                    "OS version is different than expected.")
 
             LOGGER.info("Checking kernel version")
@@ -75,7 +76,7 @@ class ProvDeployFFLib:
             LOGGER.info("Kernel Version: %s", resp)
             assert_utils.assert_in(
                 resp,
-                PROV_CFG["deploy_ff"]["prereq"]["kernel"],
+                prereq_cfg["kernel"],
                 "Kernel Version is different than expected.")
 
             LOGGER.info("Checking network interfaces")
@@ -318,14 +319,15 @@ class ProvDeployFFLib:
         param: network_trans: Network Transport protocol - (lnet/libfabric)
         param: security_path: Certification file path (stx.pem)
         """
-        network_trans = kwargs.get("network_trans", PROV_CFG["deploy_ff"]["network_trans"])
-        security_path = kwargs.get("security_path", PROV_CFG["deploy_ff"]["security_path"])
+        deploy_ff_cfg = PROV_CFG["deploy_ff"]
+        network_trans = kwargs.get("network_trans", deploy_ff_cfg["network_trans"])
+        security_path = kwargs.get("security_path", deploy_ff_cfg["security_path"])
         s3_service_instances = kwargs.get("s3_service_instances",
-                                          PROV_CFG["deploy_ff"]["feature_config"][0])
+                                          deploy_ff_cfg["feature_config"][0])
         s3_io_max_units = kwargs.get("s3_service_instances",
-                                     PROV_CFG["deploy_ff"]["feature_config"][1])
+                                     deploy_ff_cfg["feature_config"][1])
         motr_client_instances = kwargs.get("s3_service_instances",
-                                           PROV_CFG["deploy_ff"]["feature_config"][2])
+                                           deploy_ff_cfg["feature_config"][2])
 
         feature_conf = {"'cortx>software>s3>service>instances'": s3_service_instances,
                         "'cortx>software>s3>io>max_units'": s3_io_max_units,
@@ -354,6 +356,7 @@ class ProvDeployFFLib:
         param: nd_no: Node number
         """
         try:
+            deploy_ff_cfg = PROV_CFG["deploy_ff"]
             LOGGER.info("Field Deployment")
             LOGGER.info("Prepare Node")
             LOGGER.info("Configure Server Identification")
@@ -363,7 +366,7 @@ class ProvDeployFFLib:
             nd_obj.execute_cmd(cmd=
             common_cmd.PREPARE_NETWORK.format(
                 CMN_CFG["nodes"][nd_no - 1]["hostname"],
-                PROV_CFG["deploy_ff"]["search_domains"], PROV_CFG["deploy_ff"]["dns_server"]),
+                deploy_ff_cfg["search_domains"], deploy_ff_cfg["dns_server"]),
                 read_lines=True)
 
             LOGGER.info("Configure Network")
@@ -376,7 +379,7 @@ class ProvDeployFFLib:
                 netmask = netmask.strip().decode("utf-8")
                 gateway = "0.0.0.0"
                 if network_type == "management":
-                    gateway = PROV_CFG["deploy_ff"]["gateway_lco"]
+                    gateway = deploy_ff_cfg["gateway_lco"]
                 nd_obj.execute_cmd(cmd=common_cmd.PREPARE_NETWORK_TYPE.format(network_type,
                                                                               ip_addr, netmask,
                                                                               gateway),
@@ -385,7 +388,7 @@ class ProvDeployFFLib:
             LOGGER.info("Configure Firewall")
             nd_obj.execute_cmd(cmd=
                                common_cmd.CFG_FIREWALL.format(
-                                   PROV_CFG["deploy_ff"]["firewall_url"]),
+                                   deploy_ff_cfg["firewall_url"]),
                                read_lines=True)
 
             LOGGER.info("Configure Network Time Server")
@@ -548,6 +551,8 @@ class ProvDeployFFLib:
         param: build_url: Build to be deployed
         """
         try:
+            deploy_ff_cfg = PROV_CFG["deploy_ff"]
+
             LOGGER.info("Set env variable with build url")
             nd1_obj.execute_cmd(cmd="CORTX_RELEASE_REPO {}".format(build_url), read_lines=True)
 
@@ -557,7 +562,7 @@ class ProvDeployFFLib:
 
             LOGGER.info("Define Storage Set")
             self.define_storage_set(nd1_obj, srvnodes,
-                                    PROV_CFG["deploy_ff"]["storage_set_name"], deploy_cfg)
+                                    deploy_ff_cfg["storage_set_name"], deploy_cfg)
 
             LOGGER.info("Prepare Cluster")
             nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
@@ -570,8 +575,8 @@ class ProvDeployFFLib:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CMD_START_CLSTR,
                 read_lines=True)[0].strip()
-            assert_utils.assert_exact_string(resp, PROV_CFG["deploy_ff"]["cluster_start_msg"])
-            time.sleep(PROV_CFG["deploy_ff"]["cluster_start_delay"])
+            assert_utils.assert_exact_string(resp, deploy_ff_cfg["cluster_start_msg"])
+            time.sleep(deploy_ff_cfg["cluster_start_delay"])
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",

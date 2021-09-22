@@ -44,8 +44,7 @@ class TestFailureDomain:
         cls.log = logging.getLogger(__name__)
         test_config = "config/cft/test_failure_domain.yaml"
         cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
-        cls.deplymt_cfg = PROV_CFG["test_deployment_ff"]
-        cls.setup_type = CMN_CFG["setup_type"]
+        cls.deplymt_cfg = PROV_CFG["deploy_ff"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
         cls.host_list = []
