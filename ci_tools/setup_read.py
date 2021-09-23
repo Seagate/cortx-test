@@ -44,7 +44,6 @@ DB_NAME = "cft_test_results"
 SYS_INFO_COLLECTION = "r2_systems"
 DBUSER = args.dbuser
 DBPSWD = args.dbpassword
-DOCKERCMD = ""
 
 
 def read_setup():
@@ -52,6 +51,7 @@ def read_setup():
     Function will create a string
     and temporary file
     """
+    DOCKERCMD = ""
     setupname = args.target
     setup_query = {"setupname": setupname}
     mongodburi = "mongodb://{0}:{1}@{2}"
@@ -67,9 +67,8 @@ def read_setup():
         node = nodes[0]
         if data_ip in ('', 'FQDN without protocol(http/s)'):
             data_ip = node["public_data_ip"]
-        global DOCKERCMD
-        DOCKERCMD += "--add-host=" + node['host'] + ":" + data_ip + " --add-host=s3.seagate.com:" + data_ip \
-                     + " --add-host=iam.seagate.com:" + data_ip
+        DOCKERCMD += "--add-host=" + node['host'] + ":" + data_ip + " --add-host=s3.seagate.com:" \
+                     + data_ip + " --add-host=iam.seagate.com:" + data_ip
     else:
         DOCKERCMD += "setup is not added"
     with open("docker_temp", "w") as f_file:
