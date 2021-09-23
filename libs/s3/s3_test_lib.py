@@ -65,8 +65,6 @@ class S3TestLib(S3Lib):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        kwargs["use_ssl"] = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else S3_CFG["validate_certs"]
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,

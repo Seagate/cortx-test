@@ -27,8 +27,9 @@ import logging
 from typing import Union
 import boto3
 import boto3.s3
-
 from botocore.config import Config
+
+from config import S3_CFG
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import create_file
@@ -58,10 +59,11 @@ class S3Lib:
         :param debug: debug mode.
         """
         region = kwargs.get("region", None)
-        use_ssl = kwargs.get("use_ssl", True)
         aws_session_token = kwargs.get("aws_session_token", None)
         debug = kwargs.get("debug", False)
         config = Config(retries={'max_attempts': 6})
+        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else False
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
