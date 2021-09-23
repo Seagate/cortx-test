@@ -104,6 +104,35 @@ class RestTestLib:
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
         return response
 
+    def custom_rest_login_missing_param(self, param1, param1_key):
+        """
+        This function tests the invalid login scenarios
+        :param str param1: can be username or password
+        :param str param1_key: key word for json load for username or password
+        :return [object]: response
+        """
+        try:
+            # Building response
+            endpoint = self.config["rest_login_endpoint"]
+            headers = self.config["Login_headers"]
+            self.log.debug("endpoint %s", endpoint)
+            payload = "{{\"{}\":\"{}\"}}".format(
+                param1_key, param1,)
+
+            # Fetch and verify response
+            response = self.restapi.rest_call(
+                "post", endpoint, headers=headers, data=payload, save_json=False)
+            self.log.debug("response : %s", response)
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestTestLib.custom_rest_login.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+        return response
+
     def authenticate_and_login(func):
         """
         :type: Decorator

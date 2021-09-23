@@ -3456,3 +3456,290 @@ class TestCsmUser():
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28513')
+    def test_28513(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Incorrect
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Incorrect")
+
+        # self.rest_lib = RestTestLib()
+        incorrect_password = self.csm_conf["test_28513"]["password"]
+        status_code = self.csm_conf["test_28513"]["status_code"]
+
+        self.log.info("Step 1: Verifying with incorrect password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=incorrect_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with incorrect password")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Incorrect")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28512')
+    def test_28512(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Incorrect
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Incorrect")
+
+        # self.rest_lib = RestTestLib()
+        incorrect_username = self.csm_conf["test_28512"]["username"]
+        status_code = self.csm_conf["test_28512"]["status_code"]
+
+        self.log.info("Step 1: Verifying with incorrect username")
+        response = self.csm_user.custom_rest_login(
+            username=incorrect_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with incorrect username")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Incorrect")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28515')
+    def test_28515(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Invalid
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Invalid")
+
+        # self.rest_lib = RestTestLib()
+        invalid_password = self.csm_conf["test_28515"]["password"]
+        status_code = self.csm_conf["test_28515"]["status_code"]
+
+        self.log.info("Step 1: Verifying with invalid password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=invalid_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with invalid password")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Invalid")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28514')
+    def test_28514(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Invalid
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Invalid")
+
+        # self.rest_lib = RestTestLib()
+        invalid_username = self.csm_conf["test_28514"]["username"]
+        status_code = self.csm_conf["test_28514"]["status_code"]
+
+        self.log.info("Step 1: Verifying with invalid username")
+        response = self.csm_user.custom_rest_login(
+            username=invalid_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with invalid username")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Invalid")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28511')
+    def test_28511(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Empty
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Empty")
+
+        # self.rest_lib = RestTestLib()
+        empty_password = ""
+        status_code = self.csm_conf["test_28511"]["status_code"]
+
+        self.log.info("Step 1: Verifying with empty password")
+        response = self.csm_user.custom_rest_login(
+            username=self.csm_user.config["csm_admin_user"]["username"],
+            password=empty_password)
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with empty password")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Empty")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28510')
+    def test_28510(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Empty
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Empty")
+
+        # self.rest_lib = RestTestLib()
+        empty_username = ""
+        status_code = self.csm_conf["test_28510"]["status_code"]
+
+        self.log.info("Step 1: Verifying with empty username")
+        response = self.csm_user.custom_rest_login(
+            username=empty_username, password=self.csm_user.config[
+                "csm_admin_user"]["password"])
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with empty username")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Empty")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28509')
+    def test_28509(self):
+        """
+        Test that Login API returns error Response Code 401 if Password in payload is Missing
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Password in payload is Missing")
+
+        # self.rest_lib = RestTestLib()
+        status_code = self.csm_conf["test_28509"]["status_code"]
+
+        self.log.info("Step 1: Verifying with missing password")
+        response = self.csm_user.custom_rest_login_missing_param(
+            param1=self.csm_user.config["csm_admin_user"]["username"],
+            param1_key = "username")
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert response.status_code == status_code, "Unexpected status code"
+        self.log.info("Step 1: Verified with missing password")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Password in payload is Missing")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28508')
+    def test_28508(self):
+        """
+        Test that Login API returns error Response Code 401 if Username in payload is Missing
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns error Response Code 401 "
+            "if Username in payload is Missing")
+
+        # self.rest_lib = RestTestLib()
+        empty_username = ""
+        status_code = self.csm_conf["test_28508"]["status_code"]
+
+        self.log.info("Step 1: Verifying with missing username")
+        response = self.csm_user.custom_rest_login_missing_param(
+            param1=self.csm_user.config["csm_admin_user"]["password"],
+            param1_key = "password")
+        self.log.info("Expected Response: %s", status_code)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, status_code)
+        self.log.info("Step 1: Verified with missing username")
+
+        self.log.info(
+            "Verified that Login API returns error Response Code 401 "
+            "if Username in payload is Missing")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
