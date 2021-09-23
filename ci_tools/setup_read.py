@@ -51,7 +51,7 @@ def read_setup():
     Function will create a string
     and temporary file
     """
-    DOCKERCMD = ""
+    docker_cmd = ""
     setupname = args.target
     setup_query = {"setupname": setupname}
     mongodburi = "mongodb://{0}:{1}@{2}"
@@ -67,12 +67,10 @@ def read_setup():
         node = nodes[0]
         if data_ip in ('', 'FQDN without protocol(http/s)'):
             data_ip = node["public_data_ip"]
-        DOCKERCMD += "--add-host=" + node['host'] + ":" + data_ip + " --add-host=s3.seagate.com:" \
-                     + data_ip + " --add-host=iam.seagate.com:" + data_ip
-    else:
-        DOCKERCMD += "setup is not added"
+        docker_cmd += "--add-host=" + node['host'] + ":" + data_ip + " --add-host=s3.seagate.com:" \
+                      + data_ip + " --add-host=iam.seagate.com:" + data_ip
     with open("docker_temp", "w") as f_file:
-        print(DOCKERCMD, file=f_file)
+        print(docker_cmd, file=f_file)
 
 
 if __name__ == '__main__':
