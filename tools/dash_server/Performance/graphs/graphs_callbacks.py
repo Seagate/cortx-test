@@ -188,7 +188,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         if sessions1 == 'all' and xfilter == 'Build':
             plot_data['x_heading'] = 'Sessions'
             xfilter_tag = 'build'
-        elif sessions1 == 'all' and xfilter == 'Build':
+        elif sessions1 == 'all' and xfilter == 'Object_Size':
             plot_data['x_heading'] = 'Sessions'
             xfilter_tag = 'objsize'
         elif xfilter == 'Build':
