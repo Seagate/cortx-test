@@ -142,8 +142,8 @@ class Test3PSvcMonitoring:
         resp = self.ras_test_obj.get_conf_store_vals(
             url=self.sspl_cfg_url, field=self.sspl_thrs_inact_time)
         if resp != self.thrs_inact_time_org:
-            LOGGER.info("Restore threshold_inactive_time to {}".format(
-                self.thrs_inact_time_org))
+            LOGGER.info("Restore threshold_inactive_time to %s",
+                self.thrs_inact_time_org)
             self.ras_test_obj.set_conf_store_vals(
                 url=self.sspl_cfg_url,
                 encl_vals={"CONF_SSPL_SRV_THRS_INACT_TIME": int(self.thrs_inact_time_org)})
