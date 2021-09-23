@@ -3474,7 +3474,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Incorrect")
 
-        # self.rest_lib = RestTestLib()
         incorrect_password = self.csm_conf["test_28513"]["password"]
         status_code = self.csm_conf["test_28513"]["status_code"]
 
@@ -3510,7 +3509,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Incorrect")
 
-        # self.rest_lib = RestTestLib()
         incorrect_username = self.csm_conf["test_28512"]["username"]
         status_code = self.csm_conf["test_28512"]["status_code"]
 
@@ -3546,7 +3544,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Invalid")
 
-        # self.rest_lib = RestTestLib()
         invalid_password = self.csm_conf["test_28515"]["password"]
         status_code = self.csm_conf["test_28515"]["status_code"]
 
@@ -3582,7 +3579,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Invalid")
 
-        # self.rest_lib = RestTestLib()
         invalid_username = self.csm_conf["test_28514"]["username"]
         status_code = self.csm_conf["test_28514"]["status_code"]
 
@@ -3618,7 +3614,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Empty")
 
-        # self.rest_lib = RestTestLib()
         empty_password = ""
         status_code = self.csm_conf["test_28511"]["status_code"]
 
@@ -3654,7 +3649,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Empty")
 
-        # self.rest_lib = RestTestLib()
         empty_username = ""
         status_code = self.csm_conf["test_28510"]["status_code"]
 
@@ -3690,7 +3684,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Missing")
 
-        # self.rest_lib = RestTestLib()
         status_code = self.csm_conf["test_28509"]["status_code"]
 
         self.log.info("Step 1: Verifying with missing password")
@@ -3725,8 +3718,6 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Missing")
 
-        # self.rest_lib = RestTestLib()
-        empty_username = ""
         status_code = self.csm_conf["test_28508"]["status_code"]
 
         self.log.info("Step 1: Verifying with missing username")
