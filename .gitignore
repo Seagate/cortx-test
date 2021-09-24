@@ -13,3 +13,9 @@ build
 .coverage
 tmp
 venv/
+.vscode/
+robot_gui/reports/
+secrets.json
+setups.json
+log/
+virenv/
