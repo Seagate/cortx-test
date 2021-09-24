@@ -247,7 +247,7 @@ test_28512:
     username: "incorrectuser123ABC"
     status_code: 401
 test_28515:
-    password: "123456"
+    password: "7uY5HlnrQgqcNMg1dG2AdUcU/344qPhx70zTTytHqPc="
     status_code: 401
 test_28514:
     username: "123"
