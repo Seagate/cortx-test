@@ -2268,8 +2268,8 @@ class TestCopyObjects:
         """Use bucket policy to validate copy object with applied ACL."""
         LOGGER.info("STARTED: Use bucket policy to validate copy object with applied ACL.")
         bucket_policy1 = BKT_POLICY_CONF["test_22283"]["bucket_policy"]
-        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
-        bucket_policy3 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
+        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy_1"]
+        bucket_policy3 = BKT_POLICY_CONF["test_22299"]["bucket_policy_2"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object "
                     "uploaded to the above bucket.")
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
@@ -2343,7 +2343,6 @@ class TestCopyObjects:
                 'CanonicalUser'].format(str(canonical_id1))
         bucket_policy2['Statement'][1]['Resource'] = bucket_policy2['Statement'][1][
             'Resource'].format(self.bucket_name2)
-        bucket_policy2['Statement'][1]['Effect'] = "Allow"
         bucket_policy2 = json.dumps(bucket_policy2)
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
