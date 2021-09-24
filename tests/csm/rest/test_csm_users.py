@@ -3681,13 +3681,13 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-28509')
     def test_28509(self):
         """
-        Test that Login API returns error Response Code 401 if Password in payload is Missing
+        Test that Login API returns error Response Code 400 if Password in payload is Missing
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info(
-            "Verifying that Login API returns error Response Code 401 "
+            "Verifying that Login API returns error Response Code 400 "
             "if Password in payload is Missing")
 
         status_code = self.csm_conf["test_28509"]["status_code"]
@@ -3702,7 +3702,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with missing password")
 
         self.log.info(
-            "Verified that Login API returns error Response Code 401 "
+            "Verified that Login API returns error Response Code 400 "
             "if Password in payload is Missing")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -3715,13 +3715,13 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-28508')
     def test_28508(self):
         """
-        Test that Login API returns error Response Code 401 if Username in payload is Missing
+        Test that Login API returns error Response Code 400 if Username in payload is Missing
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info(
-            "Verifying that Login API returns error Response Code 401 "
+            "Verifying that Login API returns error Response Code 400 "
             "if Username in payload is Missing")
 
         status_code = self.csm_conf["test_28508"]["status_code"]
@@ -3736,7 +3736,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with missing username")
 
         self.log.info(
-            "Verified that Login API returns error Response Code 401 "
+            "Verified that Login API returns error Response Code 400 "
             "if Username in payload is Missing")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)

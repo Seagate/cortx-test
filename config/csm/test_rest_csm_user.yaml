@@ -240,3 +240,24 @@ test_28517:
     new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
     reset_password: True
     token_expire_timeout: 3600
+test_28509:
+test_28508:
+  status_code: 400
+test_28510:
+test_28511:
+  status_code: 401
+test_28511:
+test_28510:
+  status_code: 401
+test_28515:
+  invalid_password:  "123456"
+  status_code: 401
+test_28514:
+  invalid_username:  "123"
+  status_code: 401
+test_28512:
+  incorrect_username:  "incorrectuser123ABC"
+  status_code: 401
+test_28513:
+  incorrect_password:  "1oa2EwRk/urr4oKeEiO6jCg8e74EVStVfw8WVZyw0An1fW0ingjZANtJ51xljjY4"
+  status_code: 401

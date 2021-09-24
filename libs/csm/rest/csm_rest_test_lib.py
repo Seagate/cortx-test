@@ -117,7 +117,7 @@ class RestTestLib:
             headers = self.config["Login_headers"]
             self.log.debug("endpoint %s", endpoint)
             payload = "{{\"{}\":\"{}\"}}".format(
-                param1_key, param1,)
+                param1_key, param1)
 
             # Fetch and verify response
             response = self.restapi.rest_call(
