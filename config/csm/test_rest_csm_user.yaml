@@ -253,9 +253,9 @@ test_28514:
     username: "123"
     status_code: 401
 test_28511:
-    status_code: 401
+    status_code: 400
 test_28510:
-    status_code: 401
+    status_code: 400
 test_28509:
     status_code: 400
 test_28508:

@@ -3611,13 +3611,13 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-28511')
     def test_28511(self):
         """
-        Test that Login API returns error Response Code 401 if Password in payload is Empty
+        Test that Login API returns error Response Code 400 if Password in payload is Empty
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info(
-            "Verifying that Login API returns error Response Code 401 "
+            "Verifying that Login API returns error Response Code 400 "
             "if Password in payload is Empty")
 
         empty_password = ""
@@ -3633,7 +3633,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with empty password")
 
         self.log.info(
-            "Verified that Login API returns error Response Code 401 "
+            "Verified that Login API returns error Response Code 400 "
             "if Password in payload is Empty")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
@@ -3646,13 +3646,13 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-28510')
     def test_28510(self):
         """
-        Test that Login API returns error Response Code 401 if Username in payload is Empty
+        Test that Login API returns error Response Code 400 if Username in payload is Empty
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         self.log.info(
-            "Verifying that Login API returns error Response Code 401 "
+            "Verifying that Login API returns error Response Code 400 "
             "if Username in payload is Empty")
 
         empty_username = ""
@@ -3668,7 +3668,7 @@ class TestCsmUser():
         self.log.info("Step 1: Verified with empty username")
 
         self.log.info(
-            "Verified that Login API returns error Response Code 401 "
+            "Verified that Login API returns error Response Code 400 "
             "if Username in payload is Empty")
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
