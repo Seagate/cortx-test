@@ -2369,7 +2369,7 @@ class TestCopyObjects:
         bucket_policy3['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy3['Statement'][0]['Principal'][
                 'CanonicalUser'].format(str(canonical_id1))
-        bucket_policy3['Statement'][0]['Resource'] = bucket_policy2['Statement'][0][
+        bucket_policy3['Statement'][0]['Resource'] = bucket_policy3['Statement'][0][
             'Resource'].format(self.bucket_name2)
         bucket_policy3['Statement'][1]['Principal']['CanonicalUser'] = \
             bucket_policy3['Statement'][1]['Principal'][
