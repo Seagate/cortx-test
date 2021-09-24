@@ -3456,3 +3456,258 @@ class TestCsmUser():
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28501')
+    def test_28501(self):
+        """
+        Function to test password reset functionality: expect 200 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28501"]["new_password"]
+        confirm_new_password = new_password
+        reset_password = self.csm_conf["test_28501"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(
+            admin_username,
+            new_password, confirm_new_password,
+            reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 200 received"
+        else:
+            self.log.info("Verified response code 200 is returned")
+
+        self.log.info("Step 3: Check login with new password")
+        response = self.csm_user.custom_rest_login(
+            username=admin_username,
+            password=new_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with new password")
+        else:
+            self.log.error("Log in with new password failed")
+            assert False, "Log in with new password failed"
+
+        self.log.info("Step 4: Reverting user password")
+        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
+                                                          admin_password, reset_password)
+        self.log.info("Step 5: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 200 received"
+        else:
+            self.log.info("Verified response code 200 is returned")
+
+        self.log.info("Step 6: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with reverted password")
+        else:
+            self.log.error("Log in with reverted password failed")
+            assert False, "Log in with reverted password failed"
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28502')
+    def test_28502(self):
+        """
+        Function to test password reset functionality with empty payload:  expect 400 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = ""
+        confirm_new_password = ""
+        reset_password = True
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(admin_username, new_password,
+                                                          confirm_new_password, reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.log.info("Verifying response code 400 is returned")
+        if response.status_code != const.BAD_REQUEST:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 400 received"
+        else:
+            self.log.info("Verified response code 400 is returned")
+
+        self.log.info("Step 3: Check login with existing password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with existing password")
+        else:
+            self.log.error("Log in with existing password failed")
+            assert False, "Log in with existing password failed"
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28503')
+    def test_28503(self):
+        """
+        Function to test password reset functionality with non matching confirm password
+        Expect 400 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28503"]["new_password"]
+        confirm_new_password = self.csm_conf["test_28503"]["confirm_new_password"]
+        reset_password = self.csm_conf["test_28503"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(
+            CSM_REST_CFG["csm_admin_user"]["username"],
+            new_password, confirm_new_password, reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.log.info("Verifying response code 400 is returned")
+        if response.status_code != const.BAD_REQUEST:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 400 received"
+        else:
+            self.log.info("Verified response code 400 is returned")
+
+        self.log.info("Step 3: Check login with existing password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with existing password")
+        else:
+            self.log.error("Log in with existing password failed")
+            assert False, "Log in with existing password failed"
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28505')
+    def test_28505(self):
+        """
+        Function to test password reset functionality: Dont follow password policy
+        Expect 400 response
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28505"]["new_password"]
+        confirm_new_password = new_password
+        reset_password = self.csm_conf["test_28505"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(
+            CSM_REST_CFG["csm_admin_user"]["username"],
+            new_password, confirm_new_password, reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.log.info("Verifying response code 400 is returned")
+        if response.status_code != const.BAD_REQUEST:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 400 received"
+        else:
+            self.log.info("Verified response code 400 is returned")
+        self.log.info("Step 3: Check login with existing password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with existing password")
+        else:
+            self.log.error("Log in with existing password failed")
+            assert False, "Log in with existing password failed"
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28506')
+    def test_28506(self):
+        """
+        Function to test password reset functionality: Try login with old password
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28501"]["new_password"]
+        confirm_new_password = new_password
+        reset_password = self.csm_conf["test_28501"]["reset_password"]
+
+        self.log.info("Step 1: Changing user password")
+        response = self.csm_user.update_csm_user_password(admin_username, new_password,
+                                                          confirm_new_password, reset_password)
+
+        self.log.info("Step 2: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 200 received"
+        else:
+            self.log.info("Verified response code 200 is returned")
+
+        self.log.info("Step 3: Check login with new password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with new password")
+        else:
+            self.log.error("Log in with new password failed")
+            assert False, "Log in with new password failed"
+
+        self.log.info("Step 4: Check login with old password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.error("Log in with old password passed")
+            assert False, "Log in with old password passed"
+        else:
+            self.log.info("Verified log in with old password, failed as expected")
+
+        self.log.info("Step 5: Reverting user password")
+        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
+                                                          admin_password, reset_password)
+
+        self.log.info("Step 6: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code != const.SUCCESS_STATUS:
+            self.log.error(f"Response code : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than 200 received"
+        else:
+            self.log.info("Verified response code 200 is returned")
+
+        self.log.info("Step 7: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        if response.status_code == const.SUCCESS_STATUS:
+            self.log.info("Verified log in with reverted password")
+        else:
+            self.log.error("Log in with reverted password failed")
+            assert False, "Log in with reverted password failed"
