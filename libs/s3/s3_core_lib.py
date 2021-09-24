@@ -64,6 +64,7 @@ class S3Lib:
         config = Config(retries={'max_attempts': 6})
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else False
+        self.cmd_endpoint = f" --endpoint-url {endpoint_url}{'' if use_ssl else ' --no-verify-ssl'}"
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
@@ -1169,8 +1170,8 @@ class BucketPolicy(S3Lib):
 class S3LibCmd(S3Lib):
     """Class containing methods to implement aws cmd functionality."""
 
-    @staticmethod
     def upload_object_cli(
+            self,
             bucket_name: str = None,
             object_name: str = None,
             file_path: str = None) -> tuple:
@@ -1184,13 +1185,14 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
-    @staticmethod
     def upload_folder_cli(
+            self,
             bucket_name: str = None,
             folder_path: str = None,
             profile_name: str = None) -> tuple:
@@ -1204,13 +1206,14 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
-    @staticmethod
     def download_bucket_cli(
+            self,
             bucket_name: str = None,
             folder_path: str = None,
             profile_name: str = None) -> tuple:
@@ -1226,6 +1229,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
