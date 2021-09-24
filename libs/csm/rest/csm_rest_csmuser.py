@@ -898,17 +898,16 @@ class RestCsmUser(RestTestLib):
                                           headers=self.headers)
         return response
 
-    @RestTestLib.authenticate_and_login
-    def update_csm_user_password(self, username, new_password,
-                                 confirm_new_password, reset_password):
+    def reset_user_password(self, username, new_password, confirm_new_password, reset_password,
+                            headers):
         """
-        LC specific
-        This function will update csm user password for LC
+        Reset user password with external auth token
         :param username: Username
         :param new_password: New Password
         :param confirm_new_password:New Password
         :param reset_password: true/false
-        :return: Success(True)/Failure(False)
+        :param headers: external auth token
+        :return: response
         """
         try:
             self.log.debug(
@@ -927,11 +926,27 @@ class RestCsmUser(RestTestLib):
 
             # Fetching api response
             response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
-                                              headers=self.headers)
+                                              headers=headers)
         except Exception as error:
             self.log.error("{0} {1}: {2}".format(
                 const.EXCEPTION_ERROR,
                 RestCsmUser.update_csm_user_password.__name__,
                 error))
             raise CTException(err.CSM_REST_VERIFICATION_FAILED, error.args[0])
+        return response
+
+    @RestTestLib.authenticate_and_login
+    def update_csm_user_password(self, username, new_password, confirm_new_password,
+                                 reset_password):
+        """
+        LC specific
+        This function will update csm user password for LC
+        :param username: Username
+        :param new_password: New Password
+        :param confirm_new_password:New Password
+        :param reset_password: true/false
+        :return: response
+        """
+        response = reset_user_password(self, username, new_password, confirm_new_password,
+                                       reset_password, self.headers)
         return response
