@@ -951,16 +951,21 @@ class RestCsmUser(RestTestLib):
                                             reset_password, header)
         return response
 
-    def check_expected_response(self, response, expected_code):
+    def check_expected_response(self, response, expected_code, inverse_check=False):
         """
             Check expected response code is returned
         """
-        self.log.info("Verifying response code {} is returned".format(expected_code))
-        if response.status_code != expected_code:
-            self.log.error(f"Response code received : {response.status_code}")
-            self.log.error(f"Response content: {response.content}")
-            self.log.error(f"Request headers : {response.request.headers}\n"
-                           f"Request body : {response.request.body}")
-            assert False, "Response code other than expected received"
+        if inverse_check:
+            self.log.info("Verifying response code {} is not returned".format(expected_code))
+            if response.status_code == expected_code:
+                self.log.error(f"Response code : {response.status_code}")
+                assert False, "Response code other than expected received"
+            else:
+                self.log.info("Verified response code {} is not returned".format(expected_code))
         else:
-            self.log.info("Verified response code {} is returned".format(expected_code))
+            self.log.info("Verifying response code {} is returned".format(expected_code))
+            if response.status_code != expected_code:
+                self.log.error(f"Response code received : {response.status_code}")
+                assert False, "Response code other than expected received"
+            else:
+                self.log.info("Verified response code {} is returned".format(expected_code))

@@ -3619,11 +3619,7 @@ class TestCsmUser():
 
         self.log.info("Step 4: Check login with old password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
-        if response.status_code == HTTPStatus.OK:
-            self.log.error("Log in with old password passed")
-            assert False, "Log in with old password passed"
-        else:
-            self.log.info("Verified log in with old password, failed as expected")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
 
         self.log.info("Step 5: Reverting user password")
         response = self.csm_user.update_csm_user_password(admin_username, admin_password,
@@ -3696,14 +3692,7 @@ class TestCsmUser():
 
             self.log.info("Step 6.2: Verify response")
             self.log.info("Verifying response code 200 is not returned")
-            if response.status_code == HTTPStatus.OK:
-                self.log.error(f"Response code : {response.status_code}")
-                self.log.error(f"Response content: {response.content}")
-                self.log.error(f"Request headers : {response.request.headers}\n"
-                               f"Request body : {response.request.body}")
-                assert False, "Response code 200 received after token expired"
-            else:
-                self.log.info("Verified response code 200 is not returned after token expired")
+            self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
 
         self.log.info("Step 7: Reverting user password")
         response = self.csm_user.update_csm_user_password(admin_username, admin_password,
