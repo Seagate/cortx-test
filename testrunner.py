@@ -71,6 +71,10 @@ def parse_args():
                         help="Generates xml format report if set True, default is False")
     parser.add_argument("-pf", "--product_family", type=str, default='LC',
                         help="Product family LR or LC.")
+    parser.add_argument("--validate_certs", type=str_to_bool, default=True,
+                        help="Validate s3/iam endpoint against valid certificate based on input.")
+    parser.add_argument("--use-ssl", type=str_to_bool, default=True,
+                        help="Use http or https based on the use ssl input.")
     return parser.parse_args()
 
 
