@@ -3707,3 +3707,58 @@ class TestCsmUser():
 
         self.log.info("Step 10: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-28516')
+    def test_28516(self):
+        """
+        Function to test token expire after logout
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        new_password = self.csm_conf["test_28517"]["new_password"]
+        confirm_new_password = new_password
+        reset_password = self.csm_conf["test_28517"]["reset_password"]
+
+        self.log.info("Step 1: Get header")
+        header = self.csm_user.get_headers(admin_username, admin_password)
+
+        self.log.info("Step 2: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     confirm_new_password, reset_password,
+                                                     header)
+
+        self.log.info("Step 3: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 4: Logout user session")
+        response = self.csm_user.csm_user_logout(header)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 6: Verify that token expires after logout")
+        self.log.info("Step 6.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     confirm_new_password, reset_password,
+                                                     header)
+
+        self.log.info("Step 6.2: Verify response")
+        self.log.info("Verifying response code: 401")
+        self.csm_user.check_expected_response(response, HTTPStatus.UNAUTHORIZED)
+
+        self.log.info("Step 7: Reverting user password")
+        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
+                                                          admin_password, reset_password)
+
+        self.log.info("Step 8: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        #  TODO check response msg
+
+        self.log.info("Step 9: Check login with reverted password")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+
+        self.log.info("Step 10: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)

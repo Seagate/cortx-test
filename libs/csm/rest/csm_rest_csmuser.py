@@ -969,3 +969,20 @@ class RestCsmUser(RestTestLib):
                 assert False, "Response code other than expected received"
             else:
                 self.log.info("Verified response code {} is returned".format(expected_code))
+
+    def csm_user_logout(self, header):
+        """
+        logout user session
+        :param header: auth header
+        :return: response
+        """
+        try:
+            response = self.restapi.rest_call(
+                "post", endpoint=self.config["rest_logout_endpoint"], headers=header)
+        except Exception as error:
+            self.log.error("{0} {1}: {2}".format(
+                const.EXCEPTION_ERROR,
+                RestCsmUser.csm_user_logout.__name__,
+                error))
+            raise CTException(err.CSM_REST_AUTHENTICATION_ERROR, error.args[0])
+        return response
