@@ -3741,6 +3741,7 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-28501')
