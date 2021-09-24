@@ -3485,6 +3485,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Verify response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        #  TODO check response msg
 
         self.log.info("Step 3: Check login with new password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
@@ -3522,6 +3523,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Verify response: 400")
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
+        #  TODO check response msg
 
         self.log.info("Step 3: Check login with existing password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -3551,6 +3553,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Verify response 400")
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
+        #  TODO check response msg
 
         self.log.info("Step 3: Check login with existing password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -3580,6 +3583,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Verify response 400")
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
+        #  TODO check response msg
 
         self.log.info("Step 3: Check login with existing password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -3607,6 +3611,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        #  TODO check response msg
 
         self.log.info("Step 3: Check login with new password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
@@ -3706,6 +3711,7 @@ class TestCsmUser():
 
         self.log.info("Step 8: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        #  TODO check response msg
 
         self.log.info("Step 9: Check login with reverted password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
