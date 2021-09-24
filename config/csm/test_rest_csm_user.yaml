@@ -236,3 +236,7 @@ test_28503:
 test_28505:
     new_password: "D1wkl0ge5mqvq+6Ioah57QHUCdjbn2CarpIqocu2PkQ="
     reset_password: True
+test_28517:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    reset_password: True
+    token_expire_timeout: 3600

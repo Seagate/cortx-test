@@ -923,7 +923,6 @@ class RestCsmUser(RestTestLib):
             self.log.debug("editing user {}".format(patch_payload))
             endpoint = "{}/{}".format(self.config["csmuser_endpoint"], username)
             self.log.debug("Endpoint for reset password is {}".format(endpoint))
-
             # Fetching api response
             response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
                                               headers=headers)
@@ -947,6 +946,21 @@ class RestCsmUser(RestTestLib):
         :param reset_password: true/false
         :return: response
         """
+        header = self.headers
         response = self.reset_user_password(self, username, new_password, confirm_new_password,
-                                            reset_password, self.headers)
+                                            reset_password, header)
         return response
+
+    def check_expected_response(self, response, expected_code):
+        """
+            Check expected response code is returned
+        """
+        self.log.info("Verifying response code {} is returned".format(expected_code))
+        if response.status_code != expected_code:
+            self.log.error(f"Response code received : {response.status_code}")
+            self.log.error(f"Response content: {response.content}")
+            self.log.error(f"Request headers : {response.request.headers}\n"
+                           f"Request body : {response.request.body}")
+            assert False, "Response code other than expected received"
+        else:
+            self.log.info("Verified response code {} is returned".format(expected_code))
