@@ -1022,7 +1022,7 @@ def build_s3_endpoints(request) -> None:
     ssl_flg = ast.literal_eval(str(request.config.getoption('--use_ssl')).title())
     cert_flg = ast.literal_eval(str(request.config.getoption('--validate_certs')).title())
     S3_CFG["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
-    S3_CFG["iam_url"] = f"{'https' if ssl_flg else 'http'}://{iam_url}:9443"
+    S3_CFG["iam_url"] = f"{'https' if ssl_flg else 'http'}://{iam_url}:{S3_CFG['iam_port']}"
     S3_CFG["use_ssl"] = ssl_flg
     S3_CFG["validate_certs"] = cert_flg
     if not os.path.exists(S3_CFG["s3_cert_path"]) and cert_flg:
