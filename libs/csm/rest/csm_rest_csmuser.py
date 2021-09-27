@@ -947,7 +947,7 @@ class RestCsmUser(RestTestLib):
         :return: response
         """
         header = self.headers
-        response = self.reset_user_password(self, username, new_password, confirm_new_password,
+        response = self.reset_user_password(username, new_password, confirm_new_password,
                                             reset_password, header)
         return response
 
