@@ -236,11 +236,11 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--validate_certs", action="store", default=True,
-        help="Decide whether to Validate s3/iam endpoint against valid certificate based on input."
+        help="Decide whether to Validate HTTPS/SSL certificate to S3 endpoint."
     )
     parser.addoption(
         "--use_ssl", action="store", default=True,
-        help="Decide whether to use http or https based on the use ssl input."
+        help="Decide whether to use HTTPS/SSL connection for S3 endpoint."
     )
 
 
@@ -1010,10 +1010,13 @@ def filter_report_session_finish(session):
 
 @pytest.fixture(autouse=True, scope="session")
 def build_s3_endpoints(request) -> None:
-    """This function will create s3/iam url based on certificates availability and ssl usages."""
+    """
+    This function will create s3/iam url based on certificates availability and ssl usages.
+
+    TODO: remove setup details and use cached setup details.
+    """
     from config import S3_CFG
     from commons.configmanager import get_config_db
-    # TODO remove setup details and use cached setup details.
     setup_query = {"setupname": request.config.getoption('--target')}
     setup_details = get_config_db(setup_query=setup_query)[request.config.getoption("--target")]
     lb_flg = setup_details.get('lb') not in [None, '', "FQDN without protocol(http/s)"]
@@ -1023,7 +1026,6 @@ def build_s3_endpoints(request) -> None:
     cert_flg = ast.literal_eval(str(request.config.getoption('--validate_certs')).title())
     S3_CFG["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
     S3_CFG["iam_url"] = f"{'https' if ssl_flg else 'http'}://{iam_url}:{S3_CFG['iam_port']}"
-    S3_CFG['retry'] = len(setup_details.get("nodes"))
     S3_CFG["use_ssl"] = ssl_flg
     S3_CFG["validate_certs"] = cert_flg
     if not os.path.exists(S3_CFG["s3_cert_path"]) and cert_flg:
