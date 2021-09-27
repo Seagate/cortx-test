@@ -144,7 +144,8 @@ class S3TestLib(S3Lib):
         """
         kwargs["m_key"] = kwargs.get("m_key", None)
         kwargs["m_value"] = kwargs.get("m_value", None)
-        kwargs["content_md5"] = kwargs.get("content_md5", None)  # base64-encoded 128-bit MD5 digest of the message.
+        # base64-encoded 128-bit MD5 digest of the message.
+        kwargs["content_md5"] = kwargs.get("content_md5", None)
         LOGGER.info("Putting object")
         try:
             response = super().put_object(bucket_name, object_name, file_path, **kwargs)

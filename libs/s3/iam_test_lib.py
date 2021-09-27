@@ -34,9 +34,9 @@ from commons.utils.s3_utils import poll
 from libs.s3 import S3_CFG, LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib
-from libs.s3.s3_acl_test_lib import S3AclTestLib
 
 LOGGER = logging.getLogger(__name__)
+
 ACC_ACCESS_KEY = list()
 ACC_SECRET_KEY = list()
 
@@ -1080,8 +1080,8 @@ class IamTestLib(IamLib):
 
         :param account_name: Name of the account.
         :param email_id: Email IF for the account.
-        :param secret_key: Secret key.
-        :param access_key: Access key.
+        # :param secret_key: Secret key.
+        # :param access_key: Access key.
         :return: (Boolean, response)
         """
         try:
