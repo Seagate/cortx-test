@@ -24,7 +24,7 @@
 
 import os
 import logging
-from typing import Optional
+from typing import Union
 import boto3
 import boto3.s3
 
@@ -44,7 +44,7 @@ class S3Lib:
                  access_key: str = None,
                  secret_key: str = None,
                  endpoint_url: str = None,
-                 s3_cert_path: Optional[str, bool] = None,
+                 s3_cert_path: Union[str, bool] = None,
                  **kwargs) -> None:
         """
         method initializes members of S3Lib.
