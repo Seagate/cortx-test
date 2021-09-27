@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
+from dash_bootstrap_components import Card, CardBody, Row, Button, Tab, Tabs
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
@@ -165,8 +165,72 @@ stats_input_options = [
     )
 ]
 
-statistics_perf_tabs = html.Div(
+degraded_read_layout = Card(
+    CardBody([
+        html.P(html.U("Read Performance of Degraded Cluster"),
+               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+        html.P("Note: Each data point represents PER CLUSTER data.",  style={
+            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+
+        html.P("S3Bench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("Throughput Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_throughput"),
+        html.P("Latency Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_latency"),
+        html.P("IOPS Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_iops"),
+        html.P("TTFB Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_ttfb"),
+
+        html.P("COSBench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("Throughput Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_cosbench_degraded_throughput"),
+        html.P("Latency Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_cosbench_degraded_latency"),
+        html.P("IOPS Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_cosbench_degraded_iops"),
+
+        html.P("HSBench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("Throughput Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_throughput"),
+        html.P("Latency Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_latency"),
+        html.P("IOPS Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_iops"),
+    ]),
+    className="flex-sm-fill nav-link"
+)
+
+
+statistics_perf_tabs = Tabs([
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
         style=style_sub_tab, label_style=style_sub_label
+        ),
+    Tab(degraded_read_layout, id="perf_degraded_read_content", label="Degraded Read Performance",
+        style=style_sub_tab, label_style=style_sub_label
         )
+    ],
+    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row"
 )
