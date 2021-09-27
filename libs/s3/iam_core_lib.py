@@ -23,7 +23,7 @@
 """Python Library using boto3 module to perform account and user operations."""
 
 import logging
-from typing import Optional
+from typing import Union
 import boto3
 
 LOGGER = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class IamLib:
             access_key: str = None,
             secret_key: str = None,
             endpoint_url: str = None,
-            iam_cert_path: Optional[str, bool] = None,
+            iam_cert_path: Union[str, bool] = None,
             **kwargs) -> None:
         """
         Method initializes members of IamLib.
