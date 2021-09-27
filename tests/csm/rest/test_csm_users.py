@@ -3742,6 +3742,38 @@ class TestCsmUser():
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
     @pytest.mark.lc
+    @pytest.mark.lr
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
+    @pytest.mark.tags('TEST-28522')
+    def test_28522(self):
+        """
+        Test that Login API returns success Response Code 200(OK) for Correct Credentials
+        """
+        test_case_name = cortxlogging.get_frame()
+        admin_username = self.csm_user.config["csm_admin_user"]["username"]
+        admin_password = self.csm_user.config["csm_admin_user"]["password"]
+        self.log.info("##### Test started -  %s #####", test_case_name)
+
+        self.log.info(
+            "Verifying that Login API returns success Response Code 200(OK) "
+            "for Correct Credentials")
+
+        self.log.info("Step 1: Verifying with Correct Credentials")
+        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
+        self.log.info("Expected Response: %s", HTTPStatus.OK)
+        self.log.info("Actual Response: %s", response.status_code)
+        assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
+        self.log.info("Step 1: Verified with Correct Credentials")
+
+        self.log.info(
+            "Verifying that Login API returns success Response Code 200(OK) "
+            "for Correct Credentials")
+
+        self.log.info("##### Test ended -  %s #####", test_case_name)
+
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-28501')
