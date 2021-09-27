@@ -43,7 +43,7 @@ from _pytest.main import Session
 from filelock import FileLock
 from strip_ansi import strip_ansi
 
-from commons import Globals, s3_dns
+from commons import Globals
 from commons import cortxlogging
 from commons import params
 from commons import report_client
@@ -233,6 +233,14 @@ def pytest_addoption(parser):
     parser.addoption(
         "--product_family", action="store", default='LC',
         help="Product Type LR or LC."
+    )
+    parser.addoption(
+        "--validate_certs", action="store", default=True,
+        help="Decide whether to Validate HTTPS/SSL certificate to S3 endpoint."
+    )
+    parser.addoption(
+        "--use_ssl", action="store", default=True,
+        help="Decide whether to use HTTPS/SSL connection for S3 endpoint."
     )
 
 
@@ -1000,22 +1008,25 @@ def filter_report_session_finish(session):
             logfile.write(ET.tostring(root[0], encoding="unicode"))
 
 
-@pytest.fixture(autouse=False)
-def get_db_cfg(request):
+@pytest.fixture(autouse=True, scope="session")
+def build_s3_endpoints(request) -> None:
+    """
+    This function will create s3/iam url based on certificates availability and ssl usages.
+
+    TODO: remove setup details and use cached setup details.
+    """
     from config import S3_CFG
-    if request.config.getoption('--target'):
-        setup_query = {"setupname": request.config.getoption('--target')}
-        from commons.configmanager import get_config_db
-        setup_details = get_config_db(
-            setup_query=setup_query)[request.config.getoption("--target")]
-        if "lb" in setup_details.keys() and setup_details.get(
-                'lb') not in [None, '', "FQDN without protocol(http/s)"]:
-            if "s3_url" in S3_CFG.keys():
-                S3_CFG["s3_url"] = f"https://{setup_details.get('lb')}"
-                S3_CFG["iam_url"] = f"https://{setup_details.get('lb')}:9443"
-        if "s3_dns" in setup_details.keys() and setup_details.get('s3_dns'):
-            if request.config.getoption("--nodes"):
-                node_count = len(request.config.getoption("--nodes"))
-            else:
-                node_count = len(setup_details["nodes"])
-            s3_dns.dns_rr(S3_CFG, node_count, setup_details)
+    from commons.configmanager import get_config_db
+    setup_query = {"setupname": request.config.getoption('--target')}
+    setup_details = get_config_db(setup_query=setup_query)[request.config.getoption("--target")]
+    lb_flg = setup_details.get('lb') not in [None, '', "FQDN without protocol(http/s)"]
+    s3_url = setup_details.get('lb') if lb_flg else "s3.seagate.com"
+    iam_url = setup_details.get('lb') if lb_flg else "iam.seagate.com"
+    ssl_flg = ast.literal_eval(str(request.config.getoption('--use_ssl')).title())
+    cert_flg = ast.literal_eval(str(request.config.getoption('--validate_certs')).title())
+    S3_CFG["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
+    S3_CFG["iam_url"] = f"{'https' if ssl_flg else 'http'}://{iam_url}:{S3_CFG['iam_port']}"
+    S3_CFG["use_ssl"] = ssl_flg
+    S3_CFG["validate_certs"] = cert_flg
+    if not os.path.exists(S3_CFG["s3_cert_path"]) and cert_flg:
+        raise IOError(f'Certificate path {S3_CFG["s3_cert_path"]} does not exists.')
