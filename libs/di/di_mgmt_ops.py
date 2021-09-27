@@ -50,32 +50,43 @@ class ManagementOPs:
         """
         iam_users = dict()
         # Create S3 user
-        iam_users.update({'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
+        iam_users.update(
+            {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
         iam_users.update({'emailid': iam_users['s3_user'] + cls.email_suffix})
-        iam_users.update({'password': CSM_CFG["CliConfig"]["s3_account"]["password"]})
+        iam_users.update(
+            {'password': CSM_CFG["CliConfig"]["s3_account"]["password"]})
         s3acc_obj = S3AccountOperationsRestAPI()
         resp = s3acc_obj.create_s3_account(
-            user_name=iam_users['s3_user'], email_id=iam_users['s3_email'], passwd=iam_users['s3_user_pass'])
+            user_name=iam_users['s3_user'],
+            email_id=iam_users['s3_email'],
+            passwd=iam_users['s3_user_pass'])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Created s3 account %s", iam_users['s3_user'])
         iam_users.update({'accesskey': resp[1]["access_key"]})
         iam_users.update({'secretkey': resp[1]["secret_key"]})
 
         # Create IAM users
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        users = {"iam_{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
+        time_stamp = time.strftime("%Y%m%d_%H%M%S")
+        users = {
+            "iam_{}{}_{}".format(
+                cls.user_prefix,
+                i,
+                time_stamp): dict() for i in range(
+                1,
+                nusers + 1)}
         rest_iam_obj = RestIamUser()
         iam_user_passwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
-            user = "iam_{}{}_{}".format(cls.user_prefix, i, ts)
+            user = "iam_{}{}_{}".format(cls.user_prefix, i, time_stamp)
             email = user + cls.email_suffix
             udict.update({'emailid': email})
             udict.update({'user_name': user})
-            udict.update({'password': CSM_CFG["CliConfig"]["iam_user"]["password"]})
-            resp = rest_iam_obj.create_iam_user(user=user, password=iam_user_passwd,
-                                        login_as={"username": iam_users['s3_user'],
-                                                  "password": iam_users['s3_user_pass']})
+            udict.update(
+                {'password': CSM_CFG["CliConfig"]["iam_user"]["password"]})
+            resp = rest_iam_obj.create_iam_user(
+                user=user, password=iam_user_passwd, login_as={
+                    "username": iam_users['s3_user'], "password": iam_users['s3_user_pass']})
             iam_data = resp.json()
             udict.update({'accesskey': iam_data["access_key_id"]})
             udict.update({'secretkey': iam_data["secret_key"]})
