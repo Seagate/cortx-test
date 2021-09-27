@@ -3492,8 +3492,13 @@ class TestCsmUser():
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
         self.log.info("Step 4: Reverting user password")
-        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
-                                                          admin_password, reset_password)
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 4.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                     admin_password, reset_password,
+                                                     header)
+
         self.log.info("Step 5: Verify response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
@@ -3622,8 +3627,12 @@ class TestCsmUser():
         self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
 
         self.log.info("Step 5: Reverting user password")
-        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
-                                                          admin_password, reset_password)
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 5.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                     admin_password, reset_password,
+                                                     header)
 
         self.log.info("Step 6: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -3695,8 +3704,12 @@ class TestCsmUser():
             self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
 
         self.log.info("Step 7: Reverting user password")
-        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
-                                                          admin_password, reset_password)
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 7.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                     admin_password, reset_password,
+                                                     header)
 
         self.log.info("Step 8: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -3750,8 +3763,12 @@ class TestCsmUser():
         self.csm_user.check_expected_response(response, HTTPStatus.UNAUTHORIZED)
 
         self.log.info("Step 7: Reverting user password")
-        response = self.csm_user.update_csm_user_password(admin_username, admin_password,
-                                                          admin_password, reset_password)
+        header = self.csm_user.get_headers(admin_username, new_password)
+
+        self.log.info("Step 7.1: Changing user password for header {}".format(header))
+        response = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                     admin_password, reset_password,
+                                                     header)
 
         self.log.info("Step 8: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
