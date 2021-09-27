@@ -87,7 +87,7 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
         data = dict(zip(plot_data['x_actual_data'], y_actual_data))
         for item in x_data_combined:
             try:
-                y_data.append(data[item]) # /int(plot_data['nodes']))
+                y_data.append(data[item])  # /int(plot_data['nodes']))
             except KeyError:
                 y_data.append(None)
 
@@ -185,7 +185,13 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         plot_data = {}
         figs = []
 
-        if xfilter == 'Build':
+        if sessions1 == 'all' and xfilter == 'Build':
+            plot_data['x_heading'] = 'Sessions'
+            xfilter_tag = 'build'
+        elif sessions1 == 'all' and xfilter == 'Object_Size':
+            plot_data['x_heading'] = 'Sessions'
+            xfilter_tag = 'objsize'
+        elif xfilter == 'Build':
             plot_data['x_heading'] = 'Object Sizes'
             xfilter_tag = 'build'
         else:
@@ -257,7 +263,8 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
                 plot_data_optional['custom'] = data_optional['custom']
                 plot_data_optional['x_actual_data'] = x_data_optional
                 plot_data_optional['nodes'] = nodes2
-                get_graphs(fig, fig_all, df_optional, plot_data_optional, x_data_final)
+                get_graphs(fig, fig_all, df_optional,
+                           plot_data_optional, x_data_final)
                 not_plotted = False
 
             if not_plotted:
