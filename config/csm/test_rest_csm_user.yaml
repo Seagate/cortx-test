@@ -226,3 +226,17 @@ test_25285:
     message1: "Cannot delete the last {} user"
     message2: "Normal user cannot delete other user"
     message_id: "user_permission_denied"
+test_28501:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    reset_password: True
+test_28503:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    confirm_new_password : "k9fG2ndpoAlcgs1LJuJCRyzKd9hP4CYXQRVNAoKxGN0="
+    reset_password: True
+test_28505:
+    new_password: "D1wkl0ge5mqvq+6Ioah57QHUCdjbn2CarpIqocu2PkQ="
+    reset_password: True
+test_28517:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    reset_password: True
+    token_expire_timeout: 3600
