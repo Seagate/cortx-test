@@ -26,8 +26,9 @@ import datetime
 import hashlib
 import logging
 import json
-import xmltodict
 from typing import Any
+
+import xmltodict
 
 LOGGER = logging.getLogger(__name__)
 
