@@ -21,6 +21,7 @@
 """Failure Domain Test Suite."""
 import logging
 import os
+from multiprocessing import Pool
 
 import pytest
 
@@ -31,10 +32,9 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG, PROV_CFG
+from libs.csm.csm_setup import CSMConfigsCheck
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
-from multiprocessing import Pool
-from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 
@@ -147,26 +147,17 @@ class TestFailureDomain:
             assert_utils.assert_equal(output['result'], "FAILURE",
                                       "Job is successful, expected to fail")
 
-    @pytest.mark.run(order=1)
-    @pytest.mark.data_durability
-    @pytest.mark.tags("TEST-23540")
-    def test_23540(self):
-        """Perform deployment,preboarding, onboarding,s3 configuration with 4+2+0 config"""
-        resp = Provisioner.create_deployment_config_universal(self.test_config_template,
-                                                              self.node_list,
-                                                              mgmt_vip=self.mgmt_vip
-                                                              )
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
-        assert_utils.assert_true(resp, "Failure in Deployment")
-
+    def post_deployment_steps(self):
+        """
+        Perform Preboarding, S3 account creation and AWS configuration on client
+        """
         self.log.info("Perform Preboarding")
         resp = self.config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
                                            self.cft_test_cfg["csm_default_pswd"],
                                            CMN_CFG["csm"]["csm_admin_user"]["password"])
         assert_utils.assert_true(resp, "Failure in Preboarding")
 
-        self.log.info("Create S3 account and Configure AWS credentials")
+        self.log.info("Create S3 account")
         resp = self.cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
                                                       self.cft_test_cfg["s3user_email"],
                                                       self.cft_test_cfg["s3user_pswd"])
@@ -175,6 +166,39 @@ class TestFailureDomain:
         self.cortx_obj.close_connection()
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        try:
+            self.log.info("Configure AWS keys on Client")
+            resp = system_utils.execute_cmd(
+                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+        except IOError as error:
+            self.log.error(
+                "An error occurred in %s:",
+                TestFailureDomain.post_deployment_steps.__name__)
+            if isinstance(error.args[0], list):
+                self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                self.log.error(error.args[0])
+            return False, error
+
+        return True, "Post Deloyment Steps Successful!!"
+
+    @pytest.mark.run(order=1)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-23540")
+    def test_23540(self):
+        """Perform deployment,preboarding, onboarding,s3 configuration with 4+2+0 config"""
+        self.log.info("Step 1: Create Deployment Config")
+        resp = Provisioner.create_deployment_config_universal(self.test_config_template,
+                                                              self.node_list,
+                                                              mgmt_vip=self.mgmt_vip
+                                                              )
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 4+2+0")
+        resp = self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+        assert_utils.assert_true(resp, "Failure in Deployment")
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.post_deployment_steps()
 
     @pytest.mark.run(order=4)
     @pytest.mark.data_durability
@@ -186,6 +210,7 @@ class TestFailureDomain:
         Perform deployment with Invalid config and expect failure
         datapool : N+K+S : 6+2+0, data device per cvg: 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -212,6 +237,7 @@ class TestFailureDomain:
         Data Devices per CVG: 7
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -223,7 +249,11 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 8+2+0")
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.post_deployment_steps()
 
     @pytest.mark.run(order=8)
     @pytest.mark.data_durability
@@ -238,6 +268,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -248,7 +279,11 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 3+2+0")
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.post_deployment_steps()
 
     @pytest.mark.run(order=12)
     @pytest.mark.data_durability
@@ -263,6 +298,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -273,7 +309,11 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 8+4+0")
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.post_deployment_steps()
 
     @pytest.mark.run(order=16)
     @pytest.mark.data_durability
@@ -288,6 +328,7 @@ class TestFailureDomain:
         Data Devices per CVG: 3
         Metadata Device per CVG : 1
         """
+        self.log.info("Step 1: Create Deployment Config")
         assert_utils.assert_equal(len(sns_config), 3)
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
@@ -298,4 +339,8 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Perform Deployment with SNS NKS : 10+5+0")
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+
+        self.log.info("Step 3: Perform Post Deployment Steps")
+        self.post_deployment_steps()

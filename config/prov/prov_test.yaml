@@ -94,4 +94,6 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
+  per_step_delay: 5
+
 
