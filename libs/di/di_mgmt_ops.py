@@ -24,12 +24,12 @@ import time
 import random
 import logging
 import json
-from config import CSM_CFG
+from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-from libs.csm.rest.csm_rest_iamuser import RestIamUser
+from libs.s3.iam_test_lib import IamTestLib
 from libs.di.di_base import _init_s3_conn
 
 LOGGER = logging.getLogger(__name__)
@@ -52,16 +52,16 @@ class ManagementOPs:
         # Create S3 user
         iam_users.update(
             {'user_name': 's3' + cls.user_prefix + str(random.randint(100, 1000))})
-        iam_users.update({'emailid': iam_users['s3_user'] + cls.email_suffix})
+        iam_users.update({'emailid': iam_users['user_name'] + cls.email_suffix})
         iam_users.update(
-            {'password': CSM_CFG["CliConfig"]["s3_account"]["password"]})
+            {'password': DI_CFG["DiUserConfig"]["s3_account"]["password"]})
         s3acc_obj = S3AccountOperationsRestAPI()
         resp = s3acc_obj.create_s3_account(
-            user_name=iam_users['s3_user'],
-            email_id=iam_users['s3_email'],
-            passwd=iam_users['s3_user_pass'])
+            user_name=iam_users['user_name'],
+            email_id=iam_users['emailid'],
+            passwd=iam_users['password'])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Created s3 account %s", iam_users['s3_user'])
+        LOGGER.info("Created s3 account %s", iam_users['user_name'])
         iam_users.update({'accesskey': resp[1]["access_key"]})
         iam_users.update({'secretkey': resp[1]["secret_key"]})
 
@@ -74,22 +74,24 @@ class ManagementOPs:
                 time_stamp): dict() for i in range(
                 1,
                 nusers + 1)}
-        rest_iam_obj = RestIamUser()
-        iam_user_passwd = CSM_CFG["CliConfig"]["iam_user"]["password"]
+        iam_obj_acl = IamTestLib(
+            access_key=iam_users['accesskey'],
+            secret_key=iam_users['secretkey'])
+        iam_user_passwd = DI_CFG["DiUserConfig"]["iam_user"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
             user = "iam_{}{}_{}".format(cls.user_prefix, i, time_stamp)
             email = user + cls.email_suffix
             udict.update({'emailid': email})
             udict.update({'user_name': user})
-            udict.update(
-                {'password': CSM_CFG["CliConfig"]["iam_user"]["password"]})
-            resp = rest_iam_obj.create_iam_user(
-                user=user, password=iam_user_passwd, login_as={
-                    "username": iam_users['s3_user'], "password": iam_users['s3_user_pass']})
-            iam_data = resp.json()
-            udict.update({'accesskey': iam_data["access_key_id"]})
-            udict.update({'secretkey': iam_data["secret_key"]})
+            udict.update({'password': iam_user_passwd})
+            resp = iam_obj_acl.create_user(user)
+            assert_utils.assert_true(resp[0], resp[1])
+            resp = iam_obj_acl.create_access_key(user)
+            LOGGER.info(resp)
+            assert_utils.assert_true(resp[0], resp[1])
+            udict.update({'accesskey': resp[1]["AccessKey"]["AccessKeyId"]})
+            udict.update({'secretkey': resp[1]["AccessKey"]["SecretAccessKey"]})
             users.update({user: udict})
         iam_users.update({'iam_users': users})
         return iam_users
@@ -113,7 +115,7 @@ class ManagementOPs:
             s3acc_obj = RestS3user()
         ts = time.strftime("%Y%m%d_%H%M%S")
         users = {"{}{}_{}".format(cls.user_prefix, i, ts): dict() for i in range(1, nusers + 1)}
-        s3_user_passwd = CSM_CFG["CliConfig"]["s3_account"]["password"]
+        s3_user_passwd = DI_CFG["DiUserConfig"]["s3_account"]["password"]
         for i in range(1, nusers + 1):
             udict = dict()
             user = "{}{}_{}".format(cls.user_prefix, i, ts)
