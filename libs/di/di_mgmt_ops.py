@@ -74,7 +74,7 @@ class ManagementOPs:
                 time_stamp): dict() for i in range(
                 1,
                 nusers + 1)}
-        iam_obj_acl = IamTestLib(
+        iam_obj = IamTestLib(
             access_key=iam_users['accesskey'],
             secret_key=iam_users['secretkey'])
         iam_user_passwd = DI_CFG["DiUserConfig"]["iam_user"]["password"]
@@ -85,9 +85,9 @@ class ManagementOPs:
             udict.update({'emailid': email})
             udict.update({'user_name': user})
             udict.update({'password': iam_user_passwd})
-            resp = iam_obj_acl.create_user(user)
+            resp = iam_obj.create_user(user)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = iam_obj_acl.create_access_key(user)
+            resp = iam_obj.create_access_key(user)
             LOGGER.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
             udict.update({'accesskey': resp[1]["AccessKey"]["AccessKeyId"]})
