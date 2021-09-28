@@ -6,3 +6,7 @@ test_deployment:
   skip_preboarding: false
   skip_onboarding: true
   skip_s3_configure: false
+csm_default_pswd: "Cortxadmin@123"
+s3user_name: 's3user'
+s3user_email: 's3user@seagate.com'
+s3user_pswd: 'Seagate@1'

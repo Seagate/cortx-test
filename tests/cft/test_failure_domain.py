@@ -33,6 +33,9 @@ from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
+from multiprocessing import Pool
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 
 class TestFailureDomain:
@@ -64,6 +67,7 @@ class TestFailureDomain:
             "QA_VM_POOL_PASSWORD", pswdmanager.decrypt(
                 HA_CFG["vm_params"]["passwd"]))
         cls.build = os.getenv("Build", None)
+        cls.build_no = cls.build
         cls.build_branch = os.getenv("Build_Branch", "stable")
         if cls.build:
             if cls.build_branch == "stable" or cls.build_branch == "main":
@@ -76,12 +80,14 @@ class TestFailureDomain:
         cls.build_url = cls.deplymt_cfg["build_url"].format(
             cls.build_branch, version, cls.build)
         cls.deploy_ff_obj = ProvDeployFFLib()
+        cls.cortx_obj = CortxCliTestLib()
+        cls.config_chk = CSMConfigsCheck()
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        for host in self.host_list:
-            self.revert_vm_snapshot(host)
+        with Pool(self.num_nodes) as p:
+            p.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -148,10 +154,27 @@ class TestFailureDomain:
         """Perform deployment,preboarding, onboarding,s3 configuration with 4+2+0 config"""
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
-                                                              mgmt_vip=self.mgmt_vip,
+                                                              mgmt_vip=self.mgmt_vip
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        resp = self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+        assert_utils.assert_true(resp, "Failure in Deployment")
+
+        self.log.info("Perform Preboarding")
+        resp = self.config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
+                                           self.cft_test_cfg["csm_default_pswd"],
+                                           CMN_CFG["csm"]["csm_admin_user"]["password"])
+        assert_utils.assert_true(resp, "Failure in Preboarding")
+
+        self.log.info("Create S3 account and Configure AWS credentials")
+        resp = self.cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
+                                                      self.cft_test_cfg["s3user_email"],
+                                                      self.cft_test_cfg["s3user_pswd"])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Response for account creation: {}".format(resp))
+        self.cortx_obj.close_connection()
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
 
     @pytest.mark.run(order=4)
     @pytest.mark.data_durability
@@ -175,7 +198,7 @@ class TestFailureDomain:
                                                               skip_disk_count_check=True
                                                               )
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=5)
     @pytest.mark.data_durability
@@ -200,7 +223,7 @@ class TestFailureDomain:
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=8)
     @pytest.mark.data_durability
@@ -225,7 +248,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=12)
     @pytest.mark.data_durability
@@ -250,7 +273,7 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=16)
     @pytest.mark.data_durability
@@ -275,4 +298,4 @@ class TestFailureDomain:
                                                               sns_parity=str(sns_config[1]),
                                                               sns_spare=str(sns_config[2]))
         assert_utils.assert_true(resp[0], resp[1])
-        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_branch, self.build_url, resp[1])
+        self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
