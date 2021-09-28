@@ -3480,8 +3480,12 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Incorrect")
 
-        incorrect_password = self.csm_conf["test_28513"]["password"]
-        status_code = self.csm_conf["test_28513"]["status_code"]
+        test_cfg = self.csm_conf["test_28513"]
+        incorrect_password = test_cfg["password"]
+        status_code = test_cfg["status_code"]
+        # resp_error_code = test_cfg["error_code"]
+        # msg = test_cfg["message"]
+        # resp_msg_id = test_cfg["message_id"]
 
         self.log.info("Step 1: Verifying with incorrect password")
         response = self.csm_user.custom_rest_login(
@@ -3491,6 +3495,15 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert response.status_code == status_code, "Unexpected status code"
         self.log.info("Step 1: Verified with incorrect password")
+        #  TODO check response msg
+        # self.log.info("Step 2: Verifying error response...")
+        # assert_utils.assert_equals(response.json()["error_code"],
+        #                            str(resp_error_code))
+        # if CSM_REST_CFG["msg_check"] == "enable":
+        #     assert_utils.assert_equals(response.json()["message"],
+        #                                msg)
+        # assert_utils.assert_equals(response.json()["message_id"],
+        #                            resp_msg_id)
 
         self.log.info(
             "Verified that Login API returns error Response Code 401 "
@@ -3515,8 +3528,9 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Incorrect")
 
-        incorrect_username = self.csm_conf["test_28512"]["username"]
-        status_code = self.csm_conf["test_28512"]["status_code"]
+        test_cfg = self.csm_conf["test_28512"]
+        incorrect_username = test_cfg["username"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with incorrect username")
         response = self.csm_user.custom_rest_login(
@@ -3526,6 +3540,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert_utils.assert_equals(response.status_code, status_code)
         self.log.info("Step 1: Verified with incorrect username")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 401 "
@@ -3550,8 +3565,9 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Password in payload is Invalid")
 
-        invalid_password = self.csm_conf["test_28515"]["password"]
-        status_code = self.csm_conf["test_28515"]["status_code"]
+        test_cfg = self.csm_conf["test_28515"]
+        invalid_password = test_cfg["password"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with invalid password")
         response = self.csm_user.custom_rest_login(
@@ -3561,6 +3577,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert response.status_code == status_code, "Unexpected status code"
         self.log.info("Step 1: Verified with invalid password")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 401 "
@@ -3585,8 +3602,9 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 401 "
             "if Username in payload is Invalid")
 
-        invalid_username = self.csm_conf["test_28514"]["username"]
-        status_code = self.csm_conf["test_28514"]["status_code"]
+        test_cfg = self.csm_conf["test_28514"]
+        invalid_username = test_cfg["username"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with invalid username")
         response = self.csm_user.custom_rest_login(
@@ -3596,6 +3614,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert_utils.assert_equals(response.status_code, status_code)
         self.log.info("Step 1: Verified with invalid username")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 401 "
@@ -3621,7 +3640,8 @@ class TestCsmUser():
             "if Password in payload is Empty")
 
         empty_password = ""
-        status_code = self.csm_conf["test_28511"]["status_code"]
+        test_cfg = self.csm_conf["test_28511"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with empty password")
         response = self.csm_user.custom_rest_login(
@@ -3631,6 +3651,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert response.status_code == status_code, "Unexpected status code"
         self.log.info("Step 1: Verified with empty password")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -3656,7 +3677,8 @@ class TestCsmUser():
             "if Username in payload is Empty")
 
         empty_username = ""
-        status_code = self.csm_conf["test_28510"]["status_code"]
+        test_cfg = self.csm_conf["test_28510"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with empty username")
         response = self.csm_user.custom_rest_login(
@@ -3666,6 +3688,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert_utils.assert_equals(response.status_code, status_code)
         self.log.info("Step 1: Verified with empty username")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -3690,7 +3713,8 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 400 "
             "if Password in payload is Missing")
 
-        status_code = self.csm_conf["test_28509"]["status_code"]
+        test_cfg = self.csm_conf["test_28509"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with missing password")
         response = self.csm_user.custom_rest_login_missing_param(
@@ -3700,6 +3724,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert response.status_code == status_code, "Unexpected status code"
         self.log.info("Step 1: Verified with missing password")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
@@ -3724,7 +3749,8 @@ class TestCsmUser():
             "Verifying that Login API returns error Response Code 400 "
             "if Username in payload is Missing")
 
-        status_code = self.csm_conf["test_28508"]["status_code"]
+        test_cfg = self.csm_conf["test_28508"]
+        status_code = test_cfg["status_code"]
 
         self.log.info("Step 1: Verifying with missing username")
         response = self.csm_user.custom_rest_login_missing_param(
@@ -3734,6 +3760,7 @@ class TestCsmUser():
         self.log.info("Actual Response: %s", response.status_code)
         assert_utils.assert_equals(response.status_code, status_code)
         self.log.info("Step 1: Verified with missing username")
+        #  TODO check response msg
 
         self.log.info(
             "Verified that Login API returns error Response Code 400 "
