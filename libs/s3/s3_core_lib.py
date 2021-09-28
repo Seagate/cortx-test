@@ -63,8 +63,10 @@ class S3Lib:
         debug = kwargs.get("debug", False)
         config = Config(retries={'max_attempts': 6})
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else False
-        self.cmd_endpoint = f" --endpoint-url {endpoint_url}{'' if use_ssl else ' --no-verify-ssl'}"
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        s3_cert_path = s3_cert_path if val_cert else False
+        self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
+                            f"{'' if val_cert else ' --no-verify-ssl'}"
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")

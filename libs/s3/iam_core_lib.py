@@ -52,7 +52,8 @@ class IamLib:
         """
         debug = kwargs.get("debug", False)
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        iam_cert_path = iam_cert_path if S3_CFG["validate_certs"] else False
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        iam_cert_path = iam_cert_path if val_cert else False
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
