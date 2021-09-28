@@ -3692,7 +3692,6 @@ class TestCsmUser():
             time.sleep(sleep_time)
 
         self.log.info("Step 6: Verify that token expires after timeout")
-        headers = [headers1, headers2]
         for header in headers:
             self.log.info("Step 6.1: Changing user password")
             response = self.csm_user.reset_user_password(admin_username, new_password,
