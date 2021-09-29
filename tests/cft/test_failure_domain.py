@@ -80,8 +80,7 @@ class TestFailureDomain:
         cls.build_url = cls.deplymt_cfg["build_url"].format(
             cls.build_branch, version, cls.build)
         cls.deploy_ff_obj = ProvDeployFFLib()
-        cls.cortx_obj = CortxCliTestLib()
-        cls.config_chk = CSMConfigsCheck()
+
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -152,23 +151,25 @@ class TestFailureDomain:
         Perform Preboarding, S3 account creation and AWS configuration on client
         """
         self.log.info("Perform Preboarding")
-        resp = self.config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
+        cortx_obj = CortxCliTestLib()
+        config_chk = CSMConfigsCheck()
+        resp = config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
                                            self.cft_test_cfg["csm_default_pswd"],
                                            CMN_CFG["csm"]["csm_admin_user"]["password"])
         assert_utils.assert_true(resp, "Failure in Preboarding")
 
         self.log.info("Create S3 account")
-        resp = self.cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
+        resp = cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
                                                       self.cft_test_cfg["s3user_email"],
                                                       self.cft_test_cfg["s3user_pswd"])
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Response for account creation: {}".format(resp))
-        self.cortx_obj.close_connection()
+        cortx_obj.close_connection()
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         try:
             self.log.info("Configure AWS keys on Client")
-            resp = system_utils.execute_cmd(
+            system_utils.execute_cmd(
                 common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
         except IOError as error:
             self.log.error(
