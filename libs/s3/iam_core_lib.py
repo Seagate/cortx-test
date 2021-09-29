@@ -26,7 +26,7 @@ import logging
 from typing import Union
 import boto3
 
-from config import S3_CFG
+from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,13 +44,15 @@ class IamLib:
         """
         Method initializes members of IamLib.
 
+        Different instances need to be create as per different parameter values like access_key,
+        secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        debug = kwargs.get("debug", False)
+        debug = kwargs.get("debug", S3_CFG["debug"])
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
         iam_cert_path = iam_cert_path if val_cert else False

@@ -38,7 +38,8 @@ from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
-from config import S3_CFG, CMN_CFG
+from config import CMN_CFG
+from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 

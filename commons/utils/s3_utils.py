@@ -199,7 +199,7 @@ def poll(target, *args, **kwargs) -> Any:
     while time.time() <= end_time:
         try:
             response = target(*args, **kwargs)
-            if isinstance(response, expected) and response:
+            if isinstance(response, expected) or response:
                 return response
         except Exception as response:
             LOGGER.error(response)

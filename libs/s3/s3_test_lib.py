@@ -35,10 +35,12 @@ from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.s3_utils import poll
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
+
 LOGGER = logging.getLogger(__name__)
 
 

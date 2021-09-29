@@ -8,9 +8,11 @@ import shutil
 import logging
 import pytest
 
-from libs.s3 import S3H_OBJ, CM_CFG
+from config import CMN_CFG as CM_CFG
+from libs.s3 import S3H_OBJ
 from commons.helpers.s3_helper import S3Helper
-from config import S3_CFG
+from config.s3 import S3_CFG
+
 
 class TestS3helper:
     """Test S3 helper class."""

@@ -31,7 +31,8 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import format_iam_resp
 from commons.utils.s3_utils import poll
-from libs.s3 import S3_CFG, LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib
 

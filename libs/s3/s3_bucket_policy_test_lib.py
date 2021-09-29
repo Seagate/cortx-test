@@ -25,7 +25,8 @@ import logging
 from commons import errorcodes as err
 from commons.utils.s3_utils import poll
 from commons.exceptions import CTException
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import BucketPolicy
 
 LOGGER = logging.getLogger(__name__)

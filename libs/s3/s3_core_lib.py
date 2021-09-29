@@ -29,7 +29,7 @@ import boto3
 import boto3.s3
 from botocore.config import Config
 
-from config import S3_CFG
+from config.s3 import S3_CFG
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import create_file
@@ -50,6 +50,8 @@ class S3Lib:
         """
         method initializes members of S3Lib.
 
+        Different instances need to be create as per different parameter values like access_key,
+        secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -60,7 +62,7 @@ class S3Lib:
         """
         region = kwargs.get("region", None)
         aws_session_token = kwargs.get("aws_session_token", None)
-        debug = kwargs.get("debug", False)
+        debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
