@@ -35,7 +35,6 @@ from config.s3 import S3_CFG
 from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
-IAM_OBJ = iam_test_lib.IamTestLib()
 IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
@@ -51,6 +50,7 @@ class TestAwsIam:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        cls.iam_obj = iam_test_lib.IamTestLib()
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_true(
             resp, "config path not exists: {}".format(
@@ -435,7 +435,7 @@ class TestAwsIam:
             "Step 2: Creating user with existing name %s",
             self.user_name)
         try:
-            IAM_OBJ.create_user(
+            self.iam_obj.create_user(
                 self.user_name)
         except CTException as error:
             assert_in(

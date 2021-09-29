@@ -69,8 +69,8 @@ class S3Lib:
         s3_cert_path = s3_cert_path if val_cert else False
         self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
                             f"{'' if val_cert else ' --no-verify-ssl'}"
-        if val_cert and not os.path.exists(s3_cert_path) :
-            raise IOError(f'Certificate path {s3_cert_path} does not exists.')
+        if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]) :
+            raise IOError(f'Certificate path {S3_CFG["s3_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
@@ -96,6 +96,14 @@ class S3Lib:
         except Exception as Err:
             if "unreachable network" not in str(Err):
                 LOGGER.critical(Err)
+
+    def __del__(self):
+        """Destroy all core objects."""
+        try:
+            del self.s3_client
+            del self.s3_resource
+        except NameError as error:
+            LOGGER.warning(error)
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """

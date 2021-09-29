@@ -57,8 +57,8 @@ class IamLib:
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
         iam_cert_path = iam_cert_path if val_cert else False
-        if val_cert and not os.path.exists(iam_cert_path):
-            raise IOError(f'Certificate path {iam_cert_path} does not exists.')
+        if val_cert and not os.path.exists(S3_CFG['iam_cert_path']):
+            raise IOError(f'Certificate path {S3_CFG["iam_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
@@ -79,6 +79,14 @@ class IamLib:
         except Exception as err:
             if "unreachable network" not in str(err):
                 LOGGER.critical(err)
+
+    def __del__(self):
+        """Destroy all core objects."""
+        try:
+            del self.iam
+            del self.iam_resource
+        except NameError as error:
+            LOGGER.warning(error)
 
     def create_user(self, user_name: str = None) -> dict:
         """
