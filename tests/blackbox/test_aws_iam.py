@@ -31,7 +31,7 @@ from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 

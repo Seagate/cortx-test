@@ -32,7 +32,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file
-from config import S3_CFG
+from config.s3 import S3_CFG
 from config import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
 from libs.s3.cortxcli_test_lib import CortxCliTestLib

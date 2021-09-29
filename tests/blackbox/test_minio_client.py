@@ -34,7 +34,7 @@ from commons.utils import system_utils
 from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from config import S3_CFG
+from config.s3 import S3_CFG
 
 S3T_OBJ = s3_test_lib.S3TestLib()
 MINIO_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")

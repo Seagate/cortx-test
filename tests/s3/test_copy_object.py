@@ -36,7 +36,7 @@ from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from config import S3_BKT_TST as BKT_POLICY_CONF
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ

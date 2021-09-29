@@ -39,7 +39,7 @@ from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3 import cortxcli_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 
 
 class TestDataDurability:

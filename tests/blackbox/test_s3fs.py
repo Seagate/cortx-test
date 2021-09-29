@@ -30,7 +30,7 @@ from commons.utils import system_utils
 from commons.configmanager import get_config_wrapper
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true, assert_in
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 
