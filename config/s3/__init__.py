@@ -62,8 +62,6 @@ def build_s3_endpoints() -> dict:
     s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['iam_port']}"
     s3_conf["use_ssl"] = ssl_flg
     s3_conf["validate_certs"] = cert_flg
-    if not os.path.exists(s3_conf["s3_cert_path"]) and cert_flg:
-        raise IOError(f'Certificate path {s3_conf["s3_cert_path"]} does not exists.')
 
     return s3_conf
 

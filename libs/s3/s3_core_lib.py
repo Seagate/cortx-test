@@ -69,6 +69,8 @@ class S3Lib:
         s3_cert_path = s3_cert_path if val_cert else False
         self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
                             f"{'' if val_cert else ' --no-verify-ssl'}"
+        if val_cert and not os.path.exists(s3_cert_path) :
+            raise IOError(f'Certificate path {s3_cert_path} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")

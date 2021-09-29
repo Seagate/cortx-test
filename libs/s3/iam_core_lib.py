@@ -22,6 +22,7 @@
 
 """Python Library using boto3 module to perform account and user operations."""
 
+import os
 import logging
 from typing import Union
 import boto3
@@ -56,6 +57,8 @@ class IamLib:
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
         iam_cert_path = iam_cert_path if val_cert else False
+        if val_cert and not os.path.exists(iam_cert_path):
+            raise IOError(f'Certificate path {iam_cert_path} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
