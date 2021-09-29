@@ -3894,6 +3894,16 @@ class TestCsmUser():
             new_password, confirm_new_password, reset_password)
 
         self.log.info("Step 2: Verify response 400")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               admin_password, reset_password,
+                                                               header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
         #  TODO check response msg
 
@@ -3924,6 +3934,16 @@ class TestCsmUser():
             new_password, confirm_new_password, reset_password)
 
         self.log.info("Step 2: Verify response 400")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               admin_password, reset_password,
+                                                               header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
         #  TODO check response msg
 
@@ -4037,6 +4057,16 @@ class TestCsmUser():
 
             self.log.info("Step 6.2: Verify response")
             self.log.info("Verifying response code 200 is not returned")
+            if response.status_code == HTTPStatus.OK:
+                self.log.info("Revert password")
+                header = self.csm_user.get_headers(admin_username, new_password)
+                self.log.info("Step: Changing user password for header {}".format(header))
+                response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                                   admin_password, reset_password,
+                                                                   header)
+                self.log.info("Step: Verify success response")
+                self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
             self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
 
         self.log.info("Step 7: Reverting user password")
@@ -4096,6 +4126,16 @@ class TestCsmUser():
 
         self.log.info("Step 6.2: Verify response")
         self.log.info("Verifying response code: 401")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               admin_password, reset_password,
+                                                               header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+
         self.csm_user.check_expected_response(response, HTTPStatus.UNAUTHORIZED)
 
         self.log.info("Step 7: Reverting user password")
