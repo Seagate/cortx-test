@@ -327,7 +327,7 @@ class TestDelayedDelete:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-17115')
     @CTFailOn(error_handler)
-    def test_s1(self):
+    def test_17115(self):
         """
         To test the simple object upload of 50 Mb
         with delayed delete option is set to TRUE.
@@ -403,7 +403,7 @@ class TestDelayedDelete:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-17120')
     @CTFailOn(error_handler)
-    def test_s2(self):
+    def test_17120(self):
         """
         This Test will perform the re-upload of object
         with multipart upload
@@ -452,7 +452,7 @@ class TestDelayedDelete:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-17121')
     @CTFailOn(error_handler)
-    def test_s3(self):
+    def test_17121(self):
         """
         This Test Uploads file with same name but different size.
         """
@@ -557,9 +557,9 @@ class TestDelayedDelete:
                          " is different %s, %s", last_m_time_o, last_m_time_r)
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-')
+    @pytest.mark.tags('TEST-17302')
     @CTFailOn(error_handler)
-    def test_s4(self):
+    def test_17302(self):
         """
         To test the simple upload of 50 Mb object
         with delayed delete option is set to TRUE.
@@ -636,7 +636,7 @@ class TestDelayedDelete:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-17775')
     @CTFailOn(error_handler)
-    def test_s5(self):
+    def test_17775(self):
         """
         Test to verify deletion of objects when
         delayed delete option is enabled using simple object
@@ -680,7 +680,10 @@ class TestDelayedDelete:
             self.log.error("The size of objects are different "
                            "%s, %s\n", obj_size, obj_size_r)
 
-    def test_s6(self):
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-17122')
+    @CTFailOn(error_handler)
+    def test_17122(self):
         """
         This Function test the Object deletion
         when delayed delete is set to False
