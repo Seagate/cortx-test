@@ -25,7 +25,8 @@ import os
 import logging
 import re
 import pytest
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG, S3_CFG, S3_OBJ_TST
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG, S3_OBJ_TST
+from config.s3 import S3_CFG
 from commons.utils import config_utils
 from commons.constants import SwAlerts as const
 from commons import constants as cons
