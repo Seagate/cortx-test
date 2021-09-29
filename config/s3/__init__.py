@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# !/usr/bin/python
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,8 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
+
 """S3 configs are initialized here."""
 
 import os
@@ -39,13 +40,11 @@ _target = '-tg' if '-tg' in pytest_args else '--target' if '--target' in pytest_
 if _target:
     target = pytest_args[pytest_args.index(_target) + 1]
 
-_use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else True
-if _use_ssl:
-    use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1]
+_use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else None
+use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1] if _use_ssl else True
 
-_validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else True
-if _validate_certs:
-    validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1]
+_validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else None
+validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1] if _validate_certs else True
 
 
 def build_s3_endpoints() -> dict:
