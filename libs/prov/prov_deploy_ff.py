@@ -222,7 +222,7 @@ class ProvDeployFFLib:
             LOGGER.info("Configure Storage")
             deploy_ff_cfg = PROV_CFG["deploy_ff"]
             LOGGER.info("Configure Storage name")
-            encl_name = "enclosure1"
+            encl_name = deploy_ff_cfg["encl_name"]
             nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_NAME.format(encl_name), read_lines=True)
             time.sleep(deploy_ff_cfg["per_step_delay"])
 
@@ -312,7 +312,7 @@ class ProvDeployFFLib:
             time.sleep(deploy_ff_cfg["per_step_delay"])
 
             LOGGER.info("Setup Node signature")
-            nd_obj.execute_cmd(cmd=common_cmd.SET_NODE_SIGN.format("HP1_5U84"),
+            nd_obj.execute_cmd(cmd=common_cmd.SET_NODE_SIGN.format(deploy_ff_cfg["lr_sign"]),
                                read_lines=True)
             time.sleep(deploy_ff_cfg["per_step_delay"])
 

@@ -1,12 +1,4 @@
-test_deployment:
-  jenkins_job_name: 'QA-testing-EC-deployment'
-  jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA'
-  jenkins_token: 'e0EzNMlS53'
-  skip_deployment: false
-  skip_preboarding: false
-  skip_onboarding: true
-  skip_s3_configure: false
-csm_default_pswd: "Cortxadmin@123"
+csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
 s3user_name: 's3user'
 s3user_email: 's3user@seagate.com'
-s3user_pswd: 'Seagate@1'
+s3user_pswd: 'xPUfs2X7OhXgirxG6au/T9FHd+q7mWHYo3P2OS7KlWs='

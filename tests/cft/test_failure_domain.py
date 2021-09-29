@@ -81,12 +81,11 @@ class TestFailureDomain:
             cls.build_branch, version, cls.build)
         cls.deploy_ff_obj = ProvDeployFFLib()
 
-
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
         self.log.info("Reverting all the VM before deployment")
-        with Pool(self.num_nodes) as p:
-            p.map(self.revert_vm_snapshot, self.host_list)
+        with Pool(self.num_nodes) as proc_pool:
+            proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -96,56 +95,6 @@ class TestFailureDomain:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-    def deploy_3node_vm(self, config_file_path: str = None, expect_failure: bool = False):
-        """
-        Deploy 3 node using jenkins job
-        """
-        test_cfg = self.cft_test_cfg["test_deployment"]
-        self.log.info("Adding data required for the jenkins job execution")
-        parameters = dict()
-
-        parameters['Client_Node'] = os.getenv("Client_Node", None)
-        parameters['Git_Repo'] = os.getenv("Git_Repo", 'https://github.com/Seagate/cortx-test.git')
-        parameters['Git_Branch'] = os.getenv("Git_Branch", 'dev')
-        parameters['Cortx_Build'] = os.getenv("Build", None)
-        parameters['Cortx_Build_Branch'] = os.getenv("Build_Branch", "stable")
-
-        parameters['Target_Node'] = CMN_CFG["setupname"]
-        parameters['Node1_Hostname'] = CMN_CFG["nodes"][0]["hostname"]
-        parameters['Node2_Hostname'] = CMN_CFG["nodes"][1]["hostname"]
-        parameters['Node3_Hostname'] = CMN_CFG["nodes"][2]["hostname"]
-        parameters['HOST_PASS'] = CMN_CFG["nodes"][0]["password"]
-        parameters['MGMT_VIP'] = CMN_CFG["csm"]["mgmt_vip"]
-        parameters['ADMIN_USR'] = CMN_CFG["csm"]["csm_admin_user"]["username"]
-        parameters['ADMIN_PWD'] = CMN_CFG["csm"]["csm_admin_user"]["password"]
-        parameters['Skip_Deployment'] = test_cfg["skip_deployment"]
-        parameters['Skip_Preboarding'] = test_cfg["skip_preboarding"]
-        parameters['Skip_Onboarding'] = test_cfg["skip_onboarding"]
-        parameters['Skip_S3_Configuration'] = test_cfg["skip_s3_configure"]
-
-        self.log.info("Parameters for jenkins job : %s", parameters)
-
-        if config_file_path is not None and os.path.exists(config_file_path):
-            self.log.info("Retrieving the config details for deployment from provided config file")
-            with open(config_file_path, 'r') as file:
-                parameters['Provisioner_Config'] = file.read()
-        else:
-            self.log.error(
-                "Config file not provided, Deployment to be proceeded with defaults values")
-            assert_utils.assert_true(False, "Config File not provided for deployment")
-
-        output = Provisioner.build_job(test_cfg["jenkins_job_name"], parameters,
-                                       test_cfg["jenkins_token"],
-                                       test_cfg["jenkins_job_url"])
-        self.log.info("Jenkins Build URL: %s", output['url'])
-        self.log.info("Result : %s", output['result'])
-        if not expect_failure:
-            assert_utils.assert_equal(output['result'], "SUCCESS",
-                                      "Job is not successful, please check the url.")
-        else:
-            assert_utils.assert_equal(output['result'], "FAILURE",
-                                      "Job is successful, expected to fail")
-
     def post_deployment_steps(self):
         """
         Perform Preboarding, S3 account creation and AWS configuration on client
@@ -153,17 +102,19 @@ class TestFailureDomain:
         self.log.info("Perform Preboarding")
         cortx_obj = CortxCliTestLib()
         config_chk = CSMConfigsCheck()
+        csm_def_pswd = pswdmanager.decrypt(self.cft_test_cfg["csm_default_pswd"])
         resp = config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
-                                           self.cft_test_cfg["csm_default_pswd"],
-                                           CMN_CFG["csm"]["csm_admin_user"]["password"])
+                                      csm_def_pswd,
+                                      CMN_CFG["csm"]["csm_admin_user"]["password"])
         assert_utils.assert_true(resp, "Failure in Preboarding")
 
         self.log.info("Create S3 account")
+        s3user_pswd = pswdmanager.decrypt(self.cft_test_cfg["s3user_pswd"])
         resp = cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
-                                                      self.cft_test_cfg["s3user_email"],
-                                                      self.cft_test_cfg["s3user_pswd"])
+                                                 self.cft_test_cfg["s3user_email"],
+                                                 s3user_pswd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Response for account creation: {}".format(resp))
+        self.log.info("Response for account creation: %s",resp)
         cortx_obj.close_connection()
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]

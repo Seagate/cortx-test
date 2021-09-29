@@ -411,7 +411,8 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 
 # Deployment using Factory and Field
-CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh {}; chmod +x /mnt/cortx/install.sh "
+CMD_GET_PROV_INSTALL = "curl --create-dirs " \
+                       "--output /mnt/cortx/install.sh {}; chmod +x /mnt/cortx/install.sh "
 CMD_INSTALL_CORTX_RPM = "sh /mnt/cortx/install.sh -t {}"
 CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}"  # server name, type - VM/HW
 CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
