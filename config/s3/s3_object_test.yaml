@@ -10,6 +10,8 @@ s3_object:
     inval_req: "InvalidRequest"
     emailaddr: "emailaddress={}"
     mb_count: 5
+    mb_count_d: 50
+    mb_count_n: 70
     obj_name: "testobj"
     key: "testkey"
     key_err: "NoSuchKey"
