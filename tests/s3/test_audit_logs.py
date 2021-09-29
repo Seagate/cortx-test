@@ -36,7 +36,8 @@ from commons.helpers.node_helper import Node
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
-from libs.s3 import S3H_OBJ, S3_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 

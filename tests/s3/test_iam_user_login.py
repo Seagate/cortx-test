@@ -24,7 +24,8 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
-from config import S3_USER_ACC_MGMT_CONFIG, S3_CFG
+from config import S3_USER_ACC_MGMT_CONFIG
+from config.s3 import S3_CFG
 from libs.s3 import iam_test_lib
 from libs.s3 import S3H_OBJ
 from libs.s3 import cortxcli_test_lib
