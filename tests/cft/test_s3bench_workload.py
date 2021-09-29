@@ -179,8 +179,11 @@ class TestWorkloadS3Bench:
         """S3bench Workload worker"""
         object_size = "2Mb"
         client = 32
+        sample = 400
+        self.log.info("Workload: %s objects of %s with %s parallel clients",
+                      sample, object_size, client)
         resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY, bucket=f"{bucket_name}",
-                               num_clients=client, num_sample=400, obj_name_pref="loadgen_test_",
+                               num_clients=client, num_sample=sample, obj_name_pref="loadgen_test_",
                                obj_size=object_size, skip_cleanup=False, duration=None,
                                log_file_prefix="TEST-28376")
         self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
@@ -189,31 +192,37 @@ class TestWorkloadS3Bench:
             f"Please read log file {resp[1]}"
 
     @pytest.mark.tags("TEST-28376")
-    @pytest.mark.data_durability
+    @pytest.mark.scalability
     def test_28376(self):
         """Parallel S3bench workloads on multiple buckets"""
+        self.log.info("Started: Parallel S3bench workloads on multiple buckets")
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         pool = Pool(processes=3)
         pool.map(self.s3bench_workload, ["test-bucket-1", "test-bucket-2", "test-bucket-3"])
+        self.log.info("Completed: Parallel S3bench workloads on multiple buckets")
 
     @pytest.mark.tags("TEST-28377")
-    @pytest.mark.data_durability
+    @pytest.mark.scalability
     def test_28377(self):
         """S3bench workloads with varying object size and varying clients"""
+        self.log.info("Started: S3bench workloads with varying object size and varying clients")
         bucket_prefix = "test-bucket"
         object_sizes = [
             "1Kb", "4Kb", "16Kb", "64Kb", "256Kb",
             "1Mb", "5Mb", "20Mb", "64Mb", "128Mb", "256Mb", "512Mb"
         ]
         clients = [64, 128, 256]
+        sample = 1024
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for object_size in object_sizes:
             for client in clients:
+                self.log.info("Workload: 1024 objects of %s with %s parallel clients",
+                              object_size, client)
                 resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY,
                                        bucket=f"{bucket_prefix}-{object_size.lower()}-{client}",
-                                       num_clients=client, num_sample=1024,
+                                       num_clients=client, num_sample=sample,
                                        obj_name_pref="loadgen_test_", obj_size=object_size,
                                        skip_cleanup=False, duration=None,
                                        log_file_prefix="TEST-28377")
@@ -221,3 +230,4 @@ class TestWorkloadS3Bench:
                 assert not s3bench.check_log_file_error(resp[1]), \
                     f"S3bench workload for object size {object_size} with client {client} failed." \
                     f" Please read log file {resp[1]}"
+        self.log.info("Completed: S3bench workloads with varying object size and varying clients")
