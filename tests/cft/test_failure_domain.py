@@ -32,10 +32,8 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG, PROV_CFG
-from libs.csm.csm_setup import CSMConfigsCheck
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 
 class TestFailureDomain:
@@ -95,44 +93,6 @@ class TestFailureDomain:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-    def post_deployment_steps(self):
-        """
-        Perform Preboarding, S3 account creation and AWS configuration on client
-        """
-        self.log.info("Perform Preboarding")
-        cortx_obj = CortxCliTestLib()
-        config_chk = CSMConfigsCheck()
-        csm_def_pswd = pswdmanager.decrypt(self.cft_test_cfg["csm_default_pswd"])
-        resp = config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
-                                      csm_def_pswd,
-                                      CMN_CFG["csm"]["csm_admin_user"]["password"])
-        assert_utils.assert_true(resp, "Failure in Preboarding")
-
-        self.log.info("Create S3 account")
-        s3user_pswd = pswdmanager.decrypt(self.cft_test_cfg["s3user_pswd"])
-        resp = cortx_obj.create_account_cortxcli(self.cft_test_cfg["s3user_name"],
-                                                 self.cft_test_cfg["s3user_email"],
-                                                 s3user_pswd)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Response for account creation: %s",resp)
-        cortx_obj.close_connection()
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        try:
-            self.log.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
-                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-        except IOError as error:
-            self.log.error(
-                "An error occurred in %s:",
-                TestFailureDomain.post_deployment_steps.__name__)
-            if isinstance(error.args[0], list):
-                self.log.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                self.log.error(error.args[0])
-            return False, error
-
-        return True, "Post Deloyment Steps Successful!!"
 
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability

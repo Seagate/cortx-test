@@ -26,9 +26,13 @@ import time
 from configparser import ConfigParser, SectionProxy
 
 from commons import commands as common_cmd
+from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -718,3 +722,46 @@ class ProvDeployFFLib:
 
         LOGGER.info("Deployment Successful!!")
         return True
+
+    @staticmethod
+    def post_deployment_steps():
+        """
+        Perform Preboarding, S3 account creation and AWS configuration on client
+        """
+        LOGGER.info("Post Deployment Steps")
+        post_deploy_cfg = PROV_CFG["post_deployment_steps"]
+
+        LOGGER.info("Perform Preboarding")
+        cortx_obj = CortxCliTestLib()
+        config_chk = CSMConfigsCheck()
+        csm_def_pswd = pswdmanager.decrypt(post_deploy_cfg["csm_default_pswd"])
+        resp = config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
+                                      csm_def_pswd,
+                                      CMN_CFG["csm"]["csm_admin_user"]["password"])
+        assert_utils.assert_true(resp, "Failure in Preboarding")
+
+        LOGGER.info("Create S3 account")
+        s3user_pswd = pswdmanager.decrypt(post_deploy_cfg["s3user_pswd"])
+        resp = cortx_obj.create_account_cortxcli(post_deploy_cfg["s3user_name"],
+                                                 post_deploy_cfg["s3user_email"],
+                                                 s3user_pswd)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Response for account creation: %s",resp)
+        cortx_obj.close_connection()
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        try:
+            LOGGER.info("Configure AWS keys on Client")
+            system_utils.execute_cmd(
+                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.post_deployment_steps.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True, "Post Deloyment Steps Successful!!"
