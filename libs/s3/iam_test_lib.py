@@ -1001,31 +1001,38 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
-    @staticmethod
     def change_user_password(
+            self,
             old_pwd: str = None,
             new_pwd: str = None,
             access_key: str = None,
             secret_key: str = None) -> tuple:
         """
-        Change user password.
-
-        :param old_pwd: Old password of user.
+        Change user password of IAM user.
+        :param old_pwd: The IAM user's current password.
         :param new_pwd: New password of user.
-        :param access_key: Access key of user.
-        :param secret_key: Secret key of user.
+        :param access_key: Access key of IAM user.
+        :param secret_key: Secret key of IAM user.
         :return: (Boolean, response).
         """
-        LOGGER.info("Change user password")
-        status, result = tuple()  # TODO: change user password.
-        LOGGER.info("output = %s", str(result))
-        if "failed" in result:
+        try:
+            LOGGER.info("Change user password")
+            current_iam_user_obj = IamLib(secret_key=secret_key, access_key=access_key)
+            super().change_password(iam_usr_obj=current_iam_user_obj,
+                                    old_password=old_pwd,
+                                    new_password=new_pwd)
+
+        except (self.iam.exceptions.PasswordPolicyViolationException,
+                self.iam.exceptions.NoSuchEntityException,
+                ClientError) as error:
+            raise error
+        except Exception as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.change_user_password.__name__,
-                         result)
-            raise CTException(err.S3_CLIENT_ERROR, result)
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return status, result
+        return True, "Change Password Request is Successful"
 
     @staticmethod
     def update_user_login_profile_with_both_reset_options(

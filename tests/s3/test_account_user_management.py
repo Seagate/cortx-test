@@ -35,11 +35,13 @@ from commons.utils.system_utils import create_file, remove_file
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.iam_test_lib import IamTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 
 
+# pylint: disable-msg=too-many-public-methods
+# pylint: disable-msg=too-many-instance-attributes
 class TestAccountUserManagement:
     """Account User Management TestSuite."""
 
@@ -62,6 +64,9 @@ class TestAccountUserManagement:
         cls.log.info("STARTED: Test setup operations.")
         cls.log.info("Certificate path: %s", cls.ca_cert_path)
         cls.log.info("ENDED: setup test suite operations.")
+        cls.users_list = cls.accounts_list = cls.account_name = cls.test_file = None
+        cls.timestamp = cls.test_dir_path = cls.test_file_path = cls.user_name = None
+        cls.bucket_name = cls.obj_name = cls.s3acc_obj = None
 
     def setup_method(self):
         """
@@ -87,7 +92,7 @@ class TestAccountUserManagement:
                 time.perf_counter_ns())).replace('.', '_')
         self.bucket_name = "testbucket{}".format(str(time.perf_counter_ns()))
         self.obj_name = "testobj{}".format(str(time.perf_counter_ns()))
-        self.cortx_obj = CortxCliTestLib()
+        self.s3acc_obj = S3AccountOperationsRestAPI()
         self.users_list = list()
         self.accounts_list = list()
         self.log.info(
@@ -112,30 +117,26 @@ class TestAccountUserManagement:
             os.remove(self.test_file_path)
             self.log.info("Cleaned test directory: %s", self.test_dir_path)
         for acc in self.accounts_list:
-            self.cortx_obj.login_cortx_cli(acc, self.s3acc_password)
             self.log.info("deleting all users in account %s", acc)
             for user in self.users_list:
-                self.cortx_obj.delete_iam_user(user)
-            self.cortx_obj.logout_cortx_cli()
+                resp = self.iam_obj.delete_user(user)
+                assert resp[0], resp[1]
             self.log.info("deleting %s", acc)
-            self.cortx_obj.delete_account_cortxcli(
-                account_name=acc, password=self.s3acc_password)
-        del self.cortx_obj
+            self.s3acc_obj.delete_s3_account(acc)
         self.log.info("ENDED: Test teardown Operations.")
 
     def create_account(self, account_name):
-        """Create s3 account using cortxcli."""
-        status, response = self.cortx_obj.create_account_cortxcli(
-            account_name,
-            self.email_id.format(account_name),
-            self.s3acc_password)
-        if status:
+        """Create s3 account using REST api."""
+        resp = self.s3acc_obj.create_s3_account(account_name,
+                                            self.email_id.format(account_name),
+                                            self.s3acc_password)
+        assert resp[0], resp[1]
+        if resp[0]:
             self.log.info(
                 "Create account: %s, response: %s",
                 account_name,
-                response)
-
-        return status, response
+                resp[1])
+        return resp
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -172,10 +173,12 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         self.log.info(
             "Step 2: Listing account to verify new account is created")
-        list_of_accounts = self.cortx_obj.list_accounts_cortxcli()
-        new_accounts = [acc["account_name"] for acc in list_of_accounts]
-        self.log.info(new_accounts)
-        assert self.account_name in new_accounts, f"{self.account_name} not in {new_accounts}"
+        list_of_accounts = self.s3acc_obj.list_s3_accounts()
+        assert list_of_accounts[0], list_of_accounts[1]
+        # new_accounts = [account_name for account_name in list_of_accounts[1]]
+        # self.log.info(new_accounts)
+        assert self.account_name in list_of_accounts[1],\
+            f"{self.account_name} not in {list_of_accounts[1]}"
         self.accounts_list.append(self.account_name)
         self.log.info("END: Tested List account.")
 
@@ -191,12 +194,17 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 1: Creating a new account with name %s", str(
                 self.account_name))
-        resp = self.create_account(self.account_name)
+        acc_name = self.account_name_prefix
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        account_name = f"5432_{acc_name}_{str(timestamp)}"
+        email_id = f"{account_name}_email@seagate.com"
+        resp = self.s3acc_obj.create_s3_account(account_name,
+                                                email_id,
+                                                self.s3acc_password)
         assert resp[0], resp[1]
         self.log.info(
-            "Step 2: Deleting account with name %s", str(self.account_name))
-        resp = self.cortx_obj.delete_account_cortxcli(
-            self.account_name, self.s3acc_password)
+            "Step 2: Deleting account with name %s", str(account_name))
+        resp = self.s3acc_obj.delete_s3_account(account_name)
         assert resp[0], resp[1]
         self.log.info("END: Tested Delete Account.")
 
@@ -214,13 +222,14 @@ class TestAccountUserManagement:
         acc_name = self.account_name_prefix
         self.log.info("account prefix: %s", str(acc_name))
         for cnt in range(total_account):
-            account_name = f"{acc_name}{cnt}{cnt}{str(int(time.time()))}"
-            email_id = f"{acc_name}{str(int(time.time()))}{cnt}@seagate.com"
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            account_name = f"{acc_name}{cnt}{cnt}{str(timestamp)}"
+            email_id = f"{account_name}{str(int(time.time()))}{cnt}@seagate.com"
             self.log.info("account name: %s", str(account_name))
             self.log.info("email id: %s", str(email_id))
-            resp = self.cortx_obj.create_account_cortxcli(account_name,
-                                                          email_id,
-                                                          self.s3acc_password)
+            resp = self.s3acc_obj.create_s3_account(account_name,
+                                                    email_id,
+                                                    self.s3acc_password)
             assert resp[0], resp[1]
             access_keys.append(resp[1]["access_key"])
             secret_keys.append(resp[1]["secret_key"])
@@ -230,10 +239,12 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Verifying %s accounts are created by listing accounts",
             str(total_account))
-        list_of_accounts = self.cortx_obj.list_accounts_cortxcli()
-        new_accounts = [acc["account_name"] for acc in list_of_accounts]
+        list_of_accounts = self.s3acc_obj.list_s3_accounts()
+        assert list_of_accounts[0], list_of_accounts[1]
+        # new_accounts = [account_name for account_name in list_of_accounts[1]]
+        # self.log.info(new_accounts)
         for cnt in range(total_account):
-            assert account_list[cnt] in new_accounts
+            assert account_list[cnt] in list_of_accounts[1]
         self.log.info(
             "Verified %s accounts are created by listing accounts",
             str(total_account))
@@ -258,15 +269,15 @@ class TestAccountUserManagement:
                 self.account_name))
         self.log.info(
             "Step 2: Creating another account with existing account name")
-        try:
-            resp = self.create_account(self.account_name)
-            assert not resp[0], resp[1]
-        except CTException as error:
-            assert "EntityAlreadyExists" in error.message, error.message
-        self.log.info("Created another account with existing account name")
+        resp = self.s3acc_obj.create_s3_account(self.account_name,
+                                             self.email_id.format(self.account_name),
+                                             self.s3acc_password)
+        assert "attempted to create an account that already exists" in resp[1], resp[1]
+        self.log.info("Created another account with existing account name response %s", resp[1])
         self.log.info(
             "END: Tested creating new account with existing account name")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
@@ -288,17 +299,13 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj.create_user(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.cortx_obj.logout_cortx_cli()
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Create access key for newly created user")
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        resp = new_s3h_obj.create_access_key(self.user_name)
+        resp = iam_obj.create_access_key(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         user_access_key = resp[1]["AccessKey"]["AccessKeyId"]
@@ -339,10 +346,13 @@ class TestAccountUserManagement:
         self.log.info(resp)
         assert resp[0], resp[1]
         self.accounts_list.append(self.account_name)
-        self.users_list.append(self.user_name)
+        iam_obj.delete_access_key(user_name=self.user_name, access_key_id=user_access_key)
+        iam_obj.delete_user(self.user_name)
+        del iam_obj
         self.log.info(
             "END: Tested CRUD operations with valid login credentials")
 
+    # pylint: disable-msg=too-many-statements
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5435")
@@ -358,14 +368,13 @@ class TestAccountUserManagement:
             str(self.account_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        self.log.info("access key: %s", str(access_key))
+        self.log.info("secret key: %s", str(secret_key))
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj.create_user(self.user_name)
         self.log.info(resp)
-        self.cortx_obj.logout_cortx_cli()
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it.")
         # Dummy access and secret keys.
@@ -414,7 +423,8 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Performed CRUD operations with invalid user's credentials.")
         self.accounts_list.append(self.account_name)
-        self.users_list.append(self.user_name)
+        iam_obj.delete_user(self.user_name)
+        del iam_obj
         self.log.info("END: CRUD operations with invalid login credentials")
 
     @pytest.mark.parallel
@@ -435,25 +445,20 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("access key: %s", str(access_key))
         self.log.info("secret key: %s", str(secret_key))
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj.create_user(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it.")
         self.log.info("Step 2: Listing users and verifying user is created.")
-        resp = self.cortx_obj.list_users_cortxcli()
-        self.log.info(resp)
-        self.log.info("Users_List %s", str(resp[1]))
+        resp = iam_obj.list_users()
+        self.log.info("Users list %s", str(resp[1]))
         assert resp[0], resp[1]
-        assert self.user_name in resp[1], resp[1]
-        self.cortx_obj.logout_cortx_cli()
+        assert self.user_name in str(resp[1]), resp[1]
+        iam_obj.delete_user(self.user_name)
+        del iam_obj
         self.log.info("Listed users and verified user is created")
         self.accounts_list.append(self.account_name)
-        self.users_list.append(self.user_name)
         self.log.info("END: Create new user for current Account.")
 
     @pytest.mark.parallel
@@ -468,17 +473,14 @@ class TestAccountUserManagement:
         assert resp[0], resp[1]
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        self.log.info("access key: %s", str(access_key))
+        self.log.info("secret key: %s", str(secret_key))
+        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        new_s3h_obj.create_user(self.user_name)
         self.log.info(resp)
         assert resp[0], resp[1]
-        self.log.info("Step 1: Created new account and new user in it")
+        self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Updating user name of already existing user")
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         new_user_name = "testuser8676"
         resp = new_s3h_obj.update_user(new_user_name, self.user_name)
         self.log.info(resp)
@@ -486,14 +488,18 @@ class TestAccountUserManagement:
         self.log.info("Updated user name of already existing user")
         self.log.info(
             "Step 3: Listing users and verifying user name is updated.")
-        resp = self.cortx_obj.list_users_cortxcli()
-        self.log.info(resp)
+        resp = new_s3h_obj.list_users()
+        self.log.info("Users list %s", str(resp[1]))
         assert resp[0], resp[1]
-        assert "testuser8676" in resp[1], resp[1]
-        self.cortx_obj.logout_cortx_cli()
+        is_updated = False
+        for user in resp[1]:
+            if new_user_name == user['UserName']:
+                is_updated = True
+        assert is_updated, resp[1]
+        new_s3h_obj.delete_user(new_user_name)
+        del new_s3h_obj
         self.log.info("Listed users and verified user name is updated.")
         self.accounts_list.append(self.account_name)
-        self.users_list.append(new_user_name)
         self.log.info("END: Update User.")
 
     @pytest.mark.parallel
@@ -506,23 +512,23 @@ class TestAccountUserManagement:
         self.log.info("Step 1: Create new account and new user in it")
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj.create_user(self.user_name)
+        self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
             "Step 2: Listing users and verifying user details are listed")
-        resp = self.cortx_obj.list_users_cortxcli()
+        resp = iam_obj.list_users()
+        self.log.info("Users list %s", str(resp[1]))
         assert resp[0], resp[1]
-        assert self.user_name in resp[1], resp[1]
-        self.cortx_obj.logout_cortx_cli()
+        assert self.user_name in str(resp[1]), resp[1]
         self.log.info("Listed users and verified user details are listed")
+        iam_obj.delete_user(self.user_name)
+        del iam_obj
         self.accounts_list.append(self.account_name)
-        self.users_list.append(self.user_name)
         self.log.info("END: list user.")
 
     @pytest.mark.parallel
@@ -537,18 +543,17 @@ class TestAccountUserManagement:
         self.log.info("Step 1: Create new account and new user in it.")
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
+        iam_obj.create_user(self.user_name)
+        self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created new account and new user in it")
         self.log.info("Step 2: Deleting user")
-        self.cortx_obj.delete_user_cortxcli(self.user_name)
+        iam_obj.delete_user(self.user_name)
         assert resp[0], resp[1]
-        self.cortx_obj.logout_cortx_cli()
+        del iam_obj
         self.log.info("Step 2: Deleted user successfully")
         self.accounts_list.append(self.account_name)
         self.log.info("END: Delete User")
@@ -568,26 +573,25 @@ class TestAccountUserManagement:
         secret_key = resp[1]["secret_key"]
         self.log.info("Created new account successfully.")
         self.log.info("Step 2: Creating %s users", str(total_users))
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         for cnt in range(total_users):
             my_user_name = f"{self.user_name}{cnt}"
             self.log.info("Creating user with name %s", str(my_user_name))
-            resp = self.cortx_obj.create_user_cortxcli(my_user_name,
-                                                       self.s3acc_password,
-                                                       self.s3acc_password)
+            iam_obj.create_user(my_user_name)
+            self.log.info(resp)
             assert resp[0], resp[1]
             self.users_list.append(my_user_name)
             self.log.info("Created user with name %s", str(my_user_name))
         self.log.info("Step 2: Created %s users", str(total_users))
         self.log.info("Verifying %s users are created", total_users)
-        new_s3h_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
-        list_of_users = new_s3h_obj.list_users()[1]
+        list_of_users = iam_obj.list_users()[1]
         self.log.info(list_of_users)
         self.log.info("Number of users : %s", str(len(list_of_users)))
         assert resp[0], resp[1]
         assert len(list_of_users) >= total_users, list_of_users[1]
+        for user in list_of_users:
+            iam_obj.delete_user(user['UserName'])
+        del iam_obj
         self.log.info("Verified %s users are created", str(total_users))
         self.accounts_list.append(self.account_name)
         self.log.info("END: Created 100 No of Users.")
@@ -611,8 +615,8 @@ class TestAccountUserManagement:
             resp = self.iam_obj.create_user(self.user_name)
             self.log.info(resp)
             assert not resp[0], resp[1]
-        except CTException as error:
-            assert "EntityAlreadyExists" in error.message, error.message
+        except self.iam_obj.iam.exceptions.EntityAlreadyExistsException as error:
+            assert error.response['Error']['Code'] == 'EntityAlreadyExists', error
         self.log.info(
             "Could not create user with existing name %s", str(self.user_name))
         self.users_list.append(self.user_name)
@@ -641,6 +645,8 @@ class TestAccountUserManagement:
         resp = self.iam_obj.create_access_key(self.user_name)
         assert resp[0], resp[1]
         self.log.info("Step 2: Created access key for the user")
+        self.iam_obj.delete_access_key(user_name=self.user_name,
+                                       access_key_id=resp[1]["AccessKey"]["AccessKeyId"])
         self.users_list.append(self.user_name)
         self.log.info("END: Create Access key to the user")
 
@@ -668,6 +674,7 @@ class TestAccountUserManagement:
         resp_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         assert user_access_key == resp_access_key, resp[1]
         self.log.info("Listed access key of the user successfully")
+        self.iam_obj.delete_access_key(user_name=self.user_name, access_key_id=user_access_key)
         self.users_list.append(self.user_name)
         self.log.info("END: List accesskeys for the user")
 
@@ -734,6 +741,7 @@ class TestAccountUserManagement:
         assert status == "Active", resp[1]
         self.log.info(
             "Verified that access key of user is updated successfully")
+        self.iam_obj.delete_access_key(user_name=self.user_name, access_key_id=new_access_key)
         self.users_list.append(self.user_name)
         self.log.info("END: Update Accesskey of a user.")
 
@@ -874,7 +882,7 @@ class TestAccountUserManagement:
     @pytest.mark.tags("TEST-5444")
     @CTFailOn(error_handler)
     def test_change_pwd_for_iam_user_2092(self):
-        """Change passsword for IAM user."""
+        """Change password for IAM user."""
         self.log.info("START: Change password for IAM user.")
         self.log.info(
             "Step 1: Creating a user with name %s", str(
@@ -897,14 +905,13 @@ class TestAccountUserManagement:
         self.log.info("Created access key for user %s", str(self.user_name))
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
+        iam_obj_user = IamTestLib(access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 4: Changing password for %s user", str(
                 self.user_name))
-        resp = self.iam_obj.change_user_password(
+        iam_obj_user.change_user_password(
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],
-            access_key,
-            secret_key)
+            S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],)
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Changed password for %s user", str(self.user_name))
@@ -925,32 +932,27 @@ class TestAccountUserManagement:
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
         account_id = resp[1]["account_id"]
-        self.log.info(
-            "Created a new account with name %s", str(
-                self.account_name))
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2: Creating a user with name %s", str(
                 self.user_name))
-        self.cortx_obj.login_cortx_cli(
-            username=self.account_name,
-            password=self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(self.user_name,
-                                                   self.s3acc_password,
-                                                   self.s3acc_password)
-
+        resp = iam_obj.create_user(self.user_name)
+        self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Created a user with name %s", str(self.user_name))
         self.log.info("User Data is: %s", str(resp[1]))
-        self.cortx_obj.logout_cortx_cli()
         self.log.info(
             "Step 3: Verifying ARN format of user %s", str(self.user_name))
         arn_format = "arn:aws:iam::{}:user/{}".format(
             account_id, self.user_name)
-        assert arn_format == resp[1]["arn"], "Invalid user ARN format"
+        assert arn_format == resp[1]['User']["Arn"], "Invalid user ARN format"
         self.log.info(
             "Step 3: Verified ARN format of user %s successfully",
             str(self.user_name))
         self.accounts_list.append(self.account_name)
-        self.users_list.append(self.user_name)
+        iam_obj.delete_user(self.user_name)
+        del iam_obj
         self.log.info(
             "END: Test Create user for the account and verify output with proper ARN format")
