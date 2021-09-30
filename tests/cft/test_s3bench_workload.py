@@ -151,11 +151,12 @@ class TestWorkloadS3Bench:
         self.log.info("Perform Write Operation on Bucket %s", bucket_name)
         self.log.info("Workload: %s objects of %s with %s parallel clients.", samples, size,
                       clients)
-        resp = s3bench.s3bench(access_key, SECRET_KEY, bucket=bucket_name,
+        resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                num_clients=clients, num_sample=samples,
                                obj_name_pref="test_25016", obj_size=size,
                                skip_cleanup=True, duration=None,
                                log_file_prefix="test_25016")
+        assert not s3bench.check_log_file_error(resp[1]), f"S3bench write failed for {bucket_name}"
 
         self.log.info("Perform Read Operation in Loop on Bucket :%s", bucket_name)
         for loop in range(read_loops):

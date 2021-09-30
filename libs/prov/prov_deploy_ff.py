@@ -108,7 +108,7 @@ class ProvDeployFFLib:
         """
         Installs Cortx packages(RPM)
         param: nd_obj: Node object to execute commands on
-        param: build_branch: Branch of the build to be deployed
+        param: build: Build no to be deployed
         param: build_url: Build URL
         """
         try:
@@ -215,7 +215,6 @@ class ProvDeployFFLib:
         """
         Configure Storage
         param: nd_obj: node object for commands to be executed on
-        param: node_no: Node number
         param: node_config: Section of particular Node from config.ini
         """
         try:
@@ -303,7 +302,6 @@ class ProvDeployFFLib:
         """
         Initialize and Finalize node configuration
         param:  nd_obj: node object for commands to be executed on
-        param: nd_no: srvnode number
         """
         try:
             deploy_ff_cfg = PROV_CFG["deploy_ff"]
@@ -667,10 +665,12 @@ class ProvDeployFFLib:
 
         return True, "post_deploy_check Successful!!"
 
-    def deploy_3node_vm_ff(self, build, build_url, deploy_config_file):
+    def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
         """
         Perform Deployment Using factory and field method
-        param: deploy_config_file : Deployment config file (config.ini)
+        param: build: Build No
+        param: build_url: Build URL
+        param: deploy_config_file : Deployment config file (config.ini) path
         """
 
         LOGGER.info("Starting Deployment with Build:\n %s", build_url)
