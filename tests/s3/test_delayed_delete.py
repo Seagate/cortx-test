@@ -24,7 +24,7 @@ import os
 import time
 import logging
 import pytest
-import random
+from random import choice, randint
 
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
@@ -51,7 +51,7 @@ class TestDelayedDelete:
     """Delayed Delete Test Suite."""
 
     @pytest.fixture(autouse=True)
-    def setup_method(self):
+    def setup(self):
         """
         Function will be invoked prior to each test case.
         It will perform all prerequisite test steps if any.
@@ -83,7 +83,7 @@ class TestDelayedDelete:
         self.start_range = S3_OBJ_TST["s3_object"]["start_range"]
         self.end_range = S3_OBJ_TST["s3_object"]["end_range"]
         self.random_num = str(
-            random.choice(
+            choice(
                 range(
                     self.start_range,
                     self.end_range)))
@@ -269,12 +269,11 @@ class TestDelayedDelete:
             self.log.info(
                 "Retrieved metadata of an object %s", obj_name)
 
-    def put_get_head_object_jclient(self,
-                                    bucket_name,
-                                    test_file_path,
-                                    test_file,
-                                    option
-                                    ):
+    def create_put_object_jclient(self,
+                                  bucket_name,
+                                  test_file_path,
+                                  option
+                                  ):
         self.file_path_lst = []
         self.bucket_list = []
         self.log.info("STARTED: put object using jcloudclient")
@@ -289,10 +288,12 @@ class TestDelayedDelete:
             assert_utils.assert_in(
                 "Bucket created successfully", resp[1][:-1], resp[1])
             self.log.info("Bucket was created %s", bucket_name)
-        if option == "PUT_GET" or option == 1:
+            res = system_utils.create_file(test_file_path,
+                                           2048)
+            logging.info("The file is %s", res)
+
+        if option in ("PUT", 1):
             self.log.info("Put object to a bucket %s", bucket_name)
-            system_utils.create_file(test_file_path,
-                                     2048)
             put_cmd_str = "{} {}".format("put",
                                          test_file_path)
             command = self.create_cmd(
@@ -308,258 +309,174 @@ class TestDelayedDelete:
             self.file_path_lst.append(test_file_path)
             self.bucket_list.append(bucket_name)
 
-        if option == "PUT_GET" or option == 1:
-            self.log.info("Get head object")
-            bucket_str = "{}/{}".format(bucket_name, test_file)
-            command = self.create_cmd(
-                     bucket_str,
-                     "head",
-                     jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
-            resp = system_utils.execute_cmd(command)
-            assert_utils.assert_true(resp[0], resp[1])
-            self.log.info(resp)
-            output_objname = resp[1].split("\\n")[1].split(" ")[-1].strip()
-            obj_size = resp[1].split("\\n")[2].split("-")[1].strip()
-            obj_etag = resp[1].split("\\n")[3].split("-")[1].strip()
-            obj_last_m = resp[1].split("\\n")[4].split("-")[1].strip()
-            return output_objname, obj_size, obj_last_m, obj_etag
+    def put_multiple_objects(self,
+                             bucket_name,
+                             object_lst, file_path):
+        """
+        This functions put the multiple objects to the bucket.
+        :param bucket_name: Name of the bucket
+        :param object_lst: list of the object
+        :param file_path: Path of the file
+        :return: (Boolean, object of put object method)
+        """
+        self.log.info("Putting object %s", object_lst)
+        for obj_name in object_lst:
+            logging.info("Uploading the objects %s", obj_name)
+            self.s3_test_obj.put_object(bucket_name, obj_name, file_path)
+            logging.info("Object %s is Uploaded to %s", obj_name,
+                         bucket_name)
+        return True, object_lst
+
+    def get_multiple_object_head(self, bucket_name, object_lst):
+        """
+        This Function fetch the head of the object
+        for multiple objects and returns the size list,
+        last modified time list, etag list of the objects
+        """
+        time_lst = []
+        size_lst = []
+        etag_lst = []
+        self.log.info("The obj list in mthd is %s", object_lst)
+        for obj in object_lst:
+            resp = self.s3_test_obj.object_info(
+                   bucket_name,
+                   obj)
+            assert resp[0], resp[1]
+            last_m_time_o = resp[1]["LastModified"]
+            etag = resp[1]["ETag"]
+            size_o = resp[1]["ContentLength"]
+            time_lst.append(last_m_time_o)
+            size_lst.append(size_o)
+            etag_lst.append(etag)
+        return time_lst, size_lst, etag_lst
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17115')
+    @pytest.mark.tags('TEST-28995')
     @CTFailOn(error_handler)
-    def test_17115(self):
+    def test_28995(self):
         """
-        To test the simple object upload of 50 Mb
+        To test the multiple object upload of random size
         with delayed delete option is set to TRUE.
         """
         logging.info("Creating bucket")
-        logging.info(
-            "Bucket and Object : %s %s",
-            self.bucket_name,
-            self.object_name)
+        self.s3_test_obj.create_bucket(self.bucket_name)
         logging.info("Uploading the object")
-        self.create_bucket_put_list_object(
+        resp = self.s3_test_obj.put_random_size_objects(
             self.bucket_name,
             self.object_name,
-            self.test_file_path,
-            S3_OBJ_TST["s3_object"]["mb_count"],
-            m_key=S3_OBJ_TST["test_8554"]["key"],
-            m_value=S3_OBJ_TST["test_8554"]["value"])
-        logging.info("Object is uploaded %s", self.object_name)
-        resp = self.s3_test_obj.object_info(
+            S3_OBJ_TST["s3_object"]["obj_min_size"],
+            S3_OBJ_TST["s3_object"]["obj_max_size"],
+            object_count=S3_OBJ_TST["s3_object"]["object_count"],
+            file_path=self.test_file_path)
+        object_lst = resp[1]
+        logging.info("Object is uploaded %s", object_lst)
+        result = self.get_multiple_object_head(self.bucket_name,
+                                               object_lst)
+        logging.info("Last Modified Time of object info %s", result[0])
+        logging.info("Size of object %s", result[1])
+        logging.info("ETag of object info %s", result[2])
+        logging.info("=== Re-upload same file ===")
+        res = self.put_multiple_objects(
             self.bucket_name,
-            self.object_name)
-        assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
-        last_m_time_o = resp[1]["LastModified"]
-        etag = resp[1]["ETag"]
-        size_o = resp[1]["ContentLength"]
-        logging.info("Last Modified Time of object info %s", last_m_time_o)
-        logging.info("ETag of object info %s", etag)
-        logging.info("Size of object %s", size_o)
-        time.sleep(60)
-        logging.info("Re-upload same file")
-        logging.info("Uploading an object %s to bucket %s",
-                     self.object_name, self.bucket_name)
-        resp = self.s3_test_obj.put_object(
-            self.bucket_name, self.object_name, self.test_file_path,
-            m_key=S3_OBJ_TST["test_8554"]["key"],
-            m_value=S3_OBJ_TST["test_8554"]["value"])
-        assert resp[0], resp[1]
+            object_lst,
+            file_path=self.test_file_path)
+        assert_utils.assert_true(res[0], res[1])
         logging.info(
-            "Uploaded an object %s to bucket %s", self.object_name,
+            "Uploaded an object %s to bucket %s", res[1],
             self.bucket_name)
-        logging.info("Listing objects from a bucket %s", self.bucket_name)
-        resp = self.s3_test_obj.object_list(self.bucket_name)
-        assert resp[0], resp[1]
-        assert self.object_name in resp[1], resp[1]
-        logging.info(
-            "Objects are listed from a bucket %s", self.bucket_name)
-        logging.info("Object is uploaded %s", self.object_name )
-        resp = self.s3_test_obj.object_info(
-            self.bucket_name,
-            self.object_name)
-        assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
-        etag_r = resp[1]["ETag"]
-        last_m_time_r = resp[1]["LastModified"]
-        size_r = resp[1]["ContentLength"]
-        logging.info("ETag of object on re-upload %s", etag_r)
-        logging.info("Last Modified time of object on re-upload %s"
-                     , last_m_time_r)
-        logging.info("Size of object on re-upload %s", size_r)
-        if size_o == size_r:
-            logging.info("The Size of objects are  of same size on first upload"
-                         " %s,size on re-upload %s", size_o, size_r)
-        else:
-            logging.error("The size of objects are different"
-                          " a: %s, b: %s", size_o, size_r)
-        if last_m_time_o == last_m_time_r:
-            logging.error("The time is same seems object re-upload failed")
-        else:
-            logging.info("The Last modified time"
-                         " is different %s, %s", last_m_time_o, last_m_time_r)
+        result_r = self.get_multiple_object_head(self.bucket_name,
+                                                 res[1])
+        for last_mod_time, r_last_mod_time in zip(result[0], result_r[0]):
+            assert_utils.assert_true(
+                last_mod_time < r_last_mod_time,
+                f"LastModified for the old object {last_mod_time}. "
+                f"LastModified for the new object is {r_last_mod_time}")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17120')
+    @pytest.mark.tags('TEST-29032')
     @CTFailOn(error_handler)
-    def test_17120(self):
+    def test_29032(self):
         """
         This Test will perform the re-upload of object
         with multipart upload
         """
-        self.log.info(
-            "Initiate Multipart upload for file of size of 1GB to 10GB having varying part size")
-        mp_config = MPART_CFG["test_8661"]
-        self.log.info(
-            "Creating a bucket with name : %s",
-            self.bucket_name)
+        self.log.info("Initiate Multipart upload")
+        mp_config = MPART_CFG["test_8660_8664_8665_8668"]
+        self.log.info("Creating a bucket with name : %s",
+                      self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
         self.log.info(
             "Created a bucket with name : %s", self.bucket_name)
-        sp_file = split_file(
-            self.mp_obj_path,
-            mp_config["file_size"],
-            mp_config["total_parts"],
-            random_part_size=True)
-        self.log.info("Initiating multipart upload")
         res = self.s3_mp_test_obj.create_multipart_upload(
-            self.bucket_name, sp_file[0]["Output"])
+            self.bucket_name, self.object_name,
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"])
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info(
             "Multipart Upload initiated with mpu_id %s", mpu_id)
-        self.log.info("Clean up splited file parts")
-
-        resp = self.s3_test_obj.object_info(
-            self.bucket_name,
-            sp_file[0]["Output"])
-        assert resp[0], resp[1]
-        last_m_time_o = resp[1]["LastModified"]
-        etag = resp[1]["ETag"]
-        size_o = resp[1]["ContentLength"]
-        logging.info("Last Modified Time of object info %s", last_m_time_o)
-        logging.info("ETag of object info %s", etag)
-        logging.info("Size of object %s", size_o)
-        time.sleep(60)
-        # TODO re-upload
-        for file in sp_file:
-            remove_file(file["Output"])
-        self.log.info("File clean up completed")
-
-    @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17121')
-    @CTFailOn(error_handler)
-    def test_17121(self):
-        """
-        This Test Uploads file with same name but different size.
-        """
-        m_key = S3_OBJ_TST["test_8554"]["key"]
-        logging.info("Creating bucket")
-        logging.info(
-            "Bucket %s and Object %s",
-            self.bucket_name,
-            self.object_name)
-        logging.info("Uploading the object")
-        self.create_bucket_put_list_object(
+        self.log.info("Uploading parts into bucket")
+        res = self.s3_mp_test_obj.upload_parts(
+            mpu_id,
             self.bucket_name,
             self.object_name,
-            self.test_file_path,
-            S3_OBJ_TST["s3_object"]["mb_count_d"],
-            m_key=S3_OBJ_TST["test_8554"]["key"],
-            m_value=S3_OBJ_TST["test_8554"]["value"])
-        logging.info("Object is uploaded %s", )
-        resp = self.s3_test_obj.object_info(
+            mp_config["file_size"],
+            total_parts=mp_config["total_parts"],
+            multipart_obj_path=self.mp_obj_path)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]),
+                                  mp_config["total_parts"], res[1])
+        parts = res[1]
+        self.log.info("Uploaded parts into bucket: %s", parts)
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(
+            mpu_id,
             self.bucket_name,
             self.object_name)
-        assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),
+                                  mp_config["total_parts"], res[1])
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        res = self.s3_mp_test_obj.complete_multipart_upload(
+            mpu_id,
+            parts,
+            self.bucket_name,
+            self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        assert_utils.assert_in(self.object_name, res[1], res[1])
+        self.log.info("Multipart upload completed")
+        resp = self.s3_test_obj.object_info(
+               self.bucket_name,
+               self.object_name)
+        assert_utils.assert_true(resp[0], resp[1])
         last_m_time_o = resp[1]["LastModified"]
-        etag = resp[1]["ETag"]
-        size_o = resp[1]["ContentLength"]
-        logging.info("Last Modified Time of object info %s", last_m_time_o)
-        logging.info("ETag of object info %s", etag)
-        logging.info("Size of object %s", size_o)
-        time.sleep(60)
-        logging.info("Re-upload file with same name and different size")
-        logging.info("Uploading an object %s to bucket %s",
-                     self.object_name, self.bucket_name)
-        create_file(self.test_file_path,
-                    S3_OBJ_TST["s3_object"]["mb_count_n"])
-        self.log.info(
-            "Uploading an object %s to bucket %s",
-            self.object_name, self.bucket_name)
+        self.log.info("===Re-upload the same file in"
+                      " single upload===")
         resp = self.s3_test_obj.put_object(
-            self.bucket_name, self.object_name,
-            self.test_file_path,
+            self.bucket_name,
+            self.object_name,
+            file_path=self.mp_obj_path,
             m_key=S3_OBJ_TST["test_8554"]["key"],
-            m_value=S3_OBJ_TST["test_8554"]["value"])
-        assert resp[0], resp[1]
-        self.log.info(
-            "Uploaded an object %s to bucket %s", self.object_name,
-            self.bucket_name)
-        self.log.info("Listing objects from a bucket %s",
-                      self.bucket_name)
-        resp = self.s3_test_obj.object_list(self.bucket_name)
-        assert resp[0], resp[1]
-        assert self.object_name in resp[1], resp[1]
-        self.log.info(
-            "Objects are listed from a bucket %s", self.bucket_name)
-        if S3_OBJ_TST["test_8554"]["key"]:
-            self.log.info(
-                "Retrieving metadata of an object %s", self.object_name)
-            resp = self.s3_test_obj.object_info(self.bucket_name,
-                                                self.object_name)
-            assert resp[0], resp[1]
-            assert m_key in resp[1]["Metadata"], resp[1]
-            self.log.info(
-                "Retrieved metadata of an object %s", self.object_name)
-        resp = self.s3_test_obj.put_object(
-            self.bucket_name, self.object_name, self.test_file_path,
-            m_key=S3_OBJ_TST["test_8554"]["key"],
-            m_value=S3_OBJ_TST["test_8554"]["value"])
-        assert resp[0], resp[1]
-        logging.info(
-            "Uploaded an object %s to bucket %s", self.object_name,
-            self.bucket_name)
-        logging.info("Listing objects from a bucket %s",
-                     self.bucket_name)
-        resp = self.s3_test_obj.object_list(self.bucket_name)
-        assert resp[0], resp[1]
-        assert self.object_name in resp[1], resp[1]
-        logging.info(
-            "Objects are listed from a bucket %s", self.bucket_name)
-        logging.info("Object is uploaded %s", self.object_name)
+            m_value=S3_OBJ_TST["test_8554"]["value"]
+            )
+        assert_utils.assert_true(resp[0], resp[1])
         resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
-        assert resp[0], resp[1]
-        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
-        etag_r = resp[1]["ETag"]
+        assert_utils.assert_true(resp[0], resp[1])
         last_m_time_r = resp[1]["LastModified"]
-        size_r = resp[1]["ContentLength"]
-        logging.info("ETag of object on re-upload %s", etag_r)
-        logging.info("Last Modified time of object on re-upload %s"
-                     , last_m_time_r)
-        logging.info("Size of object on re-upload %s", size_r)
-        if size_o == size_r:
-            logging.error("The Size of objects are  of same size on first upload"
-                          " %s,size on re-upload %s", size_o, size_r)
-        else:
-            logging.info("The size of objects are different"
-                         " a: %s, b: %s", size_o, size_r)
-        if last_m_time_o == last_m_time_r:
-            logging.error("The time is same seems object re-upload failed")
-        else:
-            logging.info("The Last modified time"
-                         " is different %s, %s", last_m_time_o, last_m_time_r)
+        assert_utils.assert_true(last_m_time_o < last_m_time_r,
+                                 f"The last modified time is changed"
+                                 f"Old time is {last_m_time_o},"
+                                 f"new time is {last_m_time_r}")
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17302')
+    @pytest.mark.tags('TEST-28444')
     @CTFailOn(error_handler)
-    def test_17302(self):
+    def test_28444(self):
         """
         To test the simple upload of 50 Mb object
         with delayed delete option is set to TRUE.
@@ -634,51 +551,46 @@ class TestDelayedDelete:
                          " is different %s, %s", last_m_time_o, last_m_time_r)
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17775')
+    @pytest.mark.tags('TEST-29043')
     @CTFailOn(error_handler)
-    def test_17775(self):
+    def test_29043(self):
         """
         Test to verify deletion of objects when
         delayed delete option is enabled using simple object
-        upload with ununiform size objects(2MB < size <= 2GB)..
+        upload chunk.
         """
-        """Put object using jcloudclient."""
-        self.log.info("STARTED: put object using jcloudclient")
-        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
-        command = self.create_cmd(
-            self.bucket_name,
-            "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
-        resp = system_utils.execute_cmd(command)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            "Bucket created successfully", resp[1][:-1], resp[1])
-        self.log.info("Bucket was created %s", self.bucket_name)
-        resp = self.put_get_head_object_jclient(self.bucket_name,
-                                                self.test_file_path,
-                                                self.test_file,
-                                                1)
-        obj_size = resp[1]
-        obj_last_m_t = resp[2]
-        self.log.info("Re-Upload the same file")
-        resp_r = self.put_get_head_object_jclient(self.bucket_name,
-                                                  self.test_file_path,
-                                                  self.test_file,
-                                                  "PUT_GET")
-        obj_name_r = resp_r[0]
-        obj_size_r = resp_r[1]
-        obj_last_m_t_r = resp_r[2]
-        if obj_last_m_t != obj_last_m_t_r:
-            self.log.info("The Object %s is re-uploaded"
-                          " and time stamp is modified\n", obj_name_r)
-        else:
-            self.log.error("The Last Modified time %s is not changed\n", obj_last_m_t)
+        self.log.info("STARTED: put object using jcloudclient %s",
+                      self.test_file)
+        self.create_put_object_jclient(self.bucket_name,
+                                       self.test_file_path, 1)
 
-        if obj_size_r == obj_size:
-            self.log.info("The size of objects are same %s\n", obj_size_r)
-        else:
-            self.log.error("The size of objects are different "
-                           "%s, %s\n", obj_size, obj_size_r)
+        result = self.s3_test_obj.object_info(self.bucket_name,
+                                              self.test_file)
+        obj_last_m_t = result[1]["LastModified"]
+        obj_size = result[1]["ContentLength"]
+        self.log.info("Re-Upload the same file")
+        self.create_put_object_jclient(self.bucket_name,
+                                       self.test_file_path,
+                                       "PUT")
+        result = self.s3_test_obj.object_info(self.bucket_name,
+                                              self.test_file)
+        obj_last_m_t_r = result[1]["LastModified"]
+        obj_size_r = result[1]["ContentLength"]
+        assert_utils.assert_true(obj_last_m_t < obj_last_m_t_r,
+                                 f"The Object is overwrite"
+                                 f" as its Last modified time is changed"
+                                 f"new time {obj_last_m_t_r}"
+                                 f" and old time {obj_last_m_t}")
+        assert_utils.assert_true(obj_size_r == obj_size,
+                                 f"Obj size are same {obj_size_r}")
+        self.log.info("Deleting the Chunk uploaded Objects")
+        result = self.s3_test_obj.delete_object(self.bucket_name, self.test_file)
+        assert_utils.assert_true(result[0], result[1])
+        resp = self.s3_test_obj.object_list(self.bucket_name)
+        if not resp:
+            self.log.info("The given Object %s is deleted"
+                          " from bucket %s", self.test_file,
+                          self.bucket_name)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-17122')
@@ -695,39 +607,27 @@ class TestDelayedDelete:
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=False)
         assert_utils.assert_true(status, response)
-        self.log.info("STEP: 1 Creating bucket %s", self.bucket_name)
-        command = self.create_cmd(
-            self.bucket_name,
-            "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
-        resp = system_utils.execute_cmd(command)
-        assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            "Bucket created successfully", resp[1][:-1], resp[1])
-        self.log.info("Bucket was created %s", self.bucket_name)
-        resp = self.put_get_head_object_jclient(self.bucket_name,
-                                                self.test_file_path,
-                                                self.test_file,
-                                                1)
-        obj_size = resp[1]
-        obj_last_m_t = resp[2]
+        self.log.info("STARTED: put object using jcloudclient %s",
+                      self.test_file)
+        self.create_put_object_jclient(self.bucket_name,
+                                       self.test_file_path, 1)
+
+        result = self.s3_test_obj.object_info(self.bucket_name,
+                                              self.test_file)
+        obj_last_m_t = result[1]["LastModified"]
+        obj_size = result[1]["ContentLength"]
         self.log.info("Re-Upload the same file")
-        resp_r = self.put_get_head_object_jclient(self.bucket_name,
-                                                  self.test_file_path,
-                                                  self.test_file,
-                                                  "PUT_GET")
-        obj_name_r = resp_r[0]
-        obj_size_r = resp_r[1]
-        obj_last_m_t_r = resp_r[2]
-        if obj_last_m_t != obj_last_m_t_r:
-            self.log.info("The Object %s is re-uploaded"
-                          " and time stamp is modified\n", obj_name_r)
-        else:
-            self.log.error("The Last Modified time %s is not changed\n", obj_last_m_t)
-
-        if obj_size_r == obj_size:
-            self.log.info("The size of objects are same %s\n", obj_size_r)
-        else:
-            self.log.error("The size of objects are different "
-                           "%s, %s\n", obj_size, obj_size_r)
-
+        self.create_put_object_jclient(self.bucket_name,
+                                       self.test_file_path,
+                                       "PUT")
+        result = self.s3_test_obj.object_info(self.bucket_name,
+                                              self.test_file)
+        obj_last_m_t_r = result[1]["LastModified"]
+        obj_size_r = result[1]["ContentLength"]
+        assert_utils.assert_true(obj_last_m_t < obj_last_m_t_r,
+                                 f"The Object is overwrite"
+                                 f" as its Last modified time is changed"
+                                 f"new time {obj_last_m_t_r}"
+                                 f" and old time {obj_last_m_t}")
+        assert_utils.assert_true(obj_size_r == obj_size,
+                                 f"Obj size are same {obj_size_r}")
