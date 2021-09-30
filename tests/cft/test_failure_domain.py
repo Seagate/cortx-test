@@ -26,7 +26,6 @@ from multiprocessing import Pool
 import pytest
 
 from commons import commands as common_cmd
-from commons import configmanager
 from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
@@ -43,8 +42,6 @@ class TestFailureDomain:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        test_config = "config/cft/test_failure_domain.yaml"
-        cls.cft_test_cfg = configmanager.get_config_wrapper(fpath=test_config)
         cls.deplymt_cfg = PROV_CFG["deploy_ff"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.node_list = []
@@ -93,7 +90,6 @@ class TestFailureDomain:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-23540")
@@ -110,7 +106,7 @@ class TestFailureDomain:
         assert_utils.assert_true(resp, "Failure in Deployment")
 
         self.log.info("Step 3: Perform Post Deployment Steps")
-        self.post_deployment_steps()
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=4)
     @pytest.mark.data_durability
@@ -165,7 +161,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
         self.log.info("Step 3: Perform Post Deployment Steps")
-        self.post_deployment_steps()
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=8)
     @pytest.mark.data_durability
@@ -195,7 +191,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
         self.log.info("Step 3: Perform Post Deployment Steps")
-        self.post_deployment_steps()
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=12)
     @pytest.mark.data_durability
@@ -225,7 +221,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
         self.log.info("Step 3: Perform Post Deployment Steps")
-        self.post_deployment_steps()
+        self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=16)
     @pytest.mark.data_durability
@@ -255,4 +251,4 @@ class TestFailureDomain:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
         self.log.info("Step 3: Perform Post Deployment Steps")
-        self.post_deployment_steps()
+        self.deploy_ff_obj.post_deployment_steps()
