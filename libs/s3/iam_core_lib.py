@@ -277,6 +277,8 @@ class IamLib:
         """
         Changes the password of the IAM user with the IAM user
         boto3.client object requesting for the password change.
+        IAM object should be created with Access and Secret key of IAM
+        user which is requesting for the password change.
         :param old_password: Old user password.
         :param new_password: New user password.
         :return: None

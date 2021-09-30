@@ -38,6 +38,7 @@ from libs.s3 import S3H_OBJ
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
+from commons.utils.assert_utils import assert_in
 
 
 # pylint: disable-msg=too-many-public-methods
@@ -615,8 +616,12 @@ class TestAccountUserManagement:
             resp = self.iam_obj.create_user(self.user_name)
             self.log.info(resp)
             assert not resp[0], resp[1]
-        except self.iam_obj.iam.exceptions.EntityAlreadyExistsException as error:
-            assert error.response['Error']['Code'] == 'EntityAlreadyExists', error
+        except CTException as error:
+            self.log.debug(error.message)
+            assert_in(
+                "EntityAlreadyExists",
+                error.message,
+                error.message)
         self.log.info(
             "Could not create user with existing name %s", str(self.user_name))
         self.users_list.append(self.user_name)
