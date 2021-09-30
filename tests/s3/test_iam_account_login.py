@@ -30,7 +30,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.assert_utils import assert_true, assert_in
 from commons.utils.assert_utils import assert_is_not_none, assert_not_in
-from config import S3_USER_ACC_MGMT_CONFIG
+from config.s3 import S3_USER_ACC_MGMT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
 

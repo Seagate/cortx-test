@@ -26,19 +26,18 @@ from libs.s3 import s3_test_lib, iam_test_lib
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import \
     assert_true, assert_in, assert_equal, assert_not_in
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
+from config.s3 import S3_TMP_CRED_CFG
 
 LOGGER = logging.getLogger(__name__)
-TEST_CONFIG = get_config_wrapper(fpath="config/s3/test_delete_account_temp_cred.yaml")
 
 
 class TestDeleteAccountTempCred:
     """Delete Account Temp Cred Testsuite."""
 
-    cfg = TEST_CONFIG["delete_account_temp_cred"]
+    cfg = S3_TMP_CRED_CFG["delete_account_temp_cred"]
 
     def create_acnt_and_login_profile(self, account_name, email_id):
         """
@@ -190,7 +189,7 @@ class TestDeleteAccountTempCred:
     def test_4519(self):
         """Delete account with invalid temp credentials."""
         LOGGER.info("STARTED: Delete account with invalid temp credentials")
-        test_4519_cfg = TEST_CONFIG["test_4519"]
+        test_4519_cfg = S3_TMP_CRED_CFG["test_4519"]
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info("Step 5: Deleting account using invalid credentials")
         try:
@@ -218,7 +217,7 @@ class TestDeleteAccountTempCred:
         """Delete non existing account with temp credentials.."""
         LOGGER.info(
             "STARTED: Delete non existing account with temp credentials.")
-        test_4520_cfg = TEST_CONFIG["test_4520"]
+        test_4520_cfg = S3_TMP_CRED_CFG["test_4520"]
         LOGGER.info(
             "Step 4: Deleting non existing account with temp credentials.")
         try:
@@ -250,7 +249,7 @@ class TestDeleteAccountTempCred:
         """
         LOGGER.info(
             "STARTED: Delete account after 20 mins using temp credentials with expire time limit.")
-        test_4521_cfg = TEST_CONFIG["test_4521"]
+        test_4521_cfg = S3_TMP_CRED_CFG["test_4521"]
         self.get_temp_creds(
             self.account_name,
             self.cfg["password"],
@@ -286,7 +285,7 @@ class TestDeleteAccountTempCred:
         """Perform S3 operations using deleted account temp credentials."""
         LOGGER.info(
             "STARTED: Perform S3 operations using deleted account temp credentials")
-        test_4522_cfg = TEST_CONFIG["test_4522"]
+        test_4522_cfg = S3_TMP_CRED_CFG["test_4522"]
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info(
             "Step 5: Deleting an account using temporary credentials")
@@ -335,7 +334,7 @@ class TestDeleteAccountTempCred:
         """Delete account using temp cred where that account recently got deleted."""
         LOGGER.info(
             "STARTED: Delete account using temp cred where that account recently got deleted")
-        test_4523_cfg = TEST_CONFIG["test_4523"]
+        test_4523_cfg = S3_TMP_CRED_CFG["test_4523"]
         self.get_temp_creds(self.account_name, self.cfg["password"])
         LOGGER.info(
             "Step 5: Deleting account using temporary credentials of an account %s",
@@ -386,7 +385,7 @@ class TestDeleteAccountTempCred:
         """Perform S3 operations using expired temp credentials."""
         LOGGER.info(
             "STARTED: Perform S3 operations using expired temp credentials")
-        test_4525_cfg = TEST_CONFIG["test_4525"]
+        test_4525_cfg = S3_TMP_CRED_CFG["test_4525"]
         self.get_temp_creds(
             self.account_name,
             self.cfg["password"],
@@ -423,7 +422,7 @@ class TestDeleteAccountTempCred:
         """
         LOGGER.info(
             "STARTED: Delete account after 1 hour using temp credentials with expire time limit.")
-        test_4526_cfg = TEST_CONFIG["test_4526"]
+        test_4526_cfg = S3_TMP_CRED_CFG["test_4526"]
         try:
             self.get_temp_creds(
                 self.account_name,
@@ -450,7 +449,7 @@ class TestDeleteAccountTempCred:
         LOGGER.info(
             "STARTED: Delete account forcefully using temp credentials "
             "where that account contains some Resource")
-        test_4692_cfg = TEST_CONFIG["test_4692"]
+        test_4692_cfg = S3_TMP_CRED_CFG["test_4692"]
         self.get_temp_creds(self.account_name, self.cfg["password"])
         s3_temp_obj = s3_test_lib.S3TestLib(
             access_key=self.temp_creds["access_key"],

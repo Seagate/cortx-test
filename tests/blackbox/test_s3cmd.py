@@ -35,16 +35,14 @@ from commons.params import TEST_DATA_FOLDER
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.configmanager import get_config_wrapper
 from commons.utils.config_utils import get_config
 from commons.utils.assert_utils import assert_true, assert_false, assert_in, assert_not_in
 from commons.utils import system_utils
 from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
-from libs.s3. s3_test_lib import S3TestLib
+from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
-
-S3CMD_CNF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestS3cmdClient:

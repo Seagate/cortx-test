@@ -28,7 +28,7 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config import S3_OBJ_TST
+from config.s3 import S3_OBJ_TST
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
 from libs.s3 import s3_test_lib, s3_tagging_test_lib, s3_multipart_test_lib

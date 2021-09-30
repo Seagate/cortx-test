@@ -35,8 +35,7 @@ from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
 from config.s3 import S3_CFG
-
-MINIO_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
+from config.s3 import S3_BLKBOX_CFG
 
 
 class TestMinioClient:
@@ -82,7 +81,7 @@ class TestMinioClient:
         self.bucket_name = "min-bkt-{}".format(time.perf_counter_ns())
         self.test_file = "minio_client{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.root_path, self.test_file)
-        self.minio_cnf = MINIO_CFG["minio_cfg"]
+        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
         self.buckets_list = list()
         self.log.info("ENDED: Setup operations")
 

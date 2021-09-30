@@ -27,7 +27,6 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
-from commons.exceptions import CTException
 from commons.constants import const
 from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn

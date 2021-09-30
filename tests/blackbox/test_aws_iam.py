@@ -27,15 +27,13 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_in, assert_equal
 from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
-
-IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestAwsIam:
@@ -149,7 +147,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -286,7 +284,7 @@ class TestAwsIam:
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -321,7 +319,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = self.create_user_and_access_key(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             new_iam_obj)
         user_access_key = resp[0]
         user_secret_key = resp[1]
@@ -355,7 +353,7 @@ class TestAwsIam:
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -587,7 +585,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.s3_accounts_list.append(self.account_name)

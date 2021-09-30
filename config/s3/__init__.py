@@ -21,12 +21,18 @@
 
 """S3 configs are initialized here."""
 
-import os
 import sys
 import ast
 
 from commons import configmanager
 from commons.params import S3_CONFIG
+from commons.params import S3_OBJ_TEST_CONFIG
+from commons.params import S3_BKT_TEST_CONFIG
+from commons.params import S3CMD_TEST_CONFIG
+from commons.params import S3_BLACK_BOX_CONFIG_PATH
+from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
+from commons.params import S3_TEMP_CRED_CONFIG_PATH
+from commons.params import S3_MPART_CFG_PATH
 from commons.configmanager import get_config_db
 
 pytest_args = list()
@@ -37,8 +43,7 @@ for arg in sys.argv:
         pytest_args.extend([arg])
 
 _target = '-tg' if '-tg' in pytest_args else '--target' if '--target' in pytest_args else None
-if _target:
-    target = pytest_args[pytest_args.index(_target) + 1]
+target = pytest_args[pytest_args.index(_target) + 1] if _target else None
 
 _use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else None
 use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1] if _use_ssl else True
@@ -66,7 +71,14 @@ def build_s3_endpoints() -> dict:
     return s3_conf
 
 
-if _target:
+if target:
     S3_CFG = build_s3_endpoints()
 else:
     S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
+S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
+S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
+S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH)
+S3_BLKBOX_CFG = configmanager.get_config_wrapper(fpath=S3_BLACK_BOX_CONFIG_PATH)
+S3_TMP_CRED_CFG = configmanager.get_config_wrapper(fpath=S3_TEMP_CRED_CONFIG_PATH)
+MPART_CFG = configmanager.get_config_wrapper(fpath=S3_MPART_CFG_PATH)

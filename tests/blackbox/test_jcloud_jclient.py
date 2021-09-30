@@ -36,14 +36,12 @@ from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
 from commons.configmanager import config_utils
-from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-
-BLACKBOX_CONF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestJcloudAndJclient:
@@ -128,12 +126,12 @@ class TestJcloudAndJclient:
         :param str jtool: Name of the java jar tool
         :return: str command: cli command to be executed
         """
-        if jtool == BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"]:
-            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jcloud_cmd"]
+        if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
+            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
                 self.access_key, self.secret_key)
         else:
-            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jclient_cmd"]
+            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
                 self.access_key, self.secret_key)
         bucket_url = "s3://{}".format(bucket)
@@ -150,8 +148,8 @@ class TestJcloudAndJclient:
         :return: True
         """
         resp = False
-        for prop_path in [BLACKBOX_CONF["jcloud_cfg"]["jclient_properties_path"],
-                          BLACKBOX_CONF["jcloud_cfg"]["jcloud_properties_path"]]:
+        for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
+                          S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
             self.log.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
@@ -174,7 +172,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         self.log.info("command: %s", command)
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
@@ -194,7 +192,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -204,7 +202,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "rb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -224,7 +222,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -238,7 +236,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -260,7 +258,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -276,7 +274,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
@@ -289,7 +287,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "get",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
@@ -323,7 +321,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             put_cmd_str,
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object put successfully", resp[1][:-1], resp[1])
@@ -336,7 +334,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "del",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object deleted successfully", resp[1][:-1], resp)
@@ -371,7 +369,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "multidel",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Objects deleted successfully", resp[1][:-1], resp)
@@ -402,7 +400,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "head",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(resp)
@@ -435,7 +433,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "exists",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         success_msg = "Object {} exists".format(self.obj_name)
@@ -462,7 +460,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "rbifempty",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Bucket deleted successfully", resp[1][:-1], resp)
@@ -482,7 +480,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "mb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Bucket created successfully", resp[1][:-1], resp)
@@ -502,7 +500,7 @@ class TestJcloudAndJclient:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
         self.log.info("STEP: 2 Listing all the bucket created")
-        java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jclient_cmd"]
+        java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
         aws_keys_str = "--access_key {} --secret_key {}".format(
             self.access_key, self.secret_key)
         command = "{} {} {}".format(
@@ -532,7 +530,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "rb",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -563,7 +561,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "ls",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Object List %s", resp[1])
@@ -595,7 +593,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "del",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -626,7 +624,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "head",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         output_objname = resp[1].split("\\n")[1].split("-")[1].strip()
@@ -654,7 +652,7 @@ class TestJcloudAndJclient:
                                  10)
         put_cmd = "{} {}".format("put", file_path)
         command = self.create_cmd_format(
-            self.bucket_name, put_cmd, jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            self.bucket_name, put_cmd, jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
@@ -686,7 +684,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "get",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object download successfully", resp[1][:-1], resp)
@@ -712,7 +710,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "exists",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         success_msg = "Bucket {} exists".format(self.bucket_name)
@@ -744,7 +742,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "exists",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in("Object exists", resp[1][:-1], resp[1])
@@ -761,7 +759,7 @@ class TestJcloudAndJclient:
     def test_list_buckets_2369(self):
         """list buckets using jcloudclient."""
         self.log.info("STARTED: list buckets using jcloudclient")
-        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
+        common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
         self.log.info("STEP 1: Creating bucket %s", self.bucket_name)
         resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -787,7 +785,7 @@ class TestJcloudAndJclient:
         """max no of buckets supported using jcloudclient."""
         self.log.info(
             "STARTED: max no of buckets supported using jcloudclient")
-        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
+        common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
         bkt_lst = []
         self.log.info("STEP 1: Creating n buckets")
         for bkt in range(1000):
@@ -839,7 +837,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "ls",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.obj_name, resp[1], resp)
@@ -863,7 +861,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             self.bucket_name,
             "exists",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         success_msg = "Bucket {} exists".format(self.bucket_name)
@@ -880,7 +878,7 @@ class TestJcloudAndJclient:
     def test_max_bucket_support_2383(self):
         """max no of buckets supported using Jclient."""
         self.log.info("STARTED: max no of buckets supported using Jclient")
-        common_cfg = BLACKBOX_CONF["jcloud_cfg"]
+        common_cfg = S3_BLKBOX_CFG["jcloud_cfg"]
         bkt_lst = []
         self.log.info("STEP 1: Creating n buckets")
         for bkt in range(1000):
@@ -934,7 +932,7 @@ class TestJcloudAndJclient:
         command = self.create_cmd_format(
             bucket_str,
             "multidel",
-            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
         resp = system_utils.execute_cmd(command)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(
