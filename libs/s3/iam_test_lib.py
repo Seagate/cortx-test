@@ -1004,26 +1004,20 @@ class IamTestLib(IamLib):
     def change_user_password(
             self,
             old_pwd: str = None,
-            new_pwd: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+            new_pwd: str = None) -> tuple:
         """
         Change user password of IAM user.
         :param old_pwd: The IAM user's current password.
         :param new_pwd: New password of user.
-        :param access_key: Access key of IAM user.
-        :param secret_key: Secret key of IAM user.
         :return: (Boolean, response).
         """
         try:
-            LOGGER.info("Change user password")
-            current_iam_user_obj = IamLib(secret_key=secret_key, access_key=access_key)
-            super().change_password(iam_usr_obj=current_iam_user_obj,
-                                    old_password=old_pwd,
+            LOGGER.info("Change current IAM user's password")
+            super().change_password(old_password=old_pwd,
                                     new_password=new_pwd)
-
         except (self.iam.exceptions.PasswordPolicyViolationException,
                 self.iam.exceptions.NoSuchEntityException,
+                self.iam.exceptions.InvalidUserTypeException,
                 ClientError) as error:
             raise error
         except Exception as error:

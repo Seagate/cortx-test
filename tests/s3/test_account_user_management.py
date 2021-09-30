@@ -274,6 +274,7 @@ class TestAccountUserManagement:
                                              self.s3acc_password)
         assert "attempted to create an account that already exists" in resp[1], resp[1]
         self.log.info("Created another account with existing account name response %s", resp[1])
+        self.accounts_list.append(self.account_name)
         self.log.info(
             "END: Tested creating new account with existing account name")
 
@@ -580,7 +581,6 @@ class TestAccountUserManagement:
             iam_obj.create_user(my_user_name)
             self.log.info(resp)
             assert resp[0], resp[1]
-            self.users_list.append(my_user_name)
             self.log.info("Created user with name %s", str(my_user_name))
         self.log.info("Step 2: Created %s users", str(total_users))
         self.log.info("Verifying %s users are created", total_users)
@@ -905,13 +905,13 @@ class TestAccountUserManagement:
         self.log.info("Created access key for user %s", str(self.user_name))
         access_key = resp[1]["AccessKey"]["AccessKeyId"]
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
-        iam_obj_user = IamTestLib(access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 4: Changing password for %s user", str(
                 self.user_name))
-        iam_obj_user.change_user_password(
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"],)
+        current_iam_user_obj = IamTestLib(secret_key=secret_key, access_key=access_key)
+        current_iam_user_obj.change_user_password(
+            old_pwd = S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            new_pwd = S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"])
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Changed password for %s user", str(self.user_name))
