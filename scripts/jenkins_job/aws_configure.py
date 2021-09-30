@@ -180,7 +180,8 @@ def test_collect_crash_files():
         LOGGER.info("Removing existing directory %s", crash_dir)
         shutil.rmtree(crash_dir)
     os.mkdir(crash_dir)
-    
+    sb.collect_crash_files(crash_dir)
+
 
 if __name__ == '__main':
     create_s3_account()
