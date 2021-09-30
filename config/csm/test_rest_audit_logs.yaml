@@ -15,3 +15,11 @@ test_4922:
 
 test_4915:
   epoc_time_diff: 86400
+
+epoc_time_diff: 6400
+
+test_22332:
+  duration: 86400
+
+test_22334:
+  duration: 86400

@@ -110,7 +110,7 @@ class TestSSPL:
         LOGGER.info("Restarting sspl service")
         resp = self.health_obj.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
         assert resp, "Failed to restart sspl-ll"
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
@@ -248,9 +248,10 @@ class TestSSPL:
 
         LOGGER.info("Successfully performed Teardown operation")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9956")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3005(self):
         """
@@ -296,9 +297,10 @@ class TestSSPL:
         LOGGER.info("ENDED: TEST-3005: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #1")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9957")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3006(self):
         """
@@ -350,9 +352,10 @@ class TestSSPL:
         LOGGER.info("ENDED:TEST-3006: EES ras SSPL: "
                     "Node: Disk Space-Full Alerts #2")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9958")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3104(self):
         """
@@ -387,9 +390,10 @@ class TestSSPL:
         LOGGER.info("ENDED: Validate EES RAS SSPL: Sync with systemd "
                     "(to bring down startup within SLA)")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9959")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3161(self):
         """
@@ -472,9 +476,10 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure Alerts")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9960")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3280(self):
         """
@@ -583,9 +588,10 @@ class TestSSPL:
             "ENDED: RAS: Node: IPMI: FAN Failure Alerts Persistent "
             "Cache")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-9961")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_1299(self):
         """
@@ -632,9 +638,10 @@ class TestSSPL:
         LOGGER.info("ENDED: Validating EOS v1 RAS: Node: IPMI: FAN Failure "
                     "Alerts")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10622")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4332(self):
         """
@@ -698,9 +705,10 @@ class TestSSPL:
             "ENDED: EOS-9075: TA RAS Automation: Validate alert for PSU Module "
             "Fault/cable missing from 5U84 Enclosure.")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10900")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4362(self):
         """
@@ -768,9 +776,10 @@ class TestSSPL:
             "are displayed with right message controller fault resolved from "
             "5U84 Enclosure")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10623")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4335(self):
         """
@@ -834,9 +843,10 @@ class TestSSPL:
             "ENDED: EOS-9082: TA RAS Automation: Validate alerts for PSU "
             "Module Fault-Resolved from 5U84 Enclosure ")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-10624")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4361(self):
         """
@@ -901,9 +911,10 @@ class TestSSPL:
             "ENDED: EOS-9078: TA RAS Automation: Validate if alerts are "
             "displayed with right message - controller faulted")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11225")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_6916(self):
         """
@@ -938,7 +949,7 @@ class TestSSPL:
 
         assert resp[0], resp[1]
         LOGGER.info("Step 3: Successfully Restarted the SSPL Service")
-        time.sleep(common_cfg["after_service_restart_sleep_val"])
+        time.sleep(common_cfg["sspl_timeout"])
         LOGGER.info("Step 4: Verify that log_level wont be changed after "
                     "restarting the sspl service")
         res = self.ras_test_obj.update_threshold_values(kv_store_path,
@@ -952,9 +963,10 @@ class TestSSPL:
         LOGGER.info("ENDED: Validating EES RAS: Allow log level setting is not "
                     "changed when after restarting the SSPL service")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11224")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4349(self):
         """
@@ -1073,9 +1085,10 @@ class TestSSPL:
             "ENDED: TA RAS Automation: Test scenarios for validating EES RAS:"
             " Run SSPL on port 5100")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-12014")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_3424(self):
         """
@@ -1134,9 +1147,10 @@ class TestSSPL:
 
         LOGGER.info("ENDED: TA RAS Automation : Sensor to read IEM from syslog")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11760")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_6592(self):
         """
@@ -1187,9 +1201,10 @@ class TestSSPL:
             "ENDED: Validating EES RAS: Allow log level setting "
             "dynamically")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11762")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_157(self):
         """
@@ -1285,9 +1300,10 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: TA RAS Automation: Test Disabling a drive from disk group")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-11763")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_158(self):
         """
@@ -1381,9 +1397,10 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: TA RAS Automation: Test Enabling a drive from disk group")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-11761")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_6335(self):
         """
@@ -1448,8 +1465,9 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Test Enhanced IEM response through decoded IEC")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.tags("TEST-14036")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_5924(self):
         """
@@ -1474,9 +1492,10 @@ class TestSSPL:
         LOGGER.info(
             "ENDED: Test Username/Password Security coverage on consul")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14795")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4354(self):
         """
@@ -1514,9 +1533,10 @@ class TestSSPL:
             "ENDED: TEST-4354 User can view / query EES Nodes (1U Servers) OS "
             "health view (CPU Usage)")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-15198")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4355(self):
         """
@@ -1555,9 +1575,10 @@ class TestSSPL:
             "ENDED: TEST-4355 User can view / query EES Nodes (1U Servers) OS "
             "health view (Main Memory Usage)")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-4584")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_4584(self):
         """

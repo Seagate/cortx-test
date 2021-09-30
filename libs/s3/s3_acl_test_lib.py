@@ -30,6 +30,7 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Acl
+from time import sleep
 
 LOGGER = logging.getLogger(__name__)
 
@@ -111,6 +112,42 @@ class S3AclTestLib(Acl):
 
         return True, response
 
+    def copy_object_acl(self,
+                        source_bucket: str = None,
+                        source_object: str = None,
+                        dest_bucket: str = None,
+                        dest_object: str = None,
+                        acl: str = None) -> tuple:
+        """
+        Creates a copy of an object that is already stored in Seagate S3 with acl.
+
+        :param source_bucket: The name of the source bucket.
+        :param source_object: The name of the source object.
+        :param dest_bucket: The name of the destination bucket.
+        :param dest_object: The name of the destination object.
+        :param acl: The canned ACL to apply to the object.
+            ACL='private'|'public-read'|'public-read-write'|'authenticated-read'|'aws-exec-read'|
+            'bucket-owner-read'|'bucket-owner-full-control'
+        :return: True, dict.
+        """
+        try:
+            response = self.s3_client.copy_object(
+                Bucket=dest_bucket,
+                CopySource='/{}/{}'.format(source_bucket, source_object),
+                Key=dest_object,
+                ACL=acl
+            )
+
+            LOGGER.debug(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3AclTestLib.copy_object_acl.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return response, response
+
     def put_object_acl(
             self,
             bucket_name: str = None,
@@ -128,6 +165,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acl(bucket_name, object_name, acl)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acl.__name__,
@@ -153,6 +191,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acp(bucket_name, object_name, acp)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acp.__name__,
@@ -196,6 +235,7 @@ class S3AclTestLib(Acl):
             LOGGER.info(modified_acl)
             response = super().put_object_acp(bucket_name, object_name, modified_acl)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.add_grantee.__name__,
@@ -247,6 +287,7 @@ class S3AclTestLib(Acl):
                 access_control_policy=access_control_policy,
                 **kwargs)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_canned_acl.__name__,
@@ -280,6 +321,7 @@ class S3AclTestLib(Acl):
             response = super().put_object_with_acl2(
                 bucket_name, key, file_path, **kwargs)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl2.__name__,
@@ -325,6 +367,7 @@ class S3AclTestLib(Acl):
                                                    acl=acl,
                                                    **kwargs)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_obj_acl"])
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl.__name__,
@@ -365,6 +408,7 @@ class S3AclTestLib(Acl):
                                                       acl,
                                                       **kwargs)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.create_bucket_with_acl.__name__,
@@ -410,9 +454,48 @@ class S3AclTestLib(Acl):
                 access_control_policy,
                 **kwargs)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+    def put_bucket_multiple_permission(
+            self,
+            bucket_name: str = None,
+            **kwargs) -> tuple:
+        """
+        Set the permissions on a bucket using access control lists (ACL).
+
+        :param bucket_name: Name of the bucket.
+        :param grant_full_control: Allows grantee the read, write,
+        read ACP, and write ACP permissions on the bucket.
+        :param grant_read: Allows grantee to list the objects in the bucket.
+        :param grant_read_acp: Allows grantee to read the bucket ACL.
+        :param grant_write: Allows grantee to create,
+        overwrite, and delete any object in the bucket.
+        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        :return: bool, response
+        """
+        try:
+            kwargs["grant_full_control"] = kwargs.get(
+                "grant_full_control", None)
+            kwargs["grant_read"] = kwargs.get("grant_read", None)
+            kwargs["grant_read_acp"] = kwargs.get("grant_read_acp", None)
+            kwargs["grant_write"] = kwargs.get("grant_write", None)
+            kwargs["grant_write_acp"] = kwargs.get("grant_write_acp", None)
+            LOGGER.info("Setting acl while creating object")
+            response = super().put_bucket_multiple_permission(
+                bucket_name,
+                **kwargs)
+            LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_bkt_acl"])
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3AclTestLib.put_bucket_multiple_permission.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
@@ -444,12 +527,12 @@ class S3AclTestLib(Acl):
         try:
             bucket_acl = s3_iam_resource.BucketAcl(bucket_name)
             response = bucket_acl.owner, bucket_acl.grants
-            LOGGER.info(response)
-
-            return True, response
+            LOGGER.debug(response)
         except BaseException as error:
             LOGGER.error(
                 "Error in %s: %s",
                 S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
                 error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response

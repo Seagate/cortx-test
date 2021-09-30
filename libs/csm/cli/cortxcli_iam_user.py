@@ -56,21 +56,22 @@ class CortxCliIamUser(CortxCli):
         """
         help_param = kwargs.get("help_param", False)
         confirm = kwargs.get("confirm", "Y")
+        sleep_time = kwargs.get("sleep_time", 10)
         if help_param:
             cmd = " ".join([CREATE_IAM_USER, "-h"])
         else:
             cmd = " ".join(
                 [CREATE_IAM_USER, user_name])
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["Password", "usage:"])[1]
         if help_param:
             LOG.info("Displaying usage for create iam users")
             return True, output
         if "Password" in output:
-            output = self.execute_cli_commands(cmd=password)[1]
+            output = self.execute_cli_commands(cmd=password, patterns=["Confirm Password"])[1]
             if "Confirm Password" in output:
-                output = self.execute_cli_commands(cmd=confirm_password)[1]
+                output = self.execute_cli_commands(cmd=confirm_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in output:
-                    output = self.execute_cli_commands(cmd=confirm)[1]
+                    output = self.execute_cli_commands(cmd=confirm, patterns=["User Name"])[1]
                     if ("User Name" in output) and (
                             "User ID" in output) and ("ARN" in output):
 
@@ -93,13 +94,11 @@ class CortxCliIamUser(CortxCli):
         if output_format:
             list_iam_user = " ".join(
                 [list_iam_user, "-f", output_format])
-        output = self.execute_cli_commands(cmd=list_iam_user)[1]
+        status, output = self.execute_cli_commands(cmd=list_iam_user, patterns=["User Name", "iam_users", "usage:"])
         if help_param:
             LOG.info("Displaying usage for show iam users")
             return True, output
-        if not ("user_name" in output or
-                "user_id" in output or
-                "arn" in output):
+        if not status:
             return False, output
         if output_format == "json":
             output = self.format_str_to_dict(output)
@@ -125,12 +124,12 @@ class CortxCliIamUser(CortxCli):
             cmd = " ".join([DELETE_IAM_USER, "-h"])
         else:
             cmd = " ".join([DELETE_IAM_USER, user_name])
-        output = self.execute_cli_commands(cmd=cmd)[1]
+        output = self.execute_cli_commands(cmd=cmd, patterns=["[Y/n]", "usage:"])[1]
         if help_param:
             LOG.info("Displaying usage for delete iam user")
             return True, output
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd=confirm)[1]
+            output = self.execute_cli_commands(cmd=confirm, patterns=["IAM User Deleted"])[1]
 
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
@@ -176,13 +175,13 @@ class CortxCliIamUser(CortxCli):
         reset_password = kwargs.get("reset_password", "Y")
         reset_pwd_cmd = CMD_RESET_IAM_PWD.format(iamuser_name)
         LOG.info("Resetting s3 account password to %s", new_password)
-        response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
+        response = self.execute_cli_commands(cmd=reset_pwd_cmd, patterns=["Password:"])[1]
         if "Password:" in response:
-            response = self.execute_cli_commands(cmd=new_password)[1]
+            response = self.execute_cli_commands(cmd=new_password, patterns=["Confirm Password:"])[1]
             if "Confirm Password:" in response:
-                response = self.execute_cli_commands(cmd=new_password)[1]
+                response = self.execute_cli_commands(cmd=new_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd=reset_password)[1]
+                    response = self.execute_cli_commands(cmd=reset_password, patterns=[iamuser_name])[1]
                     if iamuser_name in response:
                         LOG.info("Response returned: \n%s", response)
                         return True, response

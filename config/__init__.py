@@ -22,8 +22,8 @@
 import os
 import sys
 import re
+import munch
 from typing import List
-from commons.utils import config_utils
 from commons import configmanager
 from commons.params import COMMON_CONFIG, CSM_CONFIG, S3_CONFIG
 from commons.params import S3_OBJ_TEST_CONFIG
@@ -31,7 +31,13 @@ from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
+from commons.params import DI_CONFIG_PATH
+from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
+from commons.params import S3_LDAP_TEST_CONFIG
+from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
+from commons.params import S3CMD_TEST_CONFIG
+from commons.params import HA_TEST_CONFIG_PATH
 
 
 def split_args(sys_cmd: List):
@@ -44,6 +50,7 @@ def split_args(sys_cmd: List):
             eq_splitted.extend([item])
     return eq_splitted
 
+
 pytest_args = sys.argv
 proc_name = os.path.split(pytest_args[0])[-1]
 target_filter = re.compile(".*--target")
@@ -52,7 +59,7 @@ if proc_name == 'pytest' and '--local' in pytest_args and '--target' in pytest_a
     # This condition will execute when args ore in format ['--target','<target name'>]
     if pytest_args[pytest_args.index("--local") + 1]:
         target = pytest_args[pytest_args.index("--target") + 1]
-    os.environ["TARGET"]=target
+    os.environ["TARGET"] = target
 elif proc_name == 'pytest' and '--target' in pytest_args and '--local' not in pytest_args:
     # This condition will execute for non local test runner execution
     target = pytest_args[pytest_args.index("--target") + 1].lower()
@@ -64,20 +71,40 @@ elif proc_name == 'pytest' and os.getenv('TARGET') is not None:  # test runner p
     target = os.environ["TARGET"]
 elif proc_name not in ["testrunner.py", "testrunner"]:
     target = os.environ.get("TARGET")
+# Will revisit this once we fix the singleton/s3helper issue
+elif proc_name in ["testrunner.py", "testrunner"]:
+    if '-tg' in pytest_args:
+        target = pytest_args[pytest_args.index("-tg") + 1]
+    elif '--target' in pytest_args:
+        target = pytest_args[pytest_args.index("--target") + 1]
+    else:
+        target = os.environ.get("TARGET") if os.environ.get("TARGET") else None
 else:
     target = None
-
 
 CMN_CFG = configmanager.get_config_wrapper(fpath=COMMON_CONFIG, target=target)
 CSM_REST_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="Restcall",
                                                 target=target, target_key="csm")
+JMETER_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG, config_key="JMeterConfig",
+                                                target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
-S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG, target=target, target_key="s3")
-S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG, target=target, target_key="s3")
-S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG, target=target,
-                                            target_key="s3")
+S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
+S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
+S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
+S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target)
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
                                            target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
+S3_USER_ACC_MGMT_CONFIG = configmanager.get_config_wrapper(fpath=S3_USER_ACC_MGMT_CONFIG_PATH)
+HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
+
+DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
+DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
+
+# Munched configs. These can be used by dot "." operator.
+
+di_cfg = munch.munchify(DI_CFG)
+cmn_cfg = munch.munchify(CMN_CFG)

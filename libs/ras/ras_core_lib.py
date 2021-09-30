@@ -23,6 +23,7 @@
 import os
 import logging
 import time
+import json
 from typing import Tuple, Any, Union, List
 from commons.helpers import node_helper
 from commons import constants as cmn_cons
@@ -31,6 +32,8 @@ from commons.helpers.health_helper import Health
 from libs.s3 import S3H_OBJ
 from config import RAS_VAL
 from commons.utils.system_utils import run_remote_cmd
+from commons.helpers.controller_helper import ControllerLib
+from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +56,12 @@ class RASCoreLib:
             hostname=self.host, username=self.username, password=self.pwd)
         self.health_obj = Health(hostname=self.host, username=self.username,
                                  password=self.pwd)
+        self.controller_obj = ControllerLib(
+            host=self.host, h_user=self.username, h_pwd=self.pwd,
+            enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+            enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+            enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
+
         self.s3obj = S3H_OBJ
 
     def create_remote_dir_recursive(self, file_path: str) -> bool:
@@ -115,8 +124,8 @@ class RASCoreLib:
         LOGGER.info("Installing screen utility")
         cmd = common_commands.INSTALL_SCREEN_CMD
         LOGGER.info("Running command %s", cmd)
-        response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        response = self.node_utils.execute_cmd(
+            cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return response
 
     def run_cmd_on_screen(self, cmd: str) -> \
@@ -129,11 +138,11 @@ class RASCoreLib:
         """
         self.install_screen_on_machine()
         time.sleep(5)
-        LOGGER.debug("RabbitMQ command: %s", cmd)
+        LOGGER.debug("Command to be run: %s", cmd)
         screen_cmd = common_commands.SCREEN_CMD.format(cmd)
         LOGGER.info("Running command %s", screen_cmd)
-        response = self.node_utils.execute_cmd(cmd=screen_cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        response = self.node_utils.execute_cmd(
+            cmd=screen_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, response
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
@@ -169,6 +178,30 @@ class RASCoreLib:
 
         return response
 
+    def start_message_bus_reader_cmd(self) -> bool:
+        """
+        Function will check for the alerts in message bus.
+
+        :return: Command response along with status(True/False)
+        :rtype: bool
+        """
+        file_path = cmn_cons.MSG_BUS_READER_PATH
+        local_path_msg_bus = cmn_cons.MSG_BUS_READER_LOCAL_PATH
+        LOGGER.debug("Copying file to %s", self.host)
+        self.node_utils.copy_file_to_remote(
+            local_path=local_path_msg_bus, remote_path=file_path)
+        copy_res = self.node_utils.path_exists(file_path)
+        if not copy_res:
+            LOGGER.debug('Failed to copy the file')
+            return copy_res
+        self.change_file_mode(path=file_path)
+
+        cmd = common_commands.START_MSG_BUS_READER_CMD
+        LOGGER.debug("MSG Bus Reader command: %s", cmd)
+        response = self.run_cmd_on_screen(cmd=cmd)
+
+        return response[0]
+
     def check_status_file(self) -> Tuple[Union[List[str], str, bytes]]:
         """
         Function checks the state.txt file of sspl service and sets the
@@ -180,8 +213,8 @@ class RASCoreLib:
         stat_cmd = common_commands.UPDATE_STAT_FILE_CMD.format(
             cmn_cons.SERVICE_STATUS_PATH)
         LOGGER.debug("Running cmd: %s on host: %s", stat_cmd, self.host)
-        response = self.node_utils.execute_cmd(cmd=stat_cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        response = self.node_utils.execute_cmd(
+            cmd=stat_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
 
         return True, response
 
@@ -207,8 +240,8 @@ class RASCoreLib:
         """
         cmd = common_commands.GET_CLUSTER_ID_CMD
         LOGGER.debug("Running cmd: %s on host: %s", cmd, self.host)
-        cluster_id = self.node_utils.execute_cmd(cmd=cmd,
-                                                 read_nbytes=cmn_cons.BYTES_TO_READ)
+        cluster_id = self.node_utils.execute_cmd(
+            cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, cluster_id
 
     def encrypt_pwd(self, password: str, cluster_id: str) -> \
@@ -242,8 +275,8 @@ class RASCoreLib:
             .format(cmn_cons.CONSUL_PATH,
                     kv_path, field, val)
         LOGGER.info("Running command: %s", put_cmd)
-        resp = self.node_utils.execute_cmd(cmd=put_cmd,
-                                           read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
+        resp = self.node_utils.execute_cmd(
+            cmd=put_cmd, read_nbytes=cmn_cons.ONE_BYTE_TO_READ)
         return True, resp
 
     def kv_get(self, field: str, kv_path: str) -> \
@@ -259,8 +292,8 @@ class RASCoreLib:
             .format(cmn_cons.CONSUL_PATH,
                     kv_path, field)
         LOGGER.info("Running command: %s", get_cmd)
-        response = self.node_utils.execute_cmd(cmd=get_cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        response = self.node_utils.execute_cmd(
+            cmd=get_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return True, response
 
     def put_kv_store(self, username: str, pwd: str, field: str) -> bool:
@@ -315,13 +348,15 @@ class RASCoreLib:
                 str_f = field.split('_')[-1]
                 cmd = "sed '/{}:/!d' {} | sed '{}d' | awk '{{print $2}}'".format(
                     str_f, cmn_cons.STORAGE_ENCLOSURE_PATH, lin)
-                val = self.node_utils.execute_cmd(cmd=cmd,
-                                                  read_nbytes=cmn_cons.BYTES_TO_READ)
+                val = self.node_utils.execute_cmd(
+                    cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
                 val = val.decode("utf-8")
                 val = " ".join(val.split())
 
             LOGGER.info(
-                "Putting value %s of %s from storage_enclosure.sls", val, field)
+                "Putting value %s of %s from storage_enclosure.sls",
+                val,
+                field)
             if field == "secret":
                 self.kv_put(cmn_cons.SECRET_KEY, val, cmn_cons.KV_STORE_PATH)
             else:
@@ -392,8 +427,8 @@ class RASCoreLib:
         arguments = " ".join(args)
         mdadm_cmd = common_commands.MDADM_CMD.format(arguments)
         LOGGER.info("Executing %s cmd on host %s", mdadm_cmd, self.host)
-        output = self.node_utils.execute_cmd(cmd=mdadm_cmd,
-                                             read_nbytes=cmn_cons.BYTES_TO_READ)
+        output = self.node_utils.execute_cmd(
+            cmd=mdadm_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         return output
 
     def get_sspl_state(self) -> Tuple[bool, str]:
@@ -405,8 +440,8 @@ class RASCoreLib:
         """
         flag = False
         sspl_state_cmd = cmn_cons.SSPL_STATE_CMD
-        response = self.node_utils.execute_cmd(cmd=sspl_state_cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        response = self.node_utils.execute_cmd(
+            cmd=sspl_state_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         response = response.decode("utf-8")
         response = response.strip().split("=")[-1]
         LOGGER.debug("SSPL state resp : %s", response)
@@ -451,7 +486,7 @@ class RASCoreLib:
             Tuple[Union[List[str], str, bytes]]:
         """
         Function generate err log on the using logger command on the
-        rabbitmq channel.
+        message bus channel.
 
         :param str logger_alert_cmd: command to be executed
         :return: response in tuple
@@ -534,25 +569,26 @@ class RASCoreLib:
         common_cfg = RAS_VAL["ras_sspl_alert"]
         if restart:
             LOGGER.info("Restarting sspl services and waiting some time")
-            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            self.health_obj.restart_pcs_resource(
+                common_cfg["sspl_resource_id"])
 
             LOGGER.info("Sleeping for 120 seconds after restarting sspl "
                         "services")
             time.sleep(common_cfg["sleep_val"])
 
-        LOGGER.info("Checking status of sspl and rabbitmq services")
+        LOGGER.info("Checking status of sspl and kafka services")
         resp = self.s3obj.get_s3server_service_status(
             service=common_cfg["service"]["sspl_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         resp = self.s3obj.get_s3server_service_status(
-            service=common_cfg["service"]["rabitmq_service"],
+            service=common_cfg["service"]["kafka_service"],
             host=self.host, user=self.username, pwd=self.pwd)
         if not resp[0]:
             return resp
         LOGGER.info(
-            "Verified sspl and rabbitmq services are in running state")
+            "Verified sspl and kafka services are in running state")
         time.sleep(common_cfg["sleep_val"])
 
         LOGGER.info("Fetching sspl alert response")
@@ -560,8 +596,8 @@ class RASCoreLib:
             common_cfg["file"]["screen_log"],
             common_cfg["file"]["alert_log_file"])
 
-        response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        self.node_utils.execute_cmd(
+            cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
         LOGGER.info("Successfully fetched the alert response")
 
         LOGGER.debug("Reading the alert log file")
@@ -574,12 +610,13 @@ class RASCoreLib:
         LOGGER.debug(
             "======================================================")
         LOGGER.info(
-            "Checking if alerts are generated on rabbitmq channel")
+            "Checking if alerts are generated on message bus")
         cmd = common_commands.EXTRACT_LOG_CMD.format(
             common_cfg["file"]["alert_log_file"], string_list[0],
             common_cfg["file"]["extracted_alert_file"])
-        response = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+        LOGGER.debug(cmd)
+        response = self.node_utils.execute_cmd(
+            cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
 
         resp = self.validate_alert_msg(
             remote_file_path=common_cfg["file"]["extracted_alert_file"],
@@ -607,9 +644,9 @@ class RASCoreLib:
         if os.path.exists(local_path):
             os.remove(local_path)
         _ = self.s3obj.copy_s3server_file(file_path=remote_file_path,
-                                        local_path=local_path,
-                                        host=self.host,
-                                        user=self.username, pwd=self.pwd)
+                                          local_path=local_path,
+                                          host=self.host,
+                                          user=self.username, pwd=self.pwd)
         for pattern in pattern_lst:
             if pattern in open(local_path).read():
                 response = pattern
@@ -640,8 +677,8 @@ class RASCoreLib:
         LOGGER.info("Verify if the services stops")
         time.sleep(10)
         resp = self.s3obj.get_s3server_service_status(service, host=self.host,
-                                                    user=self.username,
-                                                    pwd=self.pwd)
+                                                      user=self.username,
+                                                      pwd=self.pwd)
         if not resp[0]:
             LOGGER.debug("Verified %s services stops", service)
         else:
@@ -690,7 +727,8 @@ class RASCoreLib:
         p_id = None
         service_pid_cmd = common_commands.GET_PID_CMD.format(service)
         LOGGER.info("Get process id, command is : %s", service_pid_cmd)
-        resp = self.node_utils.execute_cmd(cmd=service_pid_cmd, read_lines=True)
+        resp = self.node_utils.execute_cmd(
+            cmd=service_pid_cmd, read_lines=True)
         for res_str in resp:
             if "Main PID" in resp[0].strip():
                 p_id = resp[0].split()[2]
@@ -738,3 +776,152 @@ class RASCoreLib:
                     return False, f"{host_name} : {result[1]}"
 
         return True, f"{host_name} : {result[1]}"
+
+    def get_conf_store_vals(self, url: str, field: str) -> dict:
+        """
+        This will get the values from any yaml/json file using conf store
+        :param url: url of the yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: field value
+        :rtype: str
+        """
+        cmd = common_commands.CONF_GET_CMD.format(url, field)
+        LOGGER.info("Running command: %s", cmd)
+        result = run_remote_cmd(hostname=self.host, username=self.username,
+                                password=self.pwd, cmd=cmd)
+        result = result[1].decode('utf-8').strip().split('\n')
+        LOGGER.debug("Response: %s", result)
+        res = json.loads(result[0])
+        return res[0]
+
+    def get_conf_store_enclosure_vals(self, field: str) -> Tuple[bool, str]:
+        """
+        This will get the values for storage_enclosure
+        :param field: field whose value needs to be extracted (
+        storage_enclosure)
+        :return: True/False, field value
+        :rtype: bool, str
+        """
+        url = cmn_cons.SSPL_GLOBAL_CONF_URL
+        e_field = 'storage_enclosure'
+        result = self.get_conf_store_vals(url=url, field=e_field)
+        for key, value in result.items():
+            if isinstance(value, dict):
+                for r_key, r_val in self.recursive_items(value, field):
+                    if r_key == field:
+                        return True, r_val
+            else:
+                if key == field:
+                    vals = value
+                    return True, vals
+        return False, "No value found"
+
+    def recursive_items(self, dictionary: dict, field: str):
+        """
+        This will recursively traverse the yaml/json file
+        :param dictionary: dictionary from yaml/json file
+        :param field: field whose value needs to be extracted
+        :return: key, value generator
+        :rtype: generator
+        """
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                if key == field:
+                    yield key, value
+                else:
+                    yield from self.recursive_items(value, field)
+            else:
+                yield key, value
+
+    def set_conf_store_vals(self, url: str, encl_vals: dict):
+        """
+        This will set values in yaml/json file using conf store
+        :param url: url of yaml/json file
+        :param encl_vals: dict of {field: value}
+        :return: None
+        """
+        for key, value in encl_vals.items():
+            k = eval(f"cmn_cons.{key}")
+            cmd = common_commands.CONF_SET_CMD.format(url, f"{k}={value}")
+            LOGGER.info("Running command: %s", cmd)
+            result = run_remote_cmd(hostname=self.host,
+                                    username=self.username,
+                                    password=self.pwd, cmd=cmd)
+            result = result[0]
+            LOGGER.debug("Response: %s", result)
+
+    def encrypt_password_secret(self, string: str) -> Tuple[bool, str]:
+        """
+        This will encrypt the password/secret key
+        :param string: string to be encrypted
+        :return: True/False, encrypted string
+        :rtype: bool, str
+        """
+        local_path = cmn_cons.ENCRYPTOR_FILE_PATH
+        path = "/root/encryptor.py"
+        password = string
+
+        self.node_utils.copy_file_to_remote(local_path=local_path,
+                                            remote_path=path)
+        if not self.node_utils.path_exists(path=path):
+            return False, "Failed to copy the file"
+        self.change_file_mode(path=path)
+        LOGGER.info("Getting cluster id")
+        cluster_id = self.get_cluster_id()
+        cluster_id = cluster_id[1].decode("utf-8")
+        cluster_id = " ".join(cluster_id.split())
+        cluster_id = cluster_id.split(' ')[-1]
+
+        LOGGER.info("Encrypting the password")
+        val = self.encrypt_pwd(password, cluster_id)
+        val = (val[1].split()[-1]).decode("utf-8")
+        val = (repr(val)[2:-1]).replace('\'', '')
+        return True, val
+
+    def get_ipmi_sensor_list(self, sensor_type: str = None) -> list:
+        """
+        Function returns the list of sensors connected to infrastructure system.
+        :param sensor_type: Type of sensor e.g., Power Supply, FAN
+        :return: List of sensors of given sensor_type if provided else all available sensors
+        """
+        ipmi_sdr_type_cmd = common_commands.IPMI_SDR_TYPE_CMD
+        if sensor_type:
+            ipmi_sdr_type_cmd = " ".join([ipmi_sdr_type_cmd, sensor_type])
+
+        output = self.node_utils.execute_cmd(
+            ipmi_sdr_type_cmd, read_lines=True)
+
+        return output
+
+    def get_ipmi_sensor_states(self, sensor_name: str) -> list:
+        """
+        Function returns the list of states available for a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :return: List of states for given sensor
+        """
+        sensor_states_cmd = " ".join(
+            [common_commands.IPMI_EVENT_CMD, sensor_name])
+        output = self.node_utils.execute_cmd(
+            sensor_states_cmd, read_lines=True)
+
+        return output
+
+    def assert_deassert_sensor_state(
+            self,
+            sensor_name: str,
+            sensor_state: str,
+            deassert: bool = False) -> list:
+        """
+        Function to assert or deassert the given state of a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :param sensor_state: state of sensor to assert or deassert
+        :param deassert: deasserts the state if set True
+        :return: response of assert or deassert sensor state
+        """
+        event_cmd = " ".join(
+            [common_commands.IPMI_EVENT_CMD, sensor_name, sensor_state])
+        if deassert:
+            event_cmd = " ".join([event_cmd, "deassert"])
+        output = self.node_utils.execute_cmd(event_cmd, read_lines=True)
+
+        return output

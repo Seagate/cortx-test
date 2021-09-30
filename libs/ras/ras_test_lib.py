@@ -25,6 +25,8 @@ class
 import logging
 import os
 import time
+import re
+import random
 from decimal import Decimal
 from typing import Tuple, Any, Union
 from libs.ras.ras_core_lib import RASCoreLib
@@ -44,11 +46,12 @@ class RASTestLib(RASCoreLib):
     """
     Test lib calls for RAS test-cases
     """
+
     def __init__(
             self,
-            host: str = CMN_CFG["nodes"][0]["host"],
-            username: str = CMN_CFG["nodes"][0]["username"],
-            password: str = CMN_CFG["nodes"][0]["password"]) -> None:
+            host: str = None,
+            username: str = None,
+            password: str = None) -> None:
         """
         Method initializes members of RASTestLib and its parent class
 
@@ -56,10 +59,13 @@ class RASTestLib(RASCoreLib):
         :param str username: username
         :param str password: password
         """
-        self.host = host
-        self.username = username
-        self.pwd = password
-        self.sspl_pass = CMN_CFG['ldap']["sspl_pass"]
+        nd_cfg = CMN_CFG.get("nodes", None)
+        ldap_cfg = CMN_CFG.get("ldap", None)
+        self.host = host if host else nd_cfg[0]["host"] if nd_cfg else None
+        self.pwd = password if password else nd_cfg[0]["password"] if nd_cfg else None
+        self.username = username if username else nd_cfg[0]["username"] if nd_cfg else None
+        self.sspl_pass = ldap_cfg["sspl_pass"] if ldap_cfg else None
+
         super().__init__(host, username, password)
 
     def start_rabbitmq_reader_cmd(self, sspl_exchange: str, sspl_key: str,
@@ -80,6 +86,23 @@ class RASTestLib(RASCoreLib):
             cmd_output = super().start_rabbitmq_reader_cmd(sspl_exchange,
                                                            sspl_key,
                                                            sspl_pass=sspl_pass)
+            LOGGER.debug(cmd_output)
+            return cmd_output
+        except BaseException as error:
+            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                         RASTestLib.start_rabbitmq_reader_cmd.__name__, error)
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+    def start_message_bus_reader_cmd(self) -> bool:
+        """
+        Function will check for the alerts in message bus.
+
+        :return: Command response along with status(True/False)
+        :rtype: bool
+        """
+        try:
+            LOGGER.info("Start to read message bus on node %s ", self.host)
+            cmd_output = super().start_message_bus_reader_cmd()
             LOGGER.debug(cmd_output)
             return cmd_output
         except BaseException as error:
@@ -184,7 +207,8 @@ class RASTestLib(RASCoreLib):
                 LOGGER.info("Retaining the %s file", path)
                 self.cp_file(path, backup_path)
 
-    def validate_alert_log(self, filename: str, string: str) -> Tuple[bool, Any]:
+    def validate_alert_log(self, filename: str,
+                           string: str) -> Tuple[bool, Any]:
         """
         Function validates if the specific alerts are generated.
 
@@ -338,7 +362,8 @@ class RASTestLib(RASCoreLib):
             LOGGER.info("Updated server disk_usage_threshold value")
 
             LOGGER.info("Restarting sspl services and waiting some time")
-            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            self.health_obj.restart_pcs_resource(
+                common_cfg["sspl_resource_id"])
             time.sleep(common_cfg["sleep_val"])
             LOGGER.info(res)
 
@@ -397,19 +422,19 @@ class RASTestLib(RASCoreLib):
         """
         common_cfg = RAS_VAL["ras_sspl_alert"]
         try:
-            LOGGER.info("Checking status of sspl and rabbitmq services")
+            LOGGER.info("Checking status of sspl and kafka services")
             resp = self.s3obj.get_s3server_service_status(
                 common_cfg["service"]["sspl_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             resp = self.s3obj.get_s3server_service_status(
-                common_cfg["service"]["rabitmq_service"], host=self.host,
+                common_cfg["service"]["kafka_service"], host=self.host,
                 user=self.username, pwd=self.pwd)
             if not resp[0]:
                 return resp
             LOGGER.info(
-                "Verified sspl and rabitmq services are in running state")
+                "Verified sspl and kafka services are in running state")
             time.sleep(common_cfg["sleep_val"])
 
             LOGGER.info("Fetching sspl alert response")
@@ -421,7 +446,8 @@ class RASTestLib(RASCoreLib):
 
             LOGGER.debug("Reading the alert log file")
             read_resp = self.node_utils.read_file(
-                common_cfg["file"]["alert_log_file"], "/tmp/rabbitmq_alert.log")
+                common_cfg["file"]["alert_log_file"],
+                common_cfg["file"]["local_path"])
             LOGGER.debug(
                 "======================================================")
             LOGGER.debug(read_resp)
@@ -429,7 +455,7 @@ class RASTestLib(RASCoreLib):
                 "======================================================")
 
             LOGGER.info(
-                "Checking if alerts are generated on rabbitmq channel")
+                "Checking if alerts are generated on message bus")
             cmd = common_commands.EXTRACT_LOG_CMD.format(
                 common_cfg["file"]["alert_log_file"], string_list[0])
             self.node_utils.execute_cmd(cmd=cmd,
@@ -442,7 +468,7 @@ class RASTestLib(RASCoreLib):
         except BaseException as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.list_alert_validation.__name__, error)
-            raise CTException(err.RAS_ERROR, error.args[0])
+            return False, error
 
     def generate_cpu_usage_alert(self, delta_cpu_usage: str, ) -> bool:
         """
@@ -478,7 +504,8 @@ class RASTestLib(RASCoreLib):
                         new_threshold_cpu_usage)
 
             LOGGER.info("Restarting sspl service on node %s", self.host)
-            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            self.health_obj.restart_pcs_resource(
+                common_cfg["sspl_resource_id"])
             LOGGER.info(
                 "Sleeping for %s seconds after restarting sspl service",
                 common_cfg["sleep_val"])
@@ -531,7 +558,8 @@ class RASTestLib(RASCoreLib):
                         "%s", new_threshold_mem_usage)
 
             LOGGER.info("Restarting sspl service on node %s", host)
-            self.health_obj.restart_pcs_resource(common_cfg["sspl_resource_id"])
+            self.health_obj.restart_pcs_resource(
+                common_cfg["sspl_resource_id"])
             LOGGER.info(
                 "Sleeping for %s seconds after restarting sspl service",
                 common_cfg["sleep_val"])
@@ -604,7 +632,8 @@ class RASTestLib(RASCoreLib):
                     md_device) in md_stat["devices"] and md_device in mdadm_conf:
                 md_stat_disks = md_stat["devices"][os.path.basename(
                     md_device)]["disks"]
-                disk_flag = [True for disk in disks if os.path.basename(disk) in md_stat_disks]
+                disk_flag = [
+                    True for disk in disks if os.path.basename(disk) in md_stat_disks]
                 if all(disk_flag):
                     return True, md_stat
         except Exception as error:
@@ -614,7 +643,8 @@ class RASTestLib(RASCoreLib):
 
         return False, md_stat
 
-    def assemble_mdraid_device(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
+    def assemble_mdraid_device(
+            self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method re-assembles/restarts the given MDRAID device on the given host.
 
@@ -764,7 +794,8 @@ class RASTestLib(RASCoreLib):
 
         return False, md_stat
 
-    def remove_mdraid_disk_array(self, md_device: str) -> Tuple[bool, Union[str, dict]]:
+    def remove_mdraid_disk_array(
+            self, md_device: str) -> Tuple[bool, Union[str, dict]]:
         """
         Method removes given MDRAID array device anc cleanup all the disks
          from array
@@ -778,9 +809,11 @@ class RASTestLib(RASCoreLib):
         try:
             md_stat = self.node_utils.get_mdstat()
             if os.path.basename(md_device) not in md_stat["devices"]:
-                return False, "{} device not found: {}".format(md_device, md_stat)
+                return False, "{} device not found: {}".format(
+                    md_device, md_stat)
 
-            disks = md_stat["devices"][os.path.basename(md_device)]["disks"].keys()
+            disks = md_stat["devices"][os.path.basename(
+                md_device)]["disks"].keys()
             LOGGER.info(
                 "Removing MDRAID array device %s with disks %s on the host "
                 "%s", md_device, disks, self.host)
@@ -804,7 +837,8 @@ class RASTestLib(RASCoreLib):
                 self.node_utils.execute_cmd(
                     cmd=wipe_disk_cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
                 time.sleep(RAS_VAL["ras_sspl_alert"]["disk_clean_time"])
-                self.node_utils.kill_remote_process(common_commands.KILL_WIPE_DISK_PROCESS)
+                self.node_utils.kill_remote_process(
+                    common_commands.KILL_WIPE_DISK_PROCESS)
         except Exception as error:
             LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
                          RASTestLib.remove_mdraid_disk_array.__name__, error)
@@ -841,8 +875,8 @@ class RASTestLib(RASCoreLib):
             status_file = RAS_VAL["ras_sspl_alert"]["file"]["selinux_status"]
             local_path = status_file
             cmd = common_commands.SELINUX_STATUS_CMD.format(status_file)
-            resp = self.node_utils.execute_cmd(cmd=cmd,
-                                               read_nbytes=cmn_cons.BYTES_TO_READ)
+            resp = self.node_utils.execute_cmd(
+                cmd=cmd, read_nbytes=cmn_cons.BYTES_TO_READ)
             LOGGER.info(resp)
             self.node_utils.copy_file_to_local(remote_path=status_file,
                                                local_path=local_path)
@@ -951,7 +985,9 @@ class RASTestLib(RASCoreLib):
             return resp[0]
         LOGGER.info("Step 1: Fetched server disk usage")
         original_disk_usage = float(resp[1].strip().decode("utf-8"))
-        LOGGER.info("Current disk usage of EES server :%f", original_disk_usage)
+        LOGGER.info(
+            "Current disk usage of EES server :%f",
+            original_disk_usage)
 
         # Converting value of disk usage to int to update it in sspl.conf
         if alert:
@@ -962,8 +998,9 @@ class RASTestLib(RASCoreLib):
         LOGGER.info(
             "Step 2: Retrieve original value of disk_usage_threshold")
 
-        self.node_utils.copy_file_to_local(sspl_file_path["sspl_conf_filename"],
-                                           sspl_file_path["sspl_cfg_temp"])
+        self.node_utils.copy_file_to_local(
+            sspl_file_path["sspl_conf_filename"],
+            sspl_file_path["sspl_cfg_temp"])
 
         orig_key_val = get_config(sspl_file_path["sspl_cfg_temp"],
                                   sspl_conf["sspl_section"],
@@ -1035,7 +1072,8 @@ class RASTestLib(RASCoreLib):
         common_cfg = RAS_VAL["ras_sspl_alert"]
         try:
             LOGGER.info("Starting collection of sspl.log")
-            cmd = common_commands.CHECK_SSPL_LOG_FILE.format(common_cfg["file"]["sspl_log_file"])
+            cmd = common_commands.CHECK_SSPL_LOG_FILE.format(
+                common_cfg["file"]["sspl_log_file"])
             response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
                                                 username=self.username,
                                                 password=self.pwd,
@@ -1047,3 +1085,479 @@ class RASTestLib(RASCoreLib):
             raise CTException(err.RAS_ERROR, error.args[0])
 
         return True, response
+
+    def update_enclosure_values(
+            self, enclosure_vals: dict) -> Tuple[bool, dict]:
+        """
+        This will update values for enclosure in yaml/json file using conf store
+        :param enclosure_vals: dict of {field: value}
+        :return: True/False, values
+        :rtype: bool, dict
+        """
+        try:
+            url = cmn_cons.SSPL_GLOBAL_CONF_URL
+            LOGGER.info("Update correct values of enclosure using conf")
+            enclosure_vals['CONF_PRIMARY_IP'] = CMN_CFG["enclosure"]["primary_enclosure_ip"]
+            enclosure_vals['CONF_PRIMARY_PORT'] = 80
+            enclosure_vals['CONF_SECONDARY_IP'] = CMN_CFG["enclosure"]["secondary_enclosure_ip"]
+            enclosure_vals['CONF_SECONDARY_PORT'] = 80
+            enclosure_vals['CONF_ENCL_USER'] = CMN_CFG["enclosure"]["enclosure_user"]
+            secret_key = self.encrypt_password_secret(
+                CMN_CFG["enclosure"]["enclosure_pwd"])[1]
+            enclosure_vals['CONF_ENCL_SECRET'] = secret_key
+
+            self.set_conf_store_vals(url=url, encl_vals=enclosure_vals)
+            controller_vals = self.get_conf_store_enclosure_vals(
+                field='controller')
+            LOGGER.info("Updated values are : %s", controller_vals)
+        except Exception as error:
+            LOGGER.error("%s %s: %s", cmn_cons.EXCEPTION_ERROR,
+                         RASTestLib.update_enclosure_values.__name__, error)
+            raise CTException(err.RAS_ERROR, error.args[0])
+
+        return True, controller_vals
+
+    def create_obj_for_nodes(self, **kwargs) -> dict:
+        """
+        Function to get/create all server node related information/objects.
+        Inputs expected in kwargs:
+        ras_c=RAS class object
+        node_c=Node class object
+        hlt_c=Health class object
+        ctrl_c=ControllerLib class object
+        Example response dict:
+        {'srvnode-1': {'nd_num': 'srvnode-1.data.private',
+        'hostname': 'ssc-vm-5592', 'ip': '10.230.248.33',
+        'pu_data_ip': '192.168.56.53', 'pr_data_ip': '192.168.91.69',
+        'ras_obj': <libs.ras.ras_test_lib.RASTestLib object at 0x7fc676045fd0>,
+        'nd_obj': <commons.helpers.node_helper.Node object at 0x7fc676045e90>,
+        'hlt_obj': <commons.helpers.health_helper.Health object at 0x7fc66852fd50>,
+        'ctrl_obj': <commons.helpers.controller_helper.ControllerLib object at 0x7fc66852b310>},
+        'srvnode-2': {...}}
+        """
+        num_nodes = len(CMN_CFG["nodes"])
+        c_dict = {}
+        node_d = self.health_obj.get_current_srvnode()
+        ras_c = kwargs.get("ras_c", None)
+        nd_c = kwargs.get("node_c", None)
+        hlt_c = kwargs.get("hlt_c", None)
+        ctrl_c = kwargs.get("ctrl_c", None)
+        bmc_c = kwargs.get("bmc_c", None)
+        for n in range(1, num_nodes + 1):
+            c_dict[f"srvnode-{n}"] = {}
+            for k, v in node_d.items():
+                if f"srvnode-{n}" in v:
+                    c_dict[f"srvnode-{n}"]["nd_num"] = v
+                    c_dict[f"srvnode-{n}"]["hostname"] = k
+                    db_n = n - 1
+                    if CMN_CFG["nodes"][db_n]["hostname"].split('.')[0] == k:
+                        c_dict[f"srvnode-{n}"]["ip"] = CMN_CFG["nodes"][db_n]["ip"]
+                        c_dict[f"srvnode-{n}"]["pu_data_ip"] = CMN_CFG["nodes"][db_n]["public_data_ip"]
+                        c_dict[f"srvnode-{n}"]["pr_data_ip"] = CMN_CFG["nodes"][db_n]["private_data_ip"]
+
+                    host = CMN_CFG["nodes"][db_n]["hostname"]
+                    uname = CMN_CFG["nodes"][db_n]["username"]
+                    passwd = CMN_CFG["nodes"][db_n]["password"]
+                    ras_obj = ras_c(
+                        host=host,
+                        username=uname,
+                        password=passwd) if ras_c is not None else None
+                    c_dict[f"srvnode-{n}"]["ras_obj"] = ras_obj
+                    nd_obj = nd_c(
+                        hostname=host,
+                        username=uname,
+                        password=passwd) if nd_c is not None else None
+                    c_dict[f"srvnode-{n}"]["nd_obj"] = nd_obj
+                    bmc_obj = bmc_c(hostname=host, username=uname,
+                                    password=passwd) if bmc_c is not None else None
+                    c_dict[f"srvnode-{n}"]["bmc_obj"] = bmc_obj
+
+                    hlt_obj = hlt_c(hostname=host, username=uname,
+                                    password=passwd) if hlt_c is not None else None
+                    c_dict[f"srvnode-{n}"]["hlt_obj"] = hlt_obj
+                    ctrl_obj = ctrl_c(
+                        host=host, h_user=uname, h_pwd=passwd,
+                        enclosure_ip=CMN_CFG["enclosure"]["primary_enclosure_ip"],
+                        enclosure_user=CMN_CFG["enclosure"]["enclosure_user"],
+                        enclosure_pwd=CMN_CFG["enclosure"]["enclosure_pwd"])
+                    c_dict[f"srvnode-{n}"]["ctrl_obj"] = ctrl_obj
+
+        return c_dict
+
+    def get_node_drive_details(self, check_drive_count: bool = False):
+        """
+        Function to get details of the drives connected to node
+        :return: True/False, drive_name, host_num, drive_count
+        (e.g. '/dev/sda', 2, 4)
+        """
+        try:
+            filepath = localpath = RAS_VAL["ras_sspl_alert"]["file"]["lsscsi_file"]
+            tempfile = RAS_VAL["ras_sspl_alert"]["file"]["temp_txt_file"]
+
+            cmd = common_commands.LSSCSI_CMD.format(filepath)
+            LOGGER.info(f"Running command {cmd}")
+            response = sys_utils.run_remote_cmd(cmd=cmd, hostname=self.host,
+                                                username=self.username,
+                                                password=self.pwd,
+                                                read_lines=True, shell=False)
+            if not response[0]:
+                return response
+
+            LOGGER.info(f"Copying file from remote to local")
+            resp = self.node_utils.copy_file_to_local(remote_path=filepath,
+                                                      local_path=localpath)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Getting drive information")
+            cmd = common_commands.LINUX_STRING_CMD.format(
+                "ATA", filepath, tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(f"Checking OS drive count")
+            cmd = common_commands.LINE_COUNT_CMD.format(tempfile)
+            resp = sys_utils.run_local_cmd(cmd=cmd)
+
+            drive_count = int(re.findall(r'\d+', resp[1])[0])
+            if not resp[0]:
+                return resp
+
+            LOGGER.info(
+                "%s number of drives are connected to nodes %s",
+                drive_count,
+                self.host)
+
+            if check_drive_count:
+                return resp[0], drive_count
+            else:
+                line_num = random.randint(1, drive_count)
+                LOGGER.info(f"Getting LUN number of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $1}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+
+                numeric_filter = filter(str.isdigit, resp.split(':')[0])
+                host_num = "".join(numeric_filter)
+
+                LOGGER.info(f"Getting name of OS drive")
+                cmd = f"sed -n '{line_num}p' {tempfile} | awk '{{print $NF}}'"
+                LOGGER.info("Running command: %s", cmd)
+                resp = os.popen(cmd=cmd).read()
+                drive_name = resp.strip()
+                return True, drive_name, host_num, drive_count
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_node_drive_details.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(localpath):
+                os.remove(localpath)
+            if os.path.exists(tempfile):
+                os.remove(tempfile)
+            self.node_utils.remove_file(filename=filepath)
+
+    def get_ipmi_sensor_list(self, sensor_type: str = None) -> tuple:
+        """
+        Function returns the list of sensors connected to infrastructure system.
+        :param sensor_type: Type of sensor e.g., Power Supply, FAN
+        :return: List of sensors of given sensor_type if provided else all available sensors
+        """
+        try:
+            LOGGER.info("Fetching all sensor types")
+            output = super().get_ipmi_sensor_list()
+            all_types = list()
+            for line in output:
+                if "(0x" in line:
+                    all_types.append(re.split('[()]', line)[0].strip().lower())
+                    all_types.append(re.split('[()]', line)[2].strip().lower())
+
+            if sensor_type:
+                if sensor_type.lower() in all_types:
+                    sensor_type = f"'{sensor_type}'"
+                    LOGGER.info(
+                        "Fetching all sensors for sensor type %s",
+                        sensor_type)
+                    output = super().get_ipmi_sensor_list(sensor_type)
+                    sensor_list = [line.split("|")[0].strip()
+                                   for line in output if "ok" in line.split("|")[2]]
+
+                    return True, sensor_list
+
+                return False, "Invalid Sensor Type"
+
+            return True, all_types
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_ipmi_sensor_list.__name__, error))
+            return False, error
+
+    def get_ipmi_sensor_states(self, sensor_name: str) -> list:
+        """
+        Function returns the list of states available for a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :return: List of states for given sensor
+        """
+        try:
+            LOGGER.info(
+                "Fetching all sensor states for sensor %s",
+                sensor_name)
+            sensor_name = f"'{sensor_name}'"
+            output = super().get_ipmi_sensor_states(sensor_name)
+            sensor_states = [state.strip().lower() for state in output[2:]]
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_ipmi_sensor_states.__name__, error))
+            return False, error
+
+        return sensor_states
+
+    def assert_deassert_sensor_state(
+            self,
+            sensor_name: str,
+            sensor_state: str,
+            deassert: bool = False) -> tuple:
+        """
+        Function to assert or deassert the given state of a given sensor.
+        :param sensor_name: Name of sensor e.g., PS2 Status, FAN1
+        :param sensor_state: state of sensor to assert or deassert
+        :param deassert: deasserts the state if set True
+        :return: response of assert or deassert sensor state
+        """
+        try:
+            LOGGER.info(
+                "Fetching all sensor states for sensor %s",
+                sensor_name)
+            sensor_name = f"'{sensor_name}'"
+            sensor_state = f"'{sensor_state}'"
+            output = super().assert_deassert_sensor_state(
+                sensor_name, sensor_state, deassert)
+            event_details = [val.strip() for val in output[-1].split("|")]
+            if not deassert and "Asserted" in event_details:
+                return True, event_details
+            if deassert and "Deasserted" in event_details:
+                return True, event_details
+
+            return False, output
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.assert_deassert_sensor_state.__name__, error))
+            return False, error
+
+    def get_nw_infc_names(self, node_num):
+        """
+        Function to get names of the network interfaces
+        :return: True/False, dict
+        (e.g. (True, {'MGMT': 'eno1', 'PUBLIC_DATA': 'enp175s0f0',
+        'PRIVATE_DATA': 'enp216s0f0'}))
+        :rtype: Boolean, dict
+        """
+        ips = [CMN_CFG["nodes"][node_num]["ip"],
+               CMN_CFG["nodes"][node_num]["public_data_ip"],
+               CMN_CFG["nodes"][node_num]["private_data_ip"]]
+
+        network_interfaces = {"MGMT": None, "PUBLIC_DATA": None,
+                              "PRIVATE_DATA": None}
+        try:
+            for ip in ips:
+                cmd = common_commands.GET_INFCS_NAME_CMD.format(ip)
+                resp = self.node_utils.execute_cmd(cmd=cmd, read_lines=True)
+                infc_name = resp[0].strip()
+                network_interfaces[list(network_interfaces.keys())[ips.index(
+                    ip)]] = infc_name
+
+            return True, network_interfaces
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_nw_infc_names.__name__, error))
+            return False, error
+
+    def get_raid_arrays(self) -> Tuple[bool, list]:
+        """
+        Function to get names of the raid arrays of node
+        Returns: status, list (e.g. ['md2', 'md0', 'md1'])
+        """
+        try:
+            cmd = common_commands.GET_RAID_ARRAYS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            resp = resp.decode("utf-8").split('\n')
+            arrays = list(filter(None, resp))
+            LOGGER.debug("Response: %s", resp)
+            return True, arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_arrays.__name__, error))
+            return False, error
+
+    def get_raid_array_details(self) -> Tuple[bool, dict]:
+        """
+        Function to get details of the raid arrays of node
+        Returns: status, dict (e.g. {'md2': {'state': 'Degraded', 'drives': [
+        'sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
+        """
+        try:
+            LOGGER.info("Checking state of arrays")
+            resp = self.check_raid_array_state()
+            if not resp[0]:
+                return resp
+            md_arrays = resp[1]
+            cmd = common_commands.GET_RAID_ARRAY_DETAILS_CMD
+            resp = self.node_utils.execute_cmd(cmd=cmd, read_lines=True)
+            for key, value in md_arrays.items():
+                for i in resp:
+                    x = i.replace("\n", "")
+                    k = (x.split(":")[0]).strip()
+                    if key == k:
+                        v_lst = ((x.split(":")[1]).strip()).split()
+                        lst = []
+                        for v in v_lst:
+                            if (re.match("^sd[a-z0-9]*", v)) is not None:
+                                lst.append(re.match("^sd[a-z0-9]*", v).group())
+                        md_arrays[k]["drives"] = lst
+                    else:
+                        continue
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_raid_array_details.__name__, error))
+            return False, error
+
+    def check_raid_array_state(self) -> Tuple[bool, dict]:
+        """
+        Function to get states of the raid arrays of node
+        Returns: status, dict
+        (e.g. {'md0': {'state': 'Active'}, 'md1': {'state':
+        'Active'}, 'md2': {'state': 'Degraded'}})
+        """
+        try:
+            md_arrays = {}
+            LOGGER.info("Getting raid array names")
+            resp = self.get_raid_arrays()
+            if not resp[0]:
+                return resp
+            arrays = resp[1]
+            for ar in arrays:
+                md_arrays[ar] = {}
+                cmd = common_commands.RAID_ARRAY_STATE_CMD.format(ar)
+                resp = self.node_utils.execute_cmd(cmd=cmd)
+                state = resp.decode('utf-8').split('\n')[0]
+                if state != '0':
+                    LOGGER.info("Array %s is in degraded state", ar)
+                    md_arrays[ar]["state"] = "Degraded"
+                else:
+                    md_arrays[ar]["state"] = "Active"
+            return True, md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.check_raid_array_state.__name__, error))
+            return False, error
+
+    def get_drive_partition_details(self, filepath: str, drive: str) -> \
+            Tuple[bool, list]:
+        """
+        Function to get raid drive partitions of drive
+        Returns: status, list (e.g. ['/dev/sda1', '/dev/sda3'])
+        """
+        try:
+            local_path = filepath
+            cmd = common_commands.FDISK_RAID_PARTITION_CMD.format(drive,
+                                                                  filepath)
+            LOGGER.info("Running command %s", cmd)
+            self.node_utils.execute_cmd(cmd=cmd)
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.copy_file_to_local(filepath, local_path)
+            LOGGER.info("Extract Linux RAID partitions of drive %s", drive)
+            f = open(local_path, 'r')
+            resp = (f.read()).split('\n')
+            resp = list(filter(None, resp))
+            raid_parts = []
+            for i in resp:
+                if re.search("^[0-9]", i) is not None:
+                    d_name = drive + i
+                    raid_parts.append(d_name)
+                else:
+                    raid_parts = resp
+                    break
+
+            LOGGER.debug("Response: %s", raid_parts)
+            return True, raid_parts
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_partition_details.__name__, error))
+            return False, error
+        finally:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            self.node_utils.remove_file(filename=filepath)
+
+    def get_drive_by_hostnum(self, hostnum: str) -> Tuple[bool, str]:
+        """
+        Function to get drive name by its host number
+        Returns: status, str (e.g. '/dev/sda1')
+        """
+        try:
+            cmd = common_commands.GET_DRIVE_HOST_NUM_CMD.format(hostnum)
+            resp = self.node_utils.execute_cmd(cmd=cmd)
+            drive_name = resp.decode('utf-8').replace('\n', '')
+            return True, drive_name
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.get_drive_by_hostnum.__name__, error))
+            return False, error
+
+    def add_raid_partitions(self, alert_lib_obj, alert_type, raid_parts: list,
+                            md_arrays: dict) -> Tuple[bool, dict]:
+        """
+        Function to add partitions of drive in raid array
+        Returns: status, dict (e.g.
+        {'md2': {'state': 'Degraded', 'drives': ['sdbo']},
+        'md0': {'state': 'Active', 'drives': ['sda1', 'sdb1']},
+        'md1': {'state': 'Active', 'drives': ['sda3', 'sdb3']}})
+        """
+        try:
+            for part in raid_parts:
+                for k, v in md_arrays.items():
+                    if part.split("/")[-1] in v["drives"]:
+                        resp = alert_lib_obj.generate_alert(
+                            alert_type.RAID_ADD_DISK_ALERT,
+                            input_parameters={
+                                "operation": "add_disk",
+                                "md_device": f"/dev/{k}",
+                                "disk": part})
+                    else:
+                        for drv in v["drives"]:
+                            if re.search("[0-9]*$",
+                                         drv).group() == re.search("[0-9]*$",
+                                                                   part.split("/")[-1]).group():
+                                resp = alert_lib_obj.generate_alert(
+                                    alert_type.RAID_ADD_DISK_ALERT,
+                                    input_parameters={
+                                        "operation": "add_disk",
+                                        "md_device": f"/dev/{k}",
+                                        "disk": part})
+            LOGGER.info("Getting new RAID array details of node %s",
+                        self.host)
+            resp = self.get_raid_array_details()
+            if not resp[0]:
+                return resp
+            new_md_arrays = resp[1]
+            return True, new_md_arrays
+        except Exception as error:
+            LOGGER.error("%s %s: %s".format(
+                cmn_cons.EXCEPTION_ERROR,
+                RASTestLib.add_raid_partitions.__name__, error))
+            return False, error

@@ -26,6 +26,7 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import BucketPolicy
+from time import sleep
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
     def put_bucket_policy(
             self,
             bucket_name: str = None,
-            bucket_policy: dict = None) -> tuple:
+            bucket_policy: str = None) -> tuple:
         """
         Apply s3 bucket policy to specified s3 bucket.
 
@@ -96,6 +97,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             LOGGER.info(response)
+            sleep(S3_CFG["delay"]["put_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
@@ -115,6 +117,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Deletes any policy applied to the bucket")
             response = super().delete_bucket_policy(bucket_name)
             LOGGER.info(response["BucketName"])
+            sleep(S3_CFG["delay"]["del_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,

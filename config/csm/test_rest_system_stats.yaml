@@ -99,8 +99,8 @@ test_4960:
 test_4967:
   epoc_time_diff: 500
   default_interval: 10
-  expected_response: 500
-  error_msg: "to time should be grater than from time"
+  expected_response: 400
+  error_msg: "to time should be greater than from time"
 
 test_4968:
   epoc_time_diff: 500

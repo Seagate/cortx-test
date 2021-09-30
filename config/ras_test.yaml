@@ -1,3 +1,26 @@
+alert_types:
+  fault: "fault"
+  resolved: "fault_resolved"
+  missing: "missing"
+  insertion: "insertion"
+  get: "get"
+
+network_interfaces:
+  VM:
+    MGMT: "eth0"
+    PUBLIC_DATA: "eth1"
+    PRIVATE_DATA: "eth3"
+  HW:
+    #Check network interface names when R2 HW is available
+    MGMT: "eno1"
+    PUBLIC_DATA: "enp175s0f0"
+    PRIVATE_DATA: "enp175s0f1"
+
+common_cfg:
+  faulty_cpu_id:
+    - 0
+    - 1
+
 test_3005:
   alert: True
   du_val: 8
@@ -212,3 +235,127 @@ test_5343:
   alert_missing: "missing"
   alert_insertion: "insertion"
   alert_fault_resolved: "fault_resolved"
+
+test_22060:
+  disk_group: "dg00"
+  resource_type: "node:enclosure:disk-group"
+  enclid: 0
+  ctrl_name: ['A', 'B']
+  operation_fault: "Disabled"
+  operation_fault_resolved: "Enabled"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+nw_port_fault:
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw"
+  host_id: "srvnode-{}.mgmt.public"
+  error_msg: "Failed to put management network port in"
+
+nw_cable_fault:
+  disconnect: 0
+  connect: 1
+  resource_id_monitor : '"resource_id": "{}"'
+  resource_id_csm : '"resource_id":"{}"'
+  resource_type: "node:interface:nw:cable"
+  host_id: "srvnode-{}.mgmt.public"
+  error_msg: "Failed to {} management network cable"
+
+test_21587:
+  delta_cpu_usage: -80
+  resource_type: "node:os:cpu_usage"
+
+test_21588:
+  delta_mem_usage: -5
+  resource_type: "node:os:memory_usage"
+
+test_21586:
+  delta_disk_usage: -5
+  resource_type: "node:os:disk_space"
+
+test_23045:
+  resource_type: "node:os:cpu:core"
+  faulty_cpu_id:
+    - 1
+
+test_22787:
+  resource_type: "node:os:cpu_usage"
+  interval: 5
+
+test_22786:
+  resource_type: "node:os:memory_usage"
+  vm_count: 1
+  memory_size: "5G"
+  timespan: "10m"
+  buffer: 10
+
+TEST-23606:
+  resource_type: "node:os:disk"
+  csm_error_msg: "Failed to get OS disk alerts using CSM REST API"
+
+test_23715:
+  md_device: "/dev/md2"
+  resource_type: "node:os:raid_data"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+test_23723:
+  resource_type: "node:os:raid_data"
+
+test_22844:
+  resource_type: "node:os:cpu_usage"
+
+test_22781:
+  resource_type: "node:os:raid_data"
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+
+
+power_failure:
+  shutdown_option: "-r now"
+  power_on: "on"
+  power_off: "off"
+  wait_10_min: 600
+  csm_error_msg: "Failed to get alerts using CSM REST API"
+  bmc_shutdown: True
+  fault_description: "The cluster has lost srvnode-{}.data.private server"
+  fault_res_desc: "Server srvnode-{}.data.private has joined back the cluster"
+  resource_type: "iem"
+
+test_22891:
+  resource_disk_space: "node:os:disk_space"
+  resource_cpu_usage: "node:os:cpu_usagee"
+  resource_memory_usage: "node:os:memory_usage"
+  resource_cpu_fault: "node:os:cpu:core"
+  vm_count: 1
+  memory_size: "5G"
+  timespan: "10m"
+  interval: 30
+
+test_23682:
+  sensor_type: "Power Supply"
+  sensor_states:
+    Presence detected: "insertion"
+    Failure detected: "fault_resolved"
+    Power Supply AC lost: "fault_resolved"
+  resource_type: "node:fru:psu"
+
+test_23728:
+  inv_bmc_ip: "10.240.76.98"
+  generate_fault: "down"
+  resolve_fault: "up"
+  resource_id: "ebmc0"
+  resource_id_monitor: '"resource_id": "ebmc0"'
+  resource_id_csm: '"resource_id":"ebmc0"'
+  resource_type: "node:interface:nw"
+  error_msg: "Failed to put bmc network port"
+
+test_23633:
+  sensor_type: "FAN"
+  sensor_states:
+    - "lnr"
+    - "lcr"
+    - "lnc"
+    - "unc"
+    - "ucr"
+    - "unr"
+  resource_type: "node:fru:fan"
+  

@@ -9,6 +9,7 @@ test_261:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_262:
   bucket_policy:
     Statement:
@@ -20,6 +21,7 @@ test_262:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_642:
   bucket_policy:
     Statement:
@@ -27,6 +29,7 @@ test_642:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_644:
   bucket_policy:
     Statement:
@@ -38,6 +41,7 @@ test_644:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_646:
   bucket_policy:
     Statement:
@@ -49,6 +53,7 @@ test_646:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_658:
   bucket_policy:
     Statement:
@@ -60,6 +65,7 @@ test_658:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_659:
   bucket_policy:
     Statement:
@@ -67,6 +73,7 @@ test_659:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/obj_policy"
+
 test_679:
   bucket_policy:
     Statement:
@@ -74,6 +81,7 @@ test_679:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/policy/objkey679_2"
+
 test_680:
   bucket_policy:
     Statement:
@@ -85,6 +93,7 @@ test_680:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_682:
   bucket_policy:
     Statement:
@@ -96,6 +105,7 @@ test_682:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3::{}/*"
+
 test_688:
   bucket_policy:
     Statement:
@@ -110,6 +120,7 @@ test_688:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_689:
   bucket_policy:
     Statement:
@@ -121,6 +132,7 @@ test_689:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_690:
   bucket_policy:
     Statement:
@@ -128,6 +140,7 @@ test_690:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/obj*"
+
 test_1300:
   bucket_policy:
     Statement:
@@ -339,6 +352,7 @@ test_694:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_716:
   bucket_policy:
     Statement:
@@ -351,6 +365,7 @@ test_716:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_718:
   bucket_policy:
     Statement:
@@ -363,6 +378,7 @@ test_718:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_719:
   bucket_policy:
     Statement:
@@ -375,6 +391,7 @@ test_719:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_720:
   bucket_policy:
     Statement:
@@ -387,6 +404,7 @@ test_720:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_721:
   bucket_policy:
     Statement:
@@ -399,6 +417,7 @@ test_721:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_722:
   bucket_policy:
     Statement:
@@ -411,6 +430,7 @@ test_722:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_723:
   bucket_policy:
     Statement:
@@ -423,6 +443,7 @@ test_723:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_724:
   bucket_policy:
     Statement:
@@ -435,6 +456,7 @@ test_724:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_725:
   bucket_policy:
     Statement:
@@ -447,6 +469,7 @@ test_725:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
 test_552:
 test_551:
@@ -459,6 +482,7 @@ test_551:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 # Cannot be automated as unstructured JSON creation fails during YAML config parsing.
 test_550:
 test_549:
@@ -473,6 +497,7 @@ test_549:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_1080:
   bucket_policy:
     Statement:
@@ -480,6 +505,7 @@ test_1080:
         Principal: "*"
         Action: "s3:GetObje?t"
         Resource: "arn:aws:s3:::{}/*"
+
 test_1079:
   bucket_policy:
     Statement:
@@ -487,6 +513,7 @@ test_1079:
         Principal: "*"
         Action: "s3:Get*"
         Resource: "arn:aws:s3:::{}/*"
+
 test_1078:
   bucket_name: "bktpolicy-1078"
   object_name_2: "objkey1078_2"
@@ -496,6 +523,7 @@ test_1078:
         Principal: "*"
         Action: "s3:*"
         Resource: "arn:aws:s3:::{}/*"
+
 test_545:
   bucket_policy:
     Statement:
@@ -507,6 +535,7 @@ test_545:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_555:
   bucket_policy:
     Statement:
@@ -518,6 +547,7 @@ test_555:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_554:
   bucket_policy:
     Statement:
@@ -530,6 +560,7 @@ test_554:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_553:
   bucket_name: "bktpolicy-553"
   bucket_policy:
@@ -542,6 +573,7 @@ test_553:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_1077:
   bucket_policy:
     Statement:
@@ -549,6 +581,7 @@ test_1077:
         Principal: "*"
         Action: "*"
         Resource: "arn:aws:s3:::{}/*"
+
 test_717:
   bucket_policy:
     Statement:
@@ -559,6 +592,7 @@ test_717:
             - "arn:aws:iam::{}:root"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_692:
   bucket_policy:
     Statement:
@@ -567,6 +601,7 @@ test_692:
           AWS: "arn:aws:iam::{}:user/{}"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_691:
   bucket_policy:
     Statement:
@@ -575,6 +610,7 @@ test_691:
           AWS: "arn:aws:iam::{}:root"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_4134:
   bucket_policy:
     Statement:
@@ -670,6 +706,7 @@ test_4148:
             s3:max-keys: "10"
         Principal:
           AWS: ""
+
 test_1190:
   bucket_policy:
     Statement:
@@ -687,6 +724,7 @@ test_1190:
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/invalid_user"
+
 test_1180:
   bucket_name: "bktpolicy-1180"
   bucket_policy:
@@ -696,6 +734,7 @@ test_1180:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1191:
   bucket_policy:
     Statement:
@@ -709,6 +748,7 @@ test_1191:
           AWS: "111111111111"
         Action: "s3:DeleteBucketPolicy"
         Resource: "arn:aws:s3:::{}"
+
 test_1184:
   bucket_policy:
     Statement:
@@ -717,6 +757,7 @@ test_1184:
         Effect: "Deny"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1171:
   bucket_policy:
     Statement:
@@ -725,6 +766,7 @@ test_1171:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1182:
   bucket_policy:
     Statement:
@@ -733,6 +775,7 @@ test_1182:
         Effect: "Deny"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1110:
   bucket_name: "bktpolicy-1110"
   bucket_policy_1:
@@ -749,6 +792,7 @@ test_1110:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1187:
   bucket_policy:
     Statement:
@@ -766,6 +810,7 @@ test_1187:
         Principal:
           AWS:
             - "arn:aws:iam::{}:user/{}"
+
 test_1166:
   bucket_policy:
     Statement:
@@ -773,6 +818,7 @@ test_1166:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1177:
   bucket_policy:
     Statement:
@@ -781,6 +827,7 @@ test_1177:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1188:
   bucket_policy:
     Statement:
@@ -794,6 +841,7 @@ test_1188:
           AWS: "{}"
         Action: "s3:DeleteBucketPolicy"
         Resource: "arn:aws:s3:::{}"
+
 test_1174:
   bucket_policy:
     Statement:
@@ -802,6 +850,7 @@ test_1174:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1185:
   bucket_policy:
     Statement:
@@ -810,6 +859,7 @@ test_1185:
         Effect: "Deny"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1186:
   bucket_policy:
     Statement:
@@ -818,6 +868,7 @@ test_1186:
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1114:
   bucket_policy:
     Statement:
@@ -829,6 +880,7 @@ test_1114:
         Principal: "*"
         Action: "s3:PutBucketPolicy"
         Resource: "arn:aws:s3:::{}"
+
 test_1169:
   bucket_policy:
     Statement:
@@ -840,6 +892,7 @@ test_1169:
         Principal: "*"
         Action: "S3:GetBucketPolicy"
         Resource: "arn:aws:s3:::{}"
+
 test_1167:
   bucket_policy:
     Statement:
@@ -847,6 +900,7 @@ test_1167:
         Effect: "Deny"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_1113:
   bucket_policy:
     Statement:
@@ -855,6 +909,7 @@ test_1113:
         Effect: "None"
         Resource: "arn:aws:s3:::bktpolicy-1113"
         Principal: "*"
+
 test_1116:
   bucket_policy:
     Statement:
@@ -870,6 +925,7 @@ test_1116:
         Principal: "*"
         Action: "s3:DeleteBucketPolicy"
         Resource: "arn:aws:s3:::{}"
+
 test_1109:
   bucket_name: "bktpolicy-1109"
   bucket_policy_1:
@@ -886,6 +942,7 @@ test_1109:
         Effect: "Deny"
         Resource: "arn:aws:s3:::{}"
         Principal: "*"
+
 test_360:
   bucket_policy:
     Statement:
@@ -1052,6 +1109,7 @@ test_1069:
         Principal: "*"
         Action: "s3:DeleteObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_1075:
   bucket_policy:
     Statement:
@@ -1157,6 +1215,7 @@ test_4502:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4504:
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
@@ -1170,6 +1229,7 @@ test_4504:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4505:
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
@@ -1183,6 +1243,7 @@ test_4505:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4506:
   error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
@@ -1196,6 +1257,7 @@ test_4506:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4507:
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
@@ -1223,6 +1285,7 @@ test_4508:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4509:
   error_message: "AccessDenied"
   date_condition: "DateEquals"
@@ -1236,6 +1299,7 @@ test_4509:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4510:
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
@@ -1249,6 +1313,7 @@ test_4510:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4511:
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
@@ -1262,6 +1327,7 @@ test_4511:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4512:
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
@@ -1275,6 +1341,7 @@ test_4512:
             aws:CurrentTime: ""
         Principal:
           AWS: ""
+
 test_4513:
   error_message: "AccessDenied"
   date_condition: "DateNotEquals"
@@ -1288,6 +1355,7 @@ test_4513:
             aws:EpochTime: ""
         Principal:
           AWS: ""
+
 test_4514:
   error_message: "AccessDenied"
   date_condition: "DateLessThan"
@@ -1301,6 +1369,7 @@ test_4514:
             aws:EpochTime: ""
         Principal:
           AWS: ""
+
 test_4515:
   error_message: "AccessDenied"
   date_condition: "DateLessThanEquals"
@@ -1314,6 +1383,7 @@ test_4515:
             aws:EpochTime: ""
         Principal:
           AWS: ""
+
 test_4516:
   error_message: "AccessDenied"
   date_condition: "DateGreaterThan"
@@ -1327,6 +1397,7 @@ test_4516:
             aws:EpochTime: ""
         Principal:
           AWS: ""
+
 test_4517:
   error_message: "AccessDenied"
   date_condition: "DateGreaterThanEquals"
@@ -1340,10 +1411,13 @@ test_4517:
             aws:EpochTime: ""
         Principal:
           AWS: ""
+
 test_1902:
   bucket_policy:
     Statement:
-      - Action: "s3:PutObject"
+      - Action:
+        - "s3:PutObject"
+        - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -1352,10 +1426,13 @@ test_1902:
               - "public-read"
         Principal:
           AWS: ""
+
 test_1903:
   bucket_policy:
     Statement:
-      - Action: "s3:PutObject"
+      - Action:
+        - "s3:PutObject"
+        - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -1364,6 +1441,7 @@ test_1903:
               - "bucket-owner-full-control"
         Principal:
           AWS: ""
+
 test_1904:
   bucket_policy:
     Statement:
@@ -1375,6 +1453,7 @@ test_1904:
             s3:x-amz-grant-full-control: "id={}"
         Principal:
           AWS: ""
+
 test_1908:
   bucket_policy:
     Statement:
@@ -1386,6 +1465,7 @@ test_1908:
             s3:x-amz-grant-write-acp: "id={}"
         Principal:
           AWS: ""
+
 test_270:
   bucket_policy:
     Statement:
@@ -1781,6 +1861,7 @@ test_6550:
       - Sid: "{}"
         Action:
           - "s3:PutObject"
+          - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -1833,6 +1914,7 @@ test_6703:
       - Sid: "{}"
         Action:
           - "s3:PutObject"
+          - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -1850,6 +1932,7 @@ test_6704:
       - Sid: "{}"
         Action:
           - "s3:PutObject"
+          - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -1868,6 +1951,7 @@ test_7053:
       - Sid: "{}"
         Action:
           - "s3:PutObject"
+          - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{}/*"
         Condition:
@@ -2540,6 +2624,7 @@ test_7058:
     Statement:
       - Action:
           - "s3:PutObject"
+          - "s3:PutObjectAcl"
         Effect: "Allow"
         Resource: "arn:aws:s3:::{0}/*"
         Condition:
@@ -2616,6 +2701,7 @@ test_5115:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
 test_5114:
   bucket_policy:
     Statement:
@@ -2624,6 +2710,7 @@ test_5114:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_5110:
   bucket_policy:
     Statement:
@@ -2632,6 +2719,7 @@ test_5110:
           CanonicalUser: "{}"
         Action: "s3:ListBucket"
         Resource: "arn:aws:s3:::{}"
+
 test_5116:
   bucket_policy:
     Statement:
@@ -2640,6 +2728,7 @@ test_5116:
           CanonicalUser: "{}"
         Action: "s3:PutBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
 test_5117:
   bucket_policy:
     Statement:
@@ -2648,6 +2737,7 @@ test_5117:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
 test_5120:
   bucket_policy:
     Statement:
@@ -2656,6 +2746,7 @@ test_5120:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
         Resource: "arn:aws:s3:::{}/*"
+
 test_5122:
   bucket_policy:
     Statement:
@@ -2664,6 +2755,7 @@ test_5122:
           CanonicalUser: "{}"
         Action: "s3:GetObjectAcl"
         Resource: "arn:aws:s3:::{}/*"
+
 test_5123:
   bucket_policy:
     Statement:
@@ -2672,6 +2764,7 @@ test_5123:
           CanonicalUser: "{}"
         Action: "s3:ListBucket"
         Resource: "arn:aws:s3:::{}"
+
 test_5126:
   bucket_policy:
     Statement:
@@ -2680,6 +2773,7 @@ test_5126:
           CanonicalUser: "{}"
         Action: "s3:PutBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
 test_5124:
   bucket_policy:
     Statement:
@@ -2688,6 +2782,7 @@ test_5124:
           CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
+
 test_5125:
   bucket_policy:
     Statement:
@@ -2696,6 +2791,7 @@ test_5125:
           CanonicalUser: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
 
 test_5137:
   bucket_policy:
@@ -2995,3 +3091,48 @@ test_6923:
           AWS: "{}"
         Action: "s3:GetBucketAcl"
         Resource: "arn:aws:s3:::{}"
+
+
+# copy object bucket policy tests.
+test_22283:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22287:
+  bucket_policy:
+    Statement:
+      - Effect: "Deny"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22292:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action:
+          - "s3:PutObject"
+          - "s3:PutObjectTagging"
+        Resource: "arn:aws:s3:::{}/*"
+
+test_22299:
+  bucket_policy:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+         CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Deny"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"

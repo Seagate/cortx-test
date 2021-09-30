@@ -5,14 +5,14 @@ system_limit_common:
 
 test_13693:
   csm_count: 0
-  s3_count: 498
+  s3_count: 1000
   iam_count: 1
   bucket_count: 1
 
 test_16009:
   csm_count: 0
   s3_count: 1
-  iam_count: 500
+  iam_count: 1000
   bucket_count: 50
 
 test_16908:
@@ -41,3 +41,6 @@ test_16911:
 
 test_20274:
   list_multipart_uploads_limit: 1000
+
+test_20271:
+  metadata_limit: 2048  # user-defined metadata is limited to 2 KB from AWS

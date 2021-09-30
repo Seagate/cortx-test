@@ -127,3 +127,6 @@ def find_distinct_values(key: str,
         tests = pymongo_db[collection]
         result = tests.distinct(key, query)
         return result
+
+
+# collection.find(query).sort([("_id", pymongo.DESCENDING)]).limit(1)

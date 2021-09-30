@@ -19,7 +19,10 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""s3 helper to have s3 services related classes & methods."""
+"""
+s3 helper to have s3 services related classes & methods.
+Note: S3 helper is singleton so please import it's object from libs.s3 __init__ as 'from libs.s3 import S3H_OBJ'.
+"""
 
 import os
 import re
@@ -29,9 +32,11 @@ import logging
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons.helpers.host import Host
+from commons.constants import const
+from commons.helpers.node_helper import Node
 from commons.utils import config_utils
-from commons.utils.system_utils import run_local_cmd, run_remote_cmd
+from commons.utils.system_utils import run_local_cmd
+from commons.utils.system_utils import run_remote_cmd
 from config import S3_CFG, CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -41,7 +46,6 @@ class S3Helper:
     """S3 Helper class to perform S3 related operations."""
 
     __instance = None
-    cm_cfg = CMN_CFG["nodes"][0]
 
     def __init__(self) -> None:
         """Virtually private constructor."""
@@ -50,9 +54,10 @@ class S3Helper:
                 "S3Helper is a singleton!, "
                 "use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
-        self.host = self.cm_cfg["host"]
-        self.pwd = self.cm_cfg["password"]
-        self.user = self.cm_cfg["username"]
+        cm_cfg = CMN_CFG.get("nodes", None)
+        self.host = cm_cfg[0]["hostname"] if cm_cfg else None
+        self.pwd = cm_cfg[0]["password"] if cm_cfg else None
+        self.user = cm_cfg[0]["username"] if cm_cfg else None
 
     @staticmethod
     def get_instance() -> object:
@@ -505,8 +510,8 @@ class S3Helper:
             fids = []
             for line in output:
                 if "s3server" in line:
-                    LOGGER.info(line)
-                    fid = "{}@{}".format(line.split()[2], line.split()[3])
+                    LOGGER.info(line.split())
+                    fid = "{}@{}".format(line.split()[1], line.split()[2])
                     fids.append(fid)
             LOGGER.info("Fids: %s", str(fids))
 
@@ -537,16 +542,13 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            hobj = Host(hostname=host, username=user, password=pwd)
-            hobj.connect_pysftp()
-            sftp = hobj.pysftp_obj
+            nobj = Node(hostname=host, username=user, password=pwd)
             LOGGER.info("sftp connected")
-            sftp.get(file_path, local_path)
+            resp = nobj.copy_file_to_local(file_path, local_path)
             LOGGER.info("file copied to : %s", str(local_path))
-            sftp.close()
-            hobj.disconnect()
+            nobj.disconnect()
 
-            return os.path.isfile(local_path), local_path
+            return resp
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s",
@@ -693,7 +695,8 @@ class S3Helper:
             data = config_utils.read_content_json(path, mode='rb')
             data["hosts"]["s3"]["accessKey"] = access
             data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(path=path, data=data, ensure_ascii=False)
+            res = config_utils.create_content_json(
+                path=path, data=data, ensure_ascii=False)
         else:
             LOGGER.warning(
                 "Minio is not installed please install and than run the configuration.")
@@ -713,8 +716,8 @@ class S3Helper:
         """
         try:
             if not os.path.isfile(path):
-                raise FileNotFoundError(
-                    "{} file is not present. Please configure aws in the system".format(path))
+                raise FileNotFoundError("{} file is not present. Please configure aws in the "
+                                        "system if you are running s3 test".format(path))
             access_key = config_utils.get_config(
                 path, section, "aws_access_key_id")
             secret_key = config_utils.get_config(
@@ -723,7 +726,7 @@ class S3Helper:
             return access_key, secret_key
         except (FileNotFoundError, KeyError, NoSectionError) as error:
             LOGGER.warning(
-                "An exception occurred in %s: %s",
+                "%s: %s",
                 S3Helper.get_local_keys.__name__,
                 str(error))
             return None, None
@@ -767,3 +770,84 @@ class S3Helper:
                 os.remove(local_path)
 
         return False, file_path
+
+    def s3server_inject_faulttolerance(self, enable=False, **kwargs) -> tuple:
+        """
+        Inject(enable/disable) fault tolerance in s3server.
+
+        TODO: Code will be revised based on F-24A feature availability.
+        :param host: IP of the host.
+        :param user: user name of the host.
+        :param password: password for the user.
+        :param enable: enable or disable fault to s3server.
+        :return: bool, response.
+        """
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("user", self.user)
+        password = kwargs.get("password", self.pwd)
+        command = commands.UPDATE_FAULTTOLERANCE.format(
+            "enable" if enable else "disable")
+        status, response = run_remote_cmd(cmd=command,
+                                          hostname=host,
+                                          username=user,
+                                          password=password)
+        status = True if "200" in response else status
+
+        return status, response
+
+    def verify_and_validate_created_object_fragement(self, object_name) -> tuple:
+        """
+        Verify in m0kv output.
+
+        TODO: Code will be revised based on F-24A feature availability.
+        Verify the Validate that object list index contains extended entries using m0kv.
+        Verify in m0kv output. Main object size and fragment size.
+        No of fragments in json value of main object.
+        :return: bool, response
+        """
+        LOGGER.info(object_name)
+        return False, "Not implemented: F-24A feature under development."
+
+    def update_s3config(self,
+                        section="S3_SERVER_CONFIG",
+                        parameter=None,
+                        value=None,
+                        **kwargs) -> tuple:
+        """
+        Reset parameter to value in s3config.yaml and return (parameter, value, old_value).
+
+        :param host: IP of the host.
+        :param user: user name of the host.
+        :param password: password for the user.
+        :param parameter: s3 parameters to be updated.
+        :param value: s3 parameter value.
+        :param section: s3config section.
+        :param backup_path: backup_path.
+        :return: True/False, response.
+        """
+        host = kwargs.get("host", self.host)
+        user = kwargs.get("username", self.user)
+        pwd = kwargs.get("password", self.pwd)
+        backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
+        nobj = Node(hostname=host, username=user, password=pwd)
+        status, resp = nobj.copy_file_to_local(const.S3_CONFIG, backup_path)
+        if not status:
+            return status, resp
+        status, resp = config_utils.read_yaml(backup_path)
+        if not status:
+            return status, resp
+        LOGGER.info(resp)
+        old_value = resp[section][parameter]
+        LOGGER.info(old_value)
+        resp[section][parameter] = value
+        status, resp = config_utils.write_yaml(backup_path, resp, backup=True)
+        if not status:
+            return status, resp
+        status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
+        if not status:
+            return status, resp
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        nobj.disconnect()
+
+        return status, (parameter, value, old_value)

@@ -23,18 +23,20 @@
 import logging
 import os
 import sys
+import time
 import platform
 import random
 import shutil
 import socket
 import builtins
+import errno
+import string
 from typing import Tuple
 from subprocess import Popen, PIPE
 from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
-
 
 if sys.platform == 'win32':
     try:
@@ -49,6 +51,7 @@ if sys.platform in ['linux', 'linux2']:
 
 LOGGER = logging.getLogger(__name__)
 
+dns_rr_counter = 0
 
 def run_remote_cmd(
         cmd: str,
@@ -78,15 +81,19 @@ def run_remote_cmd(
     if read_lines:
         output = stdout.readlines()
         output = [r.strip().strip("\n").strip() for r in output]
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.readlines()
         error = [r.strip().strip("\n").strip() for r in error]
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     else:
         output = stdout.read(read_nbytes)
-        LOGGER.debug("Result: %s", str(output))
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
         error = stderr.read()
-        LOGGER.debug("Error: %s", str(error))
+        if error:
+            LOGGER.debug("Error: %s", str(error))
     LOGGER.debug(exit_status)
     if exit_status != 0:
         if error:
@@ -99,11 +106,53 @@ def run_remote_cmd(
     return True, output
 
 
-def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
+def run_remote_cmd_wo_decision(
+        cmd: str,
+        hostname: str,
+        username: str,
+        password: str,
+        **kwargs) -> tuple:
+    """
+    Execute command on remote machine.
+    :return: stdout, stderr, status
+    :Need this command because motr api send output on stderr
+    """
+    LOGGER.info("Host: %s, User: %s, Password: %s", hostname, username, password)
+    read_lines = kwargs.get("read_lines", False)
+    read_nbytes = kwargs.get("read_nbytes", -1)
+    timeout_sec = kwargs.get("timeout_sec", 30)
+    client = SSHClient()
+    client.set_missing_host_key_policy(AutoAddPolicy())
+    LOGGER.debug("Command: %s", str(cmd))
+    client.connect(hostname, username=username,
+                   password=password, timeout=timeout_sec)
+    _, stdout, stderr = client.exec_command(cmd)
+    exit_status = stdout.channel.recv_exit_status()
+    if read_lines:
+        output = stdout.readlines()
+        output = [r.strip().strip("\n").strip() for r in output]
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
+        error = stderr.readlines()
+        error = [r.strip().strip("\n").strip() for r in error]
+        if error:
+            LOGGER.debug("Error: %s", str(error))
+    else:
+        output = stdout.read(read_nbytes)
+        if output and "hctl status" not in cmd and "pcs status" not in cmd:
+            LOGGER.debug("Result: %s", str(output))
+        error = stderr.read()
+        if error:
+            LOGGER.debug("Error: %s", str(error))
+    return output, error, exit_status
+
+
+def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr=False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
     :param flg: To get str(proc.communicate())
+    :param chk_stderr: Check if stderr is none.
     :return: bool, response.
     """
     if not cmd:
@@ -115,6 +164,9 @@ def run_local_cmd(cmd: str = None, flg: bool = False) -> tuple:
     LOGGER.debug("error = %s", str(error))
     if flg:
         return True, str((output, error))
+    if chk_stderr:
+        if error:
+            return False, str(error)
     if proc.returncode != 0:
         return False, str(error)
     if b"Number of key(s) added: 1" in output:
@@ -187,15 +239,36 @@ def command_formatter(cmd_options: dict, utility_path: str = None) -> str:
     return cmd
 
 
+def filter_bin_md5(file_checksum):
+    """
+    Function to clean binary md5 response.
+    :param file_checksum: encoded binary md5 data with newline char
+    :return: filter binary md5 data
+    """
+    LOGGER.debug("Actual MD5 %s", file_checksum)
+    if "\\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\\n", "")
+    elif "\n" in file_checksum[2:-1]:
+        bin_checksum = file_checksum[2:-1].replace("\n", "")
+    else:
+        bin_checksum = file_checksum[2:-1]
+    LOGGER.debug("Filter MD5 %s", bin_checksum)
+
+    return bin_checksum
+
+
 def calculate_checksum(
         file_path: str,
         binary_bz64: bool = True,
-        options: str = "") -> tuple:
+        options: str = "",
+        **kwargs) -> tuple:
     """
     Calculate MD5 checksum with/without binary coversion for a file.
-    :param filename: Name of the file with path
+    :param file_path: Name of the file with path
     :param binary_bz64: Calulate binary base64 checksum for file,
     if False it will return MD5 checksum digest
+    :param options: option for md5sum tool
+    :keyword filter_resp: filter md5 checksum cmd response True/False
     :return: string or MD5 object
     """
     if not os.path.exists(file_path):
@@ -208,6 +281,8 @@ def calculate_checksum(
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
     LOGGER.debug("Output: %s", str(result))
+    if kwargs.get("filter_resp", None) and binary_bz64:
+        result = (result[0], filter_bin_md5(result[1]))
     return result
 
 
@@ -382,6 +457,14 @@ def make_dirs(dpath: str, mode: int = None) -> str:
         return str(error)
 
     return dpath
+
+
+def mkdirs(pth):
+    try:
+        os.makedirs(pth, exist_ok=True)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def remove_dir(dpath: str) -> bool:
@@ -890,8 +973,11 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             resp = make_dirs(dpath=new_path)
 
         LOGGER.info("Copying file to mounted directory")
-        shutil.copy(local_path, new_path)
-        log_path = os.path.join(host_dir.split(":")[0], remote_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, new_path)
+        else:
+            shutil.copytree(local_path, os.path.join(new_path, os.path.basename(local_path)))
+        log_path = os.path.join(host_dir, remote_path)
     except Exception as error:
         LOGGER.error(error)
         LOGGER.info("Copying file to local path")
@@ -900,7 +986,10 @@ def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
             LOGGER.info("Creating local log directory")
             resp = make_dirs(dpath=log_path)
 
-        shutil.copy(local_path, log_path)
+        if os.path.isfile(local_path):
+            shutil.copy(local_path, log_path)
+        else:
+            shutil.copytree(local_path, os.path.join(log_path, os.path.basename(local_path)))
 
     return True, log_path
 
@@ -923,6 +1012,19 @@ def umount_dir(mnt_dir: str = None) -> tuple:
         remove_dir(dpath=mnt_dir)
 
     return True, "Directory is unmounted"
+
+
+def get_s3_url(cfg, node_index):
+    """
+    Function to format s3 url for individual vm
+    :param cfg: config object
+    :param node_index: node index for indexing s3_dns fqdn
+    :return: dict respo with s3_url and iam_url as key
+    """
+    final_urls = dict()
+    final_urls["s3_url"] = f"https://{cfg['s3_dns'][node_index]}"
+    final_urls["iam_url"] = f"https://{cfg['s3_dns'][node_index]}:9443"
+    return final_urls
 
 
 def configure_jclient_cloud(
@@ -992,3 +1094,168 @@ def configre_minio_cloud(minio_repo=None,
     except Exception as error:
         LOGGER.error(str(error))
         return False
+
+
+def random_metadata_generator(
+        size: int = 6,
+        chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
+    """
+    Generate random string of given size
+
+    :param size: Length of string
+    :param chars: Characters from which random selection is done
+    :return: str
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+def create_file_fallocate(filepath=None, size="1MB", option="l"):
+    """
+    Create file using tool fallocate.
+
+    :param filepath: Absolute/Relative filepath.
+    :param size: file size: 1k, 33k, 1MB, 4MB etc.
+    :param option: options supported by fallocate tool.
+    :return: True/False, response.
+    """
+    command = "fallocate -{} {} {}".format(option, size, filepath)
+    resp = run_local_cmd(command)
+
+    return os.path.exists(filepath), resp[1]
+
+
+def toggle_nw_status(device: str, status: str, host: str, username: str,
+                     pwd: str):
+    """
+    Toggle network device status using ip set command.
+    :param str device: Name of the ip network device
+    :param str status: Expect status like up/down
+    :param host: Host name on which command is to be run
+    :param username: Username of host
+    :param pwd: Password of host
+    :return: True/False
+    :rtype: Boolean
+    """
+    LOGGER.info(f"Changing {device} n/w device status to {status}")
+    cmd = commands.IP_LINK_CMD.format(device, status)
+    LOGGER.info("Running command: %s", cmd)
+    res = run_remote_cmd(
+        hostname=host, username=username, password=pwd, cmd=cmd,
+        read_lines=True)
+    LOGGER.debug("Response: %s", res)
+
+    LOGGER.debug(res)
+    return res[0]
+
+
+def create_dir_hierarchy_and_objects(directory_path=None,
+                                     obj_prefix=None,
+                                     depth: int = 1,
+                                     obj_count: int = 1,
+                                     **kwargs) -> list:
+    """
+    Create directory hierarchy as per depth and create number of objects in each folder.
+
+    :param directory_path: Absolute path of root directory.
+    :param obj_prefix: Name of the object prefix.
+    :param depth: Directory hierarchy.
+    :param obj_count: object count per directory.
+    :param b_size: object block size.
+    :param count: count.
+    :return: file path list.
+    """
+    file_path_list = []
+    count = kwargs.get("count", 1)
+    b_size = kwargs.get("b_size", 1)
+    for objcnt in range(obj_count):
+        fpath = os.path.join(directory_path,
+                             f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
+        run_local_cmd(
+            commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+        if os.path.exists(fpath):
+            file_path_list.append(fpath)
+    for dcnt in range(depth):
+        directory_path = os.path.join(
+            directory_path, ''.join(
+                random.SystemRandom().choice(
+                    string.ascii_lowercase) for _ in range(
+                    5 + dcnt)))
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+        for objcnt in range(obj_count):
+            fpath = os.path.join(
+                directory_path,
+                f"{obj_prefix}{objcnt}{time.perf_counter_ns()}.txt")
+            run_local_cmd(
+                commands.CREATE_FILE.format("/dev/zero", fpath, count, b_size))
+            if os.path.exists(fpath):
+                file_path_list.append(fpath)
+    LOGGER.info("File list: %s", file_path_list)
+
+    return file_path_list
+
+
+def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
+    """
+    Validate the s3bench parallel execution log file for failure.
+
+    :param log_dir: Log directory path.
+    :param log_prefix: s3 bench log prefix.
+    :return: bool, response.
+    """
+    LOGGER.info("S3 parallel ios log validation started.")
+    log_file_list = list_dir(log_dir)
+    log_path = None
+    for filename in log_file_list:
+        if filename.startswith(log_prefix):
+            log_path = os.path.join(log_dir, filename)
+    LOGGER.info("IO log path: %s", log_path)
+    if not log_path:
+        return False, f"failed to generate logs for parallel run: {log_prefix}."
+    lines = open(log_path).readlines()
+    resp_filtered = [
+        line for line in lines if 'Errors Count:' in line and "reportFormat" not in line]
+    LOGGER.info("'Error count' filtered list: %s", resp_filtered)
+    for response in resp_filtered:
+        if int(response.split(":")[1].strip()) != 0:
+            return False, response
+    LOGGER.info("Observed no Error count in io log.")
+    error_kws = [
+        "with error ",
+        "panic",
+        "status code",
+        "exit status 2",
+        "InternalError",
+        "ServiceUnavailable"]
+    for error in error_kws:
+        if error in ",".join(lines):
+            return False, f"{error} Found in S3Bench Run."
+    LOGGER.info("Observed no Error keyword '%s' in io log.", error_kws)
+    # remove_file(log_path)  # Keeping logs for FA/Debugging.
+    LOGGER.info("S3 parallel ios log validation completed.")
+
+    return True, "S3 parallel ios completed successfully."
+
+
+def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
+                          pwd: str):
+    """
+    Toggle network interface status using ip set command.
+    :param str device: Name of the ip network device
+    :param str status: Expect status like up/down
+    :param host: Host name on which command is to be run
+    :param username: Username of host
+    :param pwd: Password of host
+    :return: True/False
+    :rtype: Boolean
+    """
+    LOGGER.info(f"Changing {device} n/w device status to {status}")
+    cmd = commands.IF_CMD.format(status, device)
+    LOGGER.info("Running command: %s", cmd)
+    res = run_remote_cmd(
+        hostname=host, username=username, password=pwd, cmd=cmd,
+        read_lines=True)
+    LOGGER.debug("Response: %s", res)
+
+    LOGGER.debug(res)
+    return res[0]

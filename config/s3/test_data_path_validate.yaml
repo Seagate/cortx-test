@@ -1,3 +1,4 @@
+# keeping this file as DI has dependency on this
 data_path:
     bkt_name_prefix: "dpv"
     acc_name_prefix: "dpv-acc"

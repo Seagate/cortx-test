@@ -60,6 +60,22 @@ class AlertType(Enum, settings=NoAlias):
     RAID_REMOVE_DISK_ALERT = 6
     RAID_ADD_DISK_ALERT = 6
     IEM_TEST_ERROR_ALERT = 7
+    NW_PORT_FAULT = 8
+    NW_PORT_FAULT_RESOLVED = 9
+    DG_FAULT = 10
+    DG_FAULT_RESOLVED = 11
+    NW_CABLE_FAULT = 12
+    NW_CABLE_FAULT_RESOLVED = 12
+    OS_DISK_DISABLE = 13
+    OS_DISK_ENABLE = 14
+    SERVER_PSU_FAULT = 15
+    SERVER_PSU_FAULT_RESOLVED = 16
+    BMC_CHANGE_FAULT = 17
+    BMC_CHANGE_FAULT_RESOLVE = 17
+    RAID_INTEGRITY_FAULT = 18
+    RAID_INTEGRITY_RESOLVED = 19
+    FAN_ALERT = 20
+    FAN_ALERT_RESOLVED = 21
 
 
 class GenerateAlertLib:
@@ -93,7 +109,7 @@ class GenerateAlertLib:
             h_user = host_details["host_user"]
             h_pwd = host_details["host_password"]
         else:
-            host = COMMON_CONF["nodes"][0]["host"]
+            host = COMMON_CONF["nodes"][0]["hostname"]
             h_user = COMMON_CONF["nodes"][0]["username"]
             h_pwd = COMMON_CONF["nodes"][0]["password"]
 
@@ -145,7 +161,73 @@ class GenerateAlertLib:
                 'cmd': 'iem_alerts',
                 'args': f'(host="{host}", h_user="{h_user}", '
                         f'h_pwd="{h_pwd}", '
-                        f'input_parameters={input_parameters})'}
+                        f'input_parameters={input_parameters})'},
+            8: {
+                'cmd': 'create_network_port_fault',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            9: {
+                'cmd': 'resolve_network_port_fault',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            10: {
+                'cmd': 'create_disk_group_failures',
+                'args': f'(encl_ip="{enc_ip}", encl_user="{enc_user}", '
+                        f'encl_pwd="{enc_pwd}", host="{host}", '
+                        f'h_user="{h_user}", h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            11: {
+                'cmd': 'resolve_disk_group_failures',
+                'args': f'(encl_ip="{enc_ip}", encl_user="{enc_user}", '
+                        f'encl_pwd="{enc_pwd}", host="{host}", '
+                        f'h_user="{h_user}", h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            12: {
+                'cmd': 'create_resolve_network_cable_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            13: {
+                'cmd': 'disconnect_os_drive',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            14: {
+                'cmd': 'connect_os_drive',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            15: {'cmd': 'ipmi_alerts',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                f'h_pwd="{h_pwd}", '
+                f'input_parameters={input_parameters})'},
+            16: {
+                'cmd': 'ipmi_alerts',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                f'h_pwd="{h_pwd}", '
+                f'input_parameters={input_parameters})'},
+            17: {
+                'cmd': 'create_resolve_bmc_ip_change_fault'},
+            18: {
+                'cmd': 'create_raid_integrity_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            19: {
+                'cmd': 'resolve_raid_integrity_faults',
+                'args': f'(host="{host}", h_user="{h_user}", '
+                        f'h_pwd="{h_pwd}", '
+                        f'input_parameters={input_parameters})'},
+            20: {'cmd': 'ipmi_alerts',
+                 'args': f'(host="{host}", h_user="{h_user}", '
+                 f'h_pwd="{h_pwd}", '
+                 f'input_parameters={input_parameters})'},
+            21: {'cmd': 'ipmi_alerts',
+                 'args': f'(host="{host}", h_user="{h_user}", '
+                 f'h_pwd="{h_pwd}", '
+                 f'input_parameters={input_parameters})'},
         }
 
         arguments = (switcher[alert_type.value]['args'])

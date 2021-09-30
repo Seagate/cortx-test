@@ -42,7 +42,10 @@ class TestCliSystem:
             - Initialize few common variables
         """
         cls.log = logging.getLogger(__name__)
-        cls.system_obj_node1 = CortxCliSystemtOperations()
+        cls.system_obj_node1 = CortxCliSystemtOperations(
+            host=CMN_CFG["nodes"][0]["host"],
+            username=CMN_CFG["nodes"][0]["username"],
+            password=CMN_CFG["nodes"][0]["password"])
         cls.system_obj_node2 = CortxCliSystemtOperations(
             host=CMN_CFG["nodes"][1]["host"],
             username=CMN_CFG["nodes"][1]["username"],
@@ -59,7 +62,6 @@ class TestCliSystem:
         cls.pri_node_logout = True
         cls.bmc_user = CMN_CFG["bmc"]["username"]
         cls.bmc_pwd = CMN_CFG["bmc"]["password"]
-        cls.bmc_node1_ip = cls.bmc_obj_node1.get_bmc_ip()
         cls.node2_obj = CortxCli(
             host=CMN_CFG["nodes"][1]["host"],
             username=CMN_CFG["csm"]["csm_admin_user"]["username"],
@@ -94,12 +96,10 @@ class TestCliSystem:
         self.node_helper_obj.send_systemctl_cmd("start", ["csm_agent"])
         if "Chassis Power is on" not in str(
             self.bmc_obj_node2.bmc_node_power_status(
-                self.bmc_node1_ip,
                 self.bmc_user,
                 self.bmc_pwd)):
             self.log.info("Starting host from BMC console.")
-            resp = self.bmc_obj_node2.bmc_node_power_on_off(
-                self.bmc_node1_ip, self.bmc_user, self.bmc_pwd, "on")
+            resp = self.bmc_obj_node2.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
             assert_utils.assert_equals(True, resp, resp)
             time.sleep(300)
         if self.pri_node_logout:
@@ -107,7 +107,12 @@ class TestCliSystem:
             self.system_obj_node1.logout_cortx_cli()
             self.log.info("Logged out from CSMCLI console successfully")
         if self.node_stop:
+            csm = CMN_CFG.get("csm")
+            nodes = CMN_CFG.get("nodes")
             cli_sys_ser = CortxCliSystemtOperations(
+                host=csm["mgmt_vip"],
+                username=nodes[0]["username"],
+                password=nodes[0]["password"],
                 session_obj=self.node2_obj.session_obj)
             self.csm_cli_login = cli_sys_ser.login_cortx_cli()
             assert_utils.assert_equals(
@@ -184,12 +189,10 @@ class TestCliSystem:
         self.log.info("Starting node from BMC")
         if "Chassis Power is on" not in str(
             self.bmc_obj_node2.bmc_node_power_status(
-                self.bmc_node1_ip,
                 self.bmc_user,
                 self.bmc_pwd)):
             self.log.info("Starting host from BMC console.")
-            resp = self.bmc_obj_node2.bmc_node_power_on_off(
-                self.bmc_node1_ip, self.bmc_user, self.bmc_pwd, "on")
+            resp = self.bmc_obj_node2.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
             assert_utils.assert_equals(True, resp, resp)
             time.sleep(300)
         self.log.info("Started node from BMC")
