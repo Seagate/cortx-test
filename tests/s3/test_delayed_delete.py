@@ -23,14 +23,14 @@
 import os
 import time
 import logging
+from random import choice
 import pytest
-from random import choice, randint
 
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
 from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.system_utils import backup_or_restore_files, split_file, remove_dirs
+from commons.utils.system_utils import backup_or_restore_files, remove_dirs
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.configmanager import get_config_wrapper, config_utils
@@ -50,87 +50,86 @@ BLACKBOX_CONF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 class TestDelayedDelete:
     """Delayed Delete Test Suite."""
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
+    @classmethod
+    def setup_class(cls):
         """
         Function will be invoked prior to each test case.
         It will perform all prerequisite test steps if any.
         """
-        self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup operations")
-        self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.aws_config_path = []
-        self.aws_config_path.append(S3_CFG["aws_config_path"])
-        self.actions = ["backup", "restore"]
-        self.random_time = int(time.time())
-        self.bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
+        cls.log = logging.getLogger(__name__)
+        logging.info("STARTED: Setup operations")
+        cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.aws_config_path = S3_CFG["aws_config_path"]
+        cls.actions = ["backup", "restore"]
+        cls.random_time = int(time.time())
+        cls.bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             time.perf_counter_ns())
-        self.object_name = S3_OBJ_TST["s3_object"]["object_name"].format(
+        cls.object_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             time.perf_counter_ns())
-        self.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
-        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDelayedDelete")
-        self.test_file_path = os.path.join(self.test_dir_path, self.test_file)
-        self.mp_obj_path = os.path.join(self.test_dir_path, self.test_file)
-        self.config_backup_path = os.path.join(self.test_dir_path, "config_backup")
-        if not system_utils.path_exists(self.test_dir_path):
-            system_utils.make_dirs(self.test_dir_path)
-            self.log.info("Created path: %s", self.test_dir_path)
-        self.log.info("Test file path: %s", self.test_file_path)
-        self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.access_key = ACCESS_KEY
-        self.secret_key = SECRET_KEY
-        self.start_range = S3_OBJ_TST["s3_object"]["start_range"]
-        self.end_range = S3_OBJ_TST["s3_object"]["end_range"]
-        self.random_num = str(
+        cls.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDelayedDelete")
+        cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
+        cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
+        if not system_utils.path_exists(cls.test_dir_path):
+            system_utils.make_dirs(cls.test_dir_path)
+            logging.info("Created path: %s", cls.test_dir_path)
+        logging.info("Test file path: %s", cls.test_file_path)
+        cls.config_backup_path = os.path.join(cls.test_dir_path, "config_backup")
+        cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        cls.access_key = ACCESS_KEY
+        cls.secret_key = SECRET_KEY
+        cls.rest_obj = S3AccountOperations()
+        cls.start_range = S3_OBJ_TST["s3_object"]["start_range"]
+        cls.end_range = S3_OBJ_TST["s3_object"]["end_range"]
+        cls.random_num = str(
             choice(
                 range(
-                    self.start_range,
-                    self.end_range)))
-        res_ls = system_utils.execute_cmd(
-            "ls scripts/jcloud/")[1]
+                    cls.start_range,
+                    cls.end_range)))
+
+    @staticmethod
+    def setup_method(self):
+        """
+        Setup Method
+        """
+        logging.info("STARTED: Setup Operations")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
             res = system_utils.configure_jclient_cloud(
-                source=S3_CFG["jClientCloud_path"]["source"],
-                destination=S3_CFG["jClientCloud_path"]["dest"],
-                nfs_path=S3_CFG["nfs_path"],
-                ca_crt_path=S3_CFG["s3_cert_path"]
+                 source=S3_CFG["jClientCloud_path"]["source"],
+                 destination=S3_CFG["jClientCloud_path"]["dest"],
+                 nfs_path=S3_CFG["nfs_path"],
+                 ca_crt_path=S3_CFG["s3_cert_path"]
             )
-            self.log.info(res)
+            logging.info(res)
             if not res:
-                raise CTException(
-                    S3_CLIENT_ERROR,
-                    "Error: jcloudclient.jar or jclient.jar file does not exists")
+                raise CTException(S3_CLIENT_ERROR,
+                                  "Error: jcloudclient.jar"
+                                  " or jclient.jar file does not exists")
         self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         resp = self.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
-        self.account_name = "objaclacc{}".format(time.perf_counter_ns())
-        self.email_id = "{}@seagate.com".format(self.account_name)
-        self.account_name_1 = "objaclacc_one{}".format(time.perf_counter_ns())
-        self.email_id_1 = "{}@seagate.com".format(self.account_name_1)
-        self.account_name_2 = "objaclacc_two{}".format(time.perf_counter_ns())
-        self.email_id_2 = "{}@seagate.com".format(self.account_name_2)
-        self.rest_obj = S3AccountOperations()
-        self.account_list = []
-        self.log.info(
-            "Taking a backup of aws config file located at %s to %s...",
-            self.aws_config_path, self.config_backup_path)
+        logging.info("Taking a backup of aws config file "
+                     "located at %s to %s...",
+                     self.aws_config_path, self.config_backup_path)
         resp = backup_or_restore_files(
-            self.actions[0], self.config_backup_path, self.aws_config_path)
+            self.actions[0], self.config_backup_path,
+            self.aws_config_path)
         assert (resp[0], resp[1])
-        self.log.info(
-            "Taken a backup of aws config file located at %s to %s",
-            self.aws_config_path, self.config_backup_path)
-        self.log.info(
+        logging.info("Taken a backup of aws config"
+                     " file located at %s to %s", self.aws_config_path,
+                     self.config_backup_path)
+        logging.info(
             "S3_SERVER_OBJECT_DELAYED_DELETE value in s3config.yaml should be "
             "set to True.")
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=True)
         assert_utils.assert_true(status, response)
         yield
-        self.log.info("ENDED: Setup operations")
+        logging.info("ENDED: Setup operations")
 
     def teardown_method(self):
         """
@@ -153,12 +152,12 @@ class TestDelayedDelete:
         if pref_list:
             resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert resp[0], resp[1]
-        self.log.info(
-            "Restoring aws config file from %s to %s...",
-            self.config_backup_path,
-            self.aws_config_path)
-        resp = backup_or_restore_files(
-            self.actions[1], self.config_backup_path, self.aws_config_path)
+        self.log.info("Restoring aws config file from %s to %s",
+                      self.config_backup_path,
+                      self.aws_config_path)
+        resp = backup_or_restore_files(self.actions[1],
+                                       self.config_backup_path,
+                                       self.aws_config_path)
         assert resp[0], resp[1]
         self.log.info(
             "Restored aws config file from %s to %s",
@@ -169,6 +168,8 @@ class TestDelayedDelete:
             remove_dirs(self.config_backup_path)
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
+        if path_exists(self.test_file_path):
+            remove_file(self.test_file_path)
         self.log.info("Deleted a backup file and directory")
         self.log.info("ENDED: Teardown operations")
 
@@ -230,14 +231,13 @@ class TestDelayedDelete:
             **kwargs):
         """
         Function creates a bucket, uploads an object.
-
         to the bucket and list objects from the bucket.
         :param bucket_name: Name of bucket to be created
         :param obj_name: Name of an object to be put to the bucket
         :param file_path: Path of the file to be created and uploaded to bucket
         :param mb_count: Size of file in MBs
-        :param m_key: Key for metadata
-        :param m_value: Value for metadata
+        :keyword m_key: Key for metadata
+        :keyword m_value: Value for metadata
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
@@ -274,6 +274,13 @@ class TestDelayedDelete:
                                   test_file_path,
                                   option
                                   ):
+        """
+        This Function creates the bucket
+        and put the object using jclient
+        :param: bucket_name
+        :param: test_file_path
+        :option: Its to select teh create and put operation
+        """
         self.file_path_lst = []
         self.bucket_list = []
         self.log.info("STARTED: put object using jcloudclient")
@@ -543,7 +550,7 @@ class TestDelayedDelete:
                          " %s,size on re-upload %s", size_o, size_r)
         else:
             logging.error("The size of objects are different"
-                          " a: %s, b: %s", size_o, size_r)
+                          " a: %s,b: %s", size_o, size_r)
         if last_m_time_o == last_m_time_r:
             logging.error("The time is same seems object re-upload failed")
         else:
@@ -563,7 +570,6 @@ class TestDelayedDelete:
                       self.test_file)
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path, 1)
-
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
         obj_last_m_t = result[1]["LastModified"]
