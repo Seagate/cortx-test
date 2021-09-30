@@ -1081,8 +1081,6 @@ class IamTestLib(IamLib):
 
         :param account_name: Name of the account.
         :param email_id: Email IF for the account.
-        # :param secret_key: Secret key.
-        # :param access_key: Access key.
         :return: (Boolean, response)
         """
         try:

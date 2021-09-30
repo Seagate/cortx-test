@@ -882,6 +882,9 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        s3_cert_path = s3_cert_path if s3_cert_path else S3_CFG["s3_cert_path"]
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        s3_cert_path = s3_cert_path if val_cert else False
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
