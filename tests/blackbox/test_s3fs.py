@@ -133,7 +133,7 @@ class TestS3fs:
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
             self.s3fs_cfg["passwd_file"],
-            self.s3fs_cfg["url"],
+            self.s3fs_cfg["url"].format(S3_CFG["s3_url"]),
             self.s3fs_cfg["path_style"],
             self.s3fs_cfg["dbglevel"]]
         command = self.create_cmd(
