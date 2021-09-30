@@ -23,7 +23,6 @@
 import os
 import time
 import logging
-from random import choice
 import pytest
 
 from commons.ct_fail_on import CTFailOn
@@ -75,18 +74,12 @@ class TestDelayedDelete:
             system_utils.make_dirs(cls.test_dir_path)
             logging.info("Created path: %s", cls.test_dir_path)
         logging.info("Test file path: %s", cls.test_file_path)
-        cls.config_backup_path = os.path.join(cls.test_dir_path, "config_backup")
+        cls.config_backup_path = os.path.join(
+            cls.test_dir_path, "config_backup")
         cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.access_key = ACCESS_KEY
         cls.secret_key = SECRET_KEY
         cls.rest_obj = S3AccountOperations()
-        cls.start_range = S3_OBJ_TST["s3_object"]["start_range"]
-        cls.end_range = S3_OBJ_TST["s3_object"]["end_range"]
-        cls.random_num = str(
-            choice(
-                range(
-                    cls.start_range,
-                    cls.end_range)))
         cls.file_path_lst = []
         cls.bucket_list = []
         res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
@@ -102,13 +95,12 @@ class TestDelayedDelete:
                 raise CTException(S3_CLIENT_ERROR,
                                   "Error: jcloudclient.jar"
                                   " or jclient.jar file does not exists")
-
         cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
 
     def setup_method(self):
         """
-        Setup Method
+        Setup Method to perform all pre-requisites
         """
         logging.info("STARTED: Setup Operations")
         resp = self.update_jclient_jcloud_properties()
@@ -119,7 +111,7 @@ class TestDelayedDelete:
         resp = backup_or_restore_files(
             self.actions[0], self.config_backup_path,
             self.aws_config_path)
-        assert (resp[0], resp[1])
+        assert resp[0], resp[1]
         logging.info("Taken a backup of aws config"
                      " file located at %s to %s", self.aws_config_path,
                      self.config_backup_path)
@@ -153,13 +145,14 @@ class TestDelayedDelete:
         if pref_list:
             resp = self.s3_test_obj.delete_multiple_buckets(pref_list)
             assert resp[0], resp[1]
-        self.log.info("Restoring aws config file from %s to %s",
-                      self.config_backup_path,
-                      self.aws_config_path)
-        resp = backup_or_restore_files(self.actions[1],
-                                       self.config_backup_path,
-                                       self.aws_config_path)
-        assert resp[0], resp[1]
+        self.log.info(
+            "Restoring aws config file from %s to %s...",
+            self.config_backup_path,
+            self.aws_config_path)
+        resp = backup_or_restore_files(
+            self.actions[1], self.config_backup_path,
+            self.aws_config_path)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Restored aws config file from %s to %s",
             self.config_backup_path,
@@ -521,7 +514,7 @@ class TestDelayedDelete:
             self.bucket_name, self.object_name, self.test_file_path,
             m_key=S3_OBJ_TST["test_8554"]["key"],
             m_value=S3_OBJ_TST["test_8554"]["value"])
-        # TODO KILL the s3backgrounddelete service
+        # TODO: KILL the s3backgrounddelete service
         assert resp[0], resp[1]
         logging.info(
             "Uploaded an object %s to bucket %s", self.object_name, self.bucket_name)
