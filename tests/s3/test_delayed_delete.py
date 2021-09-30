@@ -87,13 +87,8 @@ class TestDelayedDelete:
                 range(
                     cls.start_range,
                     cls.end_range)))
-
-    @staticmethod
-    def setup_method(self):
-        """
-        Setup Method
-        """
-        logging.info("STARTED: Setup Operations")
+        cls.file_path_lst = []
+        cls.bucket_list = []
         res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
@@ -101,15 +96,21 @@ class TestDelayedDelete:
                  source=S3_CFG["jClientCloud_path"]["source"],
                  destination=S3_CFG["jClientCloud_path"]["dest"],
                  nfs_path=S3_CFG["nfs_path"],
-                 ca_crt_path=S3_CFG["s3_cert_path"]
-            )
+                 ca_crt_path=S3_CFG["s3_cert_path"])
             logging.info(res)
             if not res:
                 raise CTException(S3_CLIENT_ERROR,
                                   "Error: jcloudclient.jar"
                                   " or jclient.jar file does not exists")
-        self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
-        self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+
+        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+
+    def setup_method(self):
+        """
+        Setup Method
+        """
+        logging.info("STARTED: Setup Operations")
         resp = self.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
         logging.info("Taking a backup of aws config file "
@@ -281,8 +282,6 @@ class TestDelayedDelete:
         :param: test_file_path
         :option: Its to select teh create and put operation
         """
-        self.file_path_lst = []
-        self.bucket_list = []
         self.log.info("STARTED: put object using jcloudclient")
         if option == 1:
             self.log.info("Creating bucket %s", bucket_name)
