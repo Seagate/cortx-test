@@ -33,11 +33,10 @@ from commons.utils.system_utils import create_file, remove_file, run_local_cmd, 
 from commons.utils.system_utils import backup_or_restore_files, split_file, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
+from config.s3 import MPART_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-
-MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]
 
 
 class TestMultipartUpload:

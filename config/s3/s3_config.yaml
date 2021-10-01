@@ -6,7 +6,7 @@ iam_port: "9443"
 head_urls: "/auth/health"
 s3_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
 iam_cert_path: "/etc/ssl/stx-s3-clients/s3/ca.crt"
-validate_certs: False
+validate_certs: True
 use_ssl: True
 debug: False
 retry: 1

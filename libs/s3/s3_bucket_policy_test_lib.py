@@ -25,7 +25,8 @@ import logging
 from commons import errorcodes as err
 from commons.utils.s3_utils import poll
 from commons.exceptions import CTException
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import BucketPolicy
 
 LOGGER = logging.getLogger(__name__)
@@ -117,7 +118,6 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Deletes any policy applied to the bucket")
             response = poll(super().delete_bucket_policy, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response["BucketName"])
-            sleep(S3_CFG["delay"]["del_bkt_policy"])
         except Exception as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,

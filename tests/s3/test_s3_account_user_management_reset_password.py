@@ -34,7 +34,7 @@ from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3.csm_rest_cli_interface_lib import CSMAccountIntOperations

@@ -73,9 +73,9 @@ def parse_args():
                         action="store_true", help="Stop test execution on first failure")
     parser.add_argument("-pf", "--product_family", type=str, default='LC',
                         help="Product family LR or LC.")
-    parser.add_argument("--validate_certs", type=str_to_bool, default=True,
+    parser.add_argument("-c", "--validate_certs", type=str_to_bool, default=True,
                         help="Validate HTTPS/SSL certificate to S3 endpoint.")
-    parser.add_argument("--use_ssl", type=str_to_bool, default=True,
+    parser.add_argument("-s", "--use_ssl", type=str_to_bool, default=True,
                         help="Use HTTPS/SSL connection for S3 endpoint.")
     return parser.parse_args()
 

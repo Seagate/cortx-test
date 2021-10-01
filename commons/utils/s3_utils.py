@@ -29,9 +29,9 @@ import logging
 import json
 from hashlib import md5
 from random import shuffle
+from typing import Any
 
 import xmltodict
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -193,7 +193,7 @@ def convert_xml_to_dict(xml_response) -> dict:
         return xml_response
 
 
-def poll(target, *args, **kwargs) -> dict:
+def poll(target, *args, **kwargs) -> Any:
     """Method to wait for a function/target to return a certain expected condition."""
     timeout = kwargs.pop("timeout", 60)
     step = kwargs.pop("step", 10)
@@ -202,7 +202,7 @@ def poll(target, *args, **kwargs) -> dict:
     while time.time() <= end_time:
         try:
             response = target(*args, **kwargs)
-            if isinstance(response, expected) and response:
+            if isinstance(response, expected) or response:
                 return response
         except Exception as response:
             LOGGER.error(response)

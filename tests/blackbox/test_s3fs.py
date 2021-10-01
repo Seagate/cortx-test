@@ -27,15 +27,12 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import system_utils
-from commons.configmanager import get_config_wrapper
 from commons.utils.system_utils import execute_cmd
 from commons.utils.assert_utils import assert_true, assert_in
-from config import S3_CFG
+from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
-
-S3_TEST_OBJ = S3TestLib()
-S3FS_CNF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestS3fs:
@@ -49,6 +46,7 @@ class TestS3fs:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
+        self.s3_test_obj = S3TestLib()
         resp = system_utils.is_rpm_installed(const.S3FS)
         assert_true(resp[0], resp[1])
         access, secret = ACCESS_KEY, SECRET_KEY
@@ -81,7 +79,7 @@ class TestS3fs:
         execute_cmd(command)
         self.log.info("unmounted the bucket directory and remove it")
         if self.bucket_list:
-            S3_TEST_OBJ.delete_multiple_buckets(self.bucket_list)
+            self.s3_test_obj.delete_multiple_buckets(self.bucket_list)
         self.log.info("ENDED: Teardown Operations")
 
     @staticmethod
@@ -120,7 +118,7 @@ class TestS3fs:
         """
         self.bucket_name = bucket_name = self.s3fs_cfg["bucket_name"].format(time.perf_counter_ns())
         self.log.info("Creating bucket %s", bucket_name)
-        resp = S3_TEST_OBJ.create_bucket(bucket_name)
+        resp = self.s3_test_obj.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         self.log.info("Bucket created %s", bucket_name)
         self.log.info("Create a directory and list mount directory")
@@ -206,7 +204,7 @@ class TestS3fs:
             file_name,
             str(resp[1]),
             resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             file_name,
             str(resp[1]),
@@ -243,7 +241,7 @@ class TestS3fs:
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
         assert_true(file_name not in str(resp[1]), resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             file_name,
             str(resp[1]),
@@ -279,7 +277,7 @@ class TestS3fs:
             file_name,
             str(resp[1]),
             resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             file_name,
             str(resp[1]),
@@ -293,7 +291,7 @@ class TestS3fs:
         self.log.info("STEP: 2 Removed file from mount directory")
         self.log.info(
             "STEP: 3 List bucket and check deleted file should not be visible in bucket")
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_true(file_name not in str(resp[1]), resp[1])
         self.log.info(
             "STEP: 3 Listed bucket and check deleted file should not be visible in bucket")
@@ -324,7 +322,7 @@ class TestS3fs:
             new_dir_name,
             str(resp[1]),
             resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             new_dir_name,
             str(resp[1]),
@@ -361,7 +359,7 @@ class TestS3fs:
             file_name,
             str(resp[1]),
             resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             file_name,
             str(resp[1]),
@@ -396,7 +394,7 @@ class TestS3fs:
             file_name,
             str(resp[1]),
             resp[1])
-        resp = S3_TEST_OBJ.object_list(bucket_name)
+        resp = self.s3_test_obj.object_list(bucket_name)
         assert_in(
             file_name,
             str(resp[1]),

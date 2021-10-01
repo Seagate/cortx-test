@@ -27,10 +27,9 @@ from multiprocessing import Process
 from time import perf_counter_ns
 
 from config import CMN_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
