@@ -29,7 +29,6 @@ import subprocess
 from time import perf_counter_ns
 from multiprocessing import Process
 from commons import pswdmanager
-from commons.helpers.node_helper import Node
 from commons.utils import support_bundle_utils as sb
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
