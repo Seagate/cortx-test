@@ -992,6 +992,8 @@ class TestAuditLogs:
             "refer EOS-24930,EOS-24931")
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
     @pytest.mark.skip(reason="Verification of sort audit logs is blocked refer EOS-24930,EOS-24931")
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
