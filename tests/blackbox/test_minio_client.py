@@ -20,22 +20,22 @@
 
 """Minio Client test module."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.configmanager import get_config_wrapper
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons.utils import system_utils
-from commons.utils import assert_utils
-from libs.s3 import s3_test_lib
-from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3 import s3_test_lib
 from libs.s3.s3_blackbox_test_lib import MinIOClient
 
 
