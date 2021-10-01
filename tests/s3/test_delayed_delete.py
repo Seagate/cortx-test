@@ -28,22 +28,17 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
-from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.system_utils import backup_or_restore_files, remove_dirs
 from commons.utils import system_utils
 from commons.utils import assert_utils
-from commons.configmanager import get_config_wrapper, config_utils
-from commons.utils.config_utils import read_yaml
+from commons.utils import config_utils
 from commons.params import TEST_DATA_FOLDER
 from config import S3_OBJ_TST
+from config.s3 import MPART_CFG, S3_BLKBOX_CFG
 from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-
-MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]
-BLACKBOX_CONF = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestDelayedDelete:
@@ -84,7 +79,7 @@ class TestDelayedDelete:
         cls.rest_obj = S3AccountOperations()
         cls.file_path_lst = []
         cls.bucket_list = []
-        resp = backup_or_restore_files(
+        resp = system_utils.backup_or_restore_files(
             cls.actions[0], cls.config_backup_path,
             cls.aws_config_path)
         assert_utils.assert_true(resp[0], resp[1])
@@ -106,6 +101,7 @@ class TestDelayedDelete:
                                   " or jclient.jar file does not exists")
         cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+        cls.update_jclient_jcloud_properties(cls.s3_iam, cls.s3_url)
         logging.info("S3_SERVER_OBJECT_DELAYED_DELETE"
                      " value in s3config.yaml should be "
                      "set to True.")
@@ -139,7 +135,7 @@ class TestDelayedDelete:
             "Restoring aws config file from %s to %s...",
             self.config_backup_path,
             self.aws_config_path)
-        resp = backup_or_restore_files(
+        resp = system_utils.backup_or_restore_files(
             self.actions[1], self.config_backup_path,
             self.aws_config_path)
         assert_utils.assert_true(resp[0], resp[1])
@@ -148,31 +144,52 @@ class TestDelayedDelete:
             self.config_backup_path,
             self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
-        if path_exists(self.config_backup_path):
-            remove_dirs(self.config_backup_path)
-        if path_exists(self.mp_obj_path):
-            remove_file(self.mp_obj_path)
-        if path_exists(self.test_file_path):
-            self.log.info("Deleting %s", self.test_file_path)
-            remove_file(self.test_file_path)
-        if path_exists(self.test_dir_path):
-            self.log.info("Deleting %s", self.test_dir_path)
-            remove_dirs(self.test_dir_path)
+        file_lst = [self.mp_obj_path, self.test_file]
+        dir_lst = [self.test_file_path, self.config_backup_path]
+        for file in file_lst:
+            if system_utils.path_exists(file):
+                system_utils.remove_file(file)
+                self.log.info("Deleted the files %s", file)
+        for dirs in dir_lst:
+            if system_utils.path_exists(dirs):
+                system_utils.remove_dirs(dirs)
+                self.log.info("Deleted the directory %s", dirs)
         self.log.info("Deleted a backup file and directory")
         self.log.info("ENDED: Teardown operations")
+
+    @staticmethod
+    def update_jclient_jcloud_properties(s3_iam, s3_url):
+        """
+        Update jclient, jcloud properties with correct s3, iam endpoint.
+
+        :return: True
+        """
+        resp = False
+        for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
+                          S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
+            logging.info("Updating: %s", prop_path)
+            prop_dict = config_utils.read_properties_file(prop_path)
+            if prop_dict:
+                if prop_dict['iam_endpoint'] != s3_iam:
+                    prop_dict['iam_endpoint'] = s3_iam
+                if prop_dict['s3_endpoint'] != s3_url:
+                    prop_dict['s3_endpoint'] = s3_url
+                resp = config_utils.write_properties_file(prop_path, prop_dict)
+
+        return resp
 
     def create_cmd(self, bucket, operation, jtool=None):
         """
         Function forms a command to perform specified operation.
-
+        It used for chunk upload of file
         using given bucket name and returns a single line command.
         :param str bucket: Name of the s3 bucket
         :param str operation: type of operation to be performed on s3
         :param str jtool: Name of the java jar tool
         :return: str command: cli command to be executed
         """
-        if jtool == BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"]:
-            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jcloud_cmd"]
+        if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
+            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
                 self.access_key, self.secret_key)
             bucket_url = "s3://{}".format(bucket)
@@ -180,7 +197,7 @@ class TestDelayedDelete:
                                           aws_keys_str, "-p")
             self.log.info("jcloud command: %s", cmd)
         else:
-            java_cmd = BLACKBOX_CONF["jcloud_cfg"]["jclient_cmd"]
+            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
                 self.access_key, self.secret_key)
             bucket_url = "s3://{}".format(bucket)
@@ -189,26 +206,6 @@ class TestDelayedDelete:
             self.log.info("jclient command: %s", cmd)
 
         return cmd
-
-    def update_jclient_jcloud_properties(self):
-        """
-        Update jclient, jcloud properties with correct s3, iam endpoint.
-
-        :return: True
-        """
-        resp = False
-        for prop_path in [BLACKBOX_CONF["jcloud_cfg"]["jclient_properties_path"],
-                          BLACKBOX_CONF["jcloud_cfg"]["jcloud_properties_path"]]:
-            self.log.info("Updating: %s", prop_path)
-            prop_dict = config_utils.read_properties_file(prop_path)
-            if prop_dict:
-                if prop_dict['iam_endpoint'] != self.s3_iam:
-                    prop_dict['iam_endpoint'] = self.s3_iam
-                if prop_dict['s3_endpoint'] != self.s3_url:
-                    prop_dict['s3_endpoint'] = self.s3_url
-                resp = config_utils.write_properties_file(prop_path, prop_dict)
-
-        return resp
 
     def create_bucket_put_list_object(
             self,
@@ -233,7 +230,7 @@ class TestDelayedDelete:
         resp = self.s3_test_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         self.log.info("Created a bucket %s", bucket_name)
-        create_file(file_path, mb_count)
+        system_utils.create_file(file_path, mb_count)
         self.log.info(
             "Uploading an object %s to bucket %s",
             obj_name, bucket_name)
@@ -275,7 +272,7 @@ class TestDelayedDelete:
             command = self.create_cmd(
                       bucket_name,
                       "mb",
-                      jtool=BLACKBOX_CONF["jcloud_cfg"]["jcloud_tool"])
+                      jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in(
@@ -292,7 +289,7 @@ class TestDelayedDelete:
             command = self.create_cmd(
                             bucket_name,
                             put_cmd_str,
-                            jtool=BLACKBOX_CONF["jcloud_cfg"]["jclient_tool"])
+                            jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jclient_tool"])
             resp = system_utils.execute_cmd(command)
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in(
@@ -326,22 +323,16 @@ class TestDelayedDelete:
         for multiple objects and returns the size list,
         last modified time list, etag list of the objects
         """
-        time_lst = []
-        size_lst = []
-        etag_lst = []
-        self.log.info("The obj list in mthd is %s", object_lst)
+        obj_dict = {}
         for obj in object_lst:
             resp = self.s3_test_obj.object_info(
                    bucket_name,
                    obj)
             assert resp[0], resp[1]
-            last_m_time_o = resp[1]["LastModified"]
-            etag = resp[1]["ETag"]
-            size_o = resp[1]["ContentLength"]
-            time_lst.append(last_m_time_o)
-            size_lst.append(size_o)
-            etag_lst.append(etag)
-        return time_lst, size_lst, etag_lst
+            obj_dict[obj] = [resp[1]["LastModified"],
+                             resp[1]["ETag"],
+                             resp[1]["ContentLength"]]
+        return obj_dict
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28995')
@@ -351,9 +342,9 @@ class TestDelayedDelete:
         To test the multiple object upload of random size
         with delayed delete option is set to TRUE.
         """
-        logging.info("Creating bucket")
+        logging.info("STEP 1: Creating bucket")
         self.s3_test_obj.create_bucket(self.bucket_name)
-        logging.info("Uploading the object")
+        logging.info("STEP 2: Uploading the object")
         resp = self.s3_test_obj.put_random_size_objects(
             self.bucket_name,
             self.object_name,
@@ -362,13 +353,10 @@ class TestDelayedDelete:
             object_count=S3_OBJ_TST["s3_object"]["object_count"],
             file_path=self.test_file_path)
         object_lst = resp[1]
-        logging.info("Object is uploaded %s", object_lst)
+        logging.info("STEP 2:Object is uploaded %s", object_lst)
         result = self.get_multiple_object_head(self.bucket_name,
                                                object_lst)
-        logging.info("Last Modified Time of object info %s", result[0])
-        logging.info("Size of object %s", result[1])
-        logging.info("ETag of object info %s", result[2])
-        logging.info("=== Re-upload same file ===")
+        logging.info("STEP 3:Re-upload same file")
         res = self.put_multiple_objects(
             self.bucket_name,
             object_lst,
@@ -378,12 +366,11 @@ class TestDelayedDelete:
             "Uploaded an object %s to bucket %s", res[1],
             self.bucket_name)
         result_r = self.get_multiple_object_head(self.bucket_name,
-                                                 res[1])
-        for last_mod_time, r_last_mod_time in zip(result[0], result_r[0]):
-            assert_utils.assert_true(
-                last_mod_time < r_last_mod_time,
-                f"LastModified for the old object {last_mod_time}. "
-                f"LastModified for the new object is {r_last_mod_time}")
+                                                 object_lst)
+        for objects in object_lst:
+            if result_r[objects][0] > result[objects][0]:
+                logging.info(f"The Last modified time"
+                             f" is changed of {objects}")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29032')
@@ -395,21 +382,21 @@ class TestDelayedDelete:
         """
         self.log.info("Initiate Multipart upload")
         mp_config = MPART_CFG["test_8660_8664_8665_8668"]
-        self.log.info("Creating a bucket with name : %s",
+        self.log.info("STEP 1:Creating a bucket with name : %s",
                       self.bucket_name)
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(res[1], self.bucket_name, res[1])
-        self.log.info(
-            "Created a bucket with name : %s", self.bucket_name)
+        self.log.info("STEP 1 :"
+                      "Created a bucket with name : %s", self.bucket_name)
         res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name, self.object_name,
             m_key=S3_OBJ_TST["test_8554"]["key"],
             m_value=S3_OBJ_TST["test_8554"]["value"])
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
-        self.log.info(
-            "Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("STEP 2:"
+                      "Multipart Upload initiated with mpu_id %s", mpu_id)
         self.log.info("Uploading parts into bucket")
         res = self.s3_mp_test_obj.upload_parts(
             mpu_id,
@@ -440,13 +427,13 @@ class TestDelayedDelete:
         assert_utils.assert_true(res[0], res[1])
         res = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, res[1], res[1])
-        self.log.info("Multipart upload completed")
+        self.log.info("STEP 2: Multipart upload completed")
         resp = self.s3_test_obj.object_info(
                self.bucket_name,
                self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         last_m_time_o = resp[1]["LastModified"]
-        self.log.info("===Re-upload the same file in"
+        self.log.info("STEP 3: Re-upload the same file in"
                       " single upload===")
         resp = self.s3_test_obj.put_object(
             self.bucket_name,
@@ -456,15 +443,17 @@ class TestDelayedDelete:
             m_value=S3_OBJ_TST["test_8554"]["value"]
             )
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("STEP 4: Get Object details after"
+                      " re-upload")
         resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         last_m_time_r = resp[1]["LastModified"]
-        assert_utils.assert_true(last_m_time_o < last_m_time_r,
-                                 f"The last modified time is changed"
-                                 f"Old time is {last_m_time_o},"
-                                 f"new time is {last_m_time_r}")
+        if last_m_time_o < last_m_time_r:
+            self.log.info(f"The last modified time is changed"
+                          f"Old time is {last_m_time_o},"
+                          f"new time is {last_m_time_r}")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28444')
@@ -475,12 +464,12 @@ class TestDelayedDelete:
         with delayed delete option is set to TRUE.
         and kill the s3backgrounddelete service.
         """
-        logging.info("Creating bucket")
+        logging.info("STEP 1: Creating bucket")
         logging.info(
             "Bucket and Object : %s %s",
             self.bucket_name,
             self.object_name)
-        logging.info("Uploading the object")
+        logging.info("STEP 2: Uploading the object")
         self.create_bucket_put_list_object(
             self.bucket_name,
             self.object_name,
@@ -488,7 +477,7 @@ class TestDelayedDelete:
             S3_OBJ_TST["s3_object"]["mb_count"],
             m_key=S3_OBJ_TST["test_8554"]["key"],
             m_value=S3_OBJ_TST["test_8554"]["value"])
-        logging.info("Object is uploaded %s", )
+        logging.info("STEP 2: Object is uploaded %s", )
         resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
@@ -497,11 +486,12 @@ class TestDelayedDelete:
         last_m_time_o = resp[1]["LastModified"]
         etag = resp[1]["ETag"]
         size_o = resp[1]["ContentLength"]
+        logging.info("STEP 3 Fetch object details")
         logging.info("Last Modified Time of object info %s", last_m_time_o)
         logging.info("ETag of object info %s", etag)
         logging.info("Size of object %s", size_o)
         time.sleep(60)
-        logging.info("Re-upload same file")
+        logging.info("STEP 4:Re-upload same file")
         logging.info("Uploading an object %s to bucket %s",
                      self.object_name, self.bucket_name)
         resp = self.s3_test_obj.put_object(
@@ -552,30 +542,35 @@ class TestDelayedDelete:
         delayed delete option is enabled using simple object
         upload chunk.
         """
-        self.log.info("STARTED: put object using jcloudclient %s",
+        self.log.info("STEP 1: Create bucket and "
+                      "put object using jcloudclient %s",
                       self.test_file)
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path, 1)
+        self.log.info("STEP 2: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
         obj_last_m_t = result[1]["LastModified"]
         obj_size = result[1]["ContentLength"]
-        self.log.info("Re-Upload the same file")
+        self.log.info("STEP 3: Re-Upload the same file")
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path,
                                        "PUT")
+        self.log.info("STEP 4: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
         obj_last_m_t_r = result[1]["LastModified"]
         obj_size_r = result[1]["ContentLength"]
-        assert_utils.assert_true(obj_last_m_t < obj_last_m_t_r,
-                                 f"The Object is overwrite"
-                                 f" as its Last modified time is changed"
-                                 f"new time {obj_last_m_t_r}"
-                                 f" and old time {obj_last_m_t}")
-        assert_utils.assert_true(obj_size_r == obj_size,
-                                 f"Obj size are same {obj_size_r}")
-        self.log.info("Deleting the Chunk uploaded Objects")
+        self.log.info("STEP 5: Compare Object details "
+                      "before and after re-upload")
+        if obj_last_m_t < obj_last_m_t_r:
+            self.log.info(f"The Object is overwrite and its"
+                          f" Last modified time is changed"
+                          f"new time {obj_last_m_t_r}"
+                          f" and old time {obj_last_m_t}")
+        if obj_size_r == obj_size:
+            self.log.info(f"Obj size are same {obj_size_r}")
+        self.log.info("STEP 6: Deleting the Chunk uploaded Objects")
         result = self.s3_test_obj.delete_object(self.bucket_name, self.test_file)
         assert_utils.assert_true(result[0], result[1])
         resp = self.s3_test_obj.object_list(self.bucket_name)
@@ -585,41 +580,50 @@ class TestDelayedDelete:
                           self.bucket_name)
 
     @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-17122')
+    @pytest.mark.tags('TEST-29159')
     @CTFailOn(error_handler)
-    def test_17122(self):
+    def test_29159(self):
         """
         This Function test the Object deletion
         when delayed delete is set to False
         """
-        self.log.info("Testing when DELAYED DELETE is set to False\n")
+        self.log.info("STEP 1: Testing when DELAYED DELETE is set to False\n")
         self.log.info(
-            "S3_SERVER_OBJECT_DELAYED_DELETE value in s3config.yaml should be "
-            "set to False.")
+            "S3_SERVER_OBJECT_DELAYED_DELETE value in s3config.yaml"
+            " set to False.")
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=False)
         assert_utils.assert_true(status, response)
-        self.log.info("STARTED: put object using jcloudclient %s",
+        self.log.info("STEP 2: put object using jcloudclient %s",
                       self.test_file)
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path, 1)
-
+        self.log.info("STEP 3: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
         obj_last_m_t = result[1]["LastModified"]
         obj_size = result[1]["ContentLength"]
-        self.log.info("Re-Upload the same file")
+        self.log.info("STEP 4: Re-Upload the same file")
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path,
                                        "PUT")
+        self.log.info("STEP 5: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
         obj_last_m_t_r = result[1]["LastModified"]
         obj_size_r = result[1]["ContentLength"]
-        assert_utils.assert_true(obj_last_m_t < obj_last_m_t_r,
-                                 f"The Object is overwrite"
-                                 f" as its Last modified time is changed"
-                                 f"new time {obj_last_m_t_r}"
-                                 f" and old time {obj_last_m_t}")
-        assert_utils.assert_true(obj_size_r == obj_size,
-                                 f"Obj size are same {obj_size_r}")
+        self.log.info("STEP 6: Compare Object details"
+                      " before and after re-upload")
+        if obj_last_m_t < obj_last_m_t_r:
+            self.log.info(f"The Object is overwrite"
+                          f" as its Last modified time is changed"
+                          f"new time {obj_last_m_t_r}"
+                          f" and old time {obj_last_m_t}")
+        if obj_size_r == obj_size:
+            self.log.info(f"Obj size are same {obj_size_r}")
+        self.log.info("S3_SERVER_OBJECT_DELAYED_DELETE"
+                      " value is reset back to True "
+                      "in s3config.yaml")
+        status, response = S3H_OBJ.update_s3config(
+            parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=True)
+        assert_utils.assert_true(status, response)
