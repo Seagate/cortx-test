@@ -170,11 +170,15 @@ deactivate
             		  env.Current_TP = records[0][0]
         		  }
         		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		  try {
         		      sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --target ${Target_Node}
 deactivate
 '''
+} catch (err) {
+    echo "Caught error in SB: ${err}"
+}
                       /* if ( "${CREATE_JIRA_ISSUE}" ) {
                         jiraIssue = createJiraIssue(env.Current_TP)
                         env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
@@ -182,7 +186,6 @@ deactivate
                       } */
                   }
              sh label: '', script: '''source venv/bin/activate
-export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --target ${Target_Node}
 deactivate
 '''
