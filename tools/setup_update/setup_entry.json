@@ -1,5 +1,5 @@
 {
-"setupname":"T2",
+"setupname":"dk",
 "setup_type":"VM",
 "setup_in_useby": "",
 "in_use_for_parallel": false,
@@ -9,50 +9,10 @@
 "nodes":[
     {
         "host": "srv-node-0",
-        "hostname": "node 0 hostname",
-        "ip": "node 0 ip",
-        "username": "node 0 username",
-        "password": "node 0 password",
-        "public_data_ip":"",
-        "private_data_ip":"",
-        "lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "gem_controller": {
-            "ip": "",
-            "user": "",
-            "pwd": "",
-            "port1": "",
-            "port2": ""
-            }
-    },
-    {
-        "host": "srv-node-1",
-        "hostname": "node 1 hostname",
-        "ip": "node 1 ip address",
-        "username": "node 1 username",
-        "password": "node 1 password",
+        "hostname": "ssc-vm-rhev4-1024.colo.seagate.com",
+        "ip": "10.230.250.202",
+        "username": "root",
+        "password": "sqa",
         "public_data_ip":"",
         "private_data_ip":"",
         "lpdu": {
@@ -112,10 +72,10 @@
 
 "csm":
 {
-  "mgmt_vip": "",
+  "mgmt_vip": "ssc-vm-rhev4-1024.colo.seagate.com",
   "csm_admin_user":{
-    "username": "",
-    "password": ""
+    "username": "cortxadmin",
+    "password": "Seagate@1"
   }
 }
 }
