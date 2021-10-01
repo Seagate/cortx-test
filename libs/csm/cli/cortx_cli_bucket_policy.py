@@ -29,7 +29,6 @@ from commons import commands
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli import CortxCli
-from libs.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         if "[Y/n]" in output:
             output = self.execute_cli_commands(cmd="Y", patterns=["Bucket Policy Updated Successfully"])[1]
             if "Bucket Policy Updated Successfully" in output:
-                time.sleep(S3_CFG["delay"]["put_bkt_policy"])
+                time.sleep(15)
                 return True, output
 
         return False, output

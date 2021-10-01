@@ -27,8 +27,9 @@ import logging
 from typing import Union
 import boto3
 import boto3.s3
-
 from botocore.config import Config
+
+from config.s3 import S3_CFG
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import create_file
@@ -49,6 +50,8 @@ class S3Lib:
         """
         method initializes members of S3Lib.
 
+        Different instances need to be create as per different parameter values like access_key,
+        secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
@@ -57,36 +60,54 @@ class S3Lib:
         :param aws_session_token: aws_session_token.
         :param debug: debug mode.
         """
+        init_s3_connection = kwargs.get("init_s3_connection", True)
         region = kwargs.get("region", None)
-        use_ssl = kwargs.get("use_ssl", True)
         aws_session_token = kwargs.get("aws_session_token", None)
-        debug = kwargs.get("debug", False)
+        debug = kwargs.get("debug", S3_CFG["debug"])
         config = Config(retries={'max_attempts': 6})
+        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        s3_cert_path = s3_cert_path if val_cert else False
+        self.cmd_endpoint = f" --endpoint-url {endpoint_url}" \
+                            f"{'' if val_cert else ' --no-verify-ssl'}"
+        if val_cert and not os.path.exists(S3_CFG["s3_cert_path"]):
+            raise IOError(f'Certificate path {S3_CFG["s3_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
         try:
-            self.s3_resource = boto3.resource(
-                "s3",
-                use_ssl=use_ssl,
-                verify=s3_cert_path,
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-                endpoint_url=endpoint_url,
-                region_name=region,
-                aws_session_token=aws_session_token,
-                config=config)
-            self.s3_client = boto3.client("s3", use_ssl=use_ssl,
-                                          verify=s3_cert_path,
-                                          aws_access_key_id=access_key,
-                                          aws_secret_access_key=secret_key,
-                                          endpoint_url=endpoint_url,
-                                          region_name=region,
-                                          aws_session_token=aws_session_token,
-                                          config=config)
+            if init_s3_connection:
+                self.s3_resource = boto3.resource(
+                    "s3",
+                    use_ssl=use_ssl,
+                    verify=s3_cert_path,
+                    aws_access_key_id=access_key,
+                    aws_secret_access_key=secret_key,
+                    endpoint_url=endpoint_url,
+                    region_name=region,
+                    aws_session_token=aws_session_token,
+                    config=config)
+                self.s3_client = boto3.client("s3", use_ssl=use_ssl,
+                                              verify=s3_cert_path,
+                                              aws_access_key_id=access_key,
+                                              aws_secret_access_key=secret_key,
+                                              endpoint_url=endpoint_url,
+                                              region_name=region,
+                                              aws_session_token=aws_session_token,
+                                              config=config)
+            else:
+                LOGGER.info("Skipped: create s3 client, resource object with boto3.")
         except Exception as Err:
             if "unreachable network" not in str(Err):
                 LOGGER.critical(Err)
+
+    def __del__(self):
+        """Destroy all core objects."""
+        try:
+            del self.s3_client
+            del self.s3_resource
+        except NameError as error:
+            LOGGER.warning(error)
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """
@@ -755,13 +776,13 @@ class Acl(S3Lib):
                     'bucket-owner-read'|'bucket-owner-full-control'
         :param access_control_policy: Contains the elements that set the ACL permissions
         for an object per grantee.
-        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
-         on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
-        :param grant_read_acp: Allows grantee to read the object ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object
-        in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
+        # :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
+        #  on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_read_acp: Allows grantee to read the object ACL.
+        # :param grant_write: Allows grantee to create, overwrite, and delete any object
+        # in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict.
         """
         grant_full_control = kwargs.get("grant_full_control", None)
@@ -834,9 +855,9 @@ class Acl(S3Lib):
         :param bucket_name: Name of the bucket.
         :param key: Name of the object.
         :param file_path: Path of the file.
-        :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
-         on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_full_control: Gives the grantee READ, READ_ACP, and WRITE_ACP permissions
+        #  on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
         :return: dict.
         """
         grant_full_control = kwargs.get("grant_full_control", None)
@@ -866,11 +887,11 @@ class Acl(S3Lib):
                     'authenticated-read'|'aws-exec-read'|
                     'bucket-owner-read'|'bucket-owner-full-control'
         :param file_path: Path of the file.
-        :param grant_full_control: Gives the grantee. READ, READ_ACP, and WRITE_ACP permissions
-         on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
-        :param grant_read_acp: Allows grantee to read the object ACL.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
+        # :param grant_full_control: Gives the grantee. READ, READ_ACP, and WRITE_ACP permissions
+        #  on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_read_acp: Allows grantee to read the object ACL.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict
         """
         grant_full_control = kwargs.get("grant_full_control", None)
@@ -946,13 +967,13 @@ class Acl(S3Lib):
         :param bucket_name: Name of the bucket.
         :param acl: The canned ACL to apply to the bucket.
                     e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'.
-        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
-         permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object
-         in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+        #  permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create, overwrite, and delete any object
+        #  in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: dict
         """
         grant_full_control = kwargs.get("grant_full_control", None)
@@ -1017,13 +1038,13 @@ class Acl(S3Lib):
                     e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
         :param access_control_policy: Contains the elements that set the ACL permissions
          for an object per grantee.
-        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
-         permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object
-         in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+        #  permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create, overwrite, and delete any object
+        #  in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: True or False
         """
         grant_full_control = kwargs.get("grant_full_control", None)
@@ -1086,13 +1107,13 @@ class Acl(S3Lib):
         Set the permissions on a bucket using access control lists (ACL).
 
         :param bucket_name: Name of the bucket
-        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
-         permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create, overwrite, and delete any object
-         in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+        #  permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create, overwrite, and delete any object
+        #  in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: True or False
         """
         grantee = {}
@@ -1167,8 +1188,8 @@ class BucketPolicy(S3Lib):
 class S3LibCmd(S3Lib):
     """Class containing methods to implement aws cmd functionality."""
 
-    @staticmethod
     def upload_object_cli(
+            self,
             bucket_name: str = None,
             object_name: str = None,
             file_path: str = None) -> tuple:
@@ -1182,13 +1203,14 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
-    @staticmethod
     def upload_folder_cli(
+            self,
             bucket_name: str = None,
             folder_path: str = None,
             profile_name: str = None) -> tuple:
@@ -1202,13 +1224,14 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
 
-    @staticmethod
     def download_bucket_cli(
+            self,
             bucket_name: str = None,
             folder_path: str = None,
             profile_name: str = None) -> tuple:
@@ -1224,6 +1247,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
+        cmd += self.cmd_endpoint
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 

@@ -29,7 +29,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3LibNoAuth
 from libs.s3.s3_test_lib import S3TestLib
 
