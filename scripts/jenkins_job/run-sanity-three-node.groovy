@@ -181,6 +181,11 @@ deactivate
                         echo "${jira_issue}"
                       } */
                   }
+             sh label: '', script: '''source venv/bin/activate
+export MGMT_VIP="${HOSTNAME}"
+pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --target ${Target_Node}
+deactivate
+'''
 		     }
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar', followSymlinks: false
