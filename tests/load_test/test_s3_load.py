@@ -26,7 +26,7 @@ import pytest
 
 from commons.utils import assert_utils
 from scripts.locust import locust_runner
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 

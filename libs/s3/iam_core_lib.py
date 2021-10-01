@@ -22,9 +22,12 @@
 
 """Python Library using boto3 module to perform account and user operations."""
 
+import os
 import logging
 from typing import Union
 import boto3
+
+from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,34 +45,52 @@ class IamLib:
         """
         Method initializes members of IamLib.
 
+        Different instances need to be create as per different parameter values like access_key,
+        secret_key etc.
         :param access_key: access key.
         :param secret_key: secret key.
         :param endpoint_url: endpoint url.
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
-        debug = kwargs.get("debug", False)
-        use_ssl = kwargs.get("use_ssl", True)
+        init_iam_connection = kwargs.get("init_iam_connection", True)
+        debug = kwargs.get("debug", S3_CFG["debug"])
+        use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        iam_cert_path = iam_cert_path if val_cert else False
+        if val_cert and not os.path.exists(S3_CFG['iam_cert_path']):
+            raise IOError(f'Certificate path {S3_CFG["iam_cert_path"]} does not exists.')
         if debug:
             # Uncomment to enable debug
             boto3.set_stream_logger(name="botocore")
 
         try:
-            self.iam = boto3.client("iam", use_ssl=use_ssl,
-                                    verify=iam_cert_path,
-                                    aws_access_key_id=access_key,
-                                    aws_secret_access_key=secret_key,
-                                    endpoint_url=endpoint_url)
-            self.iam_resource = boto3.resource(
-                "iam",
-                use_ssl=use_ssl,
-                verify=iam_cert_path,
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-                endpoint_url=endpoint_url)
+            if init_iam_connection:
+                self.iam = boto3.client("iam", use_ssl=use_ssl,
+                                        verify=iam_cert_path,
+                                        aws_access_key_id=access_key,
+                                        aws_secret_access_key=secret_key,
+                                        endpoint_url=endpoint_url)
+                self.iam_resource = boto3.resource(
+                    "iam",
+                    use_ssl=use_ssl,
+                    verify=iam_cert_path,
+                    aws_access_key_id=access_key,
+                    aws_secret_access_key=secret_key,
+                    endpoint_url=endpoint_url)
+            else:
+                LOGGER.info("Skipped: create iam client, resource object with boto3.")
         except Exception as err:
             if "unreachable network" not in str(err):
                 LOGGER.critical(err)
+
+    def __del__(self):
+        """Destroy all core objects."""
+        try:
+            del self.iam
+            del self.iam_resource
+        except NameError as error:
+            LOGGER.warning(error)
 
     def create_user(self, user_name: str = None) -> dict:
         """

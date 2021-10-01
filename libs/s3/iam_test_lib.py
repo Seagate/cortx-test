@@ -31,12 +31,13 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import format_iam_resp
 from commons.utils.s3_utils import poll
-from libs.s3 import S3_CFG, LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib
-from libs.s3.s3_acl_test_lib import S3AclTestLib
 
 LOGGER = logging.getLogger(__name__)
+
 ACC_ACCESS_KEY = list()
 ACC_SECRET_KEY = list()
 
@@ -60,15 +61,13 @@ class IamTestLib(IamLib):
         :param debug: debug mode.
         """
         debug = kwargs.get("debug", S3_CFG["debug"])
-        use_ssl = S3_CFG["use_ssl"]
-        iam_cert_path = iam_cert_path if S3_CFG["validate_certs"] else False
         super().__init__(
             access_key=access_key,
             secret_key=secret_key,
             endpoint_url=endpoint_url,
             iam_cert_path=iam_cert_path,
             debug=debug,
-            use_ssl=use_ssl)
+            **kwargs)
 
     def create_user(self, user_name: str = None) -> tuple:
         """
@@ -1078,8 +1077,6 @@ class IamTestLib(IamLib):
 
         :param account_name: Name of the account.
         :param email_id: Email IF for the account.
-        :param secret_key: Secret key.
-        :param access_key: Access key.
         :return: (Boolean, response)
         """
         try:

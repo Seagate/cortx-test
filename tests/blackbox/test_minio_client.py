@@ -34,10 +34,8 @@ from commons.utils import system_utils
 from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from config import S3_CFG
-
-S3T_OBJ = s3_test_lib.S3TestLib()
-MINIO_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
+from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 
 
 class TestMinioClient:
@@ -52,6 +50,7 @@ class TestMinioClient:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
+        self.s3t_obj = s3_test_lib.S3TestLib()
         resp = system_utils.configre_minio_cloud(
             minio_repo=S3_CFG["minio_repo"],
             endpoint_url=S3_CFG["s3_url"],
@@ -82,7 +81,7 @@ class TestMinioClient:
         self.bucket_name = "min-bkt-{}".format(time.perf_counter_ns())
         self.test_file = "minio_client{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.root_path, self.test_file)
-        self.minio_cnf = MINIO_CFG["minio_cfg"]
+        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
         self.buckets_list = list()
         self.log.info("ENDED: Setup operations")
 
@@ -98,7 +97,7 @@ class TestMinioClient:
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
         for bucket_name in self.buckets_list:
-            resp = S3T_OBJ.delete_bucket(bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("The bucket and objects deleted successfully")
         self.log.info("Deleting files created locally for object")
@@ -134,7 +133,7 @@ class TestMinioClient:
         self.log.info(
             "Step 2: Verifying that %s bucket is created",
             self.bucket_name)
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info(
@@ -159,11 +158,11 @@ class TestMinioClient:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created two buckets simultaneously")
         self.log.info("Step 2: Verifying buckets are created")
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(bucket_name_1, resp[1])
         assert_utils.assert_in(bucket_name_2, resp[1])
-        status, resp = S3T_OBJ.delete_multiple_buckets(
+        status, resp = self.s3t_obj.delete_multiple_buckets(
             bucket_list=[bucket_name_1, bucket_name_2])
         if not status:
             self.log.info("Buckets are not deleted because: %s", resp)
@@ -208,11 +207,11 @@ class TestMinioClient:
             "Step 1: Created %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
         self.log.info("Step 2: Verifying buckets are created")
-        bucket_list = S3T_OBJ.bucket_list()[1]
+        bucket_list = self.s3t_obj.bucket_list()[1]
         for each_bucket in self.buckets_list:
             assert_utils.assert_in(each_bucket, bucket_list)
         self.log.info("Cleanup: Deleting created buckets")
-        resp, output = S3T_OBJ.delete_multiple_buckets(
+        resp, output = self.s3t_obj.delete_multiple_buckets(
             bucket_list=self.buckets_list)
         if resp:
             self.buckets_list = list()
@@ -239,7 +238,7 @@ class TestMinioClient:
         self.log.info(
             "Step 3: Verifying that %s bucket is deleted",
             self.bucket_name)
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_not_in(
             self.bucket_name,

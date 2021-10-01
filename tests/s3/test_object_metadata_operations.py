@@ -31,9 +31,10 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
-from config import S3_OBJ_TST
 from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
-from libs.s3 import s3_test_lib, S3_CFG
+from config.s3 import S3_OBJ_TST
+from config.s3 import S3_CFG
+from libs.s3 import s3_test_lib
 
 
 class TestObjectMetadataOperations:

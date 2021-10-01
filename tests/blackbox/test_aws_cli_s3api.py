@@ -31,10 +31,8 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-
-S3T_OBJ = S3TestLib()
 
 
 class TestAwsCliS3Api:
@@ -48,9 +46,8 @@ class TestAwsCliS3Api:
             - Initializes common variables
         """
         self.log = logging.getLogger(__name__)
-        self.log.info("STARTED : Setup operations at test function level")
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED : Setup operations at test suit level")
+        self.s3t_obj = S3TestLib()
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_utils.assert_true(
             resp, "config path not exists: {}".format(
@@ -84,7 +81,7 @@ class TestAwsCliS3Api:
         self.log.info("STARTED : Teardown operations at test function level")
         self.log.info(self.buckets_list)
         for bucket_name in self.buckets_list:
-            resp = S3T_OBJ.delete_bucket_awscli(bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket_awscli(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         if system_utils.path_exists(self.file_path):
             system_utils.remove_file(self.file_path)
@@ -98,7 +95,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_create_single_bucket_2328(self):
         """create single bucket using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.buckets_list.append(self.bucket_name)
@@ -114,7 +111,7 @@ class TestAwsCliS3Api:
             bucket_name = "-".join([self.bucket_name, str(i)])
             self.buckets_list.append(bucket_name)
         try:
-            resp = S3T_OBJ.create_bucket_awscli(
+            resp = self.s3t_obj.create_bucket_awscli(
                 bucket_name=' '.join(self.buckets_list))
             if not resp[0]:
                 self.buckets_list = list()
@@ -130,7 +127,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_list_buckets_2330(self):
         """list buckets using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)
@@ -146,7 +143,7 @@ class TestAwsCliS3Api:
         """max no(1000) of buckets supported using aws cli."""
         for i in range(1000):
             bucket_name = "blackboxs3bkt-{}-{}".format(i, time.perf_counter_ns())
-            resp = S3T_OBJ.create_bucket_awscli(
+            resp = self.s3t_obj.create_bucket_awscli(
                 bucket_name=bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             self.buckets_list.append(bucket_name)
@@ -158,10 +155,10 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_delete_empty_bucket_2332(self):
         """delete empty bucket using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.delete_bucket_awscli(
+        resp = self.s3t_obj.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Successfully deleted empty bucket using awscli")
@@ -173,7 +170,7 @@ class TestAwsCliS3Api:
     def test_delete_non_empty_bucket_2333(self):
         """delete bucket which has objects using aws cli."""
         error_msg = "BucketNotEmpty"
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
@@ -186,7 +183,7 @@ class TestAwsCliS3Api:
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("File is not created because: %s ", output)
-        resp = S3T_OBJ.delete_bucket_awscli(
+        resp = self.s3t_obj.delete_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
@@ -199,7 +196,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_head_bucket_2334(self):
         """Verify HEAD bucket using aws client."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.run_local_cmd(
@@ -216,7 +213,7 @@ class TestAwsCliS3Api:
     def test_bucket_location_2335(self):
         """Verification of bucket location using aws."""
         location = '"LocationConstraint": "US"'
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.run_local_cmd(
@@ -234,10 +231,10 @@ class TestAwsCliS3Api:
     def test_create_duplicate_bucket_2336(self):
         """create bucket using existing bucket name using aws cli."""
         error_msg = "BucketAlreadyOwnedByYou"
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
@@ -250,7 +247,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_delete_bucket_forcefully_2337(self):
         """Delete bucket forcefully which has objects using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         status, output = system_utils.create_file(fpath=self.file_path, count=1)
@@ -263,7 +260,7 @@ class TestAwsCliS3Api:
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("file is not created because: %s", output)
-        resp = S3T_OBJ.delete_bucket_awscli(
+        resp = self.s3t_obj.delete_bucket_awscli(
             bucket_name=self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Successfully deleted bucket having objects in it")
@@ -274,7 +271,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_list_objects_2338(self):
         """list objects in bucket using AWS."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
@@ -300,7 +297,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_delete_single_object_2339(self):
         """delete single object using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
@@ -335,7 +332,7 @@ class TestAwsCliS3Api:
         object_count = 3
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         assert_utils.assert_true(file_status, output)
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
@@ -376,7 +373,7 @@ class TestAwsCliS3Api:
         object_count = 3
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         assert_utils.assert_true(file_status, output)
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
@@ -412,7 +409,7 @@ class TestAwsCliS3Api:
         split_parts = system_utils.split_file(
             self.file_path, file_size, no_of_parts)
         mpu_parts_list = [part["Output"] for part in split_parts]
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Creating Multipart upload")
@@ -482,7 +479,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_copy_object_to_bucket_2343(self):
         """copy object from bucket using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
@@ -508,7 +505,7 @@ class TestAwsCliS3Api:
     @CTFailOn(error_handler)
     def test_download_object_from_bucket_2344(self):
         """download an object using aws cli."""
-        resp = S3T_OBJ.create_bucket_awscli(
+        resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)

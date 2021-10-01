@@ -27,18 +27,15 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.configmanager import get_config_wrapper
 from commons.utils import system_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_equal, assert_list_item
 from commons.utils.assert_utils import assert_list_equal
-from config import S3_CFG
+from config.s3 import S3_CFG
+from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-
-IAM_OBJ = iam_test_lib.IamTestLib()
-IAM_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
 
 
 class TestAwsIam:
@@ -54,6 +51,7 @@ class TestAwsIam:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.rest_obj = S3AccountOperationsRestAPI()
+        cls.iam_obj = iam_test_lib.IamTestLib()
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_true(
             resp, "config path not exists: {}".format(
@@ -82,7 +80,7 @@ class TestAwsIam:
         """
         self.log.info("STARTED: Teardown Operations")
         for acc in self.s3_accounts_list:
-            IAM_OBJ.create_user_login_profile(user_name=acc, password=self.s3acc_password)
+            self.iam_obj.create_user_login_profile(user_name=acc, password=self.s3acc_password)
             self.cortx_obj.login_cortx_cli(
                username=acc, password=self.s3acc_password)
             if self.del_iam_user:
@@ -159,7 +157,7 @@ class TestAwsIam:
         self.iam_user_dict[self.user_name] = new_iam_obj
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -310,7 +308,7 @@ class TestAwsIam:
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -346,7 +344,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = self.create_user_and_access_key(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             new_iam_obj)
         user_access_key = resp[0]
         self.iam_user_dict[self.user_name] = new_iam_obj
@@ -382,7 +380,7 @@ class TestAwsIam:
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.log.info(
@@ -600,7 +598,7 @@ class TestAwsIam:
         self.iam_user_dict[self.user_name] = new_iam_obj
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
-            IAM_CFG["password"],
+            S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
         self.iam_users_list.append(self.user_name)

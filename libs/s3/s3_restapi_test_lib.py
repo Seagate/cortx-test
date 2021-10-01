@@ -31,9 +31,9 @@ from commons.utils.s3_utils import get_headers
 from commons.utils.s3_utils import convert_xml_to_dict
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
-from config import CSM_REST_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from config import CMN_CFG
+from config import CSM_REST_CFG
 
 LOGGER = logging.getLogger(__name__)
 
