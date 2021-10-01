@@ -62,7 +62,7 @@ class TestCopyObjects:
         """
         LOGGER.info("STARTED: test setup.")
         self.s3_obj = s3_test_lib.S3TestLib()
-        self.s3_cmd_obj = S3CmdTestLib()
+        self.s3_cmd_obj = S3CmdTestLib(init_s3_connection=False)
         self.nodes = CMN_CFG["nodes"]
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
