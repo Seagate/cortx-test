@@ -35,10 +35,12 @@ from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.s3_utils import poll
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3Lib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_bucket_policy_test_lib import S3BucketPolicyTestLib
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -65,8 +67,6 @@ class S3TestLib(S3Lib):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        kwargs["use_ssl"] = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else S3_CFG["validate_certs"]
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,
@@ -146,7 +146,8 @@ class S3TestLib(S3Lib):
         """
         kwargs["m_key"] = kwargs.get("m_key", None)
         kwargs["m_value"] = kwargs.get("m_value", None)
-        kwargs["content_md5"] = kwargs.get("content_md5", None)  # base64-encoded 128-bit MD5 digest of the message.
+        # base64-encoded 128-bit MD5 digest of the message.
+        kwargs["content_md5"] = kwargs.get("content_md5", None)
         LOGGER.info("Putting object")
         try:
             response = super().put_object(bucket_name, object_name, file_path, **kwargs)
@@ -881,6 +882,9 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
+        s3_cert_path = s3_cert_path if s3_cert_path else S3_CFG["s3_cert_path"]
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        s3_cert_path = s3_cert_path if val_cert else False
         super().__init__(access_key,
                          secret_key,
                          endpoint_url,

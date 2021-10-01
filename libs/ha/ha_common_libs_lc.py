@@ -32,7 +32,8 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG, S3_CFG
+from config import CMN_CFG, HA_CFG
+from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
