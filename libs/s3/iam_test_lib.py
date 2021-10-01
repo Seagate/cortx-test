@@ -84,12 +84,8 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
 
-        except (self.iam.exceptions.EntityAlreadyExistsException, ClientError) as error:
-            raise error
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         IamTestLib.create_user.__name__,
-                         error)
+        except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
