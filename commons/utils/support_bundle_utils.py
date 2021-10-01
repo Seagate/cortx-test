@@ -166,11 +166,9 @@ def collect_crash_files(local_dir):
         for crash_dir in dir_list:
             file_list = node_list[node].list_dir(crash_dir)
             if file_list:
-                file_name = "list.srvnode{}.tar".format(node)
-                remote_path = os.path.join(crash_dir, file_name)
-                local_path = os.path.join(local_dir, file_name)
-                tar_sb_cmd = "tar -cvf {} {}".format(file_name, crash_dir)
-                node_list[node].execute_cmd(tar_sb_cmd)
-                node_list[node].copy_file_to_local(remote_path, local_path)
+                for file in file_list:
+                    remote_path = os.path.join(crash_dir, file)
+                    local_path = os.path.join(local_dir, file)
+                    node_list[node].copy_file_to_local(remote_path, local_path)
 
     LOGGER.info("Crash files if generated are copied.")
