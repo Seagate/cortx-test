@@ -6,7 +6,7 @@ pipeline {
 		}
     }
     environment {
-		Target_Node = "${"${HOSTNAME}".split("\\.")[0]}"
+		Target_Node = 'three-node-' + "${"${HOST1}".split("\\.")[0]}"
     }
     stages {
 		stage('CODE_CHECKOUT') {
@@ -23,7 +23,6 @@ source venv/bin/activate
 python --version
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
-export HOSTNAME="${HOSTNAME}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
 deactivate
@@ -35,7 +34,7 @@ deactivate
 			    sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
-python3.7 scripts/jenkins_job/client_conf.py
+python3.7 scripts/jenkins_job/multinode_server_client_setup.py "${HOST1}" "${HOST2}" "${HOST3}" --node_count 3 --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
 deactivate
 '''
 			}
@@ -43,7 +42,7 @@ deactivate
 		stage('CSM_Boarding') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-export MGMT_VIP="${HOSTNAME}"
+export MGMT_VIP="${MGMT_VIP}"
 pytest scripts/jenkins_job/aws_configure.py::test_preboarding --local True --target ${Target_Node}
 deactivate
 '''
