@@ -53,6 +53,7 @@ class IamLib:
         :param iam_cert_path: iam certificate path.
         :param debug: debug mode.
         """
+        init_iam_connection = kwargs.get("init_iam_connection", True)
         debug = kwargs.get("debug", S3_CFG["debug"])
         use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
         val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
@@ -64,18 +65,21 @@ class IamLib:
             boto3.set_stream_logger(name="botocore")
 
         try:
-            self.iam = boto3.client("iam", use_ssl=use_ssl,
-                                    verify=iam_cert_path,
-                                    aws_access_key_id=access_key,
-                                    aws_secret_access_key=secret_key,
-                                    endpoint_url=endpoint_url)
-            self.iam_resource = boto3.resource(
-                "iam",
-                use_ssl=use_ssl,
-                verify=iam_cert_path,
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key,
-                endpoint_url=endpoint_url)
+            if init_iam_connection:
+                self.iam = boto3.client("iam", use_ssl=use_ssl,
+                                        verify=iam_cert_path,
+                                        aws_access_key_id=access_key,
+                                        aws_secret_access_key=secret_key,
+                                        endpoint_url=endpoint_url)
+                self.iam_resource = boto3.resource(
+                    "iam",
+                    use_ssl=use_ssl,
+                    verify=iam_cert_path,
+                    aws_access_key_id=access_key,
+                    aws_secret_access_key=secret_key,
+                    endpoint_url=endpoint_url)
+            else:
+                LOGGER.info("Skipped: create iam client, resource object with boto3.")
         except Exception as err:
             if "unreachable network" not in str(err):
                 LOGGER.critical(err)
