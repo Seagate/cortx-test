@@ -59,7 +59,8 @@ class TestDelayedDelete:
         logging.info("STARTED: Setup operations")
         cls.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.aws_config_path = S3_CFG["aws_config_path"]
+        cls.aws_config_path = []
+        cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.random_time = int(time.time())
         cls.bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
@@ -76,12 +77,20 @@ class TestDelayedDelete:
         logging.info("Test file path: %s", cls.test_file_path)
         cls.config_backup_path = os.path.join(
             cls.test_dir_path, "config_backup")
+        logging.info("config_backup path: %s", cls.config_backup_path)
         cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.access_key = ACCESS_KEY
         cls.secret_key = SECRET_KEY
         cls.rest_obj = S3AccountOperations()
         cls.file_path_lst = []
         cls.bucket_list = []
+        resp = backup_or_restore_files(
+            cls.actions[0], cls.config_backup_path,
+            cls.aws_config_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        logging.info("Taken a backup of aws config"
+                     " file located at %s to %s", cls.aws_config_path,
+                     cls.config_backup_path)
         res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
@@ -97,31 +106,12 @@ class TestDelayedDelete:
                                   " or jclient.jar file does not exists")
         cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
-
-    def setup_method(self):
-        """
-        Setup Method to perform all pre-requisites
-        """
-        logging.info("STARTED: Setup Operations")
-        resp = self.update_jclient_jcloud_properties()
-        assert_utils.assert_true(resp, resp)
-        logging.info("Taking a backup of aws config file "
-                     "located at %s to %s...",
-                     self.aws_config_path, self.config_backup_path)
-        resp = backup_or_restore_files(
-            self.actions[0], self.config_backup_path,
-            self.aws_config_path)
-        assert resp[0], resp[1]
-        logging.info("Taken a backup of aws config"
-                     " file located at %s to %s", self.aws_config_path,
-                     self.config_backup_path)
-        logging.info(
-            "S3_SERVER_OBJECT_DELAYED_DELETE value in s3config.yaml should be "
-            "set to True.")
+        logging.info("S3_SERVER_OBJECT_DELAYED_DELETE"
+                     " value in s3config.yaml should be "
+                     "set to True.")
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=True)
         assert_utils.assert_true(status, response)
-        yield
         logging.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -163,7 +153,11 @@ class TestDelayedDelete:
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         if path_exists(self.test_file_path):
+            self.log.info("Deleting %s", self.test_file_path)
             remove_file(self.test_file_path)
+        if path_exists(self.test_dir_path):
+            self.log.info("Deleting %s", self.test_dir_path)
+            remove_dirs(self.test_dir_path)
         self.log.info("Deleted a backup file and directory")
         self.log.info("ENDED: Teardown operations")
 
@@ -601,7 +595,7 @@ class TestDelayedDelete:
         self.log.info("Testing when DELAYED DELETE is set to False\n")
         self.log.info(
             "S3_SERVER_OBJECT_DELAYED_DELETE value in s3config.yaml should be "
-            "set to True.")
+            "set to False.")
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=False)
         assert_utils.assert_true(status, response)
