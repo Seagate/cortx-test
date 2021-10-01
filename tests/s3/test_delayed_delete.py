@@ -369,8 +369,8 @@ class TestDelayedDelete:
                                                  object_lst)
         for objects in object_lst:
             if result_r[objects][0] > result[objects][0]:
-                logging.info(f"The Last modified time"
-                             f" is changed of {objects}")
+                logging.info("The Last modified time"
+                             " is changed of %s", {objects})
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29032')
@@ -451,9 +451,9 @@ class TestDelayedDelete:
         assert_utils.assert_true(resp[0], resp[1])
         last_m_time_r = resp[1]["LastModified"]
         if last_m_time_o < last_m_time_r:
-            self.log.info(f"The last modified time is changed"
-                          f"Old time is {last_m_time_o},"
-                          f"new time is {last_m_time_r}")
+            self.log.info("The last modified time is changed"
+                          "Old time is %s new time is %s",
+                          {last_m_time_o}, {last_m_time_r})
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28444')
@@ -564,12 +564,12 @@ class TestDelayedDelete:
         self.log.info("STEP 5: Compare Object details "
                       "before and after re-upload")
         if obj_last_m_t < obj_last_m_t_r:
-            self.log.info(f"The Object is overwrite and its"
-                          f" Last modified time is changed"
-                          f"new time {obj_last_m_t_r}"
-                          f" and old time {obj_last_m_t}")
+            self.log.info("The Object is overwrite and its"
+                          " Last modified time is changed"
+                          "new time %s and old time %s",
+                          {obj_last_m_t_r}, {obj_last_m_t})
         if obj_size_r == obj_size:
-            self.log.info(f"Obj size are same {obj_size_r}")
+            self.log.info("Obj size are same %s", {obj_size_r})
         self.log.info("STEP 6: Deleting the Chunk uploaded Objects")
         result = self.s3_test_obj.delete_object(self.bucket_name, self.test_file)
         assert_utils.assert_true(result[0], result[1])
@@ -615,12 +615,12 @@ class TestDelayedDelete:
         self.log.info("STEP 6: Compare Object details"
                       " before and after re-upload")
         if obj_last_m_t < obj_last_m_t_r:
-            self.log.info(f"The Object is overwrite"
-                          f" as its Last modified time is changed"
-                          f"new time {obj_last_m_t_r}"
-                          f" and old time {obj_last_m_t}")
+            self.log.info("The Object is overwrite"
+                          " as its Last modified time is changed"
+                          "new time %s and old time %s", {obj_last_m_t_r},
+                          {obj_last_m_t})
         if obj_size_r == obj_size:
-            self.log.info(f"Obj size are same {obj_size_r}")
+            self.log.info("Obj size are same %s", {obj_size_r})
         self.log.info("S3_SERVER_OBJECT_DELAYED_DELETE"
                       " value is reset back to True "
                       "in s3config.yaml")
