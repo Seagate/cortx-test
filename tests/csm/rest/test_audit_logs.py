@@ -1014,22 +1014,10 @@ class TestAuditLogs:
         passwd = CMN_CFG["nodes"][0]["password"]
         status, result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(
             "rsyslog"), hostname=host, username=uname, password=passwd, read_lines=True)
-        if not status:
-            return status, result
-        result_ = ''.join(result)
-        element = result_.split()
-        self.log.debug(element)
-        if 'inactive' in element:
-            return True, result_
+        assert status, "Command failed with error\n{}".format(result)
         status, result = run_remote_cmd(commands.SYSTEM_CTL_STOP_CMD.format(
             "elasticsearch"), hostname=host, username=uname, password=passwd, read_lines=True)
-        if not status:
-            return status, result
-        result_ = ''.join(result)
-        element = result_.split()
-        self.log.debug(element)
-        if 'inactive' in element:
-            return True, result_
+        assert status, "Command failed with error\n{}".format(result)
         self.log.info("Step 2: Create IAM user, manage user and monitor user")
         self.log.info("Creating IAM user")
         status, response = self.rest_iam_user.create_and_verify_iam_user_response_code()
@@ -1092,22 +1080,10 @@ class TestAuditLogs:
             "Step 3: Bring back rsyslog and elastic search services using systemctl start command.")
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "rsyslog"), hostname=host, username=uname, password=passwd, read_lines=True)
-        if not status:
-            return status, result
-        result_ = ''.join(result)
-        element = result_.split()
-        self.log.debug(element)
-        if 'inactive' in element:
-            return True, result_
+        assert status, "Command failed with error\n{}".format(result)
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "elasticsearch"), hostname=host, username=uname, password=passwd, read_lines=True)
-        if not status:
-            return status, result
-        result_ = ''.join(result)
-        element = result_.split()
-        self.log.debug(element)
-        if 'inactive' in element:
-            return True, result_
+        assert status, "Command failed with error\n{}".format(result)
         self.log.info("Step 4: Check hctl status")
         self.log.info("Check that all the services are up in hctl.")
         test_cfg = PROV_CFG["system"]
