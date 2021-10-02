@@ -33,7 +33,7 @@ import logging
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons.constants import const
+from commons import constants as const
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
