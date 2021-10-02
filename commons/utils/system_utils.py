@@ -37,6 +37,7 @@ from hashlib import md5
 from paramiko import SSHClient, AutoAddPolicy
 from commons import commands
 from commons import params
+from commons.constants import AWS_CLI_ERROR
 
 if sys.platform == 'win32':
     try:
@@ -52,6 +53,7 @@ if sys.platform in ['linux', 'linux2']:
 LOGGER = logging.getLogger(__name__)
 
 dns_rr_counter = 0
+
 
 def run_remote_cmd(
         cmd: str,
@@ -147,7 +149,7 @@ def run_remote_cmd_wo_decision(
     return output, error, exit_status
 
 
-def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tuple:
+def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) -> tuple:
     """
     Execute any given command on local machine(Windows, Linux).
     :param cmd: command to be executed.
@@ -165,8 +167,8 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tup
     if flg:
         return True, str((output, error))
     if chk_stderr:
-        if error:
-            return False, str((error, output))
+        if error and check_aws_cli_error(str(error)):
+            return False, str(error)
         return True, str(output)
     if proc.returncode != 0:
         return False, str(error)
@@ -177,6 +179,19 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr = False) -> tup
         return False, str(error)
 
     return True, str(output)
+
+
+def check_aws_cli_error(str_error: str):
+    """Validate error string from aws cli command."""
+    for error in AWS_CLI_ERROR:
+        if error in str_error:
+            return True
+    # InsecureRequestWarning: Unverified HTTPS request is being made to host 'public data ip'.
+    # Adding certificate verification is strongly advised.
+    if "InsecureRequestWarning" in str_error:
+        return False
+
+    return True
 
 
 def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:
