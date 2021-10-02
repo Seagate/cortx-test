@@ -705,8 +705,7 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    @staticmethod
-    def create_bucket_awscli(bucket_name: str):
+    def create_bucket_awscli(self, bucket_name: str):
         """
         Method to create a bucket using awscli.
 
@@ -715,17 +714,17 @@ class S3TestLib(S3Lib):
         """
         LOGGER.info("Creating a bucket with name: %s", bucket_name)
         success_msg = "make_bucket: {}".format(bucket_name)
-        response = run_local_cmd(
-            cmd=commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name))[1]
+        cmd = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name) + self.cmd_endpoint
+        response = run_local_cmd(cmd=cmd)[1]
         LOGGER.info("Response returned: %s", response)
-        buckets_list = run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)[1]
+        cmd = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
+        buckets_list = run_local_cmd(cmd=cmd)[1]
         if success_msg in response and bucket_name in buckets_list:
             return True, response
 
         return False, response
 
-    @staticmethod
-    def delete_bucket_awscli(bucket_name: str, force: bool = False):
+    def delete_bucket_awscli(self, bucket_name: str, force: bool = False):
         """
         Method to delete a bucket using awscli.
 
@@ -735,12 +734,13 @@ class S3TestLib(S3Lib):
         """
         LOGGER.info("Deleting bucket: %s", bucket_name)
         success_msg = "remove_bucket: {}".format(bucket_name)
-        delete_bkt_cmd = commands.CMD_AWSCLI_DELETE_BUCKET
+        delete_bkt_cmd = commands.CMD_AWSCLI_DELETE_BUCKET + self.cmd_endpoint
         if force:
             delete_bkt_cmd = " ".join([delete_bkt_cmd, "--force"])
         response = run_local_cmd(cmd=delete_bkt_cmd.format(bucket_name))[1]
         LOGGER.info("Response returned: %s", response)
-        buckets_list = run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)[1]
+        cmd = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
+        buckets_list = run_local_cmd(cmd=cmd)[1]
         if success_msg in response and bucket_name not in buckets_list:
             return True, response
 
