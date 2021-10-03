@@ -28,13 +28,13 @@ import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config.s3 import S3_OBJ_TST
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import system_utils
+from commons.utils import assert_utils
+from config.s3 import S3_OBJ_TST
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_cmd_test_lib
 from libs.s3 import s3_multipart_test_lib
-from commons.utils import system_utils
-from commons.utils import assert_utils
 
 
 class TestObjectWorkflowOperations:

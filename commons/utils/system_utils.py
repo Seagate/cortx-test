@@ -183,15 +183,17 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) 
 
 def check_aws_cli_error(str_error: str):
     """Validate error string from aws cli command."""
-    for error in AWS_CLI_ERROR:
-        if error in str_error:
-            return True
+    err_check = True
     # InsecureRequestWarning: Unverified HTTPS request is being made to host 'public data ip'.
     # Adding certificate verification is strongly advised.
     if "InsecureRequestWarning" in str_error:
-        return False
+        err_check = False
+    for error in AWS_CLI_ERROR:
+        if error in str_error:
+            err_check = True
+            break
 
-    return True
+    return err_check
 
 
 def execute_cmd(cmd: str, remote: bool = False, *remoteargs, **remoteKwargs) -> tuple:

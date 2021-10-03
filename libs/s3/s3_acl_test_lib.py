@@ -24,6 +24,7 @@
 
 import copy
 import logging
+import boto3
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
@@ -495,8 +496,8 @@ class S3AclTestLib(Acl):
 
         return True, response
 
+    @staticmethod
     def get_bucket_acl_using_iam_credentials(
-            self,
             access_key: str = None,
             secret_key: str = None,
             bucket_name: str = None) -> tuple:
@@ -509,12 +510,17 @@ class S3AclTestLib(Acl):
         :return: Bucket ACL or error
         :rtype: (Boolean, tuple/str)
         """
-        LOGGER.info("Retrieving %s acl attrs using %s, %s.",
-                    bucket_name, access_key, secret_key)
-        super().__init__(
-            access_key=access_key, secret_key=secret_key, endpoint_url=S3_CFG['s3_url'])
+        LOGGER.info("Retrieving %s acl attrs using %s, %s.", bucket_name, access_key, secret_key)
+        s3_cert_path = S3_CFG['s3_cert_path'] if S3_CFG["validate_certs"] else False
+        s3_iam_resource = boto3.resource(
+            "s3",
+            verify=s3_cert_path,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            endpoint_url=S3_CFG['s3_url'],
+            region_name=S3_CFG['region'])
         try:
-            bucket_acl = poll(self.s3_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
+            bucket_acl = poll(s3_iam_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
             response = bucket_acl.owner, bucket_acl.grants
             LOGGER.debug(response)
         except BaseException as error:
@@ -524,6 +530,6 @@ class S3AclTestLib(Acl):
                 error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
         finally:
-            super().__del__()
+            del s3_iam_resource
 
         return True, response
