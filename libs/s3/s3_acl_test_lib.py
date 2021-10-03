@@ -24,7 +24,6 @@
 
 import copy
 import logging
-import boto3
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
@@ -261,13 +260,13 @@ class S3AclTestLib(Acl):
                     'bucket-owner-read'|'bucket-owner-full-control'
         :param access_control_policy: Contains the elements
         that set the ACL permissions for an object per grantee.
-        :param grant_full_control: Gives the grantee READ,
-        READ_ACP, and WRITE_ACP permissions on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
-        :param grant_read_acp: Allows grantee to read the object ACL.
-        :param grant_write: Allows grantee to create,
-        overwrite, and delete any object in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
+        # :param grant_full_control: Gives the grantee READ,
+        # READ_ACP, and WRITE_ACP permissions on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_read_acp: Allows grantee to read the object ACL.
+        # :param grant_write: Allows grantee to create,
+        # overwrite, and delete any object in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict
         """
         try:
@@ -305,9 +304,9 @@ class S3AclTestLib(Acl):
         :param bucket_name: Name of the bucket
         :param key: Name of the object
         :param file_path: Path of the file
-        :param grant_full_control: Gives the grantee
-        READ, READ_ACP, and WRITE_ACP permissions on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_full_control: Gives the grantee
+        # READ, READ_ACP, and WRITE_ACP permissions on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
         :return: dict
         """
         try:
@@ -343,11 +342,11 @@ class S3AclTestLib(Acl):
                     'authenticated-read'|'aws-exec-read'|
                     'bucket-owner-read'|'bucket-owner-full-control'
         :param file_path: Path of the file
-        :param grant_full_control: Gives the grantee
-        READ, READ_ACP, and WRITE_ACP permissions on the object.
-        :param grant_read: Allows grantee to read the object data and its metadata.
-        :param grant_read_acp: Allows grantee to read the object ACL.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
+        # :param grant_full_control: Gives the grantee
+        # READ, READ_ACP, and WRITE_ACP permissions on the object.
+        # :param grant_read: Allows grantee to read the object data and its metadata.
+        # :param grant_read_acp: Allows grantee to read the object ACL.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable object.
         :return: dict
         """
         try:
@@ -382,13 +381,13 @@ class S3AclTestLib(Acl):
         :param bucket_name: Name of the bucket
         :param acl: The canned ACL to apply to the bucket.
         e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
-        :param grant_full_control: Allows grantee the read,
-        write, read ACP, and write ACP permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create,
-        overwrite, and delete any object in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read,
+        # write, read ACP, and write ACP permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create,
+        # overwrite, and delete any object in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: dict
         """
         try:
@@ -425,13 +424,13 @@ class S3AclTestLib(Acl):
         e.g.'private'|'public-read'|'public-read-write'|'authenticated-read'
         :param access_control_policy: Contains the elements that
         set the ACL permissions for an object per grantee.
-        :param grant_full_control: Allows grantee the read, write,
-        read ACP, and write ACP permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create,
-        overwrite, and delete any object in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read, write,
+        # read ACP, and write ACP permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create,
+        # overwrite, and delete any object in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: True or False
         """
         try:
@@ -467,13 +466,13 @@ class S3AclTestLib(Acl):
         Set the permissions on a bucket using access control lists (ACL).
 
         :param bucket_name: Name of the bucket.
-        :param grant_full_control: Allows grantee the read, write,
-        read ACP, and write ACP permissions on the bucket.
-        :param grant_read: Allows grantee to list the objects in the bucket.
-        :param grant_read_acp: Allows grantee to read the bucket ACL.
-        :param grant_write: Allows grantee to create,
-        overwrite, and delete any object in the bucket.
-        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        # :param grant_full_control: Allows grantee the read, write,
+        # read ACP, and write ACP permissions on the bucket.
+        # :param grant_read: Allows grantee to list the objects in the bucket.
+        # :param grant_read_acp: Allows grantee to read the bucket ACL.
+        # :param grant_write: Allows grantee to create,
+        # overwrite, and delete any object in the bucket.
+        # :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
         :return: bool, response
         """
         try:
@@ -512,7 +511,8 @@ class S3AclTestLib(Acl):
         """
         LOGGER.info("Retrieving %s acl attrs using %s, %s.",
                     bucket_name, access_key, secret_key)
-        super().__init__(access_key=access_key, secret_key=secret_key)
+        super().__init__(
+            access_key=access_key, secret_key=secret_key, endpoint_url=S3_CFG['s3_url'])
         try:
             bucket_acl = poll(self.s3_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
             response = bucket_acl.owner, bucket_acl.grants
