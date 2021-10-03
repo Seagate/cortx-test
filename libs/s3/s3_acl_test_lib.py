@@ -496,8 +496,8 @@ class S3AclTestLib(Acl):
 
         return True, response
 
-    @staticmethod
     def get_bucket_acl_using_iam_credentials(
+            self,
             access_key: str = None,
             secret_key: str = None,
             bucket_name: str = None) -> tuple:
@@ -512,15 +512,9 @@ class S3AclTestLib(Acl):
         """
         LOGGER.info("Retrieving %s acl attrs using %s, %s.",
                     bucket_name, access_key, secret_key)
-        s3_iam_resource = boto3.resource(
-            "s3",
-            verify=S3_CFG['s3_cert_path'],
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            endpoint_url=S3_CFG['s3_url'],
-            region_name=S3_CFG['region'])
+        super().__init__(access_key=access_key, secret_key=secret_key)
         try:
-            bucket_acl = poll(s3_iam_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
+            bucket_acl = poll(self.s3_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
             response = bucket_acl.owner, bucket_acl.grants
             LOGGER.debug(response)
         except BaseException as error:
@@ -529,5 +523,7 @@ class S3AclTestLib(Acl):
                 S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
                 error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+        finally:
+            super().__del__()
 
         return True, response
