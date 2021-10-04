@@ -170,5 +170,17 @@ def test_collect_support_bundle_single_cmd():
     os.mkdir(bundle_dir)
     sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
 
+def test_collect_crash_files():
+    """
+    Collect crash files from existing locations.
+    """
+    crash_dir = os.path.join(os.getcwd(), "crash_files")
+    if os.path.exists(crash_dir):
+        LOGGER.info("Removing existing directory %s", crash_dir)
+        shutil.rmtree(crash_dir)
+    os.mkdir(crash_dir)
+    sb.collect_crash_files(crash_dir)
+
+
 if __name__ == '__main':
     create_s3_account()
