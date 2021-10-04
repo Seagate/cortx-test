@@ -514,7 +514,6 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-19844")
     @pytest.mark.parametrize("object_size", ["5GB", "2GB"])
     def test_19844(self, object_size):
