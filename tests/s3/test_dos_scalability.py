@@ -115,7 +115,7 @@ class TestDosScalability:
     @pytest.mark.tags('TEST-8724')
     @pytest.mark.parametrize("num_clients", [400])
     @pytest.mark.parametrize("num_sample", [1000])
-    @pytest.mark.parametrize("obj_size", [1048576])
+    @pytest.mark.parametrize("obj_size", ['1Mb'])
     # @CTFailOn(error_handler)
     def test_400_constant_s3_operations_5336(self, num_clients, num_sample,
                                              obj_size):
@@ -169,7 +169,7 @@ class TestDosScalability:
     @pytest.mark.tags('TEST-9657')
     @pytest.mark.parametrize("num_clients", [300])
     @pytest.mark.parametrize("num_sample", [1000])
-    @pytest.mark.parametrize("obj_size", [1048576])
+    @pytest.mark.parametrize("obj_size", ['1Mb'])
     # @CTFailOn(error_handler)
     def test_300_constant_s3_operations_5337(self, num_clients, num_sample,
                                              obj_size):
@@ -222,7 +222,7 @@ class TestDosScalability:
     @pytest.mark.tags('TEST-9658')
     @pytest.mark.parametrize("num_clients", [1000])
     @pytest.mark.parametrize("num_sample", [1000])
-    @pytest.mark.parametrize("obj_size", [1048576])
+    @pytest.mark.parametrize("obj_size", ['1Mb'])
     # @CTFailOn(error_handler)
     def test_1000_constant_s3_operations_5338(self, num_clients, num_sample,
                                               obj_size):
@@ -275,7 +275,7 @@ class TestDosScalability:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9659')
     @pytest.mark.parametrize("nclients", [[1000, 1200, 1500]])
-    @pytest.mark.parametrize("obj_size", [1048576])
+    @pytest.mark.parametrize("obj_size", ['1Mb'])
     # @CTFailOn(error_handler)
     def test_growing_s3_operations_5340(self, obj_size, nclients):
         """Test growing S3 operations using s3bench from 1000 to 1200 then to 1500."""
@@ -332,7 +332,7 @@ class TestDosScalability:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-9660')
     @pytest.mark.parametrize("nclients", [[1000, 1500, 1000, 1500]])
-    @pytest.mark.parametrize("obj_size", [1048576])
+    @pytest.mark.parametrize("obj_size", ['1Mb'])
     # @CTFailOn(error_handler)
     def test_growing_s3_operations_5341(self, obj_size, nclients):
         """
