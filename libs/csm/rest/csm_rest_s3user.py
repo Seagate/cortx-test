@@ -548,6 +548,7 @@ class RestS3user(RestTestLib):
     @RestTestLib.authenticate_and_login
     def create_custom_s3_user(self, user_data:dict):
         """Function to create s3 user
+        :param user_data: Payload for Create S3 user.
         """
         
         self.log.debug("Create s3 accounts ...")
@@ -561,8 +562,9 @@ class RestS3user(RestTestLib):
         return resp
 
     def create_custom_s3_payload(self, user_type:str):
-        """s
-        :param type: value from "valid"
+        """
+        Create the payload for the create S3
+        :param type: value from "valid","duplicate_user",..
         """
         user_name = "test%s" % int(time.time())
         email_id = "test%s@seagate.com" % int(time.time())
@@ -591,12 +593,12 @@ class RestS3user(RestTestLib):
 
         if user_type == "duplicate_email":
             self.create_verify_s3_custom("valid")
-            access = self.recently_created_s3_account_user["account_email"]
+            email_id = self.recently_created_s3_account_user["account_email"]
             user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
 
         if user_type == "duplicate_secret":
             self.create_verify_s3_custom("valid")
-            access = self.recently_created_s3_account_user["secret_key"]
+            secret = self.recently_created_s3_account_user["secret_key"]
             user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
 
         if user_type == "missing_access":
@@ -612,6 +614,9 @@ class RestS3user(RestTestLib):
 
     def create_verify_s3_custom(self, user_type:str,
                                 expected_response:int=HTTPStatus.CREATED.value):
+        """
+        Create and verify custom S3 user.
+        """
         user_data = self.create_custom_s3_payload(user_type)
         resp = self.create_custom_s3_user(user_data)
         if expected_response is not None:

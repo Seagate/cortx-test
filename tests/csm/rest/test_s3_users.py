@@ -31,9 +31,12 @@ from commons import configmanager
 from commons.utils import config_utils
 from commons.utils import assert_utils
 from commons.utils import s3_utils
+from commons.utils import system_utils
+from commons.params import TEST_DATA_FOLDER
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from config import CSM_REST_CFG
+
 class TestS3user():
     """S3 user test class"""
 
@@ -52,6 +55,8 @@ class TestS3user():
         cls.s3user = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
+        if not system_utils.path_exists(TEST_DATA_FOLDER):
+            system_utils.make_dirs(TEST_DATA_FOLDER)
 
     @pytest.mark.lc
     @pytest.mark.parallel
@@ -490,22 +495,46 @@ class TestS3user():
         access_keys.append("a"*const.S3_ACCESS_UL)
         access_keys.append(config_utils.gen_rand_string(chars = string.digits, N=const.S3_ACCESS_LL))
         for access_key in access_keys:
+            self.log.info("Creating custom S3 account with access key %s.", access_key)
             user_data = self.s3user.create_custom_s3_payload("valid")
             user_data.update({"access_key" : access_key})
             resp = self.s3user.create_custom_s3_user(user_data)
-            #assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
-            #assert resp.json()["access_key"] == access_key, "Access key mismatch"
+            
+            self.log.info("Verify Status code of the Create user operation.")
+            assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
+            
+            self.log.info("Verify created S3 account returns correct access key.")
+            assert resp.json()["access_key"] == access_key, "Access key mismatch"
+            
             ak = resp.json()["access_key"]
             sk = resp.json()["secret_key"]
             s3_user = resp.json()["account_name"]
-            iam_user = "{}_{}".format("iam", s3_user)
-            bucket = "{}_{}".format("bucket", s3_user)
-            object = "{}_{}".format("object", s3_user)
+            iam_user = "{}{}".format("iam", s3_user)
+            bucket = "{}{}".format("bucket", s3_user)
+            obj = "{}{}.txt".format("object", s3_user)
+
+            self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
+                            iam_user, ak, sk)
             assert s3_utils.create_iam_user(iam_user, ak, sk), "Failed to create IAM user."
+            
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", bucket,
+                            ak, sk)
             assert s3_utils.create_bucket(bucket, ak, sk), "Failed to create bucket."
-            assert s3_utils.read_write_bucket(object, bucket, ak, sk), "Failed to PUT object in the bucket."
-            assert s3_utils.delete_iam_user(iam_user, ak,sk), "Failed to delete IAM user."
-            assert s3_utils.delete_bucket(bucket, ak, sk), "Failed to delete bucket."
+            
+            self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and secret "
+                          "key: %s", obj, bucket, ak, sk)
+            assert s3_utils.create_put_objects(obj, bucket, ak, sk), "Put object Failed"
+
+            self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
+                          "secret key: %s", obj, bucket, ak, sk)
+            assert s3_utils.delete_objects_bucket(bucket, ak, sk), "Failed to delete bucket."
+
+            self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                            iam_user, ak, sk)
+            assert s3_utils.delete_iam_user(iam_user, ak, sk), "Failed to delete IAM user."
+
+            self.log.info("Verify Delete S3 user: %s with access key: %s and secret key: %s",
+                            s3_user, ak, sk)
             resp = self.s3user.delete_s3_account_user(s3_user)
             assert resp.status_code == HTTPStatus.OK.value
         self.log.info("##### Test completed -  %s #####", test_case_name)
