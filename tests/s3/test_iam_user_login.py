@@ -886,6 +886,7 @@ class TestUserLoginProfileTests:
         resp = self.s3acc_obj.create_s3_account(self.account_name, email_id, self.s3acc_passwd)
         assert_true(resp[0], resp[1])
         self.log.info("Created account with name %s", self.account_name)
+        self.account_list.append(self.account_name)
         login = self.cli_obj.login_cortx_cli(
             username=self.account_name, password=self.s3acc_passwd)
         assert_true(login[0], login[1])
@@ -903,8 +904,6 @@ class TestUserLoginProfileTests:
                 error.message,
                 error.message)
         finally:
-            resp = self.cli_obj.delete_user_cortxcli(self.user_name)
-            assert_true(resp[0], resp[1])
             resp = self.cli_obj.logout_cortx_cli()
             assert_true(resp[0], resp[1])
         self.log.info("ENDED: Verify password change for a non-existing IAM user")
