@@ -31,6 +31,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
+from commons.utils.assert_utils import assert_in
 from commons.utils.system_utils import create_file, remove_file
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
@@ -38,7 +39,6 @@ from libs.s3 import S3H_OBJ
 from libs.s3.iam_test_lib import IamTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
-from commons.utils.assert_utils import assert_in
 
 
 # pylint: disable-msg=too-many-public-methods
@@ -915,8 +915,8 @@ class TestAccountUserManagement:
                 self.user_name))
         current_iam_user_obj = IamTestLib(secret_key=secret_key, access_key=access_key)
         current_iam_user_obj.change_user_password(
-            old_pwd = S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
-            new_pwd = S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"])
+            old_pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
+            new_pwd=S3_USER_ACC_MGMT_CONFIG["s3_params"]["new_password"])
         self.log.info(resp)
         assert resp[0], resp[1]
         self.log.info("Changed password for %s user", str(self.user_name))
