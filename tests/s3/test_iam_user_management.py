@@ -685,12 +685,11 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Edit authserver.properties file for user creation value set to 0")
-        self.nobj.copy_file_to_local(
+        resp = self.nobj.copy_file_to_local(
                 remote_path=self.remote_path, local_path=self.local_path)
-        if not os.path.exists(self.local_path):
-            msg = f"copy_file_to_local failed: remote path: " \
+        msg = f"copy_file_to_local failed: remote path: " \
                       f"{self.remote_path}, local path: {self.local_path}"
-            self.log.info(msg)
+        assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
@@ -714,12 +713,11 @@ class TestIAMUserManagement:
         assert_utils.assert_exact_string(resp[1], "Error")
         self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 4: Edit authserver.properties file for user creation value set to 6")
-        self.nobj.copy_file_to_local(
+        resp = self.nobj.copy_file_to_local(
                 remote_path=self.remote_path, local_path=self.local_path)
-        if not os.path.exists(self.local_path):
-            msg = f"copy_file_to_local failed: remote path: " \
+        msg = f"copy_file_to_local failed: remote path: " \
                       f"{self.remote_path}, local path: {self.local_path}"
-            self.log.info(msg)
+        assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
@@ -738,11 +736,11 @@ class TestIAMUserManagement:
             self.log.info("Service did not restart successfully {result}")
         self.log.info("Step 6: Creating 6 iam user with name %s", self.user_name)
         for i in range(6):
-            self.user_name_1 = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
-            resp = self.iam_obj.create_iam_user(user_name=self.user_name_1,
+            self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
+            resp = self.iam_obj.create_iam_user(user_name=self.user_name,
                                                 password=self.iam_password,
                                                 confirm_password=self.iam_password)
-            assert_utils.assert_exact_string(resp[1], self.user_name_1)
+            assert_utils.assert_exact_string(resp[1], self.user_name)
         self.log.info("6 iam users creation successful")
         self.log.info("Step 7: Try creating one more iam user")
         resp = self.iam_obj.create_iam_user(user_name=self.user_name,
@@ -758,12 +756,11 @@ class TestIAMUserManagement:
         """s3accounts creation with different maxIAMAccountLimit values"""
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Edit authserver.properties file for account creation value set to 0")
-        self.nobj.copy_file_to_local(
-            remote_path=self.remote_path, local_path=self.local_path)
-        if not os.path.exists(self.local_path):
-            msg = f"copy_file_to_local failed: remote path: " \
-                  f"{self.remote_path}, local path: {self.local_path}"
-            self.log.info(msg)
+        resp = self.nobj.copy_file_to_local(
+                remote_path=self.remote_path, local_path=self.local_path)
+        msg = f"copy_file_to_local failed: remote path: " \
+                      f"{self.remote_path}, local path: {self.local_path}"
+        assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
@@ -789,12 +786,11 @@ class TestIAMUserManagement:
             password=self.acc_password)
         assert_utils.assert_exact_string(resp[1], "Error")
         self.log.info("Step 4: Edit authserver.properties file for account creation value set to 6")
-        self.nobj.copy_file_to_local(
+        resp = self.nobj.copy_file_to_local(
                 remote_path=self.remote_path, local_path=self.local_path)
-        if not os.path.exists(self.local_path):
-            msg = f"copy_file_to_local failed: remote path: " \
+        msg = f"copy_file_to_local failed: remote path: " \
                       f"{self.remote_path}, local path: {self.local_path}"
-            self.log.info(msg)
+        assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
@@ -813,9 +809,9 @@ class TestIAMUserManagement:
             self.log.info("Service did not restart successfully {result}")
         self.log.info("Step 6: Creating 6 s3 accounts with name %s")
         for i in range(6):
-            self.s3acc_name_1 = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
+            self.s3acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
             resp = self.s3acc_obj.create_s3account_cortx_cli(
-                account_name=self.s3acc_name_1,
+                account_name=self.s3acc_name,
                 account_email=self.s3acc_email,
                 password=self.acc_password)
             assert_utils.assert_exact_string(resp[1], "Error")
