@@ -1207,3 +1207,14 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
+
+def validate_checksum(file_path_1: str, file_path_2: str):
+    """
+    validate MD5 checksum for 2 files
+    """
+    check_1 = calculate_checksum(file_path=file_path_1)
+    check_2 = calculate_checksum(file_path=file_path_2)
+    if check_1 == check_2:
+        return True
+    return False
