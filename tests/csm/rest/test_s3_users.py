@@ -21,16 +21,19 @@
 """Tests operations on S3 Users using REST API"""
 
 import json
+import string
 import logging
 import pytest
+from http import HTTPStatus
 from commons.constants import Rest as const
 from commons import cortxlogging
 from commons import configmanager
+from commons.utils import config_utils
+from commons.utils import assert_utils
+from commons.utils import s3_utils
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils import assert_utils     # pylint: disable=ungrouped-imports
 from config import CSM_REST_CFG
-
 class TestS3user():
     """S3 user test class"""
 
@@ -470,3 +473,39 @@ class TestS3user():
             "Verified that is returned when s3 user enters some other s3 user's account name")
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28932")
+    def test_28932(self):
+        """
+        Test create S3 account with different combination of the valid AWS access key and run IO
+        using it.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        access_keys = []
+        access_keys.append("_divya_kachhwaha")
+        access_keys.append("a"*const.S3_ACCESS_UL)
+        access_keys.append(config_utils.gen_rand_string(chars = string.digits, N=const.S3_ACCESS_LL))
+        for access_key in access_keys:
+            user_data = self.s3user.create_custom_s3_payload("valid")
+            user_data.update({"access_key" : access_key})
+            resp = self.s3user.create_custom_s3_user(user_data)
+            #assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
+            #assert resp.json()["access_key"] == access_key, "Access key mismatch"
+            ak = resp.json()["access_key"]
+            sk = resp.json()["secret_key"]
+            s3_user = resp.json()["account_name"]
+            iam_user = "{}_{}".format("iam", s3_user)
+            bucket = "{}_{}".format("bucket", s3_user)
+            object = "{}_{}".format("object", s3_user)
+            assert s3_utils.create_iam_user(iam_user, ak, sk), "Failed to create IAM user."
+            assert s3_utils.create_bucket(bucket, ak, sk), "Failed to create bucket."
+            assert s3_utils.read_write_bucket(object, bucket, ak, sk), "Failed to PUT object in the bucket."
+            assert s3_utils.delete_iam_user(iam_user, ak,sk), "Failed to delete IAM user."
+            assert s3_utils.delete_bucket(bucket, ak, sk), "Failed to delete bucket."
+            resp = self.s3user.delete_s3_account_user(s3_user)
+            assert resp.status_code == HTTPStatus.OK.value
+        self.log.info("##### Test completed -  %s #####", test_case_name)

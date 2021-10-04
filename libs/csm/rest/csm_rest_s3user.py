@@ -21,6 +21,7 @@
 """Test library for s3 account operations."""
 import json
 import time
+from http import HTTPStatus
 
 import commons.errorcodes as err
 from commons.constants import Rest as const
@@ -543,3 +544,76 @@ class RestS3user(RestTestLib):
         return self.restapi.rest_call(
             "post", endpoint=endpoint, data=user_data,
             headers=self.headers)
+
+    @RestTestLib.authenticate_and_login
+    def create_custom_s3_user(self, user_data:dict):
+        """Function to create s3 user
+        """
+        
+        self.log.debug("Create s3 accounts ...")
+        endpoint = self.config["s3accounts_endpoint"]
+        self.log.debug("Endpoint for s3 accounts is %s", endpoint)
+        user_data = json.dumps(user_data)
+        resp = self.restapi.rest_call("post", endpoint=endpoint, data=user_data, 
+                                        headers=self.headers)
+        if resp.status_code == HTTPStatus.OK.value:
+            self.recently_created_s3_account_user = resp
+        return resp
+
+    def create_custom_s3_payload(self, user_type:str):
+        """s
+        :param type: value from "valid"
+        """
+        user_name = "test%s" % int(time.time())
+        email_id = "test%s@seagate.com" % int(time.time())
+        password = self.config["test_s3account_password"]
+        access = user_name.ljust(const.S3_ACCESS_LL,"d")
+        secret = config_utils.gen_rand_string(N=const.S3_SECRET_LL)
+
+        if user_type == "valid":
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate":
+            # creating new user to make it as duplicate
+            self.create_verify_s3_custom("valid")
+            user_data = self.recently_created_s3_account_user
+            del(user_data["canonical_id"])
+
+        if user_type == "duplicate_user":
+            self.create_verify_s3_custom("valid")
+            user_name = self.recently_created_s3_account_user["account_name"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_access":
+            self.create_verify_s3_custom("valid")
+            access = self.recently_created_s3_account_user["access_key"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_email":
+            self.create_verify_s3_custom("valid")
+            access = self.recently_created_s3_account_user["account_email"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_secret":
+            self.create_verify_s3_custom("valid")
+            access = self.recently_created_s3_account_user["secret_key"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access, secret]))
+
+        if user_type == "missing_access":
+            template = const.CUSTOM_S3_USER
+            template.remove("access_key")
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, secret]))
+
+        if user_type == "missing_secret":
+            template = const.CUSTOM_S3_USER
+            template.remove("secret_key")
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access]))
+        return user_data
+
+    def create_verify_s3_custom(self, user_type:str,
+                                expected_response:int=HTTPStatus.CREATED.value):
+        user_data = self.create_custom_s3_payload(user_type)
+        resp = self.create_custom_s3_user(user_data)
+        if expected_response is not None:
+            result = resp.status_code == expected_response
+        return result

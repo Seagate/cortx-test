@@ -23,6 +23,8 @@
 Python library which have config related operations using package
 like config parser, yaml etc.
 """
+import string
+import random
 import json
 import logging
 import os
@@ -487,3 +489,11 @@ def write_csv(fpath:str, fieldnames:list, rows:list):
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+def gen_rand_string(chars:list=string.ascii_uppercase, N:int=10):
+    """
+    Generate the random string on N characters
+    :chars : list of character to generate the random string from
+    :N : lenth of the string
+    """
+    return ''.join(random.choice(chars) for _ in range(N))

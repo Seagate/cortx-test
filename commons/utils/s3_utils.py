@@ -26,8 +26,10 @@ import datetime
 import hashlib
 import logging
 import json
+import boto3
 from typing import Any
-
+from botocore.serialize import BaseRestSerializer
+from config.s3 import S3_CFG
 import xmltodict
 
 LOGGER = logging.getLogger(__name__)
@@ -206,3 +208,105 @@ def poll(target, *args, **kwargs) -> Any:
         time.sleep(step)
 
     return target(*args, **kwargs)
+
+def create_iam_user(user_name, access_key:str, secret_key:str, **kwargs):
+    """
+    Create IAM user using given secret and access key.
+    """
+    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+    val_cert = kwargs.get("verify", S3_CFG["validate_certs"])
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    region=S3_CFG["region"]
+    iam = boto3.client("iam", use_ssl=use_ssl,
+                              verify=val_cert,
+                              endpoint_url=endpoint,
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name=region,
+                              **kwargs)
+    iam.create_user(UserName=user_name)
+
+def delete_iam_user(user_name, access_key:str, secret_key:str, **kwargs):
+    """
+    Create IAM user using given secret and access key.
+    """
+    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+    val_cert = kwargs.get("verify", S3_CFG["validate_certs"])
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    region=S3_CFG["region"]
+    iam = boto3.client("iam", verify=False,
+                              endpoint_url=endpoint,
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name=region,
+                              **kwargs)
+    iam.create_user(UserName=user_name)
+
+def create_bucket(bucket_name, access_key:str, secret_key:str, **kwargs):
+    """
+    Create bucket from give access key and secret key.
+    """
+    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+    val_cert = kwargs.get("verify", S3_CFG["validate_certs"])
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    region=S3_CFG["region"]
+    s3 = boto3.resource('s3', verify=False,
+                              endpoint_url=endpoint,
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name=region,
+                              **kwargs)
+    s3.create_bucket(Bucket=bucket_name)
+    result = False
+    for bucket in s3.buckets.all():
+        if bucket.name == bucket_name:
+            result = True
+            break
+    return result
+
+def delete_bucket(bucket_name, access_key:str, secret_key:str, **kwargs):
+    """
+    Create bucket from give access key and secret key.
+    """
+    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+    val_cert = kwargs.get("verify", S3_CFG["validate_certs"])
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    region=S3_CFG["region"]
+    s3 = boto3.resource('s3', use_ssl=use_ssl,
+                              verify=val_cert,
+                              endpoint_url=endpoint,
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name=region,
+                              **kwargs)
+    s3.create_bucket(Bucket=bucket_name)
+    result = False
+    for bucket in s3.buckets.all():
+        if bucket.name == bucket_name:
+            result = True
+            break
+    return result
+
+def read_write_bucket(object_name:str, bucket_name:str, access_key:str, secret_key:str, **kwargs):
+    """
+    PUT object in the given bucket with access key and secret key.
+    """
+    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
+    val_cert = kwargs.get("verify", S3_CFG["validate_certs"])
+    endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
+    region=S3_CFG["region"]
+    data = open(object_name, 'rb')
+    s3 = boto3.resource('s3', verify=False,
+                              endpoint_url=endpoint,
+                              aws_access_key_id=access_key,
+                              aws_secret_access_key=secret_key,
+                              region_name=region,
+                              **kwargs)
+    s3.Bucket(bucket_name).put_object(Key=object_name, Body=data)
+    data.close()
+    result = False
+    for my_bucket_object in s3.Bucket(bucket_name).objects.all(): 
+        if my_bucket_object == object_name:
+            result = True
+            break
+    return result
