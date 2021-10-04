@@ -35,7 +35,9 @@ from config import CSM_CFG
 from config import S3_CFG
 from commons.helpers.node_helper import Node
 from scripts.s3_bench import s3bench
-from libs.s3 import S3H_OBJ, s3_test_lib, CM_CFG
+from libs.s3 import S3H_OBJ 
+from libs.s3 import s3_test_lib
+from libs.s3 import CM_CFG
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
