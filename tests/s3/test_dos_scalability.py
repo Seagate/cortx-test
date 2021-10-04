@@ -24,10 +24,10 @@ import os
 import time
 import logging
 import pytest
-
 from commons import commands
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.utils import system_utils
 from commons.utils.system_utils import remove_file, run_remote_cmd
 from commons.utils.assert_utils import assert_true, assert_not_in
 from commons.helpers.health_helper import Health
@@ -115,7 +115,7 @@ class TestDosScalability:
     @pytest.mark.tags('TEST-8725')
     @pytest.mark.parametrize("num_clients", [100])
     @pytest.mark.parametrize("num_sample", [1000000])
-    @pytest.mark.parametrize("obj_size", "1Kb")
+    @pytest.mark.parametrize("obj_size", ['1Kb'])
     # @CTFailOn(error_handler)
     def test_scaling_obj_20billion_size_1bytes_5308(self, num_clients,
                                                     num_sample, obj_size):
@@ -144,9 +144,12 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                verbose=True)
+                log_file_prefix="TEST-8725")
             self.log.debug(res)
             self.log_file.append(res[1])
+            resp = system_utils.validate_s3bench_parallel_execution(
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-8725")
+            assert_true(resp[0], resp[1])
         res = self.hobj.is_motr_online()
         assert_true(res, res)
         self.log.info(
@@ -171,7 +174,7 @@ class TestDosScalability:
             "Step 1: Check done in setup: S3 services up and running,"
             " Install and Configure S3bench tool and validate")
         self.log.info(
-            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with %s constant s3 operations.", num_clients)
         access_key, secret_key = S3H_OBJ.get_local_keys()
         self.log.info("Creating bucket %s", self.bucket_name)
         res = self.s3_obj.create_bucket(self.bucket_name)
@@ -188,10 +191,12 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                verbose=True)
+                log_file_prefix="TEST-8724")
             self.log.debug(res)
             self.log_file.append(res[1])
-            assert_true(res[0], res)
+            resp = system_utils.validate_s3bench_parallel_execution(
+                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-8724")
+            assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
             400)
@@ -222,7 +227,7 @@ class TestDosScalability:
             "Step 1: Check done in setup: S3 services up and running,"
             " Install and Configure S3bench tool and validate")
         self.log.info(
-            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with %s constant s3 operations.", num_clients)
         access_key, secret_key = S3H_OBJ.get_local_keys()
         self.log.info("Creating bucket %s", self.bucket_name)
         res = self.s3_obj.create_bucket(self.bucket_name)
@@ -239,10 +244,12 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                verbose=True)
+                log_file_prefix="TEST-9657")
             self.log.debug(res)
             self.log_file.append(res[1])
-            assert_true(res[0], res)
+            resp = system_utils.validate_s3bench_parallel_execution(
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9657")
+            assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
             300)
@@ -274,7 +281,7 @@ class TestDosScalability:
             "Step 1: Check done in setup: S3 services up and running,"
             " Install and Configure S3bench tool and validate")
         self.log.info(
-            "Step 2: Perform with {test_cfg['num_clients']} constant s3 operations.")
+            "Step 2: Perform with %s constant s3 operations.", num_clients)
         access_key, secret_key = S3H_OBJ.get_local_keys()
         self.log.info("Creating bucket %s", self.bucket_name)
         res = self.s3_obj.create_bucket(self.bucket_name)
@@ -291,10 +298,12 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                verbose=True)
+                log_file_prefix="TEST-9658")
             self.log.debug(res)
             self.log_file.append(res[1])
-            assert_true(res[0], res)
+            resp = system_utils.validate_s3bench_parallel_execution(
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9658")
+            assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
             1000)
@@ -345,10 +354,12 @@ class TestDosScalability:
                     obj_name_pref=self.obj_name,
                     obj_size=obj_size,
                     skip_cleanup=True,
-                    verbose=True)
+                    log_file_prefix="TEST-9659")
                 self.log.debug(res)
                 self.log_file.append(res[1])
-                assert_true(res[0], res)
+                resp = system_utils.validate_s3bench_parallel_execution(
+                    log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9659")
+                assert_true(resp[0], resp[1])
             count = count + 1
         self.log.info(
             "Step 2: Successfully performed with n constant s3 operations.")
@@ -400,10 +411,12 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                verbose=True)
+                log_file_prefix="TEST-9660")
             self.log.debug(res)
             self.log_file.append(res[1])
-            assert_true(res[0], res)
+            resp = system_utils.validate_s3bench_parallel_execution(
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9660")
+            assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with n constant s3 operations.")
         self.log.info(
