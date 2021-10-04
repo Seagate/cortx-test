@@ -97,30 +97,6 @@ class S3Helper:
 
         return status
 
-    def configure_s3fs(
-            self,
-            access: str = None,
-            secret: str = None,
-            path: str = None) -> bool:
-        """
-        Function to configure access and secret keys for s3fs.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: s3fs config file.
-        :return: True if s3fs configured else False.
-        """
-        path = path if path else self.s3_cfg["s3fs_path"]
-        status, resp = run_local_cmd("s3fs --version")
-        LOGGER.info(resp)
-        if status:
-            with open(path, "w+") as f_write:
-                f_write.write(f"{access}:{secret}")
-        else:
-            LOGGER.warning("S3fs is not present, please install it and then run the configuration.")
-
-        return status
-
     def check_s3services_online(self, host: str = None,
                                 user: str = None,
                                 pwd: str = None) -> tuple:
@@ -659,33 +635,6 @@ class S3Helper:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
             return False, error
-
-    def configure_minio(
-            self,
-            access: str = None,
-            secret: str = None,
-            path: str = None) -> bool:
-        """
-        Function to configure minio creds in config.json file.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: path to minio cfg file.
-        :return: True/False.
-        """
-        path = path if path else self.s3_cfg["minio_path"]
-        res = False
-        if os.path.exists(path):
-            data = config_utils.read_content_json(path, mode='rb')
-            data["hosts"]["s3"]["accessKey"] = access
-            data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(
-                path=path, data=data, ensure_ascii=False)
-        else:
-            LOGGER.warning(
-                "Minio is not installed please install and then run the configuration.")
-
-        return os.path.isfile(path) and res
 
     def get_local_keys(
             self,

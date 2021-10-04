@@ -35,13 +35,13 @@ from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
-from commons.configmanager import config_utils
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_blackbox_test_lib import JCloudClient
 
 
 class TestJcloudAndJclient:
@@ -58,6 +58,7 @@ class TestJcloudAndJclient:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations.")
         self.s3_test_obj = s3_test_lib.S3TestLib()
+        self.jc_obj = JCloudClient()
         self.random_id = str(time.time())
         self.access_key = ACCESS_KEY
         self.secret_key = SECRET_KEY
@@ -72,12 +73,12 @@ class TestJcloudAndJclient:
             "ls scripts/jcloud/")[1]
         res = ".jar" in res_ls
         if not res:
-            res = system_utils.configure_jclient_cloud(
+            res = self.jc_obj.configure_jclient_cloud(
                 source=S3_CFG["jClientCloud_path"]["source"],
                 destination=S3_CFG["jClientCloud_path"]["dest"],
                 nfs_path=S3_CFG["nfs_path"],
                 ca_crt_path=S3_CFG["s3_cert_path"]
-            )
+                )
             self.log.info(res)
             if not res:
                 raise CTException(
@@ -85,7 +86,7 @@ class TestJcloudAndJclient:
                     "Error: jcloudclient.jar or jclient.jar file does not exists")
         self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
-        resp = self.update_jclient_jcloud_properties()
+        resp = self.jc_obj.update_jclient_jcloud_properties()
         assert_utils.assert_true(resp, resp)
         self.bucket_name = "jcloudjclientbucket-{}".format(time.perf_counter_ns())
         self.obj_name = "objkey{}".format(time.perf_counter_ns())
@@ -126,40 +127,8 @@ class TestJcloudAndJclient:
         :param str jtool: Name of the java jar tool
         :return: str command: cli command to be executed
         """
-        if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
-            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
-            aws_keys_str = "--access-key {} --secret-key {}".format(
-                self.access_key, self.secret_key)
-        else:
-            java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
-            aws_keys_str = "--access_key {} --secret_key {}".format(
-                self.access_key, self.secret_key)
-        bucket_url = "s3://{}".format(bucket)
-        cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                      aws_keys_str, "-p")
-        self.log.info("jcloud command: %s", cmd)
 
-        return cmd
-
-    def update_jclient_jcloud_properties(self):
-        """
-        Update jclient, jcloud properties with correct s3, iam endpoint.
-
-        :return: True
-        """
-        resp = False
-        for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
-                          S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
-            self.log.info("Updating: %s", prop_path)
-            prop_dict = config_utils.read_properties_file(prop_path)
-            if prop_dict:
-                if prop_dict['iam_endpoint'] != self.s3_iam:
-                    prop_dict['iam_endpoint'] = self.s3_iam
-                if prop_dict['s3_endpoint'] != self.s3_url:
-                    prop_dict['s3_endpoint'] = self.s3_url
-                resp = config_utils.write_properties_file(prop_path, prop_dict)
-
-        return resp
+        return self.jc_obj.create_cmd_format(bucket, operation, jtool)
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops

@@ -20,22 +20,23 @@
 
 """Minio Client test module."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.configmanager import get_config_wrapper
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons.utils import system_utils
-from commons.utils import assert_utils
-from libs.s3 import s3_test_lib
-from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3 import s3_test_lib
+from libs.s3.s3_blackbox_test_lib import MinIOClient
 
 
 class TestMinioClient:
@@ -51,7 +52,8 @@ class TestMinioClient:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.s3t_obj = s3_test_lib.S3TestLib()
-        resp = system_utils.configre_minio_cloud(
+        self.minio_obj = MinIOClient()
+        resp = MinIOClient.configre_minio_cloud(
             minio_repo=S3_CFG["minio_repo"],
             endpoint_url=S3_CFG["s3_url"],
             s3_cert_path=S3_CFG["s3_cert_path"],
@@ -69,7 +71,7 @@ class TestMinioClient:
         self.log.info(minio_dict)
         if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
                 or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
-            resp = S3H_OBJ.configure_minio(ACCESS_KEY, SECRET_KEY)
+            resp = MinIOClient.configure_minio(ACCESS_KEY, SECRET_KEY)
             assert_utils.assert_true(
                 resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
         self.root_path = os.path.join(
@@ -113,14 +115,7 @@ class TestMinioClient:
         :param str bucket_name: Name of bucket to be created
         :return: None
         """
-        self.log.info(
-            "Step 1: Creating a bucket with name %s", bucket_name)
-        resp = system_utils.run_local_cmd(
-            self.minio_cnf["create_bkt_cmd"].format(bucket_name))
-        assert_utils.assert_true(resp[0], resp)
-        assert_utils.assert_in("Bucket created successfully", resp[1], resp[1])
-        self.log.info(
-            "Step 1: Bucket is created with name %s", bucket_name)
+        self.minio_obj.create_bucket(bucket_name)
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
