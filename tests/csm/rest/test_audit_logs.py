@@ -31,7 +31,8 @@ from time import perf_counter_ns
 
 import pytest
 
-from commons import configmanager, commands
+from commons import configmanager
+from commons import commands
 from commons import cortxlogging
 from commons.constants import Rest as const
 from commons.exceptions import CTException
@@ -856,9 +857,7 @@ class TestAuditLogs:
             sort_by="", return_actual_response=True)
         self.log.info("Verifying response code 400 was returned")
         assert response.status_code == const.BAD_REQUEST
-        self.log.info("Verified that status code %s was returned along "
-                      "with response: %s", response.status_code,
-                      response.json())
+        self.log.info("Verified that status code %s was returned", response.status_code)
         self.log.info("Step 4: View CSM Audit logs sorted by response code")
         params = {
             "start_date": start_time,
@@ -922,10 +921,8 @@ class TestAuditLogs:
             login_as="csm_user_manage")
         self.log.info("Verifying response code 200 was returned")
         assert response.status_code == const.SUCCESS_STATUS
-        self.log.info("Verified that status code %s was returned along "
-                      "with response: %s for the get request for csm "
-                      "manage user", response.status_code,
-                      response.json())
+        self.log.info("Verified that status code %s was returned"
+                      "for the get request for csm manage user", response.status_code)
         self.log.info("Step 2: Login using monitor user and perform GET users operation")
         response = self.csm_user.list_csm_users(
             expect_status_code=const.SUCCESS_STATUS,
@@ -940,7 +937,6 @@ class TestAuditLogs:
         self.log.info("Step 3: Login using S3 account and perform GET operation")
         self.log.info("Creating IAM user")
         response = self.iam_user.create_and_verify_iam_user_response_code()
-        assert response.status_code == const.SUCCESS_STATUS
         self.log.info("Verifying status code returned is 200 and response is not null")
         response = self.iam_user.list_iam_users(login_as="s3account_user")
         self.log.info("Verifying response code 200 was returned")
@@ -1130,7 +1126,6 @@ class TestAuditLogs:
         response = self.audit_logs.verify_csm_audit_logs_contents(resp, s3_user)
         if False in response:
             self.log.error("%s user is not found in audit logs", s3_user)
-        time.sleep(20)
         # TODO: "Verification of download audit logs is blocked refer EOS-24930,EOS-24931"
         self.log.info(
             "TODO: Verification of filter/sort audit log for Download audit logs is blocked "

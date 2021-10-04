@@ -775,11 +775,11 @@ class RestAuditLogs(RestTestLib):
                     if string in item['payload']:
                         result = True
                         break
-        if result:
-            self.log.info("Audit logs contains the entries for %s user", str_search)
-        else:
-            self.log.error("Audit logs does not contain the entries for %s user", str_search)
-        response.append(result)
+            response.append(result)
+            if result:
+                self.log.info("Audit logs contains the entries for %s user", str_search)
+            else:
+                self.log.error("Audit logs does not contain the entries for %s user", str_search)
         return response
 
     def verify_s3_bucket_exist(self, response_log, str_search):
@@ -789,17 +789,17 @@ class RestAuditLogs(RestTestLib):
         :param str_search will take bucket to search in csm audit logs
         """
         response = []
+        result = False
         for string in str_search:
-            result = False
             for item in response_log['logs']:
                 if string in item['bucket']:
                     result = True
                     break
-            if result:
-                self.log.info("Audit logs contains the entries for bucket")
-            else:
-                self.log.error("Audit logs does not contain the entries for bucket")
             response.append(result)
+            if result:
+                self.log.info("Audit logs contains the entries for bucket %s", str_search)
+            else:
+                self.log.error("Audit logs does not contain the entries for bucket %s", str_search)
         return response
 
     def verify_s3_object_exist(self, response_log, str_search):
@@ -809,15 +809,15 @@ class RestAuditLogs(RestTestLib):
         :param str_search will take object to search in csm audit logs
         """
         response = []
+        result = False
         for string in str_search:
-            result = False
             for item in response_log['logs']:
                 if string in item['key']:
                     result = True
                     break
-            if result:
-                self.log.info("Audit logs contains the entries for object")
-            else:
-                self.log.error("Audit logs does not contain the entries for object")
             response.append(result)
+            if result:
+                self.log.info("Audit logs contains the entries for object %s", str_search)
+            else:
+                self.log.error("Audit logs does not contain the entries for object %s", str_search)
         return response
