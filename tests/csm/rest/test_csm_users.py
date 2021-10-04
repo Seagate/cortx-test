@@ -3813,16 +3813,14 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = self.csm_conf["test_28501"]["new_password"]
-        confirm_new_password = new_password
         reset_password = self.csm_conf["test_28501"]["reset_password"]
 
         self.log.info("Step 1: Changing user password")
         response = self.csm_user.update_csm_user_password(admin_username, new_password,
-                                                          confirm_new_password, reset_password)
+                                                          reset_password)
 
         self.log.info("Step 2: Verify response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
-        #  TODO check response msg
 
         self.log.info("Step 3: Check login with new password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
@@ -3832,8 +3830,7 @@ class TestCsmUser():
         header = self.csm_user.get_headers(admin_username, new_password)
 
         self.log.info("Step 4.1: Changing user password for header {}".format(header))
-        response = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                     admin_password, reset_password,
+        response = self.csm_user.reset_user_password(admin_username, admin_password, reset_password,
                                                      header)
 
         self.log.info("Step 5: Verify response")
@@ -3856,56 +3853,17 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = ""
-        confirm_new_password = ""
         reset_password = True
 
         self.log.info("Step 1: Changing user password")
         response = self.csm_user.update_csm_user_password(admin_username, new_password,
-                                                          confirm_new_password, reset_password)
+                                                          reset_password)
 
         self.log.info("Step 2: Verify response: 400")
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
-        #  TODO check response msg
-
-        self.log.info("Step 3: Check login with existing password")
-        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
-        self.csm_user.check_expected_response(response, HTTPStatus.OK)
-
-    @pytest.mark.lc
-    @pytest.mark.csmrest
-    @pytest.mark.cluster_user_ops
-    @pytest.mark.tags('TEST-28503')
-    def test_28503(self):
-        """
-        Function to test password reset functionality with non matching confirm password
-        Expect 400 response
-        """
-        test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####", test_case_name)
-        admin_username = self.csm_user.config["csm_admin_user"]["username"]
-        admin_password = self.csm_user.config["csm_admin_user"]["password"]
-        new_password = self.csm_conf["test_28503"]["new_password"]
-        confirm_new_password = self.csm_conf["test_28503"]["confirm_new_password"]
-        reset_password = self.csm_conf["test_28503"]["reset_password"]
-
-        self.log.info("Step 1: Changing user password")
-        response = self.csm_user.update_csm_user_password(
-            CSM_REST_CFG["csm_admin_user"]["username"],
-            new_password, confirm_new_password, reset_password)
-
-        self.log.info("Step 2: Verify response 400")
-        if response.status_code == HTTPStatus.OK:
-            self.log.info("Revert password")
-            header = self.csm_user.get_headers(admin_username, new_password)
-            self.log.info("Step: Changing user password for header {}".format(header))
-            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                               admin_password, reset_password,
-                                                               header)
-            self.log.info("Step: Verify success response")
-            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
-
-        self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
-        #  TODO check response msg
+        if CSM_REST_CFG["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[4099]['invalid parameter msg_id']
+            assert_utils.assert_equals(response.json()["message"], resp_data[0])
 
         self.log.info("Step 3: Check login with existing password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -3925,13 +3883,11 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = self.csm_conf["test_28505"]["new_password"]
-        confirm_new_password = new_password
         reset_password = self.csm_conf["test_28505"]["reset_password"]
 
         self.log.info("Step 1: Changing user password")
         response = self.csm_user.update_csm_user_password(
-            CSM_REST_CFG["csm_admin_user"]["username"],
-            new_password, confirm_new_password, reset_password)
+            CSM_REST_CFG["csm_admin_user"]["username"], new_password, reset_password)
 
         self.log.info("Step 2: Verify response 400")
         if response.status_code == HTTPStatus.OK:
@@ -3939,13 +3895,14 @@ class TestCsmUser():
             header = self.csm_user.get_headers(admin_username, new_password)
             self.log.info("Step: Changing user password for header {}".format(header))
             response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                               admin_password, reset_password,
-                                                               header)
+                                                               reset_password, header)
             self.log.info("Step: Verify success response")
             self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
 
         self.csm_user.check_expected_response(response, HTTPStatus.BAD_REQUEST)
-        #  TODO check response msg
+        if CSM_REST_CFG["msg_check"] == "enable":
+            resp_data = self.rest_resp_conf[4099]['invalid parameter msg_id']
+            assert_utils.assert_equals(response.json()["message"], resp_data[1])
 
         self.log.info("Step 3: Check login with existing password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -3964,16 +3921,14 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = self.csm_conf["test_28501"]["new_password"]
-        confirm_new_password = new_password
         reset_password = self.csm_conf["test_28501"]["reset_password"]
 
         self.log.info("Step 1: Changing user password")
         response = self.csm_user.update_csm_user_password(admin_username, new_password,
-                                                          confirm_new_password, reset_password)
+                                                          reset_password)
 
         self.log.info("Step 2: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
-        #  TODO check response msg
 
         self.log.info("Step 3: Check login with new password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=new_password)
@@ -3987,8 +3942,7 @@ class TestCsmUser():
         header = self.csm_user.get_headers(admin_username, new_password)
 
         self.log.info("Step 5.1: Changing user password for header {}".format(header))
-        response = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                     admin_password, reset_password,
+        response = self.csm_user.reset_user_password(admin_username, admin_password, reset_password,
                                                      header)
 
         self.log.info("Step 6: Verify success response")
@@ -4015,7 +3969,6 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = self.csm_conf["test_28517"]["new_password"]
-        confirm_new_password = new_password
         reset_password = self.csm_conf["test_28517"]["reset_password"]
         token_expire_timeout = self.csm_conf["test_28517"]["token_expire_timeout"]
         sleep_time = 10 * 60  # 10 min
@@ -4030,8 +3983,7 @@ class TestCsmUser():
         for header in headers:
             self.log.info("Step 3: Changing user password for header {}".format(header))
             response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                         confirm_new_password, reset_password,
-                                                         header)
+                                                         reset_password, header)
 
             self.log.info("Step 4: Verify success response")
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -4041,8 +3993,7 @@ class TestCsmUser():
         while time.time() <= end_time:
             self.log.info("Step 5.1: Changing user password")
             response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                         confirm_new_password, reset_password,
-                                                         header2)
+                                                         reset_password, header2)
 
             self.log.info("Step 5.2: Verify success response")
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -4052,8 +4003,7 @@ class TestCsmUser():
         for header in headers:
             self.log.info("Step 6.1: Changing user password")
             response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                         confirm_new_password, reset_password,
-                                                         header)
+                                                         reset_password, header)
 
             self.log.info("Step 6.2: Verify response")
             self.log.info("Verifying response code 200 is not returned")
@@ -4062,8 +4012,7 @@ class TestCsmUser():
                 header = self.csm_user.get_headers(admin_username, new_password)
                 self.log.info("Step: Changing user password for header {}".format(header))
                 response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                                   admin_password, reset_password,
-                                                                   header)
+                                                                   reset_password, header)
                 self.log.info("Step: Verify success response")
                 self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
 
@@ -4074,12 +4023,10 @@ class TestCsmUser():
 
         self.log.info("Step 7.1: Changing user password for header {}".format(header))
         response = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                     admin_password, reset_password,
-                                                     header)
+                                                     reset_password, header)
 
         self.log.info("Step 8: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
-        #  TODO check response msg
 
         self.log.info("Step 9: Check login with reverted password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
@@ -4100,7 +4047,6 @@ class TestCsmUser():
         admin_username = self.csm_user.config["csm_admin_user"]["username"]
         admin_password = self.csm_user.config["csm_admin_user"]["password"]
         new_password = self.csm_conf["test_28517"]["new_password"]
-        confirm_new_password = new_password
         reset_password = self.csm_conf["test_28517"]["reset_password"]
 
         self.log.info("Step 1: Get header")
@@ -4108,8 +4054,7 @@ class TestCsmUser():
 
         self.log.info("Step 2: Changing user password for header {}".format(header))
         response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                     confirm_new_password, reset_password,
-                                                     header)
+                                                    reset_password, header)
 
         self.log.info("Step 3: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -4121,8 +4066,7 @@ class TestCsmUser():
         self.log.info("Step 6: Verify that token expires after logout")
         self.log.info("Step 6.1: Changing user password")
         response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                     confirm_new_password, reset_password,
-                                                     header)
+                                                     reset_password, header)
 
         self.log.info("Step 6.2: Verify response")
         self.log.info("Verifying response code: 401")
@@ -4131,8 +4075,7 @@ class TestCsmUser():
             header = self.csm_user.get_headers(admin_username, new_password)
             self.log.info("Step: Changing user password for header {}".format(header))
             response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                               admin_password, reset_password,
-                                                               header)
+                                                               reset_password, header)
             self.log.info("Step: Verify success response")
             self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
 
@@ -4143,12 +4086,10 @@ class TestCsmUser():
 
         self.log.info("Step 7.1: Changing user password for header {}".format(header))
         response = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                     admin_password, reset_password,
-                                                     header)
+                                                     reset_password, header)
 
         self.log.info("Step 8: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
-        #  TODO check response msg
 
         self.log.info("Step 9: Check login with reverted password")
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
