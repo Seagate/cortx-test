@@ -31,6 +31,7 @@ from commons.utils.system_utils import run_local_cmd, execute_cmd
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from commons.utils.assert_utils import assert_true, assert_in
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,19 +78,18 @@ class JCloudClient:
     def update_jclient_jcloud_properties(self):
         """
         Update jclient, jcloud properties with correct s3, iam endpoint.
-
         :return: True
         """
         resp = False
         for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
                           S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
-            self.log.info("Updating: %s", prop_path)
+            LOGGER.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
-                if prop_dict['iam_endpoint'] != self.s3_iam:
-                    prop_dict['iam_endpoint'] = self.s3_iam
-                if prop_dict['s3_endpoint'] != self.s3_url:
-                    prop_dict['s3_endpoint'] = self.s3_url
+                if prop_dict['iam_endpoint'] != S3_CFG["iam_url"]:
+                    prop_dict['iam_endpoint'] = S3_CFG["iam_url"]
+                if prop_dict['s3_endpoint'] != S3_CFG["s3_url"]:
+                    prop_dict['s3_endpoint'] = S3_CFG["s3_url"]
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
@@ -108,19 +108,23 @@ class JCloudClient:
         if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
-                self.access_key, self.secret_key)
+                ACCESS_KEY, SECRET_KEY)
+            bucket_url = "s3://{}".format(bucket)
+            cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                          aws_keys_str, "-p")
         else:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
-                self.access_key, self.secret_key)
-        bucket_url = "s3://{}".format(bucket)
-        if chunk:
-            cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                             aws_keys_str, "-p", "-C")
-        else:
-            cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                          aws_keys_str, "-p")
-        self.log.info("jcloud command: %s", cmd)
+                ACCESS_KEY, SECRET_KEY)
+            bucket_url = "s3://{}".format(bucket)
+            if chunk:
+                cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                                 aws_keys_str, "-p", "-C")
+            else:
+                cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                              aws_keys_str, "-p")
+
+        LOGGER.info("jcloud command: %s", cmd)
 
         return cmd
 

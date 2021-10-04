@@ -28,12 +28,12 @@ from multiprocessing import Pool
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons.errorcodes import error_handler, S3_CLIENT_ERROR
+from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config.s3 import MPART_CFG, S3_BLKBOX_CFG, DEL_CFG
+from config.s3 import MPART_CFG, S3_BLKBOX_CFG, DEL_CFG, S3_OBJ_TST
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
 from libs.s3 import S3_CFG
 from libs.s3.s3_blackbox_test_lib import JCloudClient
@@ -61,9 +61,9 @@ class TestDelayedDelete:
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.random_time = int(time.time())
-        cls.bucket_name = S3_CFG["s3_object"]["bucket_name"].format(
+        cls.bucket_name = S3_OBJ_TST["s3_object"]["bucket_name"].format(
             time.perf_counter_ns())
-        cls.object_name = S3_CFG["s3_object"]["object_name"].format(
+        cls.object_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             time.perf_counter_ns())
         cls.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDelayedDelete")
@@ -89,25 +89,10 @@ class TestDelayedDelete:
         logging.info("Taken a backup of aws config"
                      " file located at %s to %s", cls.aws_config_path,
                      cls.config_backup_path)
-        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
-        res = ".jar" in res_ls
-        if not res:
-            res = cls.jclient_obj.configure_jclient_cloud(
-                source=S3_CFG["jClientCloud_path"]["source"],
-                destination=S3_CFG["jClientCloud_path"]["dest"],
-                nfs_path=S3_CFG["nfs_path"],
-                ca_crt_path=S3_CFG["s3_cert_path"])
-            logging.info(res)
-            if not res:
-                raise CTException(S3_CLIENT_ERROR,
-                                  "Error: jcloudclient.jar"
-                                  " or jclient.jar file does not exists")
-        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
-        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         logging.info("ENDED: Setup operations")
 
     def setup_method(self):
-        """Create test data directory"""
+        """Configuring all pre-requisite for tests"""
         self.log.info("STARTED: Test Setup")
         logging.info("S3_SERVER_OBJECT_DELAYED_DELETE"
                      " value in s3config.yaml should be "
@@ -115,6 +100,19 @@ class TestDelayedDelete:
         status, response = S3H_OBJ.update_s3config(
             parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=True)
         assert_utils.assert_true(status, response)
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = self.jclient_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"])
+            logging.info(res)
+            assert_utils.assert_true(res)
+        self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
+
         self.jclient_obj.update_jclient_jcloud_properties()
         if not system_utils.path_exists(self.test_dir_path):
             resp = system_utils.make_dirs(self.test_dir_path)
@@ -156,12 +154,14 @@ class TestDelayedDelete:
             self.config_backup_path,
             self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
-        file_lst = [self.mp_obj_path, self.test_file]
         dir_lst = [self.test_file_path, self.config_backup_path]
+        cmd = "cd {} && ls".format(self.test_dir_path)
+        res = system_utils.execute_cmd(cmd=cmd)
+        file_lst = res[1].split("\n")[0].split("\\")
+        self.log.info("The file list is %s", file_lst)
         for file in file_lst:
-            if system_utils.path_exists(file):
-                system_utils.remove_file(file)
-                self.log.info("Deleted the files %s", file)
+            system_utils.remove_file(file)
+            self.log.info("Deleted the files %s", file)
         for dirs in dir_lst:
             if system_utils.path_exists(dirs):
                 system_utils.remove_dirs(dirs)
@@ -229,21 +229,21 @@ class TestDelayedDelete:
         :option: Its to select teh create and put operation
         """
         self.log.info("STARTED: put object using jcloudclient")
-        if option == 1:
-            self.log.info("Creating bucket %s", bucket_name)
-            command = self.jclient_obj.create_cmd_format(
-                bucket_name,
-                "mb",
-                jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-                chunk=True)
-            resp = system_utils.execute_cmd(command)
-            assert_utils.assert_true(resp[0], resp[1])
-            assert_utils.assert_in(
-                "Bucket created successfully", resp[1][:-1], resp[1])
-            self.log.info("Bucket was created %s", bucket_name)
-            res = system_utils.create_file(test_file_path,
-                                           2048)
-            logging.info("The file is %s", res)
+        # if option == 1:
+        #     self.log.info("Creating bucket %s", bucket_name)
+        #     command = self.jclient_obj.create_cmd_format(
+        #         bucket_name,
+        #         "mb",
+        #         jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
+        #         chunk=True)
+        #     resp = system_utils.execute_cmd(command)
+        #     assert_utils.assert_true(resp[0], resp[1])
+        #     assert_utils.assert_in(
+        #         "Bucket created successfully", resp[1][:-1], resp[1])
+        #     self.log.info("Bucket was created %s", bucket_name)
+        res = system_utils.create_file(test_file_path,
+                                       2048)
+        logging.info("The file is %s", res)
 
         if option in ("PUT", 1):
             self.log.info("Put object to a bucket %s", bucket_name)
@@ -312,10 +312,10 @@ class TestDelayedDelete:
         resp = self.s3_test_obj.put_random_size_objects(
             self.bucket_name,
             self.object_name,
-            S3_CFG["s3_object"]["obj_min_size"],
-            S3_CFG["s3_object"]["obj_max_size"],
-            object_count=S3_CFG["s3_object"]["object_count"],
-            file_path=self.test_file_path)
+            S3_OBJ_TST["s3_object"]["obj_min_size"],
+            S3_OBJ_TST["s3_object"]["obj_max_size"],
+            object_count=S3_OBJ_TST["s3_object"]["object_count"],
+            file_path=self.test_file_path, delete_file=True)
         object_lst = resp[1]
         logging.info("STEP 2:Object is uploaded %s", object_lst)
         result = self.get_multiple_object_head(self.bucket_name,
@@ -355,8 +355,8 @@ class TestDelayedDelete:
                       "Created a bucket with name : %s", self.bucket_name)
         res = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name, self.object_name,
-            m_key=S3_CFG["test_8554"]["key"],
-            m_value=S3_CFG["test_8554"]["value"])
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"])
         assert_utils.assert_true(res[0], res[1])
         mpu_id = res[1]["UploadId"]
         self.log.info("STEP 2:"
@@ -403,8 +403,8 @@ class TestDelayedDelete:
             self.bucket_name,
             self.object_name,
             file_path=self.mp_obj_path,
-            m_key=S3_CFG["test_8554"]["key"],
-            m_value=S3_CFG["test_8554"]["value"]
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"]
         )
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Get Object details after"
@@ -438,15 +438,15 @@ class TestDelayedDelete:
             self.bucket_name,
             self.object_name,
             self.test_file_path,
-            S3_CFG["s3_object"]["mb_count"],
-            m_key=S3_CFG["test_8554"]["key"],
-            m_value=S3_CFG["test_8554"]["value"])
+            S3_OBJ_TST["s3_object"]["mb_count"],
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"])
         logging.info("STEP 2: Object is uploaded %s", )
         resp = self.s3_test_obj.object_info(
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
-        assert S3_CFG["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
+        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
         last_m_time_o = resp[1]["LastModified"]
         etag = resp[1]["ETag"]
         size_o = resp[1]["ContentLength"]
@@ -460,8 +460,8 @@ class TestDelayedDelete:
                      self.object_name, self.bucket_name)
         resp = self.s3_test_obj.put_object(
             self.bucket_name, self.object_name, self.test_file_path,
-            m_key=S3_CFG["test_8554"]["key"],
-            m_value=S3_CFG["test_8554"]["value"])
+            m_key=S3_OBJ_TST["test_8554"]["key"],
+            m_value=S3_OBJ_TST["test_8554"]["value"])
         # TODO: KILL the s3backgrounddelete service
         assert resp[0], resp[1]
         logging.info(
@@ -477,7 +477,7 @@ class TestDelayedDelete:
             self.bucket_name,
             self.object_name)
         assert resp[0], resp[1]
-        assert S3_CFG["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
+        assert S3_OBJ_TST["test_8554"]["key"] in resp[1]["Metadata"], resp[1]
         etag_r = resp[1]["ETag"]
         last_m_time_r = resp[1]["LastModified"]
         size_r = resp[1]["ContentLength"]
@@ -508,8 +508,9 @@ class TestDelayedDelete:
         self.log.info("STEP 1: Create bucket and "
                       "put object using jcloudclient %s",
                       self.test_file)
-        self.create_put_object_jclient(self.bucket_name,
-                                       self.test_file_path, 1)
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.create_put_object_jclient(self.bucket_name, self.test_file_path,
+                                       option="PUT")
         self.log.info("STEP 2: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
