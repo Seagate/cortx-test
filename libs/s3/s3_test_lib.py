@@ -525,10 +525,13 @@ class S3TestLib(S3Lib):
         :param object_name: Name of object.
         :param min_size: Minimum size of object in MB.
         :param max_size: Maximum size of object in MB.
+        :keyword: delete_file: enables the flag to delete the file
+        :return: True or False and list of objects or error.
         :return: True or False and list of objects or error.
         """
         object_count = kwargs.get("object_count", None)
         file_path = kwargs.get("file_path", None)
+        delete_file = kwargs.get("del_file", None)
         objects_list = list()
         try:
             for obj in range(int(object_count)):
@@ -553,7 +556,8 @@ class S3TestLib(S3Lib):
                     objects,
                     bucket_name)
                 objects_list.append(objects)
-                os.remove(file_path)
+                if delete_file:
+                    os.remove(file_path)
         except BaseException as error:
             LOGGER.error(
                 "Error in %s: %s",
