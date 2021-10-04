@@ -97,6 +97,8 @@ deploy_ff:
   per_step_delay: 10
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"
+  bmc_username: "admin"
+  bmc_password: "admin"
 
 post_deployment_steps:
   csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
