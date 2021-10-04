@@ -26,16 +26,16 @@ import logging
 from time import perf_counter_ns
 from multiprocessing import Process
 import pytest
-from commons.helpers.health_helper import Health
+from commons.helpers import health_helper
 from commons.utils import assert_utils, system_utils
 from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
 from config import CSM_CFG
 from config import S3_CFG
-from commons.helpers.node_helper import Node
+from commons.helpers import node_helper
 from scripts.s3_bench import s3bench
-from libs.s3 import S3H_OBJ 
+from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import CM_CFG
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
@@ -56,7 +56,7 @@ class TestIAMUserManagement:
         cls.log = logging.getLogger(__name__)
         cls.remote_path = cons.AUTHSERVER_CONFIG
         cls.local_path = cons.LOCAL_COPY_PATH
-        cls.nobj = Node(hostname=CM_CFG["nodes"][0]["hostname"],
+        cls.nobj = node_helper.Node(hostname=CM_CFG["nodes"][0]["hostname"],
                          username=CM_CFG["nodes"][0]["username"],
                          password=CM_CFG["nodes"][0]["password"])
         cls.host = CMN_CFG["nodes"][0]["hostname"]
@@ -170,7 +170,7 @@ class TestIAMUserManagement:
         nodes = CMN_CFG["nodes"]
         self.log.info(nodes)
         for _, node in enumerate(nodes):
-            health_obj = Health(hostname=node["hostname"],
+            health_obj = health_helper.Health(hostname=node["hostname"],
                                 username=node["username"],
                                 password=node["password"])
             resp = health_obj.check_node_health()
