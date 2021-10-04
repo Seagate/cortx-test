@@ -33,6 +33,7 @@ from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
+from libs.s3.s3_blackbox_test_lib import S3FS
 
 
 class TestS3fs:
@@ -47,13 +48,14 @@ class TestS3fs:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
         self.s3_test_obj = S3TestLib()
+        self.s3fs_obj = S3FS()
         resp = system_utils.is_rpm_installed(const.S3FS)
         assert_true(resp[0], resp[1])
         access, secret = ACCESS_KEY, SECRET_KEY
         res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
         if f"{access}:{secret}" != res[1]:
             self.log.info("Setting access and secret key for s3fs.")
-            resp = S3H_OBJ.configure_s3fs(access, secret)
+            resp = self.s3fs_obj.configure_s3fs(access, secret)
             assert_true(resp, f"Failed to update keys in {S3_CFG['s3fs_path']}")
         self.s3fs_cfg = S3FS_CNF["s3fs_cfg"]
         resp = system_utils.path_exists(S3_CFG['s3fs_path'])
@@ -82,70 +84,14 @@ class TestS3fs:
             self.s3_test_obj.delete_multiple_buckets(self.bucket_list)
         self.log.info("ENDED: Teardown Operations")
 
-    @staticmethod
-    def create_cmd(operation, cmd_arguments=None):
-        """
-        Creating command from operation and cmd_options.
-
-        :param str operation: type of operation to be performed on s3
-        :param list cmd_arguments: parameters for the command
-        :return str: actual command that is going to execute for utility
-        """
-        cmd_elements = []
-        tool = S3FS_CNF["s3fs_cfg"]["s3fs_tool"]
-        cmd_elements.append(tool)
-        cmd_elements.append(operation)
-        if S3_CFG["use_ssl"]:
-            if S3FS_CNF["s3fs_cfg"]["no_check_certificate"]:
-                cmd_arguments.append("-o no_check_certificate")
-            if not S3FS_CNF["s3fs_cfg"]["ssl_verify_hostname"]:
-                cmd_arguments.append("-o ssl_verify_hostname=0")
-            else:
-                cmd_arguments.append("-o ssl_verify_hostname=2")
-            if S3FS_CNF["s3fs_cfg"]["nosscache"]:
-                cmd_arguments.append("-o nosscache")
-        if cmd_arguments:
-            for argument in cmd_arguments:
-                cmd_elements.append(argument)
-        cmd = " ".join(cmd_elements)
-        return cmd
-
     def create_and_mount_bucket(self):
         """
         Method helps to create bucket and mount bucket using s3fs client.
 
         :return tuple: bucket_name & dir_name
         """
-        self.bucket_name = bucket_name = self.s3fs_cfg["bucket_name"].format(time.perf_counter_ns())
-        self.log.info("Creating bucket %s", bucket_name)
-        resp = self.s3_test_obj.create_bucket(bucket_name)
-        assert_true(resp[0], resp[1])
-        self.log.info("Bucket created %s", bucket_name)
-        self.log.info("Create a directory and list mount directory")
-        dir_name = self.s3fs_cfg["dir_name"].format(int(time.perf_counter_ns()))
-        command = " ".join([self.s3fs_cfg["make_dir_cmd"], dir_name])
-        resp = execute_cmd(command)
-        assert_true(resp[0], resp[1])
-        self.log.info("Created a directory and list mount directory")
-        self.log.info("Mount bucket")
-        operation = " ".join([bucket_name, dir_name])
-        cmd_arguments = [
-            self.s3fs_cfg["passwd_file"],
-            self.s3fs_cfg["url"].format(S3_CFG["s3_url"]),
-            self.s3fs_cfg["path_style"],
-            self.s3fs_cfg["dbglevel"]]
-        command = self.create_cmd(
-            operation, cmd_arguments)
-        resp = execute_cmd(command)
-        assert_true(resp[0], resp[1])
-        self.log.info("Mount bucket successfully")
-        self.log.info("Check the mounted directory present")
-        resp = execute_cmd(self.s3fs_cfg["cmd_check_mount"].format(dir_name))
-        assert_in(
-            dir_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info("Checked the mounted directory present")
+        bucket_name = self.s3fs_cfg["bucket_name"].format(time.perf_counter_ns())
+        bucket_name, dir_name = self.s3fs_obj.create_and_mount_bucket(bucket_name)
         return bucket_name, dir_name
 
     @pytest.mark.parallel
