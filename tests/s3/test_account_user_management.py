@@ -176,8 +176,8 @@ class TestAccountUserManagement:
             "Step 2: Listing account to verify new account is created")
         list_of_accounts = self.s3acc_obj.list_s3_accounts()
         assert list_of_accounts[0], list_of_accounts[1]
-        # new_accounts = [account_name for account_name in list_of_accounts[1]]
-        # self.log.info(new_accounts)
+        new_accounts = [account_name for account_name in list_of_accounts[1]]
+        self.log.info(new_accounts)
         assert self.account_name in list_of_accounts[1],\
             f"{self.account_name} not in {list_of_accounts[1]}"
         self.accounts_list.append(self.account_name)
