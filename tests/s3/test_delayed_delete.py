@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 
-"""Delayed Delete test module."""
+"""S3Background or Delayed Delete test module."""
 
 import os
 import time
@@ -45,7 +45,7 @@ from scripts.s3_bench import s3bench
 
 
 class TestDelayedDelete:
-    """Delayed Delete Test Suite."""
+    """S3Background or Delayed Delete test suite."""
 
     @classmethod
     def setup_class(cls):
@@ -57,7 +57,6 @@ class TestDelayedDelete:
         logging.info("STARTED: Setup operations")
         cls.s3_test_obj = S3TestLib()
         cls.s3_mp_test_obj = S3MultipartTestLib()
-        cls.jclient_obj = JCloudClient()
         cls.aws_config_path = []
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
