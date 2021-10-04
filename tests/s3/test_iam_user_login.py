@@ -150,6 +150,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5664")
@@ -173,6 +174,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5665")
     @CTFailOn(error_handler)
     def test_2847(self):
@@ -190,6 +192,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5663")
     @CTFailOn(error_handler)
     def test_2848(self):
@@ -217,6 +220,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5681")
     @CTFailOn(error_handler)
     def test_2850(self):
@@ -238,6 +242,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5680")
     @CTFailOn(error_handler)
     def test_2851(self):
@@ -260,6 +265,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5704")
     @CTFailOn(error_handler)
     def test_2852(self):
@@ -283,6 +289,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5678")
     @CTFailOn(error_handler)
     def test_2853(self):
@@ -302,6 +309,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5662")
     @CTFailOn(error_handler)
     def test_2854(self):
@@ -326,6 +334,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5676")
     @CTFailOn(error_handler)
     def test_2855(self):
@@ -353,6 +362,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Not Supported cortxcli and BOTO3 Lib")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5677")
     @CTFailOn(error_handler)
     def test_2856(self):
@@ -378,6 +388,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5675")
     @CTFailOn(error_handler)
     def test_2857(self):
@@ -405,6 +416,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5703")
@@ -423,6 +435,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5702")
     @CTFailOn(error_handler)
     def test_2859(self):
@@ -440,6 +453,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5697")
     @CTFailOn(error_handler)
     def test_2860(self):
@@ -465,6 +479,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5695")
     @CTFailOn(error_handler)
     def test_2862(self):
@@ -483,6 +498,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5693")
     @CTFailOn(error_handler)
     def test_2863(self):
@@ -505,6 +521,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5699")
     @CTFailOn(error_handler)
     def test_2864(self):
@@ -523,6 +540,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5701")
     @CTFailOn(error_handler)
     def test_2865(self):
@@ -544,6 +562,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Newly added test scenario. Need to Add/Update JIRA ticket")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5673X")
     @CTFailOn(error_handler)
     def test_2909(self):
@@ -581,6 +600,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Newly added test scenario. Need to Add/Update JIRA ticket")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-XXXX")
     @CTFailOn(error_handler)
     def test_2910(self):
@@ -621,6 +641,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Newly added test scenario. Need to Add/Update JIRA ticket")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-XXXX")
     @CTFailOn(error_handler)
     def test_2911(self):
@@ -656,6 +677,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5688")
     @CTFailOn(error_handler)
     def test_2866(self):
@@ -674,6 +696,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5692")
     @CTFailOn(error_handler)
     def test_2867(self):
@@ -693,6 +716,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5691")
     @CTFailOn(error_handler)
     def test_2868(self):
@@ -712,6 +736,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5689")
     @CTFailOn(error_handler)
     def test_2869(self):
@@ -736,6 +761,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Not supported by cortxcli and boto3 lib")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5690")
     @CTFailOn(error_handler)
     def test_2870(self):
@@ -759,6 +785,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5670")
     @CTFailOn(error_handler)
     def test_2871(self):
@@ -777,6 +804,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5671")
     @CTFailOn(error_handler)
     def test_2872(self):
@@ -792,6 +820,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5672")
     @CTFailOn(error_handler)
     def test_2873(self):
@@ -813,6 +842,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
     def test_2897(self):
@@ -845,6 +875,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5669")
     @CTFailOn(error_handler)
     def test_2898(self):
@@ -880,6 +911,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5682")
     @CTFailOn(error_handler)
     def test_2899(self):
@@ -915,6 +947,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5683")
     @CTFailOn(error_handler)
     def test_2849(self):
@@ -950,6 +983,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5661")
     @CTFailOn(error_handler)
     def test_2903(self):
@@ -988,6 +1022,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5673")
     @CTFailOn(error_handler)
     def test_2904(self):
@@ -1028,6 +1063,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5705")
     @CTFailOn(error_handler)
     def test_2905(self):
@@ -1062,6 +1098,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5686")
     @CTFailOn(error_handler)
     def test_2929(self):
@@ -1112,6 +1149,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5660")
     @CTFailOn(error_handler)
     def test_2930(self):
@@ -1141,6 +1179,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5685")
     @CTFailOn(error_handler)
     def test_2931(self):
@@ -1182,6 +1221,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-10923")
     @CTFailOn(error_handler)
     def test_2932(self):
@@ -1219,6 +1259,7 @@ class TestUserLoginProfileTests:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5674")
     @CTFailOn(error_handler)
     def test_2933(self):
@@ -1251,6 +1292,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5659")
     @CTFailOn(error_handler)
     def test_2934(self):
@@ -1284,6 +1326,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5687")
     @CTFailOn(error_handler)
     def test_2935(self):
@@ -1312,6 +1355,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5666")
     @CTFailOn(error_handler)
     def test_2936(self):
@@ -1362,6 +1406,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5667")
     @CTFailOn(error_handler)
     def test_2937(self):
@@ -1398,6 +1443,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.iam_user_login
     @pytest.mark.tags("TEST-5684")
     @CTFailOn(error_handler)
     def test_2939(self):
