@@ -485,7 +485,7 @@ class TestMinioClient:
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
                     + self.minio_obj.validate_cert
         head_obj_cmd = self.minio_cnf["head_obj"].format(
-            2, self.bucket_name, self.file_path.split("/")[-1]) + self.minio_obj.validate_cert
+            2, self.bucket_name, self.file_path.split("/")[-1])
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Uploading an object to a bucket %s", self.bucket_name)
