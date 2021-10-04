@@ -35,7 +35,6 @@ from commons.utils import system_utils
 from config import CMN_CFG
 from libs.ha.ha_common_libs import HALibs
 from libs.s3 import S3H_OBJ
-from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
@@ -52,7 +51,8 @@ class TestIntelISAIO:
         cls.log.info("STARTED: Setup Module operations")
         test_config = "config/cft/test_intel_isa_workload.yaml"
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
-        cls.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.access_key, cls.secret_key = S3H_OBJ.get_local_keys()
+        cls.s3t_obj = S3TestLib(access_key=cls.access_key, secret_key=cls.secret_key)
         cls.setup_type = CMN_CFG["setup_type"]
         cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.num_nodes = len(CMN_CFG["nodes"])
@@ -60,7 +60,6 @@ class TestIntelISAIO:
         cls.node_list = []
         cls.hlt_list = []
         cls.reset_s3config = False
-
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
@@ -85,6 +84,7 @@ class TestIntelISAIO:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         self.log.info("All nodes are reachable and PCS looks clean.")
+        self.log.info("Reload S3 Access and Secret Keys")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
@@ -216,7 +216,6 @@ class TestIntelISAIO:
         clients = self.test_config["test_io_workload"]["clients"]
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
-        access_key, secret_key = S3H_OBJ.get_local_keys()
         for workload in workloads:
             bucket_name = bucket_prefix + "-" + str(workload).lower()
             if "Kb" in workload:
@@ -225,7 +224,8 @@ class TestIntelISAIO:
                 samples = 10
             else:
                 samples = 5
-            resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name, num_clients=clients,
+            resp = s3bench.s3bench(self.access_key, self.secret_key, bucket=bucket_name,
+                                   num_clients=clients,
                                    num_sample=samples, obj_name_pref="test-object-",
                                    obj_size=workload,
                                    skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)

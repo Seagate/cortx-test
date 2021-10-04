@@ -198,9 +198,16 @@ class ProvDeployFFLib:
             time.sleep(deploy_ff_cfg["per_step_delay"])
 
             LOGGER.info("Configure BMC Interface")
+            bmc_username = deploy_ff_cfg["bmc_username"]
+            bmc_password = deploy_ff_cfg["bmc_password"]
+            if CMN_CFG["bmc"]["username"] != "":
+                bmc_username = CMN_CFG["bmc"]["username"]
+            if CMN_CFG["bmc"]["password"] != "":
+                bmc_password = CMN_CFG["bmc"]["password"]
+
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_BMC.format("127.0.0.1",
-                                                                     CMN_CFG["bmc"]["username"],
-                                                                     CMN_CFG["bmc"]["password"]),
+                                                                     bmc_username,
+                                                                     bmc_password),
                                read_lines=True)
             time.sleep(deploy_ff_cfg["per_step_delay"])
         except IOError as error:
