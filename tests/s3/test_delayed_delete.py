@@ -621,9 +621,3 @@ class TestDelayedDelete:
                           {obj_last_m_t})
         if obj_size_r == obj_size:
             self.log.info("Obj size are same %s", {obj_size_r})
-        self.log.info("S3_SERVER_OBJECT_DELAYED_DELETE"
-                      " value is reset back to True "
-                      "in s3config.yaml")
-        status, response = S3H_OBJ.update_s3config(
-            parameter="S3_SERVER_OBJECT_DELAYED_DELETE", value=True)
-        assert_utils.assert_true(status, response)
