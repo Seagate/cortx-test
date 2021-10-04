@@ -21,25 +21,25 @@
 
 """S3Background or Delayed Delete test module."""
 
+import logging
 import os
 import time
-import logging
 from multiprocessing import Pool
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
 from commons.errorcodes import error_handler, S3_CLIENT_ERROR
-from commons.utils import system_utils
-from commons.utils import assert_utils
+from commons.exceptions import CTException
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config.s3 import MPART_CFG, S3_BLKBOX_CFG, DEL_CFG
-from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_test_lib import S3TestLib
+from libs.s3 import S3_CFG
 from libs.s3.s3_blackbox_test_lib import JCloudClient
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
 
