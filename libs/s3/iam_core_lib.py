@@ -270,10 +270,7 @@ class IamLib:
 
         return response
 
-    def change_password(
-            self,
-            old_password: str = None,
-            new_password: str = None):
+    def change_password(self, old_password: str = None, new_password: str = None):
         """
         Changes the password of the IAM user with the IAM user
         boto3.client object requesting for the password change.
@@ -283,5 +280,4 @@ class IamLib:
         :param new_password: New user password.
         :return: None
         """
-        self.iam.change_password(
-            OldPassword=old_password, NewPassword=new_password)
+        self.iam.change_password(OldPassword=old_password, NewPassword=new_password)
