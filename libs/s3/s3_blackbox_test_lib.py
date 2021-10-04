@@ -94,7 +94,7 @@ class JCloudClient:
 
         return resp
 
-    def create_cmd_format(self, bucket, operation, jtool=None):
+    def create_cmd_format(self, bucket, operation, jtool=None, chunk=None):
         """
         Function forms a command to perform specified operation.
 
@@ -102,6 +102,7 @@ class JCloudClient:
         :param str bucket: Name of the s3 bucket
         :param str operation: type of operation to be performed on s3
         :param str jtool: Name of the java jar tool
+        :param bool chunk: Its accepts chunk upload, if True
         :return: str command: cli command to be executed
         """
         if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
@@ -113,8 +114,12 @@ class JCloudClient:
             aws_keys_str = "--access_key {} --secret_key {}".format(
                 self.access_key, self.secret_key)
         bucket_url = "s3://{}".format(bucket)
-        cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                      aws_keys_str, "-p")
+        if chunk:
+            cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                             aws_keys_str, "-p", "-C")
+        else:
+            cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                          aws_keys_str, "-p")
         self.log.info("jcloud command: %s", cmd)
 
         return cmd
