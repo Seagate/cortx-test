@@ -930,21 +930,18 @@ class TestAuditLogs:
             login_as="csm_user_monitor")
         self.log.info("Verifying response code 200 was returned")
         assert response.status_code == const.SUCCESS_STATUS
-        self.log.info("Verified that status code %s was returned along "
-                      "with response: %s for the get request for csm "
-                      "monitor user", response.status_code,
-                      response.json())
+        self.log.info("Verified that status code %s was returned"
+                      "for the get request for csm monitor user", response.status_code)
         self.log.info("Step 3: Login using S3 account and perform GET operation")
         self.log.info("Creating IAM user")
         response = self.iam_user.create_and_verify_iam_user_response_code()
+        print(response)
         self.log.info("Verifying status code returned is 200 and response is not null")
         response = self.iam_user.list_iam_users(login_as="s3account_user")
         self.log.info("Verifying response code 200 was returned")
         assert response.status_code == const.SUCCESS_STATUS
-        self.log.info("Verified that status code %s was returned along "
-                      "with response: %s for the get request for csm "
-                      "s3account user", response.status_code,
-                      response.json())
+        self.log.info("Verified that status code %s was returned"
+                      "for the get request for csm s3account user", response.status_code)
         self.log.info("Step 4: View CSM Audit logs filtered by user")
         params = {
             "start_date": start_time,
@@ -1049,7 +1046,7 @@ class TestAuditLogs:
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info(
             "Step 2: create s3 user and bucket, perform some IO on bucket and delete this user "
-            "and bucekt")
+            "and bucket")
         s3_user = self.s3_account_prefix.format(perf_counter_ns())
         s3_bkt = self.s3_bucket_prefix.format(perf_counter_ns())
         self.log.info("Create an S3 user.")
