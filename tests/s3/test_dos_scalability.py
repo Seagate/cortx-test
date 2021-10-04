@@ -143,11 +143,11 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-8724")
+                log_file_prefix="TEST-5336")
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-8724")
+                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
@@ -196,11 +196,11 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-9657")
+                log_file_prefix="TEST-5337")
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9657")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5337")
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
@@ -250,11 +250,11 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-9658")
+                log_file_prefix="TEST-5338")
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9658")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5338")
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with %s constant s3 operations.",
@@ -306,11 +306,11 @@ class TestDosScalability:
                     obj_name_pref=self.obj_name,
                     obj_size=obj_size,
                     skip_cleanup=True,
-                    log_file_prefix="TEST-9659")
+                    log_file_prefix="TEST-5340")
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
-                    log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9659")
+                    log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5340")
                 assert_true(resp[0], resp[1])
             count = count + 1
         self.log.info(
@@ -363,11 +363,11 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-9660")
+                log_file_prefix="TEST-5341")
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-9660")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5341")
             assert_true(resp[0], resp[1])
         self.log.info(
             "Step 2: Successfully performed with n constant s3 operations.")
@@ -419,11 +419,11 @@ class TestDosScalability:
                 obj_name_pref=self.obj_name,
                 obj_size=obj_size,
                 skip_cleanup=True,
-                log_file_prefix="TEST-8725")
+                log_file_prefix="TEST-5308")
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-8725")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5308")
             assert_true(resp[0], resp[1])
         res = self.hobj.is_motr_online()
         assert_true(res, res)
