@@ -20,6 +20,7 @@
     - "Invalid request body: {'bucket_name': [\"Bucket Name should be between 4-56 Characters long.Should contain either lowercase, numeric or '-' characters. Not starting or ending with '-'\"]}"
   invalid parameter msg_id:
     - "Invalid request body: {'password': [\"Password Policy Not Met. Must be more than 8 characters. Must contain at least one Uppercase Alphabet. Must contain at least one Lowercase Alphabet. Must contain at least one Numeric value. Must include !@#$%^&*()_+-=[]{}|'.\"]}"
+    - "Invalid request body: {'password': ['Password Policy Not Met. Must contain at least one Numeric value.']}"
   invalid request parameter:
     - "username cannot be modified"
     - "Insufficient information in request body"
