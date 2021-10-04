@@ -84,7 +84,6 @@ class TestIntelISAIO:
             res = hlt_obj.check_node_health()
             assert_utils.assert_true(res[0], res[1])
         self.log.info("All nodes are reachable and PCS looks clean.")
-        self.log.info("Reload S3 Access and Secret Keys")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):
