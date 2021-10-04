@@ -123,6 +123,16 @@ class JCloudClient:
 class MinIOClient:
     """Class for minIO related operations."""
 
+    def __init__(self,
+                 **kwargs) -> None:
+        """
+        method initializes members for minio client.
+
+        """
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        self.validate_cert = f"{'' if val_cert else ' --insecure'}"
+        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
+
     @staticmethod
     def configure_minio(access: str = None, secret: str = None, path: str = None) -> bool:
         """
@@ -190,7 +200,8 @@ class MinIOClient:
         """
         LOGGER.info(
             "Step 1: Creating a bucket with name %s", bucket_name)
-        resp = system_utils.run_local_cmd(self.minio_cnf["create_bkt_cmd"].format(bucket_name))
+        cmd = self.minio_cnf["create_bkt_cmd"].format(bucket_name) + self.validate_cert
+        resp = system_utils.run_local_cmd(cmd)
         assert_utils.assert_true(resp[0], resp)
         assert_utils.assert_in("Bucket created successfully", resp[1], resp[1])
         LOGGER.info(

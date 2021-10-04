@@ -87,7 +87,6 @@ class TestAwsIam:
                 for iam_user in self.iam_users_list:
                     self.cortx_obj.delete_iam_user(iam_user)
             self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
-            self.rest_obj.delete_s3_account(user_name=acc)
             self.cortx_obj.logout_cortx_cli()
             self.cortx_obj.close_connection()
         self.log.info("ENDED: Teardown Operations")
