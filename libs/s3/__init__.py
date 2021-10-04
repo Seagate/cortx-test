@@ -25,9 +25,6 @@
 from commons.helpers.s3_helper import S3Helper
 from config import CMN_CFG
 from config.s3 import S3_CFG
-from commons import configmanager
-from commons.params import S3_BLACK_BOX_CONFIG_PATH
-from commons.params import S3_MPART_CFG_PATH
 
 S3H_OBJ = S3Helper.get_instance(CMN_CFG, S3_CFG)
 # S3 default access_key, secret key.
@@ -35,5 +32,3 @@ ACCESS_KEY, SECRET_KEY = S3H_OBJ.get_local_keys()
 ldap = CMN_CFG.get("ldap", None)
 LDAP_USERNAME = ldap["username"] if ldap else None  # Ldap username.
 LDAP_PASSWD = ldap["password"] if ldap else None  # Ldap password.
-S3_BLKBOX_CFG = configmanager.get_config_wrapper(fpath=S3_BLACK_BOX_CONFIG_PATH)
-MPART_CFG = configmanager.get_config_wrapper(fpath=S3_MPART_CFG_PATH)

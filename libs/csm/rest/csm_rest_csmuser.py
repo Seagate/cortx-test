@@ -898,13 +898,11 @@ class RestCsmUser(RestTestLib):
                                           headers=self.headers)
         return response
 
-    def reset_user_password(self, username, new_password, confirm_new_password, reset_password,
-                            headers):
+    def reset_user_password(self, username, new_password, reset_password, headers):
         """
         Reset user password with external auth token
         :param username: Username
         :param new_password: New Password
-        :param confirm_new_password:New Password
         :param reset_password: true/false
         :param headers: external auth token
         :return: response
@@ -916,7 +914,6 @@ class RestCsmUser(RestTestLib):
 
             patch_payload = {
                 "password": new_password,
-                "confirmPassword": confirm_new_password,
                 "reset_password": reset_password
             }
             patch_payload = json.dumps(patch_payload)
@@ -935,20 +932,17 @@ class RestCsmUser(RestTestLib):
         return response
 
     @RestTestLib.authenticate_and_login
-    def update_csm_user_password(self, username, new_password, confirm_new_password,
-                                 reset_password):
+    def update_csm_user_password(self, username, new_password, reset_password):
         """
         LC specific
         This function will update csm user password for LC
         :param username: Username
         :param new_password: New Password
-        :param confirm_new_password:New Password
         :param reset_password: true/false
         :return: response
         """
         header = self.headers
-        response = self.reset_user_password(username, new_password, confirm_new_password,
-                                            reset_password, header)
+        response = self.reset_user_password(username, new_password, reset_password, header)
         return response
 
     def check_expected_response(self, response, expected_code, inverse_check=False):
