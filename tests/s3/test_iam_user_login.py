@@ -26,11 +26,12 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.assert_utils import assert_true, assert_in, assert_false
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
-from libs.s3 import cortxcli_test_lib
 from libs.s3 import iam_test_lib
+from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 
@@ -62,7 +63,7 @@ class TestUserLoginProfileTests:
         self.test_cfg = S3_USER_ACC_MGMT_CONFIG["test_configs"]
         self.account_list = list()
         self.s3acc_obj = S3AccountOperationsRestAPI()
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        self.cli_obj = CortxCliTestLib() if CMN_CFG["product_type"] == "node" else None
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -843,6 +844,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5668")
     @CTFailOn(error_handler)
     def test_2897(self):
@@ -876,6 +878,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5669")
     @CTFailOn(error_handler)
     def test_2898(self):
@@ -911,6 +914,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5682")
     @CTFailOn(error_handler)
     def test_2899(self):
@@ -947,6 +951,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5683")
     @CTFailOn(error_handler)
     def test_2849(self):
@@ -983,6 +988,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5661")
     @CTFailOn(error_handler)
     def test_2903(self):
@@ -1022,6 +1028,7 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_login
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5673")
     @CTFailOn(error_handler)
     def test_2904(self):
