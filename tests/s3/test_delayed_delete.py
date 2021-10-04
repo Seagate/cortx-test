@@ -157,7 +157,7 @@ class TestDelayedDelete:
         dir_lst = [self.test_file_path, self.config_backup_path]
         cmd = "cd {} && ls".format(self.test_dir_path)
         res = system_utils.execute_cmd(cmd=cmd)
-        file_lst = res[1].split("\n")[0].split("\\")
+        file_lst = res[1].split("\n")[0].split("\\n")
         self.log.info("The file list is %s", file_lst)
         for file in file_lst:
             system_utils.remove_file(file)
