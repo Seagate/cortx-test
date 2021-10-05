@@ -206,6 +206,17 @@ class Rest:
     }
 
 
+# aws cli errors
+AWS_CLI_ERROR = ["ServiceUnavailable",
+                 "MalformedPolicy",
+                 "InvalidRequest",
+                 "Forbidden",
+                 "Conflict",
+                 "InternalError",
+                 "InvalidArgument",
+                 "AccessDenied",
+                 "Failed:"]
+
 # cortxcli constants
 S3BUCKET_HELP = [
     f'usage: cortxcli s3buckets [-h] {{show,create,delete}}',
