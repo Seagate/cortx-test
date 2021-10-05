@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash_bootstrap_components import Card, CardBody, Row, Button, Tab, Tabs
+from dash_bootstrap_components import Card, CardBody, Row, Button, Tab #, Tabs
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
@@ -190,20 +190,20 @@ degraded_read_layout = Card(
                style=style_table_caption),
         html.Div(id="statistics_s3bench_degraded_ttfb"),
 
-        html.P("COSBench", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
+        # html.P("COSBench", style=style_perf_captions),
+        # Markdown('''
+        #     ___
+        #     '''),
 
-        html.P("Throughput Chart",
-               style=style_table_caption),
-        html.Div(id="statistics_cosbench_degraded_throughput"),
-        html.P("Latency Chart",
-               style=style_table_caption),
-        html.Div(id="statistics_cosbench_degraded_latency"),
-        html.P("IOPS Chart",
-               style=style_table_caption),
-        html.Div(id="statistics_cosbench_degraded_iops"),
+        # html.P("Throughput Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_throughput"),
+        # html.P("Latency Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_latency"),
+        # html.P("IOPS Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_iops"),
 
         html.P("HSBench", style=style_perf_captions),
         Markdown('''
