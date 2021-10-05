@@ -130,7 +130,8 @@ class TestAwsCliS3Api:
         resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.run_local_cmd(cmd=commands.CMD_AWSCLI_LIST_BUCKETS)
+        cmd = commands.CMD_AWSCLI_LIST_BUCKETS + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.bucket_name)
         self.buckets_list.append(self.bucket_name)
@@ -175,11 +176,9 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("File is not created because: %s ", output)
@@ -199,9 +198,8 @@ class TestAwsCliS3Api:
         resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_HEAD_BUCKET.format(
-                self.bucket_name))
+        cmd = commands.CMD_AWSCLI_HEAD_BUCKET.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         self.buckets_list.append(self.bucket_name)
         self.log.info("Successfully verified head bucket using awscli")
@@ -216,9 +214,9 @@ class TestAwsCliS3Api:
         resp = self.s3t_obj.create_bucket_awscli(
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_GET_BUCKET_LOCATION.format(
-                self.bucket_name))
+        cmd = commands.CMD_AWSCLI_GET_BUCKET_LOCATION.format(self.bucket_name) \
+            + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], location)
         self.buckets_list.append(self.bucket_name)
@@ -252,11 +250,9 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if status:
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("file is not created because: %s", output)
@@ -276,16 +272,14 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("File is not created because: %s", output)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         self.buckets_list.append(self.bucket_name)
@@ -302,21 +296,18 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("File is not created because: %s", output)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+        cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_exact_string(resp[1], self.object_name)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
-                self.bucket_name,
-                self.object_name))
+        cmd = commands.CMD_AWSCLI_REMOVE_OBJECTS.format(self.bucket_name, self.object_name) \
+            + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         self.buckets_list.append(self.bucket_name)
@@ -337,14 +328,12 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
             self.object_name = "".join([self.file_name, str(i)])
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_exact_string(resp[1], self.object_name)
             object_list.append(self.object_name)
         delete_objs_cmd = commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
@@ -355,6 +344,7 @@ class TestAwsCliS3Api:
                                     commands.CMD_AWSCLI_INCLUDE_FLAG.format(object_list[0]),
                                     commands.CMD_AWSCLI_INCLUDE_FLAG.format(object_list[1]),
                                     ])
+        delete_objs_cmd = delete_objs_cmd + self.s3t_obj.cmd_endpoint
         resp = system_utils.run_local_cmd(cmd=delete_objs_cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], object_list[0])
@@ -378,18 +368,17 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         for i in range(object_count):
             self.object_name = "".join([self.file_name, str(i)])
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+            cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_exact_string(resp[1], self.object_name)
             object_list.append(self.object_name)
         delete_objs_cmd = " ".join([commands.CMD_AWSCLI_REMOVE_OBJECTS.format(
             self.bucket_name, ""), commands.CMD_AWSCLI_RECURSIVE_FLAG])
+        delete_objs_cmd = delete_objs_cmd + self.s3t_obj.cmd_endpoint
         resp = system_utils.run_local_cmd(cmd=delete_objs_cmd)
         assert_utils.assert_true(resp[0], resp[1])
         for obj in object_list:
@@ -413,9 +402,9 @@ class TestAwsCliS3Api:
             bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Creating Multipart upload")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_CREATE_MULTIPART_UPLOAD.format(
-                self.bucket_name, self.object_name))
+        cmd = commands.CMD_AWSCLI_CREATE_MULTIPART_UPLOAD.format(self.bucket_name, self.object_name)\
+            + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         mpu_upload_id = resp[1][resp[1].find(
             "{"):resp[1].rfind("}") + 1]
@@ -423,25 +412,25 @@ class TestAwsCliS3Api:
             mpu_upload_id.replace(
                 "\\n", ""))["UploadId"]
         self.log.info("Listing Multipart uploads")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_MULTIPART_UPLOADS.format(
-                self.bucket_name))
+        cmd = commands.CMD_AWSCLI_LIST_MULTIPART_UPLOADS.format(self.bucket_name) \
+            + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], mpu_upload_id)
         self.log.info("Uploading parts to bucket")
         for i in range(no_of_parts):
-            upload_parts = system_utils.run_local_cmd(
-                commands.CMD_AWSCLI_UPLOAD_PARTS.format(
+            cmd = commands.CMD_AWSCLI_UPLOAD_PARTS.format(
                     self.bucket_name,
                     self.object_name,
                     i + 1,
                     mpu_parts_list[i],
-                    mpu_upload_id))
+                    mpu_upload_id) + self.s3t_obj.cmd_endpoint
+            upload_parts = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(upload_parts[0], upload_parts[1])
         self.log.info("Listing uploaded parts")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_PARTS.format(
-                self.bucket_name, self.object_name, mpu_upload_id))
+        cmd = commands.CMD_AWSCLI_LIST_PARTS.format(
+                self.bucket_name, self.object_name, mpu_upload_id) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         parts_str = resp[1][resp[1].find("{"):resp[1].rfind("}") + 1]
         self.log.info(parts_str.replace("\\n", "").replace("\\\\", "\\"))
@@ -456,15 +445,15 @@ class TestAwsCliS3Api:
         with open(json_file, "w") as file:
             json.dump(part_data, file)
         self.log.info("Completing multipart upload")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_COMPLETE_MULTIPART.format(
+        cmd = commands.CMD_AWSCLI_COMPLETE_MULTIPART.format(
                 json_file,
                 self.bucket_name,
                 self.object_name,
-                mpu_upload_id))
+                mpu_upload_id) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+        cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_exact_string(resp[1], self.object_name)
         system_utils.remove_file(json_file)
         for part in mpu_parts_list:
@@ -484,16 +473,14 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(resp[0], resp[1])
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
-            resp = system_utils.run_local_cmd(
-                cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                    self.file_path,
-                    self.bucket_name,
-                    self.object_name))
+            cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                        self.object_name) + self.s3t_obj.cmd_endpoint
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
         else:
             self.log.info("File is not created because: %s", output)
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+        cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         self.buckets_list.append(self.bucket_name)
@@ -516,22 +503,20 @@ class TestAwsCliS3Api:
             self.file_path,
             before_checksum)
         self.log.info("Uploading objects to bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name,
-                self.object_name))
+        cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
+                                                    self.object_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name))
+        cmd = commands.CMD_AWSCLI_LIST_OBJECTS.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], self.object_name)
         self.log.info("Downloading object from bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
+        cmd = commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
                 self.bucket_name,
                 self.object_name,
-                self.downloaded_file_path))
+                self.downloaded_file_path) + self.s3t_obj.cmd_endpoint
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         download_checksum = system_utils.calculate_checksum(
             self.downloaded_file_path)

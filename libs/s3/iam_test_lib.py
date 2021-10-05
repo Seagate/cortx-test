@@ -87,9 +87,7 @@ class IamTestLib(IamLib):
             LOGGER.info(response)
 
         except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
-            LOGGER.error("Error in %s: %s",
-                         IamTestLib.create_user.__name__,
-                         error)
+            LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
