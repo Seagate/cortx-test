@@ -34,7 +34,7 @@ from commons.utils import system_utils
 from commons.params import TEST_DATA_FOLDER
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.csm import s3
+from libs.s3 import s3_misc
 from config import CSM_REST_CFG
 
 
@@ -516,23 +516,23 @@ class TestS3user():
 
             self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                           iam_user, akey, skey)
-            assert s3.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
+            assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
 
             self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", bucket,
                           akey, skey)
-            assert s3.create_bucket(bucket, akey, skey), "Failed to create bucket."
+            assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
 
             self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and secret "
                           "key: %s", obj, bucket, akey, skey)
-            assert s3.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
+            assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
 
             self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
                           "secret key: %s", obj, bucket, akey, skey)
-            assert s3.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+            assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
 
             self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
                           iam_user, akey, skey)
-            assert s3.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
+            assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
 
             self.log.info("Verify Delete S3 user: %s with access key: %s and secret key: %s",
                           s3_user, akey, skey)
