@@ -493,7 +493,8 @@ class TestS3user():
         access_keys = []
         access_keys.append("_divya_kachhwaha")
         access_keys.append("a" * const.S3_ACCESS_UL)
-        access_keys.append(config_utils.gen_rand_string(chars=string.digits, N=const.S3_ACCESS_LL))
+        access_keys.append(config_utils.gen_rand_string(chars=string.digits,
+                                                        length=const.S3_ACCESS_LL))
         for access_key in access_keys:
             self.log.info("Creating custom S3 account with access key %s.", access_key)
             user_data = self.s3user.create_custom_s3_payload("valid")

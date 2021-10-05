@@ -569,7 +569,7 @@ class RestS3user(RestTestLib):
         email_id = "test%s@seagate.com" % int(time.time())
         password = self.config["test_s3account_password"]
         access = user_name.ljust(const.S3_ACCESS_LL, "d")
-        secret = config_utils.gen_rand_string(N=const.S3_SECRET_LL)
+        secret = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
 
         if user_type == "valid":
             user_data = dict(zip(const.CUSTOM_S3_USER, [
@@ -579,7 +579,7 @@ class RestS3user(RestTestLib):
             # creating new user to make it as duplicate
             self.create_verify_s3_custom("valid")
             user_data = self.recently_created_s3_account_user
-            del(user_data["canonical_id"])
+            del user_data["canonical_id"]
 
         if user_type == "duplicate_user":
             self.create_verify_s3_custom("valid")

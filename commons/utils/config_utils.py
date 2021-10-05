@@ -490,10 +490,11 @@ def write_csv(fpath:str, fieldnames:list, rows:list):
         for row in rows:
             writer.writerow(row)
 
-def gen_rand_string(chars:list=string.ascii_uppercase, N:int=10):
+def gen_rand_string(chars:list=string.ascii_uppercase, length:int=10):
     """
     Generate the random string on N characters
     :chars : list of character to generate the random string from
-    :N : lenth of the string
+    :length : lenth of the string
     """
-    return ''.join(random.choice(chars) for _ in range(N))
+    # Bandit=Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+    return ''.join(random.choice(chars) for _ in range(length))
