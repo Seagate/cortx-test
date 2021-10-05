@@ -141,12 +141,9 @@ class TestDelayedDelete:
             self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
         dir_lst = [self.test_file_path, self.config_backup_path]
-        cmd = "cd {} && ls".format(self.test_dir_path)
-        res = system_utils.execute_cmd(cmd=cmd)
-        file_lst = str(res[1]).split("\\n")
-        file_lst = file_lst[1:-1]
-        self.log.info("The file list is %s", file_lst)
-        for file in file_lst:
+        res = os.listdir(path=self.test_dir_path)
+        self.log.info("The file list is %s", res)
+        for file in res:
             self.log.info("The file to be deleted is %s", file)
             file = os.path.join(self.test_dir_path, file)
             if system_utils.path_exists(file):
