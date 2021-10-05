@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 
 class DIFeatureControlLib:
     def __init__(self,
-                 primary_node=CM_CFG["host"],
-                 username=CM_CFG["username"],
-                 password=CM_CFG["password"]
+                 primary_node=CM_CFG["nodes"][0]["hostname"],
+                 username=CM_CFG["nodes"][0]["username"],
+                 password=CM_CFG["nodes"][0]["password"]
                  ):
         """This method initializes members of DIFeatureControlLib
         :param primary_node: hostname of primary name
@@ -129,7 +129,7 @@ class DIFeatureControlLib:
     @staticmethod
     def verify_flag_enable(section, flag, host, username, password):
         """
-        Verify if flags are set on both the nodes
+        Verify if flags are set on the given node
         :param section: s3config section.
         :param flag: flag to be updated.
         :param host: IP of the host.
