@@ -22,18 +22,19 @@
 
 import os
 import logging
-import pytest
 from datetime import datetime
-from commons.utils import system_utils as sys_util
-from commons.constants import const
+import pytest
 from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_PATH
-from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from commons.utils import system_utils as sys_util
+from commons.constants import const
+
 
 
 class TestDataIntegrity:
@@ -53,6 +54,7 @@ class TestDataIntegrity:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.obj_name_1 = "di-test-obj-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
         cls.obj_name_2 = "di-test-obj-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
+        cls.obj_name_3 = "di-test-obj-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
         cls.bucket_name_1 = "di-test-bkt-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
         cls.bucket_name_2 = "di-test-bkt-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
         cls.bucket_name_3 = "di-test-bkt-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
@@ -199,7 +201,8 @@ class TestDataIntegrity:
         self.log.info(resp)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
                                          source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_1, dest_object=self.obj_name_2)
+                                         dest_bucket=self.bucket_name_1,
+                                         dest_object=self.obj_name_2)
         self.log.info(resp_cp)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.log.info("Step 3::: Comparing ETags")
@@ -257,7 +260,8 @@ class TestDataIntegrity:
         self.log.info(resp)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
                                          source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_2, dest_object=self.obj_name_1)
+                                         dest_bucket=self.bucket_name_2,
+                                         dest_object=self.obj_name_1)
         self.log.info(resp_cp)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.s3obj.delete_bucket(self.bucket_name_2, force=True)
@@ -286,7 +290,8 @@ class TestDataIntegrity:
         self.log.info(resp)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
                                          source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_2, dest_object=self.obj_name_1)
+                                         dest_bucket=self.bucket_name_2,
+                                         dest_object=self.obj_name_1)
         self.log.info(resp_cp)
         resp_cp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_2,
                                             source_object=self.obj_name_2,
@@ -332,6 +337,8 @@ class TestDataIntegrity:
         resp_full = self.s3obj.object_download(bucket_name=self.bucket_name_2,
                                                obj_name=self.obj_name_2,
                                                file_path=self.F_PATH_COPY)
+        self.log.info(resp)
+        self.log.info(resp_full)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.s3obj.delete_bucket(self.bucket_name_2, force=True)
@@ -359,11 +366,13 @@ class TestDataIntegrity:
         self.log.info(resp)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
                                          source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_2, dest_object=self.obj_name_1)
+                                         dest_bucket=self.bucket_name_2,
+                                         dest_object=self.obj_name_1)
         self.log.info(resp_cp)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_2,
                                          source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_1, dest_object=self.obj_name_1)
+                                         dest_bucket=self.bucket_name_1,
+                                         dest_object=self.obj_name_1)
         self.log.info(resp_cp)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
