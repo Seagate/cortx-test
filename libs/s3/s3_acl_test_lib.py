@@ -25,7 +25,7 @@
 import copy
 import logging
 import boto3
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.s3_utils import poll
@@ -85,7 +85,7 @@ class S3AclTestLib(Acl):
             LOGGER.debug(object_acl)
             response = {"Owner": object_acl.owner, "Grants": object_acl.grants}
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_object_acl.__name__,
                          error)
@@ -106,7 +106,7 @@ class S3AclTestLib(Acl):
             LOGGER.debug(bucket_acl)
             response = bucket_acl.owner, bucket_acl.grants
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.get_bucket_acl.__name__,
                          error)
@@ -137,11 +137,10 @@ class S3AclTestLib(Acl):
                 Bucket=dest_bucket,
                 CopySource='/{}/{}'.format(source_bucket, source_object),
                 Key=dest_object,
-                ACL=acl
-            )
+                ACL=acl)
 
             LOGGER.debug(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.copy_object_acl.__name__,
                          error)
@@ -166,7 +165,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acl(bucket_name, object_name, acl)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acl.__name__,
                          error)
@@ -191,7 +190,7 @@ class S3AclTestLib(Acl):
             LOGGER.info("Applying acl to existing object")
             response = super().put_object_acp(bucket_name, object_name, acp)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_acp.__name__,
                          error)
@@ -223,8 +222,7 @@ class S3AclTestLib(Acl):
             new_grant = {
                 "Grantee": {
                     "ID": grantee_id,
-                    "Type": "CanonicalUser",
-                },
+                    "Type": "CanonicalUser", },
                 "Permission": permission,
             }
             # If we don't want to modify the original ACL variable, then we
@@ -234,7 +232,7 @@ class S3AclTestLib(Acl):
             LOGGER.info(modified_acl)
             response = super().put_object_acp(bucket_name, object_name, modified_acl)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.add_grantee.__name__,
                          error)
@@ -285,7 +283,7 @@ class S3AclTestLib(Acl):
                 access_control_policy=access_control_policy,
                 **kwargs)
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_canned_acl.__name__,
                          error)
@@ -318,7 +316,7 @@ class S3AclTestLib(Acl):
             response = super().put_object_with_acl2(
                 bucket_name, key, file_path, **kwargs)
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl2.__name__,
                          error)
@@ -363,7 +361,7 @@ class S3AclTestLib(Acl):
                                                    acl=acl,
                                                    **kwargs)
             LOGGER.info(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_object_with_acl.__name__,
                          error)
@@ -403,7 +401,7 @@ class S3AclTestLib(Acl):
                                                       acl,
                                                       **kwargs)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.create_bucket_with_acl.__name__,
                          error)
@@ -451,7 +449,7 @@ class S3AclTestLib(Acl):
             if acl == "private":
                 bucket_acl = poll(super().get_bucket_acl, bucket_name, timeout=self.sync_delay)
                 LOGGER.debug(bucket_acl)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_acl.__name__,
                          error)
@@ -488,7 +486,7 @@ class S3AclTestLib(Acl):
                 bucket_name,
                 **kwargs)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3AclTestLib.put_bucket_multiple_permission.__name__,
                          error)
@@ -523,7 +521,7 @@ class S3AclTestLib(Acl):
             bucket_acl = poll(s3_iam_resource.BucketAcl, bucket_name, timeout=S3_CFG["sync_delay"])
             response = bucket_acl.owner, bucket_acl.grants
             LOGGER.debug(response)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 S3AclTestLib.get_bucket_acl_using_iam_credentials.__name__,
