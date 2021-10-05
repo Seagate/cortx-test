@@ -168,8 +168,18 @@ def test_collect_support_bundle_single_cmd():
         LOGGER.info("Removing existing directory %s", bundle_dir)
         shutil.rmtree(bundle_dir)
     os.mkdir(bundle_dir)
-    remote_dir = "/var/lib/seagate/cortx/provisioner/shared"
-    sb.create_support_bundle_single_cmd(remote_dir, bundle_dir, bundle_name)
+    sb.create_support_bundle_single_cmd(bundle_dir, bundle_name)
+
+def test_collect_crash_files():
+    """
+    Collect crash files from existing locations.
+    """
+    crash_dir = os.path.join(os.getcwd(), "crash_files")
+    if os.path.exists(crash_dir):
+        LOGGER.info("Removing existing directory %s", crash_dir)
+        shutil.rmtree(crash_dir)
+    os.mkdir(crash_dir)
+    sb.collect_crash_files(crash_dir)
 
 
 if __name__ == '__main':
