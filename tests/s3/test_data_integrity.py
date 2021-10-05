@@ -20,6 +20,7 @@
 
 """Data Integrity test module."""
 
+import os
 import logging
 import time
 import pytest
@@ -32,6 +33,10 @@ from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from config import CMN_CFG
 from commons.utils import assert_utils
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
+from commons.exceptions import CTException
+from commons.params import TEST_DATA_PATH
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 
@@ -58,10 +63,13 @@ class TestDataIntegrity:
         cls.WRITE_PARAM = "S3_WRITE_DATA_INTEGRITY_CHECK"
         cls.READ_PARAM = "S3_READ_DATA_INTEGRITY_CHECK"
         cls.params = dict()
-        cls.LOCAL_PATH = "/root/s3config.yaml"
-        cls.F_PATH = "/root/temp.txt"
-        cls.F_PATH_COPY = "/root/temp-copy.txt"
-        cls.log.info("Saving s3config file to %s", cls.LOCAL_PATH)
+        cls.test_dir_path = os.path.join(TEST_DATA_PATH, "TestDI")
+        if not sys_util.path_exists(cls.test_dir_path):
+            resp = sys_util.make_dirs(cls.test_dir_path)
+            cls.log.info("Created path: %s", resp)
+        cls.LOCAL_PATH = cls.test_dir_path + "/s3config.yaml"
+        cls.F_PATH = cls.test_dir_path + "/temp.txt"
+        cls.F_PATH_COPY = cls.test_dir_path + "/temp-copy.txt"
         cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
@@ -73,6 +81,7 @@ class TestDataIntegrity:
         self.log.info("STARTED: Setup operations")
         self.log.info("Getting s3 server config file")
         self.get_config_file()
+        self.log.info("Saving s3config file to %s", self.LOCAL_PATH)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -91,6 +100,16 @@ class TestDataIntegrity:
         teardown class
         """
         cls.log.info("STARTED: Teardown cls operations.")
+        cls.log.info("Deleting a backup file and directory...")
+        if sys_util.path_exists(cls.LOCAL_PATH):
+            sys_util.remove_file(cls.LOCAL_PATH)
+        if sys_util.path_exists(cls.F_PATH):
+            sys_util.remove_file(cls.F_PATH)
+        if sys_util.path_exists(cls.F_PATH_COPY):
+            sys_util.remove_file(cls.F_PATH_COPY)
+        if sys_util.path_exists(cls.test_dir_path):
+            sys_util.remove_dirs(cls.test_dir_path)
+        cls.log.info("Deleted a backup file and directory")
         cls.log.info("ENDED: Teardown class operations.")
 
     def get_config_file(self):
@@ -120,40 +139,48 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29273')
+    @CTFailOn(error_handler)
     def test_29273(self):
         """
         this will test normal file upload
         with DI flag ON for both write and read
         """
+        self.log.info("Step 1::: Setting up params and restarting server")
         self.params[self.WRITE_PARAM] = True
         self.params[self.READ_PARAM] = True
         self.update_s3config_and_restart_s3_server(params=self.params)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
-        file_size = [1, 2, 3]
+        file_size = [1, 2, 3, 4, 5]
+        result = True
         for size in file_size:
             sys_util.create_file(fpath=self.F_PATH, count=size)
             self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                   file_path=self.F_PATH)
             self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                        obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
-            self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_1)
-            self.s3obj.delete_bucket(self.bucket_name_1)
             result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
-            if result:
-                continue
-            else:
-                assert False
+            if not result:
+                break
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.log.info("Step 2::: Calculating checksum")
+        if result:
+            assert True
+        else:
+            assert False
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29276')
+    @CTFailOn(error_handler)
     def test_29276(self):
         """
         this will test copy object to same bucket with diff name
         with DI disabled
         """
+        self.log.info("Step 1::: Setting up params and restarting server")
         self.params[self.WRITE_PARAM] = False
         self.params[self.READ_PARAM] = False
         self.update_s3config_and_restart_s3_server(params=self.params)
+        self.log.info("Step 2::: Creating file and bucket")
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
@@ -163,9 +190,8 @@ class TestDataIntegrity:
                                          source_object=self.obj_name_1,
                                          dest_bucket=self.bucket_name_1, dest_object=self.obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_1)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_2)
-        self.s3obj.delete_bucket(self.bucket_name_1)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.log.info("Step 3::: Comparing ETags")
         if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
             assert True
         else:
@@ -173,14 +199,17 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29277')
+    @CTFailOn(error_handler)
     def test_29277(self):
         """
         this will test copy object to same bucket with diff name
         with DI enabled
         """
+        self.log.info("Step 1::: Setting up params and restarting server")
         self.params[self.WRITE_PARAM] = True
         self.params[self.READ_PARAM] = True
         self.update_s3config_and_restart_s3_server(params=self.params)
+        self.log.info("Step 2::: Creating file and bucket")
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
@@ -191,9 +220,8 @@ class TestDataIntegrity:
                                          dest_bucket=self.bucket_name_1,
                                          dest_object=self.obj_name_2)
         self.log.info(resp_cp)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_1)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_2)
-        self.s3obj.delete_bucket(self.bucket_name_1)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.log.info("Step 3::: Comparing ETags")
         if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
             assert False
         else:
@@ -201,6 +229,7 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29281')
+    @CTFailOn(error_handler)
     def test_29281(self):
         """
         Test to verify copy object to different bucket with same
@@ -219,10 +248,8 @@ class TestDataIntegrity:
                                          source_object=self.obj_name_1,
                                          dest_bucket=self.bucket_name_2, dest_object=self.obj_name_1)
         self.log.info(resp_cp)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_1, obj_name=self.obj_name_1)
-        self.s3obj.delete_object(bucket_name=self.bucket_name_2, obj_name=self.obj_name_1)
-        self.s3obj.delete_bucket(self.bucket_name_1)
-        self.s3obj.delete_bucket(self.bucket_name_2)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.s3obj.delete_bucket(self.bucket_name_2, force=True)
         if resp[1]['ETag'] == resp_cp[1]['CopyObjectResult']['ETag']:
             assert True
         else:
@@ -230,6 +257,7 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29282')
+    @CTFailOn(error_handler)
     def test_29282(self):
         """
         Test to verify copy of copied object using simple object upload with
@@ -256,6 +284,9 @@ class TestDataIntegrity:
         self.s3obj.object_download(bucket_name=self.bucket_name_3,
                                    obj_name=self.obj_name_3, file_path=self.F_PATH_COPY)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.s3obj.delete_bucket(self.bucket_name_2, force=True)
+        self.s3obj.delete_bucket(self.bucket_name_3, force=True)
         if result:
             if resp_cp[1]['CopyObjectResult']['ETag'] == resp_cp_cp[1]['CopyObjectResult']['ETag']:
                 assert True
@@ -266,16 +297,41 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29284')
+    @CTFailOn(error_handler)
     def test_29284(self):
         """
         Test to verify copy object with chunk upload and
         GET operation with range read with file size 50mb
         with Data Integrity flag ON for write and OFF for read
         """
-
+        self.params[self.WRITE_PARAM] = True
+        self.params[self.READ_PARAM] = False
+        self.update_s3config_and_restart_s3_server(params=self.params)
+        self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
+        self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
+        sys_util.create_file(fpath=self.F_PATH, count=50)
+        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                                     file_path=self.F_PATH)
+        self.log.info(resp)
+        self.s3obj.copy_object(source_bucket=self.bucket_name_1,source_object=self.obj_name_1,
+                               dest_bucket=self.bucket_name_2, dest_object=self.obj_name_2)
+        resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name_2,
+                                                            my_key=self.obj_name_2,
+                                                            start_byte=8888, stop_byte=9999)
+        resp_full = self.s3obj.object_download(bucket_name=self.bucket_name_2,
+                                               obj_name=self.obj_name_2,
+                                               file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.s3obj.delete_bucket(self.bucket_name_2, force=True)
+        if result:
+            assert True
+        else:
+            assert False
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29286')
+    @CTFailOn(error_handler)
     def test_29286(self):
         """
         Test to overwrite an object using copy object api with
@@ -301,6 +357,8 @@ class TestDataIntegrity:
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        self.s3obj.delete_bucket(self.bucket_name_1, force=True)
+        self.s3obj.delete_bucket(self.bucket_name_2, force=True)
         if result:
             assert True
         else:
@@ -308,14 +366,15 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29288')
+    @CTFailOn(error_handler)
     def test_29288(self):
         """
         Test to verify multipart upload with s3server restart after every upload
         with Data Integrity flag ON for write and OFF for read
         """
+        parts = list()
         self.params[self.WRITE_PARAM] = True
         self.params[self.READ_PARAM] = False
-        parts = list()
         self.update_s3config_and_restart_s3_server(params=self.params)
         res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
                                           split_count=5, random_part_size=False)
@@ -353,10 +412,13 @@ class TestDataIntegrity:
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29289')
+    @CTFailOn(error_handler)
     def test_29289(self):
         """
         Test to verify Fault Injection with different modes
         using simple object upload with Data Integrity
         flag ON for write and OFF for read
         """
-        # todo
+        self.params[self.WRITE_PARAM] = True
+        self.params[self.READ_PARAM] = False
+        self.update_s3config_and_restart_s3_server(params=self.params)
