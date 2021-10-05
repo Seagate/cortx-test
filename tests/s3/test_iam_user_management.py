@@ -27,7 +27,7 @@ from time import perf_counter_ns
 from multiprocessing import Process
 import pytest
 from commons.helpers import health_helper
-from commons.utils import assert_utils, system_utils
+from commons.utils import assert_utils
 from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
@@ -90,6 +90,7 @@ class TestIAMUserManagement:
         self.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         self.user_name = None
+        self.s3acc_name = None
         self.iam_obj = CortxCliIamUser()
         self.iam_obj.open_connection()
         self.s3acc_obj = CortxCliS3AccountOperations(
@@ -728,7 +729,7 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 5: Restart s3 authserver")
-        status = run_remote_cmd(
+        status = system_utils.run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
@@ -771,7 +772,7 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 2: Restart s3 authserver")
-        status = run_remote_cmd(
+        status = system_utils.run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
@@ -801,7 +802,7 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 5: Restart s3 authserver")
-        status = run_remote_cmd(
+        status = system_utils.run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
