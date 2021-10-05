@@ -123,9 +123,9 @@ class TestDelayedDelete:
     def teardown_method(self):
         """
         Function will be invoked after each test case.
-
-        It will clean up resources which are getting created during test case execution.
-        This function will delete IAM accounts and users.
+        It will clean up resources which are getting
+        created during test case execution.
+        This function will delete files and buckets.
         """
         self.log.info("STARTED: Teardown operations")
         self.log.info(
