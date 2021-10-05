@@ -123,8 +123,14 @@ class TestDataIntegrity:
         this will put config file and
         restart s3 server
         """
-        S3H_OBJ.copy_local_to_s3_config(backup_path=self.LOCAL_PATH)
-        S3H_OBJ.restart_s3server_processes()
+        nodes = CMN_CFG["nodes"]
+        for node in nodes:
+            S3H_OBJ.copy_local_to_s3_config(backup_path=self.LOCAL_PATH,
+                                            host=node['hostname'], user=node['username'],
+                                            password=node['password'])
+            S3H_OBJ.restart_s3server_processes(host=node['hostname'],
+                                               user=node['username'],
+                                               pwd=node['password'])
         self.log.info("updated config to default and restarted s3 server")
 
     def update_s3config_and_restart_s3_server(self, params):
@@ -132,10 +138,15 @@ class TestDataIntegrity:
         this will accept params and values
         update s3 config files and restarts s3 server
         """
-        # todo for multi node
-        S3H_OBJ.update_s3config(parameter=self.WRITE_PARAM, value=params[self.WRITE_PARAM])
-        S3H_OBJ.update_s3config(parameter=self.READ_PARAM, value=params[self.READ_PARAM])
-        S3H_OBJ.restart_s3server_processes()
+        nodes = CMN_CFG["nodes"]
+        for node in nodes:
+            S3H_OBJ.update_s3config(parameter=self.WRITE_PARAM, value=params[self.WRITE_PARAM],
+                                    host=node['hostname'], user=node['username'],
+                                    password=node['password'])
+            S3H_OBJ.update_s3config(parameter=self.READ_PARAM, value=params[self.READ_PARAM],
+                                    host=node['hostname'], user=node['username'],
+                                    password=node['password'])
+            S3H_OBJ.restart_s3server_processes()
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29273')
