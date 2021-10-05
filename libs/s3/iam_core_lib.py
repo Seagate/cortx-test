@@ -269,3 +269,15 @@ class IamLib:
         LOGGER.debug("output = %s", str(response))
 
         return response
+
+    def change_password(self, old_password: str = None, new_password: str = None):
+        """
+        Changes the password of the IAM user with the IAM user
+        boto3.client object requesting for the password change.
+        IAM object should be created with Access and Secret key of IAM
+        user which is requesting for the password change.
+        :param old_password: Old user password.
+        :param new_password: New user password.
+        :return: None
+        """
+        self.iam.change_password(OldPassword=old_password, NewPassword=new_password)
