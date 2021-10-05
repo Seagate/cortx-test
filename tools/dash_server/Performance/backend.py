@@ -129,23 +129,23 @@ def get_data_for_degraded_stats(data):
         data_needed_for_query['release'], 'Object_Size', query)
     objects = sort_object_sizes_list(objects)
     results = {
-            'Throughput' :
+        'Throughput':
             {
                 'Object Sizes': statistics_column_headings
             },
-            'IOPS' :
+        'IOPS':
             {
                 'Object Sizes': statistics_column_headings
             },
-            'Latency' :
+        'Latency':
             {
                 'Object Sizes': statistics_column_headings
             },
-            'TTFB' :
+        'TTFB':
             {
                 'Object Sizes': statistics_column_headings
             }
-        }
+    }
     if data_needed_for_query['name'] != 'S3bench':
         del results['TTFB']
 
