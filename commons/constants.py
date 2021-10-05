@@ -20,9 +20,9 @@
 #
 
 """All common constants from cortx-test."""
-from commons import const
 import tempfile
 
+from commons import const
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32

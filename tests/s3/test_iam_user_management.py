@@ -20,33 +20,36 @@
 
 """CSM CLI IAM user TestSuite"""
 
+import logging
 import os
 import time
-import logging
-from time import perf_counter_ns
 from multiprocessing import Process
+from time import perf_counter_ns
+
 import pytest
-from commons.helpers import health_helper
-from commons.utils import assert_utils
+
+from commons import constants as cons
 from commons import cortxlogging as log
+from commons.configmanager import config_utils
+from commons.helpers import health_helper
+from commons.helpers import node_helper
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import CSM_CFG
 from config import S3_CFG
-from commons.helpers import node_helper
-from scripts.s3_bench import s3bench
-from libs.s3 import S3H_OBJ
-from libs.s3 import s3_test_lib
-from libs.s3 import CM_CFG
-from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
+from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
+from libs.s3 import CM_CFG
+from libs.s3 import S3H_OBJ
+from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
-from commons.utils import system_utils
-from commons import constants as cons
-from commons.configmanager import config_utils
+from scripts.s3_bench import s3bench
+
 
 class TestIAMUserManagement:
     """IAM user Testsuite for CLI/Rest"""
