@@ -788,10 +788,10 @@ class S3Helper:
     def copy_local_to_s3_config(self, **kwargs) -> tuple:
         """
         Copy s3 config files to remote server
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param password: password for the user.
-        :param backup_path: backup_path.
+        # :param host: IP of the host.
+        # :param user: user name of the host.
+        # :param password: password for the user.
+        # :param backup_path: backup_path.
         :return: True/False, response.
         """
         host = kwargs.get("host", self.host)
