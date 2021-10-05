@@ -142,6 +142,7 @@ class TestDelayedDelete:
         self.log.info("Deleting a backup file and directory...")
         dir_lst = [self.test_file_path, self.config_backup_path]
         res = os.listdir(path=self.test_dir_path)
+        res.remove("config_backup")
         self.log.info("The file list is %s", res)
         for file in res:
             self.log.info("The file to be deleted is %s", file)
