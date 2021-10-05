@@ -28,7 +28,7 @@ from commons.exceptions import CTException
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_remote_cmd_wo_decision
-from libs.di import di_constants
+from commons.commands import HCTL_MAINTENANCE_MODE_CMD, HCTL_UNMAINTENANCE_MODE_CMD
 from libs.s3 import CM_CFG
 from libs.s3 import S3H_OBJ
 
@@ -61,7 +61,7 @@ class DIFeatureControlLib:
         try:
             result, std_err, _ = run_remote_cmd_wo_decision(
                 self.primary_node, self.username, self.password,
-                di_constants.HCTL_MAINTENANCE_MODE_CMD)
+                HCTL_MAINTENANCE_MODE_CMD)
         except Exception as error:
             logger.error("Error in %s: %s",
                          DIFeatureControlLib.enable_maintenance_mode.__name__,
@@ -84,7 +84,7 @@ class DIFeatureControlLib:
         try:
             result, std_err, _ = run_remote_cmd_wo_decision(
                 self.primary_node, self.username, self.password,
-                di_constants.HCTL_UNMAINTENANCE_MODE_CMD)
+                HCTL_UNMAINTENANCE_MODE_CMD)
         except Exception as error:
             logger.error("Error in %s: %s",
                          DIFeatureControlLib.disable_maintenance_mode.__name__,
