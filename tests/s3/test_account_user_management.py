@@ -169,17 +169,13 @@ class TestAccountUserManagement:
     def test_list_account_1969(self):
         """List account."""
         self.log.info("START: Test List account.")
-        self.log.info(
-            "Step 1: Creating a new account with name %s", str(
-                self.account_name))
+        self.log.info("Step 1: Creating a new account with name %s", str(self.account_name))
         resp = self.create_account(self.account_name)
         assert resp[0], resp[1]
-        self.log.info(
-            "Step 2: Listing account to verify new account is created")
+        self.log.info("Step 2: Listing account to verify new account is created")
         list_of_accounts = self.s3acc_obj.list_s3_accounts()
         assert list_of_accounts[0], list_of_accounts[1]
-        new_accounts = [account_name for account_name in list_of_accounts[1]]
-        self.log.info(new_accounts)
+        self.log.info(list_of_accounts[1])
         assert self.account_name in list_of_accounts[1],\
             f"{self.account_name} not in {list_of_accounts[1]}"
         self.accounts_list.append(self.account_name)
