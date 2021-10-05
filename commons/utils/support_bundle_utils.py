@@ -142,3 +142,37 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
 
     LOGGER.info("Support bundle generated successfully.")
     return True, bundle_id
+
+def collect_crash_files(local_dir):
+    """
+    Collect all the crash files created at predefined locations.
+    param: local_dir: local dir path to copy crash files
+    :return: boolean
+    """
+    node_list = []
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        host = CMN_CFG["nodes"][node]["hostname"]
+        uname = CMN_CFG["nodes"][node]["username"]
+        passwd = CMN_CFG["nodes"][node]["password"]
+        node_list.append(Node(hostname=host,
+                              username=uname, password=passwd))
+
+    crash_dir1 = "/var/crash"
+    crash_dir2 = "/var/log/crash"
+    dir_list = [crash_dir1, crash_dir2]
+    flag = False
+
+    for node in range(num_nodes):
+        for crash_dir in dir_list:
+            file_list = node_list[node].list_dir(crash_dir)
+            if file_list:
+                flag = True
+                for file in file_list:
+                    remote_path = os.path.join(crash_dir, file)
+                    local_path = os.path.join(local_dir, file)
+                    node_list[node].copy_file_to_local(remote_path, local_path)
+    if flag:
+        LOGGER.info("Crash files are generated and copied at %s", local_dir)
+    else:
+        LOGGER.info("No Crash files are generated.")
