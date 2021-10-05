@@ -522,7 +522,7 @@ class S3TestLib(S3Lib):
         """
         object_count = kwargs.get("object_count", None)
         file_path = kwargs.get("file_path", None)
-        delete_file = kwargs.get("delete_file", None)
+        delete_file = kwargs.get("delete_file", True)
         objects_list = list()
         try:
             for obj in range(int(object_count)):
@@ -547,7 +547,7 @@ class S3TestLib(S3Lib):
                     objects,
                     bucket_name)
                 objects_list.append(objects)
-                if not delete_file:
+                if delete_file:
                     os.remove(file_path)
         except BaseException as error:
             LOGGER.error(

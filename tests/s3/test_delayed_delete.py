@@ -354,7 +354,7 @@ class TestDelayedDelete:
             S3_OBJ_TST["s3_object"]["obj_max_size"],
             object_count=S3_OBJ_TST["s3_object"]["object_count"],
             file_path=self.test_file_path,
-            delete_file=True)
+            delete_file=False)
         object_lst = resp[1]
         logging.info("STEP 2:Object is uploaded %s", object_lst)
         result = self.get_multiple_object_head(self.bucket_name,
