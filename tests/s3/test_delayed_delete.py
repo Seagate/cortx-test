@@ -26,8 +26,7 @@ import logging
 import pytest
 
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
-from commons.errorcodes import error_handler, S3_CLIENT_ERROR
+from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.utils import config_utils
