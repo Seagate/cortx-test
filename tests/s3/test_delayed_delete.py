@@ -65,6 +65,8 @@ class TestDelayedDelete:
             time.perf_counter_ns())
         cls.object_name = S3_OBJ_TST["s3_object"]["object_name"].format(
             time.perf_counter_ns())
+        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         cls.test_file = "testfile-{}.txt".format(time.perf_counter_ns())
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestDelayedDelete")
         cls.test_file_path = os.path.join(cls.test_dir_path, cls.test_file)
@@ -110,8 +112,6 @@ class TestDelayedDelete:
                 ca_crt_path=S3_CFG["s3_cert_path"])
             logging.info(res)
             assert_utils.assert_true(res)
-        self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
-        self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
 
         self.jclient_obj.update_jclient_jcloud_properties()
         if not system_utils.path_exists(self.test_dir_path):
@@ -155,13 +155,14 @@ class TestDelayedDelete:
             self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
         dir_lst = [self.test_file_path, self.config_backup_path]
-        cmd = "cd {} && ls".format(self.test_dir_path)
-        res = system_utils.execute_cmd(cmd=cmd)
-        file_lst = res[1].split("\n")[0].split("\\n")
-        self.log.info("The file list is %s", file_lst)
-        for file in file_lst:
-            system_utils.remove_file(file)
-            self.log.info("Deleted the files %s", file)
+        res = os.listdir(path=self.test_dir_path)
+        res.remove("config_backup")
+        self.log.info("The files list is %s", res)
+        for file in res:
+            file = os.path.join(self.test_dir_path, file)
+            if system_utils.path_exists(file):
+                system_utils.remove_file(file)
+                self.log.info("Deleted the files %s", file)
         for dirs in dir_lst:
             if system_utils.path_exists(dirs):
                 system_utils.remove_dirs(dirs)
@@ -229,21 +230,10 @@ class TestDelayedDelete:
         :option: Its to select teh create and put operation
         """
         self.log.info("STARTED: put object using jcloudclient")
-        # if option == 1:
-        #     self.log.info("Creating bucket %s", bucket_name)
-        #     command = self.jclient_obj.create_cmd_format(
-        #         bucket_name,
-        #         "mb",
-        #         jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"],
-        #         chunk=True)
-        #     resp = system_utils.execute_cmd(command)
-        #     assert_utils.assert_true(resp[0], resp[1])
-        #     assert_utils.assert_in(
-        #         "Bucket created successfully", resp[1][:-1], resp[1])
-        #     self.log.info("Bucket was created %s", bucket_name)
-        res = system_utils.create_file(test_file_path,
-                                       2048)
-        logging.info("The file is %s", res)
+        if option == 1:
+            res = system_utils.create_file(test_file_path,
+                                           2048)
+            logging.info("The file is %s", res)
 
         if option in ("PUT", 1):
             self.log.info("Put object to a bucket %s", bucket_name)
@@ -315,7 +305,7 @@ class TestDelayedDelete:
             S3_OBJ_TST["s3_object"]["obj_min_size"],
             S3_OBJ_TST["s3_object"]["obj_max_size"],
             object_count=S3_OBJ_TST["s3_object"]["object_count"],
-            file_path=self.test_file_path, delete_file=True)
+            file_path=self.test_file_path, delete_file=False)
         object_lst = resp[1]
         logging.info("STEP 2:Object is uploaded %s", object_lst)
         result = self.get_multiple_object_head(self.bucket_name,
@@ -510,7 +500,7 @@ class TestDelayedDelete:
                       self.test_file)
         self.s3_test_obj.create_bucket(self.bucket_name)
         self.create_put_object_jclient(self.bucket_name, self.test_file_path,
-                                       option="PUT")
+                                       option=1)
         self.log.info("STEP 2: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
@@ -519,7 +509,7 @@ class TestDelayedDelete:
         self.log.info("STEP 3: Re-Upload the same file")
         self.create_put_object_jclient(self.bucket_name,
                                        self.test_file_path,
-                                       "PUT")
+                                       option="PUT")
         self.log.info("STEP 4: Fetch Object details")
         result = self.s3_test_obj.object_info(self.bucket_name,
                                               self.test_file)
@@ -709,8 +699,11 @@ class TestDelayedDelete:
 
         # Do multipart upload
         object_name = self.test_file
-        self.s3_mp_test_obj.simple_multipart_upload(bucket_name, object_name, test_config["file_size"],
-                                                    self.test_file_path, test_config["total_parts"])
+        self.s3_mp_test_obj.simple_multipart_upload(bucket_name,
+                                                    object_name,
+                                                    test_config["file_size"],
+                                                    self.test_file_path,
+                                                    test_config["total_parts"])
 
         # Delete object
         res = self.s3_test_obj.delete_object(bucket_name, object_name)
