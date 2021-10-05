@@ -224,13 +224,19 @@ degraded_read_layout = Card(
 )
 
 
-statistics_perf_tabs = Tabs([
+# statistics_perf_tabs = Tabs([
+#     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
+#         style=style_sub_tab, label_style=style_sub_label
+#         ),
+#     Tab(degraded_read_layout, id="perf_degraded_read_content", label="Degraded Read Performance",
+#         style=style_sub_tab, label_style=style_sub_label
+#         )
+#     ],
+#     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row"
+# )
+
+statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
         style=style_sub_tab, label_style=style_sub_label
-        ),
-    Tab(degraded_read_layout, id="perf_degraded_read_content", label="Degraded Read Performance",
-        style=style_sub_tab, label_style=style_sub_label
         )
-    ],
-    className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row"
 )
