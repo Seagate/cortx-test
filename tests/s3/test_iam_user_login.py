@@ -18,6 +18,7 @@
 """IAM user login tests module"""
 
 import logging
+import secrets
 import time
 
 import pytest
@@ -1086,8 +1087,8 @@ class TestUserLoginProfileTests:
         assert_true(resp[0], resp[1])
         self.log.info("Created user %s", self.user_name)
         current_iam_user_obj = iam_test_lib.IamTestLib(
-            secret_key="aldkjakjfakjfklafj",
-            access_key="kahdahfouk692583")
+            secret_key=secrets.token_urlsafe(20),
+            access_key=secrets.token_urlsafe(15))
         try:
             current_iam_user_obj.change_user_password(
                 self.test_cfg["test_9832"]["password"],
