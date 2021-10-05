@@ -79,17 +79,18 @@ class TestAwsIam:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Teardown Operations")
-        for acc in self.s3_accounts_list:
-            self.iam_obj.create_user_login_profile(user_name=acc, password=self.s3acc_password)
-            self.cortx_obj.login_cortx_cli(
-               username=acc, password=self.s3acc_password)
-            if self.del_iam_user:
-                for iam_user in self.iam_users_list:
-                    self.cortx_obj.delete_iam_user(iam_user)
-            self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
-            self.cortx_obj.logout_cortx_cli()
+        try:
+            for acc in self.s3_accounts_list:
+                self.cortx_obj.login_cortx_cli(username=acc, password=self.s3acc_password)
+                if self.del_iam_user:
+                    for iam_user in self.iam_users_list:
+                        self.cortx_obj.delete_iam_user(iam_user)
+                self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
+                self.cortx_obj.logout_cortx_cli()
             self.cortx_obj.close_connection()
-        self.log.info("ENDED: Teardown Operations")
+            self.log.info("ENDED: Teardown Operations")
+        except Exception as error:
+            self.log.error("Teardown failed with error: %s", error)
 
     def create_account(self):
         """Function will create IAM account."""
@@ -133,7 +134,7 @@ class TestAwsIam:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         return access_key, secret_key
 
-    @pytest.skip("Duplicate of TEST-2077")
+    @pytest.mark.skip("Duplicate of TEST-2077")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7166")
@@ -184,7 +185,7 @@ class TestAwsIam:
         self.log.info("Step 3: Listed users and verified user name is updated")
         self.log.info("ENDED: Update User using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2078")
+    @pytest.mark.skip("Duplicate of TEST-2078")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7167")
@@ -219,7 +220,7 @@ class TestAwsIam:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2079")
+    @pytest.mark.skip("Duplicate of TEST-2079")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7168")
@@ -253,7 +254,7 @@ class TestAwsIam:
         self.del_iam_user = False
         self.log.info("ENDED: Delete User using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2080")
+    @pytest.mark.skip("Duplicate of TEST-2080")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7169")
@@ -283,7 +284,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: Create 100 Users per account using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2083")
+    @pytest.mark.skip("Duplicate of TEST-2083")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7170")
@@ -323,7 +324,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: list accesskeys for the user using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2084")
+    @pytest.mark.skip("Duplicate of TEST-2084")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7171")
@@ -355,7 +356,7 @@ class TestAwsIam:
             "ENDED: Delete Accesskey of a user using aws iam %s",
             resp)
 
-    @pytest.skip("Duplicate of TEST-2082")
+    @pytest.mark.skip("Duplicate of TEST-2082")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7172")
@@ -396,7 +397,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create Access key to the user using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2076")
+    @pytest.mark.skip("Duplicate of TEST-2076")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7173")
@@ -431,7 +432,7 @@ class TestAwsIam:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: Create new user for current Account AWS IAM")
 
-    @pytest.skip("Duplicate of TEST-2081")
+    @pytest.mark.skip("Duplicate of TEST-2081")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7191")
@@ -473,7 +474,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: creating user with existing name With AWS IAM client")
 
-    @pytest.skip("Duplicate of TEST-2085")
+    @pytest.mark.skip("Duplicate of TEST-2085")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7174")
@@ -524,7 +525,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: Update Accesskey of a user with active mode using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2086")
+    @pytest.mark.skip("Duplicate of TEST-2086")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7175")
@@ -573,7 +574,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: update access key of a user with inactive mode using aws iam")
 
-    @pytest.skip("Duplicate of TEST-2087")
+    @pytest.mark.skip("Duplicate of TEST-2087")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7176")
