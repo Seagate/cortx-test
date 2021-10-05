@@ -191,6 +191,11 @@ class Rest:
                                   "\"Principal\": {\"AWS\":\"$principal\"}}]}"
     SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
                     " user_type, created_time, updated_time.\']}"
+    CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
+    S3_ACCESS_UL = 128
+    S3_ACCESS_LL = 16
+    S3_SECRET_UL = 40
+    S3_SECRET_LL = 8
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
