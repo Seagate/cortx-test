@@ -453,4 +453,3 @@ CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
 # Maintenance mode for DI
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
 HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
-
