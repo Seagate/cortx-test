@@ -104,6 +104,12 @@ class DIFeatureControlLib:
         """
         Set s3_md5_check_flag, s3_range_read_flag or s3_disable_metadata_corr_iem or
         s3_disable_data_corr_iem flag in s3 configuration file
+        :param section: s3config section.
+        :param flag: flag to be updated.
+        :param value: value of flag.
+        :param host: IP of the host.
+        :param user: user name of the host.
+        :param password: password for the user.
         """
         self.enable_maintenance_mode()
         time.sleep(60)
@@ -124,7 +130,12 @@ class DIFeatureControlLib:
     def verify_flag_enable(section, flag, host, username, password):
         """
         Verify if flags are set on both the nodes
-        :return Boolean : True if given flag is enabled
+        :param section: s3config section.
+        :param flag: flag to be updated.
+        :param host: IP of the host.
+        :param username: user name of the host.
+        :param password: password for the user.
+        :return Boolean: True if given flag is enabled
                           False if given flag is disabled
         """
         backup_path = const.LOCAL_S3_CONFIG
