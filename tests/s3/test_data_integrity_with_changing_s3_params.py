@@ -36,8 +36,7 @@ from commons.utils import system_utils as sys_util
 from commons.constants import const
 
 
-
-class TestDataIntegrity:
+class TestDIWithChangingS3Params:
 
     """Data Integrity Test suite."""
 
