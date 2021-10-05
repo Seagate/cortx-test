@@ -42,7 +42,6 @@ from config import S3_CFG
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
-from libs.s3 import CM_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
@@ -59,9 +58,9 @@ class TestIAMUserManagement:
         cls.log = logging.getLogger(__name__)
         cls.remote_path = cons.AUTHSERVER_CONFIG
         cls.local_path = cons.LOCAL_COPY_PATH
-        cls.nobj = node_helper.Node(hostname=CM_CFG["nodes"][0]["hostname"],
-                         username=CM_CFG["nodes"][0]["username"],
-                         password=CM_CFG["nodes"][0]["password"])
+        cls.nobj = node_helper.Node(hostname=CMN_CFG["nodes"][0]["hostname"],
+                         username=CMN_CFG["nodes"][0]["username"],
+                         password=CMN_CFG["nodes"][0]["password"])
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
