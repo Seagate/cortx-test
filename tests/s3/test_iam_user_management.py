@@ -710,9 +710,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
-        assert_utils.assert_true(status, "True")
-        if not status:
-            self.log.info("Service did not restart successfully")
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
         resp = self.iam_obj.create_iam_user(user_name=self.user_name,
                                             password=self.iam_password,
@@ -739,9 +737,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
-        assert_utils.assert_true(status, "True")
-        if not status:
-            self.log.info("Service did not restart successfully")
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 6: Creating 6 iam user with name %s", self.user_name)
         for i in range(6):
             self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
@@ -783,9 +779,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
-        assert_utils.assert_true(status, "True")
-        if not status:
-            self.log.info("Service did not restart successfully")
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.s3acc_obj.logout_cortx_cli()
         self.s3acc_obj.login_cortx_cli()
         self.log.info("Step 3: Creating s3 account with name %s", self.s3acc_name)
@@ -814,9 +808,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
-        assert_utils.assert_true(status, "True")
-        if not status:
-            self.log.info("Service did not restart successfully")
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 6: Creating 6 s3 accounts with name %s")
         for i in range(6):
             self.s3acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
