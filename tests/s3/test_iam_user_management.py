@@ -710,6 +710,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
+        assert_utils.assert_true(status, "True")
         if not status:
             self.log.info("Service did not restart successfully")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
@@ -738,6 +739,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
+        assert_utils.assert_true(status, "True")
         if not status:
             self.log.info("Service did not restart successfully")
         self.log.info("Step 6: Creating 6 iam user with name %s", self.user_name)
@@ -781,6 +783,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
+        assert_utils.assert_true(status, "True")
         if not status:
             self.log.info("Service did not restart successfully")
         self.s3acc_obj.logout_cortx_cli()
@@ -811,6 +814,7 @@ class TestIAMUserManagement:
             username=self.uname,
             password=self.passwd,
             read_lines=True)
+        assert_utils.assert_true(status, "True")
         if not status:
             self.log.info("Service did not restart successfully")
         self.log.info("Step 6: Creating 6 s3 accounts with name %s")
