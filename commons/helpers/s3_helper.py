@@ -798,12 +798,17 @@ class S3Helper:
         user = kwargs.get("username", self.user)
         pwd = kwargs.get("password", self.pwd)
         backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
-        nobj = Node(hostname=host, username=user, password=pwd)
-        status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
-        if not status:
-            return status, resp
-        if os.path.exists(backup_path):
-            os.remove(backup_path)
-        nobj.disconnect()
+        try:
+            nobj = Node(hostname=host, username=user, password=pwd)
+            status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
+            if not status:
+                return status, resp
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+            nobj.disconnect()
 
-        return status
+            return status
+        except (SSHException, OSError) as error:
+            LOGGER.error(
+                "Error in %s: %s", S3Helper.copy_s3server_file.__name__, error)
+            return False, error

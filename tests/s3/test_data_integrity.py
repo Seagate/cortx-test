@@ -173,7 +173,8 @@ class TestDataIntegrity:
             self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                        obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
             self.s3obj.delete_object(bucket_name=self.bucket_name_1,obj_name=self.obj_name_1)
-            result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
+            result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                                file_path_2=self.F_PATH_COPY)
             if not result:
                 break
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
