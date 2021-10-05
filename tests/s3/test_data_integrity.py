@@ -171,7 +171,7 @@ class TestDataIntegrity:
                                   file_path=self.F_PATH)
             self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                        obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
-            result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+            result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
             if not result:
                 break
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
@@ -299,7 +299,7 @@ class TestDataIntegrity:
                                             dest_object=self.obj_name_3)
         self.s3obj.object_download(bucket_name=self.bucket_name_3,
                                    obj_name=self.obj_name_3, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.s3obj.delete_bucket(self.bucket_name_2, force=True)
         self.s3obj.delete_bucket(self.bucket_name_3, force=True)
@@ -339,7 +339,7 @@ class TestDataIntegrity:
                                                file_path=self.F_PATH_COPY)
         self.log.info(resp)
         self.log.info(resp_full)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.s3obj.delete_bucket(self.bucket_name_2, force=True)
         if result:
@@ -376,7 +376,7 @@ class TestDataIntegrity:
         self.log.info(resp_cp)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
         self.s3obj.delete_bucket(self.bucket_name_2, force=True)
         if result:
@@ -424,7 +424,7 @@ class TestDataIntegrity:
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
         self.s3obj.delete_bucket(self.bucket_name_1, force=True)
-        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
         if result:
             assert True
         else:
