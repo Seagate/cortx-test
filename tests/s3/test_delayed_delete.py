@@ -95,10 +95,7 @@ class TestDelayedDelete:
                  nfs_path=S3_CFG["nfs_path"],
                  ca_crt_path=S3_CFG["s3_cert_path"])
             logging.info(res)
-            if not res:
-                raise CTException(S3_CLIENT_ERROR,
-                                  "Error: jcloudclient.jar"
-                                  " or jclient.jar file does not exists")
+        assert_utils.assert_true(res)
         cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
         cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         cls.update_jclient_jcloud_properties(cls.s3_iam, cls.s3_url)
@@ -144,9 +141,15 @@ class TestDelayedDelete:
             self.config_backup_path,
             self.aws_config_path)
         self.log.info("Deleting a backup file and directory...")
-        file_lst = [self.mp_obj_path, self.test_file]
         dir_lst = [self.test_file_path, self.config_backup_path]
+        cmd = "cd {} && ls".format(self.test_dir_path)
+        res = system_utils.execute_cmd(cmd=cmd)
+        file_lst = str(res[1]).split("\\n")
+        file_lst = file_lst[1:-1]
+        self.log.info("The file list is %s", file_lst)
         for file in file_lst:
+            self.log.info("The file to be deleted is %s", file)
+            file = os.path.join(self.test_dir_path, file)
             if system_utils.path_exists(file):
                 system_utils.remove_file(file)
                 self.log.info("Deleted the files %s", file)
@@ -351,7 +354,8 @@ class TestDelayedDelete:
             S3_OBJ_TST["s3_object"]["obj_min_size"],
             S3_OBJ_TST["s3_object"]["obj_max_size"],
             object_count=S3_OBJ_TST["s3_object"]["object_count"],
-            file_path=self.test_file_path)
+            file_path=self.test_file_path,
+            delete_file=True)
         object_lst = resp[1]
         logging.info("STEP 2:Object is uploaded %s", object_lst)
         result = self.get_multiple_object_head(self.bucket_name,
