@@ -23,7 +23,6 @@ import logging
 import boto3
 from config.s3 import S3_CFG
 from commons.params import TEST_DATA_FOLDER
-
 from commons.utils import system_utils
 
 LOGGER = logging.getLogger(__name__)
