@@ -137,7 +137,7 @@ class DIFeatureControlLib:
         if not status:
             return status, f"Unable to read {backup_path} on client: {resp}"
         logger.info(resp)
-        if not resp[section][flag]:
+        if resp[section][flag]:
             return True, f"{flag} flag is set on {host}"
         else:
             return False, f"{flag} flag is not set on {host}"
