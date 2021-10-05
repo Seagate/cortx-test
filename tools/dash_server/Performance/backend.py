@@ -117,11 +117,11 @@ def get_data_for_stats(data):
 
 def get_data_for_degraded_stats(data):
     """
-    function for statistics tab to get data from database
+    function for degraded read tab to get data from database
     Args:
         data: dictionary needed for the query
     Returns:
-        dataframe: Pandas dataframe with queried data
+        dataframe: list of Pandas dataframe with queried data
     """
     data_needed_for_query = data.copy()
     query = get_statistics_schema(data_needed_for_query)
@@ -155,22 +155,31 @@ def get_data_for_degraded_stats(data):
         if keys_exists(data_needed_for_query, 'degraded_cluster'):
             temp_data = get_degraded_cluster_data(data_needed_for_query)
             if not check_empty_list(temp_data):
-                for stat in temp_data.keys():
+                for stat in temp_data:
                     results[stat][obj] = temp_data
 
     dataframes = []
-    for stat in results.keys():
-        df = pd.DataFrame(results[stat])
-        df = df.T
-        df.reset_index(inplace=True)
-        df.columns = df.iloc[0]
-        df = df[1:]
-        dataframes.append(df)
+    for stat in results:
+        dataframe = pd.DataFrame(results[stat])
+        dataframe = dataframe.T
+        dataframe.reset_index(inplace=True)
+        dataframe.columns = dataframe.iloc[0]
+        dataframe = dataframe[1:]
+        dataframes.append(dataframe)
 
     return dataframes
 
 
 def get_degraded_cluster_data(data_needed_for_query):
+    """
+    function to organise and get data required for degraded cluster view
+
+    Args:
+        data: dictionary needed for the query
+
+    Returns:
+        results: dictionary with data for this particular instance
+    """
     temp_data = {}
     data_needed_for_query['operation'] = 'Read'
     cluster_states = ['normal-read', 'degraded-read', 'recovered-read']
@@ -285,12 +294,12 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             if not check_empty_list(temp_data):
                 results[build] = temp_data
 
-    df = pd.DataFrame(results)
-    df = df.T
-    df.reset_index(inplace=True)
-    df.columns = df.iloc[0]
-    df = df[1:]
-    return df
+    dataframe = pd.DataFrame(results)
+    dataframe = dataframe.T
+    dataframe.reset_index(inplace=True)
+    dataframe.columns = dataframe.iloc[0]
+    dataframe = dataframe[1:]
+    return dataframe
 
 
 def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branches
@@ -299,7 +308,9 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
 
     Args:
         data: dictionary needed for the query
-        results: dictionary to append data for this particular instance
+
+    Returns:
+        results: dictionary to with appended data for this particular instance
     """
     temp_data = []
     added_objects = False

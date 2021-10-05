@@ -41,11 +41,16 @@ from Performance.backend import get_dash_table_from_dataframe, get_data_for_degr
     Input('perf_sessions_dropdown', 'value'),
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_degraded_read_s3bench(release, branch, build, nodes, pfull, itrns,
                                  custom, n_clicks, sessions, buckets):
+    """
+    callback function for s3bench tables of degraded read
+    """
     tables = [None, None, None]
-    if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
+    if not (all([
+        release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets]
+    )) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
@@ -80,11 +85,16 @@ def update_degraded_read_s3bench(release, branch, build, nodes, pfull, itrns,
     Input('perf_sessions_dropdown', 'value'),
     Input('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
-)
+)  # pylint: disable=too-many-arguments
 def update_degraded_read_hsbench(release, branch, build, nodes, pfull, itrns,
                                  custom, n_clicks, sessions, buckets):
+    """
+    callback function for hsbench data of degraded read
+    """
     tables = [None, None, None]
-    if not (all([release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
+    if not (all([
+        release, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets]
+    )) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
