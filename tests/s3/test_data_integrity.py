@@ -52,12 +52,12 @@ class TestDataIntegrity:
         cls.log.info("STARTED: setup test suite operations.")
         cls.s3obj = S3TestLib()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.obj_name_1 = "di-test-obj-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
-        cls.obj_name_2 = "di-test-obj-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
-        cls.obj_name_3 = "di-test-obj-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
-        cls.bucket_name_1 = "di-test-bkt-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
-        cls.bucket_name_2 = "di-test-bkt-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
-        cls.bucket_name_3 = "di-test-bkt-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S.%f'))
+        cls.obj_name_1 = "di-test-obj-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        cls.obj_name_2 = "di-test-obj-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        cls.obj_name_3 = "di-test-obj-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        cls.bucket_name_1 = "di-test-bkt-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        cls.bucket_name_2 = "di-test-bkt-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        cls.bucket_name_3 = "di-test-bkt-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.WRITE_PARAM = "S3_WRITE_DATA_INTEGRITY_CHECK"
         cls.READ_PARAM = "S3_READ_DATA_INTEGRITY_CHECK"
         cls.params = dict()
@@ -166,11 +166,13 @@ class TestDataIntegrity:
         file_size = [1, 2, 3, 4, 5]
         result = True
         for size in file_size:
+            self.log.info("creating a file of size %s MB", size)
             sys_util.create_file(fpath=self.F_PATH, count=size)
             self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                   file_path=self.F_PATH)
             self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                        obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
+            self.s3obj.delete_object(bucket_name=self.bucket_name_1,obj_name=self.obj_name_1)
             result = sys_util.validate_checksum(file_path_1=self.F_PATH, file_path_2=self.F_PATH_COPY)
             if not result:
                 break
@@ -329,7 +331,7 @@ class TestDataIntegrity:
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                      file_path=self.F_PATH)
         self.log.info(resp)
-        self.s3obj.copy_object(source_bucket=self.bucket_name_1,source_object=self.obj_name_1,
+        self.s3obj.copy_object(source_bucket=self.bucket_name_1, source_object=self.obj_name_1,
                                dest_bucket=self.bucket_name_2, dest_object=self.obj_name_2)
         resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name_2,
                                                             my_key=self.obj_name_2,
