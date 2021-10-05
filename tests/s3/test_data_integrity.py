@@ -293,7 +293,7 @@ class TestDataIntegrity:
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
                                          source_object=self.obj_name_1,
                                          dest_bucket=self.bucket_name_2,
-                                         dest_object=self.obj_name_1)
+                                         dest_object=self.obj_name_2)
         self.log.info(resp_cp)
         resp_cp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_2,
                                             source_object=self.obj_name_2,
