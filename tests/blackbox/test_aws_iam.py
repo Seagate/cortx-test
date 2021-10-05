@@ -29,11 +29,13 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import system_utils
 from commons.utils.assert_utils import \
-    assert_true, assert_false, assert_in, assert_equal
+    assert_true, assert_false, assert_equal, assert_list_item
+from commons.utils.assert_utils import assert_list_equal
 from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import iam_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 
 class TestAwsIam:
@@ -48,6 +50,7 @@ class TestAwsIam:
         """
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
+        cls.rest_obj = S3AccountOperationsRestAPI()
         cls.iam_obj = iam_test_lib.IamTestLib()
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_true(
@@ -65,6 +68,8 @@ class TestAwsIam:
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.s3_accounts_list = list()
         self.iam_users_list = list()
+        self.iam_user_dict = dict()
+        self.del_iam_user = True
 
     def teardown_method(self):
         """
@@ -74,15 +79,18 @@ class TestAwsIam:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Teardown Operations")
-        for acc in self.s3_accounts_list:
-            self.cortx_obj.login_cortx_cli(
-                username=acc, password=self.s3acc_password)
-            for iam_user in self.iam_users_list:
-                self.cortx_obj.delete_iam_user(iam_user)
-            self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
-            self.cortx_obj.logout_cortx_cli()
-        self.cortx_obj.close_connection()
-        self.log.info("ENDED: Teardown Operations")
+        try:
+            for acc in self.s3_accounts_list:
+                self.cortx_obj.login_cortx_cli(username=acc, password=self.s3acc_password)
+                if self.del_iam_user:
+                    for iam_user in self.iam_users_list:
+                        self.cortx_obj.delete_iam_user(iam_user)
+                self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
+                self.cortx_obj.logout_cortx_cli()
+            self.cortx_obj.close_connection()
+            self.log.info("ENDED: Teardown Operations")
+        except Exception as error:
+            self.log.error("Teardown failed with error: %s", error)
 
     def create_account(self):
         """Function will create IAM account."""
@@ -91,7 +99,7 @@ class TestAwsIam:
             self.account_name,
             self.email_id)
         return self.cortx_obj.create_account_cortxcli(
-            self.account_name, self.email_id, self.s3acc_password)
+           self.account_name, self.email_id, self.s3acc_password)
 
     def create_user_and_access_key(
             self,
@@ -126,6 +134,7 @@ class TestAwsIam:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         return access_key, secret_key
 
+    @pytest.mark.skip("Duplicate of TEST-2077")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7166")
@@ -145,6 +154,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
             S3_BLKBOX_CFG["password"],
@@ -156,6 +166,8 @@ class TestAwsIam:
         resp = new_iam_obj.update_user(
             "iamusertest2419", self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict.pop(self.user_name)
+        self.iam_user_dict["iamusertest2419"] = new_iam_obj
         self.log.info("Step 2: Updated user name of already existing user")
         self.log.info(
             "Step 3: Listing users and verifying user name is updated")
@@ -167,11 +179,13 @@ class TestAwsIam:
                           for user in all_users if
                           "iamusertest2419" in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_true(iam_users_list, "true")
+
+        assert_list_item(iam_users_list, "iamusertest2419")
         self.iam_users_list.append("iamusertest2419")
         self.log.info("Step 3: Listed users and verified user name is updated")
         self.log.info("ENDED: Update User using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2078")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7167")
@@ -191,6 +205,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         self.iam_users_list.append(self.user_name)
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
@@ -201,10 +216,11 @@ class TestAwsIam:
                           for user in all_users if
                           "seagate_user" in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_true(iam_users_list, iam_users_list)
+        assert_list_equal(self.iam_users_list, iam_users_list)
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2079")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7168")
@@ -223,6 +239,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         self.log.info("Step 1: Created new account and new user in it")
         resp = new_iam_obj.delete_user(self.user_name)
         assert_true(resp[0], resp[1])
@@ -232,9 +249,12 @@ class TestAwsIam:
                           for user in all_users if
                           self.user_name == user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_false(iam_users_list, "false")
+        resp = True if self.user_name not in iam_users_list else False
+        assert_true(resp, f"{self.user_name} is not deleted successfully")
+        self.del_iam_user = False
         self.log.info("ENDED: Delete User using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2080")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7169")
@@ -247,6 +267,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+        self.s3_accounts_list.append(self.account_name)
         new_iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
@@ -258,10 +279,12 @@ class TestAwsIam:
                 "Creating a user with name: %s", new_user_name)
             resp = new_iam_obj.create_user(new_user_name)
             assert_true(resp[0], resp[1])
+            self.iam_user_dict[new_user_name] = new_iam_obj
             self.iam_users_list.append(new_user_name)
         self.log.info(
             "ENDED: Create 100 Users per account using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2083")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7170")
@@ -281,6 +304,7 @@ class TestAwsIam:
             secret_key=self.new_secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
@@ -300,6 +324,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: list accesskeys for the user using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2084")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7171")
@@ -322,15 +347,16 @@ class TestAwsIam:
             S3_BLKBOX_CFG["password"],
             new_iam_obj)
         user_access_key = resp[0]
-        user_secret_key = resp[1]
+        self.iam_user_dict[self.user_name] = new_iam_obj
         resp = new_iam_obj.delete_access_key(
             self.user_name, user_access_key)
-        assert_true(user_access_key, user_secret_key)
+        assert_true(resp[0], f"Failed to delete access key. Response: {resp}")
         self.iam_users_list.append(self.user_name)
         self.log.info(
             "ENDED: Delete Accesskey of a user using aws iam %s",
             resp)
 
+    @pytest.mark.skip("Duplicate of TEST-2082")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7172")
@@ -350,6 +376,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         self.iam_users_list.append(self.user_name)
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
@@ -370,6 +397,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create Access key to the user using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2076")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7173")
@@ -388,6 +416,7 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         self.log.info("Step 1: Created new account and new user in it")
         self.log.info(
             "Step 2: Listing users and verifying user name present")
@@ -397,12 +426,13 @@ class TestAwsIam:
                           for user in all_users if
                           self.user_name in user["UserName"]]
         self.log.debug("IAM users: %s", iam_users_list)
-        assert_true(iam_users_list, "true")
+        assert_list_item(iam_users_list, self.user_name)
         self.s3_accounts_list.append(self.account_name)
         self.iam_users_list.append(self.user_name)
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: Create new user for current Account AWS IAM")
 
+    @pytest.mark.skip("Duplicate of TEST-2081")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7191")
@@ -421,31 +451,30 @@ class TestAwsIam:
             self.user_name, access_key, secret_key)
         self.s3_accounts_list.append(self.account_name)
         self.iam_users_list.append(self.user_name)
+        new_iam_obj = iam_test_lib.IamTestLib(
+            access_key=access_key,
+            secret_key=secret_key)
+        self.s3_accounts_list.append(self.account_name)
         self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
         resp = self.cortx_obj.create_user_cortxcli(
-            self.user_name, self.s3acc_password, self.s3acc_password)
+           self.user_name, self.s3acc_password, self.s3acc_password)
         assert_true(resp[0], resp[1])
         self.cortx_obj.logout_cortx_cli()
         self.log.info(
-            "Step 1: Created user with name %s",
-            self.user_name)
+            "Step 1: Created user with name %s", self.user_name)
         self.log.info(
-            "Step 2: Creating user with existing name %s",
-            self.user_name)
+            "Step 2: Creating user with existing name %s", self.user_name)
         try:
-            self.iam_obj.create_user(
-                self.user_name)
+            resp = new_iam_obj.create_user(self.user_name)
+            assert_false(resp[0], "EntityAlreadyExists")
         except CTException as error:
-            assert_in(
-                "EntityAlreadyExists",
-                error.message,
-                error.message)
-        self.log.info(
-            "Step 2: Could not create user with existing name %s",
-            self.user_name)
+            self.log.error("EntityAlreadyExists: %s", error)
+            self.log.info(
+                "Step 2: Could not create user with existing name %s", self.user_name)
         self.log.info(
             "ENDED: creating user with existing name With AWS IAM client")
 
+    @pytest.mark.skip("Duplicate of TEST-2085")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7174")
@@ -459,38 +488,28 @@ class TestAwsIam:
             self.account_name)
         resp = self.create_account()
         assert_true(resp[0], resp[1])
+        self.s3_accounts_list.append(self.account_name)
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
         self.log.info(
-            "Step 1: Created a new account with name %s",
-            self.account_name)
+            "Step 1: Created a new account with name %s", self.account_name)
         self.log.info(
-            "Step 2: Verifying that new account is created successfully")
-        assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Verified that new account is created successfully")
-        self.log.info(
-            "Step 3: Creating a user with name %s",
-            self.user_name)
+            "Step 3: Creating a user with name %s", self.user_name)
         resp = iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = iam_obj
         self.log.info(
-            "Step 3: Created a user with name %s",
-            self.user_name)
-        self.s3_accounts_list.append(self.account_name)
+            "Step 3: Created a user with name %s", self.user_name)
         self.iam_users_list.append(self.user_name)
         self.log.info("Step 4: Creating access key for the user")
         resp = iam_obj.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
-        resp = iam_obj.update_access_key(
-            access_key_to_update,
-            "Active",
-            self.user_name)
+        resp = iam_obj.update_access_key(access_key_to_update, "Active", self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
@@ -498,6 +517,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
+        self.log.debug("Accesskey ID: %s, Accesskey status: %s", new_access_key, status)
         assert_equal(new_access_key, access_key_to_update, resp[1])
         assert_equal(status, "Active", resp[1])
         self.log.info(
@@ -505,6 +525,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: Update Accesskey of a user with active mode using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2086")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7175")
@@ -518,38 +539,26 @@ class TestAwsIam:
             self.account_name)
         resp = self.create_account()
         assert_true(resp[0], resp[1])
+        self.s3_accounts_list.append(self.account_name)
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         iam_obj = iam_test_lib.IamTestLib(
             access_key=access_key,
             secret_key=secret_key)
         self.log.info(
-            "Step 1: Created a new account with name %s",
-            self.account_name)
-        self.log.info(
-            "Step 2: Verifying that new account is created successfully")
-        assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Verified that new account is created successfully")
-        self.log.info(
-            "Step 3: Creating a user with name %s",
-            self.user_name)
+            "Step 1: Created a new account with name %s", self.account_name)
+        self.log.info("Step 3: Creating a user with name %s", self.user_name)
         resp = iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 3: Created a user with name %s",
-            self.user_name)
-        self.s3_accounts_list.append(self.account_name)
+        self.iam_user_dict[self.user_name] = iam_obj
+        self.log.info("Step 3: Created a user with name %s", self.user_name)
         self.iam_users_list.append(self.user_name)
         self.log.info("Step 4: Creating access key for the user")
         resp = iam_obj.create_access_key(self.user_name)
         access_key_to_update = resp[1]["AccessKey"]["AccessKeyId"]
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updating access key of user")
-        resp = iam_obj.update_access_key(
-            access_key_to_update,
-            "Inactive",
-            self.user_name)
+        resp = iam_obj.update_access_key(access_key_to_update, "Inactive", self.user_name)
         assert_true(resp[0], resp[1])
         self.log.info("Step 5: Updated access key of user")
         self.log.info("Step 6: Verifying that access key of user is updated")
@@ -557,6 +566,7 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         new_access_key = resp[1]["AccessKeyMetadata"][0]["AccessKeyId"]
         status = resp[1]["AccessKeyMetadata"][0]["Status"]
+        self.log.debug("Accesskey ID: %s, Accesskey status: %s", new_access_key, status)
         assert_equal(new_access_key, access_key_to_update, resp[1])
         assert_equal(status, "Inactive", resp[1])
         self.log.info(
@@ -564,6 +574,7 @@ class TestAwsIam:
         self.log.info(
             "ENDED: update access key of a user with inactive mode using aws iam")
 
+    @pytest.mark.skip("Duplicate of TEST-2087")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7176")
@@ -576,6 +587,7 @@ class TestAwsIam:
             "Step 1: Create new account and new user and new profile in it")
         resp = self.create_account()
         assert_true(resp[0], resp[1])
+        self.s3_accounts_list.append(self.account_name)
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         new_iam_obj = iam_test_lib.IamTestLib(
@@ -583,12 +595,12 @@ class TestAwsIam:
             secret_key=secret_key)
         resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
+        self.iam_user_dict[self.user_name] = new_iam_obj
         resp = new_iam_obj.create_user_login_profile(
             self.user_name,
             S3_BLKBOX_CFG["password"],
             True)
         assert_true(resp[0], resp[1])
-        self.s3_accounts_list.append(self.account_name)
         self.iam_users_list.append(self.user_name)
         self.log.info(
             "Step 1: Created new account and new user and new profile in it")
