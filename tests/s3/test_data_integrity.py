@@ -422,3 +422,4 @@ class TestDataIntegrity:
         self.params[self.WRITE_PARAM] = True
         self.params[self.READ_PARAM] = False
         self.update_s3config_and_restart_s3_server(params=self.params)
+        # todo change server config
