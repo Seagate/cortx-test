@@ -44,7 +44,7 @@ from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
-from commons.utils.system_utils import run_remote_cmd
+from commons.utils import system_utils
 from commons import constants as cons
 from commons.configmanager import config_utils
 
@@ -700,14 +700,14 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 2: Restart s3 authserver")
-        status, result = run_remote_cmd(
+        status = system_utils.run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
             password=self.passwd,
             read_lines=True)
         if not status:
-            self.log.info("Service did not restart successfully {result}")
+            self.log.info("Service did not restart successfully")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
         resp = self.iam_obj.create_iam_user(user_name=self.user_name,
                                             password=self.iam_password,
@@ -728,14 +728,14 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 5: Restart s3 authserver")
-        status, result = run_remote_cmd(
+        status = run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
             password=self.passwd,
             read_lines=True)
         if not status:
-            self.log.info("Service did not restart successfully {result}")
+            self.log.info("Service did not restart successfully")
         self.log.info("Step 6: Creating 6 iam user with name %s", self.user_name)
         for i in range(6):
             self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
@@ -771,14 +771,14 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 2: Restart s3 authserver")
-        status, result = run_remote_cmd(
+        status = run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
             password=self.passwd,
             read_lines=True)
         if not status:
-            self.log.info("Service did not restart successfully {result}")
+            self.log.info("Service did not restart successfully")
         self.s3acc_obj.logout_cortx_cli()
         self.s3acc_obj.login_cortx_cli()
         self.log.info("Step 3: Creating s3 account with name %s", self.s3acc_name)
@@ -801,14 +801,14 @@ class TestIAMUserManagement:
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 5: Restart s3 authserver")
-        status, result = run_remote_cmd(
+        status = run_remote_cmd(
             cmd="systemctl restart s3authserver",
             hostname=self.host,
             username=self.uname,
             password=self.passwd,
             read_lines=True)
         if not status:
-            self.log.info("Service did not restart successfully {result}")
+            self.log.info("Service did not restart successfully")
         self.log.info("Step 6: Creating 6 s3 accounts with name %s")
         for i in range(6):
             self.s3acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
