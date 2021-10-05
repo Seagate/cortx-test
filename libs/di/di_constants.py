@@ -21,9 +21,6 @@
 """
 Python file to maintain all constant msg, error, commands for data integrity tests
 """
-HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
-HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
-
 #DI feature control flags
 s3_range_read_flag = "S3_RANGED_READ_ENABLED"  # enable ranged reads
 s3_md5_check_flag = "S3_READ_MD5_CHECK_ENABLED"  # enable data integrity checksum check on S3 GET

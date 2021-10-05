@@ -449,3 +449,8 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
 CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
+
+# Maintenance mode for DI
+HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
+HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
+
