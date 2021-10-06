@@ -755,8 +755,11 @@ class TestDelayedDelete:
 
         # Do multipart upload
         object_name = self.test_file
-        self.s3_mp_test_obj.simple_multipart_upload(bucket_name, object_name, test_config["file_size"],
-                                                    self.test_file_path, test_config["total_parts"])
+        self.s3_mp_test_obj.simple_multipart_upload(bucket_name,
+                                                    object_name,
+                                                    test_config["file_size"],
+                                                    self.test_file_path,
+                                                    test_config["total_parts"])
 
         # Delete object
         res = self.s3_test_obj.delete_object(bucket_name, object_name)
