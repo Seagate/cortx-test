@@ -76,8 +76,8 @@ deploy_ff:
   build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
   prereq:
     min_disks: 4
-    os_release: ["CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)"]
-    kernel: ["3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64"]
+    os_release: [ "CentOS Linux release 7.9.2009 (Core)","CentOS Linux release 7.8.2003 (Core)" ]
+    kernel: [ "3.10.0-1160.el7.x86_64","3.10.0-1127.el7.x86_64" ]
     cpu_cores: 4
     memory: 8
   network_trans: "lnet"
@@ -94,4 +94,15 @@ deploy_ff:
   setup-type: "3_node"
   cluster_start_delay: 180
   gateway_lco: "10.230.240.1"
+  per_step_delay: 10
+  encl_name: "enclosure1"
+  lr_sign: "HP1_5U84"
+  bmc_username: "admin"
+  bmc_password: "admin"
+
+post_deployment_steps:
+  csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
+  s3user_name: 's3user'
+  s3user_email: 's3user@seagate.com'
+  s3user_pswd: 'xPUfs2X7OhXgirxG6au/T9FHd+q7mWHYo3P2OS7KlWs='
 
