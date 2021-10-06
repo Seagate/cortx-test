@@ -682,6 +682,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
 
+    @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-28776")
     def test_28776(self):
@@ -753,6 +754,7 @@ class TestIAMUserManagement:
         self.log.info("Cannot create more than 6 iam users")
         self.log.info("####### Test Completed! #########")
 
+    @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-28852")
     def test_28852(self):
