@@ -175,7 +175,7 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
             cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
     if args.stop_on_first_error:
-            cmd_line = cmd_line + ["-x"]
+        cmd_line = cmd_line + ["-x"]
 
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
                            '--tp_ticket=' + args.test_plan]
