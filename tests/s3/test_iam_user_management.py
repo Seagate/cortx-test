@@ -59,8 +59,8 @@ class TestIAMUserManagement:
         cls.remote_path = cons.AUTHSERVER_CONFIG
         cls.local_path = cons.LOCAL_COPY_PATH
         cls.nobj = node_helper.Node(hostname=CMN_CFG["nodes"][0]["hostname"],
-                         username=CMN_CFG["nodes"][0]["username"],
-                         password=CMN_CFG["nodes"][0]["password"])
+                                    username=CMN_CFG["nodes"][0]["username"],
+                                    password=CMN_CFG["nodes"][0]["password"])
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
@@ -124,7 +124,7 @@ class TestIAMUserManagement:
         login = self.iam_obj.login_cortx_cli(
             username=self.s3acc_name, password=self.acc_password)
         assert_utils.assert_true(login[0], login[1])
-        self.user_name = "{0}{1}".format("iam_user", str(time.time()))
+        self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
         self.END_LOG_FORMAT = "##### Test Ended -  "
         self.log.info("ENDED : Setup operations for test function")
@@ -174,8 +174,8 @@ class TestIAMUserManagement:
         self.log.info(nodes)
         for _, node in enumerate(nodes):
             health_obj = health_helper.Health(hostname=node["hostname"],
-                                username=node["username"],
-                                password=node["password"])
+                                              username=node["username"],
+                                              password=node["password"])
             resp = health_obj.check_node_health()
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
@@ -691,9 +691,9 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Edit authserver.properties file for user creation value set to 0")
         resp = self.nobj.copy_file_to_local(
-                remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-                      f"{self.remote_path}, local path: {self.local_path}"
+            f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -718,9 +718,9 @@ class TestIAMUserManagement:
         self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 4: Edit authserver.properties file for user creation value set to 6")
         resp = self.nobj.copy_file_to_local(
-                remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-                      f"{self.remote_path}, local path: {self.local_path}"
+            f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -760,9 +760,9 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Edit authserver.properties file for account creation value set to 0")
         resp = self.nobj.copy_file_to_local(
-                remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-                      f"{self.remote_path}, local path: {self.local_path}"
+            f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -789,9 +789,9 @@ class TestIAMUserManagement:
         assert_utils.assert_exact_string(resp[1], "Error")
         self.log.info("Step 4: Edit authserver.properties file for account creation value set to 6")
         resp = self.nobj.copy_file_to_local(
-                remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-                      f"{self.remote_path}, local path: {self.local_path}"
+            f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
