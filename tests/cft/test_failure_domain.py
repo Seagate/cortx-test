@@ -47,7 +47,8 @@ class TestFailureDomain:
         cls.node_list = []
         cls.host_list = []
         for node in range(cls.num_nodes):
-            cls.host_list.append(CMN_CFG["nodes"][node]["host"])
+            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+            cls.host_list.append(vm_name)
             cls.node_list.append(Node(hostname=CMN_CFG["nodes"][node]["hostname"],
                                       username=CMN_CFG["nodes"][node]["username"],
                                       password=CMN_CFG["nodes"][node]["password"]))
