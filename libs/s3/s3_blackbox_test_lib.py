@@ -31,6 +31,7 @@ from commons.utils.system_utils import run_local_cmd, execute_cmd
 from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from commons.utils.assert_utils import assert_true, assert_in
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,24 +78,23 @@ class JCloudClient:
     def update_jclient_jcloud_properties(self):
         """
         Update jclient, jcloud properties with correct s3, iam endpoint.
-
         :return: True
         """
         resp = False
         for prop_path in [S3_BLKBOX_CFG["jcloud_cfg"]["jclient_properties_path"],
                           S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_properties_path"]]:
-            self.log.info("Updating: %s", prop_path)
+            LOGGER.info("Updating: %s", prop_path)
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
-                if prop_dict['iam_endpoint'] != self.s3_iam:
-                    prop_dict['iam_endpoint'] = self.s3_iam
-                if prop_dict['s3_endpoint'] != self.s3_url:
-                    prop_dict['s3_endpoint'] = self.s3_url
+                if prop_dict['iam_endpoint'] != S3_CFG["iam_url"]:
+                    prop_dict['iam_endpoint'] = S3_CFG["iam_url"]
+                if prop_dict['s3_endpoint'] != S3_CFG["s3_url"]:
+                    prop_dict['s3_endpoint'] = S3_CFG["s3_url"]
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
 
-    def create_cmd_format(self, bucket, operation, jtool=None):
+    def create_cmd_format(self, bucket, operation, jtool=None, chunk=None):
         """
         Function forms a command to perform specified operation.
 
@@ -102,26 +102,45 @@ class JCloudClient:
         :param str bucket: Name of the s3 bucket
         :param str operation: type of operation to be performed on s3
         :param str jtool: Name of the java jar tool
+        :param bool chunk: Its accepts chunk upload, if True
         :return: str command: cli command to be executed
         """
         if jtool == S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"]:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_cmd"]
             aws_keys_str = "--access-key {} --secret-key {}".format(
-                self.access_key, self.secret_key)
+                ACCESS_KEY, SECRET_KEY)
+            bucket_url = "s3://{}".format(bucket)
+            cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                          aws_keys_str, "-p")
         else:
             java_cmd = S3_BLKBOX_CFG["jcloud_cfg"]["jclient_cmd"]
             aws_keys_str = "--access_key {} --secret_key {}".format(
-                self.access_key, self.secret_key)
-        bucket_url = "s3://{}".format(bucket)
-        cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
-                                      aws_keys_str, "-p")
-        self.log.info("jcloud command: %s", cmd)
+                ACCESS_KEY, SECRET_KEY)
+            bucket_url = "s3://{}".format(bucket)
+            if chunk:
+                cmd = "{} {} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                                 aws_keys_str, "-p", "-C")
+            else:
+                cmd = "{} {} {} {} {}".format(java_cmd, operation, bucket_url,
+                                              aws_keys_str, "-p")
+
+        LOGGER.info("jcloud command: %s", cmd)
 
         return cmd
 
 
 class MinIOClient:
     """Class for minIO related operations."""
+
+    def __init__(self,
+                 **kwargs) -> None:
+        """
+        method initializes members for minio client.
+
+        """
+        val_cert = kwargs.get("validate_certs", S3_CFG["validate_certs"])
+        self.validate_cert = f"{'' if val_cert else ' --insecure'}"
+        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
 
     @staticmethod
     def configure_minio(access: str = None, secret: str = None, path: str = None) -> bool:
@@ -190,7 +209,8 @@ class MinIOClient:
         """
         LOGGER.info(
             "Step 1: Creating a bucket with name %s", bucket_name)
-        resp = system_utils.run_local_cmd(self.minio_cnf["create_bkt_cmd"].format(bucket_name))
+        cmd = self.minio_cnf["create_bkt_cmd"].format(bucket_name) + self.validate_cert
+        resp = system_utils.run_local_cmd(cmd)
         assert_utils.assert_true(resp[0], resp)
         assert_utils.assert_in("Bucket created successfully", resp[1], resp[1])
         LOGGER.info(

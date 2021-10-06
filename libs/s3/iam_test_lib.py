@@ -22,19 +22,21 @@
 
 """IAM test helper library which contains admin_path operations."""
 
-import time
 import logging
+import time
+
 import boto3
 import boto3.exceptions
 from botocore.exceptions import ClientError
+
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.system_utils import format_iam_resp
 from commons.utils.s3_utils import poll
+from commons.utils.system_utils import format_iam_resp
 from config.s3 import S3_CFG
 from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import S3Lib
 from libs.s3.iam_core_lib import IamLib
+from libs.s3.s3_core_lib import S3Lib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,12 +47,13 @@ ACC_SECRET_KEY = list()
 class IamTestLib(IamLib):
     """Test Class for performing IAM related operations."""
 
-    def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
-                 endpoint_url: str = S3_CFG["iam_url"],
-                 iam_cert_path: str = S3_CFG["iam_cert_path"],
-                 **kwargs) -> None:
+    def __init__(
+            self,
+            access_key: str = ACCESS_KEY,
+            secret_key: str = SECRET_KEY,
+            endpoint_url: str = S3_CFG["iam_url"],
+            iam_cert_path: str = S3_CFG["iam_cert_path"],
+            **kwargs) -> None:
         """
         Method initializes members of IamTestLib and its parent class.
 
@@ -83,12 +86,8 @@ class IamTestLib(IamLib):
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
 
-        except (self.iam.exceptions.EntityAlreadyExistsException, ClientError) as error:
-            raise error
-        except Exception as error:
-            LOGGER.error("Error in %s: %s",
-                         IamTestLib.create_user.__name__,
-                         error)
+        except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
+            LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
@@ -104,9 +103,7 @@ class IamTestLib(IamLib):
             response = super().list_users()["Users"]
             LOGGER.info(response)
 
-        except (self.iam.exceptions.UserNotFoundException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.UserNotFoundException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users.__name__,
                          error)
@@ -125,9 +122,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Creating %s user access key.", user_name)
             response = super().create_access_key(user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.ServiceFailureException , ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
                          error)
@@ -153,9 +148,7 @@ class IamTestLib(IamLib):
                 access_key_id)
             response = poll(super().delete_access_key, user_name, access_key_id)
             LOGGER.info(response)
-        except (self.iam.exceptions.NoSuchEntityException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
                          error)
@@ -174,9 +167,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Delete user %s.", user_name)
             response = poll(super().delete_user, user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.NoSuchEntityException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_user.__name__,
                          error)
@@ -195,9 +186,7 @@ class IamTestLib(IamLib):
             LOGGER.info("list access keys.")
             response = super().list_access_keys(user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.NoSuchEntityException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_access_keys.__name__,
                          error)
@@ -222,9 +211,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Update access key.")
             response = poll(super().update_access_key, access_key_id, status, user_name)
             LOGGER.info(response)
-        except (self.iam.exceptions.ServiceFailureException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_access_key.__name__,
                          error)
@@ -232,8 +219,7 @@ class IamTestLib(IamLib):
 
         return True, response
 
-    def update_user(self, new_user_name: str = None,
-                    user_name: str = None) -> tuple:
+    def update_user(self, new_user_name: str = None, user_name: str = None) -> tuple:
         """
         Updating given user.
 
@@ -249,9 +235,7 @@ class IamTestLib(IamLib):
             response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
 
-        except (self.iam.exceptions.ServiceFailureException, ClientError) as error:
-            raise error
-        except Exception as error:
+        except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user.__name__,
                          error)
@@ -285,7 +269,10 @@ class IamTestLib(IamLib):
                 "%Y-%m-%d %H:%M:%S")
             user_dict['password_reset_required'] = login_profile.password_reset_required
             LOGGER.debug(user_dict)
-        except Exception as error:
+        except (self.iam.exceptions.PasswordPolicyViolationException,
+                self.iam.exceptions.NoSuchEntityException,
+                self.iam.exceptions.InvalidUserTypeException,
+                ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_user_login_profile.__name__,
                          error)
@@ -314,7 +301,7 @@ class IamTestLib(IamLib):
             response = poll(super().update_user_login_profile,
                             user_name, password, password_reset)
             LOGGER.debug(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user_login_profile.__name__,
                          error)
@@ -337,7 +324,7 @@ class IamTestLib(IamLib):
                 user_name)
             response = poll(super().update_user_login_profile_no_pwd_reset, user_name, password)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.update_user_login_profile_no_pwd_reset.__name__,
@@ -362,7 +349,7 @@ class IamTestLib(IamLib):
                 "%Y-%m-%d %H:%M:%S")
             user_dict['password_reset_required'] = login_profile.password_reset_required
             LOGGER.info(user_dict)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.get_user_login_profile.__name__,
                          error)
@@ -405,7 +392,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Access Key deleted successfully: %s", str(res))
             LOGGER.info("Completed CRUD operations for s3 Data Path")
             response = {"AccountName": user_name, "BucketName": bucket_name}
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.s3_user_operation.__name__,
                          error)
@@ -436,7 +423,7 @@ class IamTestLib(IamLib):
             LOGGER.info("Listing and Verifying the access key for particular user")
             verify_acc_key = poll(super().list_access_keys, user_name)
             LOGGER.debug(verify_acc_key)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_modify_delete_access_key.__name__,
                          error)
@@ -476,7 +463,7 @@ class IamTestLib(IamLib):
             response = bucket.delete()
             LOGGER.debug(response)
             LOGGER.info("Deleted bucket")
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.s3_ops_using_temp_auth_creds.__name__,
                          error)
@@ -1001,31 +988,31 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
-    @staticmethod
     def change_user_password(
+            self,
             old_pwd: str = None,
-            new_pwd: str = None,
-            access_key: str = None,
-            secret_key: str = None) -> tuple:
+            new_pwd: str = None) -> tuple:
         """
-        Change user password.
-
-        :param old_pwd: Old password of user.
+        Change user password of IAM user.
+        :param old_pwd: The IAM user's current password.
         :param new_pwd: New password of user.
-        :param access_key: Access key of user.
-        :param secret_key: Secret key of user.
         :return: (Boolean, response).
         """
-        LOGGER.info("Change user password")
-        status, result = tuple()  # TODO: change user password.
-        LOGGER.info("output = %s", str(result))
-        if "failed" in result:
+        try:
+            LOGGER.info("Change current IAM user's password")
+            super().change_password(old_password=old_pwd,
+                                    new_password=new_pwd)
+        except (self.iam.exceptions.PasswordPolicyViolationException,
+                self.iam.exceptions.NoSuchEntityException,
+                self.iam.exceptions.InvalidUserTypeException,
+                ClientError,
+                Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.change_user_password.__name__,
-                         result)
-            raise CTException(err.S3_CLIENT_ERROR, result)
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-        return status, result
+        return True, "Change Password Request is Successful"
 
     @staticmethod
     def update_user_login_profile_with_both_reset_options(
@@ -1094,7 +1081,7 @@ class IamTestLib(IamLib):
             LOGGER.debug(del_acc)
 
             return status, [acc, del_acc]
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 IamTestLib.create_and_delete_account.__name__,
