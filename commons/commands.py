@@ -332,6 +332,7 @@ CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id
 CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload " \
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
 # Upload directory recursively to s3.
 CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
 CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
@@ -410,9 +411,8 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 
 # Deployment using Factory and Field
-CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh" \
-                       " https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
-                       "/components/provisioner/scripts/install.sh; chmod +x /mnt/cortx/install.sh "
+CMD_GET_PROV_INSTALL = "curl --create-dirs " \
+                       "--output /mnt/cortx/install.sh {}; chmod +x /mnt/cortx/install.sh "
 CMD_INSTALL_CORTX_RPM = "sh /mnt/cortx/install.sh -t {}"
 CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}"  # server name, type - VM/HW
 CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
@@ -428,7 +428,7 @@ SECURITY_CFG = "cortx_setup security config --certificate {}"
 FEATURE_CFG = "cortx_setup config set --key {} --val {}"
 INITIALIZE_NODE = "cortx_setup node initialize"
 SET_NODE_SIGN = "cortx_setup signature set --key LR_SIGNATURE --value {}"
-NODE_FINALIZE = "cortx_setup node finalize"
+NODE_FINALIZE = "cortx_setup node finalize --force"
 PREPARE_NODE = "cortx_setup node prepare server --site_id {} --rack_id {} --node_id {}"
 PREPARE_NETWORK = "cortx_setup node prepare network --hostname {} --search_domains {} " \
                   "--dns_servers {}"
@@ -448,3 +448,8 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
                      "--parity {} --spare {}"
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
+CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
+
+# Maintenance mode for DI
+HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
+HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"

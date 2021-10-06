@@ -1,8 +1,0 @@
-test_deployment:
-  jenkins_job_name: 'QA-testing-EC-deployment'
-  jenkins_job_url: 'http://eos-jenkins.colo.seagate.com/view/QA-R2/job/QA'
-  jenkins_token: 'e0EzNMlS53'
-  skip_deployment: false
-  skip_preboarding: false
-  skip_onboarding: true
-  skip_s3_configure: false

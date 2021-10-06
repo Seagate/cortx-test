@@ -25,6 +25,8 @@
 from commons import configmanager
 from commons.params import S3_BLACK_BOX_CONFIG_PATH
 from commons.params import S3_MPART_CFG_PATH
+from commons.params import DEL_CFG_PATH
 
 S3_BLKBOX_CFG = configmanager.get_config_wrapper(fpath=S3_BLACK_BOX_CONFIG_PATH)
 MPART_CFG = configmanager.get_config_wrapper(fpath=S3_MPART_CFG_PATH)
+DEL_CFG = configmanager.get_config_wrapper(fpath=DEL_CFG_PATH)

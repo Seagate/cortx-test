@@ -72,8 +72,7 @@ style_table_cell = {
 
 style_sub_tab = {
     'margin-left': 10,
-    'margin-right': 10,
-    'margin-top': '10px'
+    'margin-right': 10
 }
 
 style_sub_label = {
