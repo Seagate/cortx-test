@@ -376,7 +376,7 @@ def trigger_tests_from_kafka_msg(args, kafka_msg):
         for test in kafka_msg.test_list:
             write.writerow([test])
 
-    tp_metadata = create_test_meta_data_file(args, kafka_msg.test_list)  # why this data is needed in kafka exec
+    create_test_meta_data_file(args, kafka_msg.test_list)  # why this data is needed in kafka exec
     _env = os.environ.copy()
     _env['pytest_run'] = 'distributed'
 
