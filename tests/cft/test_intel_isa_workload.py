@@ -33,6 +33,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
+from config.s3 import S3_CFG
 from libs.ha.ha_common_libs import HALibs
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
@@ -234,6 +235,7 @@ class TestIntelISAIO:
                 f"Please read log file {resp[1]}"
 
     @pytest.mark.run(order=6)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26963")
     def test_26963(self):
@@ -247,6 +249,7 @@ class TestIntelISAIO:
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.run(order=9)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26964")
     def test_26964(self):
@@ -260,6 +263,7 @@ class TestIntelISAIO:
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.run(order=13)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26967")
     def test_26967(self):
@@ -273,6 +277,7 @@ class TestIntelISAIO:
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.run(order=17)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26968")
     def test_26968(self):
@@ -286,6 +291,7 @@ class TestIntelISAIO:
         self.basic_io_with_parity_check_enabled(bucket_name)
 
     @pytest.mark.run(order=7)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26969")
     def test_26969(self):
@@ -300,6 +306,7 @@ class TestIntelISAIO:
         self.io_workload(bucket_name)
 
     @pytest.mark.run(order=10)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26970")
     def test_26970(self):
@@ -314,6 +321,7 @@ class TestIntelISAIO:
         self.io_workload(bucket_name)
 
     @pytest.mark.run(order=14)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26971")
     def test_26971(self):
@@ -328,6 +336,7 @@ class TestIntelISAIO:
         self.io_workload(bucket_name)
 
     @pytest.mark.run(order=18)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26972")
     def test_26972(self):

@@ -27,7 +27,6 @@ from multiprocessing import Process
 
 import logging
 import pytest
-from commons import commands
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
@@ -36,12 +35,13 @@ from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
-from config import S3_CFG
-from config import S3_BKT_TST as BKT_POLICY_CONF
+from config.s3 import S3_CFG
+from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
+from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -61,7 +61,8 @@ class TestCopyObjects:
         2. Check cluster status, all services are running.
         """
         LOGGER.info("STARTED: test setup.")
-        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_obj = s3_test_lib.S3TestLib()
+        self.s3_cmd_obj = S3CmdTestLib(init_s3_connection=False)
         self.nodes = CMN_CFG["nodes"]
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
@@ -259,7 +260,7 @@ class TestCopyObjects:
         access_key = create_account[1]["access_key"]
         secret_key = create_account[1]["secret_key"]
         canonical_id = create_account[1]["canonical_id"]
-        LOGGER.info("Step Successfully created the s3iamcli account")
+        LOGGER.info("Step Successfully created the account")
         s3_obj = s3_test_lib.S3TestLib(
             access_key,
             secret_key,
@@ -546,11 +547,8 @@ class TestCopyObjects:
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
         LOGGER.info("Uploading objects to bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name1,
-                self.object_name1))
+        resp = self.s3_cmd_obj.object_upload_cli(
+            self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)
@@ -614,11 +612,8 @@ class TestCopyObjects:
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
         LOGGER.info("Uploading objects to bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name1,
-                self.object_name1))
+        resp = self.s3_cmd_obj.object_upload_cli(
+            self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)

@@ -28,13 +28,11 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from commons.configmanager import get_config_wrapper
 from commons.utils.assert_utils import assert_true, assert_in
 from commons.utils.assert_utils import assert_is_not_none, assert_not_in
-from config import S3_USER_ACC_MGMT_CONFIG
+from config.s3 import S3_USER_ACC_MGMT_CONFIG
 
 LOGGER = logging.getLogger(__name__)
-IAM_OBJ = iam_test_lib.IamTestLib()
 
 
 class TestAccountLoginProfile:
@@ -42,6 +40,7 @@ class TestAccountLoginProfile:
 
     def setup_method(self):
         LOGGER.info("STARTED: Setup Operation")
+        self.iam_obj = iam_test_lib.IamTestLib()
         self.account_name = "iamAccount"
         self.email_suffix = "@seagate.com"
         self.email_id = "{}{}".format(self.account_name, self.email_suffix)
@@ -57,18 +56,18 @@ class TestAccountLoginProfile:
         LOGGER.info("STARTED: Teardown Operations")
         LOGGER.info("Deleting account starts with: {}".format(
             self.account_name))
-        acc_list = IAM_OBJ.list_accounts_s3iamcli(
+        acc_list = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)[1]
         LOGGER.info(acc_list)
         all_acc = [acc["AccountName"]
                    for acc in acc_list if self.account_name in acc["AccountName"]]
         LOGGER.info(all_acc)
         for acc_name in all_acc:
-            IAM_OBJ.reset_access_key_and_delete_account_s3iamcli(acc_name)
+            self.iam_obj.reset_access_key_and_delete_account(acc_name)
         LOGGER.info("ENDED: Teardown Operations")
 
-    @staticmethod
     def create_account_n_login_profile(
+            self,
             acc_name,
             email,
             pwd,
@@ -86,13 +85,13 @@ class TestAccountLoginProfile:
         :return: None
         """
         LOGGER.info("Step 1: Creating an account %s", acc_name)
-        acc_res = IAM_OBJ.create_account_s3iamcli(acc_name, email,
+        acc_res = self.iam_obj.create_account(acc_name, email,
                                                   ldap_user, ldap_pwd)
         assert_true(acc_res[0], acc_res[1])
         LOGGER.info("Step 1: Account created %s", acc_res[1])
         LOGGER.info(
             "Step 2: Creating login profile for an account %s", acc_name)
-        login_res = IAM_OBJ.create_account_login_profile_s3iamcli(
+        login_res = self.iam_obj.create_account_login_profile(
             acc_name, pwd, acc_res[1]["access_key"],
             acc_res[1]["secret_key"], password_reset=pwd_reset)
         assert_true(login_res[0], login_res[1])
@@ -108,21 +107,21 @@ class TestAccountLoginProfile:
         """Create account login profile for new account."""
         LOGGER.info("STARTED: Create account login profile for new account")
         LOGGER.info("Step 1: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_not_in(
             self.account_name, str(
                 list_account[1]), list_account[1])
         LOGGER.info("Step 1: listed account")
         LOGGER.info("Step 2: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 2: Account created %s", res[1])
         LOGGER.info(
             "Step 3: Creating login profile for an account %s",
             self.account_name)
-        res = IAM_OBJ.create_account_login_profile_s3iamcli(
+        res = self.iam_obj.create_account_login_profile(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             res[1]["access_key"], res[1]["secret_key"],
             password_reset=True)
@@ -141,7 +140,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "ENDED: Create account login profile for nonexisting account")
         LOGGER.info("Step 1: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_not_in(
             self.account_name, str(
@@ -150,7 +149,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 2: Creating login profile for a non existing account")
         try:
-            IAM_OBJ.create_account_login_profile_s3iamcli(
+            self.iam_obj.create_account_login_profile(
                 "dummy_account", S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 "dummy_access_key", "dummy_secret_key",
                 password_reset=False)
@@ -173,14 +172,14 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "STARTED: Create account login profile for currently deleted account")
         LOGGER.info("Step 1: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_not_in(
             self.account_name, str(
                 list_account[1]), list_account[1])
         LOGGER.info("Step 1: listed account")
         LOGGER.info("Step 2: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 2: Account created %s", res[1])
@@ -189,22 +188,22 @@ class TestAccountLoginProfile:
         secret_key = res[1]["secret_key"]
 
         LOGGER.info("Step 3: list and then delete recently created account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_in(self.account_name, str(list_account[1]), list_account[1])
-        res = IAM_OBJ.delete_account_s3iamcli(
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info("Step 3: listed and Deleted recently created account")
 
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_not_in(self.account_name, list_account[1])
 
         LOGGER.info(
             "Step 4: Creating account login profile for recently deleted account")
         try:
-            IAM_OBJ.create_account_login_profile_s3iamcli(
+            self.iam_obj.create_account_login_profile(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 access_key, secret_key, password_reset=True)
         except CTException as error:
@@ -227,13 +226,13 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Create account login profile with password of 0 character")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
 
         LOGGER.info("Step 2: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_in(self.account_name, str(list_account[1]), list_account[1])
         LOGGER.info("Step 2: listed account")
@@ -245,7 +244,7 @@ class TestAccountLoginProfile:
             "Step 3: Creating account login profile for account %s "
             "with password of 0 character", self.account_name)
         try:
-            IAM_OBJ.create_account_login_profile_s3iamcli(
+            self.iam_obj.create_account_login_profile(
                 self.account_name, self.test_cfg["test_9784"]["password"],
                 access_key, secret_key, password_reset=True)
         except CTException as error:
@@ -266,13 +265,13 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "STARTED: Create account login profile with password of more than 128 characters.")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
 
         LOGGER.info("Step 2: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_in(self.account_name, str(list_account[1]), list_account[1])
         LOGGER.info("Step 2: listed account")
@@ -284,7 +283,7 @@ class TestAccountLoginProfile:
             "Step 3: Creating login profile for an account %s "
             "with password more than 128 characters", self.account_name)
         try:
-            IAM_OBJ.create_account_login_profile_s3iamcli(
+            self.iam_obj.create_account_login_profile(
                 self.account_name, self.test_cfg["test_9785"]["password"],
                 access_key, secret_key, password_reset=False)
         except CTException as error:
@@ -394,13 +393,13 @@ class TestAccountLoginProfile:
             "Create account login profile without mentioning  "
             "--password-reset-required --no-password-reset-required")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
 
         LOGGER.info("Step 2: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_in(self.account_name, str(list_account[1]), list_account[1])
         LOGGER.info("Step 2: listed account")
@@ -411,7 +410,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Creating login profile for account %s without password reset options",
             self.account_name)
-        res = IAM_OBJ.create_account_login_profile_without_both_reset_options(
+        res = self.iam_obj.create_account_login_profile_without_both_reset_options(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(res[0], res[1])
@@ -435,13 +434,13 @@ class TestAccountLoginProfile:
             "STARTED: Create account login profile with both options "
             "--no-password-reset-required --password-reset-required")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
 
         LOGGER.info("Step 2: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         assert_in(self.account_name, str(list_account[1]), list_account[1])
         LOGGER.info("Step 2: listed account")
@@ -452,7 +451,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Creating account login profile for account %s with"
             " both password reset value", self.account_name)
-        res = IAM_OBJ.create_account_login_profile_both_reset_options(
+        res = self.iam_obj.create_account_login_profile_both_reset_options(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(res[0], res[1])
@@ -473,7 +472,7 @@ class TestAccountLoginProfile:
             "STARTED: Create account login profile with accesskey "
             "and sercret key of its user")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -482,7 +481,7 @@ class TestAccountLoginProfile:
         secret_key = res[1]["secret_key"]
         user_name = "seagate_user"
         LOGGER.info("Step 2: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
@@ -501,7 +500,7 @@ class TestAccountLoginProfile:
             "Step 4: Creating account login profile for account %s with keys of its user",
             self.account_name)
         try:
-            IAM_OBJ.create_account_login_profile_s3iamcli(
+            self.iam_obj.create_account_login_profile(
                 self.account_name,
                 S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 user_access_key,
@@ -544,7 +543,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting account login profile for account %s",
             self.account_name)
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
@@ -564,7 +563,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 1: Getting account login profile for account not present")
         try:
-            IAM_OBJ.get_account_login_profile_s3iamcli(
+            self.iam_obj.get_account_login_profile(
                 "dummy_account", "dummy_access_key", "dummy_secret_key")
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -584,7 +583,7 @@ class TestAccountLoginProfile:
             "STARTED: Get login details for acc which is present but"
             " login not created")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -595,7 +594,7 @@ class TestAccountLoginProfile:
             "Step 2: Getting account login profile for account %s for which "
             "login is not created", self.account_name)
         try:
-            IAM_OBJ.get_account_login_profile_s3iamcli(
+            self.iam_obj.get_account_login_profile(
                 self.account_name, access_key, secret_key)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -626,22 +625,22 @@ class TestAccountLoginProfile:
         secret_key = res[0][1]["secret_key"]
         LOGGER.debug(res)
         LOGGER.info(
-            "Step 3: Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+            "Step 3: Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Deleted account %s using s3iamcli", self.account_name)
-        LOGGER.info("Step 4: Get account login profile using s3iamcli")
+            "Step 3: Deleted account %s", self.account_name)
+        LOGGER.info("Step 4: Get .account login profile.")
         try:
-            IAM_OBJ.get_account_login_profile_s3iamcli(
+            self.iam_obj.get_account_login_profile(
                 self.account_name, access_key, secret_key)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in("Failed to get login profile",
                       error.message, error.message)
         LOGGER.info(
-            "Step 4: Failed to get account login profile using s3iamcli")
+            "Step 4: Failed to get .account login profile.")
         LOGGER.info(
             "ENDED: Get login details for account which is recently got deleted")
 
@@ -657,7 +656,7 @@ class TestAccountLoginProfile:
             "Creating an account %s with email %s:",
             self.account_name, self.email_id)
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -666,7 +665,7 @@ class TestAccountLoginProfile:
         secret_key = res[1]["secret_key"]
         user_name = "seagate_user"
         LOGGER.info("Step 2: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
@@ -684,7 +683,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Creating account login profile for account %s with keys "
             "of its user", self.account_name)
-        IAM_OBJ.create_account_login_profile_s3iamcli(
+        self.iam_obj.create_account_login_profile(
             self.account_name,
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key,
@@ -693,16 +692,16 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Created account login profile for account %s with "
             "keys of its user", self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
+        LOGGER.info("Step 5: Get .account login profile.")
         try:
-            IAM_OBJ.get_account_login_profile_s3iamcli(
+            self.iam_obj.get_account_login_profile(
                 self.account_name, user_access_key, user_secret_key)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
             assert_in("User is not authorized to perform invoked action",
                       error.message, error.message)
         LOGGER.info(
-            "Step 5: Failed to get account login profile using s3iamcli")
+            "Step 5: Failed to get .account login profile.")
         LOGGER.info(
             "Step 5: Deleting access key of user %s", user_name)
         res = new_iam_obj.delete_access_key(user_name, user_access_key)
@@ -736,7 +735,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting account login profile for account %s",
             self.account_name)
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
@@ -747,7 +746,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name, self.test_cfg["test_9812"]["new_password"],
             access_key, secret_key,
             password_reset=True)
@@ -755,15 +754,15 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 5: Successful to get account login profile using s3iamcli")
+            "Step 5: Successful to get .account login profile.")
         LOGGER.info(
-            "Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+            "Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info("ENDED: Update account login profile with password only")
@@ -790,16 +789,16 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name,
             self.test_cfg["test_9812"]["new_password"],
             access_key,
@@ -809,13 +808,13 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        LOGGER.info("Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        LOGGER.info("Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
@@ -843,16 +842,16 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name,
             self.test_cfg["test_9812"]["new_password"],
             access_key,
@@ -862,15 +861,15 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
+        LOGGER.info("Step 5: Get .account login profile.")
         LOGGER.info(
-            "Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+            "Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
@@ -903,32 +902,32 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
 
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_both_reset_options(
+        resp = self.iam_obj.update_account_login_profile_both_reset_options(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key)
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
+        LOGGER.info("Step 5: Get .account login profile.")
         LOGGER.info(
-            "Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+            "Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
@@ -958,30 +957,30 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
 
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name, self.test_cfg["test_9812"]["new_password"],
             access_key, secret_key, password_reset=True)
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 5: Get account login profile using s3iamcli successful")
+            "Step 5: Get .account login profile. successful")
         LOGGER.info(
             "ENDED: Update account login profile with both password "
             "and reset flag")
@@ -1009,18 +1008,18 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
 
         LOGGER.info(
             "Step 4: Updating account login profile for account %s without"
             " password", self.account_name)
         try:
-            IAM_OBJ.update_account_login_profile_both_reset_options(
+            self.iam_obj.update_account_login_profile_both_reset_options(
                 self.account_name, access_key, secret_key)
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1046,7 +1045,7 @@ class TestAccountLoginProfile:
             "Creating an account %s with email %s",
             self.account_name, self.email_id)
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1058,7 +1057,7 @@ class TestAccountLoginProfile:
             "Step 2: Updating account login profile for account %s",
             self.account_name)
         try:
-            IAM_OBJ.update_account_login_profile_s3iamcli(
+            self.iam_obj.update_account_login_profile(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 access_key, secret_key, password_reset=True)
         except CTException as error:
@@ -1081,7 +1080,7 @@ class TestAccountLoginProfile:
             "STARTED: Update account login profile for the account "
             "which doesnt exist")
         LOGGER.info("Step 1: List account")
-        list_account = IAM_OBJ.list_accounts_s3iamcli(
+        list_account = self.iam_obj.list_accounts(
             self.ldap_user, self.ldap_pwd)
         acc_name = "no_account"
         assert_not_in(acc_name, str(list_account[1]), list_account[1])
@@ -1091,7 +1090,7 @@ class TestAccountLoginProfile:
             "Step 2: Updating account login profile for account %s",
             acc_name)
         try:
-            IAM_OBJ.update_account_login_profile_s3iamcli(
+            self.iam_obj.update_account_login_profile(
                 acc_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 "no_accesskey", "no_secretkey", password_reset=True)
         except CTException as error:
@@ -1130,17 +1129,17 @@ class TestAccountLoginProfile:
         secret_key = res[0][1]["secret_key"]
 
         LOGGER.info(
-            "Step 3: Deleting account %s using s3iamcli", self.account_name)
-        res = IAM_OBJ.delete_account_s3iamcli(
+            "Step 3: Deleting account %s", self.account_name)
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Deleted account %s using s3iamcli", self.account_name)
+            "Step 3: Deleted account %s", self.account_name)
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
         try:
-            IAM_OBJ.update_account_login_profile_s3iamcli(
+            self.iam_obj.update_account_login_profile(
                 self.account_name,
                 self.test_cfg["test_9820"]["new_password"],
                 access_key,
@@ -1181,17 +1180,17 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
 
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key, secret_key, password_reset=True)
         assert_true(resp[0], resp[1])
@@ -1199,13 +1198,13 @@ class TestAccountLoginProfile:
             "Step 4: Updated account login profile for account %s",
             self.account_name)
 
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 5: Get account login profile using s3iamcli successful")
+            "Step 5: Get .account login profile. successful")
         LOGGER.info(
             "ENDED: Update login profile for acc with new password"
             " as current password.")
@@ -1238,30 +1237,30 @@ class TestAccountLoginProfile:
         access_key = res[0][1]["access_key"]
         secret_key = res[0][1]["secret_key"]
 
-        LOGGER.info("Step 3: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 3: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 3: Successful to get account login profile using s3iamcli")
+            "Step 3: Successful to get .account login profile.")
 
         LOGGER.info(
             "Step 4: Updating account login profile for account %s",
             self.account_name)
-        resp = IAM_OBJ.update_account_login_profile_s3iamcli(
+        resp = self.iam_obj.update_account_login_profile(
             self.account_name, self.test_cfg["test_9822"]["new_password"],
             access_key, secret_key, password_reset=True)
         assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Updated account login profile for account %s",
             self.account_name)
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         LOGGER.debug(res)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 5: Get account login profile using s3iamcli successful")
+            "Step 5: Get .account login profile. successful")
         LOGGER.info(
             "ENDED: Update the account login profiles password with the new "
             "password which contains invalid characters.Verify if it accepts "
@@ -1280,7 +1279,7 @@ class TestAccountLoginProfile:
             "Creating an account %s with email %s:",
             self.account_name, self.email_id)
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1288,7 +1287,7 @@ class TestAccountLoginProfile:
         secret_key = res[1]["secret_key"]
         user_name = "new_user99"
         LOGGER.info("Step 2: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
@@ -1306,24 +1305,24 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 4: Creating account login profile for account %s with keys"
             " of its user", self.account_name)
-        IAM_OBJ.create_account_login_profile_s3iamcli(
+        self.iam_obj.create_account_login_profile(
             self.account_name,
             S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
             access_key,
             secret_key,
             password_reset=False)
 
-        LOGGER.info("Step 5: Get account login profile using s3iamcli")
-        res = IAM_OBJ.get_account_login_profile_s3iamcli(
+        LOGGER.info("Step 5: Get .account login profile.")
+        res = self.iam_obj.get_account_login_profile(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info(
-            "Step 5: Get account login profile using s3iamcli")
+            "Step 5: Get .account login profile.")
         LOGGER.info(
             "Updating account login profile for account %s",
             self.account_name)
         try:
-            IAM_OBJ.update_account_login_profile_s3iamcli(
+            self.iam_obj.update_account_login_profile(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 user_access_key, user_secret_key, password_reset=True)
         except CTException as error:
@@ -1355,7 +1354,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
-        res = IAM_OBJ.get_temp_auth_credentials_account(
+        res = self.iam_obj.get_temp_auth_credentials_account(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
@@ -1376,7 +1375,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 1: Getting temp auth credentials for invalid account")
         try:
-            IAM_OBJ.get_temp_auth_credentials_account(
+            self.iam_obj.get_temp_auth_credentials_account(
                 acc_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1395,7 +1394,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "STARTED: Get the temp Cred for acc which is recently got deleted")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1403,7 +1402,7 @@ class TestAccountLoginProfile:
         access_key = res[1]["access_key"]
         secret_key = res[1]["secret_key"]
         LOGGER.info("Step 2: Deleting recently created account")
-        res = IAM_OBJ.delete_account_s3iamcli(
+        res = self.iam_obj.delete_account(
             self.account_name, access_key, secret_key)
         assert_true(res[0], res[1])
         LOGGER.info("Step 2: Deleted recently created account")
@@ -1411,7 +1410,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account {} which is"
             "recently got deleted".format(self.account_name))
         try:
-            IAM_OBJ.get_temp_auth_credentials_account(
+            self.iam_obj.get_temp_auth_credentials_account(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1442,7 +1441,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
-        res = IAM_OBJ.get_temp_auth_credentials_account(
+        res = self.iam_obj.get_temp_auth_credentials_account(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
@@ -1454,7 +1453,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Perform s3 ops using temp auth credentials for account %s"
             "with creds as %s", self.account_name, res[1])
-        res = IAM_OBJ.s3_ops_using_temp_auth_creds(
+        res = self.iam_obj.s3_ops_using_temp_auth_creds(
             temp_access_key,
             temp_secret_key,
             temp_session_token,
@@ -1485,7 +1484,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
-        res = IAM_OBJ.get_temp_auth_credentials_account(
+        res = self.iam_obj.get_temp_auth_credentials_account(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
@@ -1495,7 +1494,7 @@ class TestAccountLoginProfile:
             "Step 4: Perform s3 ops using invalid temp auth credentials for account %s",
             self.account_name)
         try:
-            IAM_OBJ.s3_ops_using_temp_auth_creds(
+            self.iam_obj.s3_ops_using_temp_auth_creds(
                 "qeopioErUdjalkjfaowf", "AslkfjfjksjRsfjlskgUljflglsd",
                 "2wslfaflk1aldjlakjfkljf67skhvskjdjiwfha", "iamtestbucket")
         except CTException as error:
@@ -1519,7 +1518,7 @@ class TestAccountLoginProfile:
             "STARTED: Get temp cred for the acc which doesn't contain"
             " the acc login prof for that acc")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1527,7 +1526,7 @@ class TestAccountLoginProfile:
             "Step 2: Getting temp auth credentials for account %s",
             self.account_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_account(
+            self.iam_obj.get_temp_auth_credentials_account(
                 self.account_name, self.test_cfg["test_9866"]["password"])
         except CTException as error:
             LOGGER.error("Expected failure: %s", error.message)
@@ -1560,7 +1559,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account %s",
             self.account_name)
-        res = IAM_OBJ.get_temp_auth_credentials_account(
+        res = self.iam_obj.get_temp_auth_credentials_account(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"])
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
@@ -1590,7 +1589,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 3: Getting temp auth credentials for account with %s "
             "sec duration %s", duration, self.account_name)
-        res = IAM_OBJ.get_temp_auth_credentials_account(
+        res = self.iam_obj.get_temp_auth_credentials_account(
             self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"], duration)
         assert_is_not_none(res[0], res[1])
         LOGGER.info(
@@ -1600,7 +1599,7 @@ class TestAccountLoginProfile:
         temp_secret_key = res[1]["secret_key"]
         temp_session_token = res[1]["session_token"]
         LOGGER.info("Step 4: Performing s3 operations with temp credentials")
-        res = IAM_OBJ.s3_ops_using_temp_auth_creds(
+        res = self.iam_obj.s3_ops_using_temp_auth_creds(
             temp_access_key,
             temp_secret_key,
             temp_session_token,
@@ -1611,7 +1610,7 @@ class TestAccountLoginProfile:
         LOGGER.info("Step 5: Performing s3 operations with same temp "
                     "credentials after %s sec", duration)
         try:
-            IAM_OBJ.s3_ops_using_temp_auth_creds(
+            self.iam_obj.s3_ops_using_temp_auth_creds(
                 temp_access_key,
                 temp_secret_key,
                 temp_session_token,
@@ -1647,7 +1646,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account with %s "
             "sec duration less than 20min %s", duration, self.account_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_account(
+            self.iam_obj.get_temp_auth_credentials_account(
                 self.account_name, S3_USER_ACC_MGMT_CONFIG["s3_params"]["password"],
                 duration)
         except CTException as error:
@@ -1681,7 +1680,7 @@ class TestAccountLoginProfile:
             "Step 3: Getting temp auth credentials for account %s with"
             " invalid password", self.account_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_account(
+            self.iam_obj.get_temp_auth_credentials_account(
                 self.account_name, self.test_cfg["test_9870"][
                     "invalid_password"])
         except CTException as error:
@@ -1715,14 +1714,14 @@ class TestAccountLoginProfile:
         secret_key = res[0][1]["secret_key"]
         user_name = "seagate_user"
         LOGGER.info("Step 3: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
         LOGGER.info("Step 3: Created user with name %s", user_name)
         LOGGER.info("Step 4: Creating user login profile for user %s",
                     user_name)
-        res = IAM_OBJ.create_user_login_profile_s3iamcli(
+        res = self.iam_obj.create_user_login_profile(
             user_name,
             self.test_cfg["test_9871"]["user_password"],
             False,
@@ -1734,7 +1733,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 5: Get temp auth credentials for existing user %s",
             user_name)
-        res = IAM_OBJ.get_temp_auth_credentials_user(
+        res = self.iam_obj.get_temp_auth_credentials_user(
             self.account_name, user_name,
             self.test_cfg["test_9871"]["user_password"])
         assert_is_not_none(res[1], res[1])
@@ -1767,7 +1766,7 @@ class TestAccountLoginProfile:
             "Step 3: Get temp auth credentials for non existing user %s",
             user_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_user(
+            self.iam_obj.get_temp_auth_credentials_user(
                 self.account_name, user_name,
                 self.test_cfg["test_9871"]["user_password"])
         except CTException as error:
@@ -1801,14 +1800,14 @@ class TestAccountLoginProfile:
         secret_key = res[0][1]["secret_key"]
         user_name = "seagate_user"
         LOGGER.info("Step 3: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
         LOGGER.info("Step 3: Created user with name %s", user_name)
         LOGGER.info("Step 4: Creating user login profile for user %s",
                     user_name)
-        res = IAM_OBJ.create_user_login_profile_s3iamcli(
+        res = self.iam_obj.create_user_login_profile(
             user_name,
             self.test_cfg["test_9871"]["user_password"],
             False,
@@ -1821,7 +1820,7 @@ class TestAccountLoginProfile:
             "Step 5: Get temp auth credentials for existing user %s which does"
             " not contain login profile", user_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_user(
+            self.iam_obj.get_temp_auth_credentials_user(
                 self.account_name, user_name,
                 self.test_cfg["test_9871"]["user_password"])
         except CTException as error:
@@ -1844,7 +1843,7 @@ class TestAccountLoginProfile:
             "STARTED: Get tempauth credentials for the existing user with time"
             " duration which is present in that account")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1853,14 +1852,14 @@ class TestAccountLoginProfile:
         secret_key = res[1]["secret_key"]
         user_name = "seagate_user"
         LOGGER.info("Step 3: Creating user with name %s", user_name)
-        res = IAM_OBJ.create_user_using_s3iamcli(
+        res = self.iam_obj.create_user(
             user_name, access_key, secret_key)
         assert_true(res[0], res[1])
         assert_is_not_none(res[1], res[1])
         LOGGER.info("Step 3: Created user with name %s", user_name)
         LOGGER.info("Step 4: Creating user login profile for user %s",
                     user_name)
-        res = IAM_OBJ.create_user_login_profile_s3iamcli(
+        res = self.iam_obj.create_user_login_profile(
             user_name,
             self.test_cfg["test_9871"]["user_password"],
             False,
@@ -1872,7 +1871,7 @@ class TestAccountLoginProfile:
         LOGGER.info(
             "Step 5: Get temp auth credentials for existing user {} with time duration".format(
                 user_name))
-        res = IAM_OBJ.get_temp_auth_credentials_user(
+        res = self.iam_obj.get_temp_auth_credentials_user(
             self.account_name,
             user_name,
             self.test_cfg["test_9871"]["user_password"],
@@ -1897,7 +1896,7 @@ class TestAccountLoginProfile:
             "STARTED: Get tempauth credentials for the non-existing user"
             " with time duration which is not present in that account")
         LOGGER.info("Step 1: Creating an account")
-        res = IAM_OBJ.create_account_s3iamcli(self.account_name, self.email_id,
+        res = self.iam_obj.create_account(self.account_name, self.email_id,
                                               self.ldap_user, self.ldap_pwd)
         assert_true(res[0], res[1])
         LOGGER.info("Step 1: Account created %s", res[1])
@@ -1906,7 +1905,7 @@ class TestAccountLoginProfile:
             "Step 2: Get temp auth credentials for non existing user %s"
             " with time duration", user_name)
         try:
-            IAM_OBJ.get_temp_auth_credentials_user(
+            self.iam_obj.get_temp_auth_credentials_user(
                 self.account_name, user_name,
                 self.test_cfg["test_9875"]["user_password"], 1000)
         except CTException as error:

@@ -35,6 +35,7 @@ from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.helpers.health_helper import Health
 from config import CMN_CFG, HA_CFG, S3_CFG
+from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager

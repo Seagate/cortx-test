@@ -208,6 +208,7 @@ class TestNodeHealth:
             f"failed to generate log: {resp[1]}")
         LOGGER.info("ENDED: s3 io's operations.")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22520")
     def test_22520_verify_resource_discover(self):
@@ -216,6 +217,7 @@ class TestNodeHealth:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("The Test Completed successfully %s", resp)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22526")
     def test_22526_verify_show_health(self):
@@ -226,6 +228,7 @@ class TestNodeHealth:
         LOGGER.info("The result is %s", result)
         LOGGER.info("======= Test Completed Successfully  =================")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22527")
     def test_22527_verify_resource_health_controller(self):
@@ -239,6 +242,7 @@ class TestNodeHealth:
             LOGGER.info("Test Completed Successfully %s", result)
 
     # pylint:disable=too-many-locals,too-many-statements,too-many-branches
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22528")
     def test_22528_verify_os_disk_health(self):
@@ -407,6 +411,7 @@ class TestNodeHealth:
                 result = self.resource_cli.split_str_to_list(resp[1], "},")
                 LOGGER.info("Test Completed Successfully %s", result)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22529")
     def test_22529_verify_psu_health(self):
@@ -418,6 +423,7 @@ class TestNodeHealth:
             result = self.resource_cli.convert_to_list_format(resp[1], "},")
             LOGGER.info("Test Completed Successfully %s", result)
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22530")
     def test_22530_wrong_parameter(self):

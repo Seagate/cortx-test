@@ -30,6 +30,12 @@ from builtins import round
 from time import perf_counter_ns
 
 import pytest
+from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_csmuser import RestCsmUser
+from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
+from libs.csm.rest.csm_rest_bucket import RestS3Bucket
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from config.s3 import S3_CFG
 
 from commons import configmanager
 from commons import commands

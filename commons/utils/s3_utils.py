@@ -19,14 +19,16 @@
 
 """S3 utility Library."""
 
+import time
 import urllib
 import hmac
 import datetime
 import hashlib
 import logging
 import json
-import xmltodict
+from typing import Any
 
+import xmltodict
 
 LOGGER = logging.getLogger(__name__)
 
@@ -143,8 +145,8 @@ def sign_request_v4(method=None, canonical_uri='/', body='',
     signing_key = get_v4_signature_key(secret_key, get_date(epoch_t), region, service)
     signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
     authorization_header = 'AWS4-HMAC-SHA256' + ' ' + 'Credential=' + access_key + '/' + \
-        credential_scope + ', ' + 'SignedHeaders=' + 'host;x-amz-date' + \
-        ', ' + 'Signature=' + signature
+                           credential_scope + ', ' + 'SignedHeaders=' + 'host;x-amz-date' + \
+                           ', ' + 'Signature=' + signature
 
     return authorization_header
 
@@ -186,3 +188,21 @@ def convert_xml_to_dict(xml_response) -> dict:
     except Exception as error:
         LOGGER.error(error)
         return xml_response
+
+
+def poll(target, *args, **kwargs) -> Any:
+    """Method to wait for a function/target to return a certain expected condition."""
+    timeout = kwargs.pop("timeout", 60)
+    step = kwargs.pop("step", 10)
+    expected = kwargs.pop("expected", dict)
+    end_time = time.time() + timeout
+    while time.time() <= end_time:
+        try:
+            response = target(*args, **kwargs)
+            if isinstance(response, expected) or response:
+                return response
+        except Exception as response:
+            LOGGER.error(response)
+        time.sleep(step)
+
+    return target(*args, **kwargs)

@@ -27,7 +27,7 @@ from multiprocessing import Process
 from time import perf_counter_ns
 
 import pytest
-
+from commons.helpers.health_helper import Health
 from commons import constants as cons
 from commons import cortxlogging as log
 from commons.configmanager import config_utils
@@ -38,7 +38,10 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
 from config import CSM_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
+from scripts.s3_bench import s3bench
+from libs.s3 import S3H_OBJ, s3_test_lib
+from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
@@ -173,9 +176,9 @@ class TestIAMUserManagement:
         nodes = CMN_CFG["nodes"]
         self.log.info(nodes)
         for _, node in enumerate(nodes):
-            health_obj = health_helper.Health(hostname=node["hostname"],
-                                              username=node["username"],
-                                              password=node["password"])
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
             resp = health_obj.check_node_health()
             self.log.info(resp)
             assert_utils.assert_true(resp[0], resp[1])
@@ -693,7 +696,7 @@ class TestIAMUserManagement:
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-            f"{self.remote_path}, local path: {self.local_path}"
+              f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -720,7 +723,7 @@ class TestIAMUserManagement:
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-            f"{self.remote_path}, local path: {self.local_path}"
+              f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -762,7 +765,7 @@ class TestIAMUserManagement:
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-            f"{self.remote_path}, local path: {self.local_path}"
+              f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)
@@ -791,7 +794,7 @@ class TestIAMUserManagement:
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
-            f"{self.remote_path}, local path: {self.local_path}"
+              f"{self.remote_path}, local path: {self.local_path}"
         assert_utils.assert_true(resp, msg)
         resp = False
         prop_dict = config_utils.read_properties_file(self.local_path)

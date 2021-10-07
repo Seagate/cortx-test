@@ -21,7 +21,7 @@
 """Test library for s3 account operations."""
 import json
 import time
-
+from http import HTTPStatus
 import commons.errorcodes as err
 from commons.constants import Rest as const
 from commons.exceptions import CTException
@@ -63,16 +63,16 @@ class RestS3user(RestTestLib):
                     "new_s3_account_user",
                     user_data["account_name"],
                     user_data["password"])
-
+            user_data = json.dumps(user_data)
             # Fetching api response
             return self.restapi.rest_call(
                 "post", endpoint=endpoint, data=user_data, headers=self.headers)
 
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.create_s3_account.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.create_s3_account.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -95,9 +95,9 @@ class RestS3user(RestTestLib):
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.list_all_created_s3account.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.list_all_created_s3account.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -118,6 +118,7 @@ class RestS3user(RestTestLib):
 
             # Collecting payload
             patch_payload = self.edit_user_payload(payload_type=payload)
+            patch_payload = json.dumps(patch_payload)
             self.log.debug(
                 "Payload for edit s3 accounts is %s", patch_payload)
 
@@ -129,9 +130,9 @@ class RestS3user(RestTestLib):
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.edit_s3_account_user.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.edit_s3_account_user.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -157,9 +158,9 @@ class RestS3user(RestTestLib):
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.delete_s3_account_user.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.delete_s3_account_user.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -175,7 +176,7 @@ class RestS3user(RestTestLib):
 
             # Checking status code
             self.log.debug("Response to be verified : ",
-                            self.recently_created_s3_account_user)
+                           self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self.log.debug("Response is not 200")
                 return False
@@ -189,16 +190,16 @@ class RestS3user(RestTestLib):
             # Checking for not "no user" scenario
             if len(response["s3_accounts"]) == 0 or expect_no_user:
                 self.log.warning("No accounts present till now is : %s",
-                                  len(response["iam_users"]))
+                                 len(response["iam_users"]))
                 return len(response["s3_accounts"]) == 0 and expect_no_user
 
             return all(const.ACC_NAME in key and const.ACC_EMAIL in key
                        for key in response["s3_accounts"])
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.verify_list_s3account_details.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.verify_list_s3account_details.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -225,7 +226,7 @@ class RestS3user(RestTestLib):
 
             # Checking status code
             self.log.debug("Response to be verified : ",
-                            self.recently_created_s3_account_user)
+                           self.recently_created_s3_account_user)
             if (not response) or response.status_code != expect_status_code:
                 self.log.debug("Response is not 200")
                 return False
@@ -258,9 +259,9 @@ class RestS3user(RestTestLib):
                        for actual_result in list_acc)
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.create_and_verify_s3account.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.create_and_verify_s3account.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -310,9 +311,9 @@ class RestS3user(RestTestLib):
             return user_data
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.create_payload_for_new_s3_account.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.create_payload_for_new_s3_account.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -344,9 +345,9 @@ class RestS3user(RestTestLib):
             return payload_values[payload_type]
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.edit_user_payload.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.edit_user_payload.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -391,7 +392,7 @@ class RestS3user(RestTestLib):
 
             # Checking status code
             self.log.debug("Response to be verified : ",
-                            self.recently_created_s3_account_user)
+                           self.recently_created_s3_account_user)
             if (not response) or response.status_code != const.SUCCESS_STATUS:
                 self.log.debug("Response is not 200")
                 return False
@@ -411,9 +412,9 @@ class RestS3user(RestTestLib):
             return response[const.ACC_NAME] == account_name
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.edit_and_verify_s3_account_user.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.edit_and_verify_s3_account_user.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -444,9 +445,9 @@ class RestS3user(RestTestLib):
             return response.json()["message"] == const.DELETE_SUCCESS_MSG
         except Exception as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.delete_and_verify_s3_account_user.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.delete_and_verify_s3_account_user.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
 
@@ -479,9 +480,9 @@ class RestS3user(RestTestLib):
             return response
         except BaseException as error:
             self.log.error("%s %s: %s",
-                            const.EXCEPTION_ERROR,
-                            RestS3user.edit_s3_account_user_invalid_password.__name__,
-                            error)
+                           const.EXCEPTION_ERROR,
+                           RestS3user.edit_s3_account_user_invalid_password.__name__,
+                           error)
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
@@ -542,3 +543,86 @@ class RestS3user(RestTestLib):
         return self.restapi.rest_call(
             "post", endpoint=endpoint, data=user_data,
             headers=self.headers)
+
+    @RestTestLib.authenticate_and_login
+    def create_custom_s3_user(self, user_data: dict):
+        """Function to create s3 user
+        :param user_data: Payload for Create S3 user.
+        """
+
+        self.log.debug("Create s3 accounts ...")
+        endpoint = self.config["s3accounts_endpoint"]
+        self.log.debug("Endpoint for s3 accounts is %s", endpoint)
+        user_data = json.dumps(user_data)
+        resp = self.restapi.rest_call("post", endpoint=endpoint, data=user_data,
+                                      headers=self.headers)
+        if resp.status_code == HTTPStatus.OK.value:
+            self.recently_created_s3_account_user = resp
+        return resp
+
+    def create_custom_s3_payload(self, user_type: str):
+        """
+        Create the payload for the create S3
+        :param type: value from "valid","duplicate_user",..
+        """
+        user_name = "test%s" % int(time.time())
+        email_id = "test%s@seagate.com" % int(time.time())
+        password = self.config["test_s3account_password"]
+        access = user_name.ljust(const.S3_ACCESS_LL, "d")
+        secret = config_utils.gen_rand_string(length=const.S3_SECRET_LL)
+
+        if user_type == "valid":
+            user_data = dict(zip(const.CUSTOM_S3_USER, [
+                             user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate":
+            # creating new user to make it as duplicate
+            self.create_verify_s3_custom("valid")
+            user_data = self.recently_created_s3_account_user
+            del user_data["canonical_id"]
+
+        if user_type == "duplicate_user":
+            self.create_verify_s3_custom("valid")
+            user_name = self.recently_created_s3_account_user["account_name"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [
+                             user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_access":
+            self.create_verify_s3_custom("valid")
+            access = self.recently_created_s3_account_user["access_key"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [
+                             user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_email":
+            self.create_verify_s3_custom("valid")
+            email_id = self.recently_created_s3_account_user["account_email"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [
+                             user_name, email_id, password, access, secret]))
+
+        if user_type == "duplicate_secret":
+            self.create_verify_s3_custom("valid")
+            secret = self.recently_created_s3_account_user["secret_key"]
+            user_data = dict(zip(const.CUSTOM_S3_USER, [
+                             user_name, email_id, password, access, secret]))
+
+        if user_type == "missing_access":
+            template = const.CUSTOM_S3_USER
+            template.remove("access_key")
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, secret]))
+
+        if user_type == "missing_secret":
+            template = const.CUSTOM_S3_USER
+            template.remove("secret_key")
+            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access]))
+        return user_data
+
+    def create_verify_s3_custom(self, user_type: str,
+                                expected_response: int = HTTPStatus.CREATED.value):
+        """
+        Create and verify custom S3 user.
+        """
+        user_data = self.create_custom_s3_payload(user_type)
+        resp = self.create_custom_s3_user(user_data)
+        if expected_response is not None:
+            result = resp.status_code == expected_response
+        return result

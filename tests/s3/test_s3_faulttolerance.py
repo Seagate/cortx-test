@@ -35,9 +35,6 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_multipart_test_lib
 
-S3_OBJ = s3_test_lib.S3TestLib()
-S3_M_Obj = s3_multipart_test_lib.S3MultipartTestLib()
-
 
 class TestS3FaultTolerance:
     """S3 FaultTolerance test class."""
@@ -46,6 +43,8 @@ class TestS3FaultTolerance:
     def setup(self):
         """Fixture: perform test setup and teardown."""
         self.log = logging.getLogger(__name__)
+        self.s3_obj = s3_test_lib.S3TestLib()
+        self.s3_m_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.fault_flg = False
         self.bucket_name = "bkt-faulttolerance-{}".format(perf_counter_ns())
         self.object_name = "obj-faulttolerance-{}".format(perf_counter_ns())
@@ -67,9 +66,9 @@ class TestS3FaultTolerance:
         resp = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=response[-1])
         assert_utils.assert_true(resp[0], resp[1])
-        bucket_list = S3_OBJ.bucket_list()[1]
+        bucket_list = self.s3_obj.bucket_list()[1]
         if bucket_list:
-            resp = S3_OBJ.delete_multiple_buckets(bucket_list)
+            resp = self.s3_obj.delete_multiple_buckets(bucket_list)
             assert_utils.assert_true(resp[0], resp[1])
         if system_utils.path_exists(self.test_file_path):
             system_utils.remove_file(self.test_file_path)
@@ -95,9 +94,9 @@ class TestS3FaultTolerance:
             self.test_file_path, size=object_size)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: Create a new bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info(
             "Step 3: Using curl ,inject fault injection so that upload of object fails"
@@ -108,12 +107,12 @@ class TestS3FaultTolerance:
         self.log.info(
             "Step 4: Upload the %s file to the bucket created.",
             object_size)
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info(
@@ -182,9 +181,9 @@ class TestS3FaultTolerance:
         resp = system_utils.create_file_fallocate(self.test_file_path, "4MB")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2. Create a new bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.object_list(self.bucket_name)
+        bktlist = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info(
             "Step 3. Using curl, Disable fault injection so that upload of object is "
@@ -193,12 +192,12 @@ class TestS3FaultTolerance:
         assert_utils.assert_true(resp[0], resp[1])
         self.fault_flg = True
         self.log.info("Step 4. Upload the 6MB file to the bucket created.")
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info(
@@ -239,16 +238,16 @@ class TestS3FaultTolerance:
         resp = S3H_OBJ.s3server_inject_faulttolerance(enable=True)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4. Upload a 6MB filesize object to a bucket.")
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file_fallocate(self.test_file_path, "6MB")
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_upload(
+        resp = self.s3_obj.object_upload(
             self.bucket_name,
             self.object_name,
             self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, resp[1])
         resp = S3H_OBJ.update_s3config(
             parameter="S3_MAX_EXTENDED_OBJECTS_IN_FAULT_MODE", value=response[-1])
@@ -272,9 +271,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: Created a %s file using fallocate cmd", object_size)
 
         self.log.info("STEP 2: Create a bucket with name %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: Created a bucket with name %s", self.bucket_name)
 
@@ -289,12 +288,12 @@ class TestS3FaultTolerance:
 
         self.log.info("STEP 4: Uploading an object %s to a bucket %s",
                       self.object_name, self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded an object to a bucket")
 
         self.log.info("Verifying object is successfully uploaded")
-        resp = S3_OBJ.object_list(self.bucket_name)
+        resp = self.s3_obj.object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.object_name, resp[1])
         self.log.info("Verified that object is uploaded successfully")
@@ -310,7 +309,7 @@ class TestS3FaultTolerance:
 
         self.log.info("STEP 6: Verify getobject and getobject with "
                       "read range and verify the size and range ouput")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verify getobject and getobject with "
                       "read range and verify the size and range ouput")
@@ -359,9 +358,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: Created a 4MB file using fallocate cmd.")
 
         self.log.info("SETP 2: Create a New Bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: New bucket created %s", self.bucket_name)
 
@@ -371,7 +370,7 @@ class TestS3FaultTolerance:
         self.log.info("STEP 3: Fault Injection Disabled")
 
         self.log.info("STEP 4: Upload the 4MB file to the bucket %s", self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded the 4MB file to the bucket %s", self.bucket_name)
 
@@ -381,7 +380,7 @@ class TestS3FaultTolerance:
         self.log.info("STEP 5: Verified that No fragmented entries should be listed")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 
@@ -402,9 +401,9 @@ class TestS3FaultTolerance:
         self.log.info("STEP 1: 33k file using fallocate cmd is created.")
 
         self.log.info("SETP 2: Create a New Bucket %s", self.bucket_name)
-        resp = S3_OBJ.create_bucket(self.bucket_name)
+        resp = self.s3_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        bktlist = S3_OBJ.bucket_list()
+        bktlist = self.s3_obj.bucket_list()
         assert_utils.assert_in(self.bucket_name, bktlist)
         self.log.info("STEP 2: New bucket created %s", self.bucket_name)
 
@@ -417,7 +416,7 @@ class TestS3FaultTolerance:
                       "object fails and results in motr failure.")
 
         self.log.info("STEP 4: Upload the 33k file to the bucket %s", self.bucket_name)
-        resp = S3_OBJ.object_upload(self.bucket_name, self.object_name, self.test_file_path)
+        resp = self.s3_obj.object_upload(self.bucket_name, self.object_name, self.test_file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("STEP 4: Uploaded the 33k file to the bucket %s", self.bucket_name)
 
@@ -431,9 +430,9 @@ class TestS3FaultTolerance:
                       "object list index contains extended entries using m0kv")
 
         self.log.info("STEP 6: Run getobject and check the output.")
-        resp = S3_OBJ.get_object(self.bucket_name, self.test_file_path)
+        resp = self.s3_obj.get_object(self.bucket_name, self.test_file_path)
         assert resp[0], resp[1]
-        resp = S3_M_Obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
+        resp = self.s3_m_obj.get_object(self.bucket_name, self.test_file_path, ranges="1048576-3145728")
         assert resp[0], resp[1]
         self.log.info("STEP 6: Verified getobject output")
 
