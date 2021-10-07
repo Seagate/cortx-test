@@ -69,7 +69,7 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
-    parser.add_argument("--stop_on_first_error", "--x", dest="stop_on_first_error",
+    parser.add_argument("--stop_on_first_error", "-x", dest="stop_on_first_error",
                         action="store_true", help="Stop test execution on first failure")
     return parser.parse_args()
 
