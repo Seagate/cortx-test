@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-HA utility methods
+HA common utility methods
 """
 import logging
 import os
@@ -441,3 +441,16 @@ class HALibsLc:
         if not resp[0]:
             return False, "Cluster is not started"
         return True, "Cluster Restarted successfully."
+
+    def check_pod_status(self, pod_obj):
+        """
+        Helper function to check pods status.
+        :param pod_obj: Pod object
+        :return:
+        """
+        LOGGER.info("Checking if all Pods are online.")
+        resp = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS, read_lines=True)
+        for line in resp[1]:
+            if "failed" in line:
+                return False, resp
+        return True, resp

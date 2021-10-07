@@ -365,3 +365,6 @@ RESTART_POD_CMD = ""
 CLSTR_START_CMD = ""
 CLSTR_STOP_CMD = ""
 CLSTR_STATUS_CMD = ""
+
+CMD_POD_STATUS = "kubectl get pods"
+CMD_SRVC_STATUS = "kubectl get services"
