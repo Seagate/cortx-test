@@ -415,3 +415,13 @@ RESTART_POD_CMD = ""
 CLSTR_START_CMD = ""
 CLSTR_STOP_CMD = ""
 CLSTR_STATUS_CMD = ""
+
+# Kubernetes commands to interact with service/pods.
+
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {}"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Restart pod/ service in a namespace.
+RESTART_POD_CMD = ""

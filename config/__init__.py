@@ -92,6 +92,12 @@ else:
                                                 target=target, target_key="csm")
 CSM_CFG = configmanager.get_config_wrapper(fpath=CSM_CONFIG)
 S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target)
+S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
+S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
+S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
+S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
+S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target,
+                                                   target_key="")
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
                                            target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
@@ -99,8 +105,10 @@ RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 
-DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
-DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
+DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target,
+                                          target_key="")
+DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target,
+                                                 target_key="")
 
 # Munched configs. These can be used by dot "." operator.
 
