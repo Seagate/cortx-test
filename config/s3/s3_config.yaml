@@ -10,6 +10,7 @@ email_suffix: "@seagate.com"
 create_user_delay: 5
 list_account_delay: 5
 create_account_delay: 5
+access_key_delay: 5
 create_user_access_key_delay: 5
 delete_account_delay: 5
 reset_account_access_key_delay: 5

@@ -116,6 +116,8 @@ class IamTestLib(IamLib, S3IamCli):
             LOGGER.info("Creating %s user access key.", user_name)
             response = super().create_access_key(user_name)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            time.sleep(S3_CFG["access_key_delay"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
@@ -142,6 +144,8 @@ class IamTestLib(IamLib, S3IamCli):
                 access_key_id)
             response = super().delete_access_key(user_name, access_key_id)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            time.sleep(S3_CFG["access_key_delay"])
         except Exception as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
