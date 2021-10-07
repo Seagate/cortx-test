@@ -29,8 +29,8 @@ ENDPOINT=https://s3.seagate.com
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 APACHE_J_METER=apache-jmeter-5.4.1.tgz
-VERIFY_SSL = 'True' # for aws
-VALIDATE_CERTS = 'True'
+VERIFY_SSL='True'
+VALIDATE_CERTS='True'
 
 aws-install:
 
@@ -147,6 +147,10 @@ s3bench-install:
 	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
 	@echo "###Installed s3bench tool###"
 
+bashrc-configure:
+	@echo "###Configuring bashrc for setting ulimit for avoiding file-descriptor out of range issue###"
+	echo 'ulimit -n 999999' >> ~/.bashrc
+	source ~/.bashrc
 
 aws: aws-install aws-configure
 	@echo "### Installed & configured aws tool. ###"
@@ -182,7 +186,7 @@ apache-jmeter-install:
 	@echo "###Installed apache jmeter in current machine###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install bashrc-configure
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -213,3 +217,4 @@ help :
 	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
 	@echo "apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
+	@echo "bashrc-configure: Setup ulimit to mzximum size for allowing open file descriptors. Eg:make bashrc-configure --makefile=<makefile_path>"
