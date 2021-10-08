@@ -914,9 +914,9 @@ class TestAccountUserManagementResetPassword:
         self.log.info(
             "ENDED: Use REST API call Update Account Login Profile using access/secret key.")
 
+    @pytest.mark.skip("EOS-25213")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
     def test_21514(self):
