@@ -18,7 +18,7 @@
 #
 
 """S3 utility Library."""
-
+import os
 import urllib
 import hmac
 import datetime
@@ -26,6 +26,7 @@ import hashlib
 import logging
 import json
 import xmltodict
+from hashlib import md5
 
 
 LOGGER = logging.getLogger(__name__)
@@ -186,3 +187,20 @@ def convert_xml_to_dict(xml_response) -> dict:
     except Exception as error:
         LOGGER.error(error)
         return xml_response
+
+
+def calc_etag(input_file, part_size=0):
+    """Calculating an S3 ETag using Python md5 algorithm"""
+    try:
+        md5_digests = list()
+        with open(input_file, 'rb') as f:
+            if part_size and os.stat(input_file).st_size < part_size:
+                for chunk in iter(lambda: f.read(part_size), b''):
+                    md5_digests.append(md5(chunk).digest())
+            else:
+                md5_digests.append(md5(f.read(part_size)).digest())
+
+        return md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
