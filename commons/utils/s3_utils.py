@@ -204,3 +204,32 @@ def calc_etag(input_file, part_size=0):
     except OSError as error:
         LOGGER.error(str(error))
         raise error from OSError
+
+
+def get_aligned_parts(file_path, total_parts=1) -> dict:
+    """
+    Create the upload parts dict.
+
+    1048576 bytes = 1Mb
+    :param total_parts: No. of parts to be uploaded.
+    :param file_path: Path of object file.
+    :return: Dict of uploaded parts.
+    """
+    try:
+        obj_size = os.stat(file_path).st_size
+        parts = dict()
+        part_size = int(obj_size) // int(total_parts)
+        with open(file_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                data = file_pointer.read(1048576 * part_size)
+                if not data:
+                    break
+                LOGGER.info("data_len %s", str(len(data)))
+                parts[i] = data
+                i += 1
+
+        return parts
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
