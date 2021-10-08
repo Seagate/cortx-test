@@ -28,7 +28,7 @@ from commons.exceptions import CTException
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_remote_cmd_wo_decision
-from libs.di import di_constants
+from commons.commands import HCTL_MAINTENANCE_MODE_CMD, HCTL_UNMAINTENANCE_MODE_CMD
 from libs.s3 import CM_CFG
 from libs.s3 import S3H_OBJ
 
@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 
 class DIFeatureControlLib:
     def __init__(self,
-                 primary_node=CM_CFG["host"],
-                 username=CM_CFG["username"],
-                 password=CM_CFG["password"]
+                 primary_node=CM_CFG["nodes"][0]["hostname"],
+                 username=CM_CFG["nodes"][0]["username"],
+                 password=CM_CFG["nodes"][0]["password"]
                  ):
         """This method initializes members of DIFeatureControlLib
         :param primary_node: hostname of primary name
@@ -61,7 +61,7 @@ class DIFeatureControlLib:
         try:
             result, std_err, _ = run_remote_cmd_wo_decision(
                 self.primary_node, self.username, self.password,
-                di_constants.HCTL_MAINTENANCE_MODE_CMD)
+                HCTL_MAINTENANCE_MODE_CMD)
         except Exception as error:
             logger.error("Error in %s: %s",
                          DIFeatureControlLib.enable_maintenance_mode.__name__,
@@ -84,7 +84,7 @@ class DIFeatureControlLib:
         try:
             result, std_err, _ = run_remote_cmd_wo_decision(
                 self.primary_node, self.username, self.password,
-                di_constants.HCTL_UNMAINTENANCE_MODE_CMD)
+                HCTL_UNMAINTENANCE_MODE_CMD)
         except Exception as error:
             logger.error("Error in %s: %s",
                          DIFeatureControlLib.disable_maintenance_mode.__name__,
@@ -129,7 +129,7 @@ class DIFeatureControlLib:
     @staticmethod
     def verify_flag_enable(section, flag, host, username, password):
         """
-        Verify if flags are set on both the nodes
+        Verify if flags are set on the given node
         :param section: s3config section.
         :param flag: flag to be updated.
         :param host: IP of the host.
