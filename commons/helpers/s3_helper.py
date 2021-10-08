@@ -25,13 +25,13 @@ Note: S3 helper is singleton so please import it's object from libs.s3 __init__
  as 'from libs.s3 import S3H_OBJ'.
 """
 
-import os
-import re
-import time
 import logging
-
+import os
+import time
 from configparser import NoSectionError
+
 from paramiko.ssh_exception import SSHException
+
 from commons import commands
 from commons import constants as const
 from commons.helpers.node_helper import Node
@@ -102,7 +102,7 @@ class S3Helper:
                                 pwd: str = None) -> tuple:
         """
         Check whether all s3server services are online.
-
+        ToDo: Check if common function can be used
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -158,8 +158,8 @@ class S3Helper:
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                     self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
-                     commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
-                     read_lines=True)
+                    commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
+                    read_lines=True)
                 if not status:
                     return status, result
                 result_ = ''.join(result)
@@ -198,8 +198,8 @@ class S3Helper:
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                     self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
-                     commands.SYSTEM_CTL_START_CMD.format(service), host, user,
-                     pwd, read_lines=True)
+                    commands.SYSTEM_CTL_START_CMD.format(service), host, user,
+                    pwd, read_lines=True)
                 LOGGER.debug(result)
                 if not status:
                     return status, result
@@ -238,7 +238,7 @@ class S3Helper:
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                     self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
-                     commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
+                    commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
                 LOGGER.debug(result)
                 time.sleep(10)
                 status, resp = self.get_s3server_service_status(service, host, user, pwd)
@@ -435,7 +435,7 @@ class S3Helper:
                                  pwd: str = None) -> tuple:
         """
         Check if file exists on s3 server.
-
+        ToDo: Why do we need this? we have commons.helpers.host.Host.path_exists
         :param path: Absolute path of the file.
         :param host: IP of the host.
         :param user: Username of the host.
@@ -500,7 +500,7 @@ class S3Helper:
                            pwd: str = None) -> tuple:
         """
         copy file from s3 server to local path.
-
+        ToDo: Why do we need this wrapper? we have commons.helpers.host.Host.copy_file_to_local
         :param file_path: Remote path.
         :param local_path: Local path.
         :param host: IP of the host.
@@ -523,53 +523,6 @@ class S3Helper:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.copy_s3server_file.__name__, error)
             return False, error
-
-    def is_string_in_s3server_file(self,
-                                   string: str = None,
-                                   file_path: str = None,
-                                   **kwargs) -> tuple:
-        """
-        find given string in file present on s3 server.
-
-        :param string: String to be check.
-        :param file_path: file path.
-        :keyword host: IP of the host.
-        :keyword user: user name of the host.
-        :keyword pwd: password for the user.
-        :return: bool, response.
-        """
-        host = kwargs.get("host", self.host)
-        user = kwargs.get("user", self.user)
-        pwd = kwargs.get("password", self.pwd)
-        local_path = os.path.join(os.getcwd(), 'temp_file')
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            self.copy_s3server_file(file_path, local_path, host, user, pwd)
-            if string in open(local_path).read():
-                LOGGER.info("Match '%s' found in : %s", string, file_path)
-                return True, file_path
-
-            num = 1
-            while True:
-                if os.path.exists(local_path):
-                    os.remove(local_path)
-                self.copy_s3server_file(
-                    file_path + '.' + str(num), local_path, host, user, pwd)
-                if string in open(local_path).read():
-                    LOGGER.info("Match '%s' found in : %s", string, file_path + '.' + str(num))
-                    return True, file_path
-                num = num + 1
-                if num > 6:
-                    break
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.is_string_in_s3server_file.__name__, error)
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
-        return False, file_path
 
     def enable_disable_s3server_instances(self,
                                           resource_disable: bool = True,
@@ -663,48 +616,10 @@ class S3Helper:
                 "%s: %s", S3Helper.get_local_keys.__name__, str(error))
             return None, None
 
-    def is_string_in_file(self,
-                          string: str = None,
-                          file_path: str = None,
-                          **kwargs) -> tuple:
-        """
-        find given string in file present on s3 server.
-
-        :param string: String to be check.
-        :param file_path: file path.
-        # :param host: IP of the host.
-        # :param user: user name of the host.
-        # :param pwd: password for the user.
-        :return: bool, response..
-        """
-        host = kwargs.get("host", self.host)
-        user = kwargs.get("user", self.user)
-        pwd = kwargs.get("password", self.pwd)
-        local_path = os.path.join(os.getcwd(), "temp_file")
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            response = self.copy_s3server_file(
-                file_path, local_path, host, user, pwd)
-            LOGGER.debug(response)
-            data = open(local_path).read()
-            match = re.search(string, data)
-            if match:
-                LOGGER.info("Match '%s' found in : %s", string, file_path)
-                return True, file_path
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "An exception occurred in %s: %s", S3Helper.is_string_in_file.__name__, str(error))
-        finally:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-
-        return False, file_path
-
     def s3server_inject_faulttolerance(self, enable=False, **kwargs) -> tuple:
         """
         Inject(enable/disable) fault tolerance in s3server.
-
+        TODo: Move to s3misc
         TODO: Code will be revised based on F-24A feature availability.
         # :param host: IP of the host.
         # :param user: user name of the host.
@@ -731,7 +646,7 @@ class S3Helper:
     def verify_and_validate_created_object_fragement(object_name) -> tuple:
         """
         Verify in m0kv output.
-
+        ToDo: Move to s3 test lib
         TODO: Code will be revised based on F-24A feature availability.
         Verify the Validate that object list index contains extended entries using m0kv.
         Verify in m0kv output. Main object size and fragment size.

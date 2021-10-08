@@ -67,7 +67,7 @@ class Node(Host):
 
     def status_service(
             self,
-            services: str,
+            services: list,
             expected_status: str,
             timeout: int = 2) -> dict:
         """Function display status of services."""
