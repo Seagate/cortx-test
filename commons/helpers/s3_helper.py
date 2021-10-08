@@ -493,37 +493,6 @@ class S3Helper:
                 "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
             return False, error
 
-    def copy_s3server_file(self, file_path: str = None,
-                           local_path: str = None,
-                           host: str = None,
-                           user: str = None,
-                           pwd: str = None) -> tuple:
-        """
-        copy file from s3 server to local path.
-        ToDo: Why do we need this wrapper? we have commons.helpers.host.Host.copy_file_to_local
-        :param file_path: Remote path.
-        :param local_path: Local path.
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param pwd: password for the user.
-        :return: True if file copied else False, error/path.
-        """
-        host = host if host else self.host
-        user = user if user else self.user
-        pwd = pwd if pwd else self.pwd
-        try:
-            nobj = Node(hostname=host, username=user, password=pwd)
-            LOGGER.info("sftp connected")
-            resp = nobj.copy_file_to_local(file_path, local_path)
-            LOGGER.info("file copied to : %s", str(local_path))
-            nobj.disconnect()
-
-            return resp
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.copy_s3server_file.__name__, error)
-            return False, error
-
     def enable_disable_s3server_instances(self,
                                           resource_disable: bool = True,
                                           wait_time: int = 10,
