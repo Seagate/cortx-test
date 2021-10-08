@@ -11,11 +11,12 @@ services:
     - "rsyslog.service"
     - "haproxy.service"
     - "slapd.service"
-    - "glusterd.service"
     - "kafka-zookeeper.service"
     - "salt-master.service"
     - "salt-minion.service"
     - "lnet.service"
+  multinode:
+    - "glusterd.service"
   hw_specific:
     - "multipathd.service"
     - "scsi-network-relay.service"
