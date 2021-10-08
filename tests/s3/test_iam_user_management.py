@@ -38,7 +38,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG
 from config import CSM_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser

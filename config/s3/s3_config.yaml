@@ -60,7 +60,8 @@ CliConfig:
     password: "TS7Q7rlo43PyD8kmGEHiL54dekr+XXCgMPQRgH6gWyQ="
 # s3autherver.
 s3auth_endpoint: "http://{}:9080"
-# Workaround for EOS-21382; delay for S3 operations in seconds.
+
+# Workaround for EOS-21382; delay for S3 operations in seconds
 sync_delay: 60
 delay:
   put_bkt_acl: 15
