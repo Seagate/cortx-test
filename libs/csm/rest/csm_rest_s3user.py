@@ -625,4 +625,4 @@ class RestS3user(RestTestLib):
         resp = self.create_custom_s3_user(user_data)
         if expected_response is not None:
             result = resp.status_code == expected_response
-        return result
+        return result, resp
