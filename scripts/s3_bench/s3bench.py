@@ -83,11 +83,12 @@ def create_log(resp, log_file_prefix, client, samples, size):
     :param size: object size
     :return: Path of the log file
     """
-    if not path_exists(LOG_DIR):
-        make_dirs(LOG_DIR)
+    path = LOG_DIR + log_file_prefix + "/"
+    if not path_exists(path):
+        make_dirs(path)
 
     now = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-    path = f"{LOG_DIR}{log_file_prefix}_s3bench_{client}_{samples}_{size}_{now}.log"
+    path = f"{path}{log_file_prefix}_s3bench_{client}_{samples}_{size}_{now}.log"
     # Writing complete response in file, appends response in case of duration
     # given
     with open(path, "a") as fd_write:

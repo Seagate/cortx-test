@@ -102,11 +102,11 @@ class TestDosScalability:
         if pref_list:
             self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting files created during execution")
-        for file in self.log_file:
-            if os.path.exists(file):
-                remove_file(file)
-        self.log.info("Created files deleted")
+        # self.log.info("Deleting files created during execution")
+        # for file in self.log_file:
+        #     if os.path.exists(file):
+        #         remove_file(file)
+        # self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3_ops
@@ -140,7 +140,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
+                     log_dir=s3b_obj.LOG_DIR + "TEST-5336/", log_prefix="TEST-5336")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 400)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -185,7 +185,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5337")
+                log_dir=s3b_obj.LOG_DIR + "TEST-5337/", log_prefix="TEST-5337")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 300)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -230,7 +230,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5338")
+                log_dir=s3b_obj.LOG_DIR + "TEST-5338/", log_prefix="TEST-5338")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 1000)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -280,7 +280,7 @@ class TestDosScalability:
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
-                    log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5340")
+                    log_dir=s3b_obj.LOG_DIR + "TEST-5340/", log_prefix="TEST-5340")
                 assert_true(resp[0], resp[1])
             count = count + 1
         self.log.info("Step 2: Successfully performed with n constant s3 operations.")
@@ -331,7 +331,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5341")
+                log_dir=s3b_obj.LOG_DIR + "TEST-5341/", log_prefix="TEST-5341")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with n constant s3 operations.")
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -346,43 +346,43 @@ class TestDosScalability:
         self.log.info("ENDED: Test growing S3 operations using s3bench from 1000 to 1500 then "
                       "back to 1000 then to 1500 again")
 
-    @pytest.mark.s3_ops
-    @pytest.mark.tags('TEST-8725')
-    @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(100, 1000000, "1Kb")])
-    # # @CTFailOn(error_handler)
-    def test_scaling_obj_20billion_size_1bytes_5308(self, num_clients,
-                                                    num_sample, obj_size):
-        """Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B."""
-        self.log.info("STARTED: Test To Verify scaling of number of objects upto 20 billion with "
-                      "minimum object size i.e 1B.")
-        self.log.info("Step 1: Check done in setup: S3 services up and running, Install and "
-                      "Configure S3bench tool and validate")
-        self.log.info("Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
-        access_key, secret_key = S3H_OBJ.get_local_keys()
-        self.log.info("Creating bucket %s", self.bucket_name)
-        res = self.s3_obj.create_bucket(self.bucket_name)
-        assert_true(res[0], res[1])
-        self.log.info("Successfully created the bucket")
-        for _ in range(20000):
-            res = s3b_obj.s3bench(
-                access_key=access_key,
-                secret_key=secret_key,
-                bucket=self.bucket_name,
-                end_point=S3_CFG['s3_url'],
-                num_clients=num_clients,
-                num_sample=num_sample,
-                obj_name_pref=self.obj_name,
-                obj_size=obj_size,
-                skip_cleanup=True,
-                log_file_prefix="TEST-5308")
-            self.log.debug(res)
-            self.log_file.append(res[1])
-            resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5308")
-            assert_true(resp[0], resp[1])
-        res = self.hobj.is_motr_online()
-        assert_true(res, res)
-        self.log.info("Step 2: Executed s3bench run with objects upto 20billion and obj size 1B and"
-                      " checking stack status.")
-        self.log.info("ENDED: Test To Verify scaling of number of objects upto 20 billion with "
-                      "minimum object size i.e 1B ")
+    # @pytest.mark.s3_ops
+    # @pytest.mark.tags('TEST-8725')
+    # @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(100, 1000000, "1Kb")])
+    # # # @CTFailOn(error_handler)
+    # def test_scaling_obj_20billion_size_1bytes_5308(self, num_clients,
+    #                                                 num_sample, obj_size):
+    #     """Verify scaling of number of objects upto 20 billion with minimum object size i.e 1B."""
+    #     self.log.info("STARTED: Test To Verify scaling of number of objects upto 20 billion with "
+    #                   "minimum object size i.e 1B.")
+    #     self.log.info("Step 1: Check done in setup: S3 services up and running, Install and "
+    #                   "Configure S3bench tool and validate")
+    #     self.log.info("Step 2: Executed s3bench run with objects upto 20billion and obj size 1B.")
+    #     access_key, secret_key = S3H_OBJ.get_local_keys()
+    #     self.log.info("Creating bucket %s", self.bucket_name)
+    #     res = self.s3_obj.create_bucket(self.bucket_name)
+    #     assert_true(res[0], res[1])
+    #     self.log.info("Successfully created the bucket")
+    #     for _ in range(20000):
+    #         res = s3b_obj.s3bench(
+    #             access_key=access_key,
+    #             secret_key=secret_key,
+    #             bucket=self.bucket_name,
+    #             end_point=S3_CFG['s3_url'],
+    #             num_clients=num_clients,
+    #             num_sample=num_sample,
+    #             obj_name_pref=self.obj_name,
+    #             obj_size=obj_size,
+    #             skip_cleanup=True,
+    #             log_file_prefix="TEST-5308")
+    #         self.log.debug(res)
+    #         self.log_file.append(res[1])
+    #         resp = system_utils.validate_s3bench_parallel_execution(
+    #             log_dir=s3b_obj.LOG_DIR + "TEST-5308/", log_prefix="TEST-5308")
+    #         assert_true(resp[0], resp[1])
+    #     res = self.hobj.is_motr_online()
+    #     assert_true(res, res)
+    #     self.log.info("Step 2: Executed s3bench run with objects upto 20billion and obj size 1B and"
+    #                   " checking stack status.")
+    #     self.log.info("ENDED: Test To Verify scaling of number of objects upto 20 billion with "
+    #                   "minimum object size i.e 1B ")
