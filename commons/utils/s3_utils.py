@@ -190,12 +190,12 @@ def convert_xml_to_dict(xml_response) -> dict:
         return xml_response
 
 
-def calc_etag(input_file, part_size=0):
+def calc_etag(file_path, part_size=0):
     """Calculating an S3 ETag using Python md5 algorithm"""
     try:
         md5_digests = list()
-        with open(input_file, 'rb') as f:
-            if part_size and os.stat(input_file).st_size < part_size:
+        with open(file_path, 'rb') as f:
+            if part_size and os.stat(file_path).st_size < part_size:
                 for chunk in iter(lambda: f.read(part_size), b''):
                     md5_digests.append(md5(chunk).digest())
             else:
@@ -269,7 +269,7 @@ def get_unaligned_parts(file_path, total_parts=1, random=False) -> dict:
             i = 1
             while True:
                 shuffle(unaligned)
-                data = file_pointer.read(5242880 * part_size * unaligned[0])
+                data = file_pointer.read((5242880 + unaligned[0]) * part_size)
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
