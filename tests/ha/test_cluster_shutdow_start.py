@@ -57,6 +57,7 @@ class TestClstrShutdownStart:
         cls.host_list = []
         cls.node_list = []
         cls.ha_obj = HALibsLc()
+        cls.restored = True
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
