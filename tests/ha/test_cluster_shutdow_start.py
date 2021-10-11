@@ -72,12 +72,18 @@ class TestClstrShutdownStart:
         This function will be invoked prior to each test case.
         """
         LOGGER.info("STARTED: Setup Operations")
+        self.restored = True
+        LOGGER.info("Checking if the cluster and all Pods online.")
+        #TODO: Will need to check cluster health with health helper once available
 
     def teardown_method(self):
         """
         This function will be invoked after each test function in the module.
         """
         LOGGER.info("STARTED: Teardown Operations.")
+        if self.restored:
+            LOGGER.info("Cleanup: Check cluster status and start it if not up.")
+            #TODO: Will use health helper once available.
 
     # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
@@ -114,6 +120,7 @@ class TestClstrShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Cluster restarted fine and all Pods online.")
+        self.restored = False
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
         resp = self.ha_obj.perform_ios_ops(
