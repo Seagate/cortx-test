@@ -132,13 +132,13 @@ stats_input_options = [
         [
             html.P("User Configuration » ", style=style_filters_captions),
             Dropdown(
-                id='perf_iteration_dropdown',
-                placeholder="Select Iterations",
+                id='perf_custom_dropdown',
+                placeholder="Select Tag",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
-                id='perf_custom_dropdown',
-                placeholder="Select Tag",
+                id='perf_iteration_dropdown',
+                placeholder="Select Iterations",
                 style=dict_Style_Stats_input_options
             )
         ],
