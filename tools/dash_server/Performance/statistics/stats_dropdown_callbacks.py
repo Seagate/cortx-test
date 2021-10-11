@@ -201,7 +201,7 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull, custom):
         raise PreventUpdate
     else:
         iterations = get_distinct_keys(release, 'Iteration', {
-                                       'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 
+                                       'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
                                        'Percentage_full': pfull,  'Custom': custom})
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')

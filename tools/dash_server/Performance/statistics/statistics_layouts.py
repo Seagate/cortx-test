@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash_bootstrap_components import Card, CardBody, Row, Button, Tab #, Tabs
+from dash_bootstrap_components import Card, CardBody, Row, Button, Tab  # , Tabs
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
