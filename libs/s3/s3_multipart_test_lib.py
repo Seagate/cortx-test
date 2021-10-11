@@ -29,6 +29,8 @@ from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, cal_percent
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Multipart
+from commons.greenlet_worker import GreenletThread
+from commons.greenlet_worker import THREADS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -185,6 +187,55 @@ class S3MultipartTestLib(Multipart):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    def upload_parts_parallel(self,
+                              upload_id: int = None,
+                              bucket_name: str = None,
+                              object_name: str = None,
+                              **kwargs) -> tuple:
+        """
+        Upload parts for a specific multipart upload ID in parallel.
+
+        :param upload_id: Multipart Upload ID.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        # :param total_parts: No. of parts to be uploaded.
+        # :param multipart_obj_path: Path of object file.
+        :return: (Boolean, List of uploaded parts).
+        """
+        try:
+            chunks = kwargs.get("chunks", None)
+            content_md5 = kwargs.get("content_md5", None)
+            parallel_thread = kwargs.get("parallel_thread", 5)
+            total_iteration = len(chunks)
+            part_number_list = chunks.key()
+            part_number = part_number_list[0]
+            parts = list()
+            while total_iteration:
+                for i in range(parallel_thread):
+                    body = chunks.get(part_number, None)
+                    if not body: break
+                    t_obj = GreenletThread(i, run=self.upload_multipart,
+                                           body=body, bucket_name=bucket_name,
+                                           object_name=object_name, upload_id=upload_id,
+                                           part_number=part_number, content_md5=content_md5)
+                    t_obj.start()
+                    THREADS.append(t_obj)
+                    total_iteration -= 1
+                    part_number = part_number_list[part_number+i]
+                status, response = GreenletThread.terminate()
+                LOGGER.info(response)
+                if status:
+                    raise Exception(response)
+                for res in response:
+                    parts.append({"PartNumber": part_number, "ETag": response[res]["ETag"]})
+
+            return True, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_parts_parallel.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
     def upload_multipart(self,
                          body: str = None,
                          bucket_name: str = None,
@@ -209,7 +260,7 @@ class S3MultipartTestLib(Multipart):
             return True, part
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_parts.__name__,
+                         S3MultipartTestLib.upload_multipart.__name__,
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
