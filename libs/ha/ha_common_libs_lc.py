@@ -412,7 +412,7 @@ class HALibsLc:
         LOGGER.info("Stop the cluster")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD, read_lines=True,
                                     exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp[0]))
+        LOGGER.info("Cluster stop response: {}".format(resp[0]))
         if "message to be checked" in resp[0]:
             return True, resp[0]
         return False, resp[0]
@@ -429,20 +429,29 @@ class HALibsLc:
             return False, "Error during Stopping cluster"
         # TODO: will need to check if delay needed when stopping or starting cluster
         time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Check all Pods are offline.")
+        resp = self.check_pod_status(pod_obj)
+        if resp[0]:
+            return False, "Pods are still running."
         LOGGER.info("Start the cluster")
         resp = self.cortx_start_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Starting cluster"
         time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Check all Pods came back online.")
+        resp = self.check_pod_status(pod_obj)
+        if not resp[0]:
+            return False, "Some/All not online yet."
         # TODO: just a placeholder for cluster status
         LOGGER.info("Check the cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True,
                                     exc=False)
         if not resp[0]:
             return False, "Cluster is not started"
-        return True, "Cluster Restarted successfully."
+        return True, resp
 
-    def check_pod_status(self, pod_obj):
+    @staticmethod
+    def check_pod_status(pod_obj):
         """
         Helper function to check pods status.
         :param pod_obj: Pod object
@@ -451,6 +460,6 @@ class HALibsLc:
         LOGGER.info("Checking if all Pods are online.")
         resp = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS, read_lines=True)
         for line in resp[1]:
-            if "failed" in line:
-                return False, resp
-        return True, resp
+            if "Running" in line or "Completed" in line:
+                return True, resp
+        return False, resp
