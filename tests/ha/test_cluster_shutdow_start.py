@@ -23,24 +23,15 @@ HA test suite for Cluster Shutdown: Immediate.
 """
 
 import logging
-import time
-from random import SystemRandom
-
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
-from commons import commands as cmds
 from commons.utils import assert_utils
-from commons.utils import system_utils
 from config import CMN_CFG
-from config import HA_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
-from libs.di.di_mgmt_ops import ManagementOPs
 from libs.ha.ha_common_libs_lc import HALibsLc
-from libs.csm.cli.cortx_cli_system import CortxCliSystemtOperations
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
