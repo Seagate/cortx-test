@@ -114,7 +114,8 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info("uploading part")
             if content_md5:
                 response = super().upload_part(body, bucket_name, object_name,
-                                               upload_id=upload_id, part_number=part_number, content_md5=content_md5)
+                                               upload_id=upload_id, part_number=part_number,
+                                               content_md5=content_md5)
             else:
                 response = super().upload_part(body, bucket_name, object_name,
                                                upload_id=upload_id, part_number=part_number)
@@ -178,6 +179,34 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info(parts)
 
             return True, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_parts.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+    def upload_multipart(self,
+                         body: str = None,
+                         bucket_name: str = None,
+                         object_name: str = None,
+                         **kwargs) -> tuple:
+        """
+        Upload part of a specific multipart upload.
+
+        :param body: content of the object.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :keyword content_md5: base64-encoded MD5 digest of message
+        :return:
+        """
+        upload_id = kwargs.get("upload_id", None)
+        part_number = kwargs.get("part_number", None)
+        content_md5 = kwargs.get("content_md5", None)
+        try:
+            part = super().upload_part(body, bucket_name, object_name, upload_id=upload_id,
+                                       part_number=part_number, content_md5=content_md5)
+
+            return True, part
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts.__name__,
