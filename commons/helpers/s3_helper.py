@@ -429,34 +429,6 @@ class S3Helper:
                 "Error in %s: %s", S3Helper.restart_s3server_resources.__name__, error)
             return False, error
 
-    def is_s3_server_path_exists(self, path: str = None,
-                                 host: str = None,
-                                 user: str = None,
-                                 pwd: str = None) -> tuple:
-        """
-        Check if file exists on s3 server.
-        ToDo: Why do we need this? we have commons.helpers.host.Host.path_exists
-        :param path: Absolute path of the file.
-        :param host: IP of the host.
-        :param user: Username of the host.
-        :param pwd: Password for the user.
-        :return: bool, response.
-        """
-        host = host if host else self.host
-        user = user if user else self.user
-        pwd = pwd if pwd else self.pwd
-        try:
-            status, response = run_remote_cmd(
-                f"stat {path}", host, user, pwd, read_lines=True)
-            LOGGER.debug(response)
-            LOGGER.info("Path exists: %s", path)
-
-            return status, path
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.is_s3_server_path_exists.__name__, error)
-            return False, error
-
     def get_s3server_fids(self, host: str = None,
                           user: str = None,
                           pwd: str = None) -> tuple:

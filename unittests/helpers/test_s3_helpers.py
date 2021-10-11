@@ -284,19 +284,6 @@ class TestS3helper:
         self.log.info("END: Tested restart s3server resources.")
 
     @pytest.mark.s3unittest
-    def test_is_s3_server_path_exists(self):
-        """Test s3 server path exists."""
-        self.log.info("START: Test s3 server path exists.")
-        status, resp = S3H_OBJ.is_s3_server_path_exists(
-            path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        status, resp = S3H_OBJ.is_s3_server_path_exists(path=self.local_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        self.log.info("END: Tested s3 server path exists.")
-
-    @pytest.mark.s3unittest
     def test_get_s3server_fids(self):
         """Test get s3server fids."""
         self.log.info("START: Test get s3server fids.")
