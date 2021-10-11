@@ -141,8 +141,8 @@ class S3MultipartTestLib(Multipart):
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
         :param multipart_obj_size: Size of object need to be uploaded.
-        :param total_parts: No. of parts to be uploaded.
-        :param multipart_obj_path: Path of object file.
+        # :param total_parts: No. of parts to be uploaded.
+        # :param multipart_obj_path: Path of object file.
         :return: (Boolean, List of uploaded parts).
         """
         try:
