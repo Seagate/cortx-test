@@ -226,3 +226,33 @@ test_25285:
     message1: "Cannot delete the last {} user"
     message2: "Normal user cannot delete other user"
     message_id: "user_permission_denied"
+test_28501:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    reset_password: True
+test_28505:
+    new_password: "D1wkl0ge5mqvq+6Ioah57QHUCdjbn2CarpIqocu2PkQ="
+    reset_password: True
+test_28517:
+    new_password: "+ZfWaNAnxT4p39QOZ1A2QG+OWYJmgI4dEk9WcG6wS04="
+    reset_password: True
+    token_expire_timeout: 3600
+test_28513:
+    password: "1oa2EwRk/urr4oKeEiO6jCg8e74EVStVfw8WVZyw0An1fW0ingjZANtJ51xljjY4"
+    status_code: 401
+test_28512:
+    username: "incorrectuser123ABC"
+    status_code: 401
+test_28515:
+    password: "7uY5HlnrQgqcNMg1dG2AdUcU/344qPhx70zTTytHqPc="
+    status_code: 401
+test_28514:
+    username: "123"
+    status_code: 401
+test_28511:
+    status_code: 400
+test_28510:
+    status_code: 400
+test_28509:
+    status_code: 400
+test_28508:
+    status_code: 400

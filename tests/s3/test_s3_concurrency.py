@@ -34,8 +34,8 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.config_utils import get_config
-from config import S3CMD_CNF
-from config import S3_CFG
+from config.s3 import S3CMD_CNF
+from config.s3 import S3_CFG
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib

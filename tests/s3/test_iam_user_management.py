@@ -20,26 +20,37 @@
 
 """CSM CLI IAM user TestSuite"""
 
-import os
 import logging
-from time import perf_counter_ns
+import os
+import time
 from multiprocessing import Process
+from time import perf_counter_ns
+
 import pytest
 from commons.helpers.health_helper import Health
-from commons.utils import assert_utils, system_utils
+from commons import constants as cons
 from commons import cortxlogging as log
+from commons.configmanager import config_utils
+from commons.helpers import health_helper
+from commons.helpers import node_helper
 from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
+from commons.utils import system_utils
 from config import CMN_CFG
 from config import CSM_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ, s3_test_lib
 from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
 from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
 from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
+from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
+from libs.s3 import S3H_OBJ
+from libs.s3 import s3_test_lib
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
+from scripts.s3_bench import s3bench
 
 
 class TestIAMUserManagement:
@@ -48,6 +59,14 @@ class TestIAMUserManagement:
     @classmethod
     def setup_class(cls):
         cls.log = logging.getLogger(__name__)
+        cls.remote_path = cons.AUTHSERVER_CONFIG
+        cls.local_path = cons.LOCAL_COPY_PATH
+        cls.nobj = node_helper.Node(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                    username=CMN_CFG["nodes"][0]["username"],
+                                    password=CMN_CFG["nodes"][0]["password"])
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.rest_obj = S3AccountOperationsRestAPI()
         cls.auth_obj = S3AuthServerRestAPI()
         cls.s3_user = "s3user_{}"
@@ -76,13 +95,14 @@ class TestIAMUserManagement:
         self.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         self.user_name = None
+        self.s3acc_name = None
         self.iam_obj = CortxCliIamUser()
         self.iam_obj.open_connection()
         self.s3acc_obj = CortxCliS3AccountOperations(
             session_obj=self.iam_obj.session_obj)
         self.access_key_obj = CortxCliS3AccessKeys(
             session_obj=self.iam_obj.session_obj)
-        self.s3acc_name = "{}_{}".format("cli_s3acc", int(perf_counter_ns()))
+        self.s3acc_name = "{}_{}".format("cli_s3_acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.cli_test_obj = CortxCliTestLib()
         self.log.info("Creating s3 account with name %s", self.s3acc_name)
@@ -664,3 +684,147 @@ class TestIAMUserManagement:
         resp = self.rest_obj.delete_s3_account(self.acc_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-28776")
+    def test_28776(self):
+        """
+        s3iamusers creation with different maxIAMUserLimit values
+        """
+        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("Step 1: Edit authserver.properties file for user creation value set to 0")
+        resp = self.nobj.copy_file_to_local(
+            remote_path=self.remote_path, local_path=self.local_path)
+        msg = f"copy_file_to_local failed: remote path: " \
+              f"{self.remote_path}, local path: {self.local_path}"
+        assert_utils.assert_true(resp, msg)
+        resp = False
+        prop_dict = config_utils.read_properties_file(self.local_path)
+        if prop_dict:
+            if prop_dict['maxIAMUserLimit'] != "0":
+                prop_dict['maxIAMUserLimit'] = "0"
+        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
+        self.log.info("Step 2: Restart s3 authserver")
+        status = system_utils.run_remote_cmd(
+            cmd="systemctl restart s3authserver",
+            hostname=self.host,
+            username=self.uname,
+            password=self.passwd,
+            read_lines=True)
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
+        self.log.info("Step 3: Creating iam user with name %s", self.user_name)
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], "Error")
+        self.log.info("Created iam user with name %s", self.user_name)
+        self.log.info("Step 4: Edit authserver.properties file for user creation value set to 6")
+        resp = self.nobj.copy_file_to_local(
+            remote_path=self.remote_path, local_path=self.local_path)
+        msg = f"copy_file_to_local failed: remote path: " \
+              f"{self.remote_path}, local path: {self.local_path}"
+        assert_utils.assert_true(resp, msg)
+        resp = False
+        prop_dict = config_utils.read_properties_file(self.local_path)
+        if prop_dict:
+            if prop_dict['maxIAMUserLimit'] == "0":
+                prop_dict['maxIAMUserLimit'] = "6"
+        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
+        self.log.info("Step 5: Restart s3 authserver")
+        status = system_utils.run_remote_cmd(
+            cmd="systemctl restart s3authserver",
+            hostname=self.host,
+            username=self.uname,
+            password=self.passwd,
+            read_lines=True)
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
+        self.log.info("Step 6: Creating 6 iam user with name %s", self.user_name)
+        for i in range(6):
+            self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
+            resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                                password=self.iam_password,
+                                                confirm_password=self.iam_password)
+            assert_utils.assert_exact_string(resp[1], self.user_name)
+        self.log.info("6 iam users creation successful")
+        self.log.info("Step 7: Try creating one more iam user")
+        resp = self.iam_obj.create_iam_user(user_name=self.user_name,
+                                            password=self.iam_password,
+                                            confirm_password=self.iam_password)
+        assert_utils.assert_exact_string(resp[1], "Error")
+        self.log.info("Cannot create more than 6 iam users")
+        self.log.info("####### Test Completed! #########")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags("TEST-28852")
+    def test_28852(self):
+        """s3accounts creation with different maxIAMAccountLimit values"""
+        self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
+        self.log.info("Step 1: Edit authserver.properties file for account creation value set to 0")
+        resp = self.nobj.copy_file_to_local(
+            remote_path=self.remote_path, local_path=self.local_path)
+        msg = f"copy_file_to_local failed: remote path: " \
+              f"{self.remote_path}, local path: {self.local_path}"
+        assert_utils.assert_true(resp, msg)
+        resp = False
+        prop_dict = config_utils.read_properties_file(self.local_path)
+        if prop_dict:
+            if prop_dict['maxAccountLimit'] != "0":
+                prop_dict['maxAccountLimit'] = "1"
+        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
+        self.log.info("Step 2: Restart s3 authserver")
+        status = system_utils.run_remote_cmd(
+            cmd="systemctl restart s3authserver",
+            hostname=self.host,
+            username=self.uname,
+            password=self.passwd,
+            read_lines=True)
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
+        self.s3acc_obj.logout_cortx_cli()
+        self.s3acc_obj.login_cortx_cli()
+        self.log.info("Step 3: Creating s3 account with name %s", self.s3acc_name)
+        resp = self.s3acc_obj.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.acc_password)
+        assert_utils.assert_exact_string(resp[1], "Error")
+        self.log.info("Step 4: Edit authserver.properties file for account creation value set to 6")
+        resp = self.nobj.copy_file_to_local(
+            remote_path=self.remote_path, local_path=self.local_path)
+        msg = f"copy_file_to_local failed: remote path: " \
+              f"{self.remote_path}, local path: {self.local_path}"
+        assert_utils.assert_true(resp, msg)
+        resp = False
+        prop_dict = config_utils.read_properties_file(self.local_path)
+        if prop_dict:
+            if prop_dict['maxAccountLimit'] == "1":
+                prop_dict['maxAccountLimit'] = "6"
+        resp = config_utils.write_properties_file(self.local_path, prop_dict)
+        self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
+        self.log.info("Step 5: Restart s3 authserver")
+        status = system_utils.run_remote_cmd(
+            cmd="systemctl restart s3authserver",
+            hostname=self.host,
+            username=self.uname,
+            password=self.passwd,
+            read_lines=True)
+        assert_utils.assert_true(status[0], "Service did not restart successfully")
+        self.log.info("Step 6: Creating 6 s3 accounts with name %s")
+        for i in range(6):
+            self.s3acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
+            resp = self.s3acc_obj.create_s3account_cortx_cli(
+                account_name=self.s3acc_name,
+                account_email=self.s3acc_email,
+                password=self.acc_password)
+            assert_utils.assert_exact_string(resp[1], "Error")
+        self.log.info("6 s3 accounts creation successful")
+        self.log.info("Step 7: Try creating one more s3 account")
+        resp = self.s3acc_obj.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.acc_password)
+        assert_utils.assert_exact_string(resp[1], "Error")
+        self.log.info("Cannot create more than 6 s3 accounts")
+        self.log.info("####### Test Completed! #########")

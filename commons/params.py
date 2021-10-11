@@ -34,6 +34,9 @@ VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
+S3_MPART_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_multipart_upload.yaml")
+S3_TEMP_CRED_CONFIG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delete_account_temp_cred.yaml")
+S3_BLACK_BOX_CONFIG_PATH = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
 S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
@@ -46,6 +49,7 @@ COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
+DEL_CFG_PATH = os.path.join(CONFIG_DIR, 's3', 'test_delayed_delete.yaml')
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'

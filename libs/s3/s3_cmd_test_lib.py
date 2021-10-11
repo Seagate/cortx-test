@@ -24,11 +24,12 @@
 import os
 import shutil
 import logging
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import S3LibCmd
 
 LOGGER = logging.getLogger(__name__)
@@ -57,7 +58,6 @@ class S3CmdTestLib(S3LibCmd):
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
         kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        s3_cert_path = s3_cert_path if S3_CFG["validate_certs"] else False
         super().__init__(
             access_key,
             secret_key,
@@ -97,7 +97,7 @@ class S3CmdTestLib(S3LibCmd):
                 return status, upload_res
 
             return False, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.object_upload_cli.__name__,
                          error)
@@ -137,7 +137,7 @@ class S3CmdTestLib(S3LibCmd):
                 return status, response
 
             return False, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.upload_folder_cli.__name__,
                          error)
@@ -164,7 +164,7 @@ class S3CmdTestLib(S3LibCmd):
             LOGGER.info(response)
 
             return status, response
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          S3CmdTestLib.download_bucket_cli.__name__,
                          error)

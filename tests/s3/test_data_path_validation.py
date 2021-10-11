@@ -29,8 +29,9 @@ from commons.utils import assert_utils
 from commons.commands import CMD_S3BENCH
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.health_helper import Health
-from libs.s3 import CM_CFG
-from libs.s3 import S3H_OBJ, S3_CFG
+from config import CMN_CFG as CM_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench as s3bench_obj
 

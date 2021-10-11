@@ -20,24 +20,23 @@
 
 """Minio Client test module."""
 
+import logging
 import os
 import time
-import logging
+
 import pytest
 
-from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
-from commons.configmanager import get_config_wrapper
+from commons.params import TEST_DATA_FOLDER
+from commons.utils import assert_utils
 from commons.utils import config_utils
 from commons.utils import system_utils
-from commons.utils import assert_utils
+from config.s3 import S3_BLKBOX_CFG
+from config.s3 import S3_CFG
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3 import s3_test_lib
-from libs.s3 import S3H_OBJ, ACCESS_KEY, SECRET_KEY
-from config import S3_CFG
-
-S3T_OBJ = s3_test_lib.S3TestLib()
-MINIO_CFG = get_config_wrapper(fpath="config/blackbox/test_blackbox.yaml")
+from libs.s3.s3_blackbox_test_lib import MinIOClient
 
 
 class TestMinioClient:
@@ -52,7 +51,9 @@ class TestMinioClient:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
-        resp = system_utils.configre_minio_cloud(
+        self.s3t_obj = s3_test_lib.S3TestLib()
+        self.minio_obj = MinIOClient()
+        resp = MinIOClient.configre_minio_cloud(
             minio_repo=S3_CFG["minio_repo"],
             endpoint_url=S3_CFG["s3_url"],
             s3_cert_path=S3_CFG["s3_cert_path"],
@@ -70,7 +71,7 @@ class TestMinioClient:
         self.log.info(minio_dict)
         if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
                 or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
-            resp = S3H_OBJ.configure_minio(ACCESS_KEY, SECRET_KEY)
+            resp = MinIOClient.configure_minio(ACCESS_KEY, SECRET_KEY)
             assert_utils.assert_true(
                 resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
         self.root_path = os.path.join(
@@ -82,7 +83,7 @@ class TestMinioClient:
         self.bucket_name = "min-bkt-{}".format(time.perf_counter_ns())
         self.test_file = "minio_client{}.txt".format(time.perf_counter_ns())
         self.file_path = os.path.join(self.root_path, self.test_file)
-        self.minio_cnf = MINIO_CFG["minio_cfg"]
+        self.minio_cnf = S3_BLKBOX_CFG["minio_cfg"]
         self.buckets_list = list()
         self.log.info("ENDED: Setup operations")
 
@@ -98,7 +99,7 @@ class TestMinioClient:
         self.log.info(
             "Deleting all buckets/objects created during TC execution")
         for bucket_name in self.buckets_list:
-            resp = S3T_OBJ.delete_bucket(bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("The bucket and objects deleted successfully")
         self.log.info("Deleting files created locally for object")
@@ -114,14 +115,7 @@ class TestMinioClient:
         :param str bucket_name: Name of bucket to be created
         :return: None
         """
-        self.log.info(
-            "Step 1: Creating a bucket with name %s", bucket_name)
-        resp = system_utils.run_local_cmd(
-            self.minio_cnf["create_bkt_cmd"].format(bucket_name))
-        assert_utils.assert_true(resp[0], resp)
-        assert_utils.assert_in("Bucket created successfully", resp[1], resp[1])
-        self.log.info(
-            "Step 1: Bucket is created with name %s", bucket_name)
+        self.minio_obj.create_bucket(bucket_name)
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -134,7 +128,7 @@ class TestMinioClient:
         self.log.info(
             "Step 2: Verifying that %s bucket is created",
             self.bucket_name)
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.bucket_name, resp[1], resp[1])
         self.log.info(
@@ -153,17 +147,17 @@ class TestMinioClient:
         bucket_name_1 = f"{self.bucket_name}-1"
         bucket_name_2 = f"{self.bucket_name}-2"
         self.log.info("Step 1: Creating two buckets simultaneously")
-        resp = system_utils.run_local_cmd(
-            self.minio_cnf["cr_two_bkt_cmd"].format(
-                bucket_name_1, bucket_name_2))
+        cmd = self.minio_cnf["cr_two_bkt_cmd"].format(
+                bucket_name_1, bucket_name_2) + self.minio_obj.validate_cert
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1: Created two buckets simultaneously")
         self.log.info("Step 2: Verifying buckets are created")
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(bucket_name_1, resp[1])
         assert_utils.assert_in(bucket_name_2, resp[1])
-        status, resp = S3T_OBJ.delete_multiple_buckets(
+        status, resp = self.s3t_obj.delete_multiple_buckets(
             bucket_list=[bucket_name_1, bucket_name_2])
         if not status:
             self.log.info("Buckets are not deleted because: %s", resp)
@@ -179,8 +173,9 @@ class TestMinioClient:
         """List buckets using Minion client."""
         self.log.info("Started: List buckets using Minion client")
         self.create_bucket(self.bucket_name)
+        cmd = self.minio_cnf["lst_bkt_cmd"] + self.minio_obj.validate_cert
         self.log.info("Step 2: Listing buckets")
-        resp = system_utils.run_local_cmd(self.minio_cnf["lst_bkt_cmd"])
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(self.bucket_name, resp[1], resp)
         self.log.info("Step 2: Buckets are listed")
@@ -200,19 +195,19 @@ class TestMinioClient:
             self.minio_cnf["no_of_buckets"])
         for cnt in range(self.minio_cnf["no_of_buckets"]):
             bkt_name = "{0}{1}".format(self.bucket_name, str(cnt))
-            cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name)
-            resp = system_utils.run_local_cmd(cmd)
+            cmd = self.minio_cnf["create_bkt_cmd"].format(bkt_name) + self.minio_obj.validate_cert
+            resp = system_utils.run_local_cmd(cmd=cmd)
             assert_utils.assert_true(resp[0], resp[1])
             self.buckets_list.append(bkt_name)
         self.log.info(
             "Step 1: Created %s buckets using minio",
             self.minio_cnf["no_of_buckets"])
         self.log.info("Step 2: Verifying buckets are created")
-        bucket_list = S3T_OBJ.bucket_list()[1]
+        bucket_list = self.s3t_obj.bucket_list()[1]
         for each_bucket in self.buckets_list:
             assert_utils.assert_in(each_bucket, bucket_list)
         self.log.info("Cleanup: Deleting created buckets")
-        resp, output = S3T_OBJ.delete_multiple_buckets(
+        resp, output = self.s3t_obj.delete_multiple_buckets(
             bucket_list=self.buckets_list)
         if resp:
             self.buckets_list = list()
@@ -231,15 +226,15 @@ class TestMinioClient:
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Deleting bucket with name %s", self.bucket_name)
-        resp = system_utils.run_local_cmd(
-            self.minio_cnf["dlt_bkt_cmd"].format(self.bucket_name))
+        cmd = self.minio_cnf["dlt_bkt_cmd"].format(self.bucket_name) + self.minio_obj.validate_cert
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_true(resp[0], resp)
         self.log.info(
             "Step 2: Bucket is deleted with name %s", self.bucket_name)
         self.log.info(
             "Step 3: Verifying that %s bucket is deleted",
             self.bucket_name)
-        resp = S3T_OBJ.bucket_list()
+        resp = self.s3t_obj.bucket_list()
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_not_in(
             self.bucket_name,
@@ -258,9 +253,11 @@ class TestMinioClient:
         self.log.info(
             "STARTED: delete bucket which has objects using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
-        dlt_bkt_cmd = self.minio_cnf["dlt_bkt_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) + \
+                    self.minio_obj.validate_cert
+        dlt_bkt_cmd = self.minio_cnf["dlt_bkt_cmd"].format(self.bucket_name) + \
+                    self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 1: Uploading an object to a bucket %s",
@@ -297,8 +294,9 @@ class TestMinioClient:
             "STARTED: Create bucket using existing bucket name using Minion client")
         self.create_bucket(self.bucket_name)
         self.log.info("Step 2: Creating a bucket with existing name")
-        resp = system_utils.run_local_cmd(
-            self.minio_cnf["create_bkt_cmd"].format(self.bucket_name))
+        cmd = self.minio_cnf["create_bkt_cmd"].format(self.bucket_name) + \
+            self.minio_obj.validate_cert
+        resp = system_utils.run_local_cmd(cmd=cmd)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_in("Unable to make bucket", resp[1], resp[1])
         self.log.info(
@@ -317,8 +315,9 @@ class TestMinioClient:
         self.log.info(
             "STARTED: To list objects inside bucket using Minion client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) + \
+                    self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Uploading an object to a bucket %s", self.bucket_name)
@@ -348,10 +347,11 @@ class TestMinioClient:
         self.log.info(
             "STARTED: Delete an object from bucket using Minion client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                    + self.minio_obj.validate_cert
         dlt_obj_cmd = self.minio_cnf["dlt_obj"].format(
-            self.bucket_name, self.file_path.split("/")[-1])
+            self.bucket_name, self.file_path.split("/")[-1]) + self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Uploading an object to a bucket %s", self.bucket_name)
@@ -382,8 +382,9 @@ class TestMinioClient:
         """Copy object from bucket using Minion client."""
         self.log.info("STARTED: copy object from bucket using Minion client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                    + self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Uploading an object to a bucket %s", self.bucket_name)
@@ -410,8 +411,9 @@ class TestMinioClient:
         self.log.info(
             "STARTED: upload object of large size of(5gb) using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                    + self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info("Step 2: Creating a file of size 5GB")
         system_utils.create_file(self.file_path, 5024)
@@ -442,10 +444,11 @@ class TestMinioClient:
         self.log.info(
             "STARTED: Display the contents of a text file using Minion client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
         display_content = self.minio_cnf["display_cont"].format(
-            self.bucket_name, self.file_path.split("/")[-1])
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.bucket_name, self.file_path.split("/")[-1]) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                    + self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.log.info(
             "Step 2: Uploading an object to a bucket %s", self.bucket_name)
@@ -478,8 +481,9 @@ class TestMinioClient:
         self.log.info(
             "STARTED: Display the first few lines of a text file using Minion Client")
         upload_obj_cmd = self.minio_cnf["upload_obj_cmd"].format(
-            self.file_path, self.bucket_name)
-        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name)
+            self.file_path, self.bucket_name) + self.minio_obj.validate_cert
+        list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
+                    + self.minio_obj.validate_cert
         head_obj_cmd = self.minio_cnf["head_obj"].format(
             2, self.bucket_name, self.file_path.split("/")[-1])
         self.create_bucket(self.bucket_name)

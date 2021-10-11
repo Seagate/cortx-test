@@ -208,6 +208,7 @@ class TestNodeHealth:
             f"failed to generate log: {resp[1]}")
         LOGGER.info("ENDED: s3 io's operations.")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_management_ops
     @pytest.mark.tags("TEST-22520")
     def test_22520_verify_resource_discover(self):

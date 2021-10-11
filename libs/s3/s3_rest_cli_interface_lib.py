@@ -33,7 +33,7 @@ from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 LOGGER = logging.getLogger(__name__)
 
 
-class S3Interface(ABC):
+class S3AccountInterface(ABC):
     """S3 interface class to declare the abstract methods."""
 
     @abstractmethod
@@ -62,7 +62,7 @@ class S3Interface(ABC):
         LOGGER.info("Abstract method to create new s3 access key.")
 
 
-class S3AccountOperations(S3Interface):
+class S3AccountOperations(S3AccountInterface):
     """S3 account interface class to do s3 account operations."""
 
     def __init__(self):
