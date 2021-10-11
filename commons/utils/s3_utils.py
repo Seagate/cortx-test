@@ -28,7 +28,7 @@ import json
 import xmltodict
 from hashlib import md5
 from random import shuffle
-
+from commons.utils.config_utils import create_content_json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ def create_canonical_request(method, canonical_uri, body, epoch_t, host):
     payload_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
     canonical_headers = 'host:' + host + '\n' + 'x-amz-date:' + get_timestamp(epoch_t) + '\n'
     canonical_request = method + '\n' + canonical_uri + '\n' + canonical_query_string + '\n' + \
-        canonical_headers + '\n' + signed_headers + '\n' + payload_hash
+                        canonical_headers + '\n' + signed_headers + '\n' + payload_hash
 
     return canonical_request
 
@@ -121,7 +121,7 @@ def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t=None,
     canonical_request = create_canonical_request(method, canonical_uri, body, epoch_t, host)
     credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
     string_to_sign = algorithm + '\n' + get_timestamp(epoch_t) + '\n' + credential_scope \
-        + '\n' + hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()
+                     + '\n' + hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()
 
     return string_to_sign
 
@@ -145,8 +145,8 @@ def sign_request_v4(method=None, canonical_uri='/', body='',
     signing_key = get_v4_signature_key(secret_key, get_date(epoch_t), region, service)
     signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
     authorization_header = 'AWS4-HMAC-SHA256' + ' ' + 'Credential=' + access_key + '/' + \
-        credential_scope + ', ' + 'SignedHeaders=' + 'host;x-amz-date' + \
-        ', ' + 'Signature=' + signature
+                           credential_scope + ', ' + 'SignedHeaders=' + 'host;x-amz-date' + \
+                           ', ' + 'Signature=' + signature
 
     return authorization_header
 
@@ -284,3 +284,16 @@ def get_unaligned_parts(file_path, total_parts=1, random=False) -> dict:
     except OSError as error:
         LOGGER.error(str(error))
         raise error from OSError
+
+
+def create_multipart_json(json_path, parts) -> tuple:
+    """
+    Create json file with all multipart upload details.
+
+    parts should be list of {"PartNumber": i, "ETag": part["ETag"]}.
+    """
+    parts = {"Parts": parts}
+    with open(json_path, 'w') as file_obj:
+        json.dump(parts, file_obj)
+
+    return os.path.exists(json_path), json_path
