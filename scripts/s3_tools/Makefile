@@ -66,17 +66,18 @@ s3cmd-configure:
 
 	@echo "###Configure s3cmd in current machine###"
 	rm -rf /root/.s3cfg
-	ifeq ('$(VERIFY_SSL)', 'True')
-		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --ssl --dump-config >/root/.s3cfg
-	else
-		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --no-ssl --dump-config >/root/.s3cfg
-	endif
-
-	ifeq ('$(VALIDATE_CERTS)', 'True')
-		s3cmd --configure --check-certificate >/root/.s3cfg
-	else
-		s3cmd --configure --no-check-certificate >/root/.s3cfg
-	endif
+	@if [ $(VERIFY_SSL) = 'True' ]; then\
+		echo "#configuring ssl#";\
+        s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --ssl --dump-config >/root/.s3cfg;\
+    else\
+    	echo "configuring no-ssl";\
+    	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --no-ssl --dump-config >/root/.s3cfg;\
+    fi
+	@if [ $(VERIFY_SSL) = 'True' ]; then\
+		s3cmd --configure --check-certificate >/root/.s3cfg;\
+	else\
+		s3cmd --configure --no-check-certificate >/root/.s3cfg;\
+	fi
 	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
 	sed -i 's|^progress_meter =.*|	progress_meter = True|g' /root/.s3cfg
 	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg
@@ -96,9 +97,10 @@ s3fs-install:
 s3fs-configure:
 
 	@echo "###configure s3fs in current machine###"
-	ifeq ('$(VALIDATE_CERTS)', 'True')
+	@if [ $(VERIFY_SSL) = 'True' ]; then\
 		@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
 		trust anchor $(CA_CRT)
+	fi
 	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
@@ -217,4 +219,4 @@ help :
 	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
 	@echo "apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
-	@echo "bashrc-configure: Setup ulimit to mzximum size for allowing open file descriptors. Eg:make bashrc-configure --makefile=<makefile_path>"
+	@echo "bashrc-configure: Setup ulimit to maximum size for allowing open file descriptors. Eg:make bashrc-configure --makefile=<makefile_path>"

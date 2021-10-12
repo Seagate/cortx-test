@@ -32,7 +32,7 @@ from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_test_lib import AWScliS3api
+from libs.s3.s3_awscli import AWScliS3api
 
 AWS_CLI_OBJ = AWScliS3api()
 
