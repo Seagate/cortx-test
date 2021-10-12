@@ -26,11 +26,12 @@ import logging
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
-from commons.utils.system_utils import create_file, cal_percent
-from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import Multipart
+from commons.utils.system_utils import create_file
+from commons.utils.system_utils import cal_percent
 from commons.greenlet_worker import GreenletThread
 from commons.greenlet_worker import THREADS
+from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_core_lib import Multipart
 
 LOGGER = logging.getLogger(__name__)
 
@@ -211,7 +212,8 @@ class S3MultipartTestLib(Multipart):
             while total_iteration:
                 for i in range(parallel_thread):
                     part = parts.get(part_number, None)
-                    if not part: break
+                    if not part:
+                        break
                     t_obj = GreenletThread(i, run=self.upload_multipart,
                                            body=part[0], bucket_name=bucket_name,
                                            object_name=object_name, upload_id=upload_id,
@@ -219,7 +221,7 @@ class S3MultipartTestLib(Multipart):
                     t_obj.start()
                     THREADS.append(t_obj)
                     total_iteration -= 1
-                    part_number = part_number_list[part_number+i]
+                    part_number = part_number_list[part_number + i]
                 status, response = GreenletThread.terminate()
                 LOGGER.info(response)
                 if status:
