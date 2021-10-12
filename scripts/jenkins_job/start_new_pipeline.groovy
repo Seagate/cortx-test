@@ -185,10 +185,14 @@ deactivate
                         echo "${jira_issue}"
                       } */
                   }
+             try {
              sh label: '', script: '''source venv/bin/activate
 pytest scripts/jenkins_job/aws_configure.py::test_collect_crash_files --local True --target ${Target_Node}
 deactivate
 '''
+} catch (err) {
+    echo "Caught error in crash files collection: ${err}"
+}
 		     }
 
 			catchError(stageResult: 'FAILURE') {
