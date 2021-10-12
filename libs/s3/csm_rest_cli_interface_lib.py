@@ -121,11 +121,9 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 login_acc = "csm_admin_user"
             status, response = self.s3acc_op_rest.create_s3_account(
                 user_name=acc_name, email_id=email_id, passwd=acc_pwd, login_as=login_acc)
-            status = response.status_code == Const.SUCCESS_STATUS
             if not status:
                 raise RuntimeError(response) from RuntimeError
             response.update({"password": CSM_REST_CFG["test_s3account_password"]})
-            raise RuntimeError
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
