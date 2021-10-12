@@ -768,7 +768,6 @@ class TestS3user():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
-    @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-28931")
@@ -779,7 +778,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         existing_user = len(self.s3user.list_all_created_s3account())
-        new_users = const.MAX_S3_USERS - new_users
+        new_users = const.MAX_S3_USERS - existing_user
         created_users = []
         for i in range(new_users):
             result, user_data = self.s3user.create_verify_s3_custom("valid")
