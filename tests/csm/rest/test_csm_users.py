@@ -3979,59 +3979,74 @@ class TestCsmUser():
         self.log.info("Step 2: Get header-2")
         header2 = self.csm_user.get_headers(admin_username, admin_password)
 
-        headers = [header1, header2]
+        self.log.info("Step 3: Get header-3")
+        header3 = self.csm_user.get_headers(admin_username, admin_password)
+
+        headers = [header1, header2, header3]
         for header in headers:
-            self.log.info("Step 3: Changing user password for header {}".format(header))
+            self.log.info("Step 4.1: Changing user password for header {}".format(header))
             response = self.csm_user.reset_user_password(admin_username, new_password,
                                                          reset_password, header)
 
-            self.log.info("Step 4: Verify success response")
+            self.log.info("Step 4.2: Verify success response")
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
-        self.log.info("Step 5: Try resetting user password till token expire timeout")
-        end_time = time.time() + token_expire_timeout
-        while time.time() <= end_time:
-            self.log.info("Step 5.1: Changing user password")
-            response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                         reset_password, header2)
+        time.sleep(sleep_time)
+        self.log.info("Step 5.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header2)
 
-            self.log.info("Step 5.2: Verify success response")
+        self.log.info("Step 5.2: Verify success response")
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+
+        self.log.info("Step 6: Try resetting user password till token expire timeout")
+        end_time = time.time() + (token_expire_timeout - sleep_time)
+        while time.time() <= end_time:
+            self.log.info("Step 7.1: Changing user password")
+            response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                         reset_password, header3)
+
+            self.log.info("Step 7.2: Verify success response")
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             time.sleep(sleep_time)
 
-        self.log.info("Step 6: Verify that token expires after timeout")
-        for header in headers:
-            self.log.info("Step 6.1: Changing user password")
-            response = self.csm_user.reset_user_password(admin_username, new_password,
-                                                         reset_password, header)
+        self.log.info("Step 8: Verify that token expires after timeout")
+        for header, header_num in enumerate(headers):
+            if header_num == 0 or header_num == 1:
+                self.log.info("Step 9.1: Changing user password")
+                response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                             reset_password, header)
+                self.log.info("Step 9.2: Verify response")
+                self.log.info("Verifying response code 200 is not returned")
+                if response.status_code == HTTPStatus.OK:
+                    self.log.info("Revert password")
+                    header = self.csm_user.get_headers(admin_username, new_password)
+                    self.log.info("Step: Changing user password for header {}".format(header))
+                    response_reset = self.csm_user.reset_user_password(admin_username,
+                                                                       admin_password,
+                                                                       reset_password, header)
+                    self.log.info("Step: Verify success response")
+                    self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
 
-            self.log.info("Step 6.2: Verify response")
-            self.log.info("Verifying response code 200 is not returned")
-            if response.status_code == HTTPStatus.OK:
-                self.log.info("Revert password")
-                header = self.csm_user.get_headers(admin_username, new_password)
-                self.log.info("Step: Changing user password for header {}".format(header))
-                response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                                   reset_password, header)
-                self.log.info("Step: Verify success response")
-                self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
+                self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
+                time.sleep(sleep_time)
 
-            self.csm_user.check_expected_response(response, HTTPStatus.OK, True)
+        # Check session active with activity in last 1 hr
+        self.log.info("Step 10.1: Changing user password")
+        response = self.csm_user.reset_user_password(admin_username, new_password,
+                                                     reset_password, header3)
 
-        self.log.info("Step 7: Reverting user password")
-        header = self.csm_user.get_headers(admin_username, new_password)
+        self.log.info("Step 10.2: Verify response")
+        self.log.info("Verifying response code 200 is returned")
+        if response.status_code == HTTPStatus.OK:
+            self.log.info("Revert password")
+            header = self.csm_user.get_headers(admin_username, new_password)
+            self.log.info("Step: Changing user password for header {}".format(header))
+            response_reset = self.csm_user.reset_user_password(admin_username, admin_password,
+                                                               reset_password, header)
+            self.log.info("Step: Verify success response")
+            self.csm_user.check_expected_response(response_reset, HTTPStatus.OK)
 
-        self.log.info("Step 7.1: Changing user password for header {}".format(header))
-        response = self.csm_user.reset_user_password(admin_username, admin_password,
-                                                     reset_password, header)
-
-        self.log.info("Step 8: Verify success response")
-        self.csm_user.check_expected_response(response, HTTPStatus.OK)
-
-        self.log.info("Step 9: Check login with reverted password")
-        response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
-
-        self.log.info("Step 10: Verify success response")
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
     @pytest.mark.lc
