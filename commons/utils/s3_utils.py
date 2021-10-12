@@ -28,7 +28,7 @@ import json
 import xmltodict
 from hashlib import md5
 from random import shuffle
-from commons.utils.config_utils import create_content_json
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -207,7 +207,7 @@ def calc_etag(file_path, part_size=0):
         raise error from OSError
 
 
-def get_aligned_parts(file_path, total_parts=1, random=False) -> dict:
+def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
     Create the upload parts dict with aligned part size.
 
@@ -217,8 +217,9 @@ def get_aligned_parts(file_path, total_parts=1, random=False) -> dict:
     5 MB	        5,000,000 Bytes	    5,242,880 Bytes
     :param total_parts: No. of parts to be uploaded.
     :param file_path: Path of object file.
+    :param chunk_size: chunk size used to read each check default is 5MB.
     :param random: Generate random else sequential part order.
-    :return: Dict of uploaded parts.
+    :return: Parts details with data, checksum.
     """
     try:
         obj_size = os.stat(file_path).st_size
@@ -227,11 +228,11 @@ def get_aligned_parts(file_path, total_parts=1, random=False) -> dict:
         with open(file_path, "rb") as file_pointer:
             i = 1
             while True:
-                data = file_pointer.read(5242880 * part_size)
+                data = file_pointer.read(chunk_size * part_size)
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = data
+                parts[i] = [data, md5(data).hexdigest()]
                 i += 1
         if random:
             keys = list(parts.keys())
@@ -244,7 +245,7 @@ def get_aligned_parts(file_path, total_parts=1, random=False) -> dict:
         raise error from OSError
 
 
-def get_unaligned_parts(file_path, total_parts=1, random=False) -> dict:
+def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
     Create the upload parts dict with unaligned part size.
 
@@ -257,23 +258,24 @@ def get_unaligned_parts(file_path, total_parts=1, random=False) -> dict:
     5 MB	        5,000,000 Bytes	    5,242,880 Bytes
     :param total_parts: No. of parts to be uploaded.
     :param file_path: Path of object file.
+    :param chunk_size: chunk size used to read each check default is 5MB.
     :param random: Generate random else sequential part order.
-    :return: Dict of uploaded parts.
+    :return: Parts details with data, checksum.
     """
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
         part_size = int(obj_size) // int(total_parts)
-        unaligned = [258291, 572864, 887437]
+        unaligned = [104857, 209715, 314572, 419430, 524288, 629145, 734003, 838860, 943718]
         with open(file_path, "rb") as file_pointer:
             i = 1
             while True:
                 shuffle(unaligned)
-                data = file_pointer.read((5242880 + unaligned[0]) * part_size)
+                data = file_pointer.read((chunk_size + unaligned[0]) * part_size)
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = data
+                parts[i] = [data, md5(data).hexdigest()]
                 i += 1
         if random:
             keys = list(parts.keys())
@@ -286,13 +288,14 @@ def get_unaligned_parts(file_path, total_parts=1, random=False) -> dict:
         raise error from OSError
 
 
-def create_multipart_json(json_path, parts) -> tuple:
+def create_multipart_json(json_path, parts_list) -> tuple:
     """
-    Create json file with all multipart upload details.
+    Create json file with all multipart upload details in sorted order.
 
     parts should be list of {"PartNumber": i, "ETag": part["ETag"]}.
     """
-    parts = {"Parts": parts}
+    parts_list = sorted(parts_list, key=lambda d: d['PartNumber'])
+    parts = {"Parts": parts_list}
     with open(json_path, 'w') as file_obj:
         json.dump(parts, file_obj)
 

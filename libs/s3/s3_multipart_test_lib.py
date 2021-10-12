@@ -203,21 +203,19 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
-            chunks = kwargs.get("chunks", None)
-            content_md5 = kwargs.get("content_md5", None)
+            parts = kwargs.get("parts", None)
             parallel_thread = kwargs.get("parallel_thread", 5)
-            total_iteration = len(chunks)
-            part_number_list = chunks.key()
+            total_iteration = len(parts)
+            part_number_list = parts.key()
             part_number = part_number_list[0]
-            parts = list()
             while total_iteration:
                 for i in range(parallel_thread):
-                    body = chunks.get(part_number, None)
-                    if not body: break
+                    part = parts.get(part_number, None)
+                    if not part: break
                     t_obj = GreenletThread(i, run=self.upload_multipart,
-                                           body=body, bucket_name=bucket_name,
+                                           body=part[0], bucket_name=bucket_name,
                                            object_name=object_name, upload_id=upload_id,
-                                           part_number=part_number, content_md5=content_md5)
+                                           part_number=part_number, content_md5=part[1])
                     t_obj.start()
                     THREADS.append(t_obj)
                     total_iteration -= 1
@@ -226,10 +224,9 @@ class S3MultipartTestLib(Multipart):
                 LOGGER.info(response)
                 if status:
                     raise Exception(response)
-                for res in response:
-                    parts.append({"PartNumber": part_number, "ETag": response[res]["ETag"]})
+            response = self.list_parts(upload_id, bucket_name, object_name)
 
-            return True, parts
+            return response
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_parallel.__name__,
