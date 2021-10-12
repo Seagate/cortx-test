@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-HA utility methods
+HA common utility methods
 """
 import logging
 import os
@@ -45,7 +45,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-class HALibsLc:
+class HAK8s:
     """
     This class contains common utility methods for HA related operations.
     """
@@ -186,7 +186,7 @@ class HALibsLc:
         except Exception as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.status_pods_online.__name__,
+                         HAK8s.status_pods_online.__name__,
                          error)
 
     def status_cluster_resource_online(self):
@@ -246,7 +246,7 @@ class HALibsLc:
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.delete_s3_acc_buckets_objects.__name__,
+                         HAK8s.delete_s3_acc_buckets_objects.__name__,
                          error)
             return False, error
 
@@ -312,7 +312,7 @@ class HALibsLc:
         except (ValueError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.perform_ios_ops.__name__,
+                         HAK8s.perform_ios_ops.__name__,
                          error)
             if io_data:
                 del_resp = self.delete_s3_acc_buckets_objects(io_data)
@@ -412,7 +412,7 @@ class HALibsLc:
         LOGGER.info("Stop the cluster")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD, read_lines=True,
                                     exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp[0]))
+        LOGGER.info("Cluster stop response: {}".format(resp[0]))
         if "message to be checked" in resp[0]:
             return True, resp[0]
         return False, resp[0]
@@ -429,15 +429,37 @@ class HALibsLc:
             return False, "Error during Stopping cluster"
         # TODO: will need to check if delay needed when stopping or starting cluster
         time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Check all Pods are offline.")
+        resp = self.check_pod_status(pod_obj)
+        if resp[0]:
+            return False, "Pods are still running."
         LOGGER.info("Start the cluster")
         resp = self.cortx_start_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Starting cluster"
         time.sleep(CMN_CFG["delay_60sec"])
+        LOGGER.info("Check all Pods came back online.")
+        resp = self.check_pod_status(pod_obj)
+        if not resp[0]:
+            return False, "Some/All not online yet."
         # TODO: just a placeholder for cluster status
         LOGGER.info("Check the cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True,
                                     exc=False)
         if not resp[0]:
             return False, "Cluster is not started"
-        return True, "Cluster Restarted successfully."
+        return True, resp
+
+    @staticmethod
+    def check_pod_status(pod_obj):
+        """
+        Helper function to check pods status.
+        :param pod_obj: Pod object
+        :return:
+        """
+        LOGGER.info("Checking if all Pods are online.")
+        resp = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS, read_lines=True)
+        for line in resp[1]:
+            if "Running" in line or "Completed" in line:
+                return True, resp
+        return False, resp
