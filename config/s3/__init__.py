@@ -35,7 +35,6 @@ from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3_TEMP_CRED_CONFIG_PATH
 from commons.params import S3_MPART_CFG_PATH
 from commons.params import DEL_CFG_PATH
-from commons.configmanager import get_config_db
 
 pytest_args = list()
 for arg in sys.argv:
@@ -58,7 +57,7 @@ def build_s3_endpoints() -> dict:
     """This function will create s3/iam url based on certificates availability and ssl usages."""
     setup_query = {"setupname": target}
     s3_conf = configmanager.get_config_wrapper(fpath=S3_CONFIG)
-    setup_details = get_config_db(setup_query=setup_query)[target]
+    setup_details = configmanager.get_config_wrapper(target=target)
     lb_flg = setup_details.get('lb') not in [None, '', "FQDN without protocol(http/s)"]
     s3_url = setup_details.get('lb') if lb_flg else "s3.seagate.com"
     iam_url = setup_details.get('lb') if lb_flg else "iam.seagate.com"
