@@ -45,7 +45,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-class HALibsLc:
+class HAK8s:
     """
     This class contains common utility methods for HA related operations.
     """
@@ -186,7 +186,7 @@ class HALibsLc:
         except Exception as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.status_pods_online.__name__,
+                         HAK8s.status_pods_online.__name__,
                          error)
 
     def status_cluster_resource_online(self):
@@ -246,7 +246,7 @@ class HALibsLc:
         except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.delete_s3_acc_buckets_objects.__name__,
+                         HAK8s.delete_s3_acc_buckets_objects.__name__,
                          error)
             return False, error
 
@@ -312,7 +312,7 @@ class HALibsLc:
         except (ValueError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
-                         HALibsLc.perform_ios_ops.__name__,
+                         HAK8s.perform_ios_ops.__name__,
                          error)
             if io_data:
                 del_resp = self.delete_s3_acc_buckets_objects(io_data)

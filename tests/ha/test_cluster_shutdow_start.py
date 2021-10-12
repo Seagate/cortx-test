@@ -31,7 +31,7 @@ from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
-from libs.ha.ha_common_libs_lc import HALibsLc
+from libs.ha.ha_common_libs_k8s import HAK8s
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class TestClstrShutdownStart:
         cls.password = []
         cls.host_list = []
         cls.node_list = []
-        cls.ha_obj = HALibsLc()
+        cls.ha_obj = HAK8s()
         cls.restored = True
 
         for node in range(cls.num_nodes):
@@ -111,7 +111,7 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(resource="cluster")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal", resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 

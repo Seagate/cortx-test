@@ -587,9 +587,10 @@ class SystemHealth(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     @RestTestLib.rest_logout
-    def cluster_operation_signal(self, resource: str):
+    def cluster_operation_signal(self, operation: str, resource: str):
         """
         Helper method to send the cluster operation signal before operation performed.
+        :param operation: Operation to be performed
         :param resource: resource on which operation needs to be performed
         :return: boolean, response for POST
         """
@@ -601,22 +602,14 @@ class SystemHealth(RestTestLib):
         headers.update(conf_headers)
         self.log.info(
             "Endpoint for cluster operation is %s", endpoint)
-        operation = "shutdown_signal"
         data_val = {"operation": operation, "arguments": {}}
         # Fetching api response
-        response = self.restapi.rest_call(
-            "post",
-            endpoint=endpoint,
-            data=json.dumps(data_val),
-            headers=headers)
+        response = self.restapi.rest_call("post", endpoint=endpoint,
+                                          data=json.dumps(data_val), headers=headers)
         if response.status_code != HTTPStatus.OK:
             self.log.error("%s operation on %s POST REST API response : %s",
-                           operation,
-                           resource,
-                           response)
+                           operation, resource, response)
             return False, response
         self.log.info("%s operation on %s POST REST API response : %s",
-                      operation,
-                      resource,
-                      response)
+                      operation, resource, response)
         return True, response
