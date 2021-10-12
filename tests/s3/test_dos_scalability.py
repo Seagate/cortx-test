@@ -102,11 +102,6 @@ class TestDosScalability:
         if pref_list:
             self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
-        # self.log.info("Deleting files created during execution")
-        # for file in self.log_file:
-        #     if os.path.exists(file):
-        #         remove_file(file)
-        # self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3_ops
@@ -140,7 +135,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                     log_dir=s3b_obj.LOG_DIR + "TEST-5336/", log_prefix="TEST-5336")
+                     log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5336")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 400)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -185,7 +180,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR + "TEST-5337/", log_prefix="TEST-5337")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5337")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 300)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -230,7 +225,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR + "TEST-5338/", log_prefix="TEST-5338")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5338")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with %s constant s3 operations.", 1000)
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -280,7 +275,7 @@ class TestDosScalability:
                 self.log.debug(res)
                 self.log_file.append(res[1])
                 resp = system_utils.validate_s3bench_parallel_execution(
-                    log_dir=s3b_obj.LOG_DIR + "TEST-5340/", log_prefix="TEST-5340")
+                    log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5340")
                 assert_true(resp[0], resp[1])
             count = count + 1
         self.log.info("Step 2: Successfully performed with n constant s3 operations.")
@@ -331,7 +326,7 @@ class TestDosScalability:
             self.log.debug(res)
             self.log_file.append(res[1])
             resp = system_utils.validate_s3bench_parallel_execution(
-                log_dir=s3b_obj.LOG_DIR + "TEST-5341/", log_prefix="TEST-5341")
+                log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5341")
             assert_true(resp[0], resp[1])
         self.log.info("Step 2: Successfully performed with n constant s3 operations.")
         self.log.info("Step 3: check any crashes happened and core logs for motr")
@@ -378,7 +373,7 @@ class TestDosScalability:
     #         self.log.debug(res)
     #         self.log_file.append(res[1])
     #         resp = system_utils.validate_s3bench_parallel_execution(
-    #             log_dir=s3b_obj.LOG_DIR + "TEST-5308/", log_prefix="TEST-5308")
+    #             log_dir=s3b_obj.LOG_DIR, log_prefix="TEST-5308")
     #         assert_true(resp[0], resp[1])
     #     res = self.hobj.is_motr_online()
     #     assert_true(res, res)

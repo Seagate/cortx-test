@@ -35,11 +35,7 @@ from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ, s3_test_lib
 from libs.s3 import iam_test_lib
-# from libs.csm.cli.cortxcli_iam_user import CortxCliIamUser
-# from libs.csm.cli.cortx_cli_s3_accounts import CortxCliS3AccountOperations
-# from libs.csm.cli.cortx_cli_s3access_keys import CortxCliS3AccessKeys
-# from libs.s3.cortxcli_test_lib import CortxCliTestLib
-# from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from commons.exceptions import CTException
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -79,31 +75,17 @@ class TestIAMUserManagement:
         self.iam_password = CSM_CFG["CliConfig"]["iam_user"]["password"]
         self.acc_password = CSM_CFG["CliConfig"]["s3_account"]["password"]
         self.user_name = None
-        # self.iam_obj = CortxCliIamUser()
-        # self.iam_obj.open_connection()
-        # self.s3acc_obj = CortxCliS3AccountOperations(
-        #    session_obj=self.iam_obj.session_obj)
-        # self.access_key_obj = CortxCliS3AccessKeys(
-        #    session_obj=self.iam_obj.session_obj)
         self.s3acc_name = "{}_{}".format("cli_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        # self.cli_test_obj = CortxCliTestLib()
         self.log.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email, passwd=self.acc_password)
-        # resp = self.s3acc_obj.login_cortx_cli()
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
 
         self.iam_test_obj = iam_test_lib.IamTestLib(access_key=access_key, secret_key=secret_key)
 
-        # resp = self.s3acc_obj.create_s3account_cortx_cli(
-        #    account_name=self.s3acc_name,
-        #    account_email=self.s3acc_email,
-        #    password=self.acc_password)
-        # assert_utils.assert_true(resp[0], resp[1])
-        # self.s3acc_obj.logout_cortx_cli()
         self.log.info("Created s3 account")
         self.parallel_ios = None
         self.account_dict = dict()
@@ -114,10 +96,6 @@ class TestIAMUserManagement:
         self.object_name = "obj-reset-object-{}".format(perf_counter_ns())
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
 
-        self.log.info("Login to CORTX CLI using s3 account")
-        # login = self.iam_obj.login_cortx_cli(
-        #     username=self.s3acc_name, password=self.acc_password)
-        # assert_utils.assert_true(login[0], login[1])
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
         self.END_LOG_FORMAT = "##### Test Ended -  "
@@ -149,15 +127,9 @@ class TestIAMUserManagement:
                     self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         for acc in self.account_dict:
-            # self.cli_test_obj.login_cortx_cli(
-            #     username=acc, password=self.account_dict[acc])
-            # self.cli_test_obj.delete_iam_user(self.user_name)
-            # self.cli_test_obj.logout_cortx_cli()
-            # resp = self.cli_test_obj.delete_account_cortxcli(
-            #    account_name=acc, password=self.account_dict[acc])
-            # assert_utils.assert_true(resp[0], resp[1])
+            resp = self.rest_obj.delete_s3_account(acc_name=acc)
+            assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
-        # del self.cli_test_obj
         self.log.info("ENDED : Teardown operations for test function")
 
     def check_cluster_health(self):
@@ -249,25 +221,23 @@ class TestIAMUserManagement:
         check s3 resources are intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23398_ios", duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23398_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
-        # resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-        #                                     password=self.iam_password,
-        #                                     confirm_password=self.iam_password)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], self.user_name)
-        self.log.info("Created iam user with name %s", self.iam_password)
-        self.log.info("Step 4. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23398_ios")
-        self.log.info(
-            "Step 5. Check cluster status, all services are running after completing test.")
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
+        self.log.info("Created iam user with name %s", self.user_name)
+        self.log.info("Step 4: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23398_ios")
+        self.log.info("Step 5: Deleting IAM user")
+        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 6:. Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -281,45 +251,28 @@ class TestIAMUserManagement:
         while listing users and s3 resources should be intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23399_ios", duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23399_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
-        # resp = self.iam_obj.create_iam_user(
-        #     user_name=self.user_name,
-        #     password=self.iam_password,
-        #     confirm_password=self.iam_password)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_exact_string(resp[1], self.user_name)
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
-        self.log.info(
-            "Step 4: Verifying show command is able to list user in all format(json,xml,table)")
+        self.log.info("Step 4: Verifying list command is able to list all iam users")
         resp = self.iam_test_obj.list_users()
-
-        # show command with json format
-        # resp = self.iam_obj.list_iam_user(output_format="json")[1]["iam_users"]
-
-        user_list = [user["user_name"]
-                     for user in resp if "iam_user" in user["user_name"]]
+        user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
         assert_utils.assert_list_item(user_list, self.user_name)
-
-        # show command with xml format
-        # resp = self.iam_obj.list_iam_user(output_format="xml")[1]
-        # user_list = [each["iam_users"]["user_name"]
-        #             for each in resp if each.get("iam_users")]
-        # assert_utils.assert_list_item(user_list, self.user_name)
         self.log.info("Step 5. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23399_ios")
-        self.log.info(
-            "Step 6. Check cluster status, all services are running after completing test.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23399_ios")
+        self.log.info("Step 6: Deleting IAM user")
+        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 7:. Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
-        self.log.info(
-            "Verified show command is able to list user in all format(json,xml,table)")
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
@@ -332,37 +285,36 @@ class TestIAMUserManagement:
         and s3 resources should be intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23400_ios", duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23400_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
-        assert_utils.assert_exact_string(resp[1], self.user_name)
-        # resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-        #                                    password=self.iam_password,
-        #                                    confirm_password=self.iam_password)
-        # assert_utils.assert_exact_string(resp[1], self.user_name)
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
         create_access_key = self.iam_test_obj.create_access_key(self.user_name)
-        # create_access_key = self.access_key_obj.create_s3_iam_access_key(
-        #     user_name=self.user_name)
         assert_utils.assert_true(create_access_key[0], create_access_key[1])
         self.log.info("Created access key for IAM user %s", self.user_name)
         self.log.info("Step 5: Verify access key is created")
         resp = self.iam_test_obj.list_access_keys(self.user_name)
-        # resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
-        access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        assert_utils.assert_in(create_access_key[1]["access_key"], access_keys)
+        access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
+        assert_utils.assert_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
         self.log.info("Verified access key is created")
-        self.log.info("Step 6. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23400_ios")
-        self.log.info(
-            "Step 7. Check cluster status, all services are running after completing test.")
+        self.log.info("Step 6: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23400_ios")
+        self.log.info("Step 7: Deleting access key of iam user")
+        resp = self.iam_test_obj.delete_access_key(
+            user_name=self.user_name,
+            access_key_id=create_access_key[1]['AccessKey']['AccessKeyId'])
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 8: Deleting IAM user")
+        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 9:. Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -376,27 +328,22 @@ class TestIAMUserManagement:
         s3 resources should be intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23401_ios", duration="0h1m")
-
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23401_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
-        # resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-        #                                     password=self.iam_password,
-        #                                     confirm_password=self.iam_password)
-        # assert_utils.assert_exact_string(resp[1], self.user_name)
+        resp = self.iam_test_obj.create_user(user_name=self.user_name)
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
-        self.log.info("Deleting iam user with name %s", self.user_name)
-        # resp = self.iam_obj.delete_iam_user(self.user_name)
-        # assert_utils.assert_exact_string(resp[1], "IAM User Deleted")
-        self.log.info("Step 4. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23401_ios")
-        self.log.info(
-            "Step 5. Check cluster status, all services are running after completing test.")
+        self.log.info("Step 4: Deleting iam user with name %s", self.user_name)
+        resp = self.iam_test_obj.delete_user(self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 5: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23401_ios")
+        self.log.info("Step 6: Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
         self.log.info("Deleted iam user with name %s", self.user_name)
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -411,48 +358,52 @@ class TestIAMUserManagement:
         s3 resources should be intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23402_ios", duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23402_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
-        # resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-        #                                    password=self.iam_password,
-        #                                    confirm_password=self.iam_password)
-        # assert_utils.assert_exact_string(resp[1], self.user_name)
-        self.log.info("Created iam user with name %s", self.iam_password)
+        resp = self.iam_test_obj.create_user(user_name=self.user_name)
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
+        self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
-        # create_access_key = self.access_key_obj.create_s3_iam_access_key(
-        #    user_name=self.user_name)
-        # assert_utils.assert_true(create_access_key[0], create_access_key[1])
-        # iam_access_key = create_access_key[1]["access_key"]
+        create_access_key = self.iam_test_obj.create_access_key(self.user_name)
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
+        resp = self.iam_test_obj.list_access_keys(self.user_name)
+        access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
+        assert_utils.assert_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
         self.log.info("Created access key for IAM user %s", self.user_name)
-        self.log.info(
-            "Step 5: Verify two access keys are present for IAM user %s",
-            self.user_name)
-        # resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
-        # access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        # assert_utils.assert_in(iam_access_key, access_keys)
-        # assert_utils.assert_equal(len(access_keys), 2)
-        self.log.info(
-            "Verified two access keys are present for IAM user %s",
-            self.user_name)
-        self.log.info(
-            "Step 6: Verify IAM user can not have more than two access keys")
-        # resp = self.access_key_obj.create_s3_iam_access_key(
-        #     user_name=self.user_name)
-        # assert_utils.assert_false(resp[0], resp[1])
-        # assert_utils.assert_exact_string(resp[1], "exceeded quota")
-        # self.log.info(resp)
-        self.log.info(
-            "Verified IAM user can not have more than two access keys")
-        self.log.info("Step 7. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23402_ios")
-        self.log.info(
-            "Step 8. Check cluster status, all services are running after completing test.")
+        self.log.info("Step 5: Creating second access key for user %s", self.user_name)
+        create_access_key1 = self.iam_test_obj.create_access_key(self.user_name)
+        assert_utils.assert_true(create_access_key1[0], create_access_key1[1])
+        resp = self.iam_test_obj.list_access_keys(self.user_name)
+        access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
+        assert_utils.assert_in(create_access_key1[1]['AccessKey']['AccessKeyId'], access_keys)
+        self.log.info("Created second access key for IAM user %s", self.user_name)
+        self.log.info("Step 6: Verify two access keys are present for IAM user %s", self.user_name)
+        assert_utils.assert_equal(len(access_keys), 2)
+        self.log.info("Verified two access keys are present for IAM user %s", self.user_name)
+        self.log.info("Step 7: Verify IAM user can not have more than two access keys")
+        self.log.info("Creating third access key for user %s", self.user_name)
+        try:
+            create_access_key2 = self.iam_test_obj.create_access_key(self.user_name)
+            assert_utils.assert_false(create_access_key2[0], create_access_key2[1])
+        except CTException as error:
+            self.log.error("IAM user already has two access keys: %s", error)
+            self.log.info("Verified IAM user can not have more than two access keys")
+        self.log.info("Step 8: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23402_ios")
+        self.log.info("Step 9: Deleting access keys associated with iam user")
+        for key in access_keys:
+            resp = self.iam_test_obj.delete_access_key(user_name=self.user_name,
+                                                       access_key_id=key)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 10: Deleting IAM user")
+        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 11: Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -466,49 +417,44 @@ class TestIAMUserManagement:
         with another access key and s3 resources should be intact while S3 IO's are in progress.
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
-        self.log.info(
-            "Step 1: Check cluster status, all services are running before starting test.")
+        self.log.info("Step 1: Check cluster status, all services are running before starting test")
         self.check_cluster_health()
         self.log.info("Step 2: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Start", log_prefix="test_23463_ios", duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23463_ios",
+                                                duration="0h1m")
         self.log.info("Step 3: Creating iam user with name %s", self.user_name)
-        # resp = self.iam_obj.create_iam_user(user_name=self.user_name,
-        #                                     password=self.iam_password,
-        #                                     confirm_password=self.iam_password)
-        # assert_utils.assert_exact_string(resp[1], self.user_name)
-        self.log.info("Created iam user with name %s", self.iam_password)
+        resp = self.iam_test_obj.create_user(user_name=self.user_name)
+        assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
+        self.log.info("Created iam user with name %s", self.user_name)
+
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
-        # create_access_key = self.access_key_obj.create_s3_iam_access_key(
-        #     user_name=self.user_name)
-        # assert_utils.assert_true(create_access_key[0], create_access_key[1])
-        # iam_access_key = create_access_key[1]["access_key"]
+        create_access_key = self.iam_test_obj.create_access_key(self.user_name)
+        assert_utils.assert_true(create_access_key[0], create_access_key[1])
+        iam_access_key = create_access_key[1]['AccessKey']['AccessKeyId']
         self.log.info("Created access key for IAM user %s", self.user_name)
         self.log.info("Step 5: Verify access key is created")
-        # resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
-        # access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        # assert_utils.assert_in(iam_access_key, access_keys)
+        resp = self.iam_test_obj.list_access_keys(self.user_name)
+        access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
+        assert_utils.assert_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
         self.log.info("Verified access key is created")
         self.log.info("Step 6: Deleting access key of IAM user %s", self.user_name)
-        # resp = self.access_key_obj.delete_s3access_key(
-        #     access_key=iam_access_key, user_name=self.user_name)
-        # assert_utils.assert_true(resp[0], resp[1])
+        resp = self.iam_test_obj.delete_access_key(user_name=self.user_name,
+                                                   access_key_id=iam_access_key)
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted access key of IAM user %s", self.user_name)
-        self.log.info(
-            "Step 7: Verify access key is deleted for IAM user %s",
-            self.user_name)
-        # resp = self.access_key_obj.show_s3access_key(user_name=self.user_name)
-        # access_keys = [i["access_key_id"] for i in resp["access_keys"]]
-        # assert_utils.assert_not_in(iam_access_key, access_keys)
-        self.log.info(
-            "Verified access key is deleted for IAM user %s",
-            self.user_name)
+        self.log.info("Step 7: Verify access key is deleted for IAM user %s", self.user_name)
+        resp = self.iam_test_obj.list_access_keys(self.user_name)
+        access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
+        assert_utils.assert_not_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
+        self.log.info("Verified access key is deleted for IAM user %s", self.user_name)
 
-        self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="test_23463_ios")
-        self.log.info(
-            "Step 9. Check cluster status, all services are running after completing test.")
+        self.log.info("Step 8: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23463_ios")
+        self.log.info("Step 9: Deleting IAM user")
+        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 10: Check cluster status, all services are running after completing "
+                      "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -524,6 +470,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+
         self.log.info("Step 2: create s3iamuser with special character using REST API call.")
         for schar in ["_", "-", "@"]:
             self.iam_user = "iamuser{}{}".format(schar, perf_counter_ns())
