@@ -339,3 +339,37 @@ class S3MultipartTestLib(Multipart):
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
         return True, response
+
+    def simple_multipart_upload(
+            self,
+            bucket_name: str,
+            object_name: str,
+            file_size: int,
+            file_path: str,
+            parts: int):
+        """
+        Do multipart upload for given object by dividing it into given parts.
+
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :param file_size: Object size.
+        :param file_path: File path.
+        :param parts: Number of parts the objects needs to be divided.
+        """
+        try:
+            LOGGER.info("Initiating multipart upload")
+            res = self.create_multipart_upload(bucket_name, object_name)
+            mpu_id = res[1]["UploadId"]
+            LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+            LOGGER.info("Uploading parts into bucket")
+            res = self.upload_parts(mpu_id, bucket_name, object_name, file_size,
+                                    total_parts=parts, multipart_obj_path=file_path)
+            parts = res[1]
+            LOGGER.info("Uploaded parts into bucket: %s", parts)
+            LOGGER.info("Completing multipart upload")
+            self.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.simple_multipart_upload.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])

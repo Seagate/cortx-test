@@ -8,7 +8,6 @@ confluent_kafka
 dataclasses~=0.6
 defusedxml~=0.7.1
 docutils==0.14
-dataclasses
 fastavro
 fabric~=2.5.0
 filelock==3.0.12

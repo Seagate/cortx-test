@@ -1172,7 +1172,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1192,7 +1192,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1214,7 +1214,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response

@@ -113,6 +113,27 @@ def get_complete_schema(data):
     entry['Object_Size'] = data['objsize']
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
+    entry['Cluster_State'] = {"$exists": False }
+    # entry['Count_of_Clients'] = data['clients'],
+
+    return entry
+
+
+def get_degraded_schema(data):
+    """
+    function for getting complete performance schema
+    wrt database and provided data
+    Args:
+        data: data needed for query
+    Returns:
+        dict: data dict with db key mapped with given data
+    """
+    entry = get_common_schema(data)
+    entry['Build'] = data['build']
+    entry['Object_Size'] = data['objsize']
+    entry['Operation'] = data['operation']
+    entry['Name'] = data['name']
+    entry['Cluster_State'] = data['cluster_state']
     # entry['Count_of_Clients'] = data['clients'],
 
     return entry
