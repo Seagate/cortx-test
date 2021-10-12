@@ -106,6 +106,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     LOGGER.info("Checking for available space before SB generate.")
     for node in range(num_nodes):
         res = node_list[node].execute_cmd(cmd="df -h")
+        res = res.decode("utf-8")
         LOGGER.info("Available space on node {} : {}".format(node, res))
     LOGGER.info("Starting support bundle creation")
     command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
