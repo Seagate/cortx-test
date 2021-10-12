@@ -103,7 +103,7 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         if node_list[node].path_exists(remote_dir):
             node_list[node].remove_dir(remote_dir)
 
-    LOGGER.info("Checking for available space before SB generate.")
+    LOGGER.info("Checking for available space before generating SB.")
     for node in range(num_nodes):
         res = node_list[node].execute_cmd(cmd=cm_cmd.CMD_SPACE_CHK)
         res = res.decode("utf-8")
