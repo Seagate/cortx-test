@@ -401,37 +401,15 @@ HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
 HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
 
 
-# Deployment using Factory and Field
-CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh" \
-                       " https://raw.githubusercontent.com/Seagate/cortx-prvsnr/{}/srv" \
-                       "/components/provisioner/scripts/install.sh; chmod +x /mnt/cortx/install.sh "
-CMD_INSTALL_CORTX_RPM = "sh /mnt/cortx/install.sh -t {}"
-CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}"  # server name, type - VM/HW
-CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
-PUPPET_SERV = "puppet.service"
-NETWORK_CFG_TRANSPORT = "cortx_setup network config --transport {} --mode tcp"
-NETWORK_CFG_INTERFACE = "cortx_setup network config --interfaces {} --type {}"
-NETWORK_CFG_BMC = "cortx_setup network config --bmc {} --user {} --password {}"
-STORAGE_CFG_CONT = "cortx_setup storage config --controller virtual --mode {} " \
-                   "--ip 127.0.0.1 --port 80 --user 'admin' --password 'admin'"
-STORAGE_CFG_NAME = "cortx_setup storage config --name {} --type virtual"
-STORAGE_CFG_CVG = "cortx_setup storage config --cvg {} --data-devices {} --metadata-devices {}"
-SECURITY_CFG = "cortx_setup security config --certificate {}"
-FEATURE_CFG = "cortx_setup config set --key {} --val {}"
-INITIALIZE_NODE = "cortx_setup node initialize"
-SET_NODE_SIGN = "cortx_setup signature set --key LR_SIGNATURE --value {}"
-NODE_FINALIZE = "cortx_setup node finalize"
-PREPARE_NODE = "cortx_setup node prepare server --site_id {} --rack_id {} --node_id {}"
-PREPARE_NETWORK = "cortx_setup node prepare network --hostname {} --search_domains {} " \
-                  "--dns_servers {}"
-PREPARE_NETWORK_TYPE = "cortx_setup node prepare network --type {} --ip_address {} --netmask {} " \
-                       "--gateway {}"
-CFG_FIREWALL = "cortx_setup node prepare firewall --config {}"
-CFG_NTP = "cortx_setup node prepare time --server time.seagate.com --timezone {}"
-NODE_PREP_FINALIZE = "cortx_setup node prepare finalize"
-CLUSTER_CREATE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
-                 "--storageset_count 1 --virtual_host {} --target_build {}"
-CLUSTER_PREPARE = "cortx_setup cluster prepare"
+# Kubernetes commands to interact with service/pods.
+
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {}"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Restart pod/ service in a namespace.
+RESTART_POD_CMD = ""
 
 # LC commands
 CLSTR_START_CMD = ""

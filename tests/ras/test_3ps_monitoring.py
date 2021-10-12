@@ -641,6 +641,7 @@ class Test3PSvcMonitoring:
                 starttime, const.ResourceType.SW_SVC, True)
             LOGGER.info("Step 11: Verified fault resolved alert on CSM")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-21197")
