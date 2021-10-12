@@ -58,6 +58,7 @@ class TestClstrShutdownStart:
         cls.node_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
+        cls.s3_clean = None
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -86,6 +87,11 @@ class TestClstrShutdownStart:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
             #TODO: Will use health helper once available.
 
+            if self.s3_clean:
+                LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
+                resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+                assert_utils.assert_true(resp[0], resp[1])
+
     # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
@@ -108,10 +114,12 @@ class TestClstrShutdownStart:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
         LOGGER.info("Step 2: IOs are started successfully.")
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal", resource="cluster")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
@@ -121,7 +129,6 @@ class TestClstrShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info(
             "Step 4: Cluster restarted fine and all Pods online.")
-        self.restored = False
 
         LOGGER.info("Step 5: Check DI for IOs run before restart.")
         resp = self.ha_obj.perform_ios_ops(
@@ -133,10 +140,12 @@ class TestClstrShutdownStart:
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1')
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
         resp = self.ha_obj.perform_ios_ops(
             di_data=di_check_data, is_di=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 6: IOs running successfully with new S3 account.")
+        self.restored = False
 
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
