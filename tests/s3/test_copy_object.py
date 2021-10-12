@@ -513,6 +513,7 @@ class TestCopyObjects:
             "ENDED: Copy object to cross account buckets while S3 IOs are in progress.")
 
     @pytest.mark.parallel
+    @pytest.mark.sanity
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-19844")
     @pytest.mark.parametrize("object_size", ["5GB", "2GB"])
