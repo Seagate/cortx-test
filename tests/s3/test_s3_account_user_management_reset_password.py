@@ -23,10 +23,12 @@
 import logging
 import os
 import time
+from http import HTTPStatus
 from multiprocessing import Process
 from time import perf_counter_ns
 
 import pytest
+
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
@@ -35,19 +37,21 @@ from commons.utils import system_utils
 from config import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
-from libs.s3.cortxcli_test_lib import CSMAccountOperations
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
-from libs.s3.s3_common_test_lib import get_ldap_creds
+from libs.s3.csm_rest_cli_interface_lib import CSMAccountIntOperations
+from libs.s3.csm_restapi_interface_lib import CSMRestAPIInterfaceOperations
 from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import create_s3_acc
+from libs.s3.s3_common_test_lib import get_ldap_creds
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from scripts.s3_bench import s3bench
 
 
+# pylint: disable-msg=too-many-instance-attributes
 class TestAccountUserManagementResetPassword:
     """Account user management reset password TestSuite."""
 
+    # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
         """
@@ -65,23 +69,20 @@ class TestAccountUserManagementResetPassword:
         self.csm_user_list = list()
         self.log.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
-        assert_utils.assert_true(
-            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+        assert_utils.assert_true(res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
         self.test_dir_path = os.path.join(
             TEST_DATA_FOLDER, "TestAccountUserManagementResetPassword")
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
-        self.cli_test_obj = CortxCliTestLib()
-        self.csm_obj = CSMAccountOperations()
         self.rest_obj = S3AccountOperations()
         self.s3auth_obj = S3AuthServerRestAPI()
+        self.csmrc_obj = CSMAccountIntOperations()
+        self.csmacc_op_rest = CSMRestAPIInterfaceOperations()
         self.account_prefix = "acc-reset-passwd-{}"
         self.csm_user = "csm-user-{}".format(time.perf_counter_ns())
-        self.s3acc_name1 = "acc1-reset-passwd-{}".format(
-            time.perf_counter_ns())
-        self.s3acc_name2 = "acc2-reset-passwd-{}".format(
-            time.perf_counter_ns())
+        self.s3acc_name1 = "acc1-reset-passwd-{}".format(time.perf_counter_ns())
+        self.s3acc_name2 = "acc2-reset-passwd-{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com"
         self.io_bucket_name = "io-bkt1-reset-{}".format(perf_counter_ns())
         self.bucket_name1 = "bkt1-reset-{}".format(perf_counter_ns())
@@ -99,8 +100,7 @@ class TestAccountUserManagementResetPassword:
         if self.parallel_ios:
             if self.parallel_ios.is_alive():
                 self.parallel_ios.join()
-        self.log.info(
-            "Deleting all buckets/objects created during TC execution")
+        self.log.info("Deleting all buckets/objects created during TC execution")
         bkt_list = self.s3_obj.bucket_list()[1]
         if self.io_bucket_name in bkt_list:
             resp = self.s3_obj.delete_bucket(self.io_bucket_name, force=True)
@@ -108,18 +108,19 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step cleanup resources.")
         for resource in self.resources_dict:
             if resource:
-                resp = resource.delete_bucket(
-                    self.resources_dict[resource], force=True)
+                resp = resource.delete_bucket(self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         for acc in self.account_dict:
             resp = self.rest_obj.delete_s3_account(acc)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
         for user in self.csm_user_list:
-            resp = self.csm_obj.csm_user_delete(user)
+            resp = self.csmrc_obj.delete_csm_account_rest_cli(user)
             assert_utils.assert_true(resp[0], resp[1])
-        del self.cli_test_obj
-        del self.csm_obj
+        del self.rest_obj
+        del self.s3auth_obj
+        del self.csmrc_obj
+        del self.csmacc_op_rest
         self.log.info("ENDED: test teardown.")
 
     def s3_ios(self,
@@ -156,10 +157,7 @@ class TestAccountUserManagementResetPassword:
             duration=duration,
             log_file_prefix=log_file_prefix)
         self.log.info(resp)
-        assert_utils.assert_true(
-            os.path.exists(
-                resp[1]),
-            f"failed to generate log: {resp[1]}")
+        assert_utils.assert_true(os.path.exists(resp[1]), f"failed to generate log: {resp[1]}")
         self.log.info("ENDED: s3 io's operations.")
 
     def start_stop_validate_parallel_s3ios(
@@ -178,12 +176,9 @@ class TestAccountUserManagementResetPassword:
                 resp = self.s3_obj.object_list(self.io_bucket_name)
                 self.log.info(resp)
                 self.parallel_ios.join()
-                self.log.info(
-                    "Parallel IOs stopped: %s",
-                    not self.parallel_ios.is_alive())
+                self.log.info("Parallel IOs stopped: %s", not self.parallel_ios.is_alive())
             if log_prefix:
-                resp = system_utils.validate_s3bench_parallel_execution(
-                    s3bench.LOG_DIR, log_prefix)
+                resp = system_utils.validate_s3bench_parallel_execution(s3bench.LOG_DIR, log_prefix)
                 assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.parallel
@@ -216,18 +211,11 @@ class TestAccountUserManagementResetPassword:
                 self.s3acc_name2), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name2] = self.s3acc_passwd
         self.log.info("Step 4: Reset s3 account password using other s3 account user.")
-        resp = self.csm_obj.reset_s3acc_password(
-            self.s3acc_name1,
-            self.s3acc_passwd,
-            self.s3acc_name2,
-            self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_in(
-            "Access denied. Cannot modify another S3 account.",
-            resp[1],
-            resp[1])
-        self.log.info(
-            "Step 5: Create bucket s3bkt1, s3bkt2 in s3acc1, s3acc2 account.")
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name2, self.new_passwd, login_as={
+                "username": self.s3acc_name1, "password": self.s3acc_passwd})
+        assert_utils.assert_equals(resp[1].status_code, HTTPStatus.FORBIDDEN)
+        self.log.info("Step 5: Create bucket s3bkt1, s3bkt2 in s3acc1, s3acc2 account.")
         resp = s3_test_obj1.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
         self.resources_dict[s3_test_obj1] = self.bucket_name1
@@ -237,17 +225,14 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 6: Create and upload objects to above s3bkt1, s3bkt2.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj1.put_object(
-            self.bucket_name1, self.object_name, self.file_path)
+        resp = s3_test_obj1.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj2.put_object(
-            self.bucket_name2, self.object_name, self.file_path)
+        resp = s3_test_obj2.put_object(self.bucket_name2, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22793_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22793_s3bench_ios")
         self.log.info(
             "Step 8: Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -278,7 +263,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 3. Create csm user having monitor role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
-        resp = self.csm_obj.csm_user_create(
+        resp = self.csmrc_obj.create_csm_account_rest_cli(
             csm_user, csm_user_mail, self.csm_passwd, role="monitor")
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
@@ -288,9 +273,10 @@ class TestAccountUserManagementResetPassword:
                 self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_s3acc_password(
-            csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name1, self.new_passwd, login_as={
+                "username": csm_user, "password": self.csm_passwd})
+        assert_utils.assert_equals(resp[1].status_code, HTTPStatus.FORBIDDEN)
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
         assert_utils.assert_true(resp[1], resp[1])
@@ -298,14 +284,10 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 7. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22794_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22794_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -336,7 +318,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 3. Create csm user having manage role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
-        resp = self.csm_obj.csm_user_create(
+        resp = self.csmrc_obj.create_csm_account_rest_cli(
             csm_user, csm_user_mail, self.csm_passwd, role="manage")
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
@@ -346,8 +328,9 @@ class TestAccountUserManagementResetPassword:
                 self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_s3acc_password(
-            csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
+        resp = self.csmrc_obj.reset_s3_password_rest_cli(
+            acc_name=self.s3acc_name1, passwd=self.new_passwd, login_as={
+                "username": csm_user, "password": self.csm_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 6. Create bucket s3bkt in s3acc account.")
@@ -357,14 +340,10 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 7. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22795_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22795_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -398,8 +377,9 @@ class TestAccountUserManagementResetPassword:
                 self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 4. Reset s3 account user with it's own password.")
-        resp = self.csm_obj.reset_s3acc_own_password(
-            self.s3acc_name1, self.s3acc_passwd, self.new_passwd)
+        resp = self.csmrc_obj.reset_s3_password_rest_cli(
+            acc_name=self.s3acc_name1, passwd=self.new_passwd, login_as={
+                "username": self.s3acc_name1, "password": self.s3acc_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
@@ -409,14 +389,10 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 6. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22796_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22796_s3bench_ios")
         self.log.info(
             "Step 8. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -449,8 +425,8 @@ class TestAccountUserManagementResetPassword:
             self.s3acc_name1, self.email_id.format(
                 self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
-        resp = self.csm_obj.reset_s3acc_password(
-            acc_name=self.s3acc_name1, new_password=self.new_passwd)
+        resp = self.csmrc_obj.reset_s3_password_rest_cli(
+            acc_name=self.s3acc_name1, passwd=self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
@@ -460,10 +436,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 6. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7. list and check all resources are intact.")
         bkt_list = s3_test_obj.object_list(self.bucket_name1)[1]
@@ -472,8 +445,7 @@ class TestAccountUserManagementResetPassword:
             bkt_list,
             f"{self.object_name} not exists in {bkt_list}")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22797_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22797_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -520,41 +492,26 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 5. Create and upload objects to above s3bkt1, s3bkt2.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj1.put_object(
-            self.bucket_name1, self.object_name, self.file_path)
+        resp = s3_test_obj1.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj2.put_object(
-            self.bucket_name2, self.object_name, self.file_path)
+        resp = s3_test_obj2.put_object(self.bucket_name2, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6. Reset s3 account password using other s3 account user.")
-        resp = self.csm_obj.reset_s3acc_password(
-            self.s3acc_name1,
-            self.s3acc_passwd,
-            self.s3acc_name2,
-            self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
-        assert_utils.assert_in(
-            "Access denied. Cannot modify another S3 account.",
-            resp[1],
-            resp[1])
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name2, self.new_passwd, login_as={
+                "username": self.s3acc_name1, "password": self.s3acc_passwd})
+        assert_utils.assert_equals(resp[1].status_code, HTTPStatus.FORBIDDEN)
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj1.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         resp = s3_test_obj2.object_list(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22798_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22798_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -585,7 +542,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 3. Create csm user having monitor role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
-        resp = self.csm_obj.csm_user_create(
+        resp = self.csmrc_obj.create_csm_account_rest_cli(
             csm_user, csm_user_mail, self.csm_passwd, role="monitor")
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
@@ -601,26 +558,19 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 6. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 7. Reset s3 account password using csm user having monitor role.")
-        resp = self.csm_obj.reset_s3acc_password(
-            csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
-        assert_utils.assert_false(resp[0], resp[1])
+        self.log.info("Step 7. Reset s3 account password using csm user having monitor role.")
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name2, self.new_passwd, login_as={
+                "username": csm_user, "password": self.csm_passwd})
+        assert_utils.assert_equals(resp[1].status_code, HTTPStatus.FORBIDDEN)
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22799_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22799_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -651,7 +601,7 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 3. Create csm user having manage role.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
-        resp = self.csm_obj.csm_user_create(
+        resp = self.csmrc_obj.create_csm_account_rest_cli(
             csm_user, csm_user_mail, self.csm_passwd, role="manage")
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
@@ -667,27 +617,20 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 6. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 7. Reset s3 account password using csm user having manage role.")
-        resp = self.csm_obj.reset_s3acc_password(
-            csm_user, self.csm_passwd, self.s3acc_name1, self.new_passwd)
+        self.log.info("Step 7. Reset s3 account password using csm user having manage role.")
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name1, self.new_passwd, login_as={
+                "username": csm_user, "password": self.csm_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22800_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22800_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -725,26 +668,20 @@ class TestAccountUserManagementResetPassword:
         self.resources_dict[s3_test_obj] = self.bucket_name1
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: Reset s3 account user with it's own password.")
-        resp = self.csm_obj.reset_s3acc_own_password(
-            self.s3acc_name1, self.s3acc_passwd, self.new_passwd)
+        resp = self.csmacc_op_rest.reset_s3_user_password(
+            self.s3acc_name1, self.new_passwd, login_as={
+                "username": self.s3acc_name1, "password": self.s3acc_passwd})
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 6: list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         self.log.info("Step 7: Stop and validate S3 IOs")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22801_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22801_s3bench_ios")
         self.log.info("Step 8: Check cluster status, all services are running")
         check_cluster_health()
         self.log.info(
@@ -783,27 +720,18 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 5. Create and upload objects to above s3bkt.")
         resp = system_utils.create_file(self.file_path, count=10)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = s3_test_obj.put_object(
-            self.bucket_name1,
-            self.object_name,
-            self.file_path)
+        resp = s3_test_obj.put_object(self.bucket_name1, self.object_name, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 6. Reset s3 account password using csm admin user.")
-        resp = self.csm_obj.reset_s3acc_password(
-            acc_name=self.s3acc_name1, new_password=self.new_passwd)
+        self.log.info("Step 6. Reset s3 account password using csm admin user.")
+        resp = self.csmacc_op_rest.reset_s3_user_password(self.s3acc_name1, self.new_passwd)
         assert_utils.assert_true(resp[0], resp[1])
         self.account_dict[self.s3acc_name1] = self.new_passwd
         self.log.info("Step 7. list and check all resources are intact.")
         resp = s3_test_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(resp[0], resp[1])
-        assert_utils.assert_in(
-            self.object_name,
-            resp[1],
-            "Failed to list bucket.")
+        assert_utils.assert_in(self.object_name, resp[1], "Failed to list bucket.")
         self.log.info("Step 8. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22802_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22802_s3bench_ios")
         self.log.info(
             "Step 9. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -834,47 +762,43 @@ class TestAccountUserManagementResetPassword:
         self.log.info("Step 3. Create N number s3account.")
         account_list = []
         for i in range(10):
-            acc_name = "{}{}".format(
-                self.account_prefix.format(
-                    time.perf_counter_ns()), i)
+            acc_name = "{}{}".format(self.account_prefix.format(time.perf_counter_ns()), i)
             email_id = self.email_id.format(acc_name)
             create_s3_acc(acc_name, email_id, self.s3acc_passwd)
             account_list.append(acc_name)
             self.account_dict[acc_name] = self.s3acc_passwd
-        self.log.info(
-            "Step 4. Reset N number s3 account password using csm admin user.")
+        self.log.info("Step 4. Reset N number s3 account password using csm admin user.")
         for name in account_list:
-            resp = self.csm_obj.reset_s3acc_password(
-                acc_name=name, new_password=self.new_passwd)
+            resp = self.csmacc_op_rest.reset_s3_user_password(name, self.new_passwd)
             assert_utils.assert_true(resp[0], resp[1])
             self.account_dict[name] = self.new_passwd
         self.log.info("Step 5. Create csm user having role manage.")
         csm_user = self.csm_user.format(time.perf_counter_ns())
         csm_user_mail = self.email_id.format(csm_user)
-        resp = self.csm_obj.csm_user_create(
+        resp = self.csmrc_obj.create_csm_account_rest_cli(
             csm_user, csm_user_mail, self.csm_passwd, role="manage")
         assert_utils.assert_true(resp[0], resp[1])
         self.csm_user_list.append(csm_user)
         self.log.info(
             "Step 6. Reset N number s3 account password using csm user having manage role.")
         for name in account_list:
-            resp = self.csm_obj.reset_s3acc_password(
-                csm_user, self.csm_passwd, name, self.s3acc_passwd)
+            resp = self.csmacc_op_rest.reset_s3_user_password(
+                name, self.s3acc_passwd, login_as={
+                    "username": csm_user, "password": self.csm_passwd})
             assert_utils.assert_true(resp[0], resp[1])
             self.account_dict[name] = self.s3acc_passwd
         self.log.info("Step 7. Changes csm user role to monitor.")
-        resp = self.csm_obj.csm_user_update_role(
-            csm_user, self.csm_passwd, role="monitor")
+        resp = self.csmrc_obj.edit_csm_user_rest_cli(
+            csm_user=csm_user, csm_pwd=self.csm_passwd, role="monitor")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Step 8. Reset N number s3 account password using csm user having monitor role.")
         for name in account_list:
-            resp = self.csm_obj.reset_s3acc_password(
-                csm_user, self.csm_passwd, name, self.new_passwd)
-            assert_utils.assert_false(resp[0], resp[1])
+            resp = self.csmacc_op_rest.reset_s3_user_password(
+                name, self.new_passwd, login_as={"username": csm_user, "password": self.csm_passwd})
+            assert_utils.assert_equals(resp[1].status_code, HTTPStatus.FORBIDDEN)
         self.log.info("Step 9. Stop S3 IO & Validate logs.")
-        self.start_stop_validate_parallel_s3ios(
-            ios="Stop", log_prefix="TEST-22882_s3bench_ios")
+        self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="TEST-22882_s3bench_ios")
         self.log.info(
             "Step 10. Check cluster status, all services are running after completing test.")
         check_cluster_health()
@@ -897,7 +821,10 @@ class TestAccountUserManagementResetPassword:
             "STARTED: Use REST API call Update Account Login Profile using access/secret key.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
+            self.s3acc_name1,
+            self.email_id.format(
+                self.s3acc_name1),
+            self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
@@ -1009,7 +936,10 @@ class TestAccountUserManagementResetPassword:
                       "mentioning Account name.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
+            self.s3acc_name1,
+            self.email_id.format(
+                self.s3acc_name1),
+            self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying Account name using"
@@ -1038,7 +968,10 @@ class TestAccountUserManagementResetPassword:
                       "mentioning new Password.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
+            self.s3acc_name1,
+            self.email_id.format(
+                self.s3acc_name1),
+            self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying new Password "

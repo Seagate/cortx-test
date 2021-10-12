@@ -25,7 +25,6 @@ import logging
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 
-from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from config import CMN_CFG
 from config import CSM_REST_CFG
@@ -72,6 +71,12 @@ class CSMAccountInterface(ABC):
         """Abstract method to list created s3 accounts for given CSM user credential."""
         LOGGER.info("Abstract method to list created s3 accounts for given CSM user credential.")
 
+    @abstractmethod
+    def reset_s3_password_rest_cli(self, **kwargs):
+        """Abstract method to Reset password for s3 account using given CSM user credential."""
+        LOGGER.info("Abstract method to Reset password for s3 account using given "
+                    "CSM user credential.")
+
 
 class CSMAccountIntOperations(CSMAccountInterface):
     """S3 account interface class to do s3 account operations."""
@@ -94,6 +99,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         del self.csm_user_rest
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=W0221
     def create_s3_using_csm_rest_cli(
             self,
             acc_name,
@@ -134,6 +140,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 response.update({"password": acc_pwd})
         return status, response
 
+    # pylint: disable=W0221
     def delete_s3_acc_using_csm_rest_cli(
             self,
             s3acc_name,
@@ -168,6 +175,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         return status, response
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=W0221
     def create_csm_account_rest_cli(
             self,
             csm_user=None,
@@ -204,6 +212,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 csm_user, csm_email, csm_pwd, role)
         return status, response
 
+    # pylint: disable=W0221
     def delete_csm_account_rest_cli(self, csm_user=None, csm_pwd=None, **kwargs):
         """
         Rest/CLI interface function To Delete CSM user
@@ -231,6 +240,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         return status, response
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=W0221
     def edit_csm_user_rest_cli(
             self,
             csm_user=None,
@@ -266,6 +276,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
             status, response = self.csmacc_op_cli.csm_user_update_role(csm_user, csm_pwd, role)
         return status, response
 
+    # pylint: disable=W0221
     def csm_user_show_s3_acc_rest_cli(self, csm_user=None, csm_pwd=None, **kwargs):
         """
         Rest/CLI interface function To list s3 user for CSM user
@@ -290,4 +301,39 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 raise RuntimeError(err) from RuntimeError
             LOGGER.error(err)
             status, response = self.csmacc_op_cli.csm_user_show_s3accounts(csm_user, csm_pwd)
+        return status, response
+
+    def reset_s3_password_rest_cli(
+            self,
+            acc_name=None,
+            passwd=None,
+            csm_user=None,
+            csm_pwd=None,
+            **kwargs):
+        """
+        REST/CLI Interface function to Reset password for s3 account.
+
+        :param acc_name: Name of the S3 account user.
+        :param passwd: Password of the s3 account user.
+        :param csm_user: Name of the CSM user
+        :param csm_pwd: Password of the CSM user
+        :return: bool, response of reset s3 account password
+        """
+        try:
+            login_acc = kwargs.get("login_as", None)
+            if not login_acc and (csm_user and csm_pwd):
+                login_acc = {"username": csm_user, "password": csm_pwd}
+            elif not login_acc:
+                login_acc = "csm_admin_user"
+            status, response = self.csmacc_op_rest.reset_s3_user_password(
+                username=acc_name, new_password=passwd, login_as=login_acc)
+            if not status:
+                raise RuntimeError(response) from RuntimeError
+        except (RuntimeError, CTException) as err:
+            if not self.cli_obj:
+                raise RuntimeError(err) from RuntimeError
+            LOGGER.error(err)
+            status, response = self.csmacc_op_cli.reset_s3acc_password(
+                csm_user, csm_pwd, acc_name, passwd)
+
         return status, response

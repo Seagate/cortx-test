@@ -23,6 +23,7 @@
 
 import json
 import logging
+from http import HTTPStatus
 
 from commons import errorcodes as err
 from commons.constants import Rest
@@ -39,7 +40,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
 
     def __init__(self):
         """s3 account operations constructor."""
-        super(CSMRestAPIInterfaceOperations, self).__init__()
+        super().__init__()
         self.endpoint = CSM_REST_CFG["csmuser_endpoint"]
 
     # pylint: disable=too-many-arguments
@@ -54,7 +55,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
         :param pwd: Password of the CSM user
         :param role: User role type.
         :param alert_notice: Alert Notice for the CSM user
-        :return: response of create user operation
+        :return: bool, response of create user operation
         """
         try:
             # Building request url
@@ -72,7 +73,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
             self.headers.update(Rest.CONTENT_TYPE)
             response = self.restapi.rest_call("post", endpoint=self.endpoint,
                                               data=user_data, headers=self.headers)
-            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            if response.status_code != HTTPStatus.OK and response.ok is not True:
                 return False, response
             return True, response.json()
         except BaseException as error:
@@ -90,7 +91,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
         This function will Delete CSM user
 
         :param username: Name of user
-        :return: response of delete user operation
+        :return: bool, response of delete user operation
         """
         try:
             # Building request url
@@ -101,7 +102,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
             # Fetching api response
             self.headers.update(Rest.CONTENT_TYPE)
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
-            if response.status_code != Rest.SUCCESS_STATUS and response.ok is not True:
+            if response.status_code != HTTPStatus.OK and response.ok is not True:
                 return False, response
             return True, response.json()
         except BaseException as error:
@@ -129,7 +130,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
         :param email: Email ID of the CSM user
         :param password: New password of the CSM user
         :param current_password: Current password of the CSM user
-        :return: response of edit CSM user operation
+        :return: bool, response of edit CSM user operation
         """
         try:
             endpoint = f"{self.endpoint}/{user}"
@@ -154,3 +155,33 @@ class CSMRestAPIInterfaceOperations(RestS3user):
                            CSMRestAPIInterfaceOperations.edit_csm_user_rest.__name__,
                            error)
             raise CTException(err.CSM_REST_DELETE_REQUEST_FAILED, error) from error
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def reset_s3_user_password(self, username: str = None, new_password: str = None, reset_access_key: str = "False"):
+        """
+        This function will reset s3 account user password
+        :param username: Name of S3 account user
+        :param reset_access_key: True reset of access key also required with reset password
+        :param new_password: New password to be set for s3 user
+        :return: bool, response of reset s3 user password operation
+        """
+        # Prepare patch for s3 account user
+        patch_payload = {"password": new_password, "reset_access_key": reset_access_key}
+        self.log.debug("editing user {}".format(patch_payload))
+        endpoint = "{}/{}".format(self.config["s3accounts_endpoint"], username)
+        self.log.debug("Endpoint for s3 accounts is {}".format(endpoint))
+        self.headers.update(Rest.CONTENT_TYPE)
+        try:
+            # Fetching api response
+            response = self.restapi.rest_call("patch", data=json.dumps(patch_payload),
+                                              endpoint=endpoint, headers=self.headers)
+            if response.status_code != HTTPStatus.OK and response.ok is not True:
+                return False, response
+            return True, response.json()
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           Rest.EXCEPTION_ERROR,
+                           CSMRestAPIInterfaceOperations.reset_s3_user_password.__name__,
+                           error)
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, error) from error
