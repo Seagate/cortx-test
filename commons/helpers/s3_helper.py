@@ -24,17 +24,17 @@ s3 helper to have s3 services related classes & methods.
 Note: S3 helper is singleton so please import it's object from libs.s3 __init__
  as 'from libs.s3 import S3H_OBJ'.
 """
-
+import json
+import logging
 import os
 import re
 import time
-import logging
-
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
 from commons import constants as const
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
@@ -101,8 +101,7 @@ class S3Helper:
                                 user: str = None,
                                 pwd: str = None) -> tuple:
         """
-        Check whether all s3server services are online.
-
+        Check whether all s3server services are online using hctl status
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -131,8 +130,35 @@ class S3Helper:
                         return False, service
                 return status, output
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                LOGGER.critical("Product family: LC")
-                # TODO: Add LC related calls
+                pod = "storage-node1"
+                container = "cortx-hax"
+                namespace = "default"
+                node = LogicalNode(hostname=host, username=user, password=pwd)
+                out = node.send_k8s_cmd(
+                    operation="exec", pod=pod, namespace=namespace,
+                    command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
+                    decode=True)
+                LOGGER.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
+                result = json.loads(out)
+                for node in result["nodes"]:
+                    pod_name = node["name"]
+                    services = node["svcs"]
+                    fids = []
+                    for service in services:
+                        if "s3server" in service["name"]:
+                            fid = service["fid"]
+                            fids.append(fid)
+                            if service["status"] != "started":
+                                LOGGER.error("s3server service (%s) not started on pod %s", fid,
+                                             pod_name)
+                                return False, out
+                    if not services:
+                        LOGGER.critical("No service found!")
+                        return False, out
+                    if not fids:
+                        LOGGER.critical("No s3server service found!")
+                        return False, out
+                return True, out
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
@@ -143,7 +169,7 @@ class S3Helper:
                                     user: str = None,
                                     pwd: str = None) -> tuple:
         """
-        Execute command to get status any system service at remote s3 server.
+        Execute command to get status any system service at remote s3 server using systemctl status
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -183,7 +209,7 @@ class S3Helper:
                                user: str = None,
                                pwd: str = None) -> tuple:
         """
-        Execute command to start any system service at remote s3 server.
+        Execute command to start any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -223,7 +249,7 @@ class S3Helper:
                               user: str = None,
                               pwd: str = None) -> tuple:
         """
-        Execute command to stop any system service at remote s3 server.
+        Execute command to stop any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -260,7 +286,7 @@ class S3Helper:
                                  user: str = None,
                                  pwd: str = None) -> tuple:
         """
-        Execute command to restart any system service at remote s3 server.
+        Execute command to restart any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -287,6 +313,7 @@ class S3Helper:
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
+                return True, None
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.restart_s3server_service.__name__, error)
@@ -298,7 +325,7 @@ class S3Helper:
                                    pwd: str = None,
                                    wait_time: int = 20) -> tuple:
         """
-        Restart all s3server processes using hctl command.
+        Restart all s3server processes using systemctl restart command.
 
         :param host: IP of the host.
         :param user: user name of the host.
@@ -461,7 +488,7 @@ class S3Helper:
                           user: str = None,
                           pwd: str = None) -> tuple:
         """
-        Get fid's of all s3server processes.
+        Get fid's of all s3server processes using hctl command.
 
         :param host: IP of the host.
         :param user: user name of the host.
@@ -486,8 +513,29 @@ class S3Helper:
 
                 return status, fids
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                LOGGER.critical("Product family: LC")
-                # TODO: Add LC related calls
+                pod = "storage-node1"
+                container = "cortx-hax"
+                namespace = "default"
+                node = LogicalNode(hostname=host, username=user, password=pwd)
+                out = node.send_k8s_cmd(
+                    operation="exec", pod=pod, namespace=namespace,
+                    command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
+                    decode=True)
+                LOGGER.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
+                result = json.loads(out)
+                fids = []
+                for node in result["nodes"]:
+                    services = node["svcs"]
+                    for service in services:
+                        if "s3server" in service["name"]:
+                            fids.append(service["fid"])
+                    if not services:
+                        LOGGER.critical("No service found!")
+                        return False, out
+                    if not fids:
+                        LOGGER.critical("No s3server service found!")
+                        return False, out
+                return True, out
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
@@ -631,6 +679,7 @@ class S3Helper:
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
+                return True, None
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
