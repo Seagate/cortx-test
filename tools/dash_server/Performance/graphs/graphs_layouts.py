@@ -117,14 +117,14 @@ graphs_input_options = [
                 style=style_dropdown_small_2
             ),
             Dropdown(
-                id='graphs_iteration_dropdown',
-                placeholder="Iterations",
-                style=style_dropdown_small_2
-            ),
-            Dropdown(
                 id='graphs_custom_dropdown',
                 placeholder="Select Tag",
                 style=style_dropdown_medium
+            ),
+            Dropdown(
+                id='graphs_iteration_dropdown',
+                placeholder="Iterations",
+                style=style_dropdown_small_2
             ),
             Dropdown(
                 id='graphs_sessions_dropdown',
@@ -175,13 +175,13 @@ graphs_input_options = [
                 style={'display': 'none'}
             ),
             Dropdown(
-                id='graphs_iteration_compare_dropdown',
-                placeholder="Iterations",
+                id='graphs_custom_compare_dropdown',
+                placeholder="Select Tag",
                 style={'display': 'none'}
             ),
             Dropdown(
-                id='graphs_custom_compare_dropdown',
-                placeholder="Select Tag",
+                id='graphs_iteration_compare_dropdown',
+                placeholder="Iterations",
                 style={'display': 'none'}
             ),
             Dropdown(
