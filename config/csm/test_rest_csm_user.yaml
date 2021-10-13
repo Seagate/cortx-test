@@ -117,8 +117,8 @@ test_5002:
 test_5020:
   response_msg:
     error_code: "4099"
-    message_id: "invalid request parameter"
-    message: "Insufficient information in request body"
+    message: "Invalid request message received."
+    error_format_args: "Request body missing"
 test_5017:
   invalid_user_id: "invaliduser123"
   payload:
