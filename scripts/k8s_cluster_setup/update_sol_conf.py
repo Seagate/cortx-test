@@ -21,7 +21,7 @@
 """
 Script to Update the cluster/config yaml files
 """
-
+import json
 import random
 import string
 
@@ -44,26 +44,39 @@ def main():
         nd_obj = LogicalNode(hostname=node, username=uname,
                              password=passwd)
         node_obj_list.append(nd_obj)
-    node_list = 5
+    node_list = 3
     while iterate <= node_list:
         randomstr = ''.join(random.choices(string.digits, k=32))
         iterate = iterate+1
-        print("random \n", randomstr)
+        # print("random \n", randomstr)
         unique_id_lst.append(randomstr)
 
-    update_yaml(node_obj_list, node_list, CONF_FILE_PATH,
-                cvg_count=1,
-                data_disk_per_cvg=3)
-
+    update_sol_yaml(node_obj_list, node_list, CONF_FILE_PATH,
+                    cvg_count=1,
+                    data_disk_per_cvg=3)
     print("The updated conf is", CONF_FILE_PATH)
 
 
-def update_yaml(obj: list, node_list: int, filepath,
-                **kwargs):
+def update_sol_yaml(obj: list, node_list: int, filepath,
+                    **kwargs):
     """
     This function updates the yaml file
-    :Param: obj Its the list of node object
-    :Param:  Its the list of node object
+    :Param: obj: list of node object
+    :Param: node_list:int the count of node
+    :Param: filepath: Filename with complete path
+    :Keyword: cluster_id: cluster id
+    :Keyword: cvg_count: cvg_count per node
+    :Keyword: type_cvg: ios or cas
+    :Keyword: data_disk_per_cvg: data disk required per cvg
+    :Keyword: sns_data: N
+    :Keyword: sns_parity: K
+    :Keyword: sns_spare: S
+    :Keyword: dix_data:
+    :Keyword: dix_parity:
+    :Keyword: dix_spare:
+    :Keyword: size_metadata: size of metadata disk
+    :Keyword: size_data_disk: size of data disk
+    :Keyword: skip_disk_count_check: disk count check
 
     """
     # cluster_id = kwargs.get("cluster_id", 1)
@@ -76,6 +89,8 @@ def update_yaml(obj: list, node_list: int, filepath,
     # dix_data = kwargs.get("dix_data", 1)
     # dix_parity = kwargs.get("dix_parity", 2)
     # dix_spare = kwargs.get("dix_spare", 0)
+    size_metadata = kwargs.get("size_metadata", '5Gi')
+    size_data_disk = kwargs.get("size_data_disk", '5Gi')
     skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
 
     data_devices = list()  # empty list for data disk
@@ -94,7 +109,7 @@ def update_yaml(obj: list, node_list: int, filepath,
         metadata_devices_per_cvg = [metadata_devices[i:i + 2] for i in range(0, len(metadata_devices), 2)]
         device_list_len = len(device_list)
         new_device_lst_len = (device_list_len - cvg_count * 2)
-        print("new disk len is ", new_device_lst_len)
+        print("new disk list is ", device_list.remove)
         count = cvg_count
         if data_disk_per_cvg == "0":
             data_disk_per_cvg = len(device_list[cvg_count * 2:])
@@ -108,90 +123,72 @@ def update_yaml(obj: list, node_list: int, filepath,
         if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk_per_cvg != "0":
             count_end = int(data_disk_per_cvg + cvg_count * 2)
             data_devices.append(device_list[cvg_count * 2:count_end])
-            print("Entered in loop", data_devices)
-            print("count end in loop", count_end)
             while count:
                 count = count - 1
                 new_end = int(count_end + data_disk_per_cvg)
-                print("new count end in loop", new_end)
                 if new_end > new_device_lst_len:
                     break
-                print("new count end after break ", new_end)
                 data_devices_ad = device_list[count_end:new_end]
                 count_end = int(count_end + data_disk_per_cvg)
-                print(" 2 count end in loop", count_end)
                 data_devices.append(data_devices_ad)
-                print("Final data devices\n", data_devices)
         else:
             print("Entered in the else to list data_devices\n")
             data_devices_f = device_list[cvg_count * 2:]
             data_devices = [data_devices_f[i:i + data_disk_per_cvg]
                             for i in range(0, len(data_devices_f), data_disk_per_cvg)]
-
-        print("The disk list is \n", data_devices)
+    # Reading the yaml file
     with open(filepath) as f:
         conf = yaml.safe_load(f)
-    print(type(conf['solution']))
-    parent_key = conf['solution']
-
-    # common = parent_key['common']
-    node = parent_key['nodes']
-    print("node ", type(node))
-    total_nodes_sol = len(node.keys())
-    share_value = "/mnt/fs-local-volume"
-    # print("The key is ", total_nodes_sol)
-    data = {'d1': '', 'd2': ''}
-    vol = {'local': share_value, 'share': share_value}
-    device = {'system': '/dev/sdb', 'metadata': '/dev/sdc', 'data': data}
-    vol_key = {'volumes': vol}
-    device_key = {'devices': device}
-    dict_node = {}
-    print("Before ", node)
-    if node_list > 4:
-        # print("Enter in node addition\n")
-        for nodes in range(5, node_list+1):
-            name = {'name': "node-{}".format(nodes)}
-            new_node = {'node{}'.format(nodes): ''}
+        parent_key = conf['solution']  # Parent key
+        node = parent_key['nodes']     # Child Key
+        total_nodes = node.keys()
+        # Creating Default Schema to update the yaml file
+        share_value = "/mnt/fs-local-volume"
+        disk_schema = {'device': data_devices[0], 'size': size_metadata}
+        meta_disk_schema = {'device': metadata_devices_per_cvg[0][0],
+                            'size': size_data_disk}
+        data_schema = {'d1': disk_schema}
+        vol_schema = {'local': share_value, 'share': share_value}
+        device_schema = {'metadata': meta_disk_schema, 'data': data_schema}
+        vol_key = {'volumes': vol_schema}
+        device_key = {'devices': device_schema}
+        key_count = len(total_nodes)
+        print("key count \n", key_count, total_nodes)
+        # Removing the elements from the node dict
+        for key_count in list(total_nodes):
+            node.pop(key_count)
+            print("EMPTY the dict", node)
+        # Updating the node dict
+        for item in range(0, node_list):
+            dict_node = {}
+            name = {'name': "node-{}".format(item+1)}
             dict_node.update(name)
             dict_node.update(vol_key)
             dict_node.update(device_key)
-            print(dict_node)
-            new_node['node{}'.format(nodes)] = dict_node  # assigning the value to the dict
-            print(new_node)
+            new_node = {'node{}'.format(item+1): dict_node}
             node.update(new_node)
-        print("After", node)
-
-    for item in range(0, node_list):
-        nn = 'node{}'.format(item + 1)
-        devices = node[nn]['devices']
-        if node_list in (1, 2, 3):   # This statement make sure to remove additional entries in the sol .yaml file
-            for node_req in range(node_list, total_nodes_sol):
-                node_c = "node{}".format(node_req+1)
-                node.pop(node_c)
-        print("the device dict is ", devices)
-        # Updating the metadata , system disk in solution.yaml file
-        print("Before d", devices['system'])
-        devices['system'] = metadata_devices_per_cvg[0][1]
-        devices['metadata'] = metadata_devices_per_cvg[0][0]
-        print("After d", devices['system'])
-        data_d = devices['data']
-        print("the data d is ", data_d)
-
-        if data_disk_per_cvg < 2:
-            data_d.pop('d2')  # removing the additional disk if data per disk is < 2
-            data_d['d1'] = data_devices[0]
-        else:
-            print("Data devices list is \n", data_disk_per_cvg)
-            # for loop for adding multiple data disks
-            for per_cvg in range(0, cvg_count):
-                for disk in range(0, data_disk_per_cvg):
-                    print("the disk per", data_devices[per_cvg][disk])
-                    data_d["d{}".format(disk+1)] = data_devices[per_cvg][disk]
-    # End of for loop
-    print("The final update dict is \n", node)
-
-    with open(filepath, 'w') as f:
-        yaml.safe_dump(conf, f, sort_keys=False)
+            # Updating the metadata disk in solution.yaml file
+            nn = 'node{}'.format(item + 1)
+            devices = node[nn]['devices']
+            metadata_schema = {'device': metadata_devices_per_cvg[0][0],
+                               'size': size_metadata}
+            devices['metadata'].update(metadata_schema)
+            for disk_per_cvg in range(1, data_disk_per_cvg+1):
+                data_d = devices['data']
+                for per_cvg in range(0, cvg_count):
+                    for disk in range(0, data_disk_per_cvg):
+                        dd = "d{}".format(disk+1)
+                        upd_disk = {dd: {'device': data_devices[per_cvg][disk],
+                                         'size': size_data_disk}}
+                        data_d.update(upd_disk)
+        conf['solution']['nodes'] = node
+        f.close()
+    noalias_dumper = yaml.dumper.SafeDumper
+    noalias_dumper.ignore_aliases = lambda self, data: True
+    with open(CONF_FILE_PATH, 'w+') as f:
+        yaml.dump(conf, f, default_flow_style=False,
+                  sort_keys=False, Dumper=noalias_dumper)
+        f.close()
 
 
 if __name__ == '__main__':
