@@ -291,6 +291,10 @@ class TestMultipartUploadGetPut:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
+            assert_utils.assert_equal(
+                mp_config["error_msg"],
+                error.message,
+                error.message)
             assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
             self.log.info("Failed to complete the multipart with incomplete part details ")
 
@@ -405,6 +409,24 @@ class TestMultipartUploadGetPut:
         assert_utils.assert_equal(len(res[1]["Parts"]),  mp_config["total_parts"], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
         self.log.info("Complete the multipart upload with 3 parts")
+        self.log.info("Initiating multipart upload with 3 parts ")
+        res = self.s3_mpu_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+
+        self.log.info("Uploading parts")  # Upload 3 parts
+        # Method to upload parts
+        self.log.info("Listing parts of multipart upload")
+        # Method to list parts
+        res = self.s3_mpu_test_obj.list_parts(
+            mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),  # check these config params according to new lib
+                                  mp_config["total_parts"], res[1])
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+
+        self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
                 mpu_id, new_parts, self.bucket_name, self.object_name)
