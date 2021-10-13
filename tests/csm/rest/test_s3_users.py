@@ -777,35 +777,61 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        existing_user = len(self.s3user.list_all_created_s3account())
+        self.log.info("Deleting all S3 users except predefined ones...")
+        self.config.delete_s3_users()
+        self.log.info("Users except pre-defined ones deleted.")
+        
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        user_data = resp.json()
+        existing_user = len(user_data['s3_accounts'])
+        self.log.info("Existing S3 users on the setup: %s", existing_user)
+        
         new_users = const.MAX_S3_USERS - existing_user
         created_users = []
+        self.log.info("Creating %s S3 users...", new_users)
         for i in range(new_users):
-            result, user_data = self.s3user.create_verify_s3_custom("valid")
+            self.log.info("[START] Create User count : %s", i+1)
+            result, resp = self.s3user.create_verify_s3_custom("valid")
+            user_data = resp.json()
+            self.log.info("Created S3 user : %s", user_data["account_name"])
             created_users.append(user_data)
-            assert result, "Status code check failed."
-        
+            assert result, "Status code check failed for %s user".format(user_data["account_name"])
+            self.log.info("[END] Create User count : %s", i+1)
+
+        import pdb 
+        pdb.set_trace()
         s3_users = self.s3user.list_all_created_s3account()
-        assert len(s3_user) == const.MAX_S3_USERS, "Users listed less than created."
+        self.log.info("Listed user count : %s", len(s3_user))
+
+        assert(len(s3_user) == const.MAX_S3_USERS, 
+               "Number of users less than %s".format(const.MAX_S3_USERS))
 
         for created_user in created_users:
+            self.log.info("-"*50)
             akey = created_user["access_key"]
             skey = created_user["secret_key"]
+            usr = created_user["account_name"]
+            self.log.info("Creating objects for %s user", usr)
             for i in range(const.MAX_BUCKETS):
+                self.log.info("[START] Create Bucket count : %s", i+1)
                 bucket = "bucket" + i
-                self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
-                                bucket, akey, skey)
+                self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", 
+                              bucket, akey, skey)
                 assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
 
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                           "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
-
+                self.log.info("[END] Create Bucket count : %s", i+1)
+            
             for i in range(const.MAX_BUCKETS):
+                self.log.info("[START] Delete Bucket count : %s", i+1)
                 bucket = "bucket" + i
                 self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
                                 "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+                self.log.info("[END] Delete Bucket count : %s", i+1)
 
         for created_user in created_users:
             s3_user = created_user["account_name"]
@@ -826,17 +852,16 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####", test_case_name)
         secret_keys = []
-        secret_keys.append("_divya_kachhwaha")
+        secret_keys.append("_" + config_utils.gen_rand_string(length=const.S3_SECRET_LL))
         secret_keys.append("a" * const.S3_SECRET_UL)
         secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=const.S3_SECRET_LL))
         secret_keys.append(punctuation)
         
         for secret_key in secret_keys:
-            self.log.info("Creating custom S3 account with access key %s.", secret_key)
+            self.log.info("-"*50)
+            self.log.info("Creating custom S3 account with secret key: %s.", secret_key)
             user_data = self.s3user.create_custom_s3_payload("valid")
             user_data.update({"secret_key": secret_key})
             resp = self.s3user.create_custom_s3_user(user_data)
@@ -844,7 +869,7 @@ class TestS3user():
             self.log.info("Verify Status code of the Create user operation.")
             assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
 
-            self.log.info("Verify created S3 account returns correct access key.")
+            self.log.info("Verify created S3 account returns correct secret key.")
             assert resp.json()["secret_key"] == secret_key, "Access key mismatch"
 
             akey = resp.json()["access_key"]
@@ -878,5 +903,5 @@ class TestS3user():
                           s3_user, akey, skey)
             resp = self.s3user.delete_s3_account_user(s3_user)
             assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
-
+            self.log.info("-"*50)
         self.log.info("##### Test completed -  %s #####", test_case_name)
