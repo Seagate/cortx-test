@@ -26,9 +26,9 @@ from configparser import ConfigParser
 
 from commons import commands as common_cmd
 from commons.helpers.node_helper import Node
-from commons.utils import assert_utils
+from commons.utils import assert_utils, system_utils
 from config import CMN_CFG, PROV_CFG
-
+import yaml
 LOGGER = logging.getLogger(__name__)
 
 
@@ -140,7 +140,10 @@ class ProvDeployLCLib:
 
     def deploy_cluster(self, node_obj: Node, remote_code_path: str, local_sol_path: str):
         LOGGER.info("Copy Solution file to remote path")
-        node_obj.copy_file_to_remote(local_sol_path, remote_code_path)
+        if system_utils.path_exists(local_sol_path):
+            node_obj.copy_file_to_remote(local_sol_path, remote_code_path)
+        else:
+            return False,f"{local_sol_path} not found"
 
         LOGGER.info("Deploy Cortx cloud")
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
@@ -154,9 +157,8 @@ class ProvDeployLCLib:
     def deploy_cortx_cluster(self, solution_file_path,
                              docker_username, docker_password, git_id, git_token):
         LOGGER.info("Read solution config file")
-        sol_cfg = ConfigParser()
-        sol_cfg.read(solution_file_path)
 
+        sol_cfg = yaml.safe_load(open(solution_file_path))
         for node in self.node_list:
             self.prereq_vm(node)
             # parse system disk and pass to local path prov: UDX-6356
@@ -168,4 +170,4 @@ class ProvDeployLCLib:
             assert_utils.assert_true(False, "No master node assigned")
         self.docker_login(self.master_node, docker_username, docker_password)
         self.prereq_git(self.master_node, git_id, git_token)
-        self.deploy_cluster(self.master_node, self.deploy_cfg["git_remote_dir"], solution_file_path)
+        self.deploy_cluster(self.master_node, self.deploy_cfg["git_remote_dir"],solution_file_path)
