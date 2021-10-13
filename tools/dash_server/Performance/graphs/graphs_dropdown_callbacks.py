@@ -188,41 +188,6 @@ def update_percentfill_dropdown(xfilter, release, branch, option1, bench, nodes)
 
 
 @app.callback(
-    Output('graphs_iteration_dropdown', 'options'),
-    Output('graphs_iteration_dropdown', 'value'),
-    Output('graphs_iteration_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
-    Input('graphs_pfull_dropdown', 'value'),
-    prevent_initial_call=True
-)  # pylint: disable=too-many-arguments
-def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, pfill):
-    """updates iterations of run in default select dropdown"""
-    options = None
-    value = None
-    disabled = False
-    if not all([xfilter, branch, option1, bench, nodes]) and pfill is None:  # pylint: disable=no-else-raise
-        raise PreventUpdate
-    else:
-        iterations = get_distinct_keys(release, 'Iteration',
-                                       {'Branch': branch, xfilter: option1, 'Name': bench,
-                                        'Count_of_Servers': nodes, 'Percentage_full': pfill})
-        if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[0]['value']
-            if len(iterations) == 1:
-                disabled = True
-        else:
-            raise PreventUpdate
-
-    return options, value, disabled
-
-
-@app.callback(
     Output('graphs_custom_dropdown', 'options'),
     Output('graphs_custom_dropdown', 'value'),
     Output('graphs_custom_dropdown', 'disabled'),
@@ -233,24 +198,60 @@ def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, 
     Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_nodes_dropdown', 'value'),
     Input('graphs_pfull_dropdown', 'value'),
-    Input('graphs_iteration_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, itrns):
+def update_custom_dropdown(xfilter, release, branch, option1, bench, nodes, pfill):
     """updates custom field in default select dropdown"""
     options = None
     value = None
     disabled = False
-    if not all([xfilter, branch, option1, bench, nodes, itrns]) and pfill is None:  # pylint: disable=no-else-raise
+    if not all([xfilter, branch, option1, bench, nodes]) and pfill is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
-            'Percentage_full': pfill, 'Iteration': itrns})
+            'Percentage_full': pfill})
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
             if len(custom) == 1:
+                disabled = True
+        else:
+            raise PreventUpdate
+
+    return options, value, disabled
+
+
+@app.callback(
+    Output('graphs_iteration_dropdown', 'options'),
+    Output('graphs_iteration_dropdown', 'value'),
+    Output('graphs_iteration_dropdown', 'disabled'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_release_dropdown', 'value'),
+    Input('graphs_branch_dropdown', 'value'),
+    Input('graphs_build_dropdown', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_nodes_dropdown', 'value'),
+    Input('graphs_pfull_dropdown', 'value'),
+    Input('graphs_custom_dropdown', 'value'),
+    prevent_initial_call=True
+)  # pylint: disable=too-many-arguments
+def update_iterations_dropdown(xfilter, release, branch, option1, bench, nodes, pfill, custom):
+    """updates iterations of run in default select dropdown"""
+    options = None
+    value = None
+    disabled = False
+    if not all([xfilter, branch, option1, bench, nodes, custom]) and pfill is None:  # pylint: disable=no-else-raise
+        raise PreventUpdate
+    else:
+        iterations = get_distinct_keys(release, 'Iteration',
+                                       {'Branch': branch, xfilter: option1, 'Name': bench,
+                                        'Count_of_Servers': nodes, 'Percentage_full': pfill,
+                                        'Custom': custom})
+        if iterations:
+            options = get_dict_from_array(iterations, False, 'itrns')
+            value = options[0]['value']
+            if len(iterations) == 1:
                 disabled = True
         else:
             raise PreventUpdate
@@ -510,44 +511,6 @@ def update_percentfill_dropdown_2(xfilter, release, branch, option1, bench, node
 
 
 @app.callback(
-    Output('graphs_iteration_compare_dropdown', 'options'),
-    Output('graphs_iteration_compare_dropdown', 'value'),
-    Output('graphs_iteration_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
-    Input('graphs_pfull_compare_dropdown', 'value'),
-    Input('compare_flag', 'value'),
-    prevent_initial_call=True
-)  # pylint: disable=too-many-arguments
-def update_iterations_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill, flag):
-    """updates iterations of run in comparison select dropdown"""
-    options = None
-    value = None
-    disabled = False
-    if not flag:
-        raise PreventUpdate
-    if not all([xfilter, branch, option1, bench, nodes]) and pfill is None:  # pylint: disable=no-else-raise
-        raise PreventUpdate
-    else:
-        iterations = get_distinct_keys(release, 'Iteration', {
-            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
-            'Percentage_full': pfill})
-        if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[0]['value']
-            if len(iterations) == 1:
-                disabled = True
-        else:
-            raise PreventUpdate
-
-    return options, value, disabled
-
-
-@app.callback(
     Output('graphs_custom_compare_dropdown', 'options'),
     Output('graphs_custom_compare_dropdown', 'value'),
     Output('graphs_custom_compare_dropdown', 'disabled'),
@@ -558,27 +521,66 @@ def update_iterations_dropdown_2(xfilter, release, branch, option1, bench, nodes
     Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_nodes_compare_dropdown', 'value'),
     Input('graphs_pfull_compare_dropdown', 'value'),
-    Input('graphs_iteration_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill, itrns, flag):
+def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill, flag):
     """updates custom field in comparison select dropdown"""
     options = None
     value = None
     disabled = False
     if not flag:
         raise PreventUpdate
-    if not all([xfilter, branch, option1, bench, nodes, itrns]) and pfill is None:  # pylint: disable=no-else-raise
+    if not all([xfilter, branch, option1, bench, nodes]) and pfill is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
             'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
-            'Percentage_full': pfill, 'Iteration': itrns})
+            'Percentage_full': pfill})
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
             if len(custom) == 1:
+                disabled = True
+        else:
+            raise PreventUpdate
+
+    return options, value, disabled
+
+
+@app.callback(
+    Output('graphs_iteration_compare_dropdown', 'options'),
+    Output('graphs_iteration_compare_dropdown', 'value'),
+    Output('graphs_iteration_compare_dropdown', 'disabled'),
+    Input('graphs_filter_dropdown', 'value'),
+    Input('graphs_release_compare_dropdown', 'value'),
+    Input('graphs_branch_compare_dropdown', 'value'),
+    Input('graphs_build_compare_dropdown', 'value'),
+    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_nodes_compare_dropdown', 'value'),
+    Input('graphs_pfull_compare_dropdown', 'value'),
+    Input('graphs_custom_compare_dropdown', 'value'),
+    Input('compare_flag', 'value'),
+    prevent_initial_call=True
+)  # pylint: disable=too-many-arguments
+def update_iterations_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill,
+                                 flag, custom):
+    """updates iterations of run in comparison select dropdown"""
+    options = None
+    value = None
+    disabled = False
+    if not flag:
+        raise PreventUpdate
+    if not all([xfilter, branch, option1, bench, nodes, custom]) and pfill is None:  # pylint: disable=no-else-raise
+        raise PreventUpdate
+    else:
+        iterations = get_distinct_keys(release, 'Iteration', {
+            'Branch': branch, xfilter: option1, 'Name': bench, 'Count_of_Servers': nodes,
+            'Percentage_full': pfill, 'Custom': custom})
+        if iterations:
+            options = get_dict_from_array(iterations, False, 'itrns')
+            value = options[0]['value']
+            if len(iterations) == 1:
                 disabled = True
         else:
             raise PreventUpdate
