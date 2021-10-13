@@ -28,7 +28,6 @@ from http import HTTPStatus
 from commons.exceptions import CTException
 from config import CMN_CFG
 from config import CSM_REST_CFG
-from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.cortxcli_test_lib import CSMAccountOperations
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
@@ -88,7 +87,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
         self.s3acc_op_rest = S3AccountOperationsRestAPI()
         self.csmacc_op_rest = CSMRestAPIInterfaceOperations()
         self.csm_s3_rest = RestS3user()
-        self.csm_user_rest = RestCsmUser()
 
     def __del__(self):
         """Destroy created objects"""
@@ -96,7 +94,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
         del self.s3acc_op_rest
         del self.csmacc_op_cli
         del self.csm_s3_rest
-        del self.csm_user_rest
 
     # pylint: disable=too-many-arguments
     # pylint: disable=W0221

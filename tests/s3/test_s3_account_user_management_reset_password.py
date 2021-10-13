@@ -42,7 +42,6 @@ from libs.s3.csm_restapi_interface_lib import CSMRestAPIInterfaceOperations
 from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import create_s3_acc
 from libs.s3.s3_common_test_lib import get_ldap_creds
-from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from scripts.s3_bench import s3bench
 
@@ -75,7 +74,6 @@ class TestAccountUserManagementResetPassword:
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
-        self.rest_obj = S3AccountOperations()
         self.s3auth_obj = S3AuthServerRestAPI()
         self.csmrc_obj = CSMAccountIntOperations()
         self.csmacc_op_rest = CSMRestAPIInterfaceOperations()
@@ -111,13 +109,12 @@ class TestAccountUserManagementResetPassword:
                 resp = resource.delete_bucket(self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         for acc in self.account_dict:
-            resp = self.rest_obj.delete_s3_account(acc)
+            resp = self.csmrc_obj.delete_s3_acc_using_csm_rest_cli(acc)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
         for user in self.csm_user_list:
             resp = self.csmrc_obj.delete_csm_account_rest_cli(user)
             assert_utils.assert_true(resp[0], resp[1])
-        del self.rest_obj
         del self.s3auth_obj
         del self.csmrc_obj
         del self.csmacc_op_rest
@@ -183,6 +180,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22793")
     @CTFailOn(error_handler)
     def test_22793(self):
@@ -242,6 +240,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22794")
     @CTFailOn(error_handler)
     def test_22794(self):
@@ -297,6 +296,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22795")
     @CTFailOn(error_handler)
     def test_22795(self):
@@ -353,6 +353,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22796")
     @CTFailOn(error_handler)
     def test_22796(self):
@@ -402,6 +403,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22797")
     @CTFailOn(error_handler)
     def test_22797(self):
@@ -455,6 +457,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22798")
     @CTFailOn(error_handler)
     def test_22798(self):
@@ -521,6 +524,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22799")
     @CTFailOn(error_handler)
     def test_22799(self):
@@ -580,6 +584,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22800")
     @CTFailOn(error_handler)
     def test_22800(self):
@@ -640,6 +645,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22801")
     @CTFailOn(error_handler)
     def test_22801(self):
@@ -690,6 +696,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-22802")
     @CTFailOn(error_handler)
     def test_22802(self):
@@ -741,6 +748,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22882")
     @CTFailOn(error_handler)
     def test_22882(self):
@@ -808,6 +816,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
@@ -844,6 +853,7 @@ class TestAccountUserManagementResetPassword:
     @pytest.mark.skip("EOS-25213")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
     def test_21514(self):
@@ -875,6 +885,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-21517")
     @CTFailOn(error_handler)
     def test_21517(self):
@@ -924,6 +935,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-21520")
     @CTFailOn(error_handler)
     def test_21520(self):
@@ -956,6 +968,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-21521")
     @CTFailOn(error_handler)
     def test_21521(self):
