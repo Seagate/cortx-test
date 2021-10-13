@@ -32,6 +32,8 @@ from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
 from commons.utils import system_utils
+from commons.utils import assert_utils
+from commons.helpers.health_helper import Health
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
@@ -765,6 +767,22 @@ class HALibs:
             if resp:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
+
+    @staticmethod
+    def check_cluster_health():
+        """Check the cluster health"""
+        LOGGER.info("Check cluster status for all nodes.")
+        nodes = CMN_CFG["nodes"]
+        for node in nodes:
+            hostname = node['hostname']
+            health = Health(hostname=hostname,
+                        username=node['username'],
+                        password=node['password'])
+            result = health.check_node_health()
+            assert_utils.assert_true(result[0],
+                    f'Cluster Node {hostname} failed in health check. Reason: {result}')
+            health.disconnect()
+        LOGGER.info("Cluster status is healthy.")
 
     @staticmethod
     def cortx_start_cluster(node_obj, node: str = "--all"):

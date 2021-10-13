@@ -20,6 +20,8 @@
 #
 
 """All common constants from cortx-test."""
+import tempfile
+
 from commons import const
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
@@ -103,6 +105,8 @@ SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
+AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
+LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -221,6 +225,7 @@ AWS_CLI_ERROR = ["ServiceUnavailable",
                  "InvalidArgument",
                  "AccessDenied",
                  "Failed:"]
+
 
 # cortxcli constants
 S3BUCKET_HELP = [
@@ -343,3 +348,8 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
+
+# Support Bundle
+R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
+SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
+                "manifest", "uds", "elasticsearch", "utils", "HA"]
