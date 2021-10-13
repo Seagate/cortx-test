@@ -107,3 +107,37 @@ test_631:
             PartNumber: 1
         -   ETag: d41d8cd98876362482364f00b204e980
             PartNumber: 2
+
+test_28532:
+    error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
+    One or more of the specified parts could not be found. The part might not have been uploaded,
+    or the specified entity tag might not have matched the part's entity tag."
+    file_size: 20000
+    total_parts: 10
+    chunk_size: 3221225472
+    wrong_json_file:
+        - ETag: d41d8cd98f00b204e9800998ecf8427e
+          PartNumber: 1
+        - ETag: d41d8cd98876362482364f00b204e980
+          PartNumber: 2
+
+test_28538:
+    file_size: 1000
+    total_parts: 2
+    chunk_size: 6291456
+    error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
+    One or more of the specified parts could not be found. The part might not have been uploaded,
+    or the specified entity tag might not have matched the part's entity tag."
+
+test_28539:
+    file_size: 150
+    total_parts: 2
+    chunk_size: 288358400
+
+test_28540:
+    file_size: 500
+    total_parts: 2
+    chunk_size: 262144000
+    file_size2: 600
+    total_parts2: 3
+    chunk_size2: 209715200
