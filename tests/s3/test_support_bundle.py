@@ -27,16 +27,16 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
-from commons.exceptions import CTException
 from commons.constants import const
 from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn
 from commons.utils.system_utils import run_remote_cmd
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_false, assert_true
-from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
-from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
+from config import CMN_CFG as CM_CFG
+from config.s3 import S3_CFG
+from libs.s3 import S3H_OBJ
 
 manager = Manager()
 

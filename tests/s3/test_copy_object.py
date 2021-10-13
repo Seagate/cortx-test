@@ -27,7 +27,6 @@ from multiprocessing import Process
 
 import logging
 import pytest
-from commons import commands
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.ct_fail_on import CTFailOn
@@ -36,12 +35,13 @@ from commons.errorcodes import error_handler
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from config import CMN_CFG
-from config import S3_CFG
-from config import S3_BKT_TST as BKT_POLICY_CONF
+from config.s3 import S3_CFG
+from config.s3 import S3_BKT_TST as BKT_POLICY_CONF
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
+from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_tagging_test_lib import S3TaggingTestLib
 from libs.s3.s3_acl_test_lib import S3AclTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
@@ -61,7 +61,8 @@ class TestCopyObjects:
         2. Check cluster status, all services are running.
         """
         LOGGER.info("STARTED: test setup.")
-        self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3_obj = s3_test_lib.S3TestLib()
+        self.s3_cmd_obj = S3CmdTestLib(init_s3_connection=False)
         self.nodes = CMN_CFG["nodes"]
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
@@ -546,11 +547,8 @@ class TestCopyObjects:
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
         LOGGER.info("Uploading objects to bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name1,
-                self.object_name1))
+        resp = self.s3_cmd_obj.object_upload_cli(
+            self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)
@@ -614,11 +612,8 @@ class TestCopyObjects:
         assert_utils.assert_in(self.bucket_name1, bktlist,
                                f"failed to create bucket {self.bucket_name1}")
         LOGGER.info("Uploading objects to bucket using awscli")
-        resp = system_utils.run_local_cmd(
-            cmd=commands.CMD_AWSCLI_PUT_OBJECT.format(
-                self.file_path,
-                self.bucket_name1,
-                self.object_name1))
+        resp = self.s3_cmd_obj.object_upload_cli(
+            self.bucket_name1, self.object_name1, self.file_path)
         assert_utils.assert_true(resp[0], resp[1])
         status, objlist = self.s3_obj.object_list(self.bucket_name1)
         assert_utils.assert_true(status, objlist)
@@ -2268,7 +2263,8 @@ class TestCopyObjects:
         """Use bucket policy to validate copy object with applied ACL."""
         LOGGER.info("STARTED: Use bucket policy to validate copy object with applied ACL.")
         bucket_policy1 = BKT_POLICY_CONF["test_22283"]["bucket_policy"]
-        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
+        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy_1"]
+        bucket_policy3 = BKT_POLICY_CONF["test_22299"]["bucket_policy_2"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object "
                     "uploaded to the above bucket.")
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
@@ -2330,19 +2326,7 @@ class TestCopyObjects:
         assert_utils.assert_equal(put_etag, copy_etag,
                                   f"Failed to match put etag: '{put_etag}' "
                                   f"with copy etag: {copy_etag}")
-        LOGGER.info(
-            "Step 8: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
-        resp = s3_acl_obj1.copy_object_acl(
-            self.bucket_name1,
-            self.object_name1,
-            self.bucket_name2,
-            self.object_name2,
-            acl="bucket-owner-full-control")
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 09: Get bucket ACLs and check the ACL's got added.")
-        resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 10: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
+        LOGGER.info("Step 8: Using bucket policy Allow PutObject and PutObjectAcl access "
                     "to Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy2['Statement'][0]['Principal'][
@@ -2358,12 +2342,44 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 9: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy2, resp[1])
         LOGGER.info(
-            "Step 12: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
+            "Step 10: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
+        resp = s3_acl_obj1.copy_object_acl(
+            self.bucket_name1,
+            self.object_name1,
+            self.bucket_name2,
+            self.object_name2,
+            acl="bucket-owner-full-control")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Get bucket ACLs and check the ACL's got added.")
+        resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 12: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
+                    "to Account1 on bucket2 of Account2.")
+        bucket_policy3['Statement'][0]['Principal']['CanonicalUser'] = \
+            bucket_policy3['Statement'][0]['Principal'][
+                'CanonicalUser'].format(str(canonical_id1))
+        bucket_policy3['Statement'][0]['Resource'] = bucket_policy3['Statement'][0][
+            'Resource'].format(self.bucket_name2)
+        bucket_policy3['Statement'][1]['Principal']['CanonicalUser'] = \
+            bucket_policy3['Statement'][1]['Principal'][
+                'CanonicalUser'].format(str(canonical_id1))
+        bucket_policy3['Statement'][1]['Resource'] = bucket_policy3['Statement'][1][
+            'Resource'].format(self.bucket_name2)
+        bucket_policy3 = json.dumps(bucket_policy3)
+        resp = s3_policy_usr_obj2.put_bucket_policy(
+            self.bucket_name2, bucket_policy3)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 13: From Account2 check the applied Bucket Policy in above step.")
+        resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equals(resp[1]["Policy"], bucket_policy3, resp[1])
+        LOGGER.info(
+            "Step 14: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
         try:
             resp = s3_acl_obj1.copy_object_acl(
                 self.bucket_name1,

@@ -33,12 +33,11 @@ import logging
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons.constants import const
+from commons import constants as const
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
-from config import S3_CFG, CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,33 +47,35 @@ class S3Helper:
 
     __instance = None
 
-    def __init__(self) -> None:
+    def __init__(self, cmn_cfg, s3_cfg) -> None:
         """Virtually private constructor."""
         if S3Helper.__instance:
             raise ImportError(
                 "S3Helper is a singleton!, use S3Helper.get_instance() to access existing object.")
         S3Helper.__instance = self
-        cm_cfg = CMN_CFG.get("nodes", None)
+        self.cmn_cfg = cmn_cfg
+        self.s3_cfg = s3_cfg
+        cm_cfg = self.cmn_cfg.get("nodes", None)
         self.host = cm_cfg[0]["hostname"] if cm_cfg else None
         self.pwd = cm_cfg[0]["password"] if cm_cfg else None
         self.user = cm_cfg[0]["username"] if cm_cfg else None
 
     @staticmethod
-    def get_instance() -> object:
+    def get_instance(cmn_cfg, s3_cfg) -> object:
         """
         Static method to access singleton instance.
 
         :return: S3Helper object.
         """
         if not S3Helper.__instance:
-            S3Helper()
+            S3Helper(cmn_cfg, s3_cfg)
         return S3Helper.__instance
 
-    @staticmethod
     def configure_s3cfg(
+            self,
             access: str = None,
             secret: str = None,
-            path: str = S3_CFG["s3cfg_path"]) -> bool:
+            path: str = None) -> bool:
         """
         Function to configure access and secret keys in s3cfg file.
 
@@ -83,6 +84,7 @@ class S3Helper:
         :param path: path to s3cfg file.
         :return: True if s3cmd configured else False.
         """
+        path = path if path else self.s3_cfg["s3cfg_path"]
         status, resp = run_local_cmd("s3cmd --version")
         LOGGER.info(resp)
         if status:
@@ -92,29 +94,6 @@ class S3Helper:
         else:
             LOGGER.warning(
                 "S3cmd is not present, please install it and then run the configuration.")
-
-        return status
-
-    @staticmethod
-    def configure_s3fs(
-            access: str = None,
-            secret: str = None,
-            path: str = S3_CFG["s3fs_path"]) -> bool:
-        """
-        Function to configure access and secret keys for s3fs.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: s3fs config file.
-        :return: True if s3fs configured else False.
-        """
-        status, resp = run_local_cmd("s3fs --version")
-        LOGGER.info(resp)
-        if status:
-            with open(path, "w+") as f_write:
-                f_write.write(f"{access}:{secret}")
-        else:
-            LOGGER.warning("S3fs is not present, please install it and then run the configuration.")
 
         return status
 
@@ -133,8 +112,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host, user, pwd,
                                                 read_lines=True)
                 if not status:
@@ -151,7 +130,7 @@ class S3Helper:
                         LOGGER.error("S3 service down: %s", s3services)
                         return False, service
                 return status, output
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -176,8 +155,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
                      read_lines=True)
@@ -190,7 +169,7 @@ class S3Helper:
                     return True, result_
 
                 return status, result_
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -216,8 +195,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_START_CMD.format(service), host, user,
                      pwd, read_lines=True)
@@ -229,7 +208,7 @@ class S3Helper:
                     service, host, user, pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
 
@@ -256,8 +235,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                      commands.SYSTEM_CTL_STOP_CMD.format(service), host, user, pwd, read_lines=True)
                 LOGGER.debug(result)
@@ -267,7 +246,7 @@ class S3Helper:
                 status = bool('inactive' in str(resp))
 
                 return status, resp
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -293,8 +272,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, result = run_remote_cmd(
                     commands.SYSTEM_CTL_RESTART_CMD.format(service), host, user,
                     pwd, read_lines=True)
@@ -305,7 +284,7 @@ class S3Helper:
                 response = self.get_s3server_service_status(service, host, user, pwd)
 
                 return response
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -331,8 +310,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, fids = self.get_s3server_fids()
                 LOGGER.debug(fids)
                 if not status:
@@ -355,7 +334,7 @@ class S3Helper:
                             fail_str in line for fail_str in fail_list) and "s3server" in line:
                         return False, output
                 return status, output
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -378,8 +357,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.PCS_RESOURCE_SHOW_CMD, host, user, pwd,
                                                 read_lines=True)
                 LOGGER.info("Response: %s", str(output))
@@ -392,7 +371,7 @@ class S3Helper:
                 LOGGER.debug(s3_rcs)
 
                 return status, s3_rcs
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -418,8 +397,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, resources = self.get_s3server_resource(host=host, user=user, pwd=pwd)
                 if not status:
                     return status, resources
@@ -442,7 +421,7 @@ class S3Helper:
                         return False, output
 
                 return status, output
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -493,8 +472,8 @@ class S3Helper:
         user = user if user else self.user
         pwd = pwd if pwd else self.pwd
         try:
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, output = run_remote_cmd(commands.MOTR_STATUS_CMD, host,
                                                 user, pwd, read_lines=True)
                 fids = []
@@ -506,7 +485,7 @@ class S3Helper:
                 LOGGER.info("Fids: %s", str(fids))
 
                 return status, fids
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -610,8 +589,8 @@ class S3Helper:
             host = kwargs.get("host", self.host)
             user = kwargs.get("user", self.user)
             pwd = kwargs.get("password", self.pwd)
-            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+            if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                    self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
                 status, resources = self.get_s3server_resource()
                 if not status:
                     return status, resources
@@ -649,7 +628,7 @@ class S3Helper:
                 LOGGER.debug("s3server instances: %s", str(resources))
 
                 return status, output
-            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+            elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
         except (SSHException, OSError) as error:
@@ -657,35 +636,10 @@ class S3Helper:
                 "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
             return False, error
 
-    @staticmethod
-    def configure_minio(access: str = None,
-                        secret: str = None,
-                        path: str = S3_CFG["minio_path"]) -> bool:
-        """
-        Function to configure minio creds in config.json file.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: path to minio cfg file.
-        :return: True/False.
-        """
-        res = False
-        if os.path.exists(path):
-            data = config_utils.read_content_json(path, mode='rb')
-            data["hosts"]["s3"]["accessKey"] = access
-            data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(
-                path=path, data=data, ensure_ascii=False)
-        else:
-            LOGGER.warning(
-                "Minio is not installed please install and then run the configuration.")
-
-        return os.path.isfile(path) and res
-
-    @staticmethod
     def get_local_keys(
-            path: str = S3_CFG["aws_path"],
-            section: str = S3_CFG["aws_cred_section"]) -> tuple:
+            self,
+            path: str = None,
+            section: str = None) -> tuple:
         """
         Get local s3 access and secret keys.
 
@@ -693,6 +647,8 @@ class S3Helper:
         :param section: section name for the profile.
         :return: access_key, access_secret_key.
         """
+        path = path if path else self.s3_cfg["aws_path"]
+        section = section if section else self.s3_cfg["aws_cred_section"]
         try:
             if not os.path.isfile(path):
                 raise FileNotFoundError("{} file is not present. Please "
@@ -716,9 +672,9 @@ class S3Helper:
 
         :param string: String to be check.
         :param file_path: file path.
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param pwd: password for the user.
+        # :param host: IP of the host.
+        # :param user: user name of the host.
+        # :param pwd: password for the user.
         :return: bool, response..
         """
         host = kwargs.get("host", self.host)
@@ -750,28 +706,29 @@ class S3Helper:
         Inject(enable/disable) fault tolerance in s3server.
 
         TODO: Code will be revised based on F-24A feature availability.
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param password: password for the user.
+        # :param host: IP of the host.
+        # :param user: user name of the host.
+        # :param password: password for the user.
         :param enable: enable or disable fault to s3server.
         :return: bool, response.
         """
         host = kwargs.get("host", self.host)
         user = kwargs.get("user", self.user)
         password = kwargs.get("password", self.pwd)
-        if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
-                CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
             command = commands.UPDATE_FAULTTOLERANCE.format("enable" if enable else "disable")
             status, response = run_remote_cmd(cmd=command, hostname=host,
                                               username=user, password=password)
             status = True if "200" in response else status
 
             return status, response
-        elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+        elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
             LOGGER.critical("Product family: LC")
             # TODO: Add LC related calls
 
-    def verify_and_validate_created_object_fragement(self, object_name) -> tuple:
+    @staticmethod
+    def verify_and_validate_created_object_fragement(object_name) -> tuple:
         """
         Verify in m0kv output.
 
@@ -792,13 +749,13 @@ class S3Helper:
         """
         Reset parameter to value in s3config.yaml and return (parameter, value, old_value).
 
-        :param host: IP of the host.
-        :param user: user name of the host.
-        :param password: password for the user.
+        # :param host: IP of the host.
+        # :param user: user name of the host.
+        # :param password: password for the user.
         :param parameter: s3 parameters to be updated.
         :param value: s3 parameter value.
         :param section: s3config section.
-        :param backup_path: backup_path.
+        # :param backup_path: backup_path.
         :return: True/False, response.
         """
         host = kwargs.get("host", self.host)

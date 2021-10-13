@@ -32,7 +32,8 @@ from commons.utils import system_utils
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from libs.s3 import CMN_CFG, S3_CFG
+from config import CMN_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3 import cortxcli_test_lib

@@ -26,7 +26,11 @@ serviceinfo:
 
 ldap_username: "sgiamadmin"
 ldap_passwd: "ZpkWQD1Yo4edLImu4up9emhaHDFjAJlXKDl7qSABc60="
-
+DiUserConfig:
+  iam_user:
+    password: "KAGpbh5Tit5kX0lVGuxSeaOwsUTFaoIsaBFf64q8OqI="
+  s3_account:
+    password: "bbTlh4ugvzXd2/4ODI12T8p2rTCYj9t5rSkUVUKiotY="
 logs:
   consul:
     - "/var/log/hare/consul-watch-service.log"

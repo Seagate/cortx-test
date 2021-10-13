@@ -31,7 +31,7 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_file
 from commons.utils.system_utils import path_exists
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3 import s3_test_lib
 from libs.s3 import iam_test_lib
 from libs.s3 import s3_acl_test_lib
