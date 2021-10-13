@@ -564,7 +564,7 @@ def update_custom_dropdown_2(xfilter, release, branch, option1, bench, nodes, pf
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
 def update_iterations_dropdown_2(xfilter, release, branch, option1, bench, nodes, pfill,
-                                 flag, custom):
+                                 custom, flag):
     """updates iterations of run in comparison select dropdown"""
     options = None
     value = None
