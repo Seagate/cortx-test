@@ -50,6 +50,22 @@ from scripts.s3_bench import s3bench
 class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     """S3 Account User Management delete/view s3 account,create/regenerate access key test suite."""
 
+    @classmethod
+    def setup_class(cls):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test suite steps if any.
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test suite operations.")
+        cls.s3_obj = cls.parallel_ios = cls.account_dict = cls.s3acc_passwd = cls.object_name = None
+        cls.email_id = cls.s3rc_obj = cls.csmrc_obj = cls.resources_dict = cls.new_passwd = None
+        cls.s3acc_op_rest = cls.s3_accounts = cls.account_prefix = cls.csm_user_list = None
+        cls.csm_user = cls.s3acc_name1 = cls.s3acc_name2 = cls.file_path = cls.csm_passwd = None
+        cls.test_dir_path = cls.io_bucket_name = cls.bucket_name1 = cls.bucket_name2 = None
+        cls.log.info("ENDED: setup test suite operations.")
+
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -59,7 +75,6 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         1. Create bucket name, object name, account name.
         2. Check cluster status, all services are running.
         """
-        self.log = logging.getLogger(__name__)
         self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("STARTED: test setup.")
         self.parallel_ios = None

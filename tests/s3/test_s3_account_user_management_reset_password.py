@@ -50,6 +50,22 @@ from scripts.s3_bench import s3bench
 class TestAccountUserManagementResetPassword:
     """Account user management reset password TestSuite."""
 
+    @classmethod
+    def setup_class(cls):
+        """
+        Function will be invoked prior to each test case.
+
+        It will perform all prerequisite test suite steps if any.
+        """
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: setup test suite operations.")
+        cls.s3_obj = cls.parallel_ios = cls.account_dict = cls.s3acc_passwd = cls.object_name = None
+        cls.email_id = cls.csmrc_obj = cls.resources_dict = cls.new_passwd = None
+        cls.account_prefix = cls.csm_user_list = cls.s3auth_obj = cls.csmacc_op_rest = None
+        cls.csm_user = cls.s3acc_name1 = cls.s3acc_name2 = cls.file_path = cls.csm_passwd = None
+        cls.test_dir_path = cls.io_bucket_name = cls.bucket_name1 = cls.bucket_name2 = None
+        cls.log.info("ENDED: setup test suite operations.")
+
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -59,7 +75,6 @@ class TestAccountUserManagementResetPassword:
         1. Create bucket name, object name, account name.
         2. Check cluster status, all services are running.
         """
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: test setup.")
         self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.parallel_ios = None
@@ -201,12 +216,10 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22793_s3bench_ios", duration="0h1m")
         self.log.info("Step 3: Create two s3account s3acc1, s3acc2.")
         s3_test_obj1 = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         s3_test_obj2 = create_s3_acc(
-            self.s3acc_name2, self.email_id.format(
-                self.s3acc_name2), self.s3acc_passwd)[0]
+            self.s3acc_name2, self.email_id.format(self.s3acc_name2), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name2] = self.s3acc_passwd
         self.log.info("Step 4: Reset s3 account password using other s3 account user.")
         resp = self.csmacc_op_rest.reset_s3_user_password(
@@ -268,8 +281,7 @@ class TestAccountUserManagementResetPassword:
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Reset s3 account password using csm user having monitor role.")
         resp = self.csmacc_op_rest.reset_s3_user_password(
@@ -324,8 +336,7 @@ class TestAccountUserManagementResetPassword:
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Reset s3 account password using csm user having manage role.")
         resp = self.csmrc_obj.reset_s3_password_rest_cli(
@@ -374,8 +385,7 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22796_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 4. Reset s3 account user with it's own password.")
         resp = self.csmrc_obj.reset_s3_password_rest_cli(
@@ -424,8 +434,7 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22797_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         resp = self.csmrc_obj.reset_s3_password_rest_cli(
             acc_name=self.s3acc_name1, passwd=self.new_passwd)
@@ -478,12 +487,10 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22798_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create two s3account s3acc1, s3acc2.")
         s3_test_obj1 = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         s3_test_obj2 = create_s3_acc(
-            self.s3acc_name2, self.email_id.format(
-                self.s3acc_name2), self.s3acc_passwd)[0]
+            self.s3acc_name2, self.email_id.format(self.s3acc_name2), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name2] = self.s3acc_passwd
         self.log.info("Step 4. Create and upload objects to above s3bkt1, s3bkt2.")
         resp = s3_test_obj1.create_bucket(self.bucket_name1)
@@ -552,8 +559,7 @@ class TestAccountUserManagementResetPassword:
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -612,8 +618,7 @@ class TestAccountUserManagementResetPassword:
         self.csm_user_list.append(csm_user)
         self.log.info("Step 4. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 5. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -665,8 +670,7 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22801_s3bench_ios", duration="0h1m")
         self.log.info("Step 3: create s3 accounts.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 4: Create and upload objects to above s3bkt.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -717,8 +721,7 @@ class TestAccountUserManagementResetPassword:
             ios="Start", log_prefix="TEST-22802_s3bench_ios", duration="0h1m")
         self.log.info("Step 3. Create s3account s3acc.")
         s3_test_obj = create_s3_acc(
-            self.s3acc_name1, self.email_id.format(
-                self.s3acc_name1), self.s3acc_passwd)[0]
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)[0]
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         self.log.info("Step 4. Create bucket s3bkt in s3acc account.")
         resp = s3_test_obj.create_bucket(self.bucket_name1)
@@ -830,10 +833,7 @@ class TestAccountUserManagementResetPassword:
             "STARTED: Use REST API call Update Account Login Profile using access/secret key.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1,
-            self.email_id.format(
-                self.s3acc_name1),
-            self.s3acc_passwd)
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile using access/secret key using direct "
@@ -948,10 +948,7 @@ class TestAccountUserManagementResetPassword:
                       "mentioning Account name.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1,
-            self.email_id.format(
-                self.s3acc_name1),
-            self.s3acc_passwd)
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying Account name using"
@@ -981,10 +978,7 @@ class TestAccountUserManagementResetPassword:
                       "mentioning new Password.")
         self.log.info("Steps 1. Create Account & Login Profile.")
         response = create_s3_acc(
-            self.s3acc_name1,
-            self.email_id.format(
-                self.s3acc_name1),
-            self.s3acc_passwd)
+            self.s3acc_name1, self.email_id.format(self.s3acc_name1), self.s3acc_passwd)
         self.account_dict[self.s3acc_name1] = self.s3acc_passwd
         access_key, secret_key = response[1], response[2]
         self.log.info("Step 2. Update Account Login Profile without specifying new Password "
