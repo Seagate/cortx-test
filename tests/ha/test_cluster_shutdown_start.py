@@ -54,8 +54,10 @@ class TestClstrShutdownStart:
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.username = []
         cls.password = []
-        cls.host_list = []
-        cls.node_list = []
+        cls.host_master_list = []
+        cls.node_master_list = []
+        cls.host_worker_list = []
+        cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
         cls.s3_clean = None
@@ -64,10 +66,16 @@ class TestClstrShutdownStart:
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.username.append(CMN_CFG["nodes"][node]["username"])
             cls.password.append(CMN_CFG["nodes"][node]["password"])
-            cls.host_list.append(cls.host)
-            cls.node_list.append(LogicalNode(hostname=cls.host,
-                                      username=cls.username[node],
-                                      password=cls.password[node]))
+            if CMN_CFG["nodes"][node]["node_type"] == "master":
+                cls.host_master_list.append(cls.host)
+                cls.node_master_list.append(LogicalNode(hostname=cls.host,
+                                                        username=cls.username[node],
+                                                        password=cls.password[node]))
+            else:
+                cls.host_worker_list.append(cls.host)
+                cls.node_worker_list.append(LogicalNode(hostname=cls.host,
+                                                        username=cls.username[node],
+                                                        password=cls.password[node]))
 
     def setup_method(self):
         """
@@ -76,6 +84,10 @@ class TestClstrShutdownStart:
         LOGGER.info("STARTED: Setup Operations")
         self.restored = True
         LOGGER.info("Checking if the cluster and all Pods online.")
+        LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("SAll pods are running.")
         #TODO: Will need to check cluster health with health helper once available
 
     def teardown_method(self):
@@ -149,3 +161,84 @@ class TestClstrShutdownStart:
 
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29472")
+    @CTFailOn(error_handler)
+    def test_mpu_with_cluster_restart_29472(self):
+        """
+        This test tests multipart upload and download with cluster restart
+        """
+        LOGGER.info(
+            "STARTED: Test to verify multipart upload and download with cluster restart")
+
+        LOGGER.info("Step 1: Start multipart upload for 5GB object")
+        # TODO
+        LOGGER.info("Step 1: Successfully uploaded 5GB object")
+
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
+
+        LOGGER.info("Step 4: Download the uploaded object and verify checksum")
+        # TODO
+        LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
+        # TODO
+
+        LOGGER.info("Step 5: Successfully created bucket and did multipart upload and download "
+                    "with 5GB object")
+
+        LOGGER.info("ENDED: Test to verify multipart upload and download with cluster restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29474")
+    @CTFailOn(error_handler)
+    def test_partial_mpu_bfr_aftr_clstr_rstrt_29474(self):
+        """
+        This test tests partial multipart upload before and after cluster restart
+        """
+        LOGGER.info(
+            "STARTED: Test to verify partial multipart upload before and after cluster restart")
+
+        LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
+                    "partially")
+        # TODO
+        LOGGER.info("Step 1: Successfully completed partial multipart upload")
+
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
+
+        LOGGER.info("Step 4: Upload remaining parts")
+        # TODO
+        LOGGER.info("Step 4: Successfully uploaded remaining parts")
+
+        LOGGER.info("Step 5: Download the uploaded object and verify checksum")
+        # TODO
+        LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Step 6: Create multiple buckets and run IOs")
+        # TODO
+
+        LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
+                    "restart")
