@@ -188,6 +188,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22793")
     @CTFailOn(error_handler)
     def test_22793(self):
@@ -257,6 +258,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22794")
     @CTFailOn(error_handler)
     def test_22794(self):
@@ -315,6 +317,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22795")
     @CTFailOn(error_handler)
     def test_22795(self):
@@ -374,6 +377,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22796")
     @CTFailOn(error_handler)
     def test_22796(self):
@@ -426,6 +430,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22797")
     @CTFailOn(error_handler)
     def test_22797(self):
@@ -483,6 +488,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22798")
     @CTFailOn(error_handler)
     def test_22798(self):
@@ -564,6 +570,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22799")
     @CTFailOn(error_handler)
     def test_22799(self):
@@ -630,6 +637,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22800")
     @CTFailOn(error_handler)
     def test_22800(self):
@@ -697,6 +705,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22801")
     @CTFailOn(error_handler)
     def test_22801(self):
@@ -753,6 +762,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22802")
     @CTFailOn(error_handler)
     def test_22802(self):
@@ -813,6 +823,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-22882")
     @CTFailOn(error_handler)
     def test_22882(self):
@@ -884,6 +895,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
@@ -916,6 +928,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
@@ -948,6 +961,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-21517")
     @CTFailOn(error_handler)
     def test_21517(self):
@@ -997,6 +1011,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-21520")
     @CTFailOn(error_handler)
     def test_21520(self):
@@ -1026,6 +1041,7 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_pwd
     @pytest.mark.tags("TEST-21521")
     @CTFailOn(error_handler)
     def test_21521(self):

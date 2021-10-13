@@ -78,6 +78,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18838")
     @pytest.mark.parametrize("object_size", ["50k"])
     def test_18838(self, object_size):
@@ -128,6 +129,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18839")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_18839(self, object_size):
@@ -143,6 +145,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18840")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_18840(self, object_size):
@@ -155,6 +158,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18841")
     @pytest.mark.parametrize("object_size", ["6MB"])
     def test_18841(self, object_size):
@@ -167,6 +171,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18842")
     @CTFailOn(error_handler)
     def test_18842(self):
@@ -211,6 +216,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-18843")
     @CTFailOn(error_handler)
     def test_18843(self):
@@ -258,6 +264,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19497")
     @pytest.mark.parametrize("object_size", ["50k"])
     def test_19497(self, object_size):
@@ -318,6 +325,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19499")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_19499(self, object_size):
@@ -327,6 +335,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19501")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_19501(self, object_size):
@@ -336,6 +345,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19504")
     @pytest.mark.parametrize("object_size", ["8MB"])
     def test_19504(self, object_size):
@@ -345,6 +355,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19505")
     @pytest.mark.parametrize("object_size", ["4MB"])
     def test_19505(self, object_size):
@@ -388,6 +399,7 @@ class TestS3FaultTolerance:
 
     @pytest.mark.skip(reason="F-24A feature under development.")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_faulttolerance
     @pytest.mark.tags("TEST-19506")
     @pytest.mark.parametrize("object_size", ["33k"])
     def test_19506(self, object_size):

@@ -109,6 +109,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6094')
     @CTFailOn(error_handler)
     def test_375(self):
@@ -151,6 +152,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6092')
     @CTFailOn(error_handler)
     def test_376(self):
@@ -199,6 +201,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6090')
     @CTFailOn(error_handler)
     def test_377(self):
@@ -246,6 +249,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6088')
     @CTFailOn(error_handler)
     def test_378(self):
@@ -293,6 +297,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6086')
     @CTFailOn(error_handler)
     def test_379(self):
@@ -343,6 +348,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6084')
     @CTFailOn(error_handler)
     def test_380(self):
@@ -393,6 +399,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6082')
     @CTFailOn(error_handler)
     def test_381(self):
@@ -445,6 +452,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6080')
     @CTFailOn(error_handler)
     def test_382(self):
@@ -496,6 +504,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6078')
     @CTFailOn(error_handler)
     def test_383(self):
@@ -562,6 +571,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6076')
     @CTFailOn(error_handler)
     def test_384(self):
@@ -609,6 +619,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6074')
     @CTFailOn(error_handler)
     def test_385(self):
@@ -658,6 +669,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6072')
     @CTFailOn(error_handler)
     def test_386(self):
@@ -706,6 +718,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6070')
     @CTFailOn(error_handler)
     def test_387(self):
@@ -759,6 +772,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6068')
     @CTFailOn(error_handler)
     def test_388(self):
@@ -811,6 +825,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6066')
     @CTFailOn(error_handler)
     def test_389(self):
@@ -862,6 +877,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6064')
     @CTFailOn(error_handler)
     def test_390(self):
@@ -916,6 +932,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6062')
     @CTFailOn(error_handler)
     def test_391(self):
@@ -969,6 +986,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6060')
     @CTFailOn(error_handler)
     def test_392(self):
@@ -1023,6 +1041,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6058')
     @CTFailOn(error_handler)
     def test_393(self):
@@ -1069,6 +1088,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6056')
     @CTFailOn(error_handler)
     def test_394(self):
@@ -1122,6 +1142,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6054')
     @CTFailOn(error_handler)
     def test_395(self):
@@ -1176,6 +1197,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6052')
     @CTFailOn(error_handler)
     def test_396(self):
@@ -1229,6 +1251,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6050')
     @CTFailOn(error_handler)
     def test_397(self):
@@ -1284,6 +1307,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6048')
     @CTFailOn(error_handler)
     def test_398(self):
@@ -1338,6 +1362,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6044')
     @CTFailOn(error_handler)
     def test_399(self):
@@ -1391,6 +1416,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6042')
     @CTFailOn(error_handler)
     def test_400(self):
@@ -1443,6 +1469,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6040')
     @CTFailOn(error_handler)
     def test_401(self):
@@ -1497,6 +1524,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6038')
     @CTFailOn(error_handler)
     def test_402(self):
@@ -1551,6 +1579,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6036')
     @CTFailOn(error_handler)
     def test_403(self):
@@ -1601,6 +1630,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6033')
     @CTFailOn(error_handler)
     def test_404(self):
@@ -1655,6 +1685,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6031')
     @CTFailOn(error_handler)
     def test_405(self):
@@ -1707,6 +1738,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6029')
     @CTFailOn(error_handler)
     def test_406(self):
@@ -1760,6 +1792,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6026')
     @CTFailOn(error_handler)
     def test_407(self):
@@ -1810,6 +1843,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6024')
     @CTFailOn(error_handler)
     def test_408(self):
@@ -1864,6 +1898,7 @@ class TestAllUsersBucketAcl:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_acl
     @pytest.mark.tags('TEST-6021')
     @CTFailOn(error_handler)
     def test_409(self):

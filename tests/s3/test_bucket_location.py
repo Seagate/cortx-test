@@ -71,6 +71,8 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_valid_bkt_272(self):
@@ -108,6 +110,7 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5311")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_bkt_not_present_273(self):
@@ -133,6 +136,7 @@ class TestBucketLocation:
 
     # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_with_permission_274(self):
@@ -212,6 +216,7 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5312")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_275(self):
