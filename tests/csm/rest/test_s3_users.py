@@ -553,6 +553,7 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28924"]
         secret_keys = []
         self.log.info("Key 1: Empty Secret key") 
         secret_keys.append("")
@@ -566,12 +567,21 @@ class TestS3user():
         secret_keys.append("x" * sk_len)
 
         for secret_key in secret_keys:
+            self.log.info("[START] Secret Key : %s", secret_key)
             self.log.info("Creating custom S3 account with Secret key %s.", secret_key)
             user_data = self.s3user.create_custom_s3_payload("valid")
             user_data.update({"secret_key": secret_key})
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
-            # TODO Message checks
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed." 
+            self.log.info("[END] Secret Key : %s", secret_key)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -585,6 +595,7 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28773"]
         access_keys = []
 
         self.log.info("Key 1: Empty Access key") 
@@ -602,12 +613,21 @@ class TestS3user():
         access_keys.append(punctuation)
 
         for access_key in access_keys:
+            self.log.info("[START] Access Key : %s", access_key)
             self.log.info("Creating custom S3 account with access key %s.", access_key)
             user_data = self.s3user.create_custom_s3_payload("valid")
             user_data.update({"access_key": access_key})
             resp = self.s3user.create_custom_s3_user(user_data)
             assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
-            # TODO Message checks
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed." 
+            self.log.info("[END] Access Key : %s", access_key)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -621,10 +641,18 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        result, user_data = self.s3user.create_verify_s3_custom("missing_access",
+        test_cfg = self.csm_conf["test_28925"]
+        result, resp = self.s3user.create_verify_s3_custom("missing_access",
                         expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
-        # TODO Message checks
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying message id...")
+        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+        self.log.info("Verifying message...")
+        assert err["message"] == err_msg["message"], "Message check failed." 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -638,10 +666,18 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        result, user_data = self.s3user.create_verify_s3_custom("missing_secret",
+        test_cfg = self.csm_conf["test_28926"]
+        result, resp = self.s3user.create_verify_s3_custom("missing_secret",
                         expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
-        # TODO Message checks
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying message id...")
+        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+        self.log.info("Verifying message...")
+        assert err["message"] == err_msg["message"], "Message check failed." 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
 
@@ -663,8 +699,11 @@ class TestS3user():
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
-        assert err["error_code"] == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying message id...")
         assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+        self.log.info("Verifying message...")
         assert err["message"] == err_msg["message"], "Message check failed." 
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -687,8 +726,11 @@ class TestS3user():
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
-        assert err["error_code"] == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying message id...")
         assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+        self.log.info("Verifying message...")
         assert err["message"] == err_msg["message"], "Message check failed." 
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -712,8 +754,11 @@ class TestS3user():
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
-        assert err["error_code"] == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        self.log.info("Verifying message id...")
         assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+        self.log.info("Verifying message...")
         assert err["message"] == err_msg["message"], "Message check failed." 
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -780,14 +825,17 @@ class TestS3user():
         self.log.info("Deleting all S3 users except predefined ones...")
         self.config.delete_s3_users()
         self.log.info("Users except pre-defined ones deleted.")
-        
+
         resp = self.s3user.list_all_created_s3account()
         assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
         user_data = resp.json()
+        self.log.info("List user response : %s", user_data)
         existing_user = len(user_data['s3_accounts'])
-        self.log.info("Existing S3 users on the setup: %s", existing_user)
+        self.log.info("Existing S3 users count: %s", existing_user)
         
+        self.log.info("Max S3 users : %s", const.MAX_S3_USERS)
         new_users = const.MAX_S3_USERS - existing_user
+        self.log.info("New users to create: %s", new_users)
         created_users = []
         self.log.info("Creating %s S3 users...", new_users)
         for i in range(new_users):
@@ -799,9 +847,10 @@ class TestS3user():
             assert result, "Status code check failed for %s user".format(user_data["account_name"])
             self.log.info("[END] Create User count : %s", i+1)
 
-        import pdb 
-        pdb.set_trace()
-        s3_users = self.s3user.list_all_created_s3account()
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        user_data = resp.json()
+        s3_users = user_data['s3_accounts']
         self.log.info("Listed user count : %s", len(s3_user))
 
         assert(len(s3_user) == const.MAX_S3_USERS, 

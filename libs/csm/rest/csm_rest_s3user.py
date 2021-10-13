@@ -556,7 +556,7 @@ class RestS3user(RestTestLib):
         user_data = json.dumps(user_data)
         resp = self.restapi.rest_call("post", endpoint=endpoint, data=user_data,
                                       headers=self.headers)
-        if resp.status_code == HTTPStatus.OK.value: #TODO created
+        if resp.status_code == HTTPStatus.CREATED.value:
             self.recently_created_s3_account_user = resp.json()
         return resp
 
