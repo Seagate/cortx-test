@@ -158,7 +158,11 @@ class CSMRestAPIInterfaceOperations(RestS3user):
 
     @RestTestLib.authenticate_and_login
     @RestTestLib.rest_logout
-    def reset_s3_user_password(self, username: str = None, new_password: str = None, reset_access_key: str = "False"):
+    def reset_s3_user_password(
+            self,
+            username: str = None,
+            new_password: str = None,
+            reset_access_key: str = "False"):
         """
         This function will reset s3 account user password
         :param username: Name of S3 account user
