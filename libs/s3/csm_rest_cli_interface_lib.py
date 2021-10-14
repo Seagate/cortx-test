@@ -130,7 +130,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_create_s3account(
                 acc_name, email_id, acc_pwd, csm_user, csm_pwd)
             if status:
@@ -166,7 +166,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_delete_s3account(
                 s3_user=s3acc_name, csm_user=csm_user, passwd=csm_pwd)
         return status, response
@@ -204,7 +204,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_create(
                 csm_user, csm_email, csm_pwd, role)
         return status, response
@@ -232,7 +232,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_delete(csm_user)
         return status, response
 
@@ -269,7 +269,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_update_role(csm_user, csm_pwd, role)
         return status, response
 
@@ -296,7 +296,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.csm_user_show_s3accounts(csm_user, csm_pwd)
         return status, response
 
@@ -329,7 +329,7 @@ class CSMAccountIntOperations(CSMAccountInterface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(str(err))
             status, response = self.csmacc_op_cli.reset_s3acc_password(
                 csm_user, csm_pwd, acc_name, passwd)
 
