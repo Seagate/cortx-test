@@ -795,7 +795,7 @@ class RestAuditLogs(RestTestLib):
                 if string in item.get('key'):
                     result = True
                     break
-                elif string in item.get('bucket'):
+                if string in item.get('bucket'):
                     result = True
                     break
             response.append(result)
