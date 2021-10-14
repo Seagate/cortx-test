@@ -32,8 +32,10 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class IamLib:
-    """Class initialising s3 connection and including functions for account and user operations."""
+class IAMRest:
+    """Library for creating BOTO3 IAM Rest Library.
+
+    """
 
     def __init__(
             self,
@@ -91,6 +93,10 @@ class IamLib:
             del self.iam_resource
         except NameError as error:
             LOGGER.warning(error)
+
+
+class IamLib(IAMRest):
+    """Class initialising s3 connection and including functions for account and user operations."""
 
     def create_user(self, user_name: str = None) -> dict:
         """
@@ -188,7 +194,7 @@ class IamLib:
         return response
 
     def update_user(self, new_user_name: str = None,
-                    user_name: str = None) -> dict:
+            user_name: str = None) -> dict:
         """
         Updating given user.
 

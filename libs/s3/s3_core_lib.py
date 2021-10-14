@@ -34,9 +34,10 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class S3Lib:
-    """Class initialising s3 connection and including methods for bucket and object operations."""
+class S3Rest:
+    """Basic Class for Creating Boto3 REST API Objects.
 
+    """
     def __init__(self,
                  access_key: str = None,
                  secret_key: str = None,
@@ -104,6 +105,10 @@ class S3Lib:
             del self.s3_resource
         except NameError as error:
             LOGGER.warning(error)
+
+
+class S3Lib(S3Rest):
+    """Class initialising s3 connection and including methods for bucket and object operations."""
 
     def create_bucket(self, bucket_name: str = None) -> dict:
         """
