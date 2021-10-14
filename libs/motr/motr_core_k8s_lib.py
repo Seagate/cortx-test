@@ -1,5 +1,5 @@
 """
-Python library contains methods which allows provides the services endpoints.
+Python library contains methods which provides the services endpoints.
 """
 
 import json
