@@ -745,10 +745,16 @@ class TestIAMUserManagement:
         """s3accounts creation with different maxIAMAccountLimit values"""
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         s3_accounts = []
+        resp, acc_list = self.rest_obj.list_s3_accounts()
+        self.log.debug("Total s3 accounts present: %s", len(acc_list))
+        if len(acc_list) > 993:
+            assert_utils.assert_true(False, "Default value of maximum count of s3 accounts is 1000."
+                                            " Test can't be continued.")
         self.log.info("Step 1: Make copy of original authserver.properties file")
         resp = self.nobj.make_remote_file_copy(path=self.remote_path, backup_path=self.backup_path)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Edit authserver.properties file for account creation value set to 0")
+        self.log.info("Step 2: Edit authserver.properties file for account creation value set to "
+                      "%s", len(acc_list))
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
@@ -756,8 +762,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp, msg)
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
-            if prop_dict['maxAccountLimit'] != "0":
-                prop_dict['maxAccountLimit'] = "0"
+            prop_dict['maxAccountLimit'] = f"{len(acc_list)}"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.auth_file_change = True
@@ -778,7 +783,8 @@ class TestIAMUserManagement:
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error("Can not create s3 accounts beyond maximum limit: %s", error)
-        self.log.info("Step 5: Edit authserver.properties file for account creation value set to 6")
+        self.log.info("Step 5: Edit authserver.properties file for account creation value set to "
+                      "%s", len(acc_list) + 6)
         resp = self.nobj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         msg = f"copy_file_to_local failed: remote path: " \
@@ -786,7 +792,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp, msg)
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
-            prop_dict['maxAccountLimit'] = "7"
+            prop_dict['maxAccountLimit'] = f"{len(acc_list) + 6}"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")

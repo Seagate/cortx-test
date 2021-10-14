@@ -36,7 +36,7 @@ import mdstat
 import paramiko
 import pysftp
 
-from commons import commands, constants
+from commons import commands, const
 
 LOGGER = logging.getLogger(__name__)
 
@@ -620,23 +620,3 @@ class Host(AbsHost):
         self.disconnect()
 
         return not self.path_exists(filename)
-
-    def make_remote_file_copy(self, path: str, backup_path: str) -> \
-            Tuple[bool, Tuple[Union[List[str], str, bytes]]]:
-        """
-        copy file with remote machine cp cmd.
-
-        :param path: source path
-        :param backup_path: destination path
-        :return: response in tuple
-        """
-        try:
-            cmd = commands.COPY_FILE_CMD.format(path, backup_path)
-            resp = self.execute_cmd(cmd=cmd, read_nbytes=constants.BYTES_TO_READ)
-        except Exception as error:
-            LOGGER.error(
-                "%s %s: %s", constants.EXCEPTION_ERROR,
-                self.make_remote_file_copy.__name__, error)
-            return False, error
-
-        return True, resp
