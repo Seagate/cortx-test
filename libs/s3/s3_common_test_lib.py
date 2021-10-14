@@ -33,6 +33,10 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
 from libs.s3 import s3_test_lib
+from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_bucket_policy_test_lib
+from libs.s3 import s3_multipart_test_lib
+from libs.s3 import s3_tagging_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 LOG = logging.getLogger(__name__)
@@ -77,7 +81,6 @@ def create_s3_acc(
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
-    :param account_dict:
     :return tuple: It returns multiple values such as access_key,
     secret_key and s3 objects which required to perform further operations.
     """
@@ -105,6 +108,42 @@ def create_s3_acc(
         secret_key)
 
     return response
+
+
+def create_s3_account_get_s3objects(account_name: str, email_id: str, password: str) -> tuple:
+    """
+    function will create s3 account with specified account name and email-id and returns s3 objects.
+
+    :param account_name: Name of account to be created
+    :param email_id: Email id for account creation
+    :param password: Password for the account
+    :return: It returns account details such as canonical_id, access_key, secret_key,
+    account_id and s3 objects which will be required to perform further operations.
+    """
+    LOG.info(
+        "Step : Creating account with name %s and email_id %s",
+        account_name, email_id)
+    rest_obj = S3AccountOperations()
+    create_account = rest_obj.create_s3_account(
+        acc_name=account_name, email_id=email_id, passwd=password)
+    assert_utils.assert_true(create_account[0], create_account[1])
+    del rest_obj
+    access_key = create_account[1]["access_key"]
+    secret_key = create_account[1]["secret_key"]
+    canonical_id = create_account[1]["canonical_id"]
+    account_id = create_account[1]["account_id"]
+    LOG.info("Step Successfully created the cortxcli account")
+    s3_obj = s3_test_lib.S3TestLib(access_key=access_key, secret_key=secret_key)
+    acl_obj = s3_acl_test_lib.S3AclTestLib(access_key=access_key, secret_key=secret_key)
+    s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+        access_key=access_key, secret_key=secret_key)
+    s3_bkt_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
+        access_key=access_key, secret_key=secret_key)
+    s3_multipart_obj = s3_multipart_test_lib.S3MultipartTestLib(
+        access_key=access_key, secret_key=secret_key)
+
+    return canonical_id, s3_obj, acl_obj, s3_bkt_policy_obj, \
+        access_key, secret_key, account_id, s3_bkt_tag_obj, s3_multipart_obj
 
 
 def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_sample=3):
@@ -157,7 +196,6 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
 
     :param s3_obj: s3 object.
     :param s3_bucket: Name of the s3 bucket.
-    :param dir_path: Directory path where files getting created.
     :param obj_prefix: Prefix of the s3 object.
     :param size: size of the object multiple of 1MB.
     :param num_sample: Number of object getting created.
