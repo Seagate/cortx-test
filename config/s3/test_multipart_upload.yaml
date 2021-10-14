@@ -141,3 +141,17 @@ test_28540:
     file_size2: 600
     total_parts2: 3
     chunk_size2: 209715200
+
+test_28537:
+    multipart_uploads: 1900
+
+test_28534:
+    file_size: 40000
+    total_parts: 25
+    chunk_size: 419430400
+
+
+test_28535:
+    file_size: 40000
+    total_parts: 25
+    chunk_size: 419430400

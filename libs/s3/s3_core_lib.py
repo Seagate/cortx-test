@@ -535,6 +535,20 @@ class Multipart(S3Lib):
 
         return response
 
+    def list_multipart_uploads_with_keymarker(self, bucket:str=None,
+                                              keymarker:str=None) -> dict:
+
+        """
+        List all initiated multipart uploads.
+
+        :param bucket: Name of the bucket.
+        :return: response.
+        """
+        result = self.s3_client.list_multipart_uploads(Bucket=bucket,KeyMarker=keymarker)
+        LOGGER.debug(result)
+
+        return result
+
 
 class Tagging(S3Lib):
     """Class containing methods to implement bucket and object tagging functionality."""
