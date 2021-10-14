@@ -35,9 +35,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class S3Rest:
-    """Basic Class for Creating Boto3 REST API Objects.
-
-    """
+    """Basic Class for Creating Boto3 REST API Objects."""
     def __init__(self,
                  access_key: str = None,
                  secret_key: str = None,

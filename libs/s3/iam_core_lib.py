@@ -33,9 +33,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class IAMRest:
-    """Library for creating BOTO3 IAM Rest Library.
-
-    """
+    """Library for creating BOTO3 IAM Rest Library."""
 
     def __init__(
             self,
