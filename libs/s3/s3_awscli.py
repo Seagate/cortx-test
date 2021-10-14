@@ -172,7 +172,7 @@ class AWScliS3api:
         :param directory_path: Absolute directory path.
         :return: true/false, response.
         """
-        LOGGER.info("Download s3 object.")
+        LOGGER.info("Upload  directory to S3 bucket.")
         status, output = run_local_cmd(commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(directory_path, bucket_name))
         upload_list = [out.split("\\r")[-1] for out in output.split("\\n") if out][:-1]
         LOGGER.info("Upload list: %s", upload_list)
