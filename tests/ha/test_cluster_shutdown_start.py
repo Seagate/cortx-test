@@ -120,7 +120,8 @@ class TestClstrShutdownStart:
 
         LOGGER.info(
             "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301')
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301', nusers=1,
+                                           nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
         di_check_data = (resp[1], resp[2])
         self.s3_clean = resp[2]
@@ -173,7 +174,7 @@ class TestClstrShutdownStart:
                 "STARTED: Test to verify cluster shutdown and restart functionality in loop.")
 
             loop_count = HA_CFG["common_params"]["loop_count"]
-            for loop in range(loop_count):
+            for loop in range(1, loop_count):
                 LOGGER.info("Checking cluster restart for %s count", loop)
                 LOGGER.info("Step 1: Check the status of the pods running in cluster.")
                 resp = self.ha_obj.check_pod_status(self.node_master_list[0])
@@ -182,7 +183,8 @@ class TestClstrShutdownStart:
 
                 LOGGER.info(
                     "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-{}').format(loop)
+                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
+                                                   nbuckets=10)
                 assert_utils.assert_true(resp[0], resp[1])
                 di_check_data = (resp[1], resp[2])
                 self.s3_clean = resp[2]
@@ -208,7 +210,7 @@ class TestClstrShutdownStart:
                 LOGGER.info("Step 5: Verified DI for IOs run before restart.")
 
                 LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-new-{}').format(loop)
+                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-new')
                 assert_utils.assert_true(resp[0], resp[1])
                 di_check_data = (resp[1], resp[2])
                 self.s3_clean = resp[2]

@@ -27,10 +27,8 @@ import time
 from multiprocessing import Process
 
 from commons import commands as common_cmd
-from commons import errorcodes as err
 from commons import pswdmanager
 from commons.constants import Rest as Const
-from commons.exceptions import CTException
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
@@ -240,7 +238,7 @@ class HAK8s:
                 if not response[0]:
                     return response
             return True, "Successfully performed S3 operation clean up"
-        except (ValueError, KeyError, CTException) as error:
+        except (ValueError, KeyError) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HAK8s.delete_s3_acc_buckets_objects.__name__,
@@ -292,7 +290,7 @@ class HAK8s:
                     star_res = run_data_chk_obj.start_io(
                         users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
                     if not star_res:
-                        raise CTException(err.S3_START_IO_FAILED, star_res)
+                        return False, star_res
                 return True, run_data_chk_obj, io_data
 
             LOGGER.info("Checking DI for IOs run.")
@@ -301,20 +299,16 @@ class HAK8s:
             else:
                 stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
+                return False, stop_res[1]
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
             if not del_resp[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
+                return False, del_resp[1]
             return True, "Di check for IOs passed successfully"
-        except (ValueError, CTException) as error:
+        except ValueError as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HAK8s.perform_ios_ops.__name__,
                          error)
-            if io_data:
-                del_resp = self.delete_s3_acc_buckets_objects(io_data)
-                if not del_resp[0]:
-                    return False, (error, del_resp[1])
             return False, error
 
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
