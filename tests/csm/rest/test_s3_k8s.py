@@ -145,20 +145,16 @@ class TestS3accountK8s:
         """
         self.log.info("Fetching LDAP root user password from Conf Store.")
         try:
-            self.log.info("inside try")
             cipher_key = self.generate_key(cluster_id,decryption_key)
-        except OSError:
-            self.log.info("inside first except")
-            self.log.error(f"Failed to Fetch keys from Conf store.")
-            return None
         except Exception as e:
+            self.log.error("Failed to Fetch keys from Conf store with %s", e)
             return None
         try:
             ldap_root_decrypted_value = self.decrypt(cipher_key,
                                                 secret.encode("utf-8"))
             return ldap_root_decrypted_value.decode('utf-8')
         except CipherInvalidToken as error:
-            self.log.error(f"Decryption for LDAP root user password Failed. {error}")
+            self.log.error("Decryption for LDAP root user password Failed with %s", error)
             raise CipherInvalidToken(f"Decryption for LDAP root user password Failed. {error}")
 
 
@@ -257,3 +253,9 @@ class TestS3accountK8s:
                 self.log.info("secret key is not present")
                 self.log.info("Test passed")
         self.log.info("##############Test Passed##############")
+
+class CipherInvalidToken(Exception):
+    """
+    Wrapper around actual implementation's decryption exceptions
+    """
+    pass
