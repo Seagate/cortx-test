@@ -1100,7 +1100,7 @@ class TestAuditLogs:
                 test_cfg["stopped"], line, "Some services are not up.")
         self.log.info(
             "HCTL and PCS status is clean.")
-        time.sleep(20)
+        time.sleep(self.csm_conf["test_22337"]["delay"])
         self.log.info("Step 6: View and Download CSM audit log")
         end_time = int(time.time())
         start_time = end_time - data

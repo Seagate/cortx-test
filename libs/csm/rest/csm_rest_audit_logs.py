@@ -772,7 +772,7 @@ class RestAuditLogs(RestTestLib):
         for string in str_search:
             for item in response_log['logs']:
                 if item['payload']:
-                    if string in item['payload']:
+                    if string in item.get('payload'):
                         result = True
                         break
             response.append(result)
@@ -792,7 +792,10 @@ class RestAuditLogs(RestTestLib):
         result = False
         for string in str_search:
             for item in response_log['logs']:
-                if string in item['key'] or item['bucket']:
+                if string in item.get('key'):
+                    result = True
+                    break
+                elif string in item.get('bucket'):
                     result = True
                     break
             response.append(result)
