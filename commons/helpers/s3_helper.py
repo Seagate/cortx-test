@@ -33,8 +33,8 @@ from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
 from commons import constants as const
+from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
-from commons.helpers.pods_helper import LogicalNode
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
 from commons.utils.system_utils import run_remote_cmd
@@ -130,35 +130,8 @@ class S3Helper:
                         return False, service
                 return status, output
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                pod = "storage-node1"
-                container = "cortx-hax"
-                namespace = "default"
-                node = LogicalNode(hostname=host, username=user, password=pwd)
-                out = node.send_k8s_cmd(
-                    operation="exec", pod=pod, namespace=namespace,
-                    command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
-                    decode=True)
-                LOGGER.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
-                result = json.loads(out)
-                for node in result["nodes"]:
-                    pod_name = node["name"]
-                    services = node["svcs"]
-                    fids = []
-                    for service in services:
-                        if "s3server" in service["name"]:
-                            fid = service["fid"]
-                            fids.append(fid)
-                            if service["status"] != "started":
-                                LOGGER.error("s3server service (%s) not started on pod %s", fid,
-                                             pod_name)
-                                return False, out
-                    if not services:
-                        LOGGER.critical("No service found!")
-                        return False, out
-                    if not fids:
-                        LOGGER.critical("No s3server service found!")
-                        return False, out
-                return True, out
+                health = Health(hostname=host, username=user, password=pwd)
+                return health.hctl_status_service_status(service_name="s3server")
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
@@ -513,29 +486,8 @@ class S3Helper:
 
                 return status, fids
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                pod = "storage-node1"
-                container = "cortx-hax"
-                namespace = "default"
-                node = LogicalNode(hostname=host, username=user, password=pwd)
-                out = node.send_k8s_cmd(
-                    operation="exec", pod=pod, namespace=namespace,
-                    command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
-                    decode=True)
-                LOGGER.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
-                result = json.loads(out)
-                fids = []
-                for node in result["nodes"]:
-                    services = node["svcs"]
-                    for service in services:
-                        if "s3server" in service["name"]:
-                            fids.append(service["fid"])
-                    if not services:
-                        LOGGER.critical("No service found!")
-                        return False, out
-                    if not fids:
-                        LOGGER.critical("No s3server service found!")
-                        return False, out
-                return True, out
+                health = Health(hostname=host, username=user, password=pwd)
+                return health.hctl_status_get_service_fids(service_name="s3server")
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
