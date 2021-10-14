@@ -21,7 +21,7 @@ class TestExecuteK8Sanity:
         LOGGER.info("ENDED: Teardown Operation")
 
     def test_motr_k8s_lib(self):
-        # TODO: This a sample test for the usuage, need to deleted it later
+        # TODO: This a sample test for the usage, need to delete it later
         print(self.motr_obj.cluster_info)
         print(self.motr_obj.profile_fid)
         print(self.motr_obj.node_dict)    
