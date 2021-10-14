@@ -160,66 +160,64 @@ class TestClstrShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
 
-        # pylint: disable-msg=too-many-statements
-        @pytest.mark.ha
-        @pytest.mark.lc
-        @pytest.mark.tags("TEST-29468")
-        @CTFailOn(error_handler)
-        def test_cluster_restart_multiple(self):
-            """
-            This test tests the cluster shutdown and start functionality, in loop
-            to check the consistency.
-            """
+    # pylint: disable-msg=too-many-statements
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29468")
+    @CTFailOn(error_handler)
+    def test_cluster_restart_multiple(self):
+        """
+        This test tests the cluster shutdown and start functionality, in loop
+        to check the consistency.
+        """
+        LOGGER.info(
+            "STARTED: Test to verify cluster shutdown and restart functionality in loop.")
+
+        loop_count = HA_CFG["common_params"]["loop_count"]
+        for loop in range(1, loop_count):
+            LOGGER.info("Checking cluster restart for %s count", loop)
+            LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+            resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 1: All pods are running.")
+
             LOGGER.info(
-                "STARTED: Test to verify cluster shutdown and restart functionality in loop.")
-
-            loop_count = HA_CFG["common_params"]["loop_count"]
-            for loop in range(1, loop_count):
-                LOGGER.info("Checking cluster restart for %s count", loop)
-                LOGGER.info("Step 1: Check the status of the pods running in cluster.")
-                resp = self.ha_obj.check_pod_status(self.node_master_list[0])
-                assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Step 1: All pods are running.")
-
-                LOGGER.info(
-                    "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
-                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
+                "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
                                                    nbuckets=10)
-                assert_utils.assert_true(resp[0], resp[1])
-                di_check_data = (resp[1], resp[2])
-                self.s3_clean = resp[2]
-                LOGGER.info("Step 2: IOs are started successfully.")
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean = resp[2]
+            LOGGER.info("Step 2: IOs are started successfully.")
 
-                LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-                resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-                                                             resource="cluster")
-                assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Step 3: Cluster shutdown signal is successful.")
-
-                LOGGER.info(
-                    "Step 4: Restart the cluster and check cluster status.")
-                resp = self.ha_obj.restart_cluster(self.node_master_list[0])
-                assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info(
-                    "Step 4: Cluster restarted fine and all Pods online.")
-
-                LOGGER.info("Step 5: Check DI for IOs run before restart.")
-                resp = self.ha_obj.perform_ios_ops(
-                    di_data=di_check_data, is_di=True)
-                assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Step 5: Verified DI for IOs run before restart.")
-
-                LOGGER.info("Step 6: Create new S3 account and perform IOs.")
-                resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-new')
-                assert_utils.assert_true(resp[0], resp[1])
-                di_check_data = (resp[1], resp[2])
-                self.s3_clean = resp[2]
-                resp = self.ha_obj.perform_ios_ops(
-                    di_data=di_check_data, is_di=True)
-                assert_utils.assert_true(resp[0], resp[1])
-                LOGGER.info("Step 6: IOs running successfully with new S3 account.")
-                self.restored = False
-                LOGGER.info("Cluster restart was successful for %s count", loop)
+            LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+            resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                         resource="cluster")
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
             LOGGER.info(
-                "Completed: Test to verify cluster shutdown and restart functionality in loop.")
+                "Step 4: Restart the cluster and check cluster status.")
+            resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info(
+                "Step 4: Cluster restarted fine and all Pods online.")
+
+            LOGGER.info("Step 5: Check DI for IOs run before restart.")
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 5: Verified DI for IOs run before restart.")
+
+            LOGGER.info("Step 6: Create new S3 account and perform IOs.")
+            resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468-new')
+            assert_utils.assert_true(resp[0], resp[1])
+            di_check_data = (resp[1], resp[2])
+            self.s3_clean = resp[2]
+            resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 6: IOs running successfully with new S3 account.")
+            self.restored = False
+            LOGGER.info("Cluster restart was successful for %s count", loop)
+
+        LOGGER.info(
+            "Completed: Test to verify cluster shutdown and restart functionality in loop.")
