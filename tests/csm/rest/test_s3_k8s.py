@@ -20,38 +20,31 @@
 #
 """Tests operations on S3 Users using REST API"""
 
-import json
-import logging
-import pytest
-import time
-import re
-import os
-import subprocess
 import configparser
-import yaml
-from commons.constants import Rest as const
-from commons import cortxlogging
-from commons import configmanager
-from libs.csm.csm_setup import CSMConfigsCheck
-from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils.system_utils import run_remote_cmd
-from commons.utils import assert_utils
-from commons.helpers.node_helper import Node
-from commons import constants as cons
-from config import CMN_CFG
-from config import S3_CFG
-from config import CSM_CFG
-from commons.utils.system_utils import run_remote_cmd
-from cryptography.fernet import Fernet
-from commons.utils.config_utils import get_config
-from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-from cryptography.fernet import InvalidSignature, InvalidToken
+import logging
+import os
+import re
+import subprocess
+import time
 from base64 import urlsafe_b64encode
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+import pytest
+import yaml
+from cryptography.fernet import Fernet
+from cryptography.fernet import InvalidSignature, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-cortxsec_cmd = '/opt/seagate/cortx/extension/cortxsec'
+from commons import constants as cons
+from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
+from commons.utils.system_utils import run_remote_cmd
+from config import CMN_CFG
+from config import S3_CFG
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+
+CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
 class TestS3accountK8s:
     """S3 user test class"""
@@ -118,6 +111,9 @@ class TestS3accountK8s:
         return decrypted
 
     def gen_key(self, str1: str, str2: str, *strs):
+        """
+        Function will be called from generate_key function
+        """
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                          length=32,
                          salt=str1.encode('UTF-8'),
@@ -128,9 +124,12 @@ class TestS3accountK8s:
         return key
 
     def generate_key(self, str1: str, str2: str, *strs) -> bytes:
-        if os.path.exists(cortxsec_cmd):
+        """
+        Function will be invoked by decrypt key function.
+        """
+        if os.path.exists(CORTXSEC_CMD):
             args = ' '.join(['getkey', str1, str2] + list(strs))
-            getkey_cmd = f'{cortxsec_cmd} {args}'
+            getkey_cmd = f'{CORTXSEC_CMD} {args}'
             try:
                 resp = subprocess.check_output(getkey_cmd.split(), stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
@@ -141,6 +140,9 @@ class TestS3accountK8s:
             return generate
 
     def _decrypt_secret(self, secret, cluster_id, decryption_key):
+        """
+        Function for decrypting the password received from cluster.conf file
+        """
         self.log.info("Fetching LDAP root user password from Conf Store.")
         try:
             self.log.info("inside try")
@@ -181,7 +183,7 @@ class TestS3accountK8s:
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         stream = open(self.local_path, 'r')
-        data = yaml.load(stream, Loader=yaml.FullLoader)
+        data = yaml.safe_load(stream, Loader=yaml.FullLoader)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         self.log.info(secret)
@@ -196,16 +198,16 @@ class TestS3accountK8s:
                                         exc=False)
         self.log.info(resp_node)
         self.log.info("Step 3: call ldapsearch command form method")
-        status, result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
+        result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
         self.log.info("printing response and type")
         self.log.info("Step 4: Search for s3 account password in output")
         for resp in result:
-             if "password" in resp:
-                 self.log.info("password is present")
-             else:
-                 self.log.info("password is not present")
-                 self.log.info("Test passed")
+            if "password" in resp:
+                self.log.info("password is present")
+            else:
+                self.log.info("password is not present")
+                self.log.info("Test passed")
         self.log.info("##############Test Passed##############")
 
     @pytest.mark.parallel
@@ -229,7 +231,7 @@ class TestS3accountK8s:
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         stream = open(self.local_path, 'r')
-        data = yaml.load(stream, Loader=yaml.FullLoader)
+        data = yaml.safe_load(stream, Loader=yaml.FullLoader)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         self.log.info(secret)
@@ -244,14 +246,14 @@ class TestS3accountK8s:
                                         exc=False)
         self.log.info(resp_node)
         self.log.info("Step 3: call ldapsearch command form method")
-        status, result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
+        result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
         self.log.info("printing response and type")
         self.log.info("Step 4: Search for s3 account password in output")
         for resp in result:
-             if "secret_key "in resp:
-                 self.log.info("secret key is present")
-             else:
-                 self.log.info("secret key is not present")
-                 self.log.info("Test passed")
+            if "secret_key "in resp:
+                self.log.info("secret key is present")
+            else:
+                self.log.info("secret key is not present")
+                self.log.info("Test passed")
         self.log.info("##############Test Passed##############")
