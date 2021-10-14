@@ -90,10 +90,14 @@ class CSMAccountIntOperations(CSMAccountInterface):
 
     def __del__(self):
         """Destroy created objects"""
-        del self.cli_obj
-        del self.s3acc_op_rest
-        del self.csmacc_op_cli
-        del self.csm_s3_rest
+        try:
+            del self.cli_obj
+            del self.csmacc_op_cli
+            del self.s3acc_op_rest
+            del self.csm_s3_rest
+            del self.csmacc_op_rest
+        except NameError as error:
+            LOGGER.warning(str(error))
 
     # pylint: disable=too-many-arguments
     # pylint: disable=W0221

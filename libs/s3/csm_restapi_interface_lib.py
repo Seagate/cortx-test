@@ -60,9 +60,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
         try:
             # Building request url
             self.log.debug("Creating CSM user")
-            self.log.debug(
-                "Endpoint for CSM user creation is  %s", self.endpoint)
-
+            self.log.debug("Endpoint for CSM user creation is  %s", self.endpoint)
             # Creating required payload to be added for request
             user_data = {"username": uname,
                          "password": pwd,
@@ -97,8 +95,7 @@ class CSMRestAPIInterfaceOperations(RestS3user):
             # Building request url
             self.log.debug("Deleting CSM user")
             endpoint = f"{self.endpoint}/{username}"
-            self.log.debug(
-                "Endpoint for CSM user creation is  %s", endpoint)
+            self.log.debug("Endpoint for CSM user creation is  %s", endpoint)
             # Fetching api response
             self.headers.update(Rest.CONTENT_TYPE)
             response = self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)

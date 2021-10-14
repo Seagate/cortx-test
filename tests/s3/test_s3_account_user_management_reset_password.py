@@ -50,22 +50,6 @@ from scripts.s3_bench import s3bench
 class TestAccountUserManagementResetPassword:
     """Account user management reset password TestSuite."""
 
-    @classmethod
-    def setup_class(cls):
-        """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test suite steps if any.
-        """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.s3_obj = cls.parallel_ios = cls.account_dict = cls.s3acc_passwd = cls.object_name = None
-        cls.email_id = cls.csmrc_obj = cls.resources_dict = cls.new_passwd = None
-        cls.account_prefix = cls.csm_user_list = cls.s3auth_obj = cls.csmacc_op_rest = None
-        cls.csm_user = cls.s3acc_name1 = cls.s3acc_name2 = cls.file_path = cls.csm_passwd = None
-        cls.test_dir_path = cls.io_bucket_name = cls.bucket_name1 = cls.bucket_name2 = None
-        cls.log.info("ENDED: setup test suite operations.")
-
     # pylint: disable-msg=too-many-statements
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -75,6 +59,7 @@ class TestAccountUserManagementResetPassword:
         1. Create bucket name, object name, account name.
         2. Check cluster status, all services are running.
         """
+        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: test setup.")
         self.s3_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.parallel_ios = None
@@ -195,7 +180,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22793")
     @CTFailOn(error_handler)
     def test_22793(self):
@@ -364,7 +348,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22796")
     @CTFailOn(error_handler)
     def test_22796(self):
@@ -413,7 +396,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22797")
     @CTFailOn(error_handler)
     def test_22797(self):
@@ -466,7 +448,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22798")
     @CTFailOn(error_handler)
     def test_22798(self):
@@ -650,7 +631,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22801")
     @CTFailOn(error_handler)
     def test_22801(self):
@@ -700,7 +680,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-22802")
     @CTFailOn(error_handler)
     def test_22802(self):
@@ -819,7 +798,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
@@ -885,7 +863,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-21517")
     @CTFailOn(error_handler)
     def test_21517(self):
@@ -935,7 +912,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-21520")
     @CTFailOn(error_handler)
     def test_21520(self):
@@ -965,7 +941,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.lc
     @pytest.mark.tags("TEST-21521")
     @CTFailOn(error_handler)
     def test_21521(self):
