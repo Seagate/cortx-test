@@ -156,6 +156,15 @@ class TestIAMUserManagement:
                                                    backup_path=self.remote_path)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Restored authserver.properties file successfully")
+            self.log.info("Restart s3 authserver")
+            status = system_utils.run_remote_cmd(
+                cmd="systemctl restart s3authserver",
+                hostname=self.host,
+                username=self.uname,
+                password=self.passwd,
+                read_lines=True)
+            assert_utils.assert_true(status[0], "Service did not restart successfully")
+            self.log.info("Restarted s3 authserver successfully")
 
         self.log.info("ENDED : Teardown operations for test function")
 
@@ -696,8 +705,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp, msg)
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
-            if prop_dict['maxIAMUserLimit'] == "0":
-                prop_dict['maxIAMUserLimit'] = "6"
+            prop_dict['maxIAMUserLimit'] = "6"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")
@@ -778,8 +786,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp, msg)
         prop_dict = config_utils.read_properties_file(self.local_path)
         if prop_dict:
-            if prop_dict['maxAccountLimit'] == "1":
-                prop_dict['maxAccountLimit'] = "6"
+            prop_dict['maxAccountLimit'] = "7"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")
