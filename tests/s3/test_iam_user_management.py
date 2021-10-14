@@ -621,6 +621,7 @@ class TestIAMUserManagement:
         self.log.info(
             "ENDED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
 
+    @pytest.mark.skip("")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-21644")
     def test_21644(self):
@@ -659,6 +660,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
 
+    @pytest.mark.skip("Need more validation")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-28776")
     def test_28776(self):
@@ -739,6 +741,7 @@ class TestIAMUserManagement:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("####### Test Completed! #########")
 
+    @pytest.mark.skip("Need more validation")
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-28852")
     def test_28852(self):
