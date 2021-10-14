@@ -288,6 +288,7 @@ class TestDelayedDelete:
                              resp[1]["ContentLength"]]
         return obj_dict
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags('TEST-28995')
     @CTFailOn(error_handler)
@@ -326,6 +327,7 @@ class TestDelayedDelete:
                 logging.info("The Last modified time"
                              " is changed of %s", {objects})
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags('TEST-29032')
     @CTFailOn(error_handler)
@@ -409,6 +411,7 @@ class TestDelayedDelete:
                           "Old time is %s new time is %s",
                           {last_m_time_o}, {last_m_time_r})
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags('TEST-28444')
     @CTFailOn(error_handler)
@@ -486,6 +489,7 @@ class TestDelayedDelete:
             logging.info("The Last modified time"
                          " is different %s, %s", last_m_time_o, last_m_time_r)
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags('TEST-29043')
     @CTFailOn(error_handler)
@@ -533,6 +537,7 @@ class TestDelayedDelete:
                           " from bucket %s", self.test_file,
                           self.bucket_name)
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags('TEST-29159')
     @CTFailOn(error_handler)
@@ -576,6 +581,7 @@ class TestDelayedDelete:
         if obj_size_r == obj_size:
             self.log.info("Obj size are same %s", {obj_size_r})
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags("TEST-28990")
     @CTFailOn(error_handler)
@@ -607,6 +613,7 @@ class TestDelayedDelete:
         self.log.info("Completed: Verify background deletes using multiple "
                       "objects delete operation")
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags("TEST-28991")
     @CTFailOn(error_handler)
@@ -633,6 +640,7 @@ class TestDelayedDelete:
         self.log.info("Completed: Verify background deletes when ran s3bench workload "
                       "on multiple buckets")
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags("TEST-28992")
     @CTFailOn(error_handler)
@@ -682,6 +690,7 @@ class TestDelayedDelete:
 
         self.log.info("Completed: Verify if deletion is successful post simple object delete")
 
+    @pytest.mark.s3_ops
     @pytest.mark.s3_delete
     @pytest.mark.tags("TEST-28993")
     @CTFailOn(error_handler)
