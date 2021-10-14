@@ -1074,9 +1074,13 @@ class TestAuditLogs:
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "rsyslog"), hostname=host, username=uname, password=passwd, read_lines=True)
         assert status, "Command failed with error\n{}".format(result)
+        time.sleep(5)
+        self.log.info("Waiting for sometime for rsyslog service to start")
         status, result = run_remote_cmd(commands.SYSTEM_CTL_START_CMD.format(
             "elasticsearch"), hostname=host, username=uname, password=passwd, read_lines=True)
         assert status, "Command failed with error\n{}".format(result)
+        time.sleep(5)
+        self.log.info("Waiting for sometime for elasticsearch service to start")
         self.log.info("Step 4: Check hctl status")
         self.log.info("Check that all the services are up in hctl.")
         test_cfg = PROV_CFG["system"]
@@ -1096,8 +1100,8 @@ class TestAuditLogs:
                 test_cfg["stopped"], line, "Some services are not up.")
         self.log.info(
             "HCTL and PCS status is clean.")
-        time.sleep(10)
-        self.log.info("Step 7: View and Download CSM audit log")
+        time.sleep(20)
+        self.log.info("Step 6: View and Download CSM audit log")
         end_time = int(time.time())
         start_time = end_time - data
         params = {"start_date": start_time, "end_date": end_time, "sortby": "user", "dir": "desc"}
@@ -1110,16 +1114,16 @@ class TestAuditLogs:
                                    const.SUCCESS_STATUS)
         self.log.info("Verified that audit log show request returned status: %s",
                       audit_log_show_response.status_code)
-        self.log.info("Searching new created manage user in csm audit logs")
+        self.log.info("Searching new created manage user %s in csm audit logs", mgusername)
         resp = audit_log_show_response.json()
         response = self.audit_logs.verify_csm_audit_logs_contents(resp, mgusername)
         if False in response:
             self.log.error("%s user is not found in audit logs", mgusername)
-        self.log.info("Searching new created monitor user in csm audit logs")
+        self.log.info("Searching new created monitor user %s in csm audit logs", musername)
         response = self.audit_logs.verify_csm_audit_logs_contents(resp, musername)
         if False in response:
             self.log.error("%s user is not found in audit logs", musername)
-        self.log.info("Searching new created s3 user in csm audit logs")
+        self.log.info("Searching new created s3 user %s in csm audit logs", s3_user)
         response = self.audit_logs.verify_csm_audit_logs_contents(resp, s3_user)
         if False in response:
             self.log.error("%s user is not found in audit logs", s3_user)
@@ -1137,7 +1141,7 @@ class TestAuditLogs:
         #                            const.SUCCESS_STATUS)
         # self.log.info("Verified that audit log download request returned status: %s",
         #               audit_log_download_response.status_code)
-        self.log.info("Step 8: View and Download S3 audit log")
+        self.log.info("Step 7: View and Download S3 audit log")
         end_time = int(time.time())
         start_time = end_time - data
         params = {"start_date": start_time, "end_date": end_time}
@@ -1146,12 +1150,12 @@ class TestAuditLogs:
         audit_log_show_response = self.audit_logs.audit_logs_s3_show(
             params=params)
         resp = audit_log_show_response.json()
-        self.log.info("Searching new created bucket in s3 audit logs")
-        response = self.audit_logs.verify_s3_bucket_exist(resp, s3_bkt)
+        self.log.info("Searching new created bucket %s in s3 audit logs", s3_bkt)
+        response = self.audit_logs.verify_s3_audit_logs_contents(resp, s3_bkt)
         if False in response:
             self.log.error("bucket is not found in audit logs")
-        self.log.info("Searching new created object in s3 audit logs")
-        response = self.audit_logs.verify_s3_object_exist(resp, ["test_22337"])
+        self.log.info("Searching new created object %s in s3 audit logs", "test_22337")
+        response = self.audit_logs.verify_s3_audit_logs_contents(resp, ["test_22337"])
         if False in response:
             self.log.error("object is not found in audit logs")
         # TODO: "Verification of download audit logs is blocked refer EOS-24246"
