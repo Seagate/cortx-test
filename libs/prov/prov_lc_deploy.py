@@ -27,7 +27,7 @@ import time
 import yaml
 
 from commons import commands as common_cmd
-from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
 from config import CMN_CFG, PROV_CFG
 
@@ -43,17 +43,18 @@ class ProvDeployLCLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["lc_deploy"]
         self.num_nodes = len(CMN_CFG["nodes"])
-        self.node_list = []
+        self.worker_node_list = []
         self.master_node = None
         for node in range(self.num_nodes):
-            node_obj = Node(hostname=CMN_CFG["nodes"][node]["hostname"],
-                            username=CMN_CFG["nodes"][node]["username"],
-                            password=CMN_CFG["nodes"][node]["password"])
-            self.node_list.append(node_obj)
+            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                   username=CMN_CFG["nodes"][node]["username"],
+                                   password=CMN_CFG["nodes"][node]["password"])
             if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
                 self.master_node = node_obj
+            else:
+                self.worker_node_list.append(node_obj)
 
-    def prereq_vm(self, node_obj: Node):
+    def prereq_vm(self, node_obj: LogicalNode):
         """
         Perform prerequisite check for VM configurations
         param: node_obj : Node object to perform the checks on
@@ -100,7 +101,7 @@ class ProvDeployLCLib:
         return True, "Prerequisite VM check successful"
 
     @staticmethod
-    def make_fs(node_obj: Node, disk_partition: str, timeout: int = 120):
+    def make_fs(node_obj: LogicalNode, disk_partition: str, timeout: int = 120):
         """
         Create ext4 file system on the disk partition specified.
         param: node_obj : Node Object
@@ -141,7 +142,7 @@ class ProvDeployLCLib:
             return False, error
         return True, "file system created"
 
-    def prereq_local_path_prov(self, node_obj: Node, disk_partition: str):
+    def prereq_local_path_prov(self, node_obj: LogicalNode, disk_partition: str):
         """
         Perform the prerequisite for Local Path Provisioner
         param: node_obj: Node object
@@ -165,7 +166,7 @@ class ProvDeployLCLib:
         node_obj.execute_cmd(
             common_cmd.CMD_MOUNT_EXT4.format(disk_partition, self.deploy_cfg["local_path_prov"]))
 
-    def prereq_glusterfs(self, node_obj: Node):
+    def prereq_glusterfs(self, node_obj: LogicalNode):
         """
         Prerequisite for GlusterFS - Create specified directory
         param: node_obj : Node Object
@@ -177,7 +178,7 @@ class ProvDeployLCLib:
         LOGGER.info("Install Gluster-fuse package")
         node_obj.execute_cmd(common_cmd.RPM_INSTALL_CMD.format(self.deploy_cfg["gluster_pkg"]))
 
-    def prereq_3rd_party_srv(self, node_obj: Node):
+    def prereq_3rd_party_srv(self, node_obj: LogicalNode):
         """
         Prerequisite for 3rd Party Services - Create specified directory
         param: node_obj : Node Object
@@ -187,7 +188,7 @@ class ProvDeployLCLib:
             node_obj.make_dir(each)
 
     @staticmethod
-    def docker_login(node_obj: Node, docker_user: str, docker_pswd: str):
+    def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
         """
         Perform Docker Login
         param: node_obj: Node Object
@@ -197,7 +198,7 @@ class ProvDeployLCLib:
         LOGGER.info("Perform Docker Login")
         node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
 
-    def prereq_git(self, node_obj: Node, git_id: str, git_token: str):
+    def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str):
         """
         Checkout cortx-k8s code on the master node. Delete is any previous exists.
         param: node_obj : Node object to checkout code - Master node.
@@ -215,7 +216,7 @@ class ProvDeployLCLib:
         cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(self.deploy_cfg["git_tag"])
         node_obj.execute_cmd(cmd)
 
-    def deploy_cluster(self, node_obj: Node, local_sol_path: str, remote_code_path: str):
+    def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str, remote_code_path: str):
         """
         Copy solution file from local path to remote path and deploy cortx cluster.
         cortx-k8s repo code should be checked out on node at remote_code_path
@@ -236,7 +237,7 @@ class ProvDeployLCLib:
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
         node_obj.execute_cmd(cmd)
 
-    def destroy_cluster(self, node_obj: Node, remote_code_path: str):
+    def destroy_cluster(self, node_obj: LogicalNode, remote_code_path: str):
         """
         Destroy cortx cluster
         param: node_obj: Node object
@@ -258,10 +259,10 @@ class ProvDeployLCLib:
         """
         LOGGER.info("Read solution config file")
         sol_cfg = yaml.safe_load(open(solution_file_path))
-        for node in self.node_list:
+        for node in self.worker_node_list:
             self.prereq_vm(node)
             # TODO: parse system disk and pass to local path prov: UDX-6356
-            self.prereq_local_path_prov(node,"/dev/sdb")
+            self.prereq_local_path_prov(node, "/dev/sdb")
             self.prereq_glusterfs(node)
             self.prereq_3rd_party_srv(node)
 
