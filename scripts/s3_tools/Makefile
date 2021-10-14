@@ -32,6 +32,18 @@ APACHE_J_METER=apache-jmeter-5.4.1.tgz
 VERIFY_SSL='True'
 VALIDATE_CERTS='True'
 
+ifeq ($(VERIFY_SSL),'True')
+   ssl=--ssl
+else
+   ssl=--no-ssl
+endif
+
+ifeq ($(VALIDATE_CERTS),'True')
+   certificate=--check-certificate
+else
+   certificate=--no-check-certificate
+endif
+
 aws-install:
 
 	@echo "### Install awscli. ###"
@@ -66,18 +78,7 @@ s3cmd-configure:
 
 	@echo "###Configure s3cmd in current machine###"
 	rm -rf /root/.s3cfg
-	@if [ $(VERIFY_SSL) = 'True' ]; then\
-		echo "#configuring ssl#";\
-        s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --ssl --dump-config >/root/.s3cfg;\
-    else\
-    	echo "configuring no-ssl";\
-    	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --no-ssl --dump-config >/root/.s3cfg;\
-    fi
-	@if [ $(VERIFY_SSL) = 'True' ]; then\
-		s3cmd --configure --check-certificate >/root/.s3cfg;\
-	else\
-		s3cmd --configure --no-check-certificate >/root/.s3cfg;\
-	fi
+	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt $(ssl) $(certificate) --dump-config >/root/.s3cfg
 	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
 	sed -i 's|^progress_meter =.*|	progress_meter = True|g' /root/.s3cfg
 	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg
@@ -97,10 +98,8 @@ s3fs-install:
 s3fs-configure:
 
 	@echo "###configure s3fs in current machine###"
-	@if [ $(VERIFY_SSL) = 'True' ]; then\
-		@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
-		trust anchor $(CA_CRT)
-	fi
+	@echo "adding /etc/ssl/stx-s3-clients/s3/ca.crt value into /etc/pki/tls/certs/ca-bundle.crt to work with https"
+	trust anchor $(CA_CRT)
 	rm -rf /etc/passwd-s3fs
 	touch /etc/passwd-s3fs
 	chmod -v 600 /etc/passwd-s3fs
