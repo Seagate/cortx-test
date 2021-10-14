@@ -241,7 +241,7 @@ class S3MultipartTestLib(Multipart):
                          object_name: str = None,
                          **kwargs) -> tuple:
         """
-        Upload part of a specific multipart upload.
+        Upload single part of a specific multipart upload.
 
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
