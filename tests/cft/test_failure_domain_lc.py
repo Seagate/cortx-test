@@ -26,8 +26,8 @@ import pytest
 from libs.prov.prov_lc_deploy import ProvDeployLCLib
 
 
-class TestFailureDomain:
-    """Test Failure Domain (EC,Intel ISA) deployment testsuite"""
+class TestFailureDomainLC:
+    """Test Failure Domain LC (EC,Intel ISA) deployment testsuite"""
 
     @classmethod
     def setup_class(cls):
@@ -39,9 +39,13 @@ class TestFailureDomain:
         cls.docker_password = ""
         cls.deploy_lc_obj = ProvDeployLCLib()
 
+    @pytest.mark.run(order=1)
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29485")
     def test_29485(self):
-        # get solution file
+        """
+        Intel ISA  - 3node - SNS- 4+2+0 Deployment
+        """
+        #TODO : Retrieve solution file
         self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.docker_username,
                                                 self.docker_password, self.git_id, self.git_token)
