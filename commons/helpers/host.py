@@ -183,7 +183,6 @@ class AbsHost:
         if exit_status != 0:
             err = stderr.readlines()
             err = [r.strip().strip("\n").strip() for r in err]
-            LOGGER.debug("Stdout: %s",str(stdout.readlines()))
             LOGGER.debug("Error: %s", str(err))
             if exc:
                 if err:

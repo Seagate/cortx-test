@@ -420,7 +420,7 @@ CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
 
 #LC deployment
-CMD_MKFS_EXT4 = "mkfs.ext4 {}"
+CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
 CMD_CURL = "curl -o {} {}"
 #Git commands

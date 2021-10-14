@@ -22,7 +22,6 @@
 Provisioner utiltiy methods for Deployment of Lyve Cloud.
 """
 import logging
-import time
 
 import yaml
 
@@ -37,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 class ProvDeployLCLib:
     """
     This class contains utility methods for all the operations related
-    to Deployment for Lyve Cloud.
+    to k8s based Cortx Deployment .
     """
 
     def __init__(self):
@@ -54,93 +53,42 @@ class ProvDeployLCLib:
             else:
                 self.worker_node_list.append(node_obj)
 
-    def prereq_vm(self, node_obj: LogicalNode):
+    def prereq_vm(self, node_obj: LogicalNode) -> tuple:
         """
         Perform prerequisite check for VM configurations
         param: node_obj : Node object to perform the checks on
         """
-        try:
-            LOGGER.info(
-                "Starting the prerequisite checks on node %s",
-                node_obj.hostname)
-            LOGGER.info("Check that the host is pinging")
-            node_obj.execute_cmd(cmd=
-                                 common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
+        LOGGER.info(
+            "Starting the prerequisite checks on node %s",
+            node_obj.hostname)
+        LOGGER.info("Check that the host is pinging")
+        node_obj.execute_cmd(cmd=
+                             common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
 
-            LOGGER.info("Checking number of disks present")
-            count = node_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
-            LOGGER.info("No. of disks : %s", count[0])
-            if int(count[0]) < self.deploy_cfg["prereq"]["min_disks"]:
-                return False, f"Need at least " \
-                              f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
+        LOGGER.info("Checking number of disks present")
+        count = node_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
+        LOGGER.info("No. of disks : %s", count[0])
+        if int(count[0]) < self.deploy_cfg["prereq"]["min_disks"]:
+            return False, f"Need at least " \
+                          f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
 
-            LOGGER.info("Checking OS release version")
-            resp = node_obj.execute_cmd(cmd=
-                                        common_cmd.CMD_OS_REL,
-                                        read_lines=True)[0].strip()
-            LOGGER.info("OS Release Version: %s", resp)
-            if resp not in self.deploy_cfg["prereq"]["os_release"]:
-                return False, "OS version is different than expected."
+        LOGGER.info("Checking OS release version")
+        resp = node_obj.execute_cmd(cmd=
+                                    common_cmd.CMD_OS_REL,
+                                    read_lines=True)[0].strip()
+        LOGGER.info("OS Release Version: %s", resp)
+        if resp not in self.deploy_cfg["prereq"]["os_release"]:
+            return False, "OS version is different than expected."
 
-            LOGGER.info("Checking kernel version")
-            resp = node_obj.execute_cmd(cmd=
-                                        common_cmd.CMD_KRNL_VER,
-                                        read_lines=True)[0].strip()
-            LOGGER.info("Kernel Version: %s", resp)
-            if resp not in self.deploy_cfg["prereq"]["kernel"]:
-                return False, "Kernel Version is different than expected."
-        except IOError as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployLCLib.prereq_vm.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
+        LOGGER.info("Checking kernel version")
+        resp = node_obj.execute_cmd(cmd=
+                                    common_cmd.CMD_KRNL_VER,
+                                    read_lines=True)[0].strip()
+        LOGGER.info("Kernel Version: %s", resp)
+        if resp not in self.deploy_cfg["prereq"]["kernel"]:
+            return False, "Kernel Version is different than expected."
+
         return True, "Prerequisite VM check successful"
-
-    @staticmethod
-    def make_fs(node_obj: LogicalNode, disk_partition: str, timeout: int = 120):
-        """
-        Create ext4 file system on the disk partition specified.
-        param: node_obj : Node Object
-        param: disk_partition: Disk partition for creating file system.
-        param: timeout : timeout for mkfs command
-        """
-        try:
-            node_obj.connect(shell=True)
-            channel = node_obj.shell_obj
-            output = ""
-            current_output = ""
-            start_time = time.time()
-            cmd = common_cmd.CMD_MKFS_EXT4.format(disk_partition) + "\n"
-            LOGGER.info("Command : %s", cmd)
-            channel.send(cmd)
-            while (time.time() - start_time) < timeout:
-                time.sleep(10)
-                if channel.recv_ready():
-                    current_output = channel.recv(9999).decode("utf-8")
-                    output = output + current_output
-                    LOGGER.info(current_output)
-                if "Proceed anyway" in current_output:
-                    channel.send('y\n')
-                if "Writing superblocks and filesystem accounting information:" in output:
-                    LOGGER.info("mkfs done!!")
-                    break
-            else:
-                LOGGER.info("Timeout: file system creation failed")
-                return False, "file system creation failed"
-        except IOError as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployLCLib.make_fs.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
-        return True, "file system created"
 
     def prereq_local_path_prov(self, node_obj: LogicalNode, disk_partition: str):
         """
@@ -151,20 +99,21 @@ class ProvDeployLCLib:
         LOGGER.info("Create directory for Local Path provisioner")
         node_obj.make_dir(self.deploy_cfg["local_path_prov"])
 
-        LOGGER.info("Validate if any mount point present on the disk,umount it")
+        LOGGER.info("Validate if any mount point present on the disk,unmount it")
         cmd = "lsblk | grep \"{}\" |awk '{{print $7}}'".format(disk_partition)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("resp: %s", resp)
         for mp in resp:
             node_obj.execute_cmd("umount {}".format(mp))
 
-        LOGGER.info("Make file system on the system disk")
-        resp = self.make_fs(node_obj, disk_partition)
-        if not resp[0]:
-            return resp
+        LOGGER.info("mkfs %s", disk_partition)
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4, read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
         LOGGER.info("Mount the file system")
-        node_obj.execute_cmd(
+        resp = node_obj.execute_cmd(
             common_cmd.CMD_MOUNT_EXT4.format(disk_partition, self.deploy_cfg["local_path_prov"]))
+        LOGGER.debug("resp: %s", resp)
 
     def prereq_glusterfs(self, node_obj: LogicalNode):
         """
@@ -176,7 +125,9 @@ class ProvDeployLCLib:
             node_obj.make_dir(each)
 
         LOGGER.info("Install Gluster-fuse package")
-        node_obj.execute_cmd(common_cmd.RPM_INSTALL_CMD.format(self.deploy_cfg["gluster_pkg"]))
+        resp = node_obj.execute_cmd(
+            common_cmd.RPM_INSTALL_CMD.format(self.deploy_cfg["gluster_pkg"]))
+        LOGGER.debug("resp: %s", resp)
 
     def prereq_3rd_party_srv(self, node_obj: LogicalNode):
         """
@@ -196,7 +147,8 @@ class ProvDeployLCLib:
         param: docker_pswd : Docker password
         """
         LOGGER.info("Perform Docker Login")
-        node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
+        resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
+        LOGGER.debug("resp: %s", resp)
 
     def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str):
         """
@@ -206,15 +158,18 @@ class ProvDeployLCLib:
         param: git_token : Git token for accessing cortx-k8s repo.
         """
         LOGGER.info("Delete cortx-k8s repo on node")
-        node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format("cortx-k8s"))
+        resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format("cortx-k8s"))
+        LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git clone cortx-k8s repo")
         url = self.deploy_cfg["git_k8_repo"].format(git_id, git_token)
-        node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
+        resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
+        LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git checkout tag %s", self.deploy_cfg["git_tag"])
         cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(self.deploy_cfg["git_tag"])
-        node_obj.execute_cmd(cmd)
+        resp = node_obj.execute_cmd(cmd)
+        LOGGER.debug("resp: %s", resp)
 
     def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str, remote_code_path: str):
         """
@@ -235,7 +190,8 @@ class ProvDeployLCLib:
 
         LOGGER.info("Deploy Cortx cloud")
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
-        node_obj.execute_cmd(cmd)
+        resp = node_obj.execute_cmd(cmd)
+        LOGGER.debug("resp :%s", resp)
 
     def destroy_cluster(self, node_obj: LogicalNode, remote_code_path: str):
         """
@@ -245,7 +201,8 @@ class ProvDeployLCLib:
         """
         LOGGER.info("Destroy Cortx cloud")
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["destroy_cluster"])
-        node_obj.execute_cmd(cmd)
+        resp = node_obj.execute_cmd(cmd)
+        LOGGER.debug("resp: %s", resp)
 
     def deploy_cortx_cluster(self, solution_file_path,
                              docker_username, docker_password, git_id, git_token):
@@ -260,7 +217,8 @@ class ProvDeployLCLib:
         LOGGER.info("Read solution config file")
         sol_cfg = yaml.safe_load(open(solution_file_path))
         for node in self.worker_node_list:
-            self.prereq_vm(node)
+            resp = self.prereq_vm(node)
+            assert_utils.assert_true(resp[0], resp[1])
             # TODO: parse system disk and pass to local path prov: UDX-6356
             self.prereq_local_path_prov(node, "/dev/sdb")
             self.prereq_glusterfs(node)
@@ -268,6 +226,8 @@ class ProvDeployLCLib:
 
         if self.master_node is None:
             assert_utils.assert_true(False, "No master node assigned")
+
         self.docker_login(self.master_node, docker_username, docker_password)
         self.prereq_git(self.master_node, git_id, git_token)
         self.deploy_cluster(self.master_node, solution_file_path, self.deploy_cfg["git_remote_dir"])
+

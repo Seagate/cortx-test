@@ -21,10 +21,15 @@
 """Failure Domain LC Test Suite."""
 import logging
 import os
+from multiprocessing import Pool
 
 import pytest
-from libs.prov.prov_lc_deploy import ProvDeployLCLib
 
+from commons.utils import system_utils
+from libs.prov.prov_lc_deploy import ProvDeployLCLib
+from commons import commands as common_cmd, pswdmanager
+from commons.utils import assert_utils
+from config import CMN_CFG,HA_CFG
 
 class TestFailureDomainLC:
     """Test Failure Domain LC (EC,Intel ISA) deployment testsuite"""
@@ -35,9 +40,31 @@ class TestFailureDomainLC:
         cls.log = logging.getLogger(__name__)
         cls.git_id = os.getenv("GIT_ID")
         cls.git_token = os.getenv("GIT_PASSWORD")
-        cls.docker_username = ""
-        cls.docker_password = ""
+        #TODO: Update Docker credentials
+        cls.docker_username = os.getenv("DOCKER_USERNAME")
+        cls.docker_password = os.getenv("DOCKER_PASSWORD")
+        cls.vm_username = os.getenv("QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
+        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD", pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
         cls.deploy_lc_obj = ProvDeployLCLib()
+        cls.host_list = []
+        for node in range(len(CMN_CFG["nodes"])):
+            vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
+            cls.host_list.append(vm_name)
+
+    def setup_method(self):
+        """Revert the VM's before starting the deployment tests"""
+        #Assuming the last captured snapshot is after the k8's deployment
+        self.log.info("Reverting all the VM before deployment")
+        with Pool(len(CMN_CFG["nodes"])) as proc_pool:
+            proc_pool.map(self.revert_vm_snapshot, self.host_list)
+
+    def revert_vm_snapshot(self, host):
+        """Revert VM snapshot
+           host: VM name """
+        resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
+            self.vm_username, self.vm_password, host), read_lines=True)
+
+        assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability
