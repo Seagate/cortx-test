@@ -149,3 +149,33 @@ def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_
     LOG.info("S3 IO completed successfully...")
 
     return True, f"S3 IO's completed successfully on {s3_bucket}"
+
+
+def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, num_sample=3):
+    """
+    Upload number of random size objects using simple upload.
+
+    :param s3_obj: s3 object.
+    :param s3_bucket: Name of the s3 bucket.
+    :param dir_path: Directory path where files getting created.
+    :param obj_prefix: Prefix of the s3 object.
+    :param size: size of the object multiple of 1MB.
+    :param num_sample: Number of object getting created.
+    """
+    buckets = s3_obj.bucket_list()[1]
+    if s3_bucket not in buckets:
+        resp = s3_obj.create_bucket(s3_bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+    objects = []
+    for i in range(1, num_sample):
+        fpath = os.path.join(os.getcwd(), f"{obj_prefix}-{i}")
+        resp = system_utils.create_file(fpath, count=size*i)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(system_utils.path_exists(fpath), f"Failed to create path: {fpath}")
+        resp = s3_obj.put_object(s3_bucket, os.path.basename(fpath), fpath)
+        assert_utils.assert_true(resp[0], resp[1])
+        objects.append(os.path.basename(fpath))
+        resp = system_utils.remove_file(fpath)
+        assert_utils.assert_true(resp[0], resp[1])
+
+    return objects
