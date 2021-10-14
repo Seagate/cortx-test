@@ -109,6 +109,7 @@ class TestIAMUserManagement:
         self.object_name = "obj-reset-object-{}".format(perf_counter_ns())
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.auth_file_change = False
+        self.del_iam_user = False
 
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
@@ -141,6 +142,10 @@ class TestIAMUserManagement:
                     self.resources_dict[resource], force=True)
                 assert_utils.assert_true(resp[0], resp[1])
         for acc in self.account_dict:
+            if self.del_iam_user:
+                self.log.info("Deleting IAM user")
+                resp = self.iam_test_obj.delete_user(user_name=self.user_name)
+                assert_utils.assert_true(resp[0], resp[1])
             resp = self.rest_obj.delete_s3_account(acc_name=acc)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
@@ -252,13 +257,11 @@ class TestIAMUserManagement:
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
+        self.del_iam_user = True
         self.log.info("Created iam user with name %s", self.user_name)
         self.log.info("Step 4: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23398_ios")
-        self.log.info("Step 5: Deleting IAM user")
-        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 6:. Check cluster status, all services are running after completing "
+        self.log.info("Step 5:. Check cluster status, all services are running after completing "
                       "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -283,16 +286,14 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
+        self.del_iam_user = True
         self.log.info("Step 4: Verifying list command is able to list all iam users")
         resp = self.iam_test_obj.list_users()
         user_list = [user["UserName"] for user in resp[1] if "iam_user" in user["UserName"]]
         assert_utils.assert_list_item(user_list, self.user_name)
         self.log.info("Step 5. Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23399_ios")
-        self.log.info("Step 6: Deleting IAM user")
-        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 7:. Check cluster status, all services are running after completing "
+        self.log.info("Step 6:. Check cluster status, all services are running after completing "
                       "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -316,6 +317,7 @@ class TestIAMUserManagement:
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
+        self.del_iam_user = True
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
         create_access_key = self.iam_test_obj.create_access_key(self.user_name)
         assert_utils.assert_true(create_access_key[0], create_access_key[1])
@@ -332,10 +334,7 @@ class TestIAMUserManagement:
             user_name=self.user_name,
             access_key_id=create_access_key[1]['AccessKey']['AccessKeyId'])
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 8: Deleting IAM user")
-        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 9:. Check cluster status, all services are running after completing "
+        self.log.info("Step 8: Check cluster status, all services are running after completing "
                       "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -389,6 +388,7 @@ class TestIAMUserManagement:
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
+        self.del_iam_user = True
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
         create_access_key = self.iam_test_obj.create_access_key(self.user_name)
         assert_utils.assert_true(create_access_key[0], create_access_key[1])
@@ -421,10 +421,7 @@ class TestIAMUserManagement:
             resp = self.iam_test_obj.delete_access_key(user_name=self.user_name,
                                                        access_key_id=key)
             assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 10: Deleting IAM user")
-        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 11: Check cluster status, all services are running after completing "
+        self.log.info("Step 10: Check cluster status, all services are running after completing "
                       "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -448,6 +445,7 @@ class TestIAMUserManagement:
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
+        self.del_iam_user = True
 
         self.log.info("Step 4: Creating access key for IAM user %s", self.user_name)
         create_access_key = self.iam_test_obj.create_access_key(self.user_name)
@@ -472,10 +470,7 @@ class TestIAMUserManagement:
 
         self.log.info("Step 8: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23463_ios")
-        self.log.info("Step 9: Deleting IAM user")
-        resp = self.iam_test_obj.delete_user(user_name=self.user_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 10: Check cluster status, all services are running after completing "
+        self.log.info("Step 9: Check cluster status, all services are running after completing "
                       "test.")
         self.check_cluster_health()
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -705,7 +700,6 @@ class TestIAMUserManagement:
                 prop_dict['maxIAMUserLimit'] = "6"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
-        self.auth_file_change = True
         self.log.info("Step 6: Restart s3 authserver")
         status = system_utils.run_remote_cmd(
             cmd="systemctl restart s3authserver",
@@ -769,7 +763,9 @@ class TestIAMUserManagement:
         assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 4: Try creating one s3 account")
         try:
-            resp = self.rest_obj.create_s3_account(self.s3acc_name, self.s3acc_email,
+            self.acc_name = self.s3_user.format(perf_counter_ns())
+            self.email_id = "{}@seagate.com".format(self.acc_name)
+            resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id,
                                                    self.acc_password)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -785,7 +781,6 @@ class TestIAMUserManagement:
             if prop_dict['maxAccountLimit'] == "1":
                 prop_dict['maxAccountLimit'] = "6"
         resp = config_utils.write_properties_file(self.local_path, prop_dict)
-        self.auth_file_change = True
         self.nobj.copy_file_to_remote(local_path=self.local_path, remote_path=self.remote_path)
         self.log.info("Step 6: Restart s3 authserver")
         status = system_utils.run_remote_cmd(
@@ -797,17 +792,18 @@ class TestIAMUserManagement:
         assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 7: Creating 6 s3 accounts with name %s")
         for i in range(6):
-            self.s3acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
-            self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-            resp = self.rest_obj.create_s3_account(self.s3acc_name, self.s3acc_email,
+            self.acc_name = "{0}_{1}_{2}".format("cli_s3_acc", int(perf_counter_ns()), i)
+            self.email_id = "{}@seagate.com".format(self.acc_name)
+            resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id,
                                                    self.acc_password)
             assert_utils.assert_true(resp[0], resp[1])
-            s3_accounts.append(self.s3acc_name)
+            s3_accounts.append(self.acc_name)
         self.log.info("6 s3 accounts creation successful")
         self.log.info("Step 8: Try creating one more s3 account")
         try:
-            self.s3acc_name = "{0}_{1}".format("cli_s3_acc", int(perf_counter_ns()))
-            resp = self.rest_obj.create_s3_account(self.s3acc_name, self.s3acc_email,
+            self.acc_name = "{0}_{1}".format("cli_s3_acc", int(perf_counter_ns()))
+            self.email_id = "{}@seagate.com".format(self.acc_name)
+            resp = self.rest_obj.create_s3_account(self.acc_name, self.email_id,
                                                    self.acc_password)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
