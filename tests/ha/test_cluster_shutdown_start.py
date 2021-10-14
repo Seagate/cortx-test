@@ -30,8 +30,10 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG
+from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.ha.ha_common_libs_k8s import HAK8s
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -77,6 +79,8 @@ class TestClstrShutdownStart:
                                                         username=cls.username[node],
                                                         password=cls.password[node]))
 
+        cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+
     def setup_method(self):
         """
         This function will be invoked prior to each test case.
@@ -84,11 +88,11 @@ class TestClstrShutdownStart:
         LOGGER.info("STARTED: Setup Operations")
         self.restored = True
         LOGGER.info("Checking if the cluster and all Pods online.")
-        LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+        LOGGER.info("Check the status of the pods running in cluster.")
         resp = self.ha_obj.check_pod_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("SAll pods are running.")
-        #TODO: Will need to check cluster health with health helper once available
+        LOGGER.info("All pods are running.")
+        # TODO: Will need to check cluster health with health helper once available
 
     def teardown_method(self):
         """
@@ -97,7 +101,7 @@ class TestClstrShutdownStart:
         LOGGER.info("STARTED: Teardown Operations.")
         if self.restored:
             LOGGER.info("Cleanup: Check cluster status and start it if not up.")
-            #TODO: Will use health helper once available.
+            # TODO: Will use health helper once available.
 
             if self.s3_clean:
                 LOGGER.info("Cleanup: Cleaning created s3 accounts and buckets.")
@@ -174,7 +178,7 @@ class TestClstrShutdownStart:
             "STARTED: Test to verify multipart upload and download with cluster restart")
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object")
-        # TODO
+        resp = self.s3_mp_test_obj.create_multipart_upload()
         LOGGER.info("Step 1: Successfully uploaded 5GB object")
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
