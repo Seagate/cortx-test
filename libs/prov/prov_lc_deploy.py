@@ -171,7 +171,8 @@ class ProvDeployLCLib:
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
-    def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str, remote_code_path: str):
+    def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str,
+                       remote_code_path: str) -> tuple:
         """
         Copy solution file from local path to remote path and deploy cortx cluster.
         cortx-k8s repo code should be checked out on node at remote_code_path
@@ -192,6 +193,7 @@ class ProvDeployLCLib:
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp :%s", resp)
+        return True, "Cluster deployed"
 
     def destroy_cluster(self, node_obj: LogicalNode, remote_code_path: str):
         """
@@ -205,7 +207,7 @@ class ProvDeployLCLib:
         LOGGER.debug("resp: %s", resp)
 
     def deploy_cortx_cluster(self, solution_file_path,
-                             docker_username, docker_password, git_id, git_token):
+                             docker_username, docker_password, git_id, git_token) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
@@ -229,5 +231,6 @@ class ProvDeployLCLib:
 
         self.docker_login(self.master_node, docker_username, docker_password)
         self.prereq_git(self.master_node, git_id, git_token)
-        self.deploy_cluster(self.master_node, solution_file_path, self.deploy_cfg["git_remote_dir"])
-
+        resp = self.deploy_cluster(self.master_node, solution_file_path,
+                                   self.deploy_cfg["git_remote_dir"])
+        return resp
