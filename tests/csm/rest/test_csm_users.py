@@ -646,8 +646,8 @@ class TestCsmUser():
             "Test Purpose 1: Step 1: Logging in as csm user and creating s3 account")
         response = self.s3_accounts.create_s3_account(
             login_as="csm_user_manage")
-        self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verifying response code 201 was returned")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
 
         s3_account_name = response.json()["account_name"]
 
@@ -754,7 +754,7 @@ class TestCsmUser():
             "Step 1: Creating s3 account")
         response = self.s3_accounts.create_s3_account()
         self.log.info("Verifying s3 account was successfully created")
-        assert response.status_code == const.SUCCESS_STATUS
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         s3_account_name = response.json()["account_name"]
         self.log.info(
             "Step 2: Verified s3 account %s was successfully created ", s3_account_name)
