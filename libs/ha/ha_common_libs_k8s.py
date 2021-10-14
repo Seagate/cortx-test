@@ -92,8 +92,8 @@ class HAK8s:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"Unable to get VM power status for {vm_name}")
+                    LOGGER.info(f"Unable to get VM power status for {vm_name}")
+                    return False
                 data = vm_info[1].split("\\n")
                 pw_state = ""
                 for lines in data:
@@ -129,7 +129,8 @@ class HAK8s:
                 common_cmd.CMD_VM_POWER_ON.format(
                     self.vm_username, self.vm_password, vm_name))
             if not resp[0]:
-                raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
+                LOGGER.info("Response for failed VM power on command: %s", resp)
+                return False
         else:
             bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
 
@@ -159,8 +160,8 @@ class HAK8s:
                     common_cmd.CMD_VM_POWER_OFF.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not resp[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"VM power off command not executed")
+                    LOGGER.info("Response for failed VM power off command: %s", resp)
+                    return False
             else:
                 bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "off")
 
@@ -174,31 +175,28 @@ class HAK8s:
         """
         Helper function to check that all Pods are shown online in cortx REST
         :param no_pods: Number of pods in the cluster
-        :rtype: None
+        :return: boolean
         """
         # Future: Right now system health api is not available but will be implemented after M0
-        try:
-            check_rem_pod = ["online" for _ in range(no_pods)]
-            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
-            if not rest_resp[0]:
-                raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
-            LOGGER.info("REST response for pods health status. %s", rest_resp[1])
-        except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.status_pods_online.__name__,
-                         error)
+        check_rem_pod = ["online" for _ in range(no_pods)]
+        rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
+        LOGGER.info("REST response for pods health status. %s", rest_resp[1])
+        if not rest_resp[0]:
+            return False
+        return True
 
     def status_cluster_resource_online(self):
         """
         Check cluster/rack/site/pods are shown online in Cortx REST
-        :return: none
+        :return: boolean
         """
-        LOGGER.info("Check luster/rack/site/pods health status.")
+        LOGGER.info("Check cluster/rack/site/pods health status.")
         resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
+        LOGGER.info("Health status response : %s", resp[1])
         if not resp[0]:
-            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
+            return False
         LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        return True
 
     def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
         """
@@ -209,8 +207,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(
-                self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
