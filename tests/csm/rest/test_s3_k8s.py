@@ -41,7 +41,7 @@ from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils.system_utils import run_remote_cmd
 from config import CMN_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
@@ -77,17 +77,18 @@ class TestS3accountK8s:
         if password is not None:
             ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
         self.log.info(ldap_search_cmd)
-        response = run_remote_cmd(
-            cmd=ldap_search_cmd,
-            hostname=self.host,
-            username=self.uname,
-            password=self.passwd,
-            read_lines=True)
+        #response = run_remote_cmd(
+        #    cmd=ldap_search_cmd,
+        #    hostname=self.host,
+        #    username=self.uname,
+        #    password=self.passwd,
+        #    read_lines=True)
         self.log.info("printing response from ldap function")
-        self.log.info(response)
-        return response
+        #self.log.info(response)
+        return ldap_search_cmd
 
     def get_cluster_ip(self, resp1):
+        """Fetch openldap service ip"""
         self.log.info("extract cluster ip")
         data = str(resp1, 'UTF-8')
         data = data.split("\n")
@@ -165,10 +166,10 @@ class TestS3accountK8s:
     def test_28934(self):
         """This test validates the presence of password in ldapsearch output"""
         #S3 account creation could not be executed due to setup issue
-        self.log.info("Step 1: Create s3account s3acc.")
-        resp = self.s3_rest_obj.create_s3_account(
-           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        assert_utils.assert_true(resp[0], resp)
+        #self.log.info("Step 1: Create s3account s3acc.")
+        #resp = self.s3_rest_obj.create_s3_account(
+        #   self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
+        #assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
@@ -179,7 +180,7 @@ class TestS3accountK8s:
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         stream = open(self.local_path, 'r')
-        data = yaml.safe_load(stream, Loader=yaml.FullLoader)
+        data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         self.log.info(secret)
@@ -188,22 +189,22 @@ class TestS3accountK8s:
         admin_passwd = self._decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
         #Follwing command takes too long to execute
-        login_ldap_pod = "kubectl exec -it symas-openldap-pod -- /bin/bash"
-        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
-                                        read_lines=False,
-                                        exc=False)
-        self.log.info(resp_node)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
-        self.log.info("printing response and type")
+        self.log.info(type(result))
+        ldap_cmd = "kubectl exec -it symas-openldap-pod -- /bin/bash -c "
+        login_ldap_pod = ldap_cmd + '"{}"'.format(result)
+        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
+                                        read_lines=False,
+                                        exc=False)
+        resp_str = resp_node.decode('UTF-8')
+        self.log.info(resp_str)
         self.log.info("Step 4: Search for s3 account password in output")
-        for resp in result:
-            if "password" in resp:
-                self.log.info("password is present")
-            else:
-                self.log.info("password is not present")
-                self.log.info("Test passed")
+        if "password" in resp_str:
+           self.log.info("password present")
+        else:
+           self.log.info("password not present")
         self.log.info("##############Test Passed##############")
 
     @pytest.mark.parallel
@@ -213,10 +214,10 @@ class TestS3accountK8s:
     def test_28935(self):
         """This test validates the presence of secret key in ldapsearch output"""
         #S3 account creation could not be executed due to setup issue
-        self.log.info("Step 1: Create s3account s3acc.")
-        resp = self.s3_rest_obj.create_s3_account(
-           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        assert_utils.assert_true(resp[0], resp)
+        #self.log.info("Step 1: Create s3account s3acc.")
+        #resp = self.s3_rest_obj.create_s3_account(
+        #   self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
+        #assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
@@ -227,7 +228,7 @@ class TestS3accountK8s:
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         stream = open(self.local_path, 'r')
-        data = yaml.safe_load(stream, Loader=yaml.FullLoader)
+        data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         self.log.info(secret)
@@ -236,23 +237,24 @@ class TestS3accountK8s:
         admin_passwd = self._decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
         #Follwing command takes too long to execute
-        login_ldap_pod = "kubectl exec -it symas-openldap-pod -- /bin/bash"
-        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
-                                        read_lines=False,
-                                        exc=False)
-        self.log.info(resp_node)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
-        self.log.info("printing response and type")
-        self.log.info("Step 4: Search for s3 account password in output")
-        for resp in result:
-            if "secret_key "in resp:
-                self.log.info("secret key is present")
-            else:
-                self.log.info("secret key is not present")
-                self.log.info("Test passed")
+        self.log.info(type(result))
+        ldap_cmd = "kubectl exec -it symas-openldap-pod -- /bin/bash -c "
+        login_ldap_pod = ldap_cmd + '"{}"'.format(result)
+        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
+                                        read_lines=False,
+                                        exc=False)
+        resp_str = resp_node.decode('UTF-8')
+        self.log.info(resp_str)
+        self.log.info("Step 4: Search for s3 secret key in output")
+        if "secret_key" in resp_str:
+           self.log.info("secret key present")
+        else:
+           self.log.info("secret key not present")
         self.log.info("##############Test Passed##############")
+
 
 class CipherInvalidToken(Exception):
     """
