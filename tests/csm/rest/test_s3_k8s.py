@@ -38,7 +38,6 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from commons import constants as cons
 from commons.helpers.node_helper import Node
-from commons.utils import assert_utils
 from commons.utils.system_utils import run_remote_cmd
 from config import CMN_CFG
 from config.s3 import S3_CFG
@@ -48,10 +47,11 @@ CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
 class TestS3accountK8s:
     """S3 user test class"""
+    
     @classmethod
-    def setup_method(self):
+    def setup_class(self):
         """
-        Function will be invoked test before and after yield part each test case execution.
+        Setup all the states required for execution of this test suit.
         """
         self.log = logging.getLogger(__name__)
         self.config = configparser.ConfigParser()
@@ -66,25 +66,18 @@ class TestS3accountK8s:
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.remote_path = cons.CLUSTER_CONF_PATH
         self.local_path = cons.LOCAL_CONF_PATH
-
+    
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
         if ip_addr is not None:
-            ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
+           ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
         if user_name is not None:
-            ldap_search_cmd = ldap_search_cmd + " -D \"cn={0},dc=seagate,dc=com\"".format(user_name)
+           ldap_search_cmd = ldap_search_cmd + " -D \"cn={0},dc=seagate,dc=com\"".format(user_name)
         if password is not None:
-            ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
+           ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
         self.log.info(ldap_search_cmd)
-        #response = run_remote_cmd(
-        #    cmd=ldap_search_cmd,
-        #    hostname=self.host,
-        #    username=self.uname,
-        #    password=self.passwd,
-        #    read_lines=True)
         self.log.info("printing response from ldap function")
-        #self.log.info(response)
         return ldap_search_cmd
 
     def get_cluster_ip(self, resp1):
@@ -99,6 +92,7 @@ class TestS3accountK8s:
                 res = res.split()[2]
                 self.log.info(res)
                 return res
+            return None
 
     def decrypt(self, key: bytes, data: bytes) -> bytes:
         """
@@ -107,8 +101,8 @@ class TestS3accountK8s:
 
         try:
             decrypted = Fernet(key).decrypt(data)
-        except (InvalidSignature, InvalidToken):
-            raise CipherInvalidToken(f'Decryption failed')
+        except (InvalidSignature, InvalidToken) as Invalid_exception:
+            raise CipherInvalidToken("Decryption failed") from Invalid_exception
         return decrypted
 
     def gen_key(self, str1: str, str2: str, *strs):
@@ -133,8 +127,8 @@ class TestS3accountK8s:
             getkey_cmd = f'{CORTXSEC_CMD} {args}'
             try:
                 resp = subprocess.check_output(getkey_cmd.split(), stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                raise Exception(f'Command "{getkey_cmd}" failed with the output: {e.output}') from e
+            except subprocess.CalledProcessError as process_error:
+                raise Exception('Command "{getkey_cmd}" failed') from process_error
             return resp
         else:
             generate = self.gen_key(str1, str2, *strs)
@@ -147,16 +141,15 @@ class TestS3accountK8s:
         self.log.info("Fetching LDAP root user password from Conf Store.")
         try:
             cipher_key = self.generate_key(cluster_id,decryption_key)
-        except Exception as e:
-            self.log.error("Failed to Fetch keys from Conf store with %s", e)
+        except Exception as fetch_key_exception:
+            self.log.error("Failed to Fetch keys from Conf store with %s", fetch_key_exception)
             return None
         try:
             ldap_root_decrypted_value = self.decrypt(cipher_key,
                                                 secret.encode("utf-8"))
             return ldap_root_decrypted_value.decode('utf-8')
-        except CipherInvalidToken as error:
-            self.log.error("Decryption for LDAP root user password Failed with %s", error)
-            raise CipherInvalidToken(f"Decryption for LDAP root user password Failed. {error}")
+        except CipherInvalidToken as invalid_exception:
+            raise CipherInvalidToken("Decryption failed for ldap root password") from invalid_exception
 
 
     @pytest.mark.parallel
@@ -166,10 +159,10 @@ class TestS3accountK8s:
     def test_28934(self):
         """This test validates the presence of password in ldapsearch output"""
         #S3 account creation could not be executed due to setup issue
-        #self.log.info("Step 1: Create s3account s3acc.")
-        #resp = self.s3_rest_obj.create_s3_account(
-        #   self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        #assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 1: Create s3account s3acc.")
+        resp = self.s3_rest_obj.create_s3_account(
+           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
+        assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
@@ -188,7 +181,6 @@ class TestS3accountK8s:
         self.log.info(cluster_id)
         admin_passwd = self._decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
-        #Follwing command takes too long to execute
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
@@ -202,9 +194,9 @@ class TestS3accountK8s:
         self.log.info(resp_str)
         self.log.info("Step 4: Search for s3 account password in output")
         if "password" in resp_str:
-           self.log.info("password present")
+            self.log.info("password present")
         else:
-           self.log.info("password not present")
+            self.log.info("password not present")
         self.log.info("##############Test Passed##############")
 
     @pytest.mark.parallel
@@ -214,10 +206,10 @@ class TestS3accountK8s:
     def test_28935(self):
         """This test validates the presence of secret key in ldapsearch output"""
         #S3 account creation could not be executed due to setup issue
-        #self.log.info("Step 1: Create s3account s3acc.")
-        #resp = self.s3_rest_obj.create_s3_account(
-        #   self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        #assert_utils.assert_true(resp[0], resp)
+        self.log.info("Step 1: Create s3account s3acc.")
+        resp = self.s3_rest_obj.create_s3_account(
+           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
+        assert_utils.assert_true(resp[0], resp)
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
@@ -236,7 +228,6 @@ class TestS3accountK8s:
         self.log.info(cluster_id)
         admin_passwd = self._decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
-        #Follwing command takes too long to execute
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
@@ -250,9 +241,9 @@ class TestS3accountK8s:
         self.log.info(resp_str)
         self.log.info("Step 4: Search for s3 secret key in output")
         if "secret_key" in resp_str:
-           self.log.info("secret key present")
+            self.log.info("secret key present")
         else:
-           self.log.info("secret key not present")
+            self.log.info("secret key not present")
         self.log.info("##############Test Passed##############")
 
 
@@ -260,4 +251,3 @@ class CipherInvalidToken(Exception):
     """
     Wrapper around actual implementation's decryption exceptions
     """
-    pass
