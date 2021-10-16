@@ -22,6 +22,7 @@
 
 import os
 import logging
+import time
 from multiprocessing import Process
 from time import perf_counter_ns
 
@@ -37,6 +38,7 @@ from scripts.s3_bench import s3bench
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_common_test_lib import s3_ios
+from libs.s3.s3_common_test_lib import get_cortx_capacity
 from libs.s3.s3_common_test_lib import upload_random_size_objects
 from libs.s3.s3_common_test_lib import create_s3_account_get_s3objects
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -122,6 +124,7 @@ class TestMultipartUploadDelete:
         """
         self.log.info("STARTED: Abort multipart upload completed object with size 5TB and max parts"
                       " 10000 and then delete that object")
+        cortx_capacity1 = get_cortx_capacity()
         self.log.info("Step 1: Create bucket.")
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -171,7 +174,9 @@ class TestMultipartUploadDelete:
         assert_utils.assert_not_in(self.object_name, resp[1],
                                    f"Failed to delete object {self.object_name}")
         self.log.info("Step 10: Check the space reclaim after 6 hrs.")
-        # TODO: Logic to check space reclaimed.
+        time.sleep(3600*6)
+        cortx_capacity2 = get_cortx_capacity()
+        assert cortx_capacity1[-1] <= cortx_capacity2[-1], "Space not reclaimed."
         self.log.info("ENDED: Abort multipart upload completed object with size 5TB and max parts"
                       " 10000 and then delete that object")
 
@@ -361,6 +366,7 @@ class TestMultipartUploadDelete:
         Check Space reclaim after Deleting an object 1hr.
         """
         self.log.info("STARTED: Check Space reclaim after Deleting an object 1hr.")
+        cortx_capacity1 = get_cortx_capacity()
         self.log.info("Step 1: Create bucket.")
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -400,5 +406,7 @@ class TestMultipartUploadDelete:
         resp = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 7: Check space reclaim after 1hr.")
-        # TODO: Logic to check space reclaimed.
+        time.sleep(3600)
+        cortx_capacity2 = get_cortx_capacity()
+        assert cortx_capacity1[-1] <= cortx_capacity2[-1], "Space not reclaimed."
         self.log.info("ENDED: Check Space reclaim after Deleting an object 1hr.")

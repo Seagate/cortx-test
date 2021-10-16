@@ -73,6 +73,20 @@ def get_ldap_creds() -> tuple:
     return resp
 
 
+def get_cortx_capacity() -> tuple:
+    """Get the cortx capacity stat."""
+    nodes = CMN_CFG["nodes"]
+    hostname = nodes[0]['hostname']
+    username = nodes[0]['username']
+    password = nodes[0]['password']
+    health = Health(hostname=hostname,
+                    username=username,
+                    password=password)
+    total, avail, used = health.get_sys_capacity()
+
+    return total, avail, used
+
+
 def create_s3_acc(
         account_name: str = None,
         email_id: str = None,
