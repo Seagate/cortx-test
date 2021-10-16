@@ -38,7 +38,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from commons import constants as cons
 from commons.helpers.node_helper import Node
-from commons.utils.system_utils import run_remote_cmd
+from commons.utils import assert_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -47,7 +47,6 @@ CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
 class TestS3accountK8s:
     """S3 user test class"""
-    
     @classmethod
     def setup_class(self):
         """
@@ -71,11 +70,11 @@ class TestS3accountK8s:
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
         if ip_addr is not None:
-           ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
+            ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
         if user_name is not None:
-           ldap_search_cmd = ldap_search_cmd + " -D \"cn={0},dc=seagate,dc=com\"".format(user_name)
+            ldap_search_cmd = ldap_search_cmd + " -D \"cn={0},dc=seagate,dc=com\"".format(user_name)
         if password is not None:
-           ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
+            ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
         self.log.info(ldap_search_cmd)
         self.log.info("printing response from ldap function")
         return ldap_search_cmd
@@ -93,7 +92,8 @@ class TestS3accountK8s:
                 self.log.info(res)
                 return res
             return None
-
+    
+    @staticmethod
     def decrypt(self, key: bytes, data: bytes) -> bytes:
         """
         Performs a symmetric decryption of the provided data with the provided key
@@ -101,8 +101,8 @@ class TestS3accountK8s:
 
         try:
             decrypted = Fernet(key).decrypt(data)
-        except (InvalidSignature, InvalidToken) as Invalid_exception:
-            raise CipherInvalidToken("Decryption failed") from Invalid_exception
+        except (InvalidSignature, InvalidToken) as invalid_exception:
+            raise CipherInvalidToken("Decryption failed") from invalid_exception
         return decrypted
 
     def gen_key(self, str1: str, str2: str, *strs):
@@ -118,6 +118,7 @@ class TestS3accountK8s:
         key = urlsafe_b64encode(kdf.derive(passwd.encode('utf-8')))
         return key
 
+    @staticmethod
     def generate_key(self, str1: str, str2: str, *strs) -> bytes:
         """
         Function will be invoked by decrypt key function.
@@ -141,15 +142,15 @@ class TestS3accountK8s:
         self.log.info("Fetching LDAP root user password from Conf Store.")
         try:
             cipher_key = self.generate_key(cluster_id,decryption_key)
-        except Exception as fetch_key_exception:
-            self.log.error("Failed to Fetch keys from Conf store with %s", fetch_key_exception)
+        except Exception as key_except:
+            self.log.error("Failed to Fetch keys from Conf store with %s", key_except)
             return None
         try:
             ldap_root_decrypted_value = self.decrypt(cipher_key,
                                                 secret.encode("utf-8"))
             return ldap_root_decrypted_value.decode('utf-8')
         except CipherInvalidToken as invalid_exception:
-            raise CipherInvalidToken("Decryption failed for ldap root password") from invalid_exception
+            raise CipherInvalidToken("Decryption failed for password") from invalid_exception
 
 
     @pytest.mark.parallel
