@@ -22,6 +22,7 @@
 
 import os
 import logging
+from multiprocessing import Process
 from time import perf_counter_ns
 
 import pytest
@@ -32,8 +33,10 @@ from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.utils import s3_utils
 from config import S3_CFG
+from scripts.s3_bench import s3bench
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_common_test_lib import s3_ios
 from libs.s3.s3_common_test_lib import upload_random_size_objects
 from libs.s3.s3_common_test_lib import create_s3_account_get_s3objects
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -51,6 +54,7 @@ class TestMultipartUploadDelete:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "s3-bkt-{}".format(perf_counter_ns())
+        self.io_bucket_name = "io-bkt-reset-{}".format(perf_counter_ns())
         self.object_name = "s3-upload-obj-{}".format(perf_counter_ns())
         self.acc_name = "s3-acc-{}"
         self.acc_mail = "{}@seagate.com"
@@ -81,6 +85,30 @@ class TestMultipartUploadDelete:
             assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("ENDED: Teardown operations")
+
+    def start_stop_validate_parallel_s3ios(
+            self, ios=None, log_prefix=None, duration="0h1m"):
+        """Start/stop parallel s3 io's and validate io's worked successfully."""
+        if ios == "Start":
+            self.parallel_ios = Process(
+                target=s3_ios, args=(
+                    self.io_bucket_name, log_prefix, duration))
+            if not self.parallel_ios.is_alive():
+                self.parallel_ios.start()
+            self.log.info("Parallel IOs started: %s for duration: %s",
+                          self.parallel_ios.is_alive(), duration)
+        if ios == "Stop":
+            if self.parallel_ios.is_alive():
+                resp = self.s3_test_obj.object_list(self.io_bucket_name)
+                self.log.info(resp)
+                self.parallel_ios.join()
+                self.log.info(
+                    "Parallel IOs stopped: %s",
+                    not self.parallel_ios.is_alive())
+            if log_prefix:
+                resp = system_utils.validate_s3bench_parallel_execution(
+                    s3bench.LOG_DIR, log_prefix)
+                assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29163')
@@ -159,6 +187,9 @@ class TestMultipartUploadDelete:
         """
         self.log.info("STARTED: Initiate multipart and try to delete the object before even "
                       "uploading parts to it, Then upload parts and complete multipart upload.")
+        self.log.info("Start S3 IO.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="TEST-29169_s3bench_ios", duration="0h1m")
         self.log.info("Step 1: Create bucket.")
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -195,6 +226,9 @@ class TestMultipartUploadDelete:
         resp = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, resp[1],
                                    f"Failed to delete object {self.object_name}")
+        self.log.info("Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Stop", log_prefix="TEST-29169_s3bench_ios")
         self.log.info("ENDED: Initiate multipart and try to delete the object before even "
                       "uploading parts to it, Then upload parts and complete multipart upload.")
 
@@ -209,6 +243,8 @@ class TestMultipartUploadDelete:
         """
         self.log.info("STARTED: Delete multiple objects in bucket which are uploaded and not"
                       " uploaded completely.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="TEST-29171_s3bench_ios", duration="0h1m")
         self.log.info("Step 1: Create bucket.")
         res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
@@ -253,6 +289,9 @@ class TestMultipartUploadDelete:
         resp = self.s3_test_obj.object_list(self.bucket_name)[1]
         resp = self.s3_test_obj.delete_multiple_objects(self.bucket_name, resp[1])
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Stop", log_prefix="TEST-29171_s3bench_ios")
         self.log.info("ENDED: Delete multiple objects in bucket which are uploaded and not"
                       " uploaded completely.")
 
@@ -268,6 +307,8 @@ class TestMultipartUploadDelete:
         """
         self.log.info("STARTED: Upload object2 in bucket1 of accnt1 from accnt 2 and try to delete"
                       " object from both accnt1 and accnt2.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="TEST-29172_s3bench_ios", duration="0h1m")
         self.log.info("Step 1: Multipart upload an object1 in bucket1 from accnt1")
         acc_resp1 = create_s3_account_get_s3objects(self.acc_name.format(perf_counter_ns()),
                                                     self.acc_mail.format(self.acc_name),
@@ -304,6 +345,9 @@ class TestMultipartUploadDelete:
         self.log.info("Step 7: DeleteObjects from accnt2.")
         resp = acc_resp2[1].delete_object(self.bucket_name, f"{self.object_name}-{1}")
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 7: Stop S3 IO & Validate logs.")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Stop", log_prefix="TEST-29172_s3bench_ios")
         self.log.info("ENDED: Upload object2 in bucket1 of accnt1 from accnt 2 and try to delete"
                       " object from both accnt1 and accnt2.")
 

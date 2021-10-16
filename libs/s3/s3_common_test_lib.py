@@ -27,11 +27,13 @@ from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
+from scripts.s3_bench import s3bench
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
+from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3 import s3_bucket_policy_test_lib
@@ -217,3 +219,41 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
         assert_utils.assert_true(resp[0], resp[1])
 
     return objects
+
+
+def s3_ios(
+           bucket=None,
+           log_file_prefix="parallel_io",
+           duration="0h1m",
+           obj_size="24Kb",
+           **kwargs):
+    """
+    Perform io's for specific durations.
+
+    1. Create bucket.
+    2. perform io's for specified durations.
+    3. Check executions successful.
+    """
+    kwargs.setdefault("num_clients", 2)
+    kwargs.setdefault("num_sample", 5)
+    kwargs.setdefault("obj_name_pref", "load_gen_")
+    kwargs.setdefault("end_point", S3_CFG["s3_url"])
+    LOG.info("STARTED: s3 io's operations.")
+    access_key, secret_key = S3H_OBJ.get_local_keys()
+    resp = s3bench.s3bench(
+        access_key,
+        secret_key,
+        bucket=bucket,
+        end_point=kwargs["end_point"],
+        num_clients=kwargs["num_clients"],
+        num_sample=kwargs["num_sample"],
+        obj_name_pref=kwargs["obj_name_pref"],
+        obj_size=obj_size,
+        duration=duration,
+        log_file_prefix=log_file_prefix)
+    LOG.info(resp)
+    assert_utils.assert_true(
+        os.path.exists(
+            resp[1]),
+        f"failed to generate log: {resp[1]}")
+    LOG.info("ENDED: s3 io's operations.")
