@@ -139,15 +139,9 @@ class TestMultipartUploadDelete:
         assert_utils.assert_true(resp[0], resp[1])
         Put_Etag = s3_utils.calc_etag(self.file_path)
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=10000, random=True)
-        parts = []
-        for part_number in chunks:
-            self.log.info("Uploading part: %s", part_number)
-            resp = self.s3_mp_test_obj.upload_multipart(chunks[part_number][0], self.bucket_name,
-                                                        self.object_name, upload_id=mpu_id,
-                                                        part_number=part_number,
-                                                        content_md5=chunks[part_number][1])
-            assert_utils.assert_true(resp[0], resp[1])
-            parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+        status, parts = self.s3_mp_test_obj.upload_parts_sequential(
+            mpu_id, self.bucket_name, self.object_name, chunks=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         for _ in range(10):
             res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -211,15 +205,9 @@ class TestMultipartUploadDelete:
         resp = system_utils.create_file(self.file_path, count=1, b_size="6GB")
         assert_utils.assert_true(resp[0], resp[1])
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=10, random=True)
-        parts = []
-        for part_number in chunks:
-            self.log.info("Uploading part: %s", part_number)
-            resp = self.s3_mp_test_obj.upload_multipart(chunks[part_number][0], self.bucket_name,
-                                                        self.object_name, upload_id=mpu_id,
-                                                        part_number=part_number,
-                                                        content_md5=chunks[part_number][1])
-            assert_utils.assert_true(resp[0], resp[1])
-            parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+        status, parts = self.s3_mp_test_obj.upload_parts_sequential(
+            mpu_id, self.bucket_name, self.object_name, chunks=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
         self.log.info("Step 5: Do ListParts to see the parts uploaded.")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -266,15 +254,9 @@ class TestMultipartUploadDelete:
         resp = system_utils.create_file(self.file_path, count=1, b_size="6GB")
         assert_utils.assert_true(resp[0], resp[1])
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=10, random=True)
-        parts = []
-        for part_number in chunks:
-            self.log.info("Uploading part: %s", part_number)
-            resp = self.s3_mp_test_obj.upload_multipart(chunks[part_number][0], self.bucket_name,
-                                                        self.object_name, upload_id=mpu_id,
-                                                        part_number=part_number,
-                                                        content_md5=chunks[part_number][1])
-            assert_utils.assert_true(resp[0], resp[1])
-            parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+        status, parts = self.s3_mp_test_obj.upload_parts_sequential(
+            mpu_id, self.bucket_name, self.object_name, chunks=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
         self.log.info("Step 5: Do ListParts to see the parts uploaded.")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -381,15 +363,9 @@ class TestMultipartUploadDelete:
         assert_utils.assert_true(resp[0], resp[1])
         Put_Etag = s3_utils.calc_etag(self.file_path)
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=20, random=True)
-        parts = []
-        for part_number in chunks:
-            self.log.info("Uploading part: %s", part_number)
-            resp = self.s3_mp_test_obj.upload_multipart(chunks[part_number][0], self.bucket_name,
-                                                        self.object_name, upload_id=mpu_id,
-                                                        part_number=part_number,
-                                                        content_md5=chunks[part_number][1])
-            assert_utils.assert_true(resp[0], resp[1])
-            parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+        status, parts = self.s3_mp_test_obj.upload_parts_sequential(
+            mpu_id, self.bucket_name, self.object_name, chunks=chunks)
+        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
