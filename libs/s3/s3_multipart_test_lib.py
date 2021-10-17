@@ -235,6 +235,37 @@ class S3MultipartTestLib(Multipart):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    def upload_parts_sequential(self,
+                                upload_id: int = None,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                **kwargs) -> tuple:
+        """
+        Upload parts for a specific multipart upload ID in sequential.
+
+        :param upload_id: Multipart Upload ID.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        # :param chunks: No. of parts to be uploaded with details.
+        :return: (Boolean, List of uploaded parts).
+        """
+        try:
+            chunks = kwargs.get("chunks", None)
+            parts = []
+            for part_number in chunks:
+                LOGGER.info("Uploading part: %s", part_number)
+                resp = self.upload_multipart(chunks[part_number][0], bucket_name, object_name,
+                                             upload_id=upload_id, part_number=part_number,
+                                             content_md5=chunks[part_number][1])
+                parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+
+            return True, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_parts_sequential.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
     def upload_multipart(self,
                          body: str = None,
                          bucket_name: str = None,
