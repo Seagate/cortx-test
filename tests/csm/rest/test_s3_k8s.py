@@ -52,9 +52,9 @@ class TestS3accountK8s:
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
-        cls.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
+        cls.nd_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
         cls.s3acc_name = "{}_{}".format("cli_s3_acc", int(time.perf_counter_ns()))
-        cls.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
+        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
         cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
@@ -82,6 +82,7 @@ class TestS3accountK8s:
         for line in data:
             if "openldap-svc" in line:
                 line_found = line
+                self.log.info(line_found)
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[2]
                 self.log.info(res)
@@ -162,7 +163,7 @@ class TestS3accountK8s:
         self.log.info(secret)
         cluster_id = data["cluster"]["id"]
         self.log.info(cluster_id)
-        admin_passwd = Cipher._decrypt_secret(secret,cluster_id,"cortx")
+        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
