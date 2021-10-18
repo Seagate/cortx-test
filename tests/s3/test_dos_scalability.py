@@ -102,11 +102,6 @@ class TestDosScalability:
         if pref_list:
             self.s3_obj.delete_multiple_buckets(pref_list)
         self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting files created during execution")
-        for file in self.log_file:
-            if os.path.exists(file):
-                remove_file(file)
-        self.log.info("Created files deleted")
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3_ops
@@ -351,6 +346,7 @@ class TestDosScalability:
         self.log.info("ENDED: Test growing S3 operations using s3bench from 1000 to 1500 then "
                       "back to 1000 then to 1500 again")
 
+    @pytest.mark.skip("Need to validate on HW")
     @pytest.mark.s3_ops
     @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-8725')
