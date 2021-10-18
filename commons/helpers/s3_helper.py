@@ -24,16 +24,16 @@ s3 helper to have s3 services related classes & methods.
 Note: S3 helper is singleton so please import it's object from libs.s3 __init__
  as 'from libs.s3 import S3H_OBJ'.
 """
-
+import json
+import logging
 import os
 import re
 import time
-import logging
-
 from configparser import NoSectionError
 from paramiko.ssh_exception import SSHException
 from commons import commands
-from commons.constants import const
+from commons import constants as const
+from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import config_utils
 from commons.utils.system_utils import run_local_cmd
@@ -97,36 +97,11 @@ class S3Helper:
 
         return status
 
-    def configure_s3fs(
-            self,
-            access: str = None,
-            secret: str = None,
-            path: str = None) -> bool:
-        """
-        Function to configure access and secret keys for s3fs.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: s3fs config file.
-        :return: True if s3fs configured else False.
-        """
-        path = path if path else self.s3_cfg["s3fs_path"]
-        status, resp = run_local_cmd("s3fs --version")
-        LOGGER.info(resp)
-        if status:
-            with open(path, "w+") as f_write:
-                f_write.write(f"{access}:{secret}")
-        else:
-            LOGGER.warning("S3fs is not present, please install it and then run the configuration.")
-
-        return status
-
     def check_s3services_online(self, host: str = None,
                                 user: str = None,
                                 pwd: str = None) -> tuple:
         """
-        Check whether all s3server services are online.
-
+        Check whether all s3server services are online using hctl status
         :param host: IP of the host.
         :param user: user name of the host.
         :param pwd: password for the user.
@@ -155,8 +130,8 @@ class S3Helper:
                         return False, service
                 return status, output
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                LOGGER.critical("Product family: LC")
-                # TODO: Add LC related calls
+                health = Health(hostname=host, username=user, password=pwd)
+                return health.hctl_status_service_status(service_name="s3server")
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.check_s3services_online.__name__, str(error))
@@ -167,7 +142,7 @@ class S3Helper:
                                     user: str = None,
                                     pwd: str = None) -> tuple:
         """
-        Execute command to get status any system service at remote s3 server.
+        Execute command to get status any system service at remote s3 server using systemctl status
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -207,7 +182,7 @@ class S3Helper:
                                user: str = None,
                                pwd: str = None) -> tuple:
         """
-        Execute command to start any system service at remote s3 server.
+        Execute command to start any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -247,7 +222,7 @@ class S3Helper:
                               user: str = None,
                               pwd: str = None) -> tuple:
         """
-        Execute command to stop any system service at remote s3 server.
+        Execute command to stop any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -284,7 +259,7 @@ class S3Helper:
                                  user: str = None,
                                  pwd: str = None) -> tuple:
         """
-        Execute command to restart any system service at remote s3 server.
+        Execute command to restart any system service at remote s3 server using systemctl command.
 
         :param service: Name of the service.
         :param host: IP of the host.
@@ -311,6 +286,7 @@ class S3Helper:
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
+                return True, None
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.restart_s3server_service.__name__, error)
@@ -322,7 +298,7 @@ class S3Helper:
                                    pwd: str = None,
                                    wait_time: int = 20) -> tuple:
         """
-        Restart all s3server processes using hctl command.
+        Restart all s3server processes using systemctl restart command.
 
         :param host: IP of the host.
         :param user: user name of the host.
@@ -485,7 +461,7 @@ class S3Helper:
                           user: str = None,
                           pwd: str = None) -> tuple:
         """
-        Get fid's of all s3server processes.
+        Get fid's of all s3server processes using hctl command.
 
         :param host: IP of the host.
         :param user: user name of the host.
@@ -510,8 +486,8 @@ class S3Helper:
 
                 return status, fids
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-                LOGGER.critical("Product family: LC")
-                # TODO: Add LC related calls
+                health = Health(hostname=host, username=user, password=pwd)
+                return health.hctl_status_get_service_fids(service_name="s3server")
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.get_s3server_fids.__name__, error)
@@ -655,37 +631,11 @@ class S3Helper:
             elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
                 LOGGER.critical("Product family: LC")
                 # TODO: Add LC related calls
+                return True, None
         except (SSHException, OSError) as error:
             LOGGER.error(
                 "Error in %s: %s", S3Helper.enable_disable_s3server_instances.__name__, error)
             return False, error
-
-    def configure_minio(
-            self,
-            access: str = None,
-            secret: str = None,
-            path: str = None) -> bool:
-        """
-        Function to configure minio creds in config.json file.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: path to minio cfg file.
-        :return: True/False.
-        """
-        path = path if path else self.s3_cfg["minio_path"]
-        res = False
-        if os.path.exists(path):
-            data = config_utils.read_content_json(path, mode='rb')
-            data["hosts"]["s3"]["accessKey"] = access
-            data["hosts"]["s3"]["secretKey"] = secret
-            res = config_utils.create_content_json(
-                path=path, data=data, ensure_ascii=False)
-        else:
-            LOGGER.warning(
-                "Minio is not installed please install and then run the configuration.")
-
-        return os.path.isfile(path) and res
 
     def get_local_keys(
             self,

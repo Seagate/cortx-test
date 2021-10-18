@@ -101,6 +101,8 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5651")
     @CTFailOn(error_handler)
     def test_2805(self):
@@ -133,6 +135,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5650")
     @CTFailOn(error_handler)
     def test_2806(self):
@@ -165,6 +168,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5652")
     @CTFailOn(error_handler)
     def test_2807(self):
@@ -219,6 +223,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5645")
     @CTFailOn(error_handler)
     def test_2808(self):
@@ -258,6 +263,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5644")
     @CTFailOn(error_handler)
     def test_2809(self):
@@ -298,6 +304,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5643")
     @CTFailOn(error_handler)
     def test_2810(self):
@@ -320,6 +327,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5642")
     @CTFailOn(error_handler)
     def test_2811(self):
@@ -344,6 +352,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5649")
     @CTFailOn(error_handler)
     def test_2812(self):
@@ -363,6 +372,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5648")
     @CTFailOn(error_handler)
     def test_2813(self):
@@ -382,6 +392,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5641")
     @CTFailOn(error_handler)
     def test_2814(self):
@@ -423,6 +434,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5646")
     @CTFailOn(error_handler)
     def test_2815(self):
@@ -464,6 +476,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5647")
     @CTFailOn(error_handler)
     def test_2816(self):
@@ -525,6 +538,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5629")
     @CTFailOn(error_handler)
     def test_2829(self):
@@ -554,6 +568,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5628")
     @CTFailOn(error_handler)
     def test_2830(self):
@@ -575,6 +590,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5627")
     @CTFailOn(error_handler)
     def test_2831(self):
@@ -608,6 +624,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5626")
     @CTFailOn(error_handler)
     def test_2832(self):
@@ -646,6 +663,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5640")
     @CTFailOn(error_handler)
     def test_2833(self):
@@ -713,6 +731,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5611")
     @CTFailOn(error_handler)
     def test_2834(self):
@@ -769,6 +788,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5614")
     @CTFailOn(error_handler)
     def test_2835(self):
@@ -822,6 +842,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5616")
     @CTFailOn(error_handler)
     def test_2836(self):
@@ -878,6 +899,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5613")
     @CTFailOn(error_handler)
     def test_2837(self):
@@ -936,6 +958,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5612")
     @CTFailOn(error_handler)
     def test_2838(self):
@@ -987,6 +1010,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5610")
     @CTFailOn(error_handler)
     def test_2839(self):
@@ -1034,6 +1058,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5622")
     @CTFailOn(error_handler)
     def test_2840(self):
@@ -1072,6 +1097,7 @@ class TestAccountLoginProfile:
             " which didn't have the login profile created")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5621")
     @CTFailOn(error_handler)
     def test_2841(self):
@@ -1107,6 +1133,7 @@ class TestAccountLoginProfile:
             "which doesnt exist")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5617")
     @CTFailOn(error_handler)
     def test_2842(self):
@@ -1159,6 +1186,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5620")
     @CTFailOn(error_handler)
     def test_2843(self):
@@ -1211,6 +1239,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5618")
     @CTFailOn(error_handler)
     def test_2844(self):
@@ -1268,6 +1297,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5679")
     @CTFailOn(error_handler)
     def test_2845(self):
@@ -1338,6 +1368,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5630")
     @CTFailOn(error_handler)
     def test_2882(self):
@@ -1364,6 +1395,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5634")
     @CTFailOn(error_handler)
     def test_2883(self):
@@ -1387,6 +1419,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5625")
     @CTFailOn(error_handler)
     def test_2884(self):
@@ -1424,6 +1457,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5658")
     @CTFailOn(error_handler)
     def test_2885(self):
@@ -1467,6 +1501,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5608")
     @CTFailOn(error_handler)
     def test_2886(self):
@@ -1510,6 +1545,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5631")
     @CTFailOn(error_handler)
     def test_2887(self):
@@ -1541,6 +1577,7 @@ class TestAccountLoginProfile:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5632")
     @CTFailOn(error_handler)
     def test_2888(self):
@@ -1570,6 +1607,7 @@ class TestAccountLoginProfile:
             "login profile for that acc.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5605")
     @CTFailOn(error_handler)
     def test_2889(self):
@@ -1626,6 +1664,7 @@ class TestAccountLoginProfile:
             " cred for the valid acc")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5606")
     @CTFailOn(error_handler)
     def test_2890(self):
@@ -1661,6 +1700,7 @@ class TestAccountLoginProfile:
             "for Get temp cred for the valid acc")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5623")
     @CTFailOn(error_handler)
     def test_2891(self):
@@ -1695,6 +1735,7 @@ class TestAccountLoginProfile:
             "the get temporary credentials")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5638")
     @CTFailOn(error_handler)
     def test_2892(self):
@@ -1746,6 +1787,7 @@ class TestAccountLoginProfile:
             " is present in that account")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5636")
     @CTFailOn(error_handler)
     def test_2893(self):
@@ -1781,6 +1823,7 @@ class TestAccountLoginProfile:
             "which is not present in that account")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5639")
     @CTFailOn(error_handler)
     def test_2894(self):
@@ -1835,6 +1878,7 @@ class TestAccountLoginProfile:
             "doesnt contain UserLoginProfile")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5637")
     @CTFailOn(error_handler)
     def test_2895(self):
@@ -1885,6 +1929,7 @@ class TestAccountLoginProfile:
             "duration which is present in that account")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_account
     @pytest.mark.tags("TEST-5635")
     @CTFailOn(error_handler)
     def test_2896(self):

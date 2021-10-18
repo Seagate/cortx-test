@@ -20,6 +20,8 @@
 #
 
 """All common constants from cortx-test."""
+import tempfile
+
 from commons import const
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
@@ -103,6 +105,8 @@ SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
+AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
+LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -181,6 +185,11 @@ class Rest:
                                   "\"Principal\": {\"AWS\":\"$principal\"}}]}"
     SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
                     " user_type, created_time, updated_time.\']}"
+    CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
+    S3_ACCESS_UL = 128
+    S3_ACCESS_LL = 16
+    S3_SECRET_UL = 40
+    S3_SECRET_LL = 8
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -204,6 +213,18 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+
+
+# aws cli errors
+AWS_CLI_ERROR = ["ServiceUnavailable",
+                 "MalformedPolicy",
+                 "InvalidRequest",
+                 "Forbidden",
+                 "Conflict",
+                 "InternalError",
+                 "InvalidArgument",
+                 "AccessDenied",
+                 "Failed:"]
 
 
 # cortxcli constants
@@ -327,3 +348,8 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
+
+# Support Bundle
+R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
+SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
+                "manifest", "uds", "elasticsearch", "utils", "HA"]

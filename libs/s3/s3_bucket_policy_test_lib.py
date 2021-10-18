@@ -21,13 +21,13 @@
 """Python library contains methods for bucket policy."""
 
 import logging
-
+from botocore.exceptions import ClientError
 from commons import errorcodes as err
 from commons.utils.s3_utils import poll
 from commons.exceptions import CTException
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import BucketPolicy
+from libs.s3.s3_bucket_policy import BucketPolicy
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("getting bucket policy for the bucket")
             response = poll(super().get_bucket_policy, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.get_bucket_policy.__name__,
                          error)
@@ -99,7 +99,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Applying bucket policy to specified bucket")
             response = super().put_bucket_policy(bucket_name, bucket_policy)
             LOGGER.info(response)
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.put_bucket_policy.__name__,
                          error)
@@ -118,7 +118,7 @@ class S3BucketPolicyTestLib(BucketPolicy):
             LOGGER.info("Deletes any policy applied to the bucket")
             response = poll(super().delete_bucket_policy, bucket_name, timeout=self.sync_delay)
             LOGGER.info(response["BucketName"])
-        except Exception as error:
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in  %s: %s",
                          S3BucketPolicyTestLib.delete_bucket_policy.__name__,
                          error)

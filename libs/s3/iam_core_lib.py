@@ -32,8 +32,8 @@ from config.s3 import S3_CFG
 LOGGER = logging.getLogger(__name__)
 
 
-class IamLib:
-    """Class initialising s3 connection and including functions for account and user operations."""
+class IAMRest:
+    """Library for creating BOTO3 IAM Rest Library."""
 
     def __init__(
             self,
@@ -91,6 +91,10 @@ class IamLib:
             del self.iam_resource
         except NameError as error:
             LOGGER.warning(error)
+
+
+class IamLib(IAMRest):
+    """Class initialising s3 connection and including functions for account and user operations."""
 
     def create_user(self, user_name: str = None) -> dict:
         """
@@ -188,7 +192,7 @@ class IamLib:
         return response
 
     def update_user(self, new_user_name: str = None,
-                    user_name: str = None) -> dict:
+            user_name: str = None) -> dict:
         """
         Updating given user.
 
@@ -269,3 +273,15 @@ class IamLib:
         LOGGER.debug("output = %s", str(response))
 
         return response
+
+    def change_password(self, old_password: str = None, new_password: str = None):
+        """
+        Changes the password of the IAM user with the IAM user
+        boto3.client object requesting for the password change.
+        IAM object should be created with Access and Secret key of IAM
+        user which is requesting for the password change.
+        :param old_password: Old user password.
+        :param new_password: New user password.
+        :return: None
+        """
+        self.iam.change_password(OldPassword=old_password, NewPassword=new_password)

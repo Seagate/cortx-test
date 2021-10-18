@@ -278,6 +278,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23321")
     @CTFailOn(error_handler)
     def test_23321(self):
@@ -348,6 +349,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23322")
     @CTFailOn(error_handler)
     def test_23322(self):
@@ -426,6 +428,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23323")
     @CTFailOn(error_handler)
     def test_23323(self):
@@ -501,6 +504,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23324")
     @CTFailOn(error_handler)
     def test_23324(self):
@@ -577,6 +581,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23379")
     @CTFailOn(error_handler)
     def test_23379(self):
@@ -646,6 +651,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23380")
     @CTFailOn(error_handler)
     def test_23380(self):
@@ -712,6 +718,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23381")
     @CTFailOn(error_handler)
     def test_23381(self):
@@ -763,6 +770,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23382")
     @CTFailOn(error_handler)
     def test_23382(self):
@@ -824,6 +832,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23395")
     @CTFailOn(error_handler)
     def test_23395(self):
@@ -885,6 +894,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23396")
     @CTFailOn(error_handler)
     def test_23396(self):

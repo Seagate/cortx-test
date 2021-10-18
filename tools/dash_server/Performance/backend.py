@@ -85,7 +85,7 @@ def get_data_for_stats(data):
     Returns:
         dataframe: Pandas dataframe with queried data
     """
-    data_needed_for_query = data
+    data_needed_for_query = data.copy()
     query = get_statistics_schema(data_needed_for_query)
     objects = get_distinct_keys(
         data_needed_for_query['release'], 'Object_Size', query)
@@ -115,6 +115,110 @@ def get_data_for_stats(data):
     return df
 
 
+def get_data_for_degraded_stats(data):
+    """
+    function for degraded read tab to get data from database
+    Args:
+        data: dictionary needed for the query
+    Returns:
+        dataframe: list of Pandas dataframe with queried data
+    """
+    data_needed_for_query = data.copy()
+    query = get_statistics_schema(data_needed_for_query)
+    objects = get_distinct_keys(
+        data_needed_for_query['release'], 'Object_Size', query)
+    objects = sort_object_sizes_list(objects)
+    results = {
+        'Throughput':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'IOPS':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'Latency':
+            {
+                'Object Sizes': statistics_column_headings
+            },
+        'TTFB':
+            {
+                'Object Sizes': statistics_column_headings
+            }
+    }
+    if data_needed_for_query['name'] != 'S3bench':
+        del results['TTFB']
+
+    for obj in objects:
+        data_needed_for_query['objsize'] = obj
+
+        if keys_exists(data_needed_for_query, 'degraded_cluster'):
+            temp_data = get_degraded_cluster_data(data_needed_for_query)
+            if not check_empty_list(temp_data):
+                for stat in temp_data:
+                    results[stat][obj] = temp_data
+
+    dataframes = []
+    for stat in results:
+        dataframe = pd.DataFrame(results[stat])
+        dataframe = dataframe.T
+        dataframe.reset_index(inplace=True)
+        dataframe.columns = dataframe.iloc[0]
+        dataframe = dataframe[1:]
+        dataframes.append(dataframe)
+
+    return dataframes
+
+
+def get_degraded_cluster_data(data_needed_for_query):
+    """
+    function to organise and get data required for degraded cluster view
+
+    Args:
+        data: dictionary needed for the query
+
+    Returns:
+        results: dictionary with data for this particular instance
+    """
+    temp_data = {}
+    data_needed_for_query['operation'] = 'Read'
+    cluster_states = ['normal-read', 'degraded-read', 'recovered-read']
+
+    if data_needed_for_query["name"] == 'S3bench':
+        stats = ["Throughput", "IOPS", "Latency", "TTFB"]
+    else:
+        stats = ["Throughput", "IOPS", "Latency"]
+
+    for stat in stats:
+        temp_data[stat] = []
+
+    uri, db_name, db_collection = get_db_details(
+        data_needed_for_query['release'])
+
+    for state in cluster_states:
+        data_needed_for_query['cluster_state'] = state
+        query = get_degraded_schema(data_needed_for_query)
+        count = count_documents(query=query, uri=uri, db_name=db_name,
+                                collection=db_collection)
+        db_data = find_documents(query=query, uri=uri, db_name=db_name,
+                                 collection=db_collection)
+
+        for stat in stats:
+            if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
+                temp_data[stat].append(get_average_data(
+                    count, db_data, stat, "Avg", 1000))
+            elif data_needed_for_query["name"] == 'S3bench':
+                temp_data[stat].append(get_data(count, db_data, stat, 1))
+            else:
+                try:
+                    temp_data[stat].append(get_data(count, db_data, stat, 1))
+                except TypeError:
+                    temp_data[stat].append(get_average_data(
+                        count, db_data, stat, "Avg", 1))
+
+    return temp_data
+
+
 def get_data_for_graphs(data, xfilter, xfilter_tag):
     """
     function for graphs tab to get data from database
@@ -127,7 +231,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
     Returns:
         dataframe: Pandas dataframe with queried data
     """
-    data_needed_for_query = data
+    data_needed_for_query = data.copy()
 
     if data_needed_for_query['sessions'] == 'all' or data_needed_for_query['all_sessions_plot']:
         query = get_multi_concurrency_schema(data, xfilter, xfilter_tag)
@@ -190,12 +294,12 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             if not check_empty_list(temp_data):
                 results[build] = temp_data
 
-    df = pd.DataFrame(results)
-    df = df.T
-    df.reset_index(inplace=True)
-    df.columns = df.iloc[0]
-    df = df[1:]
-    return df
+    dataframe = pd.DataFrame(results)
+    dataframe = dataframe.T
+    dataframe.reset_index(inplace=True)
+    dataframe.columns = dataframe.iloc[0]
+    dataframe = dataframe[1:]
+    return dataframe
 
 
 def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branches
@@ -204,7 +308,9 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
 
     Args:
         data: dictionary needed for the query
-        results: dictionary to append data for this particular instance
+
+    Returns:
+        results: dictionary to with appended data for this particular instance
     """
     temp_data = []
     added_objects = False
@@ -273,7 +379,7 @@ def get_dash_table_from_dataframe(df, bench, column_id):
     Returns:
         figure: dashtable figure with plotted plots
     """
-    if len(df) < 2:
+    if len(df) < 1:
         benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
