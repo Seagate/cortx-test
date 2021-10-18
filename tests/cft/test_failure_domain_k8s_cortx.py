@@ -25,7 +25,8 @@ from multiprocessing import Pool
 
 import pytest
 
-from commons import commands as common_cmd, pswdmanager
+from commons import commands as common_cmd
+from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
