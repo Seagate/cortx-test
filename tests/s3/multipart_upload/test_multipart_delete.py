@@ -137,7 +137,7 @@ class TestMultipartUploadDelete:
         self.log.info("Step 3: Upload 5TB(max size) Object with random 10000 parts.")
         resp = system_utils.create_file(self.file_path, count=1, b_size="5TB")
         assert_utils.assert_true(resp[0], resp[1])
-        Put_Etag = s3_utils.calc_etag(self.file_path)
+        put_etag = s3_utils.calc_etag(self.file_path)
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=10000, random=True)
         status, parts = self.s3_mp_test_obj.upload_parts_sequential(
             mpu_id, self.bucket_name, self.object_name, chunks=chunks)
@@ -154,8 +154,8 @@ class TestMultipartUploadDelete:
         resp = self.s3_test_obj.object_download(
             self.bucket_name, self.object_name, self.download_path)
         assert_utils.assert_true(resp[0], resp[1])
-        Down_Etag = s3_utils.calc_etag(self.download_path)
-        assert_utils.assert_equal(Put_Etag, Down_Etag, "Data Integrity failed.")
+        download_etag = s3_utils.calc_etag(self.download_path)
+        assert_utils.assert_equal(put_etag, download_etag, "Data Integrity failed.")
         self.log.info("Step 7: Abort Multipart Upload using AbortMultipartUpload API.")
         resp = self.s3_mp_test_obj.abort_multipart_upload(
             self.bucket_name, self.object_name, mpu_id)
@@ -245,7 +245,7 @@ class TestMultipartUploadDelete:
         self.log.info("Created a bucket with name : %s", self.bucket_name)
         self.log.info("Step 2: Upload 3 (random number)objects using simple upload.")
         objects = upload_random_size_objects(self.s3_test_obj, self.bucket_name, num_sample=3)
-        assert_utils.assert_equal(len(objects), 3, f"Failed to create/upload objects.")
+        assert_utils.assert_equal(len(objects), 3, "Failed to create/upload objects.")
         self.log.info("Step 3: Initiate multipart upload by performing CreateMultipartUpload.")
         res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -361,7 +361,7 @@ class TestMultipartUploadDelete:
         self.log.info("Step 3: Upload 20GB Object : Upload 20 parts of various sizes.")
         resp = system_utils.create_file(self.file_path, count=1, b_size="20GB")
         assert_utils.assert_true(resp[0], resp[1])
-        Put_Etag = s3_utils.calc_etag(self.file_path)
+        put_etag = s3_utils.calc_etag(self.file_path)
         chunks = s3_utils.get_unaligned_parts(self.file_path, total_parts=20, random=True)
         status, parts = self.s3_mp_test_obj.upload_parts_sequential(
             mpu_id, self.bucket_name, self.object_name, chunks=chunks)
@@ -376,8 +376,8 @@ class TestMultipartUploadDelete:
         resp = self.s3_mp_test_obj.object_download(
             self.bucket_name, self.object_name, self.download_path)
         assert_utils.assert_true(resp[0], resp[1])
-        Down_Etag = s3_utils.calc_etag(self.download_path)
-        assert_utils.assert_equal(Put_Etag, Down_Etag, "Data Integrity failed.")
+        download_etag = s3_utils.calc_etag(self.download_path)
+        assert_utils.assert_equal(put_etag, download_etag, "Data Integrity failed.")
         self.log.info("Step 6: Delete the object.")
         resp = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
