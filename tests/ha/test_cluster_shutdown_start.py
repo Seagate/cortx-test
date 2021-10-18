@@ -270,6 +270,7 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 4: Download the uploaded object and verify checksum")
         resp = self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
         LOGGER.info("Get object response: %s", resp)
+        # TODO: Add checksum verification
         LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
@@ -363,6 +364,7 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 8: Download the uploaded object and verify checksum")
         resp = self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
         LOGGER.info("Get object response: %s", resp)
+        # TODO: Add checksum verification
         LOGGER.info("Step 8: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
