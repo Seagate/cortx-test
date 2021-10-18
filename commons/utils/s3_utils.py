@@ -191,7 +191,7 @@ def convert_xml_to_dict(xml_response) -> dict:
         return xml_response
 
 
-def calc_etag(file_path, part_size=0):
+def calc_checksum(file_path, part_size=0):
     """Calculating an S3 ETag using Python md5 algorithm"""
     try:
         md5_digests = list()
