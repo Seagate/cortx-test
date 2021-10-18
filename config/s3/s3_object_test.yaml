@@ -10,6 +10,8 @@ s3_object:
     inval_req: "InvalidRequest"
     emailaddr: "emailaddress={}"
     mb_count: 5
+    mb_count_d: 50
+    mb_count_n: 70
     obj_name: "testobj"
     key: "testkey"
     key_err: "NoSuchKey"
@@ -17,6 +19,9 @@ s3_object:
     emailid_1: "my_account_one{}@seagate.com"
     account_name_2: "my_account_two{}"
     emailid_2: "my_account_two{}@seagate.com"
+    object_count: 3
+    obj_min_size: 2
+    obj_max_size: 2048
 
 # Tests from test_object_acl.py
 test_get_obj_acl_mp:
