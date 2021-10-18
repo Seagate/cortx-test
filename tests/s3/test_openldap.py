@@ -26,7 +26,8 @@ from datetime import datetime
 
 import paramiko
 import pytest
-from config import CMN_CFG, S3_LDAP_TST_CFG
+from config import CMN_CFG
+from config.s3 import S3_LDAP_TST_CFG
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
