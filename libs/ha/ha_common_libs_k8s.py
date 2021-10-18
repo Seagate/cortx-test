@@ -32,6 +32,7 @@ from commons.constants import Rest as Const
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
+from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
@@ -179,9 +180,7 @@ class HAK8s:
         check_rem_pod = ["online" for _ in range(no_pods)]
         rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
         LOGGER.info("REST response for pods health status. %s", rest_resp[1])
-        if not rest_resp[0]:
-            return False
-        return True
+        return rest_resp
 
     def status_cluster_resource_online(self):
         """
@@ -191,10 +190,9 @@ class HAK8s:
         LOGGER.info("Check cluster/rack/site/pods health status.")
         resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
         LOGGER.info("Health status response : %s", resp[1])
-        if not resp[0]:
-            return False
-        LOGGER.info("cluster/rack/site/pods health status is online in REST")
-        return True
+        if resp[0]:
+            LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        return resp
 
     def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
         """
@@ -238,7 +236,7 @@ class HAK8s:
                 if not response[0]:
                     return response
             return True, "Successfully performed S3 operation clean up"
-        except (ValueError, KeyError) as error:
+        except (ValueError, KeyError, CTException) as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HAK8s.delete_s3_acc_buckets_objects.__name__,
@@ -299,10 +297,10 @@ class HAK8s:
             else:
                 stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
-                return False, stop_res[1]
+                return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
             if not del_resp[0]:
-                return False, del_resp[1]
+                return del_resp
             return True, "Di check for IOs passed successfully"
         except ValueError as error:
             LOGGER.error("%s %s: %s",

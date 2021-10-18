@@ -101,7 +101,6 @@ class TestClstrShutdownStart:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
 
-    # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29301")
@@ -160,7 +159,6 @@ class TestClstrShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
 
-    # pylint: disable-msg=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29468")
@@ -173,18 +171,18 @@ class TestClstrShutdownStart:
         LOGGER.info(
             "STARTED: Test to verify cluster shutdown and restart functionality in loop.")
 
+        LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: All pods are running.")
+
         loop_count = HA_CFG["common_params"]["loop_count"]
         for loop in range(1, loop_count):
             LOGGER.info("Checking cluster restart for %s count", loop)
-            LOGGER.info("Step 1: Check the status of the pods running in cluster.")
-            resp = self.ha_obj.check_pod_status(self.node_master_list[0])
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 1: All pods are running.")
 
-            LOGGER.info(
-                "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+            LOGGER.info("Step 2: Start IOs (create s3 acc, buckets and upload objects).")
             resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29468', nusers=1,
-                                                   nbuckets=10)
+                                               nbuckets=10)
             assert_utils.assert_true(resp[0], resp[1])
             di_check_data = (resp[1], resp[2])
             self.s3_clean = resp[2]
@@ -196,12 +194,10 @@ class TestClstrShutdownStart:
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
-            LOGGER.info(
-                "Step 4: Restart the cluster and check cluster status.")
+            LOGGER.info("Step 4: Restart the cluster and check cluster status.")
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
             assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info(
-                "Step 4: Cluster restarted fine and all Pods online.")
+            LOGGER.info("Step 4: Cluster restarted fine and all Pods online.")
 
             LOGGER.info("Step 5: Check DI for IOs run before restart.")
             resp = self.ha_obj.perform_ios_ops(di_data=di_check_data, is_di=True)
