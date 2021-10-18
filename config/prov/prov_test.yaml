@@ -106,18 +106,25 @@ post_deployment_steps:
   s3user_email: 's3user@seagate.com'
   s3user_pswd: 'xPUfs2X7OhXgirxG6au/T9FHd+q7mWHYo3P2OS7KlWs='
 
-lc_deploy:
+k8s_cluster_deploy:
+  job_name: "setup-kubernetes-cluster"
+  jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/job/setup-kubernetes-cluster/"
+  #TODO: update token once RE team generates auth-token
+  auth_token: ""
+
+k8s_cortx_deploy:
   build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
   prereq:
     min_disks: 8
-    os_release: [ "CentOS Linux release 7.9.2009 (Core)"]
-    kernel: [ "3.10.0-1160.el7.x86_64"]
+    os_release: [ "CentOS Linux release 7.9.2009 (Core)" ]
+    kernel: [ "3.10.0-1160.el7.x86_64" ]
     cpu_cores: 8
     memory: 16
   local_path_prov: "/mnt/fs-local-volume/"
-  glusterfs_dir: ["/mnt/fs-local-volume/etc/gluster","/mnt/fs-local-volume/var/log/gluster","/mnt/fs-local-volume/var/lib/glusterd"]
+  glusterfs_dir: [ "/mnt/fs-local-volume/etc/gluster","/mnt/fs-local-volume/var/log/gluster",
+                   "/mnt/fs-local-volume/var/lib/glusterd" ]
   gluster_pkg: "glusterfs-fuse"
-  3rd_party_dir: ["/etc/3rd-party/openldap","/var/data/3rd-party","/var/log/3rd-party"]
+  3rd_party_dir: [ "/etc/3rd-party/openldap","/var/data/3rd-party","/var/log/3rd-party" ]
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"

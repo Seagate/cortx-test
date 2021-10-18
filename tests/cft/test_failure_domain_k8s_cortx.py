@@ -18,21 +18,23 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
-"""Failure Domain LC Test Suite."""
+"""Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os
 from multiprocessing import Pool
 
 import pytest
 
-from commons.utils import system_utils
-from libs.prov.prov_lc_deploy import ProvDeployLCLib
 from commons import commands as common_cmd, pswdmanager
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
-from config import CMN_CFG,HA_CFG
+from commons.utils import system_utils
+from config import CMN_CFG, HA_CFG
+from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
-class TestFailureDomainLC:
-    """Test Failure Domain LC (EC,Intel ISA) deployment testsuite"""
+
+class TestFailureDomainK8Cortx:
+    """Test Failure Domain - k8s based Cortx (EC,Intel ISA) deployment testsuite"""
 
     @classmethod
     def setup_class(cls):
@@ -40,22 +42,33 @@ class TestFailureDomainLC:
         cls.log = logging.getLogger(__name__)
         cls.git_id = os.getenv("GIT_ID")
         cls.git_token = os.getenv("GIT_PASSWORD")
-        #TODO: Update Docker credentials
+        # TODO: Update Docker credentials
         cls.docker_username = os.getenv("DOCKER_USERNAME")
         cls.docker_password = os.getenv("DOCKER_PASSWORD")
-        cls.vm_username = os.getenv("QA_VM_POOL_ID", pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD", pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
-        cls.deploy_lc_obj = ProvDeployLCLib()
+        cls.vm_username = os.getenv("QA_VM_POOL_ID",
+                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
+        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
+                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
+        cls.deploy_lc_obj = ProvDeployK8sCortxLib()
+        cls.num_nodes = len(CMN_CFG["nodes"])
+        cls.worker_node_list = []
+        cls.master_node_list = []
         cls.host_list = []
-        for node in range(len(CMN_CFG["nodes"])):
+        for node in range(cls.num_nodes):
             vm_name = CMN_CFG["nodes"][node]["hostname"].split(".")[0]
             cls.host_list.append(vm_name)
+            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
+                                   username=CMN_CFG["nodes"][node]["username"],
+                                   password=CMN_CFG["nodes"][node]["password"])
+            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+                cls.master_node_list.append(node_obj)
+            else:
+                cls.worker_node_list.append(node_obj)
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
-        #Assuming the last captured snapshot is after the k8's deployment
         self.log.info("Reverting all the VM before deployment")
-        with Pool(len(CMN_CFG["nodes"])) as proc_pool:
+        with Pool(self.num_nodes) as proc_pool:
             proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
@@ -73,6 +86,16 @@ class TestFailureDomainLC:
         """
         Intel ISA  - 3node - SNS- 4+2+0 Deployment
         """
-        #TODO : Retrieve solution file
-        self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.docker_username,
-                                                self.docker_password, self.git_id, self.git_token)
+        self.log.info("Perform k8s Cluster Deployment")
+        resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Create solution file")
+        # TODO : Retrieve solution file
+
+        self.log.info("Perform Cortx Cluster Deployment")
+        resp = self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.master_node_list,
+                                                       self.worker_node_list, self.docker_username,
+                                                       self.docker_password, self.git_id,
+                                                       self.git_token)
+        assert_utils.assert_true(resp[0], resp[1])

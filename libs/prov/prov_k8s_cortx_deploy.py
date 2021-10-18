@@ -19,44 +19,82 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Provisioner utiltiy methods for Deployment of Lyve Cloud.
+Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import logging
 
 import yaml
 
 from commons import commands as common_cmd
+from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
-from config import CMN_CFG, PROV_CFG
+from config import PROV_CFG
+from libs.prov.provisioner import Provisioner
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ProvDeployLCLib:
+class ProvDeployK8sCortxLib:
     """
     This class contains utility methods for all the operations related
     to k8s based Cortx Deployment .
     """
 
     def __init__(self):
-        self.deploy_cfg = PROV_CFG["lc_deploy"]
-        self.num_nodes = len(CMN_CFG["nodes"])
-        self.worker_node_list = []
-        self.master_node = None
-        for node in range(self.num_nodes):
-            node_obj = LogicalNode(hostname=CMN_CFG["nodes"][node]["hostname"],
-                                   username=CMN_CFG["nodes"][node]["username"],
-                                   password=CMN_CFG["nodes"][node]["password"])
-            if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
-                self.master_node = node_obj
-            else:
-                self.worker_node_list.append(node_obj)
+        self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
+
+    @staticmethod
+    def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
+                          taint_master: bool = False) -> tuple:
+        """
+        Setup K8's cluster using RE jenkins job
+        param: master_node_list : List of all master nodes(Logical Node object)
+        param: worker_node_list : List of all worker nodes(Logical Node object)
+        param: taint_master : Taint master - boolean
+        return : True/False and success/failure message
+        """
+        k8s_deploy_cfg = PROV_CFG["k8s_cluster_deploy"]
+        LOGGER.info("Create inputs for RE jenkins job")
+        hosts_input_str = []
+        jen_parameter = {}
+        if len(master_node_list) > 0:
+            # TODO : handle multiple master node case.
+            input_str = f'hostname={master_node_list[0].hostname},' \
+                        f'user={master_node_list[0].username},' \
+                        f'pass={master_node_list[0].password}'
+            hosts_input_str.append(input_str)
+        else:
+            return False, "Master Node List is empty"
+
+        if len(worker_node_list) > 0:
+            for each in worker_node_list:
+                input_str = f'hostname={each.hostname},' \
+                            f'user={each.username},' \
+                            f'pass={each.password}'
+                hosts_input_str.append(input_str)
+        else:
+            return False, "Worker Node List is empty"
+        hosts = "\n".join(each for each in hosts_input_str)
+        jen_parameter["hosts"] = hosts
+        jen_parameter["TAINT"] = taint_master
+
+        output = Provisioner.build_job(
+            k8s_deploy_cfg["job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
+            k8s_deploy_cfg["jenkins_url"])
+        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        if output['result'] == "SUCCESS":
+            LOGGER.info("k8's Cluster Deployment successful")
+            return True, output['result']
+        else:
+            LOGGER.error(f"k8's Cluster Deployment {output['result']},please check URL")
+            return False, output['result']
 
     def prereq_vm(self, node_obj: LogicalNode) -> tuple:
         """
         Perform prerequisite check for VM configurations
         param: node_obj : Node object to perform the checks on
+        return: True/False and success/failure message
         """
         LOGGER.info(
             "Starting the prerequisite checks on node %s",
@@ -179,6 +217,7 @@ class ProvDeployLCLib:
         param: node_obj: Node object
         param: local_sol_path: Local path for solution.yaml
         param: remote_code_path: Cortx-k8's repo Path on node
+        return : True/False and resp
         """
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
@@ -193,24 +232,17 @@ class ProvDeployLCLib:
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp :%s", resp)
-        return True, "Cluster deployed"
+        return True, resp
 
-    def destroy_cluster(self, node_obj: LogicalNode, remote_code_path: str):
-        """
-        Destroy cortx cluster
-        param: node_obj: Node object
-        param: remote_code_path: Cortx-k8's repo Path on node
-        """
-        LOGGER.info("Destroy Cortx cloud")
-        cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["destroy_cluster"])
-        resp = node_obj.execute_cmd(cmd)
-        LOGGER.debug("resp: %s", resp)
-
-    def deploy_cortx_cluster(self, solution_file_path,
-                             docker_username, docker_password, git_id, git_token) -> tuple:
+    def deploy_cortx_cluster(self, solution_file_path: str, master_node_list: list,
+                             worker_node_list: list,
+                             docker_username: str, docker_password: str, git_id: str,
+                             git_token: str) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
+        param: master_node_list : List of all master nodes(Logical Node object)
+        param: worker_node_list : List of all worker nodes(Logical Node object)
         param: docker_username: Docker Username
         param: docker_password: Docker password
         param: git_id: Git ID to access Cortx-k8s repo
@@ -218,7 +250,12 @@ class ProvDeployLCLib:
         """
         LOGGER.info("Read solution config file")
         sol_cfg = yaml.safe_load(open(solution_file_path))
-        for node in self.worker_node_list:
+        if len(master_node_list) == 0:
+            return False, "Minimum one master node needed for deployment"
+        if len(worker_node_list) == 0:
+            return False, "Minimum one worker node needed for deployment"
+
+        for node in worker_node_list:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             # TODO: parse system disk and pass to local path prov: UDX-6356
@@ -226,11 +263,17 @@ class ProvDeployLCLib:
             self.prereq_glusterfs(node)
             self.prereq_3rd_party_srv(node)
 
-        if self.master_node is None:
-            assert_utils.assert_true(False, "No master node assigned")
-
-        self.docker_login(self.master_node, docker_username, docker_password)
-        self.prereq_git(self.master_node, git_id, git_token)
-        resp = self.deploy_cluster(self.master_node, solution_file_path,
+        self.docker_login(master_node_list[0], docker_username, docker_password)
+        self.prereq_git(master_node_list[0], git_id, git_token)
+        resp = self.deploy_cluster(master_node_list[0], solution_file_path,
                                    self.deploy_cfg["git_remote_dir"])
+        if resp[0]:
+            LOGGER.info("Validate all cluster services are online using hclt status")
+            health_obj = Health(hostname=master_node_list[0].hostname,
+                                username=master_node_list[0].username,
+                                password=master_node_list[0].password)
+            resp = health_obj.all_cluster_services_online()
+            LOGGER.debug("resp: %s", resp)
+            return resp
+
         return resp
