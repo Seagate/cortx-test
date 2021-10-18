@@ -35,6 +35,7 @@ from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_k8s_restapi import Cipher
+from libs.csm.csm_setup import CSMConfigsCheck
 
 CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
@@ -58,7 +59,8 @@ class TestS3accountK8s:
         cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
-
+        cls.config = CSMConfigsCheck()        
+ 
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
@@ -87,19 +89,18 @@ class TestS3accountK8s:
                 res = res.split()[2]
                 self.log.info(res)
                 return res
-            return None
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_k8s_user
-    @pytest.mark.tags("TEST-28934")
-    def test_28934(self):
+    @pytest.mark.tags("TEST-28935")
+    def test_28935(self):
         """This test validates the presence of password in ldapsearch output"""
-        #S3 account creation could not be executed due to setup issue
         self.log.info("Step 1: Create s3account s3acc.")
-        resp = self.s3_rest_obj.create_s3_account(
-           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        assert_utils.assert_true(resp[0], resp)
+        s3acc_already_present = self.config.check_predefined_s3account_present()
+        if not s3acc_already_present:
+            s3acc_already_present = self.config.setup_csm_s3()
+        assert s3acc_already_present
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
@@ -139,14 +140,14 @@ class TestS3accountK8s:
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_k8s_user
-    @pytest.mark.tags("TEST-28935")
-    def test_28935(self):
+    @pytest.mark.tags("TEST-28934")
+    def test_28934(self):
         """This test validates the presence of secret key in ldapsearch output"""
-        #S3 account creation could not be executed due to setup issue
         self.log.info("Step 1: Create s3account s3acc.")
-        resp = self.s3_rest_obj.create_s3_account(
-           self.s3acc_name, self.s3acc_email, self.s3acc_passwd)
-        assert_utils.assert_true(resp[0], resp)
+        s3acc_already_present = self.config.check_predefined_s3account_present()
+        if not s3acc_already_present:
+            s3acc_already_present = self.config.setup_csm_s3()
+        assert s3acc_already_present
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
                                         read_lines=False,
