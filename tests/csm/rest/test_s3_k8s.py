@@ -22,9 +22,7 @@
 
 import configparser
 import logging
-import os
 import re
-import subprocess
 import time
 
 import pytest
@@ -36,7 +34,6 @@ from commons.utils import assert_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-from libs.s3.s3_k8s_restapi import Cipher, CipherInvalidToken
 
 CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
@@ -89,7 +86,6 @@ class TestS3accountK8s:
                 self.log.info(res)
                 return res
             return None
-    
 
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -165,7 +161,7 @@ class TestS3accountK8s:
         self.log.info(secret)
         cluster_id = data["cluster"]["id"]
         self.log.info(cluster_id)
-        admin_passwd = self._decrypt_secret(secret,cluster_id,"cortx")
+        admin_passwd = Cipher._decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
