@@ -884,7 +884,6 @@ class TestAccountUserManagementResetPassword:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
     def test_21502(self):
