@@ -108,7 +108,7 @@ post_deployment_steps:
 
 k8s_cluster_deploy:
   job_name: "setup-kubernetes-cluster"
-  jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/job/setup-kubernetes-cluster/"
+  jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/"
   auth_token: "$eagate@123"
 
 k8s_cortx_deploy:

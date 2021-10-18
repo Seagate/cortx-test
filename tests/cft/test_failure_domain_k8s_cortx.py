@@ -94,6 +94,7 @@ class TestFailureDomainK8Cortx:
 
         self.log.info("Step 2: Create solution file")
         # TODO : Retrieve solution file
+        # TODO : Retrieve disk partition to be used for local path provisioner.
 
         self.log.info("Step 3: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.master_node_list,
