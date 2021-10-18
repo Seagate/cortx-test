@@ -29,17 +29,17 @@ from multiprocessing import Process
 from commons import commands as common_cmd
 from commons import pswdmanager
 from commons.constants import Rest as Const
+from commons.exceptions import CTException
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
-from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
-from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-from scripts.s3_bench import s3bench
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -436,8 +436,7 @@ class HAK8s:
             return False, "Some/All not online yet."
         # TODO: just a placeholder for cluster status
         LOGGER.info("Check the cluster status.")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True,
-                                   exc=False)
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True, exc=False)
         if not resp[0]:
             return False, "Cluster is not started"
         return True, resp

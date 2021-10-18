@@ -12,6 +12,6 @@ s3_operation_data:
   no_buckets_per_users: 50
   obj_per_bucket: 200
 
-test_29472:
+5gb_mpu_data:
   file_size = 4800
   total_parts = 100
