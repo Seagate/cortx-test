@@ -27,13 +27,12 @@ import time
 from multiprocessing import Process
 
 from commons import commands as common_cmd
-from commons import errorcodes as err
 from commons import pswdmanager
 from commons.constants import Rest as Const
-from commons.exceptions import CTException
 from commons.utils import system_utils
 from config import CMN_CFG, HA_CFG
 from config.s3 import S3_CFG
+from commons.exceptions import CTException
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
@@ -92,8 +91,8 @@ class HAK8s:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"Unable to get VM power status for {vm_name}")
+                    LOGGER.info(f"Unable to get VM power status for {vm_name}")
+                    return False
                 data = vm_info[1].split("\\n")
                 pw_state = ""
                 for lines in data:
@@ -129,7 +128,8 @@ class HAK8s:
                 common_cmd.CMD_VM_POWER_ON.format(
                     self.vm_username, self.vm_password, vm_name))
             if not resp[0]:
-                raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
+                LOGGER.info("Response for failed VM power on command: %s", resp)
+                return False
         else:
             bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
 
@@ -159,8 +159,8 @@ class HAK8s:
                     common_cmd.CMD_VM_POWER_OFF.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not resp[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"VM power off command not executed")
+                    LOGGER.info("Response for failed VM power off command: %s", resp)
+                    return False
             else:
                 bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "off")
 
@@ -174,31 +174,25 @@ class HAK8s:
         """
         Helper function to check that all Pods are shown online in cortx REST
         :param no_pods: Number of pods in the cluster
-        :rtype: None
+        :return: boolean
         """
         # Future: Right now system health api is not available but will be implemented after M0
-        try:
-            check_rem_pod = ["online" for _ in range(no_pods)]
-            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
-            if not rest_resp[0]:
-                raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
-            LOGGER.info("REST response for pods health status. %s", rest_resp[1])
-        except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.status_pods_online.__name__,
-                         error)
+        check_rem_pod = ["online" for _ in range(no_pods)]
+        rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
+        LOGGER.info("REST response for pods health status. %s", rest_resp[1])
+        return rest_resp
 
     def status_cluster_resource_online(self):
         """
         Check cluster/rack/site/pods are shown online in Cortx REST
-        :return: none
+        :return: boolean
         """
-        LOGGER.info("Check luster/rack/site/pods health status.")
+        LOGGER.info("Check cluster/rack/site/pods health status.")
         resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
-        if not resp[0]:
-            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
-        LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        LOGGER.info("Health status response : %s", resp[1])
+        if resp[0]:
+            LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        return resp
 
     def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
         """
@@ -209,8 +203,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(
-                self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -295,7 +288,7 @@ class HAK8s:
                     star_res = run_data_chk_obj.start_io(
                         users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
                     if not star_res:
-                        raise CTException(err.S3_START_IO_FAILED, star_res)
+                        return False, star_res
                 return True, run_data_chk_obj, io_data
 
             LOGGER.info("Checking DI for IOs run.")
@@ -304,20 +297,16 @@ class HAK8s:
             else:
                 stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
+                return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
             if not del_resp[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
+                return del_resp
             return True, "Di check for IOs passed successfully"
-        except (ValueError, CTException) as error:
+        except ValueError as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HAK8s.perform_ios_ops.__name__,
                          error)
-            if io_data:
-                del_resp = self.delete_s3_acc_buckets_objects(io_data)
-                if not del_resp[0]:
-                    return False, (error, del_resp[1])
             return False, error
 
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
