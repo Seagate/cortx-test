@@ -115,8 +115,8 @@ class TestClstrShutdownStart:
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         LOGGER.info("Successfully created s3 account")
-        self.s3_data = {'accesskey': access_key, 'secretkey': secret_key,
-                        'user_name': self.s3acc_name}
+        self.s3_data = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                   'user_name': self.s3acc_name}}
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
         self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
