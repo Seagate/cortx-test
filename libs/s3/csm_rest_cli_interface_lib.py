@@ -141,7 +141,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 response.update({"password": acc_pwd})
         return status, response
 
-    # pylint: disable=W0221
     def delete_s3_acc_using_csm_rest_cli(
             self,
             s3acc_name,
@@ -176,7 +175,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
         return status, response
 
     # pylint: disable=too-many-arguments
-    # pylint: disable=W0221
     def create_csm_account_rest_cli(
             self,
             csm_user=None,
@@ -213,7 +211,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
                 csm_user, csm_email, csm_pwd, role)
         return status, response
 
-    # pylint: disable=W0221
     def delete_csm_account_rest_cli(self, csm_user=None, csm_pwd=None, **kwargs):
         """
         Rest/CLI interface function To Delete CSM user
@@ -241,7 +238,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
         return status, response
 
     # pylint: disable=too-many-arguments
-    # pylint: disable=W0221
     def edit_csm_user_rest_cli(
             self,
             csm_user=None,
@@ -277,7 +273,6 @@ class CSMAccountIntOperations(CSMAccountInterface):
             status, response = self.csmacc_op_cli.csm_user_update_role(csm_user, csm_pwd, role)
         return status, response
 
-    # pylint: disable=W0221
     def csm_user_show_s3_acc_rest_cli(self, csm_user=None, csm_pwd=None, **kwargs):
         """
         Rest/CLI interface function To list s3 user for CSM user
