@@ -23,7 +23,6 @@ Test class that contains K8s tests.
 """
 
 import logging
-import pytest
 from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
