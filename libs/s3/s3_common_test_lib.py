@@ -105,12 +105,12 @@ def create_s3_acc(
         "Step : Creating account with name %s and email_id %s",
         account_name,
         email_id)
-    create_account = rest_obj.create_s3_account(
+    s3_account = rest_obj.create_s3_account(
         account_name, email_id, password)
     del rest_obj
-    assert_utils.assert_true(create_account[0], create_account[1])
-    access_key = create_account[1]["access_key"]
-    secret_key = create_account[1]["secret_key"]
+    assert_utils.assert_true(s3_account[0], s3_account[1])
+    access_key = s3_account[1]["access_key"]
+    secret_key = s3_account[1]["secret_key"]
     LOG.info("Step Successfully created the s3 account")
     s3_obj = s3_test_lib.S3TestLib(
         access_key,
@@ -126,7 +126,7 @@ def create_s3_acc(
     return response
 
 
-def create_s3_account_get_s3objects(account_name: str, email_id: str, password: str) -> tuple:
+def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, password: str) -> tuple:
     """
     function will create s3 account with specified account name and email-id and returns s3 objects.
 
@@ -140,15 +140,15 @@ def create_s3_account_get_s3objects(account_name: str, email_id: str, password: 
         "Step : Creating account with name %s and email_id %s",
         account_name, email_id)
     rest_obj = S3AccountOperations()
-    create_account = rest_obj.create_s3_account(
+    s3_account = rest_obj.create_s3_account(
         acc_name=account_name, email_id=email_id, passwd=password)
-    assert_utils.assert_true(create_account[0], create_account[1])
+    assert_utils.assert_true(s3_account[0], s3_account[1])
     del rest_obj
-    access_key = create_account[1]["access_key"]
-    secret_key = create_account[1]["secret_key"]
-    canonical_id = create_account[1]["canonical_id"]
-    account_id = create_account[1]["account_id"]
-    LOG.info("Step Successfully created the cortxcli account")
+    access_key = s3_account[1]["access_key"]
+    secret_key = s3_account[1]["secret_key"]
+    canonical_id = s3_account[1]["canonical_id"]
+    account_id = s3_account[1]["account_id"]
+    LOG.info("Step Successfully created s3 account.")
     s3_obj = s3_test_lib.S3TestLib(access_key=access_key, secret_key=secret_key)
     acl_obj = s3_acl_test_lib.S3AclTestLib(access_key=access_key, secret_key=secret_key)
     s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(

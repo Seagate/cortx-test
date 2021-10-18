@@ -241,7 +241,7 @@ class S3MultipartTestLib(Multipart):
                                 object_name: str = None,
                                 **kwargs) -> tuple:
         """
-        Upload parts for a specific multipart upload ID in sequential.
+        Upload parts(ordered/unordered) for a specific multipart upload ID in sequential.
 
         :param upload_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
@@ -250,16 +250,16 @@ class S3MultipartTestLib(Multipart):
         :return: (Boolean, List of uploaded parts).
         """
         try:
-            chunks = kwargs.get("chunks", None)
-            parts = []
-            for part_number in chunks:
+            parts = kwargs.get("parts", None)
+            parts_details = []
+            for part_number in parts:
                 LOGGER.info("Uploading part: %s", part_number)
-                resp = self.upload_multipart(chunks[part_number][0], bucket_name, object_name,
+                resp = self.upload_multipart(parts[part_number][0], bucket_name, object_name,
                                              upload_id=upload_id, part_number=part_number,
-                                             content_md5=chunks[part_number][1])
-                parts.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+                                             content_md5=parts[part_number][1])
+                parts_details.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
 
-            return True, parts
+            return True, parts_details
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_sequential.__name__,
