@@ -233,7 +233,7 @@ class TestClusterShutdownStart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29469")
     @CTFailOn(error_handler)
-    def test_reads_after_cluster_shutdown_start(self):
+    def test_reads_after_cluster_restart(self):
         """
         This test verifies READs after cluster restart on WRITEs before shutdown
         """
@@ -277,7 +277,7 @@ class TestClusterShutdownStart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29470")
     @CTFailOn(error_handler)
-    def test_write_after_cluster_shutdown_start(self):
+    def test_write_after_cluster_restart(self):
         """
         This test verifies WRITEs after cluster restart
         """
