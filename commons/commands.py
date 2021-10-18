@@ -487,3 +487,14 @@ CLSTR_STATUS_CMD = ""
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
+
+#LC deployment
+CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
+CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
+CMD_CURL = "curl -o {} {}"
+#Git commands
+CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CHECKOUT = "git checkout {}"
+
+#docker commands
+CMD_DOCKER_LOGIN = "docker login -u {} -p {}"
