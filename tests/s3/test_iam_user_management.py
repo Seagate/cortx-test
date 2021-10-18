@@ -248,6 +248,7 @@ class TestIAMUserManagement:
                 assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23398")
     def test_23398_create_iam_user(self):
         """
@@ -276,6 +277,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23399")
     def test_23399_list_user(self):
         """
@@ -308,6 +310,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23400")
     def test_23400_create_access_key(self):
         """
@@ -349,6 +352,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23401")
     def test_23401_delete_iam_user(self):
         """
@@ -379,6 +383,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23402")
     def test_23402_check_access_key_count(self):
         """
@@ -436,6 +441,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23463")
     def test_23463_crud_with_another_access_key(self):
         """
@@ -485,6 +491,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-22150")
     def test_22150(self):
         """use REST API call to create s3iamuser with special characters."""
@@ -511,6 +518,7 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to create s3iamuser with special characters.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-22148")
     def test_22148(self):
         """REST API to Update Login Profile without mentioning new Password for the s3iamuser."""
@@ -542,6 +550,7 @@ class TestIAMUserManagement:
             "ENDED: Update Login Profile without mentioning new Password for the s3iamuser.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-27277")
     def test_27277(self):
         """use REST API call to perform CRUD operations on s3iamuser."""
@@ -574,6 +583,7 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to perform CRUD operations on s3iamuser.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-27278")
     def test_27278(self):
         """use REST API call to perform accesskey CRUD operations for s3iamuser."""
@@ -623,6 +633,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.skip("")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-21644")
     def test_21644(self):
         """use REST API call to create more than 2 Accesskeys for s3iamuser."""
@@ -662,6 +673,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.skip("Need more validation")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28776")
     def test_28776(self):
         """
@@ -743,6 +755,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.skip("Need more validation")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28852")
     def test_28852(self):
         """s3accounts creation with different maxIAMAccountLimit values"""

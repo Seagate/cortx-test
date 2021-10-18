@@ -105,6 +105,7 @@ class TestDosScalability:
         self.log.info("ENDED: Teardown Operations")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-8724')
     @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(400, 1000, "1Mb")])
     # @CTFailOn(error_handler)
@@ -150,6 +151,7 @@ class TestDosScalability:
         self.log.info("ENDED: Test constant 400 S3 operations using s3bench.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-9657')
     @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(300, 1000, "1Mb")])
     # @CTFailOn(error_handler)
@@ -195,6 +197,7 @@ class TestDosScalability:
         self.log.info("ENDED: Test constant 300 S3 operations using s3bench")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-9658')
     @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(1000, 1000, "1Mb")])
     # @CTFailOn(error_handler)
@@ -240,6 +243,7 @@ class TestDosScalability:
         self.log.info("ENDED: Test constant 1000 S3 operations using s3bench")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-9659')
     @pytest.mark.parametrize("nclients, obj_size", [([1000, 1200, 1500], "1Mb")])
     # @CTFailOn(error_handler)
@@ -292,6 +296,7 @@ class TestDosScalability:
                       "1500")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-9660')
     @pytest.mark.parametrize("obj_size, nclients", [("1Mb", [1000, 1500, 1000, 1500])])
     # @CTFailOn(error_handler)
@@ -343,6 +348,7 @@ class TestDosScalability:
 
     @pytest.mark.skip("Need to validate on HW")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_scalability
     @pytest.mark.tags('TEST-8725')
     @pytest.mark.parametrize("num_clients, num_sample, obj_size", [(100, 1000000, "1Kb")])
     # # @CTFailOn(error_handler)

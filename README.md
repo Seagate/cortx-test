@@ -9,7 +9,7 @@ Right now, it can be divided into following logical loosely coupled parts
 ## Start Here
 Make sure you brush up your Git knowledge if you are coming from svn or other versioning system. Create an Github account and a PAT, and get access to Seagate Repositories including Cortx-Test. Follow the link https://github.com/Seagate/cortx/blob/main/doc/github-process-readme.md to configure git on your local machine. Following Readme document will give you enough insights and start contributing.
 
-You may need a seperate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
+You may need a separate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
 
 
 ## Get the Sources
@@ -90,14 +90,17 @@ To setup s3 client tools, make sure you have completed basic setup in `Set up de
 Script in project's root folder cortx-test `scripts/s3_tools/Makefile` can be used to install s3 tools on client.
 ```commandline
 Required arguments in configuration:
-    ACCESS=<aws_access_key_id>
-    SECRET=<aws_secret_access_key>
+    ACCESS aws_access_key_id
+    SECRET aws_secret_access_key
 optional arguments:
-    -i, --ignore-errors  Ignore all errors in commands executed to remake files.
-    -k, --keep-going     Continue as much as possible after an error.
+    -i --ignore-errors  Ignore all errors in commands executed to remake files.
+    -k --keep-going     Continue as much as possible after an error.
     ENDPOINT=<s3_endpoint>
     CA_CRT=<certificate_file_path>
     NFS_SHARE=<NFS_share_jclient_path>
+    APACHE_J_METER=apache-jmeter-5.4.1.tgz
+    VERIFY_SSL='True' 
+    VALIDATE_CERTS='True'
 
 make help --makefile=scripts/s3_tools/Makefile
     all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
@@ -109,6 +112,10 @@ make help --makefile=scripts/s3_tools/Makefile
     s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
     jcloud-client: Setup jcloud-client. Eg: make jcloud-client
     minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    bashrc-configure : Configure ~/.bashrc for updating ulimit -n for allowing file descriptors 
+    
+To increase ulimit for allowing maximum file descriptors
+make bashrc-configure
 
 To install & configure all tools:
 make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
@@ -342,7 +349,7 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
   ```
 #### Running Test locally in distributed mode
 ```commandline
-pytest --local=True -d --tx 3*popen -rA unittests\<Your_Test_Module>.py
+pytest --local=True -d --tx 3*popen -rA unittests\Your_Test_Module.py
 ```
 ```properties
 3 is # of worker processes to be spawned.
@@ -350,7 +357,7 @@ pytest --local=True -d --tx 3*popen -rA unittests\<Your_Test_Module>.py
 #### Running test plans in dev environment
 ##### With dist mode
 ```commandline
-pytest --capture=no --te_tkt TEST-17412 -d --tx 2*popen -rA unittests\<Your_Test_Module>.py
+pytest --capture=no --te_tkt TEST-17412 -d --tx 2*popen -rA unittests\Your_Test_Module.py
 
 ```
 ##### With sequential execution
