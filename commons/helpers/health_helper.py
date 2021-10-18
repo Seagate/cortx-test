@@ -25,9 +25,11 @@ import json
 import time
 import xmltodict
 import re
-from typing import Tuple, List, Any
+from typing import Tuple, List, Any, Union
+from commons import constants as const
 from commons.helpers.host import Host
 from commons import commands
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
 from config import RAS_VAL
@@ -38,6 +40,10 @@ LOG = logging.getLogger(__name__)
 
 class Health(Host):
     """Class for health related methods."""
+
+    def __init__(self, hostname: str, username: str, password: str):
+        self.cmn_cfg = CMN_CFG
+        super().__init__(hostname, username, password)
 
     def get_ports_of_service(self, service: str) -> List[str] or None:
         """
@@ -274,16 +280,95 @@ class Health(Host):
         :return: Json response of stdout
         :rtype: dict
         """
-        hctl_command = commands.HCTL_STATUS_CMD_JSON
-        LOG.info("Executing Command %s on node %s",
-                 hctl_command, self.hostname)
-        result = self.execute_cmd(hctl_command, read_lines=False)
-        result = result.decode("utf-8")
-        # LOG.info("Response of the command %s:\n %s ",
-        #          hctl_command, result)
-        result = json.loads(result)
+        result = {}
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
+                self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
+            hctl_command = commands.HCTL_STATUS_CMD_JSON
+            LOG.info("Executing Command %s on node %s",
+                     hctl_command, self.hostname)
+            result = self.execute_cmd(hctl_command, read_lines=False)
+            result = result.decode("utf-8")
+            # LOG.info("Response of the command %s:\n %s ",
+            #          hctl_command, result)
+            result = json.loads(result)
+        elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            pod = "storage-node1"
+            container = "cortx-hax"
+            namespace = "default"
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            out = node.send_k8s_cmd(
+                operation="exec", pod=pod, namespace=namespace,
+                command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
+            result = json.loads(out)
 
         return result
+
+    def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
+        """
+        Checks all the services with given name are started using hctl status
+        :param service_name: Service name to be checked in hctl status.
+        :return: False if no services found or given service_name not started else returns True
+        """
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                fids = []
+                for service in services:
+                    if service_name in service["name"]:
+                        fid = service["fid"]
+                        fids.append(fid)
+                        if service["status"] != "started":
+                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
+                                      pod_name)
+                            return False, result
+                if not services:
+                    LOG.critical("No service found on pod %s", pod_name)
+                    return False, result
+                if not fids:
+                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
+                    return False, result
+            return True, result
+        LOG.error("Product family: %s Unimplemented method", self.cmn_cfg["product_family"])
+        return False, {}
+
+    def hctl_status_get_service_fids(
+            self,
+            service_name: str) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
+        """
+        Get FIDs for given services using hctl status command
+        :param service_name: Service name to be checked in hctl status.
+        :return: List of FIDs found
+        """
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            fids = []
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                pod_fids = []
+                for service in services:
+                    if service_name in service["name"]:
+                        fid = service["fid"]
+                        pod_fids.append(fid)
+                        if service["status"] != "started":
+                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
+                                      pod_name)
+                            return False, result
+                if not services:
+                    LOG.critical("No service found on pod %s", pod_name)
+                    return False, result
+                if not pod_fids:
+                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
+                    return False, result
+                fids.extend(pod_fids)
+            return True, fids
+        LOG.error("Product family: %s: Unimplemented method", self.cmn_cfg["product_family"])
+        return False, []
 
     def get_sys_capacity(self):
         """Parse the hctl response to extract used, available and total capacity
@@ -762,8 +847,8 @@ class Health(Host):
         r_try = 1
         hostname = node['hostname']
         health = Health(hostname=hostname,
-               username=node['username'],
-               password=node['password'])
+                        username=node['username'],
+                        password=node['password'])
         health_result = False
         capacity_result = False
         while r_try <= retry:

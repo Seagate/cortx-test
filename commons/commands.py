@@ -473,7 +473,7 @@ DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 # Kubernetes commands to interact with service/pods.
 
 # Kubectl command prefix
-KUBECTL_CMD = "kubectl {} {} -n {}"
+KUBECTL_CMD = "kubectl {} {} -n {} {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
