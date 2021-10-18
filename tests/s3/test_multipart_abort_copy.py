@@ -23,8 +23,8 @@
 import os
 import time
 import logging
-import pytest
 from multiprocessing import Process
+import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
