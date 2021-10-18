@@ -192,17 +192,17 @@ def convert_xml_to_dict(xml_response) -> dict:
 
 
 def calc_etag(file_path, part_size=0):
-    """Calculating an S3 ETag using Python md5 algorithm"""
+    """Calculating an S3 ETag using encryption algorithm."""
     try:
-        md5_digests = list()
+        hash_digests = list()
         with open(file_path, 'rb') as f_obj:
             if part_size and os.stat(file_path).st_size < part_size:
                 for chunk in iter(lambda: f_obj.read(part_size), b''):
-                    md5_digests.append(sha256(chunk).digest())
+                    hash_digests.append(sha256(chunk).digest())
             else:
-                md5_digests.append(sha256(f_obj.read(part_size)).digest())
+                hash_digests.append(sha256(f_obj.read(part_size)).digest())
 
-        return sha256(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+        return sha256(b''.join(hash_digests)).hexdigest() + '-' + str(len(hash_digests))
     except OSError as error:
         LOGGER.error(str(error))
         raise error from OSError
@@ -225,7 +225,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(obj_size) // int(total_parts)
+        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
         with open(file_path, "rb") as file_pointer:
             i = 1
             while True:
@@ -266,7 +266,7 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(obj_size) // int(total_parts)
+        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
         unaligned = [104857, 209715, 314572, 419430, 524288,
                      629145, 734003, 838860, 943718, 1048576]
         with open(file_path, "rb") as file_pointer:
