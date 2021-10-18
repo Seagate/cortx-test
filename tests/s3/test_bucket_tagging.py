@@ -70,6 +70,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
@@ -110,6 +111,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5517")
     @CTFailOn(error_handler)
     def test_2433(self):
@@ -149,6 +151,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
@@ -194,6 +197,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5533")
     @CTFailOn(error_handler)
     def test_2435(self):
@@ -236,6 +240,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5534")
     @CTFailOn(error_handler)
     def test_2436(self):
@@ -277,6 +282,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5535")
     @CTFailOn(error_handler)
     def test_2437(self):
@@ -322,6 +328,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5536")
     @CTFailOn(error_handler)
     def test_2438(self):
@@ -368,6 +375,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):
@@ -410,6 +418,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5529")
     @CTFailOn(error_handler)
     def test_2440(self):
@@ -448,6 +457,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5521")
     @CTFailOn(error_handler)
     def test_2441(self):
@@ -492,6 +502,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5520")
     @CTFailOn(error_handler)
     def test_2442(self):
@@ -535,6 +546,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5526")
     @CTFailOn(error_handler)
     def test_2443(self):
@@ -578,6 +590,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5527")
     @CTFailOn(error_handler)
     def test_2444(self):
@@ -616,6 +629,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5524")
     @CTFailOn(error_handler)
     def test_2445(self):
@@ -655,6 +669,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5531")
     @CTFailOn(error_handler)
     def test_2446(self):
@@ -689,6 +704,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5512")
     @CTFailOn(error_handler)
     def test_2447(self):
@@ -733,6 +749,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5530")
     @CTFailOn(error_handler)
     def test_2448(self):
@@ -767,6 +784,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5523")
     @CTFailOn(error_handler)
     def test_2449(self):
@@ -872,6 +890,7 @@ class TestBucketTagging:
     # Raised bug EOS-2528, Uncomment when fixed
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5522")
     @CTFailOn(error_handler)
     def test_2450(self):
@@ -904,6 +923,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5513")
     @CTFailOn(error_handler)
     def test_2451(self):
@@ -933,6 +953,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5516")
     @CTFailOn(error_handler)
     def test_2452(self):
@@ -974,6 +995,7 @@ class TestBucketTagging:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_tags
     @pytest.mark.tags("TEST-5518")
     @CTFailOn(error_handler)
     def test_2453(self):

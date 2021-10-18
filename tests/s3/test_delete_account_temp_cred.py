@@ -156,6 +156,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6208")
     @CTFailOn(error_handler)
     def test_4518(self):
@@ -184,6 +185,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6207")
     @CTFailOn(error_handler)
     def test_4519(self):
@@ -211,6 +213,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6206")
     @CTFailOn(error_handler)
     def test_4520(self):
@@ -240,6 +243,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6205")
     @CTFailOn(error_handler)
     def test_4521(self):
@@ -279,6 +283,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6204")
     @CTFailOn(error_handler)
     def test_4522(self):
@@ -328,6 +333,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6203")
     @CTFailOn(error_handler)
     def test_4523(self):
@@ -379,6 +385,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6202")
     @CTFailOn(error_handler)
     def test_4525(self):
@@ -413,6 +420,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6201")
     @CTFailOn(error_handler)
     def test_4526(self):
@@ -442,6 +450,7 @@ class TestDeleteAccountTempCred:
 
     @pytest.mark.skip(reason="Will be taken after F-11D")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_account_creds
     @pytest.mark.tags("TEST-6200")
     @CTFailOn(error_handler)
     def test_4692(self):

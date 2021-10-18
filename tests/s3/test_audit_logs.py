@@ -398,6 +398,7 @@ class TestAuditLogs:
         assert_utils.assert_true(result[0], result[1])
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8012')
     @CTFailOn(error_handler)
     def test_5248(self):
@@ -426,6 +427,7 @@ class TestAuditLogs:
                       "if we set audit logger policy to disabled")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8013')
     @CTFailOn(error_handler)
     def test_5236(self):
@@ -448,6 +450,7 @@ class TestAuditLogs:
             "Multipart upload with Syslog logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8014')
     @CTFailOn(error_handler)
     def test_5235(self):
@@ -469,6 +472,7 @@ class TestAuditLogs:
             "Object operations with syslog logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8015')
     @CTFailOn(error_handler)
     def test_5231(self):
@@ -490,6 +494,7 @@ class TestAuditLogs:
             "Bucket operations with syslog logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8016')
     @CTFailOn(error_handler)
     def test_5228(self):
@@ -511,6 +516,7 @@ class TestAuditLogs:
             "Object operations with log4cxx logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8018')
     @CTFailOn(error_handler)
     def test_5209(self):
@@ -532,6 +538,7 @@ class TestAuditLogs:
             "Bucket operations with log4cxx logger policy.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8017')
     @CTFailOn(error_handler)
     def test_5213(self):
@@ -554,6 +561,7 @@ class TestAuditLogs:
             "Multipart upload with log4cxx logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8010')
     @CTFailOn(error_handler)
     def test_6253(self):
@@ -602,6 +610,7 @@ class TestAuditLogs:
             " the audit server logs post any bucket operation.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8011')
     @CTFailOn(error_handler)
     def test_6255(self):
@@ -661,6 +670,7 @@ class TestAuditLogs:
             " the audit server logs post any object operation.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8726')
     @CTFailOn(error_handler)
     def test_5238(self):
@@ -708,6 +718,7 @@ class TestAuditLogs:
             "operations with 'rsyslog-tcp' logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8727')
     @CTFailOn(error_handler)
     def test_5240(self):
@@ -766,6 +777,7 @@ class TestAuditLogs:
             "operations with 'rsyslog-tcp' logger policy")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_audit_logs
     @pytest.mark.tags('TEST-8728')
     @CTFailOn(error_handler)
     def test_5246(self):
