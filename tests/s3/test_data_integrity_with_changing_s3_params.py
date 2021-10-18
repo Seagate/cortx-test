@@ -28,6 +28,7 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
+from libs.di import data_generator as data_gen
 from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -444,4 +445,65 @@ class TestDIWithChangingS3Params:
         self.params[self.WRITE_PARAM] = True
         self.params[self.READ_PARAM] = False
         self.update_s3config_and_restart_s3_server(params=self.params)
-        # todo change server config
+        first_byte_for_write = ['f', 'z', 'k']
+        first_byte_for_read = ['F', 'Z', 'K']
+        # todo change server config introduce data corruption
+        # buff, csum = data_gen.generate(size=1024 * 1024 * 5, seed=data_gen.get_random_seed())
+        # buff[0] = ord(first_byte_for_write[0])
+        # data_gen.save_buf_to_file(fbuf=buff, csum=csum, size=1024 * 1024, name="test_di")
+
+        sys_util.create_file(fpath=self.F_PATH, count=1)
+        self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
+        self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
+        # test scene 1
+        with open(self.F_PATH, 'rb+') as f:
+            data = f.read()
+            ba = bytearray(data)
+            ba[0] = ord(first_byte_for_write[0])
+            data = bytes(ba)
+            f.write(data)
+        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                                     file_path=self.F_PATH)
+        resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                                         source_object=self.obj_name_1,
+                                         dest_bucket=self.bucket_name_2,
+                                         dest_object=self.obj_name_2)
+        # this copy operation should fail
+        self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                   obj_name=self.obj_name_1, file_path=self.F_PATH)
+        # this get operation should fail
+        # test scene 2
+        with open(self.F_PATH, 'rb+') as f:
+            data = f.read()
+            ba = bytearray(data)
+            ba[0] = ord(first_byte_for_write[1])
+            data = bytes(ba)
+            f.write(data)
+        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                                     file_path=self.F_PATH)
+        resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                                         source_object=self.obj_name_1,
+                                         dest_bucket=self.bucket_name_2,
+                                         dest_object=self.obj_name_2)
+        # this copy operation should fail
+        self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                   obj_name=self.obj_name_1, file_path=self.F_PATH)
+        # this get operation should fail
+        with open(self.F_PATH, 'rb+') as f:
+            data = f.read()
+            ba = bytearray(data)
+            ba[0] = ord(first_byte_for_write[2])
+            data = bytes(ba)
+            f.write(data)
+        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                                     file_path=self.F_PATH)
+        self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                   obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                            file_path_2=self.F_PATH_COPY)
+        if result:
+            assert True
+        else:
+            assert False
+        # ETAG should match
+        # TO DO for READ corruption part
