@@ -81,12 +81,12 @@ class RestTestLib:
         :param str password: password
         :param str username_key: key word for json load for username
         :param str password_key: key word for json load for password
-        :param boolean config_params: to enable/disable param override
+        :param boolean override_config: to enable/disable param override
         :param dict config_params: params to be override
         :return [object]: response
         """
         try:
-            if override_config:
+            if override_config and config_params is not None:
                 config = CSM_REST_CFG
                 for key, value in config_params.items():
                     config.update({key: value})
