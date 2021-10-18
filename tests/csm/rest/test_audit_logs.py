@@ -35,7 +35,6 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from config.s3 import S3_CFG
 
 from commons import configmanager
 from commons import commands
@@ -49,7 +48,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_remote_cmd
 from config import CMN_CFG, PROV_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs
