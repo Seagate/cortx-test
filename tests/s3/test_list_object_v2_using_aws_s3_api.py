@@ -32,7 +32,7 @@ from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_test_lib import AWScliS3api
+from libs.s3.s3_awscli import AWScliS3api
 
 AWS_CLI_OBJ = AWScliS3api()
 
@@ -103,6 +103,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15187")
     @CTFailOn(error_handler)
     def test_15187(self):
@@ -119,6 +120,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15188")
     @CTFailOn(error_handler)
     def test_15188(self):
@@ -134,6 +136,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15189")
     @CTFailOn(error_handler)
     def test_15189(self):
@@ -154,6 +157,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15190")
     @CTFailOn(error_handler)
     def test_15190(self):
@@ -172,6 +176,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15191")
     @CTFailOn(error_handler)
     def test_15191(self):
@@ -197,6 +202,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15194")
     @CTFailOn(error_handler)
     def test_15194(self):
@@ -216,6 +222,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15192")
     @CTFailOn(error_handler)
     def test_15192(self):
