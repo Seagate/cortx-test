@@ -84,5 +84,3 @@ class MotrCoreK8s:
         for node in self.node_dict.keys():
             if node == storage_node:
                 return self.node_dict[node]
-
-        
