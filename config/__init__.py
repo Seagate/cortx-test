@@ -35,6 +35,7 @@ from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3_LDAP_TEST_CONFIG
+from commons.params import S3_MPART_CFG_PATH
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3CMD_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
@@ -93,6 +94,7 @@ S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
 S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
 S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)
 S3_LDAP_TST_CFG = configmanager.get_config_wrapper(fpath=S3_LDAP_TEST_CONFIG, target=target)
+S3_MPART_CFG = configmanager.get_config_wrapper(fpath=S3_MPART_CFG_PATH)
 RAS_VAL = configmanager.get_config_wrapper(fpath=RAS_CONFIG_PATH,
                                            target=target, target_key="csm")
 CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_CONFIG_PATH)
