@@ -87,16 +87,18 @@ class TestFailureDomainK8Cortx:
         """
         Intel ISA  - 3node - SNS- 4+2+0 Deployment
         """
-        self.log.info("Perform k8s Cluster Deployment")
+        self.log.info("STARTED: 3node (SNS-4+2+0) k8s based Cortx Deployment")
+        self.log.info("Step 1: Perform k8s Cluster Deployment")
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Create solution file")
+        self.log.info("Step 2: Create solution file")
         # TODO : Retrieve solution file
 
-        self.log.info("Perform Cortx Cluster Deployment")
+        self.log.info("Step 3: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.master_node_list,
                                                        self.worker_node_list, self.docker_username,
                                                        self.docker_password, self.git_id,
                                                        self.git_token)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: 3node (SNS-4+2+0) k8s based Cortx Deployment")
