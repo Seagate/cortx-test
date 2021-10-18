@@ -98,9 +98,9 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             res = node.send_k8s_cmd(
@@ -125,9 +125,9 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             res = node.send_k8s_cmd(
@@ -153,9 +153,9 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             res = node.send_k8s_cmd(
@@ -294,9 +294,9 @@ class Health(Host):
                     LOG.debug(output)
             LOG.debug("Machine is already configured..!")
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             cmd_output = node.send_k8s_cmd(
@@ -374,9 +374,9 @@ class Health(Host):
             #          hctl_command, result)
             result = json.loads(result)
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             out = node.send_k8s_cmd(
