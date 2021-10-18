@@ -308,6 +308,41 @@ class S3BackgroundIO:
         assert_utils.assert_true(
             res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
 
+    @staticmethod
+    def s3_ios(bucket: str = None,
+               log_file_prefix: str = "parallel_io",
+               duration: str = "0h1m",
+               obj_size: str = "24Kb",
+               **kwargs) -> None:
+        """
+        Perform IOs for specific durations.
+        1. Perform IOs for specified durations.
+        2. Check executions are successful.
+        """
+        kwargs.setdefault("num_clients", 2)
+        kwargs.setdefault("num_sample", 5)
+        kwargs.setdefault("obj_name_pref", "load_gen_")
+        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        LOG.info("STARTED: s3 io's operations.")
+        access_key, secret_key = S3H_OBJ.get_local_keys()
+        resp = s3bench.s3bench(
+            access_key,
+            secret_key,
+            bucket=bucket,
+            end_point=kwargs["end_point"],
+            num_clients=kwargs["num_clients"],
+            num_sample=kwargs["num_sample"],
+            obj_name_pref=kwargs["obj_name_pref"],
+            obj_size=obj_size,
+            duration=duration,
+            log_file_prefix=log_file_prefix)
+        LOG.info(resp)
+        assert_utils.assert_true(
+            os.path.exists(
+                resp[1]),
+            f"failed to generate log: {resp[1]}")
+        LOG.info("ENDED: s3 io's operations.")
+
     def is_alive(self) -> bool:
         """
         Check if parallel IOs are running
@@ -320,7 +355,8 @@ class S3BackgroundIO:
 
     def start(self,
               duration: str = "0h1m",
-              log_prefix: str = None) -> None:
+              log_prefix: str = None,
+              **kwargs) -> None:
         """
         Start parallel IO process
 
@@ -331,8 +367,9 @@ class S3BackgroundIO:
             self.log_prefix = log_prefix
 
         self.parallel_ios = Process(
-            target=s3_ios, args=(
-                self.io_bucket_name, self.log_prefix, duration))
+            target=self.s3_ios,
+            args=(self.io_bucket_name, self.log_prefix, duration),
+            kwargs=kwargs)
         if not self.parallel_ios.is_alive():
             self.parallel_ios.start()
         LOG.info("Parallel IOs started: %s for duration: %s",
