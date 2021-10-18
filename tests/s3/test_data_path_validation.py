@@ -170,6 +170,7 @@ class TestDataPathValidation:
                 resp[1]), f"S3 IO's failed: {resp[1]}")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8735')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
     def test_1696(self, obj_size, block_size):
@@ -185,6 +186,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8736')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, 1)])
     def test_1697(self, obj_size, block_size):
@@ -192,6 +194,7 @@ class TestDataPathValidation:
         self.test_1696(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8737')
     @pytest.mark.parametrize("obj_size, block_size", [(1, "1M")])
     def test_1698(self, obj_size, block_size):
@@ -207,6 +210,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8738')
     @pytest.mark.parametrize("obj_size, block_size", [(10, "1M")])
     def test_1699(self, obj_size, block_size):
@@ -214,6 +218,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8739')
     @pytest.mark.parametrize("obj_size, block_size", [(100, "1M")])
     def test_1700(self, obj_size, block_size):
@@ -221,6 +226,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8740')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, "1M")])
     def test_1701(self, obj_size, block_size):
@@ -228,6 +234,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8741')
     @pytest.mark.parametrize("obj_size, block_size", [(10000, "1M")])
     def test_1702(self, obj_size, block_size):
@@ -235,6 +242,7 @@ class TestDataPathValidation:
         self.test_1698(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8742')
     @pytest.mark.parametrize("obj_size, block_size", [(1, 1)])
     def test_1703(self, obj_size, block_size):
@@ -251,6 +259,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8743')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, 1)])
     def test_1704(self, obj_size, block_size):
@@ -258,6 +267,7 @@ class TestDataPathValidation:
         self.test_1703(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8744')
     @pytest.mark.parametrize("obj_size, block_size", [(1, "1M")])
     def test_1705(self, obj_size, block_size):
@@ -274,6 +284,7 @@ class TestDataPathValidation:
             obj_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8745')
     @pytest.mark.parametrize("obj_size, block_size", [(10, "1M")])
     def test_1706(self, obj_size, block_size):
@@ -281,6 +292,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8746')
     @pytest.mark.parametrize("obj_size, block_size", [(100, "1M")])
     def test_1707(self, obj_size, block_size):
@@ -288,6 +300,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8729')
     @pytest.mark.parametrize("obj_size, block_size", [(1000, "1M")])
     def test_1708(self, obj_size, block_size):
@@ -295,6 +308,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8730')
     @pytest.mark.parametrize("obj_size, block_size", [(10000, "1M")])
     def test_1709(self, obj_size, block_size):
@@ -302,6 +316,7 @@ class TestDataPathValidation:
         self.test_1705(obj_size, block_size)
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8731')
     @pytest.mark.parametrize("obj_size, requests",
                              [("8Mb", [100, 500, 1200, 1500])])
@@ -357,6 +372,7 @@ class TestDataPathValidation:
             " with single client on single bucket")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8732')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [10, 50, 100, 500], [10, 10, 12, 20])])
@@ -417,6 +433,7 @@ class TestDataPathValidation:
             " with multiple clients on single buckets")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8733')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [100, 100, 100, 200], [1, 2, 3, 4])])
@@ -484,6 +501,7 @@ class TestDataPathValidation:
             " with multiple clients on multiple buckets")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_data_path
     @pytest.mark.tags('TEST-8734')
     @pytest.mark.parametrize("obj_size, requests, num_clients",
                              [("8Mb", [120, 150], [10, 2])])
