@@ -67,8 +67,6 @@ class HAK8s:
         self.num_nodes = len(CMN_CFG["nodes"])
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
-        self.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.parallel_ios = None
 
     def polling_host(self,
@@ -455,10 +453,12 @@ class HAK8s:
                 return True, resp
         return False, resp
 
-    def create_bucket_to_complete_mpu(self, bucket_name, object_name, file_size, total_parts,
+    @staticmethod
+    def create_bucket_to_complete_mpu(s3_data, bucket_name, object_name, file_size, total_parts,
                                       multipart_obj_path):
         """
         Helper function to complete multipart upload.
+        :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_size: Size of the file to be created to upload
@@ -466,23 +466,29 @@ class HAK8s:
         :param multipart_obj_path: Path of the file to be uploaded
         :return: response
         """
+        access_key = s3_data["access_key"]
+        secret_key = s3_data["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
+                                            secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
+
         LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = self.s3_test_obj.create_bucket(bucket_name)
+        res = s3_test_obj.create_bucket(bucket_name)
         if not res[0] or res[1] != bucket_name:
             return res
         LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+        res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
         if not res[0]:
             return res
         mpu_id = res[1]["UploadId"]
         LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         LOGGER.info("Uploading parts into bucket")
-        res = self.s3_mp_test_obj.upload_parts(mpu_id=mpu_id, bucket_name=bucket_name,
-                                               object_name=object_name,
-                                               multipart_obj_size=file_size,
-                                               total_parts=total_parts,
-                                               multipart_obj_path=multipart_obj_path)
+        res = s3_mp_test_obj.upload_parts(mpu_id=mpu_id, bucket_name=bucket_name,
+                                          object_name=object_name, multipart_obj_size=file_size,
+                                          total_parts=total_parts,
+                                          multipart_obj_path=multipart_obj_path)
         if not res[0] or len(res[1]) != total_parts:
             return res
         parts = res[1]
@@ -490,22 +496,24 @@ class HAK8s:
         LOGGER.info("Successfully uploaded object")
 
         LOGGER.info("Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        res = s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
         if not res[0] or len(res[1]["Parts"]) != total_parts:
             return res
         LOGGER.info("Listed parts of multipart upload: %s", res[1])
         LOGGER.info("Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
         if not res[0]:
             return res
-        res = self.s3_test_obj.object_list(bucket_name)
+        res = s3_test_obj.object_list(bucket_name)
         if object_name not in res[1]:
             return res
         LOGGER.info("Multipart upload completed")
+        return True, s3_data
 
-    def partial_multipart_upload(self, bucket_name, object_name, part_numbers, **kwargs):
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
         """
-        Helper function to complete multipart upload.
+        Helper function to do partial multipart upload.
+        :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param part_numbers: List of parts to be uploaded
@@ -518,14 +526,21 @@ class HAK8s:
             remaining_upload = kwargs.get("remaining_upload", False)
             parts = kwargs.get("parts", None)
             mpu_id = kwargs.get("mpu_id", None)
+            access_key = s3_data["access_key"]
+            secret_key = s3_data["secret_key"]
+            s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                    endpoint_url=S3_CFG["s3_url"])
+            s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                                endpoint_url=S3_CFG["s3_url"])
+
             if not remaining_upload:
                 LOGGER.info("Creating a bucket with name : %s", bucket_name)
-                res = self.s3_test_obj.create_bucket(bucket_name)
+                res = s3_test_obj.create_bucket(bucket_name)
                 if not res[0] or res[1] != bucket_name:
                     return res
                 LOGGER.info("Created a bucket with name : %s", bucket_name)
                 LOGGER.info("Initiating multipart upload")
-                res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+                res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
                 if not res[0]:
                     return res
                 mpu_id = res[1]["UploadId"]
@@ -542,11 +557,9 @@ class HAK8s:
 
             LOGGER.info("Uploading parts %s", part_numbers)
             for part in part_numbers:
-                resp = self.s3_mp_test_obj.upload_multipart(body=parts[part],
-                                                            bucket_name=bucket_name,
-                                                            object_name=object_name,
-                                                            upload_id=mpu_id,
-                                                            part_number=part)
+                resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
+                                                       object_name=object_name, upload_id=mpu_id,
+                                                       part_number=part)
                 LOGGER.info("Uploaded part %s", part)
             return True, mpu_id, parts
         except BaseException as error:

@@ -90,7 +90,7 @@ class TestClstrShutdownStart:
 
         cls.rest_obj = S3AccountOperations()
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
-        cls.test_file = "mp_obj"
+        cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
         cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
@@ -107,19 +107,8 @@ class TestClstrShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         self.s3acc_name = "{}_{}".format("ha_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
-                                               email_id=self.s3acc_email,
-                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        LOGGER.info("Successfully created s3 account")
-        self.s3_data = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
-                                   'user_name': self.s3acc_name}}
         self.bucket_name = "ha-mp-bkt-{}".format(self.random_time)
         self.object_name = "ha-mp-obj-{}".format(self.random_time)
-        self.s3_test_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("All pods are running.")
         # TODO: Will need to check cluster health with health helper once available
 
@@ -137,9 +126,6 @@ class TestClstrShutdownStart:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Deleting s3 account and buckets associated with it")
-        resp = self.ha_obj.delete_s3_acc_buckets_objects(s3_data=self.s3_data)
-        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Teardown completed")
 
     @pytest.mark.ha
@@ -271,7 +257,20 @@ class TestClstrShutdownStart:
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
 
         LOGGER.info("Step 1: Do multipart upload for 5GB object")
-        resp = self.ha_obj.create_bucket_to_complete_mpu(bucket_name=self.bucket_name,
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account")
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=self.bucket_name,
                                                          object_name=self.object_name,
                                                          file_size=file_size,
                                                          total_parts=total_parts,
@@ -290,7 +289,7 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
         LOGGER.info("Step 4: Download the uploaded object and verify checksum")
-        resp = self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
+        resp = s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
         LOGGER.info("Get object response: %s", resp)
         # TODO: Add checksum verification
         LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
@@ -298,13 +297,14 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
         object_name = "mp-obj-{}".format(self.random_time)
-        resp = self.ha_obj.create_bucket_to_complete_mpu(bucket_name=bucket_name,
+        resp = self.ha_obj.create_bucket_to_complete_mpu(s3_data=self.s3_clean,
+                                                         bucket_name=bucket_name,
                                                          object_name=object_name,
                                                          file_size=file_size,
                                                          total_parts=total_parts,
                                                          multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
-        resp = self.s3_test_obj.get_object(bucket=bucket_name, key=object_name)
+        resp = s3_test_obj.get_object(bucket=bucket_name, key=object_name)
         LOGGER.info("Get object response: %s", resp)
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Successfully created bucket and did multipart upload and download "
@@ -329,7 +329,20 @@ class TestClstrShutdownStart:
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially")
-        resp = self.ha_obj.partial_multipart_upload(bucket_name=self.bucket_name,
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account")
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+        resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
+                                                    bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
                                                     part_numbers=part_numbers,
                                                     multipart_obj_size=file_size,
@@ -360,7 +373,8 @@ class TestClstrShutdownStart:
         LOGGER.info("Step 5: Upload remaining parts")
         remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts)))
 
-        resp = self.ha_obj.partial_multipart_upload(bucket_name=self.bucket_name,
+        resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
+                                                    bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
                                                     part_numbers=remaining_parts,
                                                     remaining_upload=True, parts=parts,
@@ -377,13 +391,13 @@ class TestClstrShutdownStart:
         res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, self.bucket_name,
                                                             self.object_name)
         assert_utils.assert_true(res[0], res)
-        res = self.s3_test_obj.object_list(self.bucket_name)
+        res = s3_test_obj.object_list(self.bucket_name)
         if self.object_name not in res[1]:
             assert_utils.assert_true(False, res)
         LOGGER.info("Step 7: Multipart upload completed")
 
         LOGGER.info("Step 8: Download the uploaded object and verify checksum")
-        resp = self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
+        resp = s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
         LOGGER.info("Get object response: %s", resp)
         # TODO: Add checksum verification
         LOGGER.info("Step 8: Successfully downloaded the object and verified the checksum")
