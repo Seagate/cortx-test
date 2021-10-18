@@ -317,9 +317,7 @@ class TestMultipartAbortCopy:
         """
         Testing deleting a completed multipart upload being copied.
 
-        Initiate a multipart upload, upload parts and complete it.
-        Copy uploaded object.
-        Delete object while copy is in progress.
+        Upload object using multipart, copy the object and delete while copy is in progress.
         Verify copy object fails.
         """
         self.log.info("STARTED: Test deleting completed multipart object during copy operation")
@@ -327,8 +325,7 @@ class TestMultipartAbortCopy:
         self.log.info("Start background S3 IOs")
         self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Initiate multipart upload")
-        resp = self.s3_mp_test_obj.create_multipart_upload(
-            self.bucket_name, self.object_name)
+        resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         mpu_id = resp[1]["UploadId"]
         self.log.info("Step 2: Upload unaligned parts")
@@ -336,15 +333,14 @@ class TestMultipartAbortCopy:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
         source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
-        parts = get_unaligned_parts(
-            self.mp_obj_path, total_parts=mp_config["total_parts"],
-            chunk_size=mp_config["chunk_size"], random=True)
+        parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
+                                    chunk_size=mp_config["chunk_size"], random=True)
         uploaded_parts = self.s3_mp_test_obj.upload_prepared_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, parts=uploaded_parts, bucket=self.bucket_name,
+            mpu_id=mpu_id, bucket=self.bucket_name, parts=uploaded_parts,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
@@ -352,35 +348,25 @@ class TestMultipartAbortCopy:
         assert_utils.assert_in(self.object_name, resp[1], resp[1])
         self.log.info("Step 4: Copy multipart object in a separate process")
         dst_bkt = "mp-bkt-{}".format(self.random_time)
-        self.log.info("Creating a bucket with name : %s", dst_bkt)
         resp = self.s3_test_obj.create_bucket(dst_bkt)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(resp[1], dst_bkt, resp[1])
-        self.log.info("Created a bucket with name : %s", dst_bkt)
-        process = Process(
-            target=self.s3_test_obj.copy_object, kwargs={
-                "source_bucket": self.bucket_name, "source_object": self.object_name,
-                "dest_bucket": dst_bkt, "dest_object": self.object_name})
+        process = Process(target=self.s3_test_obj.copy_object, kwargs={
+            "source_bucket": self.bucket_name, "source_object": self.object_name,
+            "dest_bucket": dst_bkt, "dest_object": self.object_name})
         process.start()
         self.log.info("Step 5: Delete source multipart object")
-        resp = self.s3_test_obj.delete_object(bucket_name=self.bucket_name,
-                                              obj_name=self.object_name)
+        resp = self.s3_test_obj.delete_object(
+            bucket_name=self.bucket_name, obj_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         process.join()
         self.log.info("Step 6: Verify object is not copied")
-        try:
-            self.s3_test_obj.object_info(self.bucket_name, self.object_name)
-        except CTException as error:
-            self.log.error(error)
-            assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
-            self.log.info("Retrieving info of deleted source object failed")
-        self.log.info("Retrieve metadata of copy object")
-        try:
-            self.s3_test_obj.object_info(dst_bkt, self.object_name)
-        except CTException as error:
-            self.log.error(error)
-            assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
-            self.log.info("Retrieving info of incomplete copy object failed")
+        for bucket in [self.bucket_name, dst_bkt]:
+            try:
+                self.s3_test_obj.object_info(bucket, self.object_name)
+            except CTException as error:
+                self.log.error(error)
+                assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
         self.log.info("Stop background S3 IOs")
         self.s3_background_io.stop()
         self.log.info("ENDED: Test deleting completed multipart object during copy operation")
@@ -406,14 +392,12 @@ class TestMultipartAbortCopy:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
         source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
-        parts = get_unaligned_parts(
-            self.mp_obj_path, total_parts=mp_config["total_parts"],
-            chunk_size=mp_config["chunk_size"], random=True)
+        parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
+                                    chunk_size=mp_config["chunk_size"], random=True)
         mpu_list = []
         process_list = []
         for i in range(mp_config["mpu_count"]):
             mpu_bucket_name = self.bucket_name + str(i)
-            self.log.info("Creating a bucket with name : %s", mpu_bucket_name)
             resp = self.s3_test_obj.create_bucket(mpu_bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             mpu_name = self.object_name + str(i)
@@ -423,8 +407,7 @@ class TestMultipartAbortCopy:
             mpu_dict = ({"object_name": mpu_name, "mpu_id": mpu_id,
                          "bucket_name": mpu_bucket_name, "parts": parts})
             mpu_list.append(mpu_dict)
-            process = Process(
-                target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu_dict)
+            process = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu_dict)
             process_list.append(process)
         self.log.info("Step 2: Upload parts in parallel")
         for process in process_list:
@@ -439,18 +422,15 @@ class TestMultipartAbortCopy:
                 object_name=mpu_dict["object_name"])
             assert_utils.assert_true(resp[0], resp[1])
             # Update mpu_dict["parts"] to contain uploaded part information
-            mpu_dict["parts"] = [
-                {"PartNumber": part_info["PartNumber"], "ETag": part_info["ETag"]}
+            mpu_dict["parts"] = [{"PartNumber": part_info["PartNumber"], "ETag": part_info["ETag"]}
                 for part_info in resp[1]]
-            process = Process(
-                target=self.s3_mp_test_obj.complete_multipart_upload, kwargs=mpu_dict)
+            process = Process(target=self.s3_mp_test_obj.complete_multipart_upload, kwargs=mpu_dict)
             process_list.append(process)
         for process in process_list:
             process.start()
         self.log.info("Step 4: Restart S3 server during upload")
         resp = S3H_OBJ.restart_s3server_processes(
-            S3_CFG["nodes"][0]["hostname"], S3_CFG["nodes"][0]["username"],
-            S3_CFG["nodes"][0]["password"])
+            S3_CFG["nodes"][0]["hostname"], S3_CFG["nodes"][0]["username"], S3_CFG["nodes"][0]["password"])
         assert_utils.assert_true(resp[0], resp[1])
         for process in process_list:
             process.join()
@@ -467,8 +447,7 @@ class TestMultipartAbortCopy:
             resp = self.s3_test_obj.object_list(mpu_dict["bucket_name"])
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_in(mpu_dict["object_name"], resp[1], resp[1])
-            resp = self.s3_test_obj.object_info(
-                bucket_name=self.bucket_name, key=mpu_dict["object_name"])
+            resp = self.s3_test_obj.object_info(bucket_name=self.bucket_name, key=mpu_dict["object_name"])
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_equal(source_etag, resp[1]["ETag"])
         self.log.info("ENDED: Test uploading 20 5TB multipart objects")
