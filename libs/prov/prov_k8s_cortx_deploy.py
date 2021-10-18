@@ -279,12 +279,11 @@ class ProvDeployK8sCortxLib:
 
         return resp
 
-    def update_sol_yaml(self, worker_obj: list, hosts: list, filepath,
+    def update_sol_yaml(self, worker_obj: list, filepath,
                         **kwargs):
         """
         This function updates the yaml file
         :Param: worker_obj: list of node object
-        :Param: hosts:list of worker nodes
         :Param: filepath: Filename with complete path
         :Keyword: cluster_id: cluster id
         :Keyword: cvg_count: cvg_count per node
@@ -299,6 +298,8 @@ class ProvDeployK8sCortxLib:
         :Keyword: size_metadata: size of metadata disk
         :Keyword: size_data_disk: size of data disk
         :Keyword: skip_disk_count_check: disk count check
+        returns: the filepath, and dict of host with
+        reserve disk for system
 
         """
         # cluster_id = kwargs.get("cluster_id", 1)
@@ -361,7 +362,13 @@ class ProvDeployK8sCortxLib:
                 data_devices_f = device_list[cvg_count * 2:]
                 data_devices = [data_devices_f[i:i + data_disk_per_cvg]
                                 for i in range(0, len(data_devices_f), data_disk_per_cvg)]
-        system_disk = metadata_devices_per_cvg[0][1]
+        system_disk = metadata_devices_per_cvg[0][0]
+        # Create dict for host and disk
+        sys_disk_pernode = {}
+        for host in worker_obj:
+            schema = {host.hostname: system_disk}
+            sys_disk_pernode.update(schema)
+
         LOGGER.info("System disk ", metadata_devices_per_cvg[0][1])
         # Reading the yaml file
         with open(filepath) as soln:
@@ -394,9 +401,9 @@ class ProvDeployK8sCortxLib:
             for cvg in list(total_cvg):
                 storage.pop(cvg)
             # Updating the node dict
-            for item, host in zip(list(range(node_list)), hosts):
+            for item, host in zip(list(range(node_list)), worker_obj):
                 dict_node = {}
-                name = {'name': host}
+                name = {'name': host.hostname}
                 dict_node.update(name)
                 dict_node.update(device_key)
                 new_node = {'node{}'.format(item + 1): dict_node}
@@ -430,4 +437,4 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, filepath, system_disk
+        return True, filepath, sys_disk_pernode
