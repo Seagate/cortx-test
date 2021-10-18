@@ -32,7 +32,7 @@ from commons.greenlet_worker import GreenletThread
 from commons.greenlet_worker import THREADS
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
-from libs.s3.s3_core_lib import Multipart
+from libs.s3.s3_multipart import Multipart
 
 LOGGER = logging.getLogger(__name__)
 
