@@ -30,6 +30,7 @@ import yaml
 
 from commons import constants as cons
 from commons.helpers.node_helper import Node
+from commons.utils import assert_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
@@ -109,7 +110,7 @@ class TestS3accountK8s:
         self.log.info(cluster_ip)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
-        self.log.info(resp)
+        assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
@@ -157,6 +158,7 @@ class TestS3accountK8s:
         self.log.info(cluster_ip)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
+        assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
