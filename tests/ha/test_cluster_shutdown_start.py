@@ -25,6 +25,8 @@ HA test suite for Cluster Shutdown: Immediate.
 import logging
 import pytest
 import time
+import os
+import random
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
@@ -36,6 +38,7 @@ from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
+from commons.params import TEST_DATA_FOLDER
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -82,6 +85,9 @@ class TestClstrShutdownStart:
                                                         password=cls.password[node]))
 
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.test_file = "mp_obj"
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def setup_method(self):
         """
@@ -189,7 +195,8 @@ class TestClstrShutdownStart:
         resp = self.ha_obj.create_bucket_to_complete_mpu(bucket_name=self.bucket_name,
                                                          object_name=self.object_name,
                                                          file_size=file_size,
-                                                         total_parts=total_parts)
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
@@ -214,7 +221,8 @@ class TestClstrShutdownStart:
         resp = self.ha_obj.create_bucket_to_complete_mpu(bucket_name=bucket_name,
                                                          object_name=object_name,
                                                          file_size=file_size,
-                                                         total_parts=total_parts)
+                                                         total_parts=total_parts,
+                                                         multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
         resp = self.s3_test_obj.get_object(bucket=bucket_name, key=object_name)
         LOGGER.info("Get object response: %s", resp)
@@ -235,34 +243,75 @@ class TestClstrShutdownStart:
         LOGGER.info(
             "STARTED: Test to verify partial multipart upload before and after cluster restart")
 
+        file_size = HA_CFG["test_29472"]["file_size"]
+        total_parts = HA_CFG["test_29472"]["total_parts"]
+        part_numbers = random.sample(range(1, total_parts), total_parts//2)
+
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially")
-        # TODO
+        resp = self.ha_obj.partial_multipart_upload(bucket_name=self.bucket_name,
+                                                    object_name=self.object_name,
+                                                    part_numbers=part_numbers,
+                                                    multipart_obj_size=file_size,
+                                                    total_parts=total_parts,
+                                                    multipart_obj_path=self.multipart_obj_path)
+        parts = resp[2]
+        mpu_id = resp[1]
+        assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 1: Successfully completed partial multipart upload")
 
-        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 2: Listing parts of partial multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        if not res[0] or res[1]["Parts"].sort() != part_numbers.sort():
+            assert_utils.assert_true(res[0], res)
+        LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
+
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
                                                      resource="cluster")
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 3: Cluster shutdown signal sent successfully.")
 
-        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        LOGGER.info("Step 4: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
+        LOGGER.info("Step 4: Cluster restarted successfully and all Pods are online.")
 
-        LOGGER.info("Step 4: Upload remaining parts")
-        # TODO
-        LOGGER.info("Step 4: Successfully uploaded remaining parts")
+        LOGGER.info("Step 5: Upload remaining parts")
+        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts)))
 
-        LOGGER.info("Step 5: Download the uploaded object and verify checksum")
-        # TODO
-        LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
+        resp = self.ha_obj.partial_multipart_upload(bucket_name=self.bucket_name,
+                                                    object_name=self.object_name,
+                                                    part_numbers=remaining_parts,
+                                                    remaining_upload=True, parts=parts,
+                                                    mpu_id=mpu_id)
 
-        LOGGER.info("Step 6: Create multiple buckets and run IOs")
-        # TODO
+        assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+        LOGGER.info("Step 5: Successfully uploaded remaining parts")
+        LOGGER.info("Step 6: Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        if not res[0] or len(res[1]["Parts"]) != total_parts:
+            return res
+        LOGGER.info("Step 6: Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Step 7: Completing multipart upload")
+        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, self.bucket_name,
+                                                            self.object_name)
+        if not res[0]:
+            return res
+        res = self.s3_test_obj.object_list(self.bucket_name)
+        if self.object_name not in res[1]:
+            return res
+        LOGGER.info("Step 7: Multipart upload completed")
 
-        LOGGER.info("Step 6: Successfully created multiple buckets and ran IOs")
+        LOGGER.info("Step 8: Download the uploaded object and verify checksum")
+        resp = self.s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
+        LOGGER.info("Get object response: %s", resp)
+        LOGGER.info("Step 8: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Step 9: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29474', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
                     "restart")

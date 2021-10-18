@@ -467,13 +467,15 @@ class HAK8s:
                 return True, resp
         return False, resp
 
-    def create_bucket_to_complete_mpu(self, bucket_name, object_name, file_size, total_parts):
+    def create_bucket_to_complete_mpu(self, bucket_name, object_name, file_size, total_parts,
+                                      multipart_obj_path):
         """
         Helper function to complete multipart upload.
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_size: Size of the file to be created to upload
         :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
         :return: response
         """
         LOGGER.info("Creating a bucket with name : %s", bucket_name)
@@ -491,7 +493,8 @@ class HAK8s:
         res = self.s3_mp_test_obj.upload_parts(mpu_id=mpu_id, bucket_name=bucket_name,
                                                object_name=object_name,
                                                multipart_obj_size=file_size,
-                                               total_parts=total_parts)
+                                               total_parts=total_parts,
+                                               multipart_obj_path=multipart_obj_path)
         if not res[0] or len(res[1]) != total_parts:
             return res
         parts = res[1]
@@ -511,3 +514,77 @@ class HAK8s:
         if object_name not in res[1]:
             return res
         LOGGER.info("Multipart upload completed")
+
+    def partial_multipart_upload(self, bucket_name, object_name, part_numbers, **kwargs):
+        """
+        Helper function to complete multipart upload.
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param part_numbers: List of parts to be uploaded
+        :return: response
+        """
+        try:
+            total_parts = kwargs.get("total_parts", None)
+            multipart_obj_size = kwargs.get("multipart_obj_size", None)
+            multipart_obj_path = kwargs.get("multipart_obj_path", None)
+            remaining_upload = kwargs.get("remaining_upload", False)
+            parts = kwargs.get("parts", None)
+            mpu_id = kwargs.get("mpu_id", None)
+            if not remaining_upload:
+                LOGGER.info("Creating a bucket with name : %s", bucket_name)
+                res = self.s3_test_obj.create_bucket(bucket_name)
+                if not res[0] or res[1] != bucket_name:
+                    return res
+                LOGGER.info("Created a bucket with name : %s", bucket_name)
+                LOGGER.info("Initiating multipart upload")
+                res = self.s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+                if not res[0]:
+                    return res
+                mpu_id = res[1]["UploadId"]
+                LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+
+                LOGGER.info("Creating parts of data")
+                if os.path.exists(multipart_obj_path):
+                    os.remove(multipart_obj_path)
+                system_utils.create_file(multipart_obj_path, multipart_obj_size)
+                parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
+                                                        multipart_obj_path=multipart_obj_path,
+                                                        total_parts=total_parts)
+                LOGGER.info("Created parts of data: %s", parts)
+
+            LOGGER.info("Uploading parts %s", part_numbers)
+            for part in part_numbers:
+                resp = self.s3_mp_test_obj.upload_multipart(body=parts[part],
+                                                            bucket_name=bucket_name,
+                                                            object_name=object_name,
+                                                            upload_id=mpu_id,
+                                                            part_number=part)
+                LOGGER.info("Uploaded part %s", part)
+            return True, mpu_id, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
+            return False, error
+
+    @staticmethod
+    def create_multiple_data_parts(multipart_obj_path, multipart_obj_size, total_parts):
+        """
+        :param multipart_obj_size: Size of the file to be created to upload
+        :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
+        :return: response
+        """
+        parts = {}
+        uploaded_bytes = 0
+        single_part_size = int(multipart_obj_size) // int(total_parts)
+        with open(multipart_obj_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                data = file_pointer.read(1048576 * single_part_size)
+                LOGGER.info("data_len %s", str(len(data)))
+                if not data:
+                    break
+                parts[i] = data
+                uploaded_bytes += len(data)
+                i += 1
+
+        return parts
