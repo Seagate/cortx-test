@@ -404,11 +404,11 @@ class TestMultipartAbortCopy:
             resp = self.s3_mp_test_obj.create_multipart_upload(mpu_bucket_name, mpu_name)
             assert_utils.assert_true(resp[0], resp[1])
             mpu_id = resp[1]["UploadId"]
-            mpu_dict = ({"object_name": mpu_name, "mpu_id": mpu_id,
-                         "bucket_name": mpu_bucket_name, "parts": parts})
-            mpu_list.append(mpu_dict)
-            process = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu_dict)
-            process_list.append(process)
+            mpu = ({"object_name": mpu_name, "mpu_id": mpu_id, "bucket_name": mpu_bucket_name,
+                    "parts": parts})
+            mpu_list.append(mpu)
+            p = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu)
+            process_list.append(p)
         self.log.info("Step 2: Upload parts in parallel")
         for process in process_list:
             process.start()
@@ -416,38 +416,40 @@ class TestMultipartAbortCopy:
             process.join()
         process_list = []
         self.log.info("Step 3: Complete multipart uploads")
-        for mpu_dict in mpu_list:
+        for mpu in mpu_list:
             resp = self.s3_mp_test_obj.list_parts(
-                mpu_id=mpu_dict["mpu_id"], bucket_name=self.bucket_name,
-                object_name=mpu_dict["object_name"])
+                mpu_id=mpu["mpu_id"], bucket_name=mpu["bucket_name"],
+                object_name=mpu["object_name"])
             assert_utils.assert_true(resp[0], resp[1])
-            # Update mpu_dict["parts"] to contain uploaded part information
-            mpu_dict["parts"] = [{"PartNumber": part_info["PartNumber"], "ETag": part_info["ETag"]}
+            # Update mpu["parts"] to contain uploaded part information
+            mpu["parts"] = [{"PartNumber": part_info["PartNumber"], "ETag": part_info["ETag"]}
                 for part_info in resp[1]]
-            process = Process(target=self.s3_mp_test_obj.complete_multipart_upload, kwargs=mpu_dict)
+            process = Process(target=self.s3_mp_test_obj.complete_multipart_upload, kwargs=mpu)
             process_list.append(process)
         for process in process_list:
             process.start()
         self.log.info("Step 4: Restart S3 server during upload")
         resp = S3H_OBJ.restart_s3server_processes(
-            S3_CFG["nodes"][0]["hostname"], S3_CFG["nodes"][0]["username"], S3_CFG["nodes"][0]["password"])
+            S3_CFG["nodes"][0]["hostname"], S3_CFG["nodes"][0]["username"],
+            S3_CFG["nodes"][0]["password"])
         assert_utils.assert_true(resp[0], resp[1])
         for process in process_list:
             process.join()
         self.log.info("Step 5: Retry failed complete multipart requests")
-        for mpu_dict in mpu_list:
+        for mpu in mpu_list:
             resp = self.s3_mp_test_obj.list_parts(
-                mpu_id=mpu_dict["mpu_id"], bucket_name=mpu_dict["bucket_name"],
-                object_name=mpu_dict["object_name"])
+                mpu_id=mpu["mpu_id"], bucket_name=mpu["bucket_name"],
+                object_name=mpu["object_name"])
             if resp[0]:
-                resp = self.s3_mp_test_obj.complete_multipart_upload(**mpu_dict)
+                resp = self.s3_mp_test_obj.complete_multipart_upload(**mpu)
                 assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 6: Verify multipart uploads")
-        for mpu_dict in mpu_list:
-            resp = self.s3_test_obj.object_list(mpu_dict["bucket_name"])
+        for mpu in mpu_list:
+            resp = self.s3_test_obj.object_list(mpu["bucket_name"])
             assert_utils.assert_true(resp[0], resp[1])
-            assert_utils.assert_in(mpu_dict["object_name"], resp[1], resp[1])
-            resp = self.s3_test_obj.object_info(bucket_name=self.bucket_name, key=mpu_dict["object_name"])
+            assert_utils.assert_in(mpu["object_name"], resp[1], resp[1])
+            resp = self.s3_test_obj.object_info(
+                bucket_name=self.bucket_name, key=mpu["object_name"])
             assert_utils.assert_true(resp[0], resp[1])
             assert_utils.assert_equal(source_etag, resp[1]["ETag"])
         self.log.info("ENDED: Test uploading 20 5TB multipart objects")
