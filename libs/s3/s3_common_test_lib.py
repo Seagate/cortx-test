@@ -23,16 +23,17 @@
 
 import os
 import logging
+from multiprocessing import Process
 from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
-from scripts.s3_bench import s3bench
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
+from commons.utils.system_utils import path_exists
 from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
@@ -40,6 +41,7 @@ from libs.s3 import s3_bucket_policy_test_lib
 from libs.s3 import s3_multipart_test_lib
 from libs.s3 import s3_tagging_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from scripts.s3_bench import s3bench
 
 LOG = logging.getLogger(__name__)
 
@@ -97,6 +99,7 @@ def create_s3_acc(
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
+    :param account_dict:
     :return tuple: It returns multiple values such as access_key,
     secret_key and s3 objects which required to perform further operations.
     """
@@ -235,6 +238,7 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
     return objects
 
 
+
 def s3_ios(
            bucket=None,
            log_file_prefix="parallel_io",
@@ -243,7 +247,6 @@ def s3_ios(
            **kwargs):
     """
     Perform io's for specific durations.
-
     1. Create bucket.
     2. perform io's for specified durations.
     3. Check executions successful.
@@ -271,3 +274,105 @@ def s3_ios(
             resp[1]),
         f"failed to generate log: {resp[1]}")
     LOG.info("ENDED: s3 io's operations.")
+
+
+class S3BackgroundIO:
+    """Class to handle background S3 IOs for S3 tests"""
+
+    def __init__(self,
+                 s3_test_lib_obj,
+                 io_bucket_name: str = None) -> None:
+        """
+        Initialize object and create IO bucket, if not present.
+
+        :param s3_test_lib_obj: Instance of S3TestLib
+        :param io_bucket_name: IO bucket name
+        """
+        if not io_bucket_name:
+            io_bucket_name = "iobkt1-{}".format(perf_counter_ns())
+
+        self.s3_test_lib_obj = s3_test_lib_obj
+        self.io_bucket_name = io_bucket_name
+        self.log_prefix = None
+        self.parallel_ios = None
+
+        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        if not bucket_exists:
+            LOG.info("Creating IO bucket: %s", self.io_bucket_name)
+            resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("Created IO bucket: %s", self.io_bucket_name)
+
+        LOG.info("Check s3 bench tool installed.")
+        res = path_exists(s3bench.S3_BENCH_PATH)
+        assert_utils.assert_true(
+            res, f"S3bench tools not installed: {s3bench.S3_BENCH_PATH}")
+
+    def is_alive(self) -> bool:
+        """
+        Check if parallel IOs are running
+
+        :return: False if IO process is not running or if not created else True
+        """
+        if not self.parallel_ios:
+            return False
+        return self.parallel_ios.is_alive()
+
+    def start(self,
+              duration: str = "0h1m",
+              log_prefix: str = None) -> None:
+        """
+        Start parallel IO process
+
+        :param duration: Duration of the test in the format NhMm for N hours and M minutes
+        :param log_prefix: Prefix for s3bench logs
+        """
+        if log_prefix:
+            self.log_prefix = log_prefix
+
+        self.parallel_ios = Process(
+            target=s3_ios, args=(
+                self.io_bucket_name, self.log_prefix, duration))
+        if not self.parallel_ios.is_alive():
+            self.parallel_ios.start()
+        LOG.info("Parallel IOs started: %s for duration: %s",
+                 self.parallel_ios.is_alive(), duration)
+
+    def stop(self,
+             log_prefix: str = None) -> None:
+        """
+        Stop the parallel IO process and validate logs if log prefix is specified
+
+        :param log_prefix: Prefix for s3bench logs
+        """
+        if self.parallel_ios.is_alive():
+            resp = self.s3_test_lib_obj.object_list(self.io_bucket_name)
+            LOG.info(resp)
+            self.parallel_ios.join()
+            LOG.info(
+                "Parallel IOs stopped: %s",
+                not self.parallel_ios.is_alive())
+        if self.log_prefix:
+            self.validate()
+
+    def validate(self) -> None:
+        """
+        Validate s3bench execution logs
+        """
+        resp = system_utils.validate_s3bench_parallel_execution(
+            s3bench.LOG_DIR, self.log_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+
+    def cleanup(self) -> None:
+        """
+        Stop parallel IO process and cleanup IO bucket
+        """
+        if self.is_alive():
+            self.parallel_ios.join()
+
+        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        if bucket_exists:
+            LOG.info("Deleting IO bucket: %s", self.io_bucket_name)
+            resp = self.s3_test_lib_obj.delete_bucket(self.io_bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOG.info("Deleted IO bucket: %s", self.io_bucket_name)
