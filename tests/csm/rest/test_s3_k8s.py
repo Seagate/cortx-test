@@ -34,34 +34,35 @@ from commons.utils import assert_utils
 from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from libs.s3.s3_k8s_restapi import Cipher
 
 CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
 class TestS3accountK8s:
     """S3 user test class"""
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """
         Setup all the states required for execution of this test suit.
         """
-        self.log = logging.getLogger(__name__)
-        self.config = configparser.ConfigParser()
-        self.log.info("STARTED: test setup.")
-        self.s3_rest_obj = S3AccountOperationsRestAPI()
-        self.host = CMN_CFG["nodes"][0]["hostname"]
-        self.uname = CMN_CFG["nodes"][0]["username"]
-        self.passwd = CMN_CFG["nodes"][0]["password"]
-        self.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
-        self.s3acc_name = "{}_{}".format("cli_s3_acc", int(time.perf_counter_ns()))
-        self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
-        self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.remote_path = cons.CLUSTER_CONF_PATH
-        self.local_path = cons.LOCAL_CONF_PATH
-        self.ldap_search_cmd = ""
+        cls.log = logging.getLogger(__name__)
+        cls.config = configparser.ConfigParser()
+        cls.log.info("STARTED: test setup.")
+        cls.s3_rest_obj = S3AccountOperationsRestAPI()
+        cls.host = CMN_CFG["nodes"][0]["hostname"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.nd_obj = Node(hostname=self.host, username=self.uname, password=self.passwd)
+        cls.s3acc_name = "{}_{}".format("cli_s3_acc", int(time.perf_counter_ns()))
+        cls.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
+        cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        cls.remote_path = cons.CLUSTER_CONF_PATH
+        cls.local_path = cons.LOCAL_CONF_PATH
 
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
+        ldap_search_cmd = ""
         if ip_addr is not None:
             ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
             self.log.info(ldap_search_cmd)
@@ -114,7 +115,7 @@ class TestS3accountK8s:
         self.log.info(secret)
         cluster_id = data["cluster"]["id"]
         self.log.info(cluster_id)
-        admin_passwd = Cipher._decrypt_secret(secret,cluster_id,"cortx")
+        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
         self.log.info(admin_passwd)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,

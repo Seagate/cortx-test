@@ -78,7 +78,7 @@ class Cipher:
             generate = Cipher.gen_key(str1, str2, *strs)
             return generate
 
-    def _decrypt_secret(secret, cluster_id, decryption_key):
+    def decrypt_secret(secret, cluster_id, decryption_key):
         """
         Function for decrypting the password received from cluster.conf file
         """
