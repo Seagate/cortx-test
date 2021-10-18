@@ -247,6 +247,7 @@ class ProvDeployK8sCortxLib:
         param: docker_password: Docker password
         param: git_id: Git ID to access Cortx-k8s repo
         param: git_token: Git token to access Cortx-k8s repo
+        return : True/False and resp
         """
         LOGGER.info("Read solution config file")
         sol_cfg = yaml.safe_load(open(solution_file_path))
