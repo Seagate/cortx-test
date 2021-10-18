@@ -38,6 +38,7 @@ from commons.params import TEST_DATA_FOLDER
 from config import S3_MPART_CFG
 from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
+from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -150,6 +151,7 @@ class TestMultipartAbortCopy:
 
         self.log.info("Cleanup S3 background IO artifacts")
         self.s3_background_io.cleanup()
+        check_cluster_health()
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
@@ -407,8 +409,8 @@ class TestMultipartAbortCopy:
             mpu = ({"object_name": mpu_name, "mpu_id": mpu_id, "bucket_name": mpu_bucket_name,
                     "parts": parts})
             mpu_list.append(mpu)
-            p = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu)
-            process_list.append(p)
+            proc = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu)
+            process_list.append(proc)
         self.log.info("Step 2: Upload parts in parallel")
         for process in process_list:
             process.start()
