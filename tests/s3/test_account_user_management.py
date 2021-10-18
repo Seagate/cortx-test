@@ -267,7 +267,7 @@ class TestAccountUserManagement:
         self.log.info(
             "END: Tested creating new account with existing account name")
 
-    @pytest.mark.skip
+    @pytest.mark.skip (reason="Need to be Modified with boto3")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5434")
@@ -416,7 +416,7 @@ class TestAccountUserManagement:
         self.users_list.append(self.user_name)
         self.log.info("END: CRUD operations with invalid login credentials")
 
-    @pytest.mark.skip
+    @pytest.mark.skip (reason="Need to be Modified with boto3")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-5439")
