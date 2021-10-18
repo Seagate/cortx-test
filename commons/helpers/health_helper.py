@@ -25,8 +25,8 @@ import json
 import time
 import xmltodict
 import re
+from typing import Tuple, List, Any, Union
 from commons import constants as const
-from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode
@@ -387,6 +387,70 @@ class Health(Host):
             result = json.loads(out)
 
         return result
+
+    def hctl_status_service_status(self, service_name: str) -> Tuple[bool, dict]:
+        """
+        Checks all the services with given name are started using hctl status
+        :param service_name: Service name to be checked in hctl status.
+        :return: False if no services found or given service_name not started else returns True
+        """
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                fids = []
+                for service in services:
+                    if service_name in service["name"]:
+                        fid = service["fid"]
+                        fids.append(fid)
+                        if service["status"] != "started":
+                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
+                                      pod_name)
+                            return False, result
+                if not services:
+                    LOG.critical("No service found on pod %s", pod_name)
+                    return False, result
+                if not fids:
+                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
+                    return False, result
+            return True, result
+        LOG.error("Product family: %s Unimplemented method", self.cmn_cfg["product_family"])
+        return False, {}
+
+    def hctl_status_get_service_fids(
+            self,
+            service_name: str) -> Union[Tuple[bool, dict], Tuple[bool, list]]:
+        """
+        Get FIDs for given services using hctl status command
+        :param service_name: Service name to be checked in hctl status.
+        :return: List of FIDs found
+        """
+        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            fids = []
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                pod_fids = []
+                for service in services:
+                    if service_name in service["name"]:
+                        fid = service["fid"]
+                        pod_fids.append(fid)
+                        if service["status"] != "started":
+                            LOG.error("%s service (%s) not started on pod %s", service_name, fid,
+                                      pod_name)
+                            return False, result
+                if not services:
+                    LOG.critical("No service found on pod %s", pod_name)
+                    return False, result
+                if not pod_fids:
+                    LOG.critical("No %s service found on pod %s", service_name, pod_name)
+                    return False, result
+                fids.extend(pod_fids)
+            return True, fids
+        LOG.error("Product family: %s: Unimplemented method", self.cmn_cfg["product_family"])
+        return False, []
 
     def get_sys_capacity(self):
         """Parse the hctl response to extract used, available and total capacity
@@ -865,8 +929,8 @@ class Health(Host):
         r_try = 1
         hostname = node['hostname']
         health = Health(hostname=hostname,
-               username=node['username'],
-               password=node['password'])
+                        username=node['username'],
+                        password=node['password'])
         health_result = False
         capacity_result = False
         while r_try <= retry:

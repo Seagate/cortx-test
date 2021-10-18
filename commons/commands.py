@@ -404,7 +404,7 @@ HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
 # Kubernetes commands to interact with service/pods.
 
 # Kubectl command prefix
-KUBECTL_CMD = "kubectl {} {} -n {}"
+KUBECTL_CMD = "kubectl {} {} -n {} {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
