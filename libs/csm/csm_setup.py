@@ -26,7 +26,7 @@ class CSMConfigsCheck:
             self._log.info("Creating S3 account for setup ")
             response = self._s3account.create_s3_account(user_type="pre-define")
             result = response.status_code in (
-                const.CONFLICT, const.SUCCESS_STATUS)
+                const.CONFLICT, const.SUCCESS_STATUS_FOR_POST)
         except Exception as error:
             # CTP Exception handling not done here as this is being called in setup for every test suit
             # CTP Exception handling shall get complicated
