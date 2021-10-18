@@ -587,11 +587,16 @@ class SystemHealth(RestTestLib):
 
     @RestTestLib.authenticate_and_login
     @RestTestLib.rest_logout
-    def cluster_operation_signal(self, operation: str, resource: str):
+    def cluster_operation_signal(
+            self,
+            operation: str,
+            resource: str,
+            expected_response=HTTPStatus.OK):
         """
         Helper method to send the cluster operation signal before operation performed.
         :param operation: Operation to be performed
         :param resource: resource on which operation needs to be performed
+        :param expected_response: Expected status code
         :return: boolean, response for POST
         """
         # Building request url to perform cluster operation
@@ -606,7 +611,7 @@ class SystemHealth(RestTestLib):
         # Fetching api response
         response = self.restapi.rest_call("post", endpoint=endpoint,
                                           data=json.dumps(data_val), headers=headers)
-        if response.status_code != HTTPStatus.OK:
+        if response.status_code != expected_response:
             self.log.error("%s operation on %s POST REST API response : %s",
                            operation, resource, response)
             return False, response
