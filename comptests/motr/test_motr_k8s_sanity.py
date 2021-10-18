@@ -28,6 +28,7 @@ from libs.motr.motr_core_k8s_lib import MotrCoreK8s
 
 logger = logging.getLogger(__name__)
 
+MOTR_OBJ = MotrCoreK8s()
 
 class TestExecuteK8Sanity:
     """Execute Motr K8s Test suite"""
@@ -36,12 +37,10 @@ class TestExecuteK8Sanity:
     def setup_class(self):
         """ Setup class for running Motr tests"""
         logger.info("STARTED: Setup Operation")
-        self.motr_obj = MotrCoreK8s()
         logger.info("ENDED: Setup Operation")
         yield
         # Perform the clean up for each test.
         logger.info("STARTED: Teardown Operation")
-        del self.motr_obj
         logger.info("ENDED: Teardown Operation")
 
     def test_motr_k8s_lib(self):
@@ -49,9 +48,9 @@ class TestExecuteK8Sanity:
         Sample test
         """
         # TODO: This a sample test for the usage, need to delete it later
-        logger.info(self.motr_obj.cluster_info)
-        logger.info(self.motr_obj.profile_fid)
-        logger.info(self.motr_obj.node_dict)
-        logger.info(self.motr_obj.storage_nodes)
-        logger.info(self.motr_obj.get_primary_podNode())
-        logger.info(self.motr_obj.get_podNode_endpoints())
+        logger.info(MOTR_OBJ.cluster_info)
+        logger.info(MOTR_OBJ.profile_fid)
+        logger.info(MOTR_OBJ.node_dict)
+        logger.info(MOTR_OBJ.storage_nodes)
+        logger.info(MOTR_OBJ.get_primary_podNode())
+        logger.info(MOTR_OBJ.get_podNode_endpoints())
