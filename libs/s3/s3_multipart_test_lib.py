@@ -366,6 +366,28 @@ class S3MultipartTestLib(Multipart):
 
         return True, response
 
+    def list_parts_with_partnum_marker(self, mpu_id:str=None, bucket:str=None,
+                                       object:str=None, partnummarker:int=None) -> tuple:
+
+        """
+        List all parts >1000 in multiart upload .
+
+        :param bucket: Name of the bucket.
+        :return: response.
+        """
+        try:
+            response = super().list_parts(mpu_id, bucket, object,
+                                          PartNumberMarker=partnummarker)
+            LOGGER.info(response)
+        except Exception as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.list_parts.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+        return True, response
+
+
     def abort_multipart_upload(
             self,
             bucket: str = None,

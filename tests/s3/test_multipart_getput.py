@@ -52,7 +52,7 @@ MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]  # To - this ne
 
 class TestMultipartUploadGetPut:
     """Multipart Upload Test Suite."""
-
+    @classmethod
     def setup_class(cls):
         """This is called only once before starting any tests in this class
         """
@@ -73,6 +73,7 @@ class TestMultipartUploadGetPut:
             make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", cls.test_dir_path)
 
+    @classmethod
     def teardown_class(cls):
         """
         This is called after all tests in this class finished execution
@@ -215,7 +216,6 @@ class TestMultipartUploadGetPut:
             self.log.info("Failed to complete the multipart")
 
         self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
-        self.log.info("Stop and validate parallel S3 IOs")
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28532')
@@ -499,7 +499,6 @@ class TestMultipartUploadGetPut:
             mpu_id = res2[1]["UploadId"]
             self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
             mpu_ids2.append(mpu_id)
-
         # list multipart uploads twice
 
         self.log.info("list multipart uploads")
@@ -595,7 +594,7 @@ class TestMultipartUploadGetPut:
 
         self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
                                     all_parts, etag)
-
+        self.log.info("Stop and validate parallel S3 IOs")
         s3_copy_obj.start_stop_validate_parallel_s3ios(ios="Stop",
                                                        log_prefix="TEST-28534_s3bench_ios")
         self.log.info("ENDED: Test multipart upload of object from 10 different client sessions")
@@ -603,7 +602,7 @@ class TestMultipartUploadGetPut:
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28535')
     @CTFailOn(error_handler)
-    def test_multipart_upload_test_283535(self):
+    def test_multipart_upload_test_28535(self):
         """
         ths test is for restarting s3server
         """
@@ -655,8 +654,120 @@ class TestMultipartUploadGetPut:
 
         self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
                                     all_parts, etag)
-
+        self.log.info("Stop and validate parallel S3 IOs")
         s3_copy_obj.start_stop_validate_parallel_s3ios(ios="Stop",
                                                        log_prefix="TEST-28535_s3bench_ios")
         self.log.info("ENDED: Test multipart upload of object from 5 different client sessions "
                       "and restarting s3server randomly")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-28526')
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_28526(self):
+        """
+        This test is for uploading 5TB max size object using multipart upload
+        """
+        self.log.info("STARTED: Multipart upload of 5TB object ")
+
+        mp_config = MPART_CFG["test_28526"]
+        mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
+        etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        new_parts = self.upload_parts_get_etags(self.bucket_name, self.object_name, mpu_id, parts)
+
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
+                                    new_parts, etag)
+
+        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.log.info("ENDED: Test multipart upload of 5TB object")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-28528')
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_28528(self):
+        """
+        This test is for multipart upload of an object having 10000 parts
+        """
+        self.log.info("STARTED: List parts after completion of Multipart upload of an object ")
+        self.log.info("start s3 IO's")
+        s3_copy_obj.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="TEST-28528_s3bench_ios", duration="0h3m")  # check timefor ios
+
+        mp_config = MPART_CFG["test_28528"]
+        mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
+        etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        new_parts = self.upload_parts_get_etags(self.bucket_name, self.object_name, mpu_id, parts)
+
+        self.log.info("Listing parts of multipart upload")
+
+        res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_equal(len(res[1]["Parts"]),
+                                  mp_config["total_parts"], res[1])
+        self.log.info("Part Number marker is %s and list is trunkated %s", res[
+                'PartNumberMarker'], res['IsTruncated'])
+        partNumMarker = res['PartNumberMarker']
+        isTruncated = res['IsTruncated']
+
+        while isTruncated:
+            response = self.s3_mpu_test_obj.list_parts_with_partnum_marker(mpu_id,
+                                                                           self.bucket_name,
+                                                                           self.object_name,
+                                                                           partNumMarker)
+            assert_utils.assert_true(response[0], response[1])
+            partNumMarker = res['PartNumberMarker']
+            isTruncated = response['IsTruncated']
+
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Complete the multipart upload")
+        try:
+            resp = self.s3_mpu_test_obj.complete_multipart_upload(
+                mpu_id, new_parts, self.bucket_name, self.object_name)
+            assert_utils.assert_false(resp[0], resp[1])
+        except CTException as error:
+            self.log.error(error)
+            self.log.info("Failed to complete the multipart")
+
+        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_copy_obj.start_stop_validate_parallel_s3ios(ios="Stop",
+                                                       log_prefix="TEST-28528_s3bench_ios")
+        self.log.info("ENDED: Test List multipart with 10000 parts")
+
+    @pytest.mark.s3_ops
+    @pytest.mark.tags('TEST-28530')
+    @CTFailOn(error_handler)
+    def test_multipart_upload_test_28530(self):
+        self.log.info("STARTED: List parts after completion of multipart upload of an object ")
+        self.log.info("start s3 IO's")
+        s3_copy_obj.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="TEST-28530_s3bench_ios", duration="0h3m")  # check timefor ios
+
+        mp_config = MPART_CFG["test_28530"]
+        mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
+        etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        new_parts = self.upload_parts_get_etags(self.bucket_name, self.object_name, mpu_id, parts)
+
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
+                                    new_parts, etag)
+        self.log.info("Listing parts of multipart upload upon completion of multipart upload")
+        try:
+            resp = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+            assert_utils.assert_false(resp[0], resp[1])
+        except CTException as error:
+            self.log.error(error)
+            self.log.info("Failed to list parts after the completion of the multipart upload")
+
+        self.log.info("list parts cant be done after completion of multipart upload")
+        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+
+        self.log.info("Stop and validate parallel S3 IOs")
+        s3_copy_obj.start_stop_validate_parallel_s3ios(ios="Stop",
+                                                       log_prefix="TEST-28530_s3bench_ios")
+        self.log.info("ENDED: Test List multipart followed by completion of multipart upload")
+
+
+

@@ -155,6 +155,19 @@ test_28535:
     file_size: 40000
     total_parts: 25
     chunk_size: 419430400
+
+test_28530:
+    file_size: 2000
+    total_parts: 5
+
+test_28526:
+    file_size: 5000000
+    total_parts: 1035
+
+test_28528:
+    file_size: 81766
+    total_parts: 10000
+
 test_29163:
     file_size: 5000000
     total_parts: 10000
