@@ -21,11 +21,11 @@
 """Tests various csm related operation on Cluster user using REST API
 """
 import logging
-import pytest
 import time
 from http import HTTPStatus
+import pytest
 
-from commons import configmanager, cortxlogging
+from commons import cortxlogging
 from commons.utils import assert_utils
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_cluster import RestCsmCluster

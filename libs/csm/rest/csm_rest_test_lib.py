@@ -72,8 +72,9 @@ class RestTestLib:
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
+    # pylint: disable=too-many-arguments
     def custom_rest_login(self, username, password, username_key="username",
-                          password_key="password", override_config=False, config_params=dict()):
+                          password_key="password", override_config=False, config_params=None):
         """
         This function tests the invalid login scenarios
         :param str username: username
