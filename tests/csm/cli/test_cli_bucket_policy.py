@@ -283,6 +283,9 @@ class TestCliBucketPolicy:
         self.log.info(
             "Step 2: Created bucket policy on a bucket %s", self.bucket_name)
         self.log.info("Step 3: Creating json file for bucket policy")
+        self.log.debug("Bucket policy file content : %s", self.bkt_policy)
+        self.log.debug("Bucket policy local file path : %s", self.policy_file_path)
+        self.log.debug("Bucket policy remote file path : %s", self.remote_file_path)
         self.s3bkt_plc_obj.create_copy_json_file(self.bkt_policy,
                                                  self.policy_file_path,
                                                  self.remote_file_path)

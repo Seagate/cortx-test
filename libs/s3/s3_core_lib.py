@@ -411,7 +411,7 @@ class Multipart(S3Lib):
         return response
 
     def upload_part(self,
-                    body: str = None,
+                    body: bytes = None,
                     bucket_name: str = None,
                     object_name: str = None,
                     **kwargs) -> dict:

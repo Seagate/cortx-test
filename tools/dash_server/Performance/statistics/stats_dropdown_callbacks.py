@@ -151,37 +151,6 @@ def update_percentfill_dropdown(release, branch, build, nodes):
 
 
 @app.callback(
-    Output('perf_iteration_dropdown', 'options'),
-    Output('perf_iteration_dropdown', 'value'),
-    Output('perf_iteration_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    prevent_initial_call=True
-)
-def update_iteration_dropdown(release, branch, build, nodes, pfull):
-    options = None
-    value = None
-    disabled = False
-    if not all([branch, build, nodes]) and pfull is None:  # pylint: disable=no-else-raise
-        raise PreventUpdate
-    else:
-        iterations = get_distinct_keys(release, 'Iteration', {
-                                       'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
-        if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[0]['value']
-            if len(iterations) == 1:
-                disabled = True
-        else:
-            raise PreventUpdate
-
-    return options, value, disabled
-
-
-@app.callback(
     Output('perf_custom_dropdown', 'options'),
     Output('perf_custom_dropdown', 'value'),
     Output('perf_custom_dropdown', 'disabled'),
@@ -190,22 +159,54 @@ def update_iteration_dropdown(release, branch, build, nodes, pfull):
     Input('perf_build_dropdown', 'value'),
     Input('perf_nodes_dropdown', 'value'),
     Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_custom_dropdown(release, branch, build, nodes, pfull, itrns):
+def update_custom_dropdown(release, branch, build, nodes, pfull):
     options = None
     value = None
     disabled = False
-    if not all([branch, build, nodes, itrns]) and pfull is None:  # pylint: disable=no-else-raise
+    if not all([branch, build, nodes]) and pfull is None:  # pylint: disable=no-else-raise
         raise PreventUpdate
     else:
         custom = get_distinct_keys(release, 'Custom', {
-                                   'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull, 'Iteration': itrns})
+                                   'Branch': branch, 'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
         if custom:
             options = get_dict_from_array(custom, False)
             value = options[0]['value']
             if len(custom) == 1:
+                disabled = True
+        else:
+            raise PreventUpdate
+
+    return options, value, disabled
+
+
+@app.callback(
+    Output('perf_iteration_dropdown', 'options'),
+    Output('perf_iteration_dropdown', 'value'),
+    Output('perf_iteration_dropdown', 'disabled'),
+    Input('perf_release_dropdown', 'value'),
+    Input('perf_branch_dropdown', 'value'),
+    Input('perf_build_dropdown', 'value'),
+    Input('perf_nodes_dropdown', 'value'),
+    Input('perf_pfull_dropdown', 'value'),
+    Input('perf_custom_dropdown', 'value'),
+    prevent_initial_call=True
+)
+def update_iteration_dropdown(release, branch, build, nodes, pfull, custom):
+    options = None
+    value = None
+    disabled = False
+    if not all([branch, build, nodes, custom]) and pfull is None:  # pylint: disable=no-else-raise
+        raise PreventUpdate
+    else:
+        iterations = get_distinct_keys(release, 'Iteration', {
+                                       'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+                                       'Percentage_full': pfull,  'Custom': custom})
+        if iterations:
+            options = get_dict_from_array(iterations, False, 'itrns')
+            value = options[0]['value']
+            if len(iterations) == 1:
                 disabled = True
         else:
             raise PreventUpdate
