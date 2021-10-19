@@ -263,20 +263,33 @@ def calculate_checksum(
         options: str = "",
         **kwargs) -> tuple:
     """
-    Calculate MD5 checksum with/without binary coversion for a file.
+    Calculate MD5 checksum with/without binary conversion for a file.
     :param file_path: Name of the file with path
-    :param binary_bz64: Calulate binary base64 checksum for file,
+    :param binary_bz64: Calculate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :param options: option for md5sum tool
     :keyword filter_resp: filter md5 checksum cmd response True/False
+    # :param hash_algo: calculate checksum for given hash algo
     :return: string or MD5 object
     """
+    hash_algo = kwargs.get("hash_algo", "md5")
     if not os.path.exists(file_path):
         return False, "Please pass proper file path"
-    if binary_bz64:
-        cmd = "openssl md5 -binary {} | base64".format(file_path)
-    else:
-        cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "md5":
+        if binary_bz64:
+            cmd = "openssl md5 -binary {} | base64".format(file_path)
+        else:
+            cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "SHA-1":
+        cmd = "sha1sum {}".format(file_path)
+    if hash_algo == "SHA-224":
+        cmd = "sha224sum {}".format(file_path)
+    if hash_algo == "SHA-256":
+        cmd = "sha256sum {}".format(file_path)
+    if hash_algo == "SHA-384":
+        cmd = "sha384sum {}".format(file_path)
+    if hash_algo == "SHA-512":
+        cmd = "sha512sum {}".format(file_path)
 
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
@@ -1259,3 +1272,15 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
+def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
+    """
+    validate MD5 checksum for 2 files
+    # :param hash_algo: calculate checksum for given hash algo
+    """
+    hash_algo = kwargs.get("hash_algo", "md5")
+    check_1 = calculate_checksum(file_path=file_path_1, hash_algo=hash_algo)
+    check_2 = calculate_checksum(file_path=file_path_2, hash_algo=hash_algo)
+    if check_1 == check_2:
+        return True
+    return False
