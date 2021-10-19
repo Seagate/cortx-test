@@ -144,7 +144,8 @@ class TestMultipartUploadGetPut:
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         return mpu_id
 
-    def create_file_mpu(self, multipart_obj_size: int = None, object_path: str = None):
+    @staticmethod
+    def create_file_mpu(multipart_obj_size: int = None, object_path: str = None):
         """
          Create file of given size and get the aligned size parts
         :param multipart_obj_size: Size of object need to be uploaded.
@@ -241,7 +242,7 @@ class TestMultipartUploadGetPut:
         self.log.info("Uploading parts")
         # To - Method to upload parts ; check the part no .order is shuffled in get_unaligned parts
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, 
+                                                                         self.object_name,
                                                                          parts=parts)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
@@ -299,7 +300,7 @@ class TestMultipartUploadGetPut:
         s3_background_io.start(log_prefix="TEST-28538_s3bench_ios", duration="0h4m")
         # Initiate multipart upload
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
-        upload_etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         self.log.info(" Uploading parts")   # Upload part number 1 and 10000 only
         # Method to get parts
         parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"],
@@ -665,7 +666,7 @@ class TestMultipartUploadGetPut:
             is_truncated = response[1]['IsTruncated']
             all_parts.append(res[1]["Parts"])
 
-        self.log.info("Listed parts of multipart upload: ", all_parts)
+        self.log.info("Listed parts of multipart upload: %s", all_parts)
         self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
