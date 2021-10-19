@@ -280,6 +280,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19841")
     @CTFailOn(error_handler)
     def test_19841(self):
@@ -354,6 +355,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19842")
     @CTFailOn(error_handler)
     def test_19842(self):
@@ -430,6 +432,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19843")
     @CTFailOn(error_handler)
     def test_19843(self):
@@ -515,6 +518,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19844")
     @pytest.mark.parametrize("object_size", ["5GB", "2GB"])
     def test_19844(self, object_size):
@@ -587,6 +591,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19846")
     @CTFailOn(error_handler)
     def test_19846(self):
@@ -646,6 +651,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19847")
     @CTFailOn(error_handler)
     def test_19847(self):
@@ -740,6 +746,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19848")
     @CTFailOn(error_handler)
     def test_19848(self):
@@ -833,6 +840,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19849")
     @CTFailOn(error_handler)
     def test_19849(self):
@@ -919,6 +927,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19850")
     @CTFailOn(error_handler)
     def test_19850(self):
@@ -981,6 +990,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19851")
     @CTFailOn(error_handler)
     def test_19851(self):
@@ -1063,6 +1073,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19891")
     @CTFailOn(error_handler)
     def test_19891(self):
@@ -1147,6 +1158,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19892")
     @CTFailOn(error_handler)
     def test_19892(self):
@@ -1217,6 +1229,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19893")
     @CTFailOn(error_handler)
     def test_19893(self):
@@ -1302,6 +1315,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19894")
     @CTFailOn(error_handler)
     def test_19894(self):
@@ -1372,6 +1386,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19895")
     @CTFailOn(error_handler)
     def test_19895(self):
@@ -1452,6 +1467,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19896")
     @CTFailOn(error_handler)
     def test_19896(self):
@@ -1528,6 +1544,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19897")
     @CTFailOn(error_handler)
     def test_19897(self):
@@ -1589,6 +1606,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19898")
     @CTFailOn(error_handler)
     def test_19898(self):
@@ -1655,6 +1673,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19899")
     @CTFailOn(error_handler)
     def test_19899(self):
@@ -1735,6 +1754,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-19900")
     @pytest.mark.parametrize("object_name",
                              ["new% (1234) ::#$$^**", "cp-object"])
@@ -1838,6 +1858,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-16899")
     @CTFailOn(error_handler)
     def test_16899(self):
@@ -1888,6 +1909,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-17110")
     @CTFailOn(error_handler)
     def test_17110(self):
@@ -1957,6 +1979,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-22283")
     @CTFailOn(error_handler)
     def test_22283(self):
@@ -2031,6 +2054,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-22287")
     @CTFailOn(error_handler)
     def test_22287(self):
@@ -2124,6 +2148,7 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-22292")
     @CTFailOn(error_handler)
     def test_22292(self):
@@ -2257,13 +2282,15 @@ class TestCopyObjects:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_copy
     @pytest.mark.tags("TEST-22299")
     @CTFailOn(error_handler)
     def test_22299(self):
         """Use bucket policy to validate copy object with applied ACL."""
         LOGGER.info("STARTED: Use bucket policy to validate copy object with applied ACL.")
         bucket_policy1 = BKT_POLICY_CONF["test_22283"]["bucket_policy"]
-        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy"]
+        bucket_policy2 = BKT_POLICY_CONF["test_22299"]["bucket_policy_1"]
+        bucket_policy3 = BKT_POLICY_CONF["test_22299"]["bucket_policy_2"]
         LOGGER.info("Step 1: Create a bucket in Account1. Create, upload & check object "
                     "uploaded to the above bucket.")
         canonical_id1, s3_obj1, s3_acl_obj1 = self.response1[:3]
@@ -2325,19 +2352,7 @@ class TestCopyObjects:
         assert_utils.assert_equal(put_etag, copy_etag,
                                   f"Failed to match put etag: '{put_etag}' "
                                   f"with copy etag: {copy_etag}")
-        LOGGER.info(
-            "Step 8: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
-        resp = s3_acl_obj1.copy_object_acl(
-            self.bucket_name1,
-            self.object_name1,
-            self.bucket_name2,
-            self.object_name2,
-            acl="bucket-owner-full-control")
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 09: Get bucket ACLs and check the ACL's got added.")
-        resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
-        assert_utils.assert_true(resp[0], resp)
-        LOGGER.info("Step 10: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
+        LOGGER.info("Step 8: Using bucket policy Allow PutObject and PutObjectAcl access "
                     "to Account1 on bucket2 of Account2.")
         bucket_policy2['Statement'][0]['Principal']['CanonicalUser'] = \
             bucket_policy2['Statement'][0]['Principal'][
@@ -2353,12 +2368,44 @@ class TestCopyObjects:
         resp = s3_policy_usr_obj2.put_bucket_policy(
             self.bucket_name2, bucket_policy2)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 11: From Account2 check the applied Bucket Policy in above step.")
+        LOGGER.info("Step 9: From Account2 check the applied Bucket Policy in above step.")
         resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(resp[1]["Policy"], bucket_policy2, resp[1])
         LOGGER.info(
-            "Step 12: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
+            "Step 10: From Account1 copy object from bucket1 to bucket2 with applying ACL's .")
+        resp = s3_acl_obj1.copy_object_acl(
+            self.bucket_name1,
+            self.object_name1,
+            self.bucket_name2,
+            self.object_name2,
+            acl="bucket-owner-full-control")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 11: Get bucket ACLs and check the ACL's got added.")
+        resp = s3_acl_obj1.get_object_acl(self.bucket_name2, self.object_name2)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 12: Using bucket policy Allow PutObject and Deny PutObjectAcl access "
+                    "to Account1 on bucket2 of Account2.")
+        bucket_policy3['Statement'][0]['Principal']['CanonicalUser'] = \
+            bucket_policy3['Statement'][0]['Principal'][
+                'CanonicalUser'].format(str(canonical_id1))
+        bucket_policy3['Statement'][0]['Resource'] = bucket_policy3['Statement'][0][
+            'Resource'].format(self.bucket_name2)
+        bucket_policy3['Statement'][1]['Principal']['CanonicalUser'] = \
+            bucket_policy3['Statement'][1]['Principal'][
+                'CanonicalUser'].format(str(canonical_id1))
+        bucket_policy3['Statement'][1]['Resource'] = bucket_policy3['Statement'][1][
+            'Resource'].format(self.bucket_name2)
+        bucket_policy3 = json.dumps(bucket_policy3)
+        resp = s3_policy_usr_obj2.put_bucket_policy(
+            self.bucket_name2, bucket_policy3)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 13: From Account2 check the applied Bucket Policy in above step.")
+        resp = s3_policy_usr_obj2.get_bucket_policy(self.bucket_name2)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_equals(resp[1]["Policy"], bucket_policy3, resp[1])
+        LOGGER.info(
+            "Step 14: From Account1 copy object from bucket1 to bucket2 along with applying ACL's.")
         try:
             resp = s3_acl_obj1.copy_object_acl(
                 self.bucket_name1,

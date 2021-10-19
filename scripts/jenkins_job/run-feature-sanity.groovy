@@ -53,8 +53,8 @@ deactivate
 		stage('TEST_EXECUTION') {
 			steps{
 			    sh label: '', script: '''source venv/bin/activate
-export HOSTNAME="${HOSTNAME}"
-sh scripts/jenkins_job/run_tests.sh
+export Target_Node="${Target_Node}"
+sh scripts/jenkins_job/run_tests.sh ${Target_Node}
 deactivate
 '''
 			}

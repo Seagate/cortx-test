@@ -3124,11 +3124,23 @@ test_22292:
         Resource: "arn:aws:s3:::{}/*"
 
 test_22299:
-  bucket_policy:
+  bucket_policy_1:
     Statement:
       - Effect: "Allow"
         Principal:
          CanonicalUser: "{}"
+        Action: "s3:PutObject"
+        Resource: "arn:aws:s3:::{}/*"
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
+        Action: "s3:PutObjectAcl"
+        Resource: "arn:aws:s3:::{}/*"
+  bucket_policy_2:
+    Statement:
+      - Effect: "Allow"
+        Principal:
+          CanonicalUser: "{}"
         Action: "s3:PutObject"
         Resource: "arn:aws:s3:::{}/*"
       - Effect: "Deny"

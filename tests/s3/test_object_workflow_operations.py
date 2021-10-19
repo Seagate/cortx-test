@@ -107,6 +107,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
@@ -134,6 +135,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5499")
     @CTFailOn(error_handler)
     def test_copy_different_sizes_2209(self):
@@ -166,6 +168,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5496")
     @CTFailOn(error_handler)
     def test_recursive_copy_2210(self):
@@ -188,6 +191,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5502")
     def test_add_object_non_existing_bucket2211(self):
         """Add Object to non existing bucket."""
@@ -205,6 +209,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5500")
     @CTFailOn(error_handler)
     def test_copy_object_local_file_2213(self):
@@ -257,6 +262,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5495")
@@ -298,6 +304,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5501")
     @CTFailOn(error_handler)
     def test_download_byte_range_2215(self):
@@ -338,6 +345,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5493")
@@ -384,6 +392,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5503")
     @CTFailOn(error_handler)
     def test_add_metadata_verify_object_2218(self):
@@ -451,6 +460,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5494")
     @CTFailOn(error_handler)
     def test_remove_metadata_2219(self):
@@ -506,6 +516,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5497")
@@ -562,6 +573,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5492")
     @CTFailOn(error_handler)
     def test_delete_non_existing_object_2221(self):
@@ -589,6 +601,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8713")
     @CTFailOn(error_handler)
     def test_del_object_verbose_mode_7653(self):
@@ -620,6 +633,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8714")
     @CTFailOn(error_handler)
     def test_delete_object_quiet_mode_7655(self):
@@ -656,6 +670,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8715")
     @CTFailOn(error_handler)
     def test_delete_objects_and_mention_1001_objects_7656(self):
@@ -684,6 +699,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8716")
     @CTFailOn(error_handler)
     def test_delete_objects_and_mention_1000_objects_7657(self):

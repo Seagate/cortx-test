@@ -38,7 +38,7 @@ class LogicalNode(Host):
     """
 
     kube_commands = ('create', 'apply', 'config', 'get', 'explain',
-                 'autoscale', 'patch', 'scale')
+                     'autoscale', 'patch', 'scale', 'exec')
 
     def get_service_logs(self, svc_name: str, namespace: str, options: '') -> Tuple:
         """Get logs of a pod or service."""
@@ -53,16 +53,31 @@ class LogicalNode(Host):
             namespace: str,
             command_suffix: str,
             decode=False,
-            **kwargs) -> list:
+            **kwargs) -> bytes:
         """send/execute command on logical node/pods."""
         if operation not in LogicalNode.kube_commands:
             raise ValueError(
                 "command parameter must be one of %r." % str(LogicalNode.kube_commands))
-        out = []
         log.debug("Performing %s on service %s in namespace %s...", operation, pod, namespace)
         cmd = commands.KUBECTL_CMD.format(operation, pod, namespace, command_suffix)
         resp = self.execute_cmd(cmd, **kwargs)
         if decode:
             resp = resp.decode("utf8").strip()
-        out.append(resp)
-        return out
+        return resp
+
+    def shutdown_node(self, options=None):
+        """Function to shutdown any of the node."""
+        try:
+            cmd = "shutdown {}".format(options if options else "")
+            log.debug(
+                "Shutting down %s node using cmd: %s.",
+                self.hostname,
+                cmd)
+            resp = self.execute_cmd(cmd, shell=False)
+            log.debug(resp)
+        except Exception as error:
+            log.error("*ERROR* An exception occurred in %s: %s",
+                      LogicalNode.shutdown_node.__name__, error)
+            return False, error
+
+        return True, "Node shutdown successfully"
