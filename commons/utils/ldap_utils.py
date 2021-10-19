@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""S3 REST API operation in K8s Library."""
+"""LDAP related operations."""
 import os
 import subprocess
 import logging
@@ -30,12 +30,12 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-cortxsec_cmd = '/opt/seagate/cortx/extension/cortxsec'
+CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
 
 LOGGER = logging.getLogger(__name__)
 
 class Cipher:
-
+    """Cipher class for decryption"""
     @staticmethod
     def decrypt(key: bytes, data: bytes) -> bytes:
         """
@@ -67,9 +67,9 @@ class Cipher:
         """
         Function will be invoked by decrypt key function.
         """
-        if os.path.exists(cortxsec_cmd):
+        if os.path.exists(CORTXSEC_CMD):
             args = ' '.join(['getkey', str1, str2] + list(strs))
-            getkey_cmd = f'{cortxsec_cmd} {args}'
+            getkey_cmd = f'{CORTXSEC_CMD} {args}'
             try:
                 resp = subprocess.check_output(getkey_cmd.split(), stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as process_error:
