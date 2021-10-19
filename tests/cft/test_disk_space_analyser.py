@@ -442,33 +442,6 @@ class LogAnalyser(TestCase):
                 log.info('Continue running...')
 
 
-# def start_service(c):
-#     command = "systemctl start "
-#     for svc in services:
-#         csts = status(c, svc)
-#         if csts[c.host] != "Running":
-#             coutput = c.run(command + svc, pty=False)
-#             log.info("Starting: %s " % (c.host))
-
-
-# def status(cn, svc_list):
-#     for svc in svc_list:
-#         coutput = cn.run("hostname && ps -ef | grep " + svc, hide="both")
-#         msg = {cn.host + svc: "Stopped"}
-#         if svc in coutput.stdout:
-#             msg[cn.host + svc] = "Running"
-#     return msg
-
-
-# def stop_service(c, services):
-#     core_command = "sudo systemctl stop"  # stop services
-#     for svc in services:
-#         coutput = c.run(core_command + svc)
-#         time.sleep(2)
-#         csts = status(c, services)
-#         log.info(c.host, csts[c.host])
-
-
 def send_mail(smtpsrv, fromlist, tolist, msg, hosts):
     """Email configuration when Log Size Limit exceeds"""
     try:
