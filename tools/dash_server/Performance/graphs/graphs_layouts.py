@@ -140,11 +140,6 @@ graphs_input_options = [
                 placeholder="Buckets",
                 style=style_dropdown_medium
             ),
-        ],
-        justify='center'
-    ),
-    Row(
-        [
             daq.ToggleSwitch(
                 id="compare_flag",
                 label="Compare",
@@ -152,6 +147,11 @@ graphs_input_options = [
                 style={'color': '#FFFFFF', 'margin-top': '15px',
                        'margin-right': '10px'}
             ),
+        ],
+        justify='center'
+    ),
+    Row(
+        [ 
             Dropdown(
                 id="graphs_release_compare_dropdown",
                 options=release,
