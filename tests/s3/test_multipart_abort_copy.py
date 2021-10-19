@@ -35,8 +35,8 @@ from commons.utils.system_utils import backup_or_restore_files, make_dirs, remov
 from commons.utils.system_utils import calculate_checksum
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
+from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
-from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import S3BackgroundIO
