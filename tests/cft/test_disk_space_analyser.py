@@ -242,7 +242,7 @@ class LogAnalyser(TestCase):
                     total_sz += szmap.get(log_file, 0)
                     if szmap.get(log_file) is None:
                         continue
-                    svc_log_sz.update({svc: svc_log_sz.get(svc, 0) + szmap.get(lg)})
+                    svc_log_sz.update({svc: svc_log_sz.get(svc, 0) + szmap.get(log_file)})
             elif isinstance(svcs[svc], str):
                 try:
                     msg = "Log file/dir {} is not present in szmap".format(svcs[svc])
@@ -253,10 +253,10 @@ class LogAnalyser(TestCase):
                     tb_info = traceback.extract_tb(tb)
                     filename, line, func, text = tb_info[-1]
                     log.debug("Assertion Error occured on line {} in statement {}".format(line, text))
-                total_sz += szmap.get(lg, 0)
-                if szmap.get(lg) is None:
+                total_sz += szmap.get(log_file, 0)
+                if szmap.get(log_file) is None:
                     continue
-                svc_log_sz.update({svc: svc_log_sz.get(svc, 0) + szmap.get(lg)})
+                svc_log_sz.update({svc: svc_log_sz.get(svc, 0) + szmap.get(log_file)})
         log.info("For Host {} Cortx Logs size in MBs group by service are:".format(host))
         self.roundoff_MB(svc_log_sz)
         log.info(svc_log_sz)
