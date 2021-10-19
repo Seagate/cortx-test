@@ -195,7 +195,7 @@ def update_bucketops(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         data = {
-            'release': release_combined.split("_")[0], 'OS': release_combined.split("_")[1], 
+            'release': release_combined.split("_")[0], 'OS': release_combined.split("_")[1],
             'build': build, 'branch': branch, 'nodes': nodes,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
