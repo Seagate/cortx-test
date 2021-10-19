@@ -460,9 +460,9 @@ class TestDIWithChangingS3Params:
         # test scene 1
         with open(self.F_PATH, 'rb+') as f_random:
             data = f_random.read()
-            ba = bytearray(data)
-            ba[0] = ord(first_byte_for_write[0])
-            data = bytes(ba)
+            byt_ary = bytearray(data)
+            byt_ary[0] = ord(first_byte_for_write[0])
+            data = bytes(byt_ary)
             f_random.write(data)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                      file_path=self.F_PATH)
@@ -477,9 +477,9 @@ class TestDIWithChangingS3Params:
         # test scene 2
         with open(self.F_PATH, 'rb+') as f_random:
             data = f_random.read()
-            ba = bytearray(data)
-            ba[0] = ord(first_byte_for_write[1])
-            data = bytes(ba)
+            byt_ary = bytearray(data)
+            byt_ary[0] = ord(first_byte_for_write[1])
+            data = bytes(byt_ary)
             f_random.write(data)
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                               file_path=self.F_PATH)
@@ -493,9 +493,9 @@ class TestDIWithChangingS3Params:
         # this get operation should fail
         with open(self.F_PATH, 'rb+') as f_random:
             data = f_random.read()
-            ba = bytearray(data)
-            ba[0] = ord(first_byte_for_write[2])
-            data = bytes(ba)
+            byt_ary = bytearray(data)
+            byt_ary[0] = ord(first_byte_for_write[2])
+            data = bytes(byt_ary)
             f_random.write(data)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                      file_path=self.F_PATH)
@@ -511,9 +511,9 @@ class TestDIWithChangingS3Params:
         # test scene 3
         with open(self.F_PATH, 'rb+') as f_random:
             data = f_random.read()
-            ba = bytearray(data)
-            ba[0] = ord(first_byte_for_read[2])
-            data = bytes(ba)
+            byt_ary = bytearray(data)
+            byt_ary[0] = ord(first_byte_for_read[2])
+            data = bytes(byt_ary)
             f_random.write(data)
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                               file_path=self.F_PATH)
