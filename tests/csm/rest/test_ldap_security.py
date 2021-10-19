@@ -35,7 +35,7 @@ from config import CMN_CFG
 from config import CSM_REST_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from libs.s3.s3_k8s_restapi import Cipher
+from commons.utils.ldap_utils import Cipher
 
 class TestS3accountK8s:
     """S3 user test class"""
