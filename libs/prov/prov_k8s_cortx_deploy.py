@@ -279,6 +279,12 @@ class ProvDeployK8sCortxLib:
 
         return resp
 
+    def checkout_solution_file(self, token, git_tag):
+        url = self.deploy_cfg["git_k8_repo_file"].format(token, git_tag)
+        cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["template_path"], url)
+        system_utils.execute_cmd(cmd=cmd)
+        return self.deploy_cfg["template_path"]
+
     def update_sol_yaml(self, worker_obj: list, filepath,
                         **kwargs):
         """

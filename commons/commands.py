@@ -423,6 +423,7 @@ CMD_SRVC_STATUS = "kubectl get services"
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
 CMD_CURL = "curl -o {} {}"
+
 #Git commands
 CMD_GIT_CLONE = "git clone {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
