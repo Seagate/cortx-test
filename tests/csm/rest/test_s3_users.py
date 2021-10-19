@@ -512,9 +512,9 @@ class TestS3user():
             akey = resp.json()["access_key"]
             skey = resp.json()["secret_key"]
             s3_user = resp.json()["account_name"]
-            iam_user = "{}{}".format("iam", s3_user)
-            bucket = "{}{}".format("bucket", s3_user)
-            obj = "{}{}.txt".format("object", s3_user)
+            iam_user = f"iam{s3_user}"
+            bucket = f"bucket{s3_user}"
+            obj = f"object{s3_user}.txt"
 
             self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                           iam_user, akey, skey)
@@ -776,10 +776,9 @@ class TestS3user():
         akey = resp.json()["access_key"]
         skey = resp.json()["secret_key"]
         s3_user = resp.json()["account_name"]
-        iam_user = "{}{}".format("iam", s3_user)
-        bucket = "{}{}".format("bucket", s3_user)
-        obj = "{}{}.txt".format("object", s3_user)
-
+        iam_user = f"iam{s3_user}"
+        bucket = f"bucket{s3_user}"
+        obj = f"object{s3_user}.txt"
         self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                       iam_user, akey, skey)
         assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
@@ -813,7 +812,8 @@ class TestS3user():
     @pytest.mark.tags("TEST-28931")
     def test_28931(self):
         """
-        Test create , get, edit and delete max number of S3 account with custom AWS access key and secret key
+        Test create , get, edit and delete max number of S3 account with custom AWS access key and
+        secret key
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -839,7 +839,8 @@ class TestS3user():
             user_data = resp.json()
             self.log.info("Created S3 user : %s", user_data["account_name"])
             created_users.append(user_data)
-            assert result, "Status code check failed for %s user".format(user_data["account_name"])
+            usr = user_data["account_name"]
+            assert result, f"Status code check failed for {usr} user"
             self.log.info("[END] Create User count : %s", i + 1)
 
         resp = self.s3user.list_all_created_s3account()
@@ -847,8 +848,8 @@ class TestS3user():
         user_data = resp.json()
         s3_users = user_data['s3_accounts']
         self.log.info("Listed user count : %s", len(s3_users))
-        assert(len(s3_users) == const.MAX_S3_USERS,
-               "Number of users less than %s".format(const.MAX_S3_USERS))
+        err_msg = f"Number of users less than {const.MAX_S3_USERS}"
+        assert len(s3_users) == const.MAX_S3_USERS, err_msg
 
         for created_user in created_users:
             self.log.info("-" * 50)
@@ -858,11 +859,11 @@ class TestS3user():
             self.log.info("Creating objects for %s user", usr)
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Create Bucket count : %s", i + 1)
-                bucket = "{}{}.txt".format("bucket", i)
+                bucket = f"bucket{i}"
                 self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                               bucket, akey, skey)
                 assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
-                obj = "{}{}.txt".format("object", i)
+                obj = f"object{i}.txt"
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                               "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
@@ -870,7 +871,7 @@ class TestS3user():
 
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
-                bucket = "{}{}.txt".format("bucket", i)
+                bucket = f"bucket{i}"
                 self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
                               "secret key: %s", bucket, akey, skey)
                 assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
@@ -891,7 +892,8 @@ class TestS3user():
     @pytest.mark.tags("TEST-28933")
     def test_28933(self):
         """
-        Test create S3 account with different combination of the valid AWS secret key and run IO using it.
+        Test create S3 account with different combination of the valid AWS secret key and run IO
+        using it.
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -918,9 +920,9 @@ class TestS3user():
             akey = resp.json()["access_key"]
             skey = resp.json()["secret_key"]
             s3_user = resp.json()["account_name"]
-            iam_user = "{}{}".format("iam", s3_user)
-            bucket = "{}{}".format("bucket", s3_user)
-            obj = "{}{}.txt".format("object", s3_user)
+            iam_user = f"iam{s3_user}"
+            bucket = f"bucket{s3_user}"
+            obj = f"object{s3_user}.txt"
 
             self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                           iam_user, akey, skey)
