@@ -363,7 +363,7 @@ class TestMultipartUploadGetPut:
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, 
+                                                                         self.object_name,
                                                                          parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
