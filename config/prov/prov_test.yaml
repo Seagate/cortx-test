@@ -127,5 +127,7 @@ k8s_cortx_deploy:
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
+  git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   git_tag: "v0.0.4"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
+  new_file_path: "solution.yaml"
