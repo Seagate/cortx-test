@@ -35,7 +35,6 @@ from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3_LDAP_TEST_CONFIG
-from commons.params import S3_MPART_CFG_PATH
 from commons.params import S3_USER_ACC_MGMT_CONFIG_PATH
 from commons.params import S3CMD_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
