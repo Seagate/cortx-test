@@ -99,18 +99,17 @@ style_dropdown_small_2 = {
 
 
 style_dropdown_medium = {
-    'width': '155px',
+    'width': '150px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px"
 }
 
 style_dropdown_large = {
-    'width': '250px',
+    'width': '180px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
-    "margin-top": "10px",
-    "margin-bottom": "10px"
+    "margin-top": "10px"
 }
 
 dict_style_profiles = {
@@ -131,5 +130,6 @@ dict_button_style = {
     'height': '35px',
     'margin-top': '20px',
     'background-color': "#81DD59",
-    'color': '#000000'
+    'color': '#000000',
+    'margin-bottom': '20px'
 }

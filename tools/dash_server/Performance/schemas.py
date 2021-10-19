@@ -74,6 +74,7 @@ def get_graphs_schema(data, xfilter, xfilter_tag):
     """
     entry = get_common_schema(data)
     entry[xfilter] = data[xfilter_tag]
+    entry['Name'] = data['name']
 
     return entry
 
