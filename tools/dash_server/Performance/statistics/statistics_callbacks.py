@@ -48,9 +48,9 @@ def update_workload(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
@@ -84,9 +84,9 @@ def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
@@ -122,9 +122,9 @@ def update_metadata(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
         }
@@ -158,9 +158,9 @@ def update_hsbench(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
@@ -195,9 +195,9 @@ def update_bucketops(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch, 'nodes': nodes,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch, 'nodes': nodes,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
@@ -231,9 +231,9 @@ def update_cosbench(release_combined, branch, build, nodes,
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': OS, 'build': build, 'branch': branch,
+            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }

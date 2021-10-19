@@ -43,8 +43,8 @@ def update_branches_dropdown(release_combined):
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
-        branches = get_distinct_keys(release, 'Branch', {'OS': OS})
+        op_sys = release_combined.split("_")[1]
+        branches = get_distinct_keys(release, 'Branch', {'OS': op_sys})
         if branches:
             options = get_dict_from_array(branches, False)
             if 'stable' in branches:
@@ -78,9 +78,9 @@ def update_builds_dropdown(release_combined, branch):
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         builds = get_distinct_keys(
-            release, 'Build', {'OS': OS, 'Branch': branch})
+            release, 'Build', {'OS': op_sys, 'Branch': branch})
         if builds:
             builds = sort_builds_list(builds)
             versions = get_dict_from_array(builds, True)
@@ -110,8 +110,8 @@ def update_nodes_dropdown(release_combined, branch, build):
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
-        nodes = get_distinct_keys(release, 'Count_of_Servers', {'OS': OS,
+        op_sys = release_combined.split("_")[1]
+        nodes = get_distinct_keys(release, 'Count_of_Servers', {'OS': op_sys,
                                   'Branch': branch, 'Build': build})
         nodes = list(map(int, nodes))
         if nodes:
@@ -143,9 +143,9 @@ def update_percentfill_dropdown(release_combined, branch, build, nodes):
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         pfulls = get_distinct_keys(release, 'Percentage_full', {
-            'OS': OS, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
             value = options[0]['value']
@@ -176,9 +176,9 @@ def update_custom_dropdown(release_combined, branch, build, nodes, pfull):
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         custom = get_distinct_keys(release, 'Custom', {
-            'OS': OS, 'Branch': branch,
+            'OS': op_sys, 'Branch': branch,
             'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
         if custom:
             options = get_dict_from_array(custom, False)
@@ -211,9 +211,9 @@ def update_iteration_dropdown(release_combined, branch, build, nodes, pfull, cus
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         iterations = get_distinct_keys(release, 'Iteration', {
-            'OS': OS, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull,  'Custom': custom})
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
@@ -247,9 +247,9 @@ def update_sessions_dropdown(release_combined, branch, build, nodes, pfull, itrn
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         sessions = get_distinct_keys(release, 'Sessions', {
-            'OS': OS, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
         if sessions:
@@ -286,9 +286,9 @@ def update_buckets_dropdown(release_combined, branch, build, nodes, pfull, itrns
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         buckets = get_distinct_keys(release, 'Buckets', {
-            'OS': OS, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
         })
         if buckets:
@@ -326,9 +326,9 @@ def update_bucketops_dropdown(release_combined, branch,
         raise PreventUpdate
     else:
         release = release_combined.split("_")[0]
-        OS = release_combined.split("_")[1]
+        op_sys = release_combined.split("_")[1]
         objsizes = get_distinct_keys(release, 'Object_Size', {
-            'OS': OS, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
+            'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Name': 'Hsbench',
             'Buckets': buckets, 'Sessions': sessions
         })
