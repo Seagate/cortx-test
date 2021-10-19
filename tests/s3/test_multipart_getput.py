@@ -33,7 +33,7 @@ from commons.utils.s3_utils import get_unaligned_parts, calc_checksum
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from config import S3_MPART_CFG
+from config.s3 import MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -227,7 +227,7 @@ class TestMultipartUploadGetPut:
         Initiate multipartUpload, UploadParts, ListParts, give wrong
         json file while doing completeMultipartUpload
         """
-        mp_config = S3_MPART_CFG["test_28532"]
+        mp_config = MPART_CFG["test_28532"]
         self.log.info("STARTED: Test Multipart upload with invalid json input")
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("start s3 IO's")
@@ -291,7 +291,7 @@ class TestMultipartUploadGetPut:
         This test is for uploading skipping part upload between first and last part
         Initiate multipart upload, upload parts, List parts, completeMultipartUpload
         """
-        mp_config = S3_MPART_CFG["test_28538"]
+        mp_config = MPART_CFG["test_28538"]
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("STARTED: Test Multipart upload with 2 part details")
         self.log.info("start s3 IO's")
@@ -346,7 +346,7 @@ class TestMultipartUploadGetPut:
         This test is for simple upload of an object followed by multipart upload of an object
         Upload 150M object
         """
-        mp_config = S3_MPART_CFG["test_28539"]
+        mp_config = MPART_CFG["test_28539"]
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("STARTED: test Simple upload followed by Multipart upload of an object ")
         self.log.info("start s3 IO's")
@@ -396,7 +396,7 @@ class TestMultipartUploadGetPut:
         """
         self.log.info("STARTED: test Simple upload followed by Multipart upload of an object ")
         self.log.info("start s3 IO's")
-        mp_config = S3_MPART_CFG["test_28540"]
+        mp_config = MPART_CFG["test_28540"]
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         s3_background_io.start(log_prefix="TEST-28540_s3bench_ios", duration="0h4m")
         # check timefor ios
@@ -459,7 +459,7 @@ class TestMultipartUploadGetPut:
         """
         This test is for initiating 2000 multipart uploads and listing them twice
         """
-        mp_config = S3_MPART_CFG["test_28537"]
+        mp_config = MPART_CFG["test_28537"]
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("STARTED: test to upload and list 2000 multipart uploads")
         self.log.info("start s3 IO's")
@@ -524,7 +524,7 @@ class TestMultipartUploadGetPut:
         """
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
-        mp_config = S3_MPART_CFG['test_28537']
+        mp_config = MPART_CFG['test_28537']
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28534_s3bench_ios", duration="0h4m")
@@ -565,7 +565,7 @@ class TestMultipartUploadGetPut:
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28535_s3bench_ios", duration="0h4m")
         # check timefor ios
-        mp_config = S3_MPART_CFG['test_28537']
+        mp_config = MPART_CFG['test_28537']
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         # get all the parts
@@ -609,7 +609,7 @@ class TestMultipartUploadGetPut:
         This test is for uploading 5TB max size object using multipart upload
         """
         self.log.info("STARTED: Multipart upload of 5TB object ")
-        mp_config = S3_MPART_CFG["test_28526"]
+        mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
@@ -632,7 +632,7 @@ class TestMultipartUploadGetPut:
         """
         self.log.info("STARTED: List parts after completion of Multipart upload of an object ")
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
-        mp_config = S3_MPART_CFG["test_28528"]
+        mp_config = MPART_CFG["test_28528"]
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28528_s3bench_ios", duration="0h3m")
         # check timefor ios
@@ -688,7 +688,7 @@ class TestMultipartUploadGetPut:
         """
         self.log.info("STARTED: List parts after completion of multipart upload of an object ")
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
-        mp_config = S3_MPART_CFG["test_28530"]
+        mp_config = MPART_CFG["test_28530"]
         self.log.info("start s3 IO's")
         s3_background_io.start(log_prefix="TEST-28530_s3bench_ios", duration="0h3m")
         # check timefor ios
