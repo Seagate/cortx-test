@@ -663,13 +663,13 @@ class RestS3user(RestTestLib):
         if result:
             self.log.info("Status code check passed.")
             if verify_err_args:
-                resp_args = resp.json()["error_format_args"]    
+                resp_args = resp.json()["error_format_args"]
                 user_name = user_data["account_name"]
                 if isinstance(resp_args, dict):
-                    err_arg_check  = user_name in resp_args.values() or \
-                                    user_name in  resp_args.keys()
+                    err_arg_check = user_name in resp_args.values() or \
+                        user_name in resp_args.keys()
                 else:
-                    err_arg_check  = user_name in resp_args.values()
+                    err_arg_check = user_name in resp_args.values()
                 result = result and err_arg_check
         else:
             self.log.error("Status code check failed.")
