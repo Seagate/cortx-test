@@ -29,6 +29,7 @@ from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
+from paramiko.ssh_exception import SSHException
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_base import _init_s3_conn
 from commons.exceptions import CortxTestException
@@ -36,7 +37,6 @@ from commons import params
 from commons.utils import assert_utils
 from commons import constants as const
 from commons.helpers.node_helper import Node
-from paramiko.ssh_exception import SSHException
 
 IAM_UTYPE = 1
 S3_ACC_UTYPE = 2

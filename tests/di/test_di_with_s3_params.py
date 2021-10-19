@@ -458,12 +458,12 @@ class TestDIWithChangingS3Params:
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         # test scene 1
-        with open(self.F_PATH, 'rb+') as f:
-            data = f.read()
+        with open(self.F_PATH, 'rb+') as f_random:
+            data = f_random.read()
             ba = bytearray(data)
             ba[0] = ord(first_byte_for_write[0])
             data = bytes(ba)
-            f.write(data)
+            f_random.write(data)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                      file_path=self.F_PATH)
         resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
@@ -475,28 +475,28 @@ class TestDIWithChangingS3Params:
                                    obj_name=self.obj_name_1, file_path=self.F_PATH)
         # this get operation should fail
         # test scene 2
-        with open(self.F_PATH, 'rb+') as f:
-            data = f.read()
+        with open(self.F_PATH, 'rb+') as f_random:
+            data = f_random.read()
             ba = bytearray(data)
             ba[0] = ord(first_byte_for_write[1])
             data = bytes(ba)
-            f.write(data)
-        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                                     file_path=self.F_PATH)
-        resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
-                                         source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_2,
-                                         dest_object=self.obj_name_2)
+            f_random.write(data)
+        self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                              file_path=self.F_PATH)
+        self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                               source_object=self.obj_name_1,
+                               dest_bucket=self.bucket_name_2,
+                               dest_object=self.obj_name_2)
         # this copy operation should fail
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH)
         # this get operation should fail
-        with open(self.F_PATH, 'rb+') as f:
-            data = f.read()
+        with open(self.F_PATH, 'rb+') as f_random:
+            data = f_random.read()
             ba = bytearray(data)
             ba[0] = ord(first_byte_for_write[2])
             data = bytes(ba)
-            f.write(data)
+            f_random.write(data)
         resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                                      file_path=self.F_PATH)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
@@ -509,12 +509,12 @@ class TestDIWithChangingS3Params:
             assert False
         # ETAG should match
         # test scene 3
-        with open(self.F_PATH, 'rb+') as f:
-            data = f.read()
+        with open(self.F_PATH, 'rb+') as f_random:
+            data = f_random.read()
             ba = bytearray(data)
-            ba[0] = ord(first_byte_for_write[1])
+            ba[0] = ord(first_byte_for_read[2])
             data = bytes(ba)
-            f.write(data)
+            f_random.write(data)
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                               file_path=self.F_PATH)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
