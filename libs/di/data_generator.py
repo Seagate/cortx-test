@@ -106,7 +106,6 @@ class DataGenerator:
                 compressibility = int(100 - (1 / self.compression_ratio * 100))
                 buf = self.__get_data(size, compressibility, seed)
         buf = buf.encode('utf-8')[:size]  # hack until better solution is found.
-        #buf = buf[:size]
         csum.update(buf)
         chksum = csum.hexdigest()
         return buf, chksum
