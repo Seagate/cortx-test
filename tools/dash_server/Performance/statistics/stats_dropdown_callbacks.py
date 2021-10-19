@@ -47,12 +47,10 @@ def update_branches_dropdown(release_combined):
         branches = get_distinct_keys(release, 'Branch', {'OS': os})
         if branches:
             options = get_dict_from_array(branches, False)
-            if 'Release' in branches:
-                value = 'Release'
-            elif 'stable' in branches:
+            if 'stable' in branches:
                 value = 'stable'
-            elif 'custom' in branches:
-                value = 'custom'
+            elif 'cortx-1.0' in branches:
+                value = 'cortx-1.0'
             else:
                 value = options[0]['value']
             if len(options) == 1:
