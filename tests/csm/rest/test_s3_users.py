@@ -18,6 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# pylint: Too many statements
 """Tests operations on S3 Users using REST API"""
 
 import json
@@ -805,7 +806,8 @@ class TestS3user():
         assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
-
+    
+    # pylint: Too many local variables
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
