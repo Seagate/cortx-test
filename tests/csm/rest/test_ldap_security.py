@@ -25,13 +25,13 @@ import re
 
 import pytest
 import yaml
-from commons.utils.ldap_utils import Cipher
 
 from commons import commands as comm
 from commons import constants as cons
 from commons.constants import Rest as const
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
+from commons.utils import ldap_utils
 from config import CMN_CFG
 from config import CSM_REST_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
@@ -58,13 +58,13 @@ class TestS3accountK8s:
         assert s3acc_already_present
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
- 
+    
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
         ldap_search_cmd = ""
         if ip_addr is not None and user_name is not None and  password is not None:
-            ldap_search_cmd = comm.LDAP_SEARCH_DATA.format(ip_addr, user_name, password)
+           ldap_search_cmd = comm.LDAP_SEARCH_DATA.format(ip_addr, user_name, password)
         self.log.info("printing response from ldap function: %s", ldap_search_cmd)
         return ldap_search_cmd
 
@@ -77,25 +77,25 @@ class TestS3accountK8s:
             if "openldap-svc" in line:
                 line_found = line
                 self.log.info(line_found)
+                res = False
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[2]
-                self.log.info(res)
-                return res
+                break
+        return res
 
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-28934")
     def test_28934(self):
         """
-        Test that all the secret keys are encrypted on openldap
+        Test that all the secret keys are encrypted on openldap 
         and not available for direct use in IOs
         """
         self.log.info("Step 1: Create s3account s3acc.")
         response = self.s3user.create_s3_account(user_type="valid")
         response = response.json()
         if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
-            self.log.debug("secret key and/or access key is not present")
-            return False
+           self.log.debug("secret key and/or access key is not present")
         secret_key = response["secret_key"]
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_SVC_CMD,
@@ -111,8 +111,8 @@ class TestS3accountK8s:
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         cluster_id = data["cluster"]["id"]
-        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
-        self.log.info("Step 3: Run ldapsearch command")
+        admin_passwd = ldap_utils.decrypt_secret(secret,cluster_id,"cortx")
+        self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
         login_ldap_pod = comm.K8S_LDAP_CMD.format(result)
@@ -121,7 +121,7 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 secret key in output")
-        assert secret_key not in resp_str, "{} is present in the openldap".format(secret_key)
+        assert secret_key not in resp_str, "{} is not present in the openldap".format(secret_key)
         self.log.info("##############Test Completed##############")
 
     @pytest.mark.lc
@@ -129,7 +129,7 @@ class TestS3accountK8s:
     @pytest.mark.tags("TEST-28935")
     def test_28935(self):
         """
-        Test S3 accounts passwords are encrypted on openldap
+        Test S3 accounts passwords are encrypted on openldap 
         and available for direct use for creating buckets
         """
         self.log.info("Step 1: Fetch password for created s3 account.")
@@ -143,13 +143,12 @@ class TestS3accountK8s:
         self.log.info("Openldap service ip is: %s",cluster_ip)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
-        assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
         cluster_id = data["cluster"]["id"]
-        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
+        admin_passwd = ldap_utils.decrypt_secret(secret,cluster_id,"cortx")
         self.log.info("Step 3: Run ldapsearch command")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
@@ -159,5 +158,5 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 account password in output")
-        assert s3_passwd not in resp_str, "{} is present in the openldap".format(s3_passwd)
+        assert s3_passwd not in resp_str, "{} is not present in the openldap".format(s3_passwd)
         self.log.info("##############Test Completed##############")
