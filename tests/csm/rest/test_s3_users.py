@@ -851,9 +851,8 @@ class TestS3user():
         assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
         user_data = resp.json()
         s3_users = user_data['s3_accounts']
-        self.log.info("Listed user count : %s", len(s3_user))
-
-        assert(len(s3_user) == const.MAX_S3_USERS, 
+        self.log.info("Listed user count : %s", len(s3_users))
+        assert(len(s3_users) == const.MAX_S3_USERS, 
                "Number of users less than %s".format(const.MAX_S3_USERS))
 
         for created_user in created_users:
@@ -864,11 +863,11 @@ class TestS3user():
             self.log.info("Creating objects for %s user", usr)
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Create Bucket count : %s", i+1)
-                bucket = "bucket" + i
+                bucket = "{}{}.txt".format("bucket", i)
                 self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", 
                               bucket, akey, skey)
                 assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
-
+                obj = "{}{}.txt".format("object", i)
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                           "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
@@ -876,9 +875,9 @@ class TestS3user():
             
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i+1)
-                bucket = "bucket" + i
-                self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
-                                "secret key: %s", obj, bucket, akey, skey)
+                bucket = "{}{}.txt".format("bucket", i)
+                self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
+                                "secret key: %s", bucket, akey, skey)
                 assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
                 self.log.info("[END] Delete Bucket count : %s", i+1)
 
