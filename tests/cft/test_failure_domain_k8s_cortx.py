@@ -43,6 +43,7 @@ class TestFailureDomainK8Cortx:
         cls.log = logging.getLogger(__name__)
         cls.git_id = os.getenv("GIT_ID")
         cls.git_token = os.getenv("GIT_PASSWORD")
+        cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG", PROV_CFG["k8s_cortx_deploy"]["git_tag"])
         # TODO: Update Docker credentials
         cls.docker_username = os.getenv("DOCKER_USERNAME")
         cls.docker_password = os.getenv("DOCKER_PASSWORD")
@@ -92,18 +93,20 @@ class TestFailureDomainK8Cortx:
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Step 2: Create solution file")
-        resp = self.deploy_lc_obj.update_sol_yaml(self.worker_node_list,
-                                                  PROV_CFG["k8s_cortx_deploy"]["template_path"])
-        assert_utils.assert_true(resp[0], "Failure creating solution.yaml")
+        self.log.info("Step 2: Download solution file template")
+        path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
+
+        self.log.info("Step 3 : Update solution file template")
+        resp = self.deploy_lc_obj.update_sol_yaml(self.worker_node_list, path)
+        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
 
-        self.log.info("Step 3: Perform Cortx Cluster Deployment")
+        self.log.info("Step 4: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
                                                        self.worker_node_list, system_disk_dict,
                                                        self.docker_username,
                                                        self.docker_password, self.git_id,
-                                                       self.git_token)
+                                                       self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: 3node (SNS-4+2+0) k8s based Cortx Deployment")
