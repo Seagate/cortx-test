@@ -58,7 +58,7 @@ class TestS3accountK8s:
         assert s3acc_already_present
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
- 
+    
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
@@ -112,7 +112,7 @@ class TestS3accountK8s:
         secret = data['cortx']['external']['openldap']['secret']
         cluster_id = data["cluster"]["id"]
         admin_passwd = ldap_utils.decrypt_secret(secret,cluster_id,"cortx")
-        self.log.info("Step 3: call ldapsearch command form method")
+        self.log.info("Step 3: Run ldapsearch command")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
         login_ldap_pod = comm.K8S_LDAP_CMD.format(result)
@@ -121,7 +121,7 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 secret key in output")
-        assert secret_key not in resp_str, "{} is not present in the openldap".format(secret_key)
+        assert secret_key not in resp_str, "{} is present in the openldap".format(secret_key)
         self.log.info("##############Test Completed##############")
 
     @pytest.mark.lc
@@ -159,5 +159,5 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 account password in output")
-        assert s3_passwd not in resp_str, "{} is not present in the openldap".format(s3_passwd)
+        assert s3_passwd not in resp_str, "{} is present in the openldap".format(s3_passwd)
         self.log.info("##############Test Completed##############")

@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-"""S3 REST API operation in K8s Library."""
+"""LDAP related operations."""
 import os
 import subprocess
 import logging
