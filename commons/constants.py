@@ -37,6 +37,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# K8s for cortx
+POD_NAME = "storage-node1"
+HAX_CONTAINER_NAME = "cortx-hax"
+NAMESPACE = "default"
+
 # Product Family and versions
 PROD_FAMILY_LC = "LC"
 PROD_FAMILY_LR = "LR"
