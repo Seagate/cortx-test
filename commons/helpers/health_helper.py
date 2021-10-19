@@ -112,10 +112,13 @@ class Health(Host):
 
         return float(res.replace('\n', ''))
 
-    def get_cpu_usage(self) -> float:
+    def get_cpu_usage(self, pod_name: str = const.POD_NAME,
+                      container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
 
+        :pod_name: name of the pod
+        :container_name: name of the container
         :return: system cpu usage
         """
         LOG.debug("Fetching system cpu usage from node %s", self.hostname)
@@ -126,14 +129,12 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            pod = const.POD_NAME
-            container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             res = node.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=namespace,
-                command_suffix=f"-c {container} -- {commands.CPU_USAGE_CMD}",
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container_name} -- {commands.CPU_USAGE_CMD}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.CPU_USAGE_CMD, res)
         cpu_usage = float(res.replace('\n', ''))
