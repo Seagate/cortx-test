@@ -283,7 +283,8 @@ class ProvDeployK8sCortxLib:
                         **kwargs):
         """
         This function updates the yaml file
-        :Param: worker_obj: list of node object
+        :Param: obj: list of node object
+        :Param: node_list:int the count of worker nodes
         :Param: filepath: Filename with complete path
         :Keyword: cluster_id: cluster id
         :Keyword: cvg_count: cvg_count per node
@@ -298,8 +299,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: size_metadata: size of metadata disk
         :Keyword: size_data_disk: size of data disk
         :Keyword: skip_disk_count_check: disk count check
-        returns: the filepath, and dict of host with
-        reserve disk for system
+        returns the status, filepath and system reserved disk
 
         """
         # cluster_id = kwargs.get("cluster_id", 1)
@@ -317,29 +317,27 @@ class ProvDeployK8sCortxLib:
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
 
         data_devices = list()  # empty list for data disk
-        metadata_devices_per_cvg = list()  # empty metadata list
-
+        sys_disk_pernode = {}  # empty dict
+        node_list = len(worker_obj)
         nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
         dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         valid_disk_count = sns_spare + sns_data + sns_parity
-        node_list = len(worker_obj)
+
         for node_count, node_obj in enumerate(worker_obj, start=1):
             LOGGER.info(node_count)
             device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
                                                read_lines=True)[0].split(",")
             device_list[-1] = device_list[-1].replace("\n", "")
-            metadata_devices = device_list[0:cvg_count * 2]
+            metadata_devices = device_list[1:cvg_count + 1]
             # This will split the metadata disk list
             # into metadata devices per cvg
             # 2 is defined the split size based
             # on disk required for metadata,system
-            metadata_devices_per_cvg = [metadata_devices[i:i + 2]
-                                        for i in range(0, len(metadata_devices), 2)]
             device_list_len = len(device_list)
-            new_device_lst_len = (device_list_len - cvg_count * 2)
+            new_device_lst_len = (device_list_len - cvg_count)
             count = cvg_count
             if data_disk_per_cvg == "0":
-                data_disk_per_cvg = len(device_list[cvg_count * 2:])
+                data_disk_per_cvg = len(device_list[cvg_count + 1:])
             # The condition to validate the config.
             if not skip_disk_count_check and valid_disk_count > \
                     (data_disk_per_cvg * cvg_count * node_list):
@@ -347,9 +345,10 @@ class ProvDeployK8sCortxLib:
                               "is less than N+K+S count"
             # This condition validated the total available disk count
             # and split the disks per cvg.
+
             if (data_disk_per_cvg * cvg_count) < new_device_lst_len and data_disk_per_cvg != "0":
-                count_end = int(data_disk_per_cvg + cvg_count * 2)
-                data_devices.append(device_list[cvg_count * 2:count_end])
+                count_end = int(data_disk_per_cvg + cvg_count + 1)
+                data_devices.append(device_list[cvg_count + 1:count_end])
                 while count:
                     count = count - 1
                     new_end = int(count_end + data_disk_per_cvg)
@@ -359,17 +358,15 @@ class ProvDeployK8sCortxLib:
                     count_end = int(count_end + data_disk_per_cvg)
                     data_devices.append(data_devices_ad)
             else:
-                data_devices_f = device_list[cvg_count * 2:]
+                data_devices_f = device_list[cvg_count:]
                 data_devices = [data_devices_f[i:i + data_disk_per_cvg]
                                 for i in range(0, len(data_devices_f), data_disk_per_cvg)]
-        system_disk = metadata_devices_per_cvg[0][0]
-        # Create dict for host and disk
-        sys_disk_pernode = {}
-        for host in worker_obj:
-            schema = {host.hostname: system_disk}
+
+            # Create dict for host and disk
+            system_disk = device_list[0]
+            schema = {node_obj.hostname: system_disk}
             sys_disk_pernode.update(schema)
 
-        LOGGER.info("System disk ", metadata_devices_per_cvg[0][1])
         # Reading the yaml file
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
@@ -381,18 +378,10 @@ class ProvDeployK8sCortxLib:
             total_nodes = node.keys()
             total_cvg = storage.keys()
             # Creating Default Schema to update the yaml file
-            share_value = self.deploy_cfg['local_path_prov']  # This needs to changed
-            # based on disk we get in solution.yaml file
-            disk_schema = {'device': data_devices[0], 'size': size_metadata}
-            meta_disk_schema = {'device': metadata_devices_per_cvg[0][1],
-                                'size': size_data_disk}
-            data_schema = {'d1': disk_schema}
-            # vol_schema = {'local': share_value, 'share': share_value}
+            share_value = "/mnt/fs-local-volume"  # This needs to changed
             device_schema = {'system': share_value}
-            # vol_key = {'volumes': vol_schema}
-            c_device_schema = {'metadata': meta_disk_schema, 'data': data_schema}
-            key_cvg_devices = {'devices': c_device_schema}
             device_key = {'devices': device_schema}
+            # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
             # Removing the elements from the node dict
@@ -408,9 +397,17 @@ class ProvDeployK8sCortxLib:
                 dict_node.update(device_key)
                 new_node = {'node{}'.format(item + 1): dict_node}
                 node.update(new_node)
-            # Updating the cvg details
+            # Updating the metadata and data disk
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
+                metadata_schema_upd = {'devices': metadata_devices[cvg], 'size': size_metadata}
+                data_schema = {}
+                for disk in range(0, data_disk_per_cvg):
+                    disk_schema_upd = {'device': data_devices[cvg][disk], 'size': size_data_disk}
+                    c_data_device_schema = {'d{}'.format(disk + 1): disk_schema_upd}
+                    data_schema.update(c_data_device_schema)
+                c_device_schema = {'metadata': metadata_schema_upd, 'data': data_schema}
+                key_cvg_devices = {'devices': c_device_schema}
                 cvg_name = {'name': 'cvg-0{}'.format(cvg + 1)}
                 cvg_type_schema = {'type': cvg_type}
                 cvg_dict.update(cvg_name)
@@ -418,16 +415,7 @@ class ProvDeployK8sCortxLib:
                 cvg_dict.update(key_cvg_devices)
                 cvg_key = {'cvg{}'.format(cvg + 1): cvg_dict}
                 storage.update(cvg_key)
-                cname = 'cvg{}'.format(cvg + 1)
-                devices = storage[cname]['devices']
-                data_d = devices['data']
-                storage.update(cvg_key)
-                for per_cvg in range(0, cvg_count):
-                    for disk in range(0, data_disk_per_cvg):
-                        data_disk_device = "d{}".format(disk + 1)
-                        upd_disk = {data_disk_device: {'device': data_devices[per_cvg][disk],
-                                                       'size': size_data_disk}}
-                        data_d.update(upd_disk)
+
             conf['solution']['nodes'] = node
             conf['solution']['storage'] = storage
             soln.close()
