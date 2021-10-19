@@ -23,20 +23,18 @@
 import logging
 import time
 import multiprocessing
-import pytest
 import os
-from test_copy_object import TestCopyObjects
+import pytest
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.system_utils import get_unaligned_parts, calc_etag
+from commons.utils.s3_utils import get_unaligned_parts, calc_checksum
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config import S3_MPART_CFG
 from libs.s3.s3_common_test_lib import S3BackgroundIO
-from commons.utils import system_utils
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_common_test_lib import check_cluster_health
@@ -150,45 +148,63 @@ class TestMultipartUploadGetPut:
         """
          Create file of given size and get the aligned size parts
         :param multipart_obj_size: Size of object need to be uploaded.
-        :object_path: path of the file
+        :param object_path: path of the file
         :return: etag string.
         """
         multipart_obj_path = object_path
         if os.path.exists(multipart_obj_path):
             os.remove(multipart_obj_path)
         create_file(multipart_obj_path, multipart_obj_size)
-        etag = calc_etag(multipart_obj_path)
+        etag = calc_checksum(multipart_obj_path)
         return etag
 
-    def compare_etags(self, upload_etag, download_etag):
+    def compare_checksums(self, upload_checksum, download_checksum):
+        """
+        Comapres checksums
+        param: upload_checksum: upload checksum
+        param: download_checksum: download_checksum
+        """
         self.log.info("Compare ETag of uploaded and downloaded object ")
-        self.log.info("ETags: upload: %s, download: %s", upload_etag, download_etag)
-        assert_utils.assert_equal(upload_etag, download_etag,
-                                  f"Failed to match ETag: {upload_etag}, {download_etag}")
-        self.log.info("Matched ETag: %s, %s", upload_etag, download_etag)
+        self.log.info("ETags: upload: %s, download: %s", upload_checksum, download_checksum)
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match ETag: {upload_checksum}, {download_checksum}")
+        self.log.info("Matched ETag: %s, %s", upload_checksum, download_checksum)
 
     def multiprocess_uploads(self, mpu_id, all_parts,
                              parts: tuple = None, ):
+        """
+        uploads multipart
+        """
         self.log.info("Creating s3_client session")
         client_instance = S3MultipartTestLib()
         self.log.info("uploading parts in client session")
         for key in parts:
             self.multipart = client_instance.upload_multipart(parts[key], self.bucket_name,
-                                                              self.object_name, mpu_id, key)
+                                                              self.object_name, mpu_id,
+                                                              part_number=key)
             response = self.multipart  # To - check field content_md5
             all_parts.append({"PartNumber": key, "ETag": response[1]["ETag"]})
 
-    def get_obj_compare_etags(self, bucket_name, object_name, upload_etag):
+    def get_obj_compare_checksums(self, bucket_name, object_name, upload_checksum):
+        """
+        Downloads object and compares checksums
+        """
         # check downloaded and uploaded objects are identical
         self.log.info("Download the uploaded object")
         status, res = self.s3_test_obj.get_object(bucket_name, object_name)
         assert_utils.assert_true(status, res)
-        get_etag = res['ETag']  # To: Check if this param is correct
-        self.compare_etags(upload_etag, get_etag)
+        get_checksum = res['ETag']  # To: Check if this param is correct
+        self.compare_checksums(upload_checksum, get_checksum)
 
-    def list_parts_completempu(self, mpu_id, mpcfg, bucket_name, object_name, all_parts, etag):
+    def list_parts_completempu(self, mpu_id, mpcfg, bucket_name, **kwargs,):
+        """
+        Lists parts and completes multipart
+        """
+        obj_name = kwargs.get("object_name")
+        all_parts = kwargs.get("parts_list")
+        etag = kwargs.get("cheksum")
         self.log.info("Listing parts of multipart upload")
-        res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        res = self.s3_mpu_test_obj.list_parts(mpu_id, bucket_name, obj_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(len(res[1]["Parts"]), mpcfg["total_parts"], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
@@ -196,12 +212,12 @@ class TestMultipartUploadGetPut:
         self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
-                mpu_id, all_parts, bucket_name, object_name)
+                mpu_id, all_parts, bucket_name, obj_name)
         except CTException as error:
             self.log.error(error)
             self.log.info("Failed to complete the multipart")
 
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
 
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28532')
@@ -225,7 +241,8 @@ class TestMultipartUploadGetPut:
         self.log.info("Uploading parts")
         # To - Method to upload parts ; check the part no .order is shuffled in get_unaligned parts
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=parts)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -261,7 +278,7 @@ class TestMultipartUploadGetPut:
             self.log.info(
                 "Failed to complete the multipart upload after 30 mins of failure mpu with wrong "
                 "json ")
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, upload_etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, upload_etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -291,11 +308,13 @@ class TestMultipartUploadGetPut:
         new_parts = []
         response1 = self.s3_mpu_test_obj.upload_multipart(parts[1], self.bucket_name,
                                                           self.object_name,
-                                                          mpu_id, 10000)
+                                                          mpu_id, part_number=10000)
         new_parts.append({"PartNumber": 10000, "ETag": response1[1]["ETag"]})
         response2 = self.s3_mpu_test_obj.upload_multipart(parts[2], self.bucket_name,
                                                           self.object_name,
-                                                          mpu_id, 1)   # To-check field content_md5
+                                                          mpu_id, part_number=1)   # To-check
+        # field
+        # content_md5
         new_parts.append({"PartNumber": 1, "ETag": response2[1]["ETag"]})
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -340,12 +359,13 @@ class TestMultipartUploadGetPut:
         self.log.info("Put object ETag: %s", put_etag)
         # split that object into smaller parts :2 parts: 100.1M and 49.9M and do mpu of it
         # chunk size is 55MB
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"],
-                                    mp_config["chunk_size"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"],
+                                     mp_config["chunk_size"], True)
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.log.info("Uploading parts")
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -362,7 +382,7 @@ class TestMultipartUploadGetPut:
             self.log.error(error)
             assert_utils.assert_equal(mp_config["error_msg"], error.message,  error.message)
             self.log.info("Failed to complete the multipart")
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -384,10 +404,11 @@ class TestMultipartUploadGetPut:
         # Initiate multipart upload with 2 parts
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"],
-                                    mp_config["chunk_size"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"],
+                                     mp_config["chunk_size"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -406,10 +427,11 @@ class TestMultipartUploadGetPut:
                 mp_config["error_msg"], error.message, error.message)
             self.log.info("Failed to complete the multipart with 2 parts")
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts2"],
-                                    mp_config["chunk_size2"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts2"],
+                                     mp_config["chunk_size2"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -425,7 +447,7 @@ class TestMultipartUploadGetPut:
             self.log.error(error)
             assert_utils.assert_equal(mp_config["error_msg"], error.message, error.message)
             self.log.info("Failed to complete the multipart")
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -466,11 +488,11 @@ class TestMultipartUploadGetPut:
         # list multipart uploads twice
         self.log.info("list multipart uploads")
         response = self.s3_mpu_test_obj.list_multipart_uploads(self.bucket_name)
-        self.log.info("Next key marker is %s and list is trunkated %s", response['NextKeyMarker'],
-                      response['IsTruncated'])
+        self.log.info("Next key marker is %s and list is trunkated %s",
+                      response[1]['NextKeyMarker'], response[1]['IsTruncated'])
         self.log.info("list 2 multipart uploads")
         response2 = self.s3_mpu_test_obj.list_multipart_uploads_with_keymarker(
-            self.bucket_name, response['NextKeyMarker'])
+            self.bucket_name, response[1]['NextKeyMarker'])
         for mpu_id in mpu_ids1:
             assert_utils.assert_in(mpu_id, str(response[1]),
                                    f"mpu ID {mpu_id} is not present in {response[1]}")
@@ -498,6 +520,9 @@ class TestMultipartUploadGetPut:
     @pytest.mark.tags('TEST-28534')
     @CTFailOn(error_handler)
     def test_multipart_upload_test_28534(self):
+        """
+        This is for uploading multipart from 10 different sessions
+        """
         self.log.info(
             "STARTED: test for an object multipart from 10 different sessions of same client")
         mp_config = S3_MPART_CFG['test_28537']
@@ -517,8 +542,9 @@ class TestMultipartUploadGetPut:
                       (mpu_id, all_parts, parts[20]), (mpu_id, all_parts, parts[7:9]),
                       (mpu_id, all_parts, parts[9:13]), (mpu_id, all_parts, parts[13:15]),
                       (mpu_id, all_parts, parts[15:20]), (mpu_id, all_parts, parts[20:22])])
-        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
-                                    all_parts, etag)
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
+                                    object_name=self.object_name,
+                                    parts_list=all_parts, checksum=etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -567,8 +593,9 @@ class TestMultipartUploadGetPut:
         assert_utils.assert_true(resp[0], resp[1])
         proc_4.join()
         proc_5.join()
-        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
-                                    all_parts, etag)
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
+                                    object_name=self.object_name,
+                                    parts_list=all_parts, checksum=etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -586,13 +613,15 @@ class TestMultipartUploadGetPut:
         mp_config = S3_MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
-        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
-                                    new_parts, etag)
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
+                                    object_name=self.object_name,
+                                    parts_list=new_parts, checksum=etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
         self.log.info("ENDED: Test multipart upload of 5TB object")
 
     @pytest.mark.s3_ops
@@ -610,27 +639,30 @@ class TestMultipartUploadGetPut:
         # check timefor ios
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name, 
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_equal(len(res[1]["Parts"]),
                                   mp_config["total_parts"], res[1])
-        self.log.info("Part Number marker is %s and list is trunkated %s", res['PartNumberMarker'],
-                      res['IsTruncated'])
-        part_num_marker = res['PartNumberMarker']
-        is_truncated = res['IsTruncated']
+        self.log.info("Part Number marker is %s and list is trunkated %s",
+                      res[1]['PartNumberMarker'],
+                      res[1]['IsTruncated'])
+        part_num_marker = res[1]['PartNumberMarker']
+        is_truncated = res[1]['IsTruncated']
         all_parts = []
         all_parts.append(res[1]["Parts"])
         while is_truncated:
             response = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name,
-                                                       self.object_name, part_num_marker)
+                                                       self.object_name,
+                                                       PartNumberMarker=part_num_marker)
             assert_utils.assert_true(response[0], response[1])
-            part_num_marker = res['PartNumberMarker']
-            is_truncated = response['IsTruncated']
+            part_num_marker = res[1]['PartNumberMarker']
+            is_truncated = response[1]['IsTruncated']
             all_parts.append(res[1]["Parts"])
 
         self.log.info("Listed parts of multipart upload: ", all_parts)
@@ -642,7 +674,7 @@ class TestMultipartUploadGetPut:
         except CTException as error:
             self.log.error(error)
             self.log.info("Failed to complete the multipart")
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
@@ -652,6 +684,9 @@ class TestMultipartUploadGetPut:
     @pytest.mark.tags('TEST-28530')
     @CTFailOn(error_handler)
     def test_multipart_upload_test_28530(self):
+        """
+        This is for listing parts after completion of multipart upload
+        """
         self.log.info("STARTED: List parts after completion of multipart upload of an object ")
         s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         mp_config = S3_MPART_CFG["test_28530"]
@@ -660,12 +695,14 @@ class TestMultipartUploadGetPut:
         # check timefor ios
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        parts = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
+        chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, parts)
+                                                                         self.object_name,
+                                                                         parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
-        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name, self.object_name,
-                                    new_parts, etag)
+        self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
+                                    object_name=self.object_name,
+                                    parts_list=new_parts, checksum=etag)
         self.log.info("Listing parts of multipart upload upon completion of multipart upload")
         try:
             resp = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
@@ -674,7 +711,7 @@ class TestMultipartUploadGetPut:
             self.log.error(error)
             self.log.info("Failed to list parts after the completion of the multipart upload")
         self.log.info("list parts cant be done after completion of multipart upload")
-        self.get_obj_compare_etags(self.bucket_name, self.object_name, etag)
+        self.get_obj_compare_checksums(self.bucket_name, self.object_name, etag)
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
         s3_background_io.cleanup()
