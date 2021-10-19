@@ -37,8 +37,11 @@ Xfilter = [
 ]
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LR-R2-CentOS-7.9', 'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8', 'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+    {'label': 'LR-R1-CentOS', 'value': '1_CentOS'},
+    
 ]
 
 benchmarks = [  # get from database
@@ -94,7 +97,7 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_small
+                style=style_dropdown_medium
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
