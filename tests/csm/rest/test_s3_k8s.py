@@ -18,26 +18,24 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-"""Tests operations on S3 Users using REST API"""
+"""Tests operations on S3 Users using REST API for K8s environment"""
 
-import configparser
 import logging
 import re
-import time
 
 import pytest
 import yaml
 
+from commons import commands as comm
 from commons import constants as cons
+from commons.constants import Rest as const
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from config import CMN_CFG
-from config.s3 import S3_CFG
-from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
-from libs.s3.s3_k8s_restapi import Cipher
+from config import CSM_REST_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
-
-CORTXSEC_CMD = '/opt/seagate/cortx/extension/cortxsec'
+from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.s3.s3_k8s_restapi import Cipher
 
 class TestS3accountK8s:
     """S3 user test class"""
@@ -47,33 +45,27 @@ class TestS3accountK8s:
         Setup all the states required for execution of this test suit.
         """
         cls.log = logging.getLogger(__name__)
-        cls.config = configparser.ConfigParser()
+        cls.config = CSMConfigsCheck()
         cls.log.info("STARTED: test setup.")
-        cls.s3_rest_obj = S3AccountOperationsRestAPI()
+        cls.s3user = RestS3user()
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
         cls.nd_obj = Node(hostname=cls.host, username=cls.uname, password=cls.passwd)
-        cls.s3acc_name = "{}_{}".format("cli_s3_acc", int(time.perf_counter_ns()))
-        cls.s3acc_email = "{}@seagate.com".format(cls.s3acc_name)
-        cls.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        s3acc_already_present = cls.config.check_predefined_s3account_present()
+        if not s3acc_already_present:
+            s3acc_already_present = cls.config.setup_csm_s3()
+        assert s3acc_already_present
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
-        cls.config = CSMConfigsCheck()
  
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
         ldap_search_cmd = ""
-        if ip_addr is not None:
-            ldap_search_cmd = cons.LDAP_SEARCH_DATA + " -H ldap://{}".format(ip_addr)
-            self.log.info(ldap_search_cmd)
-        if user_name is not None:
-            ldap_search_cmd = ldap_search_cmd + " -D \"cn={0},dc=seagate,dc=com\"".format(user_name)
-        if password is not None:
-            ldap_search_cmd = ldap_search_cmd + " -w {}".format(password)
-        self.log.info(ldap_search_cmd)
-        self.log.info("printing response from ldap function")
+        if ip_addr is not None and user_name is not None and  password is not None:
+           ldap_search_cmd = comm.LDAP_SEARCH_DATA.format(ip_addr, user_name, password)
+        self.log.info("printing response from ldap function: %s", ldap_search_cmd)
         return ldap_search_cmd
 
     def get_cluster_ip(self, resp1):
@@ -90,72 +82,27 @@ class TestS3accountK8s:
                 self.log.info(res)
                 return res
 
-    @pytest.mark.parallel
+    @pytest.mark.lc
     @pytest.mark.csmrest
-    @pytest.mark.cluster_k8s_user
-    @pytest.mark.tags("TEST-28935")
-    def test_28935(self):
-        """This test validates the presence of password in ldapsearch output"""
-        self.log.info("Step 1: Create s3account s3acc.")
-        s3acc_already_present = self.config.check_predefined_s3account_present()
-        if not s3acc_already_present:
-            s3acc_already_present = self.config.setup_csm_s3()
-        assert s3acc_already_present
-        self.log.info("Step 2: Get cluster IP of openldap")
-        resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
-                                        read_lines=False,
-                                        exc=False)
-        cluster_ip = self.get_cluster_ip(resp_node)
-        self.log.info("printing ip in test after calling function")
-        self.log.info(cluster_ip)
-        resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.remote_path, local_path=self.local_path)
-        assert_utils.assert_true(resp[0], resp)
-        stream = open(self.local_path, 'r')
-        data = yaml.safe_load(stream)
-        admin_user = data['cortx']['external']['openldap']['admin']
-        secret = data['cortx']['external']['openldap']['secret']
-        self.log.info(secret)
-        cluster_id = data["cluster"]["id"]
-        self.log.info(cluster_id)
-        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
-        self.log.info(admin_passwd)
-        self.log.info("Step 3: call ldapsearch command form method")
-        result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
-                                password=admin_passwd)
-        self.log.info(type(result))
-        ldap_cmd = "kubectl exec -it symas-openldap-pod -- /bin/bash -c "
-        login_ldap_pod = ldap_cmd + '"{}"'.format(result)
-        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
-                                        read_lines=False,
-                                        exc=False)
-        resp_str = resp_node.decode('UTF-8')
-        self.log.info(resp_str)
-        self.log.info("Step 4: Search for s3 account password in output")
-        if "password" in resp_str:
-            self.log.info("password present")
-        else:
-            self.log.info("password not present")
-        self.log.info("##############Test Passed##############")
-
-    @pytest.mark.parallel
-    @pytest.mark.csmrest
-    @pytest.mark.cluster_k8s_user
     @pytest.mark.tags("TEST-28934")
     def test_28934(self):
-        """This test validates the presence of secret key in ldapsearch output"""
+        """
+        Test that all the secret keys are encrypted on openldap 
+        and not available for direct use in IOs
+        """
         self.log.info("Step 1: Create s3account s3acc.")
-        s3acc_already_present = self.config.check_predefined_s3account_present()
-        if not s3acc_already_present:
-            s3acc_already_present = self.config.setup_csm_s3()
-        assert s3acc_already_present
+        response = self.s3user.create_s3_account(user_type="valid")
+        response = response.json()
+        if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
+           self.log.debug("secret key and/or access key is not present")
+           return False
+        secret_key = response["secret_key"]
         self.log.info("Step 2: Get cluster IP of openldap")
-        resp_node = self.nd_obj.execute_cmd(cmd="kubectl get svc",
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_SVC_CMD,
                                         read_lines=False,
                                         exc=False)
         cluster_ip = self.get_cluster_ip(resp_node)
-        self.log.info("printing ip in test after calling function")
-        self.log.info(cluster_ip)
+        self.log.info("Openldap service ip is: %s",cluster_ip)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp)
@@ -163,25 +110,53 @@ class TestS3accountK8s:
         data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']
         secret = data['cortx']['external']['openldap']['secret']
-        self.log.info(secret)
         cluster_id = data["cluster"]["id"]
-        self.log.info(cluster_id)
         admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
-        self.log.info(admin_passwd)
         self.log.info("Step 3: call ldapsearch command form method")
         result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
                                 password=admin_passwd)
-        self.log.info(type(result))
-        ldap_cmd = "kubectl exec -it symas-openldap-pod -- /bin/bash -c "
-        login_ldap_pod = ldap_cmd + '"{}"'.format(result)
+        login_ldap_pod = comm.K8S_LDAP_CMD.format(result)
         resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
                                         read_lines=False,
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
-        self.log.info(resp_str)
         self.log.info("Step 4: Search for s3 secret key in output")
-        if "secret_key" in resp_str:
-            self.log.info("secret key present")
-        else:
-            self.log.info("secret key not present")
-        self.log.info("##############Test Passed##############")
+        assert secret_key not in resp_str, "{} is not present in the openldap".format(secret_key)
+        self.log.info("##############Test Completed##############")
+
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.tags("TEST-28935")
+    def test_28935(self):
+        """
+        Test S3 accounts passwords are encrypted on openldap 
+        and available for direct use for creating buckets
+        """
+        self.log.info("Step 1: Fetch password for created s3 account.")
+        s3_passwd = CSM_REST_CFG["s3account_user"]["password"]
+        self.log.info("s3 password is: %s", s3_passwd)
+        self.log.info("Step 2: Get cluster IP of openldap")
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_SVC_CMD,
+                                        read_lines=False,
+                                        exc=False)
+        cluster_ip = self.get_cluster_ip(resp_node)
+        self.log.info("Openldap service ip is: %s",cluster_ip)
+        resp = self.nd_obj.copy_file_to_local(
+            remote_path=self.remote_path, local_path=self.local_path)
+        stream = open(self.local_path, 'r')
+        data = yaml.safe_load(stream)
+        admin_user = data['cortx']['external']['openldap']['admin']
+        secret = data['cortx']['external']['openldap']['secret']
+        cluster_id = data["cluster"]["id"]
+        admin_passwd = Cipher.decrypt_secret(secret,cluster_id,"cortx")
+        self.log.info("Step 3: Run ldapsearch command")
+        result = self.ldap_search(ip_addr=cluster_ip, user_name=admin_user,
+                                password=admin_passwd)
+        login_ldap_pod = comm.K8S_LDAP_CMD.format(result)
+        resp_node = self.nd_obj.execute_cmd(cmd=login_ldap_pod,
+                                        read_lines=False,
+                                        exc=False)
+        resp_str = resp_node.decode('UTF-8')
+        self.log.info("Step 4: Search for s3 account password in output")
+        assert s3_passwd not in resp_str, "{} is not present in the openldap".format(s3_passwd)
+        self.log.info("##############Test Completed##############")

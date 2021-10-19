@@ -402,7 +402,9 @@ HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
 
 
 # Kubernetes commands to interact with service/pods.
-
+LDAP_SEARCH_DATA = "ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0} -D \"cn={1},dc=seagate,dc=com\" -w {2}"
+K8S_LDAP_CMD = "kubectl exec -it symas-openldap-pod -- /bin/bash -c \"{}\""
+K8S_SVC_CMD ="kubectl get svc"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {}"
 # Fetch logs of a pod/service in a namespace.
