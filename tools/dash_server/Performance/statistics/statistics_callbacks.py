@@ -173,7 +173,7 @@ def update_hsbench(release_combined, branch, build, nodes,
 
 @app.callback(
     Output('statistics_bucketops_table', 'children'),
-    Input('perf_release_dropdown', 'value'),
+    [Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
     Input('perf_nodes_dropdown', 'value'),
@@ -183,7 +183,7 @@ def update_hsbench(release_combined, branch, build, nodes,
     Input('perf_submit_button', 'n_clicks'),
     Input('perf_sessions_dropdown', 'value'),
     Input('perf_buckets_dropdown', 'value'),
-    Input('perf_bucketops_dropdown', 'value'),
+    Input('perf_bucketops_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_bucketops(release_combined, branch, build, nodes,
@@ -194,10 +194,9 @@ def update_bucketops(release_combined, branch, build, nodes,
         raise PreventUpdate
 
     if n_clicks > 0:
-        release = release_combined.split("_")[0]
-        op_sys = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS': op_sys, 'build': build, 'branch': branch, 'nodes': nodes,
+            'release': release_combined.split("_")[0], 'OS': release_combined.split("_")[1], 
+            'build': build, 'branch': branch, 'nodes': nodes,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
