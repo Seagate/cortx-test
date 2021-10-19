@@ -60,6 +60,8 @@ class TestIntelISAIO:
         cls.node_list = []
         cls.hlt_list = []
         cls.reset_s3config = False
+        cls.master_node_list = []
+        cls.worker_node_list = []
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
@@ -71,8 +73,12 @@ class TestIntelISAIO:
                 cls.node_list.append(Node(hostname=cls.host,
                                           username=cls.uname, password=cls.passwd))
             elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
-                cls.node_list.append(LogicalNode(hostname=cls.host,
-                                                 username=cls.uname, password=cls.passwd))
+                node_obj = LogicalNode(hostname=cls.host, username=cls.uname, password=cls.passwd)
+                if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+                    cls.master_node_list.append(node_obj)
+                else:
+                    cls.worker_node_list.append(node_obj)
+
             cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestIntelISAIO")
             if not os.path.exists(cls.test_dir_path):
                 os.makedirs(cls.test_dir_path)
@@ -177,6 +183,9 @@ class TestIntelISAIO:
         Set the read verify flag to true
         Restart the S3 and motr services
         """
+        self.log.info("STARTED: Basic IO with parity check")
+        self.log.info("Parity Check :%s", parity_check)
+
         basic_io_config = self.test_config["test_basic_io"]
 
         if parity_check:
@@ -217,11 +226,13 @@ class TestIntelISAIO:
         self.log.info("Step 5: Delete bucket %s", bucket_name)
         resp = self.s3t_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: Basic IO with parity check")
 
     def io_workload(self, bucket_prefix):
         """
         S3 bench workload test executed for each of Erasure coding config
         """
+        self.log.info("STARTED: S3 bench workload test")
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
             "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
@@ -246,6 +257,7 @@ class TestIntelISAIO:
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
+            self.log.info("ENDED: S3 bench workload test")
 
     # Ordering maintained for LR2
     # Order - 1  TEST-23540
