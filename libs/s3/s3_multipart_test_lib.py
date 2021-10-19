@@ -188,47 +188,6 @@ class S3MultipartTestLib(Multipart):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
-    def upload_prepared_parts_sequential(self,
-                              upload_id: int = None,
-                              bucket_name: str = None,
-                              object_name: str = None,
-                              **kwargs) -> list:
-        """
-        Upload precalculated/prepared part list to a specific multipart
-        upload ID.
-
-        :param upload_id: Multipart Upload ID.
-        :param bucket_name: Name of the bucket.
-        :param object_name: Name of the object.
-        :return: (Boolean, List of uploaded parts).
-
-        """
-        try:
-            parts_to_upload = kwargs.get("parts", None)
-            uploaded_parts = []
-
-            LOGGER.info("Uploading parts")
-            for i, part in enumerate(parts_to_upload):
-                response = super().upload_part(part,
-                                               bucket_name,
-                                               object_name,
-                                               pload_id=upload_id,
-                                               part_number=i)
-
-                LOGGER.debug("Uploaded PartNumber : %d, ETag: %s",
-                             i,
-                             response["ETag"])
-
-                uploaded_parts.append({"PartNumber": i,
-                                       "ETag": response["ETag"]})
-
-            return uploaded_parts
-        except BaseException as error:
-            LOGGER.error("Error in %s: %s",
-                         S3MultipartTestLib.upload_prepared_parts_sequential.__name__,
-                         error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
-
     def upload_parts_parallel(self,
                               upload_id: int = None,
                               bucket_name: str = None,

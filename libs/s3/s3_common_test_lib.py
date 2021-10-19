@@ -294,14 +294,12 @@ class S3BackgroundIO:
         self.io_bucket_name = io_bucket_name
         self.log_prefix = None
         self.parallel_ios = None
-
         bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
         if not bucket_exists:
             LOG.info("Creating IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
             assert_utils.assert_true(resp[0], resp[1])
             LOG.info("Created IO bucket: %s", self.io_bucket_name)
-
         LOG.info("Check s3 bench tool installed.")
         res = path_exists(s3bench.S3_BENCH_PATH)
         assert_utils.assert_true(
@@ -384,9 +382,7 @@ class S3BackgroundIO:
             resp = self.s3_test_lib_obj.object_list(self.io_bucket_name)
             LOG.info(resp)
             self.parallel_ios.join()
-            LOG.info(
-                "Parallel IOs stopped: %s",
-                not self.parallel_ios.is_alive())
+            LOG.info("Parallel IOs stopped: %s", not self.parallel_ios.is_alive())
         if self.log_prefix:
             self.validate()
 

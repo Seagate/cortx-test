@@ -35,7 +35,7 @@ from commons.utils.system_utils import backup_or_restore_files, make_dirs, remov
 from commons.utils.system_utils import calculate_checksum
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from config import S3_MPART_CFG
+from config.s3 import MPART_CFG
 from libs.s3 import S3_CFG
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_common_test_lib import check_cluster_health
@@ -148,7 +148,6 @@ class TestMultipartAbortCopy:
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup file and directory")
-
         self.log.info("Cleanup S3 background IO artifacts")
         self.s3_background_io.cleanup()
         check_cluster_health()
@@ -166,7 +165,7 @@ class TestMultipartAbortCopy:
         Verify expected error message is generated
         """
         self.log.info("STARTED: Test uploading parts to an aborted multipart upload")
-        mp_config = S3_MPART_CFG["test_29167"]
+        mp_config = MPART_CFG["test_29167"]
         self.log.info("Start background S3 IOs")
         self.s3_background_io.start(log_prefix="TEST-29167_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Initiate multipart upload")
@@ -180,7 +179,7 @@ class TestMultipartAbortCopy:
         parts = get_unaligned_parts(
             self.mp_obj_path, total_parts=mp_config["total_parts"],
             chunk_size=mp_config["chunk_size"], random=True)
-        self.s3_mp_test_obj.upload_prepared_parts_sequential(
+        self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
         self.log.info("Step 3: Abort multipart upload")
@@ -189,7 +188,7 @@ class TestMultipartAbortCopy:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 4: Upload parts to aborted multipart upload ID")
         try:
-            self.s3_mp_test_obj.upload_prepared_parts_sequential(
+            self.s3_mp_test_obj.upload_parts_sequential(
                 upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
                 parts=parts)
         except CTException as error:
@@ -214,7 +213,7 @@ class TestMultipartAbortCopy:
         Verify with list multipart
         """
         self.log.info("STARTED: Test aborting multipart upload that is in progress")
-        mp_config = S3_MPART_CFG["test_29164"]
+        mp_config = MPART_CFG["test_29164"]
         self.log.info("Start background S3 IOs")
         self.s3_background_io.start(log_prefix="TEST-29164_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Initiate multipart upload")
@@ -263,7 +262,7 @@ class TestMultipartAbortCopy:
         Verify copied objects
         """
         self.log.info("STARTED: Test copying a copied object uploaded using multipart")
-        mp_config = S3_MPART_CFG["test_29165"]
+        mp_config = MPART_CFG["test_29165"]
         self.log.info("Start background S3 IOs")
         self.s3_background_io.start(log_prefix="TEST-29165_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Initiating multipart upload")
@@ -279,7 +278,7 @@ class TestMultipartAbortCopy:
         parts = get_unaligned_parts(
             self.mp_obj_path, total_parts=mp_config["total_parts"],
             chunk_size=mp_config["chunk_size"], random=True)
-        uploaded_parts = self.s3_mp_test_obj.upload_prepared_parts_sequential(
+        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
         self.log.info("Step 3: Complete multipart upload")
@@ -323,7 +322,7 @@ class TestMultipartAbortCopy:
         Verify copy object fails.
         """
         self.log.info("STARTED: Test deleting completed multipart object during copy operation")
-        mp_config = S3_MPART_CFG["test_29166"]
+        mp_config = MPART_CFG["test_29166"]
         self.log.info("Start background S3 IOs")
         self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h5m")
         self.log.info("Step 1: Initiate multipart upload")
@@ -337,7 +336,7 @@ class TestMultipartAbortCopy:
         source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
                                     chunk_size=mp_config["chunk_size"], random=True)
-        uploaded_parts = self.s3_mp_test_obj.upload_prepared_parts_sequential(
+        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
         self.log.info("Step 3: Complete multipart upload")
@@ -388,7 +387,7 @@ class TestMultipartAbortCopy:
         Verify all uploaded multiparts.
         """
         self.log.info("STARTED: Test uploading 20 5TB multipart objects")
-        mp_config = S3_MPART_CFG["test_29168"]
+        mp_config = MPART_CFG["test_29168"]
         self.log.info("Step 1: Initiate 20 multipart uploads")
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
@@ -409,7 +408,7 @@ class TestMultipartAbortCopy:
             mpu = ({"object_name": mpu_name, "mpu_id": mpu_id, "bucket_name": mpu_bucket_name,
                     "parts": parts})
             mpu_list.append(mpu)
-            proc = Process(target=self.s3_mp_test_obj.upload_prepared_parts_sequential, kwargs=mpu)
+            proc = Process(target=self.s3_mp_test_obj.upload_parts_sequential, kwargs=mpu)
             process_list.append(proc)
         self.log.info("Step 2: Upload parts in parallel")
         for process in process_list:
