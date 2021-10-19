@@ -73,11 +73,11 @@ class TestS3accountK8s:
         self.log.info("extract cluster ip")
         data = str(resp1, 'UTF-8')
         data = data.split("\n")
+        res = False
         for line in data:
             if "openldap-svc" in line:
                 line_found = line
                 self.log.info(line_found)
-                res = False
                 res = re.sub(' +', ' ', line_found)
                 res = res.split()[2]
                 break
