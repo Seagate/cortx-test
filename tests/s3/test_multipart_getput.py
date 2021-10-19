@@ -20,7 +20,6 @@
 
 """Multipart Upload test module."""
 
-import pytest
 import logging
 import time
 import multiprocessing
@@ -42,10 +41,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3 import S3_CFG, S3H_OBJ
-
-s3_copy_obj = TestCopyObjects()
-
-MPART_CFG = read_yaml("config/s3/test_multipart_upload.yaml")[1]  # To - this needs to be checked
 
 
 class TestMultipartUploadGetPut:
@@ -114,7 +109,6 @@ class TestMultipartUploadGetPut:
         # check health of cluster
         check_cluster_health()
         self.log.info("STARTED: Teardown operations")
-
         self.log.info("Restoring aws config file from %s to %s...",
                       self.config_backup_path, self.aws_config_path)
         resp = backup_or_restore_files(self.actions[1], self.config_backup_path,
