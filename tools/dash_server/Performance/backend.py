@@ -429,7 +429,10 @@ def get_workload_headings(data):
     Returns:
         H5: heading with workload string
     """
-    return html.H5(f"Data for {data['build']} build on branch {data['branch']} with {data['nodes']} nodes, {data['pfull']}% utilization having workload of {data['buckets']} bucket(s) and {data['sessions']} session(s).")
+    return html.H5(f"Data for {data['build']} build with {data['OS']} OS\
+        on branch {data['branch']} with {data['nodes']} nodes, \
+        {data['pfull']}% utilization having workload of {data['buckets']} \
+        bucket(s) and {data['sessions']} session(s).")
 
 
 def get_metadata_latencies(data_needed_for_query):

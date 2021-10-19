@@ -141,8 +141,8 @@ def update_Ttfb_Style(bench):
     Input('graphs_obj_size_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
-                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
+def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch1, option1,
+                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2_combined,
                   branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2,
                   buckets2, flag, obj_size):
     """
@@ -198,16 +198,20 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
             plot_data['x_heading'] = 'Builds'
             xfilter_tag = 'objsize'
 
+        release1 = release1_combined.split("_")[0]
+        os1 = release1_combined.split("_")[1]
         data = {
-            'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
-            'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
+            'release': release1, 'OS': os1, 'xfilter': xfilter, xfilter_tag: option1,
+            'branch': branch1, 'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
             'buckets': buckets1, 'sessions': sessions1, 'name': bench, 'all_sessions_plot': False
         }
         if flag:
+            release2 = release2_combined.split("_")[0]
+            os2 = release2_combined.split("_")[1]
             data_optional = {
-                'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
-                'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
-                'buckets': buckets2, 'sessions': sessions2, 'name': bench,
+                'release': release2, 'OS': os2, 'xfilter': xfilter, xfilter_tag: option2,
+                'branch': branch2, 'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2,
+                'custom': custom2, 'buckets': buckets2, 'sessions': sessions2, 'name': bench,
                 'all_sessions_plot': False
             }
 
