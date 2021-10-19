@@ -496,8 +496,8 @@ class TestDIWithChangingS3Params:
             byt_ary[0] = ord(first_byte_for_write[2])
             data = bytes(byt_ary)
             f_random.write(data)
-        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                                     file_path=self.F_PATH)
+        self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                              file_path=self.F_PATH)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH,
