@@ -429,7 +429,7 @@ class TestMultipartUploadGetPut:
         chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts2"],
                                      mp_config["chunk_size2"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, 
+                                                                         self.object_name,
                                                                          parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
@@ -614,7 +614,7 @@ class TestMultipartUploadGetPut:
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, 
+                                                                         self.object_name,
                                                                          parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
@@ -640,7 +640,7 @@ class TestMultipartUploadGetPut:
         etag = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         chunks = get_unaligned_parts(self.mp_obj_path, mp_config["total_parts"], True)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name, 
+                                                                         self.object_name,
                                                                          parts=chunks)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
         self.log.info("Listing parts of multipart upload")
