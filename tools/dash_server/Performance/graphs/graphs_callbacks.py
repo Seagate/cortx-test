@@ -227,6 +227,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch
         plot_data['custom'] = data['custom']
         plot_data['pallete'] = pallete['1']
         plot_data['nodes'] = nodes1
+        plot_data['name'] = 'Query 1'
         fig_all = get_graph_layout(plot_data)
 
         for metric in stats:
@@ -267,6 +268,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch
                 plot_data_optional['custom'] = data_optional['custom']
                 plot_data_optional['x_actual_data'] = x_data_optional
                 plot_data_optional['nodes'] = nodes2
+                plot_data_optional['name'] = 'Query 2'
                 get_graphs(fig, fig_all, df_optional,
                            plot_data_optional, x_data_final)
                 not_plotted = False
