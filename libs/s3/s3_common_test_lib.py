@@ -27,12 +27,18 @@ from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
+from scripts.s3_bench import s3bench
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
+from libs.s3 import S3H_OBJ
 from libs.s3 import s3_test_lib
+from libs.s3 import s3_acl_test_lib
+from libs.s3 import s3_bucket_policy_test_lib
+from libs.s3 import s3_multipart_test_lib
+from libs.s3 import s3_tagging_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
 LOG = logging.getLogger(__name__)
@@ -67,6 +73,20 @@ def get_ldap_creds() -> tuple:
     return resp
 
 
+def get_cortx_capacity() -> tuple:
+    """Get the cortx capacity stat."""
+    nodes = CMN_CFG["nodes"]
+    hostname = nodes[0]['hostname']
+    username = nodes[0]['username']
+    password = nodes[0]['password']
+    health = Health(hostname=hostname,
+                    username=username,
+                    password=password)
+    total, avail, used = health.get_sys_capacity()
+
+    return total, avail, used
+
+
 def create_s3_acc(
         account_name: str = None,
         email_id: str = None,
@@ -77,7 +97,6 @@ def create_s3_acc(
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
-    :param account_dict:
     :return tuple: It returns multiple values such as access_key,
     secret_key and s3 objects which required to perform further operations.
     """
@@ -86,12 +105,12 @@ def create_s3_acc(
         "Step : Creating account with name %s and email_id %s",
         account_name,
         email_id)
-    create_account = rest_obj.create_s3_account(
+    s3_account = rest_obj.create_s3_account(
         account_name, email_id, password)
     del rest_obj
-    assert_utils.assert_true(create_account[0], create_account[1])
-    access_key = create_account[1]["access_key"]
-    secret_key = create_account[1]["secret_key"]
+    assert_utils.assert_true(s3_account[0], s3_account[1])
+    access_key = s3_account[1]["access_key"]
+    secret_key = s3_account[1]["secret_key"]
     LOG.info("Step Successfully created the s3 account")
     s3_obj = s3_test_lib.S3TestLib(
         access_key,
@@ -105,6 +124,42 @@ def create_s3_acc(
         secret_key)
 
     return response
+
+
+def create_s3_account_get_s3lib_objects(account_name: str, email_id: str, password: str) -> tuple:
+    """
+    function will create s3 account with specified account name and email-id and returns s3 objects.
+
+    :param account_name: Name of account to be created
+    :param email_id: Email id for account creation
+    :param password: Password for the account
+    :return: It returns account details such as canonical_id, access_key, secret_key,
+    account_id and s3 objects which will be required to perform further operations.
+    """
+    LOG.info(
+        "Step : Creating account with name %s and email_id %s",
+        account_name, email_id)
+    rest_obj = S3AccountOperations()
+    s3_account = rest_obj.create_s3_account(
+        acc_name=account_name, email_id=email_id, passwd=password)
+    assert_utils.assert_true(s3_account[0], s3_account[1])
+    del rest_obj
+    access_key = s3_account[1]["access_key"]
+    secret_key = s3_account[1]["secret_key"]
+    canonical_id = s3_account[1]["canonical_id"]
+    account_id = s3_account[1]["account_id"]
+    LOG.info("Step Successfully created s3 account.")
+    s3_obj = s3_test_lib.S3TestLib(access_key=access_key, secret_key=secret_key)
+    acl_obj = s3_acl_test_lib.S3AclTestLib(access_key=access_key, secret_key=secret_key)
+    s3_bkt_policy_obj = s3_bucket_policy_test_lib.S3BucketPolicyTestLib(
+        access_key=access_key, secret_key=secret_key)
+    s3_bkt_tag_obj = s3_tagging_test_lib.S3TaggingTestLib(
+        access_key=access_key, secret_key=secret_key)
+    s3_multipart_obj = s3_multipart_test_lib.S3MultipartTestLib(
+        access_key=access_key, secret_key=secret_key)
+
+    return canonical_id, s3_obj, acl_obj, s3_bkt_policy_obj, \
+        access_key, secret_key, account_id, s3_bkt_tag_obj, s3_multipart_obj
 
 
 def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_sample=3):
@@ -149,3 +204,70 @@ def perform_s3_io(s3_obj, s3_bucket, dir_path, obj_prefix="S3obj", size=10, num_
     LOG.info("S3 IO completed successfully...")
 
     return True, f"S3 IO's completed successfully on {s3_bucket}"
+
+
+def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, num_sample=3):
+    """
+    Upload number of random size objects using simple upload.
+
+    :param s3_obj: s3 object.
+    :param s3_bucket: Name of the s3 bucket.
+    :param obj_prefix: Prefix of the s3 object.
+    :param size: size of the object multiple of 1MB.
+    :param num_sample: Number of object getting created.
+    """
+    buckets = s3_obj.bucket_list()[1]
+    if s3_bucket not in buckets:
+        resp = s3_obj.create_bucket(s3_bucket)
+        assert_utils.assert_true(resp[0], resp[1])
+    objects = []
+    for i in range(1, num_sample):
+        fpath = os.path.join(os.getcwd(), f"{obj_prefix}-{i}")
+        resp = system_utils.create_file(fpath, count=size*i)
+        assert_utils.assert_true(resp[0], resp[1])
+        assert_utils.assert_true(system_utils.path_exists(fpath), f"Failed to create path: {fpath}")
+        resp = s3_obj.put_object(s3_bucket, os.path.basename(fpath), fpath)
+        assert_utils.assert_true(resp[0], resp[1])
+        objects.append(os.path.basename(fpath))
+        resp = system_utils.remove_file(fpath)
+        assert_utils.assert_true(resp[0], resp[1])
+
+    return objects
+
+
+def s3_ios(
+           bucket=None,
+           log_file_prefix="parallel_io",
+           duration="0h1m",
+           obj_size="24Kb",
+           **kwargs):
+    """
+    Perform io's for specific durations.
+
+    1. Create bucket.
+    2. perform io's for specified durations.
+    3. Check executions successful.
+    """
+    kwargs.setdefault("num_clients", 2)
+    kwargs.setdefault("num_sample", 5)
+    kwargs.setdefault("obj_name_pref", "load_gen_")
+    kwargs.setdefault("end_point", S3_CFG["s3_url"])
+    LOG.info("STARTED: s3 io's operations.")
+    access_key, secret_key = S3H_OBJ.get_local_keys()
+    resp = s3bench.s3bench(
+        access_key,
+        secret_key,
+        bucket=bucket,
+        end_point=kwargs["end_point"],
+        num_clients=kwargs["num_clients"],
+        num_sample=kwargs["num_sample"],
+        obj_name_pref=kwargs["obj_name_pref"],
+        obj_size=obj_size,
+        duration=duration,
+        log_file_prefix=log_file_prefix)
+    LOG.info(resp)
+    assert_utils.assert_true(
+        os.path.exists(
+            resp[1]),
+        f"failed to generate log: {resp[1]}")
+    LOG.info("ENDED: s3 io's operations.")
