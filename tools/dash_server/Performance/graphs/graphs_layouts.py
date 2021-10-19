@@ -37,9 +37,12 @@ Xfilter = [
 ]
 
 release = [
-    {'label': 'LR-R2-CentOS-7.9', 'value': '2_CentOS Linux release 7.9.2009 (Core)'},
-    {'label': 'LR-R2-CentOS-7.8', 'value': '2_CentOS Linux release 7.8.2003 (Core)'},
-    {'label': 'LR-R1-CentOS', 'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
 ]
 

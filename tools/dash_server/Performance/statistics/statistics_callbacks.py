@@ -43,7 +43,7 @@ def update_workload(release_combined, branch, build, nodes,
     workload = None
     if not (all([
         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
-        ])) and pfull is None:
+    ])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
@@ -79,14 +79,14 @@ def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
     table = None
     if not (all([
         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
-        ])) and pfull is None:
+    ])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
         release = release_combined.split("_")[0]
         os = release_combined.split("_")[1]
         data = {
-            'release': release, 'OS':os, 'build': build, 'branch': branch,
+            'release': release, 'OS': os, 'build': build, 'branch': branch,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
@@ -117,7 +117,7 @@ def update_metadata(release_combined, branch, build, nodes,
     table = None
     if not (all([
         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
-        ])) and pfull is None:
+    ])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
@@ -152,8 +152,8 @@ def update_metadata(release_combined, branch, build, nodes,
 def update_hsbench(release_combined, branch, build, nodes,
                    pfull, itrns, custom, n_clicks, sessions, buckets):
     table = None
-    if not (all([release_combined, branch, build, nodes, 
-    itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
+    if not (all([release_combined, branch, build, nodes,
+                 itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
@@ -189,8 +189,8 @@ def update_hsbench(release_combined, branch, build, nodes,
 def update_bucketops(release_combined, branch, build, nodes,
                      pfull, itrns, custom, n_clicks, sessions, buckets, objsize):
     table = None
-    if not (all([release_combined, branch, build, nodes, 
-    itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
+    if not (all([release_combined, branch, build, nodes,
+                 itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:
@@ -225,8 +225,8 @@ def update_bucketops(release_combined, branch, build, nodes,
 def update_cosbench(release_combined, branch, build, nodes,
                     pfull, itrns, custom, n_clicks, sessions, buckets):
     table = None
-    if not (all([release_combined, branch, build, nodes, 
-    itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
+    if not (all([release_combined, branch, build, nodes,
+                 itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
         raise PreventUpdate
 
     if n_clicks > 0:

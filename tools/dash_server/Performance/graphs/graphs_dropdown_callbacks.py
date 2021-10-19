@@ -104,7 +104,8 @@ def update_options_dropdown(xfilter, release_combined, branch):
     else:
         release = release_combined.split("_")[0]
         os = release_combined.split("_")[1]
-        options = get_distinct_keys(release, xfilter, {'OS': os, 'Branch': branch})
+        options = get_distinct_keys(
+            release, xfilter, {'OS': os, 'Branch': branch})
         if options:
             if xfilter == 'Build':
                 builds = sort_builds_list(options)
@@ -244,8 +245,8 @@ def update_custom_dropdown(xfilter, release_combined, branch, option1, bench, no
     Input('graphs_custom_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_iterations_dropdown(xfilter, release_combined, 
-        branch, option1, bench, nodes, pfill, custom):
+def update_iterations_dropdown(xfilter, release_combined,
+                               branch, option1, bench, nodes, pfill, custom):
     """updates iterations of run in default select dropdown"""
     options = None
     value = None
@@ -285,8 +286,8 @@ def update_iterations_dropdown(xfilter, release_combined,
     Input('graphs_custom_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_sessions_dropdown(xfilter, release_combined, branch, 
-option1, bench, nodes, pfill, itrns, custom):
+def update_sessions_dropdown(xfilter, release_combined, branch,
+                             option1, bench, nodes, pfill, itrns, custom):
     """updates sessions in default select dropdown"""
     options = None
     value = None
@@ -437,7 +438,8 @@ def update_options_dropdown_2(xfilter, release_combined, branch, flag):
     else:
         release = release_combined.split("_")[0]
         os = release_combined.split("_")[1]
-        options = get_distinct_keys(release, xfilter, {'OS': os, 'Branch': branch})
+        options = get_distinct_keys(
+            release, xfilter, {'OS': os, 'Branch': branch})
         if options:
             if xfilter == 'Build':
                 builds = sort_builds_list(options)
