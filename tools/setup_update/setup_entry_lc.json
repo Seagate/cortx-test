@@ -139,7 +139,7 @@
 
 "csm":
 {
-  "csm_endpoint": "fqdn:port",
+  "mgmt_vip": "fqdn",
   "csm_admin_user":{
     "username": "",
     "password": ""

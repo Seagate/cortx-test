@@ -32,20 +32,16 @@ def create_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     """
     Create IAM user using given secret and access key.
     """
-    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-    LOGGER.debug("Use SSL : %s", use_ssl)
-
-    val_cert = kwargs.get("verify", S3_CFG["iam_cert_path"])
-    LOGGER.debug("SSL certificate path: %s", val_cert)
-
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
 
     region = kwargs.get("region_name", S3_CFG["region"])
     LOGGER.debug("Region : %s", region)
 
-    iam = boto3.client("iam", use_ssl=use_ssl,
-                       verify=val_cert,
+    iam = boto3.client("iam",
+                       verify=False,
                        endpoint_url=endpoint,
                        aws_access_key_id=access_key,
                        aws_secret_access_key=secret_key,
@@ -68,20 +64,16 @@ def delete_iam_user(user_name, access_key: str, secret_key: str, **kwargs):
     """
     Delete IAM user using given secret and access key.
     """
-    use_ssl = kwargs.get("use_ssl", S3_CFG["use_ssl"])
-    LOGGER.debug("Use SSL : %s", use_ssl)
-
-    val_cert = kwargs.get("verify", S3_CFG["iam_cert_path"])
-    LOGGER.debug("SSL certificate path: %s", val_cert)
-
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["iam_url"])
     LOGGER.debug("IAM endpoint : %s", endpoint)
 
     region = kwargs.get("region_name", S3_CFG["region"])
     LOGGER.debug("Region : %s", region)
 
-    iam = boto3.client("iam", use_ssl=use_ssl,
-                       verify=val_cert,
+    iam = boto3.client("iam",
+                       verify=False,
                        endpoint_url=endpoint,
                        aws_access_key_id=access_key,
                        aws_secret_access_key=secret_key,
@@ -105,6 +97,8 @@ def create_bucket(bucket_name, access_key: str, secret_key: str, **kwargs):
     """
     Create bucket from give access key and secret key.
     """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
 
@@ -137,6 +131,8 @@ def delete_objects_bucket(bucket_name, access_key: str, secret_key: str, **kwarg
     """
     Delete bucket from give access key and secret key.
     """
+    LOGGER.debug("Access Key : %s", access_key)
+    LOGGER.debug("Secret Key : %s", secret_key)
     endpoint = kwargs.get("endpoint_url", S3_CFG["s3_url"])
     LOGGER.debug("S3 Endpoint : %s", endpoint)
 
