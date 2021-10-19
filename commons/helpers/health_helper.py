@@ -161,7 +161,7 @@ class Health(Host):
                                password=self.password)
             res = node.send_k8s_cmd(
                 operation="exec", pod=pod, namespace=namespace,
-                command_suffix=f"-c {container} -- {commands.CPU_USAGE_CMD}",
+                command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.MEM_USAGE_CMD, res)
         mem_usage = float(res.replace('\n', ''))
