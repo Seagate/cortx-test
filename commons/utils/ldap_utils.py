@@ -75,9 +75,8 @@ class Cipher:
             except subprocess.CalledProcessError as process_error:
                 raise Exception('Command "{getkey_cmd}" failed') from process_error
             return resp
-        else:
-            generate = Cipher.gen_key(str1, str2, *strs)
-            return generate
+        generate = Cipher.gen_key(str1, str2, *strs)
+        return generate
 
     def decrypt_secret(secret, cluster_id, decryption_key):
         """
@@ -86,7 +85,7 @@ class Cipher:
         LOGGER.info("Fetching LDAP root user password from Conf Store.")
         try:
             cipher_key = Cipher.generate_key(cluster_id, decryption_key)
-        except Exception as key_except:
+        except KeyError as key_except:
             LOGGER.error("Failed to Fetch keys from Conf store with %s", key_except)
             return None
         try:
