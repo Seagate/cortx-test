@@ -547,6 +547,7 @@ class Multipart(S3Lib):
         """
         List all initiated multipart uploads.
         :param bucket: Name of the bucket.
+        :keymarker: key marker of more than >1000 mpu
         :return: response.
         """
         result = self.s3_client.list_multipart_uploads(Bucket=bucket, KeyMarker=keymarker)

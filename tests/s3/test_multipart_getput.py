@@ -120,10 +120,8 @@ class TestMultipartUploadGetPut:
         if path_exists(self.mp_obj_path):
             remove_file(self.mp_obj_path)
         self.log.info("Deleted a backup file and directory")
-
         # test cleanup
         self.log.info("Test cleanup")
-
         self.log.info("Deleting object in a bucket")
         res = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
