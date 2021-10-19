@@ -315,7 +315,7 @@ class ProvDeployK8sCortxLib:
         size_metadata = kwargs.get("size_metadata", '5Gi')
         size_data_disk = kwargs.get("size_data_disk", '5Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
-
+        new_filepath = self.deploy_cfg['new_file_path']
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -343,6 +343,9 @@ class ProvDeployK8sCortxLib:
                     (data_disk_per_cvg * cvg_count * node_list):
                 return False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
+            if len(data_devices) < data_disk_per_cvg*cvg_count:
+                return False, "The requested data disk is more than" \
+                              " the data disk available on the system"
             # This condition validated the total available disk count
             # and split the disks per cvg.
 
@@ -421,8 +424,8 @@ class ProvDeployK8sCortxLib:
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
-        with open(filepath, 'w+') as soln:
+        with open(new_filepath, 'w') as soln:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, filepath, sys_disk_pernode
+        return True, new_filepath, sys_disk_pernode
