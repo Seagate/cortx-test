@@ -107,3 +107,26 @@ test_631:
             PartNumber: 1
         -   ETag: d41d8cd98876362482364f00b204e980
             PartNumber: 2
+
+test_29163:
+    file_size: 5000000
+    total_parts: 10000
+    delay: 21600  # The Delay to check the space reclaimed after 6 hrs.
+
+test_29169:
+    file_size: 6000
+    total_parts: 10
+
+test_29171:
+    file_size: 6000
+    num_sample: 3
+    total_parts: 10
+
+test_29172:
+    file_size: 100
+    total_parts: 10
+
+test_29173:
+    file_size: 20000
+    total_parts: 20
+    delay: 3600
