@@ -559,7 +559,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
     )
 
     fig.add_trace(trace)
-    trace.update(name=f"{plot_data['operation']} {plot_data['metric']} - {plot_data['name']}")
+    trace.update(
+        name=f"{plot_data['operation']} {plot_data['metric']} - {plot_data['name']}")
     fig_all.add_trace(trace)
 
 

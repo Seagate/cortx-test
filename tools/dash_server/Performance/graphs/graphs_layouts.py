@@ -151,7 +151,7 @@ graphs_input_options = [
         justify='center'
     ),
     Row(
-        [ 
+        [
             Dropdown(
                 id="graphs_release_compare_dropdown",
                 options=release,
