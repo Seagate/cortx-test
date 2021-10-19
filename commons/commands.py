@@ -432,4 +432,4 @@ CMD_GIT_CLONE = "git clone {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
 #docker commands
-CMD_DOCKER_LOGIN = "docker login -u {} -p {}"
+CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"

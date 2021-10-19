@@ -145,7 +145,8 @@ class ProvDeployK8sCortxLib:
             node_obj.execute_cmd("umount {}".format(mp))
 
         LOGGER.info("mkfs %s", disk_partition)
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4, read_lines=True)
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition),
+                                    read_lines=True)
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Mount the file system")
@@ -188,7 +189,7 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
         LOGGER.debug("resp: %s", resp)
 
-    def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str):
+    def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str, git_tag: str):
         """
         Checkout cortx-k8s code on the master node. Delete is any previous exists.
         param: node_obj : Node object to checkout code - Master node.
@@ -204,8 +205,8 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
         LOGGER.debug("resp: %s", resp)
 
-        LOGGER.info("Git checkout tag %s", self.deploy_cfg["git_tag"])
-        cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(self.deploy_cfg["git_tag"])
+        LOGGER.info("Git checkout tag %s", git_tag)
+        cmd = "cd cortx-k8s && " + common_cmd.CMD_GIT_CHECKOUT.format(git_tag)
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
@@ -235,9 +236,9 @@ class ProvDeployK8sCortxLib:
         return True, resp
 
     def deploy_cortx_cluster(self, solution_file_path: str, master_node_list: list,
-                             worker_node_list: list,
+                             worker_node_list: list, system_disk_dict: dict,
                              docker_username: str, docker_password: str, git_id: str,
-                             git_token: str) -> tuple:
+                             git_token: str, git_tag) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
@@ -249,8 +250,6 @@ class ProvDeployK8sCortxLib:
         param: git_token: Git token to access Cortx-k8s repo
         return : True/False and resp
         """
-        LOGGER.info("Read solution config file")
-        sol_cfg = yaml.safe_load(open(solution_file_path))
         if len(master_node_list) == 0:
             return False, "Minimum one master node needed for deployment"
         if len(worker_node_list) == 0:
@@ -259,13 +258,14 @@ class ProvDeployK8sCortxLib:
         for node in worker_node_list:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
-            # TODO: parse system disk and pass to local path prov: UDX-6356
-            self.prereq_local_path_prov(node, "/dev/sdb")
+            system_disk = system_disk_dict[node.hostname]
+            # system disk will be used mount /mnt/fs-local-volume on worker node
+            self.prereq_local_path_prov(node, system_disk)
             self.prereq_glusterfs(node)
             self.prereq_3rd_party_srv(node)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
-        self.prereq_git(master_node_list[0], git_id, git_token)
+        self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
         resp = self.deploy_cluster(master_node_list[0], solution_file_path,
                                    self.deploy_cfg["git_remote_dir"])
         if resp[0]:
@@ -328,7 +328,7 @@ class ProvDeployK8sCortxLib:
         nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
         dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         valid_disk_count = sns_spare + sns_data + sns_parity
-
+        metadata_devices = []
         for node_count, node_obj in enumerate(worker_obj, start=1):
             LOGGER.info(node_count)
             device_list = node_obj.execute_cmd(cmd=common_cmd.CMD_LIST_DEVICES,
