@@ -28,7 +28,6 @@ from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.di import data_generator as data_gen
 from libs.di import di_lib
 from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
@@ -434,7 +433,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.skip(reason="Not tested, hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
@@ -464,12 +463,12 @@ class TestDIWithChangingS3Params:
             byt_ary[0] = ord(first_byte_for_write[0])
             data = bytes(byt_ary)
             f_random.write(data)
-        resp = self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                                     file_path=self.F_PATH)
-        resp_cp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
-                                         source_object=self.obj_name_1,
-                                         dest_bucket=self.bucket_name_2,
-                                         dest_object=self.obj_name_2)
+        self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                              file_path=self.F_PATH)
+        self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                               source_object=self.obj_name_1,
+                               dest_bucket=self.bucket_name_2,
+                               dest_object=self.obj_name_2)
         # this copy operation should fail
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH)
