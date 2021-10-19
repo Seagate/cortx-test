@@ -22,12 +22,14 @@
 Size could be as small as 1 byte to 1 GB.
 """
 import os
+import sys
 import logging
 import array
 import random
 import zlib
 import hashlib
 import string
+import traceback
 from typing import Union
 from typing import Tuple
 from typing import Any
@@ -100,10 +102,11 @@ class DataGenerator:
 
         if datatype == DEFAULT_DATA_TYPE:
             # Ignoring de-dupe ratio for blobs.
-            if self.compression_ratio > 1:
+            if self.compression_ratio >= 1:
                 compressibility = int(100 - (1 / self.compression_ratio * 100))
                 buf = self.__get_data(size, compressibility, seed)
         buf = buf.encode('utf-8')[:size]  # hack until better solution is found.
+        #buf = buf[:size]
         csum.update(buf)
         chksum = csum.hexdigest()
         return buf, chksum
@@ -197,9 +200,30 @@ class DataGenerator:
                 off += iosize
         return name
 
+    @staticmethod
+    def add_first_byte_to_buffer(buffer, first_byte):
+        """
+        'non z and f' as first byte of file: then the file is not corrupted during put-object
+        'z' as first byte of file: then entire file zeroed during put-object after calculating
+         checksum, but before sending data to Motr.
+        'f' as first byte of file: then the first byte of the object is
+        set to 0 during put-object after calculating checksum,
+        but before sending data to Motr.
+
+        :param buffer:
+        :param first_byte: is a literal  z,f,Z, F which indicates different types of corruption.
+        :return: bytes
+        """
+        buf = bytearray(buffer)
+        buf[0] = ord(first_byte)
+        buffer = bytes(buf)
+        return buffer
+
+
 if __name__ == '__main__':
     # Test Data Generator here.
     d = DataGenerator(c_ratio=1)
     buf, csum = d.generate(1024 * 1024 * 5, seed=10)
     print(csum)
+    buf = d.add_first_byte_to_buffer(buf, 'z')
     d.save_buf_to_file(buf, csum, 1024 * 1024, "test-1")

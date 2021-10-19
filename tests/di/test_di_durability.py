@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-F-23B : Data Durability test module.
+F-23B : Data Durability/Integrity test module.
 """
 
 import os
@@ -42,17 +42,17 @@ from boto3.s3.transfer import TransferConfig
 class TestDIDurability:
     """DI Durability Test suite."""
 
-    @pytest.yield_fixture(autouse=True)
-    def setup(self):
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self):
         """
-        Function will be invoked prior to each test case.
-
-        It will perform all prerequisite test suite steps if any.
+        Yield fixture to setup pre requisites and teardown them.
+        Part before yield will be invoked prior to each test case and
+        part after yield will be invoked after test call i.e as teardown.
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup test operations.")
         self.secure_range = secrets.SystemRandom()
-        self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+        #self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.s3_test_obj = S3TestLib()
         self.s3_mp_test_obj = S3MultipartTestLib()
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
@@ -110,6 +110,7 @@ class TestDIDurability:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22483')
     def test_toggle_checksum_feature_with_no_data_loss_22483(self):
@@ -154,6 +155,7 @@ class TestDIDurability:
             "(immediate effect). No I/O drops should be observed.")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22492')
     def test_verify_read_corrupt_metadata_at_motr_lvl_22492(self):
@@ -198,6 +200,7 @@ class TestDIDurability:
             "read (Get).")
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22493')
     def test_verify_range_read_corrupt_metadata_at_motr_lvl_22493(self):
@@ -233,6 +236,7 @@ class TestDIDurability:
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
     def test_object_data_integrity_while_upload_using_correct_checksum_22497(self):

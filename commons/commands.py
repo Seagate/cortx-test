@@ -453,3 +453,24 @@ CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
 # Maintenance mode for DI
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
 HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
+
+# DI Flags
+RUN_FI_FLAG = 'curl -X PUT -H "x-seagate-faultinjection: {},always,{},0,0" {}'
+S3_FI_FLAG_DC_ON_WRITE = 'di_data_corrupted_on_write'
+S3_FI_FLAG_DC_ON_READ = 'di_data_corrupted_on_read'
+S3_FI_FLAG_CSUM_CORRUPT = 'di_obj_md5_corrupted'
+
+FI_ENABLE = 'enable'
+FI_DISABLE = 'disable'
+FI_TEST = 'test'
+
+S3_SRV_PORT = S3_SRV_START_PORT = 28081
+
+# corrupts file before storing;
+DI_DATA_CORRUPT_ON_WRITE = 'di_data_corrupted_on_write'
+
+# corrupts file during retrieval;
+DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
+
+# instead of md5 hash of the object stores md5 hash of empty string.
+DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
