@@ -22,14 +22,12 @@
 Size could be as small as 1 byte to 1 GB.
 """
 import os
-import sys
 import logging
 import array
 import random
 import zlib
 import hashlib
 import string
-import traceback
 from typing import Union
 from typing import Tuple
 from typing import Any
@@ -213,9 +211,9 @@ class DataGenerator:
         :param first_byte: is a literal  z,f,Z, F which indicates different types of corruption.
         :return: bytes
         """
-        buf = bytearray(buffer)
-        buf[0] = ord(first_byte)
-        buffer = bytes(buf)
+        tbuf = bytearray(buffer)
+        tbuf[0] = ord(first_byte)
+        buffer = bytes(tbuf)
         return buffer
 
 
