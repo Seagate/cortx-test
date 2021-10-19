@@ -27,7 +27,7 @@ import dash_html_components as html
 import dash_daq as daq
 
 from Performance.styles import style_sub_tab, style_sub_label,\
-    style_dropdown_small_2, style_dropdown_medium, dict_button_style
+    style_dropdown_small_2, style_dropdown_medium, dict_button_style, style_dropdown_large
 
 # Variable declarations
 Xfilter = [
@@ -98,7 +98,7 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_medium
+                style=style_dropdown_large
             ),
             Dropdown(
                 id="graphs_branch_dropdown",

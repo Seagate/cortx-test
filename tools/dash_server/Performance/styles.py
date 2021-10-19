@@ -99,14 +99,14 @@ style_dropdown_small_2 = {
 
 
 style_dropdown_medium = {
-    'width': '155px',
+    'width': '150px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px"
 }
 
 style_dropdown_large = {
-    'width': '250px',
+    'width': '180px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px",
