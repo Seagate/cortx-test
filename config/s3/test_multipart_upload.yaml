@@ -130,3 +130,33 @@ test_29173:
     file_size: 20000
     total_parts: 20
     delay: 3600
+
+test_29167:
+    file_size: 300
+    chunk_size: 1048576
+    total_parts: 5
+    error_msg: "An error occurred (NoSuchUpload) when calling the UploadPart operation:
+    The specified upload does not exist. The upload ID may be invalid, or the upload may have been
+    aborted or completed."
+
+test_29164:
+    file_size: 600
+    chunk_size: 1048576
+    total_parts: 30
+
+test_29165:
+    file_size: 150
+    chunk_size: 1048576
+    total_parts: 3
+
+test_29166:
+    file_size: 5120
+    chunk_size: 1048576
+    total_parts: 20
+    error_msg: "Not Found"
+
+test_29168:
+    file_size: 5242880
+    chunk_size: 1048576
+    total_parts: 20
+    mpu_count: 20
