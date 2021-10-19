@@ -43,13 +43,14 @@ from libs.ha.ha_common_libs_k8s import HAK8s
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 from libs.s3.s3_test_lib import S3TestLib
+from libs.di.di_mgmt_ops import ManagementOPs
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
 
 # pylint: disable=R0902
-class TestClstrShutdownStart:
+class TestClusterShutdownStart:
     """
     Test suite for Cluster shutdown: Immediate.
     """
@@ -71,7 +72,8 @@ class TestClstrShutdownStart:
         cls.node_worker_list = []
         cls.ha_obj = HAK8s()
         cls.restored = True
-        cls.s3_clean = None
+        cls.s3_clean = cls.test_prefix = cls.s3bench_cleanup = None
+        cls.mgnt_ops = ManagementOPs()
 
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
@@ -126,6 +128,14 @@ class TestClstrShutdownStart:
                 resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
                 assert_utils.assert_true(resp[0], resp[1])
 
+            # Check if s3bench objects cleanup is required
+            if self.s3bench_cleanup:
+                for user_info in self.s3bench_cleanup.values():
+                    resp = self.ha_obj.ha_s3_workload_operation(
+                        s3userinfo=user_info, log_prefix=self.test_prefix,
+                        skipwrite=True, skipread=True)
+                    assert_utils.assert_true(resp[0], resp[1])
+                LOGGER.info("Cleanup: Deleted s3 objects and buckets.")
         LOGGER.info("Teardown completed")
 
     @pytest.mark.ha
@@ -409,3 +419,87 @@ class TestClstrShutdownStart:
 
         LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
                     "restart")
+
+    @pytest.mark.tags("TEST-29469")
+    @CTFailOn(error_handler)
+    def test_reads_after_cluster_restart(self):
+        """
+        This test verifies READs after cluster restart on WRITEs before shutdown
+        """
+        LOGGER.info("Started: Test to check READs after cluster restart on WRITEs before shutdown.")
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test_29469'
+        self.s3_clean = self.s3bench_cleanup = users
+        resp = self.ha_obj.ha_s3_workload_operation(
+            s3userinfo=list(users.values())[0],
+            log_prefix=self.test_prefix,
+            skipread=True,
+            skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
+        LOGGER.info("Step 4: Perform READs and verify DI on the written data")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(
+            users.values())[0], log_prefix=self.test_prefix, skipwrite=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3bench_cleanup = None
+        LOGGER.info("Step 4: Performed READs and verified DI on the written data")
+        LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        self.restored = False
+        LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
+        LOGGER.info(
+            "Completed: Test to check READs after cluster restart on WRITEs before shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29470")
+    @CTFailOn(error_handler)
+    def test_write_after_cluster_restart(self):
+        """
+        This test verifies WRITEs after cluster restart
+        """
+        LOGGER.info("Started: Test to check WRITEs after cluster restart.")
+        LOGGER.info("STEP 1: Perform IOs with variable object sizes")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test_29470'
+        self.s3_clean = self.s3bench_cleanup = users
+        resp = self.ha_obj.ha_s3_workload_operation(
+            s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted fine and all Pods online.")
+        LOGGER.info("STEP 4: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB). "
+                    "Verify READs and DI on the written data.")
+        resp = self.ha_obj.ha_s3_workload_operation(
+            s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Performed WRITEs with variable sizes objects."
+                    "Verified READs and verified DI on the written data.")
+        self.s3bench_cleanup = None
+        LOGGER.info("Step 5: Delete all the test objects, buckets and s3 user")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(self.s3_clean)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3_clean = None
+        self.restored = False
+        LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
+        LOGGER.info("Completed: Test to check WRITEs after cluster restart.")
