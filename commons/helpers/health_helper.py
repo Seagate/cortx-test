@@ -79,13 +79,17 @@ class Health(Host):
             return None
         return ports
 
-    def get_disk_usage(self, dir_path: str, field_val: int = 3) -> float:
+    def get_disk_usage(self, dir_path: str, field_val: int = 3,
+                       pod_name: str = const.POD_NAME,
+                       container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function will return disk usage associated with given path.
 
         :param dir_path: Directory path of which size is to be calculated
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
         percent used space respectively
+        :pod_name: name of the pod
+        :container_name: name of the container
         :return: float value of the disk usage
         """
 
@@ -98,14 +102,12 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = const.POD_NAME
-            container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             res = node.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=namespace,
-                command_suffix=f"-c {container} -- {cmd}",
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container_name} -- {cmd}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", cmd, res)
 
