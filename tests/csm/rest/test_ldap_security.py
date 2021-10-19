@@ -58,13 +58,13 @@ class TestS3accountK8s:
         assert s3acc_already_present
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
-    
+ 
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
         ldap_search_cmd = ""
         if ip_addr is not None and user_name is not None and  password is not None:
-           ldap_search_cmd = comm.LDAP_SEARCH_DATA.format(ip_addr, user_name, password)
+            ldap_search_cmd = comm.LDAP_SEARCH_DATA.format(ip_addr, user_name, password)
         self.log.info("printing response from ldap function: %s", ldap_search_cmd)
         return ldap_search_cmd
 
@@ -88,14 +88,14 @@ class TestS3accountK8s:
     @pytest.mark.tags("TEST-28934")
     def test_28934(self):
         """
-        Test that all the secret keys are encrypted on openldap 
+        Test that all the secret keys are encrypted on openldap
         and not available for direct use in IOs
         """
         self.log.info("Step 1: Create s3account s3acc.")
         response = self.s3user.create_s3_account(user_type="valid")
         response = response.json()
         if const.ACCESS_KEY not in response and const.SECRET_KEY not in response:
-           self.log.debug("secret key and/or access key is not present")
+            self.log.debug("secret key and/or access key is not present")
         secret_key = response["secret_key"]
         self.log.info("Step 2: Get cluster IP of openldap")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_SVC_CMD,
@@ -129,7 +129,7 @@ class TestS3accountK8s:
     @pytest.mark.tags("TEST-28935")
     def test_28935(self):
         """
-        Test S3 accounts passwords are encrypted on openldap 
+        Test S3 accounts passwords are encrypted on openldap
         and available for direct use for creating buckets
         """
         self.log.info("Step 1: Fetch password for created s3 account.")
@@ -143,6 +143,7 @@ class TestS3accountK8s:
         self.log.info("Openldap service ip is: %s",cluster_ip)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.remote_path, local_path=self.local_path)
+        assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
         admin_user = data['cortx']['external']['openldap']['admin']

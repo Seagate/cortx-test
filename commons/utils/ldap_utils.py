@@ -43,7 +43,7 @@ def decrypt(key: bytes, data: bytes) -> bytes:
     try:
         decrypted = Fernet(key).decrypt(data)
     except (InvalidSignature, InvalidToken) as invalid_exception:
-         raise CipherInvalidToken("Decryption failed") from invalid_exception
+        raise CipherInvalidToken("Decryption failed") from invalid_exception
     return decrypted
 
 def gen_key(str1: str, str2: str, *strs):
