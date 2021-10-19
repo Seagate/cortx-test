@@ -30,7 +30,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 
@@ -93,12 +93,16 @@ class TestFailureDomainK8Cortx:
         assert_utils.assert_true(resp[0], resp[1])
 
         self.log.info("Step 2: Create solution file")
-        # TODO : Retrieve solution file
-        # TODO : Retrieve disk partition to be used for local path provisioner.
+        resp = self.deploy_lc_obj.update_sol_yaml(self.worker_node_list,
+                                                  PROV_CFG["k8s_cortx_deploy"]["template_path"])
+        assert_utils.assert_true(resp[0], "Failure creating solution.yaml")
+        sol_file_path = resp[1]
+        system_disk_dict = resp[2]
 
         self.log.info("Step 3: Perform Cortx Cluster Deployment")
-        resp = self.deploy_lc_obj.deploy_cortx_cluster("solution.yaml", self.master_node_list,
-                                                       self.worker_node_list, self.docker_username,
+        resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
+                                                       self.worker_node_list, system_disk_dict,
+                                                       self.docker_username,
                                                        self.docker_password, self.git_id,
                                                        self.git_token)
         assert_utils.assert_true(resp[0], resp[1])

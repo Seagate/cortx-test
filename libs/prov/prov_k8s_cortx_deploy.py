@@ -23,8 +23,6 @@ Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import logging
 
-import yaml
-
 from commons import commands as common_cmd
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
@@ -145,7 +143,8 @@ class ProvDeployK8sCortxLib:
             node_obj.execute_cmd("umount {}".format(mp))
 
         LOGGER.info("mkfs %s", disk_partition)
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition), read_lines=True)
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition),
+                                    read_lines=True)
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Mount the file system")
@@ -235,7 +234,7 @@ class ProvDeployK8sCortxLib:
         return True, resp
 
     def deploy_cortx_cluster(self, solution_file_path: str, master_node_list: list,
-                             worker_node_list: list,
+                             worker_node_list: list, system_disk_dict: dict,
                              docker_username: str, docker_password: str, git_id: str,
                              git_token: str) -> tuple:
         """
@@ -249,9 +248,6 @@ class ProvDeployK8sCortxLib:
         param: git_token: Git token to access Cortx-k8s repo
         return : True/False and resp
         """
-        LOGGER.info("Read solution config file")
-        sol_cfg = yaml.safe_load(open(solution_file_path))
-
         if len(master_node_list) == 0:
             return False, "Minimum one master node needed for deployment"
         if len(worker_node_list) == 0:
@@ -260,8 +256,9 @@ class ProvDeployK8sCortxLib:
         for node in worker_node_list:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
-            # TODO: parse system disk and pass to local path prov: UDX-6356
-            self.prereq_local_path_prov(node, "/dev/sdb")
+            system_disk = system_disk_dict[node.hostname]
+            # system disk will be used mount /mnt/fs-local-volume on worker node
+            self.prereq_local_path_prov(node, system_disk)
             self.prereq_glusterfs(node)
             self.prereq_3rd_party_srv(node)
 
