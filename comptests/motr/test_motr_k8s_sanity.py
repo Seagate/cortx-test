@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Test class that contains K8s tests.
+Test class that contains MOTR K8s tests.
 """
 
 import logging
