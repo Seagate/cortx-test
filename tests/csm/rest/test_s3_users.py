@@ -23,7 +23,6 @@
 
 import json
 import string
-from string import punctuation
 import logging
 from http import HTTPStatus
 import pytest
@@ -611,7 +610,7 @@ class TestS3user():
         access_keys.append("x" * ak_len)
 
         self.log.info("Key 4: Access key special character except _")
-        access_keys.append(punctuation)
+        access_keys.append(string.punctuation)
 
         for access_key in access_keys:
             self.log.info("[START] Access Key : %s", access_key)
@@ -904,7 +903,7 @@ class TestS3user():
         secret_keys.append("a" * const.S3_SECRET_UL)
         secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=const.S3_SECRET_LL))
-        secret_keys.append(punctuation)
+        secret_keys.append(string.punctuation)
 
         for secret_key in secret_keys:
             self.log.info("-" * 50)
