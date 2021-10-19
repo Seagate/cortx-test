@@ -25,7 +25,7 @@ from dash.exceptions import PreventUpdate
 
 from Performance.global_functions import get_dict_from_array,\
     get_distinct_keys, sort_builds_list, sort_object_sizes_list, sort_sessions
-from Performance.styles import style_dropdown_small_2, style_dropdown_medium
+from Performance.styles import style_dropdown_small_2, style_dropdown_medium, style_dropdown_large
 from common import app
 
 # first dropdown
@@ -374,7 +374,7 @@ def update_compare_dropdown_styles(flag):
     return_val = [{'display': 'None'}]*9
     if flag:
         return_val = [
-            style_dropdown_medium, style_dropdown_small_2, style_dropdown_medium,
+            style_dropdown_large, style_dropdown_small_2, style_dropdown_medium,
             style_dropdown_medium, style_dropdown_small_2, style_dropdown_small_2,
             style_dropdown_medium, style_dropdown_medium, style_dropdown_medium
         ]
