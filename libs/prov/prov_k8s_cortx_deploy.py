@@ -145,7 +145,7 @@ class ProvDeployK8sCortxLib:
             node_obj.execute_cmd("umount {}".format(mp))
 
         LOGGER.info("mkfs %s", disk_partition)
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4, read_lines=True)
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition), read_lines=True)
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Mount the file system")
@@ -251,6 +251,7 @@ class ProvDeployK8sCortxLib:
         """
         LOGGER.info("Read solution config file")
         sol_cfg = yaml.safe_load(open(solution_file_path))
+
         if len(master_node_list) == 0:
             return False, "Minimum one master node needed for deployment"
         if len(worker_node_list) == 0:
