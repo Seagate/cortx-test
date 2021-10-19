@@ -99,7 +99,7 @@ style_dropdown_small_2 = {
 
 
 style_dropdown_medium = {
-    'width': '150px',
+    'width': '155px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px"

@@ -32,6 +32,7 @@ def get_common_schema(data):
         dict: data dict with db key mapped with given data
     """
     entry = {
+        'OS': data['OS'],
         'Branch': data['branch'],
         'Count_of_Servers': data['nodes'],
         'Percentage_full': data['pfull'],
