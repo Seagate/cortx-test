@@ -82,8 +82,9 @@ class CSMAccountIntOperations(CSMAccountInterface):
 
     def __init__(self):
         """S3 account operations constructor."""
-        self.cli_obj = CortxCliTestLib() if CMN_CFG["product_type"] == "node" else None
-        self.csmacc_op_cli = CSMAccountOperations() if CMN_CFG["product_type"] == "node" else None
+        prod_type = CMN_CFG.get("product_type", None)
+        self.cli_obj = CortxCliTestLib() if prod_type == "node" else None
+        self.csmacc_op_cli = CSMAccountOperations() if prod_type == "node" else None
         self.s3acc_op_rest = S3AccountOperationsRestAPI()
         self.csmacc_op_rest = CSMRestAPIInterfaceOperations()
         self.csm_s3_rest = RestS3user()
