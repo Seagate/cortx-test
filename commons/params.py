@@ -21,6 +21,7 @@
 """Constants
 """
 import os
+import tempfile
 
 LOG_FILE = 'cortx-test.log'
 
@@ -113,6 +114,8 @@ DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
+S3_INSTANCES_PER_NODE = 1
+LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
 PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
