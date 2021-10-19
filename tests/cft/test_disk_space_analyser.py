@@ -4,14 +4,14 @@ import time
 import signal
 import os
 import sys
-import getpass
+#import getpass
 import logging
-import socket
+#import socket
+import re
+import base64
 import paramiko
 import yaml
 import traceback
-import re
-import base64
 import smtplib
 import datetime
 from unittest import TestCase
@@ -21,6 +21,7 @@ from fabric import ThreadingGroup, SerialGroup
 from fabric import runners
 from fabric.exceptions import GroupException
 
+"""Disk Space Analyser test script"""
 
 def read_yaml(fpath):
     """Read yaml file and return dictionary/list of the content"""
@@ -32,13 +33,13 @@ def read_yaml(fpath):
                 data = yaml.safe_load(fin)
             except yaml.YAMLError as exc:
                 try:
-                    data = yaml.load(fin.read(), Loader=yaml.Loader)
+                    data = yaml.safe_load(fin.read(), Loader=yaml.Loader)
                 except yaml.YAMLError as exc:
                     err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
                     raise YamlError(fpath, 'YAML file syntax error')
 
     else:
-        err_msg = "Specified file doesn't exist: {}".format(fpath)
+        #err_msg = "Specified file doesn't exist: {}".format(fpath)
         raise YamlError(fpath, 'YAML file missing')
     return data
 
@@ -46,10 +47,12 @@ def read_yaml(fpath):
 BASE_DIR = "/var"
 log = logging.getLogger("LogAnalyzer")
 LOG_CFG = read_yaml("config/infra/test_logrotation.yaml")
-user = LOG_CFG["username"]
+USER = LOG_CFG["username"]
 passwords = LOG_CFG["passwords"]
 core_hosts = [host for host in LOG_CFG["hosts"]]
-# core_hosts = ["%s.%s" % (node, LOG_CFG["host_domain"]) if not re.match("^\d{1,3}(?:\.\d{1,3}){3}$", node) else node
+# core_hosts = ["%s.%s" % (node, LOG_CFG["host_domain"]) 
+#              if not re.match("^\d{1,3}(?:\.\d{1,3}){3}$", node) 
+#              else node
 #              for node in core_hosts]
 # password = LOG_CFG["password"]
 # password = base64.b64decode(bytes(password, 'utf-8'))
@@ -108,6 +111,7 @@ Max_Size_Component = {"consul": 400,
 
 
 def init_loghandler(log):
+    """Initialize logger handler"""
     log.setLevel(level.get(LOG_CFG['logging_Level']))
     fh = logging.FileHandler('diskspace_analyser.log', mode='w')
     fh.setLevel(level.get(LOG_CFG['logging_Level']))
@@ -121,12 +125,14 @@ def init_loghandler(log):
 
 
 def sigint_handler(signum, frame):
+    """Initialize  sigint handler"""
     print('SIGINT handler called with signal ', signum)
     log.info('Signal handler called with signal {}, exiting process'.format(signum))
     sys.exit(0)
 
 
 class YamlError(Exception):
+    """Check for yaml file format"""
     def __init__(self, name, message=""):
         self.message = message
         self.name = name
@@ -137,31 +143,36 @@ class YamlError(Exception):
 
 
 class StatsException(Exception):
+    """Exception handler"""
     def __init__(self, message=""):
         self.message = message
         super().__init__(self.message)
 
 
 class LogAnalyser(TestCase):
+    """Analysis Log on shared POD container"""
     logdir = "/shared/var/log" #shared POD address /shared
 
     def __init__(self):
+        """Initialize variables"""
         self.stats = dict()
-        processes = LOG_CFG.keys()
+        #processes = LOG_CFG.keys()
         self.szmap = dict()
         self.svc_log_sz = dict()
         self.series = dict()
 
     def init_Connections(self):
-        global user
+        """Connection Initialization"""
+        global USER
 
-        self.connections = [Connection(host, user=user, connect_kwargs={'password': passwords[host]},
+        self.connections = [Connection(host, user=USER, connect_kwargs={'password': passwords[host]},
                             config=Config(overrides={'sudo': {'password': passwords[host]}}))
                             for host in core_hosts]
         self.connections[:] = [c for c in self.connections if 'Linux' in c.run('uname -s', pty=False).stdout]
         self.ctg = SerialGroup.from_connections(self.connections)
 
     def build_command(self, path=None):
+        """Build command """
         command = ''
         if path:
             command = "df -h " + path + " | tail -n1 | awk '{print $5}'"
@@ -171,6 +182,7 @@ class LogAnalyser(TestCase):
         return command
 
     def collect_basedir_usage(self, command=None):
+        """Collect log directory log-file size information"""
         stats = dict()
         try:
             if not command:
@@ -179,23 +191,26 @@ class LogAnalyser(TestCase):
             for res in results.values():
                 stats.update({res.connection.host: res.stdout})
             return stats
-        except GroupException as e:
-            for c, r in e.result.items():
+        except GroupException as ge:
+            for cd, runner in ge.result.items():
                 if isinstance(r, runners.Result):
-                    log.info("Successfully executed cmd on {} and output is {}".format(c.host, r.stdout.strip()))
-                    if c.host not in stats:
-                        stats.update({c.host: r.stdout})
-                elif isinstance(r, OSError):
-                    log.error("Error in executing cmd on {}, output is {}".format(c.host, r.stdout.strip()))
-                elif isinstance(r, paramiko.ssh_exception.AuthenticationException):
-                    log.error("Authentication exception on {}".format(c.host, ))
+                    log.info("Successfully executed cmd on {} and output is {}"
+                                    .format(cd.host, runner.stdout.strip()))
+                    if cd.host not in stats:
+                        stats.update({cd.host: runner.stdout})
+                elif isinstance(runner, OSError):
+                    log.error("Error in executing cmd on {}, output is {}"
+                                 .format(cd.host, runner.stdout.strip()))
+                elif isinstance(runner, paramiko.ssh_exception.AuthenticationException):
+                    log.error("Authentication exception on {}".format(cd.host, ))
                 else:
-                    log.error("Exception occurred while running df command on {}".format(c.host))
+                    log.error("Exception occurred while running df command on {}".format(cd.host))
         finally:
             return stats
 
     def analyse(self, conn):
-        cmd = "find /var/log -type f -exec du -s {} + | sort -nr"
+        """Analyse log collected from shared POD container"""
+        cmd = "find /shared/var/log -type f -exec du -s {} + | sort -nr"
         output = conn.run(cmd, hide=True)
         lines = output.stdout.split("\n")
         host = output.connection.host
@@ -213,19 +228,19 @@ class LogAnalyser(TestCase):
         svcs = LOG_CFG['logs']
         for svc in svcs.keys():
             if isinstance(svcs[svc], list):
-                for lg in svcs[svc]:
+                for log_file in svcs[svc]:
                     # soft assert
                     try:
-                        msg = "Log file/dir {} is not present in szmap".format(lg)
-                        self.assertTrue(lg in szmap, msg)
+                        msg = "Log file/dir {} is not present in szmap".format(log_file)
+                        self.assertTrue(log_file in szmap, msg)
                     except AssertionError:
                         _, ig, tb = sys.exc_info()
                         tb_info = traceback.extract_tb(tb)
                         filename, line, func, text = tb_info[-1]
                         log.debug("Assertion Error occurred on line {} in statement {}".format(line, text))
 
-                    total_sz += szmap.get(lg, 0)
-                    if szmap.get(lg) is None:
+                    total_sz += szmap.get(log_file, 0)
+                    if szmap.get(log_file) is None:
                         continue
                     svc_log_sz.update({svc: svc_log_sz.get(svc, 0) + szmap.get(lg)})
             elif isinstance(svcs[svc], str):
@@ -282,6 +297,7 @@ class LogAnalyser(TestCase):
                         log.error("Exception {}".format(str(sys.exc_info())))
 
     def plog_stats(self):
+        """Component wise log size summary"""
         now = str(datetime.datetime.now())
         with open('diskspace_summary', mode='w') as hndl:
             hndl.write('Disk Space Summary\n')
@@ -367,6 +383,7 @@ class LogAnalyser(TestCase):
         self.plot_series()
 
     def run(self):
+        """Class Run function"""
         global log
         signal.signal(signal.SIGINT, sigint_handler)
         init_loghandler(log)
@@ -434,6 +451,7 @@ class LogAnalyser(TestCase):
 
 
 def send_mail(smtpsrv, fromlist, tolist, msg, hosts):
+    """Email configuration when Log Size Limit exceeds"""
     try:
         smtpserver = smtplib.SMTP(smtpsrv, 25)
         passwd = base64.b64decode(bytes(LOG_CFG['smtp']['passwd'], 'utf-8'))
