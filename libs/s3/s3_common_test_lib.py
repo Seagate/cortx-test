@@ -238,7 +238,6 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
     return objects
 
 
-
 def s3_ios(
            bucket=None,
            log_file_prefix="parallel_io",
@@ -365,7 +364,6 @@ class S3BackgroundIO:
         """
         if log_prefix:
             self.log_prefix = log_prefix
-
         self.parallel_ios = Process(
             target=self.s3_ios,
             args=(self.io_bucket_name, self.log_prefix, duration),
@@ -406,7 +404,6 @@ class S3BackgroundIO:
         """
         if self.is_alive():
             self.parallel_ios.join()
-
         bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
         if bucket_exists:
             LOG.info("Deleting IO bucket: %s", self.io_bucket_name)
