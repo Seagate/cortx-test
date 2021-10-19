@@ -37,6 +37,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# K8s for cortx
+POD_NAME = "storage-node1"
+HAX_CONTAINER_NAME = "cortx-hax"
+NAMESPACE = "default"
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
