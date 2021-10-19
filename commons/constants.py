@@ -112,6 +112,8 @@ CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
+LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
+CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
