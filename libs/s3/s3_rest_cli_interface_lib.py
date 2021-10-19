@@ -72,8 +72,11 @@ class S3AccountOperations(S3Interface):
 
     def __del__(self):
         """Destroy created objects"""
-        del self.cli_obj
-        del self.rest_obj
+        try:
+            del self.cli_obj
+            del self.rest_obj
+        except NameError as err:
+            LOGGER.warning(err)
 
     # pylint: disable=W0221
     def create_s3_account(self, acc_name=None,
@@ -93,7 +96,9 @@ class S3AccountOperations(S3Interface):
                     "already exists" in response or "Password Policy Not Met" in response):
                 raise RuntimeError(response) from RuntimeError
         except (RuntimeError, CTException) as err:
-            LOGGER.error(err)
+            if not self.cli_obj:
+                raise RuntimeError(err) from RuntimeError
+            LOGGER.exception(err)
             status, response = self.cli_obj.create_account_cortxcli(
                 acc_name, email_id, passwd)
 
@@ -110,7 +115,9 @@ class S3AccountOperations(S3Interface):
             if not status:
                 raise RuntimeError(response) from RuntimeError
         except (RuntimeError, CTException) as err:
-            LOGGER.error(err)
+            if not self.cli_obj:
+                raise RuntimeError(err) from RuntimeError
+            LOGGER.exception(err)
             response = self.cli_obj.list_accounts_cortxcli()
             status = True if response else False
 
@@ -131,7 +138,9 @@ class S3AccountOperations(S3Interface):
             if not status and "Password Policy Not Met" not in response:
                 raise RuntimeError(response) from RuntimeError
         except (RuntimeError, CTException) as err:
-            LOGGER.error(err)
+            if not self.cli_obj:
+                raise RuntimeError(err) from RuntimeError
+            LOGGER.exception(err)
             status, response = self.cli_obj.reset_s3_account_password(
                 acc_name, new_password=new_passwd)
 
@@ -150,7 +159,9 @@ class S3AccountOperations(S3Interface):
             if not status and "not exist" not in response:
                 raise RuntimeError(response) from RuntimeError
         except (RuntimeError, CTException) as err:
-            LOGGER.error(err)
+            if not self.cli_obj:
+                raise RuntimeError(err) from RuntimeError
+            LOGGER.exception(err)
             status, response = self.cli_obj.delete_account_cortxcli(acc_name)
 
         return status, response
@@ -171,7 +182,7 @@ class S3AccountOperations(S3Interface):
         except (RuntimeError, CTException) as err:
             if not self.cli_obj:
                 raise RuntimeError(err) from RuntimeError
-            LOGGER.error(err)
+            LOGGER.exception(err)
             status, response = self.cli_obj.create_s3_user_access_key(acc_name, passwd, acc_name)
 
         return status, response
