@@ -52,9 +52,10 @@ class Cipher:
         """
         Function will be called from generate_key function
         """
+        enc_str = str1.encode('UTF-8')
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                          length=32,
-                         salt=str1.encode('UTF-8'),
+                         salt=enc_str,
                          iterations=100000,
                          backend=default_backend())
         passwd = str2 + ''.join(strs)
@@ -89,8 +90,9 @@ class Cipher:
             LOGGER.error("Failed to Fetch keys from Conf store with %s", key_except)
             return None
         try:
+            enc_secret = secret.encode("utf-8")
             ldap_root_decrypted_value = Cipher.decrypt(cipher_key,
-                                                     secret.encode("utf-8"))
+                                                    enc_secret)
             return ldap_root_decrypted_value.decode('utf-8')
         except CipherInvalidToken as invalid_exception:
             raise CipherInvalidToken("Decryption failed for password") from invalid_exception

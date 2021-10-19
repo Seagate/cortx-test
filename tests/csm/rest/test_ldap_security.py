@@ -25,6 +25,7 @@ import re
 
 import pytest
 import yaml
+from commons.utils.ldap_utils import Cipher
 
 from commons import commands as comm
 from commons import constants as cons
@@ -35,7 +36,6 @@ from config import CMN_CFG
 from config import CSM_REST_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
-from commons.utils.ldap_utils import Cipher
 
 class TestS3accountK8s:
     """S3 user test class"""
@@ -121,7 +121,7 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 secret key in output")
-        assert secret_key not in resp_str, "{} is not present in the openldap".format(secret_key)
+        assert secret_key not in resp_str, "{} is present in the openldap".format(secret_key)
         self.log.info("##############Test Completed##############")
 
     @pytest.mark.lc
@@ -159,5 +159,5 @@ class TestS3accountK8s:
                                         exc=False)
         resp_str = resp_node.decode('UTF-8')
         self.log.info("Step 4: Search for s3 account password in output")
-        assert s3_passwd not in resp_str, "{} is not present in the openldap".format(s3_passwd)
+        assert s3_passwd not in resp_str, "{} is present in the openldap".format(s3_passwd)
         self.log.info("##############Test Completed##############")
