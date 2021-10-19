@@ -29,6 +29,7 @@ from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.di import data_generator as data_gen
+from libs.di import di_lib
 from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -125,9 +126,9 @@ class TestDIWithChangingS3Params:
                 CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
             nodes = CMN_CFG["nodes"]
             for node in nodes:
-                S3H_OBJ.copy_local_to_s3_config(backup_path=self.LOCAL_PATH,
-                                                host=node['hostname'], user=node['username'],
-                                                password=node['password'])
+                di_lib.copy_local_to_s3_config(backup_path=self.LOCAL_PATH, host=node['hostname'],
+                                               user=node['username'],
+                                               password=node['password'])
                 S3H_OBJ.restart_s3server_processes(host=node['hostname'],
                                                    user=node['username'],
                                                    pwd=node['password'])
@@ -150,7 +151,7 @@ class TestDIWithChangingS3Params:
                                         password=node['password'])
                 S3H_OBJ.restart_s3server_processes()
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
     def test_29273(self):
@@ -184,7 +185,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
     def test_29276(self):
@@ -214,7 +215,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29277')
     @CTFailOn(error_handler)
     def test_29277(self):
@@ -244,7 +245,7 @@ class TestDIWithChangingS3Params:
         else:
             assert True
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
     def test_29281(self):
@@ -273,7 +274,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
     def test_29282(self):
@@ -314,7 +315,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
     def test_29284(self):
@@ -350,7 +351,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
     def test_29286(self):
@@ -387,7 +388,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
     def test_29288(self):
@@ -433,7 +434,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.s3_ops
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
     def test_29289(self):
@@ -506,4 +508,21 @@ class TestDIWithChangingS3Params:
         else:
             assert False
         # ETAG should match
-        # TO DO for READ corruption part
+        # test scene 3
+        with open(self.F_PATH, 'rb+') as f:
+            data = f.read()
+            ba = bytearray(data)
+            ba[0] = ord(first_byte_for_write[1])
+            data = bytes(ba)
+            f.write(data)
+        self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
+                              file_path=self.F_PATH)
+        self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                   obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
+        result = sys_util.validate_checksum(file_path_1=self.F_PATH,
+                                            file_path_2=self.F_PATH_COPY)
+        # checksum should match
+        if result:
+            assert True
+        else:
+            assert False

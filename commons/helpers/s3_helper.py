@@ -784,31 +784,3 @@ class S3Helper:
         nobj.disconnect()
 
         return status, (parameter, value, old_value)
-
-    def copy_local_to_s3_config(self, **kwargs) -> tuple:
-        """
-        Copy s3 config files to remote server
-        # :param host: IP of the host.
-        # :param user: user name of the host.
-        # :param password: password for the user.
-        # :param backup_path: backup_path.
-        :return: True/False, response.
-        """
-        host = kwargs.get("host", self.host)
-        user = kwargs.get("username", self.user)
-        pwd = kwargs.get("password", self.pwd)
-        backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
-        try:
-            nobj = Node(hostname=host, username=user, password=pwd)
-            status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
-            if not status:
-                return status, resp
-            if os.path.exists(backup_path):
-                os.remove(backup_path)
-            nobj.disconnect()
-
-            return status
-        except (SSHException, OSError) as error:
-            LOGGER.error(
-                "Error in %s: %s", S3Helper.copy_s3server_file.__name__, error)
-            return False, error
