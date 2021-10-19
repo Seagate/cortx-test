@@ -642,8 +642,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_28925"]
-        result, resp = self.s3user.create_verify_s3_custom("missing_access",
-                                                           expected_response=HTTPStatus.BAD_REQUEST.value)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "missing_access", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
@@ -667,8 +667,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_28926"]
-        result, resp = self.s3user.create_verify_s3_custom("missing_secret",
-                                                           expected_response=HTTPStatus.BAD_REQUEST.value)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "missing_secret", expected_response=HTTPStatus.BAD_REQUEST.value)
         assert result, "Status code check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
@@ -692,9 +692,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_28927"]
-        result, resp = self.s3user.create_verify_s3_custom("duplicate_user",
-                                                           expected_response=HTTPStatus.CONFLICT.value,
-                                                           verify_err_args=True)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_user", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
@@ -719,9 +718,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_28928"]
-        result, resp = self.s3user.create_verify_s3_custom("duplicate_email",
-                                                           expected_response=HTTPStatus.CONFLICT.value,
-                                                           verify_err_args=True)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_email", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
@@ -746,9 +744,8 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_28929"]
-        result, resp = self.s3user.create_verify_s3_custom("duplicate_access",
-                                                           expected_response=HTTPStatus.CONFLICT.value,
-                                                           verify_err_args=True)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_access", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
         assert result, "Status code check or error arg check failed."
         err_msg = test_cfg["response_msg"]
         err = resp.json()
@@ -772,8 +769,8 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        result, resp = self.s3user.create_verify_s3_custom("duplicate_secret",
-                                                           expected_response=HTTPStatus.CREATED.value)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_secret", expected_response=HTTPStatus.CREATED.value)
         assert result, "Status code check failed."
 
         akey = resp.json()["access_key"]
