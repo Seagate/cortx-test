@@ -21,7 +21,22 @@ from fabric import ThreadingGroup, SerialGroup
 from fabric import runners
 from fabric.exceptions import GroupException
 
+#TODO: Part of automation and script validation is covered in
+# EOS-24721
+
 """Disk Space Analyser test script"""
+def parse_args():
+    """
+    Argument parser
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-ll", "--log_level", type=int, default=10,
+                        help="log level value")
+    parser.add_argument("-hs", "--hosts", type=str,
+                        help="host list")
+    parser.add_argument("-np", "--node_pass", type=str,
+                        default='', help="node password")
+    return parser.parse_args()
 
 def read_yaml(fpath):
     """Read yaml file and return dictionary/list of the content"""
@@ -46,10 +61,14 @@ def read_yaml(fpath):
 
 BASE_DIR = "/var"
 log = logging.getLogger("LogAnalyzer")
-LOG_CFG = read_yaml("config/infra/test_logrotation.yaml")
+LOG_CFG = read_yaml("config/cft/test_logrotation.yaml")
 USER = LOG_CFG["username"]
-passwords = LOG_CFG["passwords"]
-core_hosts = [host for host in LOG_CFG["hosts"]]
+passwords = args.node_pass
+        elif len(vm_machines) == 3:
+vm_machines = args.hosts.split(',')
+core_hosts = list()
+        for host in vm_machines:
+            core_hosts.append('.'.join([host.strip(), suffix]))
 # core_hosts = ["%s.%s" % (node, LOG_CFG["host_domain"]) 
 #              if not re.match("^\d{1,3}(?:\.\d{1,3}){3}$", node) 
 #              else node

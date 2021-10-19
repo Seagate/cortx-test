@@ -75,24 +75,11 @@ logs:
 
 pcs_status_cmd: "pcs status"
 # prefer DNS name
-hosts:
-  - # number of nodes
-  - # 1
-  - # 2
-  - # 3
-
 
 host_domain: colo.seagate.com
 username: root
 password: c2VhZ2F0ZQ==
 interval: 300
-
-# hosts in password should be same as that in hosts List
-passwords:
-  10.237.66.55: seagate
-  10.237.65.157: seagate
-  sm7-r18.pun.seagate.com: seagate1
-  sm8-r18.pun.seagate.com: seagate1
 
 smtp:
   to_list: user1@testmail.com,user2@testmail.com
