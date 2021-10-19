@@ -444,7 +444,8 @@ class Multipart(S3Lib):
             self,
             mpu_id: str = None,
             bucket: str = None,
-            object_name: str = None) -> dict:
+            object_name: str = None,
+            part_number_marker: int = 0) -> dict:
         """
         list parts of a specific multipart upload.
 
@@ -453,8 +454,13 @@ class Multipart(S3Lib):
         :param object_name: Name of the object
         :return: response
         """
-        response = self.s3_client.list_parts(
-            Bucket=bucket, Key=object_name, UploadId=mpu_id)
+        if part_number_marker:
+            response = self.s3_client.list_parts(
+                Bucket=bucket, Key=object_name, UploadId=mpu_id,
+                PartNumberMarker=part_number_marker)
+        else:
+            response = self.s3_client.list_parts(
+                Bucket=bucket, Key=object_name, UploadId=mpu_id)
         LOGGER.debug(response)
 
         return response
@@ -535,16 +541,15 @@ class Multipart(S3Lib):
 
         return response
 
-    def list_multipart_uploads_with_keymarker(self, bucket:str=None,
-                                              keymarker:str=None) -> dict:
+    def list_multipart_uploads_with_keymarker(self, bucket: str = None,
+                                              keymarker: str = None) -> dict:
 
         """
         List all initiated multipart uploads.
-
         :param bucket: Name of the bucket.
         :return: response.
         """
-        result = self.s3_client.list_multipart_uploads(Bucket=bucket,KeyMarker=keymarker)
+        result = self.s3_client.list_multipart_uploads(Bucket=bucket, KeyMarker=keymarker)
         LOGGER.debug(result)
 
         return result
