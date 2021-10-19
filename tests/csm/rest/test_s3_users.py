@@ -806,7 +806,7 @@ class TestS3user():
         assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
-    
+
     # pylint: disable-msg=too-many-locals
     @pytest.mark.lc
     @pytest.mark.csmrest
