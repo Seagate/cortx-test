@@ -602,8 +602,6 @@ def create_file(
     finally:
         if proc:
             proc.terminate()
-        if os.path.isfile(fpath):
-            os.remove(fpath)
 
 
 def create_multiple_size_files(
