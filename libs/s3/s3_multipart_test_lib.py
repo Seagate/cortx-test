@@ -235,13 +235,44 @@ class S3MultipartTestLib(Multipart):
                          error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
 
+    def upload_parts_sequential(self,
+                                upload_id: int = None,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                **kwargs) -> tuple:
+        """
+        Upload parts(ordered/unordered) for a specific multipart upload ID in sequential.
+
+        :param upload_id: Multipart Upload ID.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        # :param chunks: No. of parts to be uploaded with details.
+        :return: (Boolean, List of uploaded parts).
+        """
+        try:
+            parts = kwargs.get("parts", None)
+            parts_details = []
+            for part_number in parts:
+                LOGGER.info("Uploading part: %s", part_number)
+                resp = self.upload_multipart(parts[part_number][0], bucket_name, object_name,
+                                             upload_id=upload_id, part_number=part_number,
+                                             content_md5=parts[part_number][1])
+                parts_details.append({"PartNumber": part_number, "ETag": resp[1]["ETag"]})
+
+            return True, parts_details
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_parts_sequential.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
     def upload_multipart(self,
                          body: str = None,
                          bucket_name: str = None,
                          object_name: str = None,
                          **kwargs) -> tuple:
         """
-        Upload part of a specific multipart upload.
+        Upload single part of a specific multipart upload.
 
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
@@ -267,7 +298,8 @@ class S3MultipartTestLib(Multipart):
             self,
             mpu_id: str = None,
             bucket_name: str = None,
-            object_name: str = None) -> tuple:
+            object_name: str = None,
+            **kwargs) -> tuple:
         """
         List parts of a specific multipart upload.
 
@@ -278,7 +310,8 @@ class S3MultipartTestLib(Multipart):
         """
         try:
             LOGGER.info("Listing uploaded parts.")
-            response = super().list_parts(mpu_id, bucket_name, object_name)
+            part_num_marker = kwargs.get("PartNumberMarker", 0)
+            response = super().list_parts(mpu_id, bucket_name, object_name, part_num_marker)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
