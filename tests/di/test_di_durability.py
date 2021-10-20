@@ -109,9 +109,6 @@ class TestDIDurability:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
-
-    @pytest.mark.skip(reason="Not tested, hence marking skip.")
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -238,7 +235,6 @@ class TestDIDurability:
         self.log.info(
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
-
 
     @pytest.mark.skip(reason="Not tested, hence marking skip.")
     @pytest.mark.data_integrity
