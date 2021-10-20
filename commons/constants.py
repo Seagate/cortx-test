@@ -31,6 +31,12 @@ NWORKERS = 32
 # run in parallel.
 NGREENLETS = 32
 
+# Product Family and versions
+PROD_FAMILY_LC = "LC"
+PROD_FAMILY_LR = "LR"
+PROD_TYPE_K8S = "k8s"
+PROD_TYPE_NODE = "node"
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
@@ -105,7 +111,6 @@ LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
-const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",

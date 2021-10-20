@@ -109,11 +109,14 @@ class TestDIDurability:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
-
+<<<<<<< HEAD
     @pytest.mark.skip(reason="Not tested, hence marking skip.")
+||||||| 8e422a8
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+=======
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
+>>>>>>> 0a84a82b4857ac04f255f9225ab063aa1a2ec122
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22483')
     def test_toggle_checksum_feature_with_no_data_loss_22483(self):
@@ -239,9 +242,12 @@ class TestDIDurability:
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
 
-
+<<<<<<< HEAD
     @pytest.mark.skip(reason="Not tested, hence marking skip.")
+||||||| 8e422a8
+=======
     @pytest.mark.data_integrity
+>>>>>>> 0a84a82b4857ac04f255f9225ab063aa1a2ec122
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
     def test_object_data_integrity_while_upload_using_correct_checksum_22497(self):

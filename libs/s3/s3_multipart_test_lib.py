@@ -298,7 +298,8 @@ class S3MultipartTestLib(Multipart):
             self,
             mpu_id: str = None,
             bucket_name: str = None,
-            object_name: str = None) -> tuple:
+            object_name: str = None,
+            **kwargs) -> tuple:
         """
         List parts of a specific multipart upload.
 
@@ -309,7 +310,8 @@ class S3MultipartTestLib(Multipart):
         """
         try:
             LOGGER.info("Listing uploaded parts.")
-            response = super().list_parts(mpu_id, bucket_name, object_name)
+            part_num_marker = kwargs.get("PartNumberMarker", 0)
+            response = super().list_parts(mpu_id, bucket_name, object_name, part_num_marker)
             LOGGER.info(response)
         except Exception as error:
             LOGGER.error("Error in %s: %s",
