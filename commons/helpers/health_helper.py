@@ -42,7 +42,6 @@ class Health(Host):
     """Class for health related methods."""
 
     def __init__(self, hostname: str, username: str, password: str):
-        self.cmn_cfg = CMN_CFG
         super().__init__(hostname, username, password)
 
     def get_ports_of_service(self, service: str) -> List[str] or None:
@@ -79,35 +78,65 @@ class Health(Host):
             return None
         return ports
 
-    def get_disk_usage(self, dir_path: str, field_val: int = 3) -> float:
+    def get_disk_usage(self, dir_path: str, field_val: int = 3,
+                       pod_name: str = const.POD_NAME,
+                       container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function will return disk usage associated with given path.
 
         :param dir_path: Directory path of which size is to be calculated
         :param field_val: 0, 1, 2 and 3 for total, used, free in bytes and
         percent used space respectively
+        :pod_name: name of the pod
+        :container_name: name of the container
         :return: float value of the disk usage
         """
 
         cmd = "python3 -c 'import psutil; print(psutil.disk_usage(\"{a}\")[{b}])'" \
             .format(a=str(dir_path), b=int(field_val))
-        LOG.debug("Running python command %s", cmd)
-        res = self.execute_cmd(cmd)
-        LOG.debug(res)
-        res = res.decode("utf-8")
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            LOG.debug("Running python command %s", cmd)
+            res = self.execute_cmd(cmd)
+            LOG.debug(res)
+            res = res.decode("utf-8")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            namespace = const.NAMESPACE
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            res = node.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container_name} -- {cmd}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", cmd, res)
+
         return float(res.replace('\n', ''))
 
-    def get_cpu_usage(self) -> float:
+    def get_cpu_usage(self, pod_name: str = const.POD_NAME,
+                      container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
 
+        :pod_name: name of the pod
+        :container_name: name of the container
         :return: system cpu usage
         """
         LOG.debug("Fetching system cpu usage from node %s", self.hostname)
         LOG.debug(commands.CPU_USAGE_CMD)
-        res = self.execute_cmd(commands.CPU_USAGE_CMD)
-        LOG.debug(res)
-        res = res.decode("utf-8")
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            res = self.execute_cmd(commands.CPU_USAGE_CMD)
+            LOG.debug(res)
+            res = res.decode("utf-8")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            namespace = const.NAMESPACE
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            res = node.send_k8s_cmd(
+                operation="exec", pod=pod_name, namespace=namespace,
+                command_suffix=f"-c {container_name} -- {commands.CPU_USAGE_CMD}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", commands.CPU_USAGE_CMD, res)
         cpu_usage = float(res.replace('\n', ''))
         return cpu_usage
 
@@ -120,9 +149,22 @@ class Health(Host):
         LOG.debug(
             "Fetching system memory usage from node %s", self.hostname)
         LOG.debug(commands.MEM_USAGE_CMD)
-        res = self.execute_cmd(commands.MEM_USAGE_CMD)
-        LOG.debug(res)
-        res = res.decode("utf-8")
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            res = self.execute_cmd(commands.MEM_USAGE_CMD)
+            LOG.debug(res)
+            res = res.decode("utf-8")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            res = node.send_k8s_cmd(
+                operation="exec", pod=pod, namespace=namespace,
+                command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", commands.MEM_USAGE_CMD, res)
         mem_usage = float(res.replace('\n', ''))
         return mem_usage
 
@@ -209,13 +251,27 @@ class Health(Host):
 
         :return: hctl response.
         """
-        output = self.execute_cmd(commands.MOTR_STATUS_CMD, read_lines=True)
-        LOG.debug(output)
-        fail_list = ['failed', 'not running', 'offline']
-        LOG.debug(fail_list)
-        for line in output:
-            if any(fail_str in line for fail_str in fail_list):
-                return False
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            output = self.execute_cmd(commands.MOTR_STATUS_CMD, read_lines=True)
+            LOG.debug(output)
+            fail_list = ['failed', 'not running', 'offline']
+            LOG.debug(fail_list)
+            for line in output:
+                if any(fail_str in line for fail_str in fail_list):
+                    return False
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            result = self.hctl_status_json()
+            for node in result["nodes"]:
+                pod_name = node["name"]
+                services = node["svcs"]
+                for service in services:
+                    if service["status"] != "started":
+                        LOG.error("%s service not started on pod %s", service["name"], pod_name)
+                        return False
+                if not services:
+                    LOG.critical("No service found on pod %s", pod_name)
+                    return False
 
         return True
 
@@ -228,15 +284,37 @@ class Health(Host):
         """
         motr_status_cmd = commands.MOTR_STATUS_CMD
         LOG.debug("command %s:", motr_status_cmd)
-        cmd_output = self.execute_cmd(motr_status_cmd, read_lines=True)
-        if not cmd_output[0] or "command not found" in str(cmd_output[1]):
-            LOG.debug("Machine is not configured..!")
-            return False
-        cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
-        for output in cmd_output:
-            if ('[' and ']') in output:
-                LOG.debug(output)
-        LOG.debug("Machine is already configured..!")
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            cmd_output = self.execute_cmd(motr_status_cmd, read_lines=True)
+            if not cmd_output[0] or "command not found" in str(cmd_output[1]):
+                LOG.debug("Machine is not configured..!")
+                return False
+            cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
+            for output in cmd_output:
+                if ('[' and ']') in output:
+                    LOG.debug(output)
+            LOG.debug("Machine is already configured..!")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
+            node = LogicalNode(hostname=self.hostname, username=self.username,
+                               password=self.password)
+            cmd_output = node.send_k8s_cmd(
+                operation="exec", pod=pod, namespace=namespace,
+                command_suffix=f"-c {container} -- {motr_status_cmd}",
+                decode=True)
+            LOG.debug("Response of %s:\n %s ", motr_status_cmd, cmd_output)
+            if not cmd_output[0] or "command not found" in str(cmd_output[1]):
+                LOG.debug("Machine is not configured..!")
+                return False
+            cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
+            for output in cmd_output:
+                if ('[' and ']') in output:
+                    LOG.debug(output)
+            LOG.debug("Machine is already configured..!")
+
         return True
 
     def all_cluster_services_online(self, timeout=400) -> Tuple[bool, str]:
@@ -249,27 +327,33 @@ class Health(Host):
         """
         mero_status_cmd = commands.MOTR_STATUS_CMD
         LOG.debug("command :%s", mero_status_cmd)
-        cmd_output = self.execute_cmd(
-            mero_status_cmd, timeout=timeout, read_lines=True)
-        if not cmd_output[0]:
-            LOG.error("Command %s failed..!", mero_status_cmd)
-            return False, cmd_output[1]
-        # removing \n character from each line of output
-        cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
-        for output in cmd_output:
-            # fetching all services status
-            if ']' in output:
-                service_status = output.split(']')[0].split('[')[1].strip()
-                if 'started' not in service_status:
-                    LOG.error("services not starts successfully")
-                    return False, "Services are not online"
-            elif ("command not found" in output) or \
-                    ("Cluster is not running." in output):
-                LOG.debug("Machine is not configured..!")
-                return False, f"{commands.MOTR_STATUS_CMD} command not found"
-            else:
-                LOG.debug("All other services are online")
-                return True, "Server is Online"
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
+            cmd_output = self.execute_cmd(mero_status_cmd,\
+                                          timeout=timeout, read_lines=True)
+            if not cmd_output[0]:
+                LOG.error("Command %s failed..!", mero_status_cmd)
+                return False, cmd_output[1]
+            # removing \n character from each line of output
+            cmd_output = [line.split("\n")[0] for line in cmd_output[1]]
+            for output in cmd_output:
+                # fetching all services status
+                if ']' in output:
+                    service_status = output.split(']')[0].split('[')[1].strip()
+                    if 'started' not in service_status:
+                        LOG.error("services not starts successfully")
+                        return False, "Services are not online"
+                elif ("command not found" in output) or \
+                        ("Cluster is not running." in output):
+                    LOG.debug("Machine is not configured..!")
+                    return False, f"{commands.MOTR_STATUS_CMD} command not found"
+                else:
+                    LOG.debug("All other services are online")
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            result = self.is_motr_online()
+            if not result:
+                return False, "Services are not online"
+
         return True, "Server is Online"
 
     def hctl_status_json(self):
@@ -281,8 +365,8 @@ class Health(Host):
         :rtype: dict
         """
         result = {}
-        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
-                self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LR and \
+                CMN_CFG.get("product_type") == const.PROD_TYPE_NODE:
             hctl_command = commands.HCTL_STATUS_CMD_JSON
             LOG.info("Executing Command %s on node %s",
                      hctl_command, self.hostname)
@@ -291,10 +375,10 @@ class Health(Host):
             # LOG.info("Response of the command %s:\n %s ",
             #          hctl_command, result)
             result = json.loads(result)
-        elif self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
-            pod = "storage-node1"
-            container = "cortx-hax"
-            namespace = "default"
+        elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
+            pod = const.POD_NAME
+            container = const.HAX_CONTAINER_NAME
+            namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
             out = node.send_k8s_cmd(
@@ -312,7 +396,7 @@ class Health(Host):
         :param service_name: Service name to be checked in hctl status.
         :return: False if no services found or given service_name not started else returns True
         """
-        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             result = self.hctl_status_json()
             for node in result["nodes"]:
                 pod_name = node["name"]
@@ -333,7 +417,7 @@ class Health(Host):
                     LOG.critical("No %s service found on pod %s", service_name, pod_name)
                     return False, result
             return True, result
-        LOG.error("Product family: %s Unimplemented method", self.cmn_cfg["product_family"])
+        LOG.error("Product family: %s Unimplemented method", CMN_CFG.get("product_family"))
         return False, {}
 
     def hctl_status_get_service_fids(
@@ -344,7 +428,7 @@ class Health(Host):
         :param service_name: Service name to be checked in hctl status.
         :return: List of FIDs found
         """
-        if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LC:
+        if CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
             result = self.hctl_status_json()
             fids = []
             for node in result["nodes"]:
@@ -367,7 +451,7 @@ class Health(Host):
                     return False, result
                 fids.extend(pod_fids)
             return True, fids
-        LOG.error("Product family: %s: Unimplemented method", self.cmn_cfg["product_family"])
+        LOG.error("Product family: %s: Unimplemented method", CMN_CFG.get("product_family"))
         return False, []
 
     def get_sys_capacity(self):
