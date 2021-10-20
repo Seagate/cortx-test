@@ -42,12 +42,6 @@ POD_NAME = "storage-node1"
 HAX_CONTAINER_NAME = "cortx-hax"
 NAMESPACE = "default"
 
-# Product Family and versions
-PROD_FAMILY_LC = "LC"
-PROD_FAMILY_LR = "LR"
-PROD_TYPE_K8S = "k8s"
-PROD_TYPE_NODE = "node"
-
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
