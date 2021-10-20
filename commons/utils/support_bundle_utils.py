@@ -26,13 +26,15 @@ import os
 import logging
 import time
 from commons.helpers.node_helper import Node
-from commons.utils import config_utils
+from commons import commands as cm_cmd
+from commons import constants as cm_const
+from commons.utils import assert_utils
 from config import CMN_CFG
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-arguments
 def create_support_bundle_individual_cmd(node, username, password, remote_dir, local_dir, component="all"):
     """
     Collect support bundles from various components
@@ -78,62 +80,103 @@ def create_support_bundle_individual_cmd(node, username, password, remote_dir, l
 
     return True, local_sb_path
 
-
-def create_support_bundle_single_cmd(remote_dir, local_dir, bundle_name):
+# pylint: disable=too-many-arguments
+def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
     """
     Collect support bundles from various components using single support bundle cmd
-    :param remote_dir: Directory on node where support bundles will be collected
     :param local_dir: Local directory where support bundles will be copied
     :param bundle_name: Name of bundle
-    :return: True/False and local sb path
+    :param comp_list: List of components for SB collection
+    :return: boolean
     """
-    primary_node_obj = Node(
-        hostname=CMN_CFG["nodes"][0]["hostname"],
-        username=CMN_CFG["nodes"][0]["username"],
-        password=CMN_CFG["nodes"][0]["password"])
-    shared_path = "glusterfs://{}".format(remote_dir)
-    remote_dir = os.path.join(remote_dir, "support_bundle")
-    if primary_node_obj.path_exists(remote_dir):
-        primary_node_obj.remove_dir(remote_dir)
-    primary_node_obj.create_dir_sftp(remote_dir)
 
-    LOGGER.info("Updating shared path for support bundle %s", shared_path)
-    cortx_conf = "/etc/cortx/cortx.conf"
-    temp_conf = os.path.join(os.getcwd(), "cortx.conf")
-    primary_node_obj.copy_file_to_local(cortx_conf, temp_conf)
-    conf = config_utils.read_content_json(temp_conf)
-    conf["support"]["shared_path"] = shared_path
-    config_utils.create_content_json(temp_conf, conf)
-    for node in CMN_CFG["nodes"]:
-        node_obj = Node(node["hostname"], node["username"], node["password"])
-        node_obj.copy_file_to_remote(temp_conf, cortx_conf)
+    remote_dir = cm_const.R2_SUPPORT_BUNDLE_PATH
+    node_list = []
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        host = CMN_CFG["nodes"][node]["hostname"]
+        uname = CMN_CFG["nodes"][node]["username"]
+        passwd = CMN_CFG["nodes"][node]["password"]
+        node_list.append(Node(hostname=host,
+                                  username=uname, password=passwd))
+    for node in range(num_nodes):
+        if node_list[node].path_exists(remote_dir):
+            node_list[node].remove_dir(remote_dir)
 
+    LOGGER.info("Checking for available space before generating SB.")
+    for node in range(num_nodes):
+        res = node_list[node].execute_cmd(cmd=cm_cmd.CMD_SPACE_CHK)
+        res = res.decode("utf-8")
+        LOGGER.info("Available space on srvnode %s : %s", node, res)
     LOGGER.info("Starting support bundle creation")
-    primary_node_obj.execute_cmd(
-        "support_bundle generate {}".format(bundle_name))
+    command = " ".join([cm_cmd.R2_CMD_GENERATE_SUPPORT_BUNDLE, bundle_name])
+    # Form the command if component list is provided in parameters
+    if comp_list is not None:
+        command = command + ''.join(" -c ")
+        command = command + ''.join(comp_list)
+    resp = node_list[0].execute_cmd(cmd=command)
+    LOGGER.debug("Response for support bundle generate: {}".format(resp))
+    assert_utils.assert_true(resp[0], resp[1])
     start_time = time.time()
     timeout = 2700
-    bundle_id = primary_node_obj.list_dir(remote_dir)[0]
+    bundle_id = node_list[0].list_dir(remote_dir)[0]
     LOGGER.info(bundle_id)
     bundle_dir = os.path.join(remote_dir, bundle_id)
     success_msg = "Support bundle generation completed."
+
     while timeout > time.time() - start_time:
         time.sleep(180)
         LOGGER.info("Checking Support Bundle status")
-        status = primary_node_obj.execute_cmd(
+        status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
-        if str(status).count(success_msg) == len(CMN_CFG["nodes"]):
+        if str(status).count(success_msg) == num_nodes:
             LOGGER.info(success_msg)
-            LOGGER.info("Archiving and copying Support bundle from server")
-            sb_tar_file = "".join([bundle_id, ".tar"])
-            remote_sb_path = os.path.join(remote_dir, sb_tar_file)
-            local_sb_path = os.path.join(local_dir, sb_tar_file)
-            tar_sb_cmd = "tar -cvf {} {}".format(remote_sb_path, bundle_dir)
-            primary_node_obj.execute_cmd(tar_sb_cmd)
-            primary_node_obj.copy_file_to_local(remote_sb_path, local_sb_path)
+            for node in range(num_nodes):
+                LOGGER.info("Archiving and copying Support bundle from server")
+                sb_tar_file = "".join([bundle_id, ".srvnode{}.tar"]).format(node)
+                remote_sb_path = os.path.join(remote_dir, sb_tar_file)
+                local_sb_path = os.path.join(local_dir, sb_tar_file)
+                tar_sb_cmd = "tar -cvf {} {}".format(remote_sb_path, bundle_dir)
+                node_list[node].execute_cmd(tar_sb_cmd)
+                node_list[node].copy_file_to_local(remote_sb_path, local_sb_path)
             break
     else:
         LOGGER.error("Timeout while generating support bundle")
-        return False, "Timeout while generating support bundle"
+        return False, bundle_id
 
-    return True, local_sb_path
+    LOGGER.info("Support bundle generated successfully.")
+    return True, bundle_id
+
+def collect_crash_files(local_dir):
+    """
+    Collect all the crash files created at predefined locations.
+    param: local_dir: local dir path to copy crash files
+    :return: boolean
+    """
+    node_list = []
+    num_nodes = len(CMN_CFG["nodes"])
+    for node in range(num_nodes):
+        host = CMN_CFG["nodes"][node]["hostname"]
+        uname = CMN_CFG["nodes"][node]["username"]
+        passwd = CMN_CFG["nodes"][node]["password"]
+        node_list.append(Node(hostname=host,
+                              username=uname, password=passwd))
+
+    crash_dir1 = "/var/crash"
+    crash_dir2 = "/var/log/crash"
+    dir_list = [crash_dir1, crash_dir2]
+    flag = False
+
+    for node in range(num_nodes):
+        for crash_dir in dir_list:
+            file_list = node_list[node].list_dir(crash_dir)
+            if file_list:
+                flag = True
+                for file in file_list:
+                    remote_path = os.path.join(crash_dir, file)
+                    local_path = os.path.join(local_dir, file)
+                    node_list[node].copy_file_to_local(remote_path, local_path)
+    if flag:
+        LOGGER.info("Crash files are generated and copied at %s", local_dir)
+    else:
+        LOGGER.info("No Crash files are generated.")

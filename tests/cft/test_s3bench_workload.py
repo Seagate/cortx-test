@@ -20,13 +20,15 @@
 
 """S3bench test workload suit."""
 import logging
+import time
+from multiprocessing import Pool
 
 import pytest
 
 from commons import configmanager
+from config import CMN_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
 from scripts.s3_bench import s3bench
-from config import CMN_CFG
 
 
 class TestWorkloadS3Bench:
@@ -151,11 +153,12 @@ class TestWorkloadS3Bench:
         self.log.info("Perform Write Operation on Bucket %s", bucket_name)
         self.log.info("Workload: %s objects of %s with %s parallel clients.", samples, size,
                       clients)
-        resp = s3bench.s3bench(access_key, SECRET_KEY, bucket=bucket_name,
+        resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
                                num_clients=clients, num_sample=samples,
                                obj_name_pref="test_25016", obj_size=size,
                                skip_cleanup=True, duration=None,
                                log_file_prefix="test_25016")
+        assert not s3bench.check_log_file_error(resp[1]), f"S3bench write failed for {bucket_name}"
 
         self.log.info("Perform Read Operation in Loop on Bucket :%s", bucket_name)
         for loop in range(read_loops):
@@ -173,3 +176,48 @@ class TestWorkloadS3Bench:
             self.log.info("Log Path %s", resp[1])
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for failed in loop {loop}. Please read log file {resp[1]}"
+
+    @pytest.mark.tags("TEST-28376")
+    @pytest.mark.scalability
+    def test_28376(self):
+        """Parallel S3bench workloads on multiple buckets"""
+        self.log.info("Started: Parallel S3bench workloads on multiple buckets")
+        resp = s3bench.setup_s3bench()
+        assert (resp, resp), "Could not setup s3bench."
+        pool = Pool(processes=3)
+        buckets = [f"test-28991-bucket-{i}-{str(int(time.time()))}" for i in range(3)]
+        pool.starmap(s3bench.s3bench_workload,
+                     [(buckets[0], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY),
+                      (buckets[1], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY),
+                      (buckets[2], "TEST-28376", "2Mb", 32, 400, ACCESS_KEY, SECRET_KEY)])
+        self.log.info("Completed: Parallel S3bench workloads on multiple buckets")
+
+    @pytest.mark.tags("TEST-28377")
+    @pytest.mark.scalability
+    def test_28377(self):
+        """S3bench workloads with varying object size and varying clients"""
+        self.log.info("Started: S3bench workloads with varying object size and varying clients")
+        bucket_prefix = "test-bucket"
+        object_sizes = [
+            "1Kb", "4Kb", "16Kb", "64Kb", "256Kb",
+            "1Mb", "5Mb", "20Mb", "64Mb", "128Mb", "256Mb", "512Mb"
+        ]
+        clients = [64, 128, 256]
+        sample = 1024
+        resp = s3bench.setup_s3bench()
+        assert (resp, resp), "Could not setup s3bench."
+        for object_size in object_sizes:
+            for client in clients:
+                self.log.info("Workload: 1024 objects of %s with %s parallel clients",
+                              object_size, client)
+                resp = s3bench.s3bench(ACCESS_KEY, SECRET_KEY,
+                                       bucket=f"{bucket_prefix}-{object_size.lower()}-{client}",
+                                       num_clients=client, num_sample=sample,
+                                       obj_name_pref="loadgen_test_", obj_size=object_size,
+                                       skip_cleanup=False, duration=None,
+                                       log_file_prefix="TEST-28377")
+                self.log.info(f"json_resp {resp[0]}\n Log Path {resp[1]}")
+                assert not s3bench.check_log_file_error(resp[1]), \
+                    f"S3bench workload for object size {object_size} with client {client} failed." \
+                    f" Please read log file {resp[1]}"
+        self.log.info("Completed: S3bench workloads with varying object size and varying clients")

@@ -87,10 +87,7 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
         data = dict(zip(plot_data['x_actual_data'], y_actual_data))
         for item in x_data_combined:
             try:
-                if isinstance(data[item], str):
-                    y_data.append(data[item])
-                else:
-                    y_data.append(data[item]/int(plot_data['nodes']))
+                y_data.append(data[item])  # /int(plot_data['nodes']))
             except KeyError:
                 y_data.append(None)
 
@@ -144,8 +141,8 @@ def update_Ttfb_Style(bench):
     Input('graphs_obj_size_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option1,
-                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2,
+def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch1, option1,
+                  nodes1, pfull1, itrns1, custom1, sessions1, buckets1, release2_combined,
                   branch2, option2, nodes2, pfull2, itrns2, custom2, sessions2,
                   buckets2, flag, obj_size):
     """
@@ -188,23 +185,33 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         plot_data = {}
         figs = []
 
-        if xfilter == 'Build':
+        if sessions1 == 'all' and xfilter == 'Build':
+            plot_data['x_heading'] = 'Sessions'
+            xfilter_tag = 'build'
+        elif sessions1 == 'all' and xfilter == 'Object_Size':
+            plot_data['x_heading'] = 'Sessions'
+            xfilter_tag = 'objsize'
+        elif xfilter == 'Build':
             plot_data['x_heading'] = 'Object Sizes'
             xfilter_tag = 'build'
         else:
             plot_data['x_heading'] = 'Builds'
             xfilter_tag = 'objsize'
 
+        release1 = release1_combined.split("_")[0]
+        os1 = release1_combined.split("_")[1]
         data = {
-            'release': release1, 'xfilter': xfilter, xfilter_tag: option1, 'branch': branch1,
-            'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
+            'release': release1, 'OS': os1, 'xfilter': xfilter, xfilter_tag: option1,
+            'branch': branch1, 'nodes': nodes1, 'pfull': pfull1, 'itrns': itrns1, 'custom': custom1,
             'buckets': buckets1, 'sessions': sessions1, 'name': bench, 'all_sessions_plot': False
         }
         if flag:
+            release2 = release2_combined.split("_")[0]
+            os2 = release2_combined.split("_")[1]
             data_optional = {
-                'release': release2, 'xfilter': xfilter, xfilter_tag: option2, 'branch': branch2,
-                'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2, 'custom': custom2,
-                'buckets': buckets2, 'sessions': sessions2, 'name': bench,
+                'release': release2, 'OS': os2, 'xfilter': xfilter, xfilter_tag: option2,
+                'branch': branch2, 'nodes': nodes2, 'pfull': pfull2, 'itrns': itrns2,
+                'custom': custom2, 'buckets': buckets2, 'sessions': sessions2, 'name': bench,
                 'all_sessions_plot': False
             }
 
@@ -220,6 +227,7 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
         plot_data['custom'] = data['custom']
         plot_data['pallete'] = pallete['1']
         plot_data['nodes'] = nodes1
+        plot_data['name'] = 'Query 1'
         fig_all = get_graph_layout(plot_data)
 
         for metric in stats:
@@ -254,12 +262,15 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1, branch1, option
 
                 get_graphs(fig, fig_all, data_frame, plot_data, x_data_final)
 
-                plot_data['pallete'] = pallete['2']
-                plot_data['option'] = data_optional[xfilter_tag]
-                plot_data['custom'] = data_optional['custom']
-                plot_data['x_actual_data'] = x_data_optional
-                plot_data['nodes'] = nodes2
-                get_graphs(fig, fig_all, df_optional, plot_data, x_data_final)
+                plot_data_optional = plot_data.copy()
+                plot_data_optional['pallete'] = pallete['2']
+                plot_data_optional['option'] = data_optional[xfilter_tag]
+                plot_data_optional['custom'] = data_optional['custom']
+                plot_data_optional['x_actual_data'] = x_data_optional
+                plot_data_optional['nodes'] = nodes2
+                plot_data_optional['name'] = 'Query 2'
+                get_graphs(fig, fig_all, df_optional,
+                           plot_data_optional, x_data_final)
                 not_plotted = False
 
             if not_plotted:

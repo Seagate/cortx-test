@@ -69,8 +69,8 @@ def parse_args():
                         default=['ALL'], help="Space separated test types")
     parser.add_argument("--xml_report", type=str_to_bool, default=False,
                         help="Generates xml format report if set True, default is False")
-    parser.add_argument("-pf", "--product_family", type=str, default='LC',
-                        help="Product family LR or LC.")
+    parser.add_argument("--stop_on_first_error", "-x", dest="stop_on_first_error",
+                        action="store_true", help="Stop test execution on first failure")
     return parser.parse_args()
 
 
@@ -174,9 +174,11 @@ def run_pytest_cmd(args, te_tag=None, parallel_exe=False, env=None, re_execution
         else:
             cmd_line = cmd_line + ["--junitxml=log/non_parallel_" + te_id + "report.xml"]
 
+    if args.stop_on_first_error:
+        cmd_line = cmd_line + ["-x"]
+
     cmd_line = cmd_line + ['--build=' + build, '--build_type=' + build_type,
-                           '--tp_ticket=' + args.test_plan,
-                           '--product_family=' + args.product_family]
+                           '--tp_ticket=' + args.test_plan]
     LOGGER.debug('Running pytest command %s', cmd_line)
     prc = subprocess.Popen(cmd_line, env=env)
     prc.communicate()
@@ -433,6 +435,10 @@ def trigger_tests_from_te(args):
             thread_io, event = runner.start_parallel_io(args)
 
         _env = os.environ.copy()
+        te_label = tp_metadata['te_meta']['te_label']
+        if te_label is not None and "stop_on_first_error" in te_label:
+            args.stop_on_first_error = True
+
         if not args.force_serial_run:
             # First execute all tests with parallel tag which are mentioned in given tag.
             run_pytest_cmd(args, te_tag, True, env=_env)
