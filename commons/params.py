@@ -21,6 +21,7 @@
 """Constants
 """
 import os
+import tempfile
 
 LOG_FILE = 'cortx-test.log'
 
@@ -49,7 +50,9 @@ COMMON_DESTRUCTIVE_CONFIG_PATH = "config/common_destructive.yaml"
 DI_CONFIG_PATH = os.path.join(CONFIG_DIR, 'di_config.yaml')
 DATA_PATH_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3/test_data_path_validate.yaml')
 HA_TEST_CONFIG_PATH = "config/ha_test.yaml"
-DEL_CFG_PATH = os.path.join(CONFIG_DIR, 's3', 'test_delayed_delete.yaml')
+S3_MPART_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_multipart_upload.yaml")
+S3_BLACK_BOX_CONFIG_PATH = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
+DEL_CFG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delayed_delete.yaml")
 
 TEST_DATA_PATH = os.path.join(os.getcwd(), TEST_DATA_FOLDER)
 JIRA_TEST_LIST = 'test_lists.csv'
@@ -114,6 +117,8 @@ DESTRUCTIVE_TEST_RESULT = "/root/result_summary.csv"
 DELETE_PERCENTAGE = 10
 DOWNLOAD_HOME = '/var/log/'
 
+S3_INSTANCES_PER_NODE = 1
+LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
 PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
