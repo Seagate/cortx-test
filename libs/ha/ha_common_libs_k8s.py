@@ -622,6 +622,7 @@ class HAK8s:
         res = s3_test_obj.create_bucket(bucket_name)
         if not res[0]:
             output.put(res)
+            raise Exception(res, "Expected bucket is not created")
         LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
         res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
