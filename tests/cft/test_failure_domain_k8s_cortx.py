@@ -45,7 +45,7 @@ class TestFailureDomainK8Cortx:
         cls.git_token = os.getenv("GIT_PASSWORD")
         # TODO: Added below to jenkins job
         cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG", PROV_CFG["k8s_cortx_deploy"]["git_tag"])
-        cls.cortx_image = os.getenv("CORTX_IMAGE")
+        cls.cortx_image = os.getenv("CORTX_IMAGE", PROV_CFG["k8s_cortx_deploy"]["cortx_image"])
         # TODO: Update Docker credentials
         cls.docker_username = os.getenv("DOCKER_USERNAME")
         cls.docker_password = os.getenv("DOCKER_PASSWORD")
@@ -71,9 +71,9 @@ class TestFailureDomainK8Cortx:
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
-        # self.log.info("Reverting all the VM before deployment")
-        # with Pool(self.num_nodes) as proc_pool:
-        #     proc_pool.map(self.revert_vm_snapshot, self.host_list)
+        self.log.info("Reverting all the VM before deployment")
+        with Pool(self.num_nodes) as proc_pool:
+            proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -101,18 +101,15 @@ class TestFailureDomainK8Cortx:
             if not resp:
                 self.deploy_lc_obj.taint_master(node)
 
-        # self.log.info("Step 3: Download solution file template")
-        # path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
-        #
-        # self.log.info("Step 4 : Update solution file template")
-        # resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
-        #                                           cortx_image=self.cortx_image)
-        # assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
-        # sol_file_path = resp[1]
-        # system_disk_dict = resp[2]
-        sol_file_path = "sol_file_path"
-        system_disk_dict = {'ssc-vm-g3-rhev4-1882.colo.seagate.com':'/dev/sdb',
-                            'ssc-vm-g3-rhev4-1883.colo.seagate.com':'/dev/sdb'}
+        self.log.info("Step 3: Download solution file template")
+        path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
+
+        self.log.info("Step 4 : Update solution file template")
+        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
+                                                  cortx_image=self.cortx_image)
+        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+        sol_file_path = resp[1]
+        system_disk_dict = resp[2]
 
         self.log.info("Step 5: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,

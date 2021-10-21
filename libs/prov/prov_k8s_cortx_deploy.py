@@ -100,6 +100,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Check if master is tainted")
         resp = node_obj.execute_cmd(common_cmd.K8S_CHK_TAINT.format(node_obj.hostname))
         LOGGER.debug("resp: %s", resp)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
         if "NoSchedule" in resp:
             LOGGER.info("%s is tainted", node_obj.hostname)
             return True
@@ -204,7 +206,7 @@ class ProvDeployK8sCortxLib:
         node_obj.execute_cmd(cmd=cmd)
 
         if system_utils.path_exists(local_sol_path):
-            node_obj.copy_file_to_remote(local_sol_path, self.deploy_cfg["worker_sol_path"])
+            node_obj.copy_file_to_remote(local_sol_path, self.deploy_cfg["worker_path"])
             return True, f"{local_sol_path} copied to {node_obj.hostname}"
         return False, f"{local_sol_path} not found"
 
@@ -215,9 +217,14 @@ class ProvDeployK8sCortxLib:
         param: system_disk: parameter to prereq script
         """
         LOGGER.info("Executing prereq script")
+        prereq_path = self.deploy_cfg["worker_exe_path"] + self.deploy_cfg["prereq_file"]
+        resp = node_obj.execute_cmd(cmd=common_cmd.FILE_MODE_CHANGE_CMD.format(prereq_path))
+        LOGGER.debug("resp:%s",resp)
         cmd = " ".join(
-            [self.deploy_cfg["prereq_file"], system_disk, self.deploy_cfg["worker_sol_path"]])
-        node_obj.execute_cmd(cmd=cmd)
+            ["sh", prereq_path, system_disk, self.deploy_cfg["worker_path"]])
+        resp = node_obj.execute_cmd(cmd=cmd,read_lines=True)
+        LOGGER.debug("\n".join(resp.args[0]).replace("\\n", "\n"))
+
 
     def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str,
                        remote_code_path: str) -> tuple:
@@ -268,8 +275,11 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
+            self.docker_login(node,docker_username,docker_password)
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            self.copy_prereq_file(node, git_token, git_tag, sol_file_path)
+            resp = self.copy_prereq_file(node, git_token, git_tag, sol_file_path)
+            if not resp[0]:
+                return resp
             self.execute_prereq_cortx(node, system_disk)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
