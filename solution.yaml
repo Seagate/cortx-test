@@ -1,0 +1,75 @@
+solution:
+  namespace: default
+  secrets:
+    name: cortx-secret
+    content:
+      openldap_admin_secret: seagate1
+      kafka_admin_secret: Seagate@123
+      consul_admin_secret: Seagate@123
+      common_admin_secret: Seagate@123
+      s3_auth_admin_secret: ldapadmin
+      csm_auth_admin_secret: seagate2
+      csm_mgmt_admin_secret: Cortxadmin@123
+  images:
+    cortxcontrolprov: "ghcr.io/seagate/cortx-all:2.0.0-358-RC3"
+    cortxcontrol: "ghcr.io/seagate/cortx-all:2.0.0-358-RC3"
+    cortxdataprov: "ghcr.io/seagate/cortx-all:2.0.0-358-RC3"
+    cortxdata: "ghcr.io/seagate/cortx-all:2.0.0-358-RC3"
+    openldap: ghcr.io/seagate/symas-openldap:standalone
+    consul: hashicorp/consul:1.10.3
+    kafka: bitnami/kafka
+    zookeeper: bitnami/zookeeper
+    gluster: docker.io/gluster/gluster-centos
+    rancher: rancher/local-path-provisioner:v0.0.20
+  3rdparty:
+    openldap:
+      password: seagate1
+  common:
+    cortx_io_svc_ingress: false
+    storage:
+      local: /etc/cortx
+      shared: /share
+      log: /share/var/log/cortx
+    s3:
+      num_inst: 2
+      start_port_num: 28051
+    motr:
+      num_client_inst: 1
+      start_port_num: 29000
+    storage_sets:
+      name: storage-set-1
+      durability:
+        sns: 1+0+0
+        dix: 1+0+0
+  storage:
+    cvg1:
+      name: cvg-01
+      type: ios
+      devices:
+        metadata:
+          device: /dev/sdc
+          size: 5Gi
+        data:
+          d1:
+            device: /dev/sdd
+            size: 5Gi
+    cvg2:
+      name: cvg-02
+      type: ios
+      devices:
+        metadata:
+          device: /dev/sde
+          size: 5Gi
+        data:
+          d1:
+            device: /dev/sdf
+            size: 5Gi
+  nodes:
+    node1:
+      name: ssc-vm-g3-rhev4-1882.colo.seagate.com
+      devices:
+        system: /mnt/fs-local-volume/
+    node2:
+      name: ssc-vm-g3-rhev4-1883.colo.seagate.com
+      devices:
+        system: /mnt/fs-local-volume/

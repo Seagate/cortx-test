@@ -112,7 +112,6 @@ k8s_cluster_deploy:
   auth_token: "$eagate@123"
 
 k8s_cortx_deploy:
-  build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/{1}/{2}/"
   prereq:
     min_disks: 8
     os_release: [ "CentOS Linux release 7.9.2009 (Core)" ]
@@ -120,15 +119,14 @@ k8s_cortx_deploy:
     cpu_cores: 8
     memory: 16
   local_path_prov: "/mnt/fs-local-volume/"
-  glusterfs_dir: [ "/mnt/fs-local-volume/etc/gluster","/mnt/fs-local-volume/var/log/gluster",
-                   "/mnt/fs-local-volume/var/lib/glusterd" ]
-  gluster_pkg: "glusterfs-fuse"
-  3rd_party_dir: [ "/etc/3rd-party/openldap","/var/data/3rd-party","/var/log/3rd-party" ]
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
-  git_tag: "v0.0.5"
+  git_k8_repo_raw: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/{}"
+  prereq_file: "prereq-deploy-cortx-cloud.sh"
+  git_tag: "v0.0.7"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   template_path: "config/prov/solution.yaml"
+  worker_sol_path: "/root/solution.yaml"

@@ -46,7 +46,7 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
-                          taint_master: bool = False) -> tuple:
+                          taint_master: bool = True) -> tuple:
         """
         Setup K8's cluster using RE jenkins job
         param: master_node_list : List of all master nodes(Logical Node object)
@@ -90,6 +90,32 @@ class ProvDeployK8sCortxLib:
             LOGGER.error(f"k8's Cluster Deployment {output['result']},please check URL")
             return False, output['result']
 
+    @staticmethod
+    def validate_master_tainted(node_obj: LogicalNode) -> bool:
+        """
+        Validate master node tainted.
+        param: node_obj: Master node object
+        return: Boolean
+        """
+        LOGGER.info("Check if master is tainted")
+        resp = node_obj.execute_cmd(common_cmd.K8S_CHK_TAINT.format(node_obj.hostname))
+        LOGGER.debug("resp: %s", resp)
+        if "NoSchedule" in resp:
+            LOGGER.info("%s is tainted", node_obj.hostname)
+            return True
+        LOGGER.info("%s is not tainted", node_obj.hostname)
+        return False
+
+    @staticmethod
+    def taint_master(node_obj: LogicalNode):
+        """
+        Taint master node.
+        param: node_obj: Master node object
+        """
+        LOGGER.info("Adding taint to %s", node_obj.hostname)
+        resp = node_obj.execute_cmd(common_cmd.K8S_TAINT_NODE.format(node_obj.hostname))
+        LOGGER.debug("resp: %s", resp)
+
     def prereq_vm(self, node_obj: LogicalNode) -> tuple:
         """
         Perform prerequisite check for VM configurations
@@ -128,55 +154,6 @@ class ProvDeployK8sCortxLib:
 
         return True, "Prerequisite VM check successful"
 
-    def prereq_local_path_prov(self, node_obj: LogicalNode, disk_partition: str):
-        """
-        Perform the prerequisite for Local Path Provisioner
-        param: node_obj: Node object
-        param: disk_partition : Mount this partition for Local Path Prov.
-        """
-        LOGGER.info("Create directory for Local Path provisioner")
-        node_obj.make_dir(self.deploy_cfg["local_path_prov"])
-
-        LOGGER.info("Validate if any mount point present on the disk,unmount it")
-        cmd = "lsblk | grep \"{}\" |awk '{{print $7}}'".format(disk_partition)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-        for mp in resp:
-            node_obj.execute_cmd("umount {}".format(mp))
-
-        LOGGER.info("mkfs %s", disk_partition)
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition),
-                                    read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        LOGGER.info("Mount the file system")
-        resp = node_obj.execute_cmd(
-            common_cmd.CMD_MOUNT_EXT4.format(disk_partition, self.deploy_cfg["local_path_prov"]))
-        LOGGER.debug("resp: %s", resp)
-
-    def prereq_glusterfs(self, node_obj: LogicalNode):
-        """
-        Prerequisite for GlusterFS - Create specified directory
-        param: node_obj : Node Object
-        """
-        LOGGER.info("Create Directories for GlusterFS")
-        for each in self.deploy_cfg["glusterfs_dir"]:
-            node_obj.make_dir(each)
-
-        LOGGER.info("Install Gluster-fuse package")
-        resp = node_obj.execute_cmd(
-            common_cmd.RPM_INSTALL_CMD.format(self.deploy_cfg["gluster_pkg"]))
-        LOGGER.debug("resp: %s", resp)
-
-    def prereq_3rd_party_srv(self, node_obj: LogicalNode):
-        """
-        Prerequisite for 3rd Party Services - Create specified directory
-        param: node_obj : Node Object
-        """
-        LOGGER.info("Create directory for 3rd Party services")
-        for each in self.deploy_cfg["3rd_party_dir"]:
-            node_obj.make_dir(each)
-
     @staticmethod
     def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
         """
@@ -210,6 +187,38 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
+    def copy_prereq_file(self, node_obj: LogicalNode, git_token: str, git_tag: str,
+                         local_sol_path: str):
+        """
+        Copy prerequisite files to worker nodes(Solution.yaml and prereq-deploy-cortx-cloud).
+        param: node_obj: Logical node object of worker nodes
+        param: git_token: Git token
+        param: git_tag: Git tag for service teams cortx-k8 repo
+        param: local_sol_path: Solution file path which is to be copied to worker node
+        return: Boolean and message
+        """
+        prereq_file = self.deploy_cfg["prereq_file"]
+        LOGGER.info("Download %s on %s", prereq_file, node_obj.hostname)
+        url = self.deploy_cfg["git_k8_repo_raw"].format(git_token, git_tag, prereq_file)
+        cmd = common_cmd.CMD_CURL.format(prereq_file, url)
+        node_obj.execute_cmd(cmd=cmd)
+
+        if system_utils.path_exists(local_sol_path):
+            node_obj.copy_file_to_remote(local_sol_path, self.deploy_cfg["worker_sol_path"])
+            return True, f"{local_sol_path} copied to {node_obj.hostname}"
+        return False, f"{local_sol_path} not found"
+
+    def execute_prereq_cortx(self, node_obj: LogicalNode, system_disk: str):
+        """
+        Execute prerq script on worker node,
+        param: node_obj: Worker node object
+        param: system_disk: parameter to prereq script
+        """
+        LOGGER.info("Executing prereq script")
+        cmd = " ".join(
+            [self.deploy_cfg["prereq_file"], system_disk, self.deploy_cfg["worker_sol_path"]])
+        node_obj.execute_cmd(cmd=cmd)
+
     def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str,
                        remote_code_path: str) -> tuple:
         """
@@ -235,7 +244,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("resp :%s", resp)
         return True, resp
 
-    def deploy_cortx_cluster(self, solution_file_path: str, master_node_list: list,
+    def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
                              docker_username: str, docker_password: str, git_id: str,
                              git_token: str, git_tag) -> tuple:
@@ -260,13 +269,12 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            self.prereq_local_path_prov(node, system_disk)
-            self.prereq_glusterfs(node)
-            self.prereq_3rd_party_srv(node)
+            self.copy_prereq_file(node, git_token, git_tag, sol_file_path)
+            self.execute_prereq_cortx(node, system_disk)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
-        resp = self.deploy_cluster(master_node_list[0], solution_file_path,
+        resp = self.deploy_cluster(master_node_list[0], sol_file_path,
                                    self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate all cluster services are online using hclt status")
@@ -349,7 +357,7 @@ class ProvDeployK8sCortxLib:
                     (data_disk_per_cvg * cvg_count * node_list):
                 return False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
-            if len(data_devices) < data_disk_per_cvg*cvg_count:
+            if len(data_devices) < data_disk_per_cvg * cvg_count:
                 return False, "The requested data disk is more than" \
                               " the data disk available on the system"
             # This condition validated the total available disk count
