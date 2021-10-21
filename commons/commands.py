@@ -402,9 +402,12 @@ HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
 
 
 # Kubernetes commands to interact with service/pods.
-
+LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
+                 +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
+K8S_LDAP_CMD = "kubectl exec -it symas-openldap-pod -- /bin/bash -c \"{}\""
+K8S_SVC_CMD ="kubectl get svc"
 # Kubectl command prefix
-KUBECTL_CMD = "kubectl {} {} -n {}"
+KUBECTL_CMD = "kubectl {} {} -n {} {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -418,3 +421,15 @@ CLSTR_STATUS_CMD = ""
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
+
+#LC deployment
+CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
+CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
+CMD_CURL = "curl -o {} {}"
+
+#Git commands
+CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CHECKOUT = "git checkout {}"
+
+#docker commands
+CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"

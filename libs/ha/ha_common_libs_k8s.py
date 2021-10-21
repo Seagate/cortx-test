@@ -27,7 +27,6 @@ import time
 from multiprocessing import Process
 
 from commons import commands as common_cmd
-from commons import errorcodes as err
 from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
@@ -37,8 +36,9 @@ from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_system_health import SystemHealth
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_run_man import RunDataCheckManager
-from libs.s3.s3_test_lib import S3TestLib
+from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
+from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
@@ -92,8 +92,8 @@ class HAK8s:
                     common_cmd.CMD_VM_INFO.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not vm_info[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"Unable to get VM power status for {vm_name}")
+                    LOGGER.info(f"Unable to get VM power status for {vm_name}")
+                    return False
                 data = vm_info[1].split("\\n")
                 pw_state = ""
                 for lines in data:
@@ -129,7 +129,8 @@ class HAK8s:
                 common_cmd.CMD_VM_POWER_ON.format(
                     self.vm_username, self.vm_password, vm_name))
             if not resp[0]:
-                raise CTException(err.CLI_COMMAND_FAILURE, msg=f"VM power on command not executed")
+                LOGGER.info("Response for failed VM power on command: %s", resp)
+                return False
         else:
             bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "on")
 
@@ -159,8 +160,8 @@ class HAK8s:
                     common_cmd.CMD_VM_POWER_OFF.format(
                         self.vm_username, self.vm_password, vm_name))
                 if not resp[0]:
-                    raise CTException(err.CLI_COMMAND_FAILURE,
-                                      msg=f"VM power off command not executed")
+                    LOGGER.info("Response for failed VM power off command: %s", resp)
+                    return False
             else:
                 bmc_obj.bmc_node_power_on_off(self.bmc_user, self.bmc_pwd, "off")
 
@@ -174,31 +175,25 @@ class HAK8s:
         """
         Helper function to check that all Pods are shown online in cortx REST
         :param no_pods: Number of pods in the cluster
-        :rtype: None
+        :return: boolean
         """
         # Future: Right now system health api is not available but will be implemented after M0
-        try:
-            check_rem_pod = ["online" for _ in range(no_pods)]
-            rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
-            if not rest_resp[0]:
-                raise CTException(err.HA_BAD_NODE_HEALTH, rest_resp[1])
-            LOGGER.info("REST response for pods health status. %s", rest_resp[1])
-        except Exception as error:
-            LOGGER.error("%s %s: %s",
-                         Const.EXCEPTION_ERROR,
-                         HAK8s.status_pods_online.__name__,
-                         error)
+        check_rem_pod = ["online" for _ in range(no_pods)]
+        rest_resp = self.system_health.verify_node_health_status_rest(exp_status=check_rem_pod)
+        LOGGER.info("REST response for pods health status. %s", rest_resp[1])
+        return rest_resp
 
     def status_cluster_resource_online(self):
         """
         Check cluster/rack/site/pods are shown online in Cortx REST
-        :return: none
+        :return: boolean
         """
-        LOGGER.info("Check luster/rack/site/pods health status.")
+        LOGGER.info("Check cluster/rack/site/pods health status.")
         resp = self.check_csrn_status(csr_sts="online", pod_sts="online", pod_id=0)
-        if not resp[0]:
-            raise CTException(err.HA_BAD_CLUSTER_HEALTH, resp[1])
-        LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        LOGGER.info("Health status response : %s", resp[1])
+        if resp[0]:
+            LOGGER.info("cluster/rack/site/pods health status is online in REST")
+        return resp
 
     def check_csrn_status(self, csr_sts: str, pod_sts: str, pod_id: int):
         """
@@ -209,8 +204,7 @@ class HAK8s:
         :return: (bool, response)
         """
         check_rem_pod = [
-            pod_sts if num == pod_id else "online" for num in range(
-                self.num_pods)]
+            pod_sts if num == pod_id else "online" for num in range(self.num_pods)]
         LOGGER.info("Checking pod-%s status is %s via REST", pod_id+1, pod_sts)
         resp = self.system_health.verify_node_health_status_rest(
             check_rem_pod)
@@ -295,7 +289,7 @@ class HAK8s:
                     star_res = run_data_chk_obj.start_io(
                         users=io_data, buckets=None, files_count=files_count, prefs=pref_dir)
                     if not star_res:
-                        raise CTException(err.S3_START_IO_FAILED, star_res)
+                        return False, star_res
                 return True, run_data_chk_obj, io_data
 
             LOGGER.info("Checking DI for IOs run.")
@@ -304,20 +298,16 @@ class HAK8s:
             else:
                 stop_res = di_data[0].stop_io(users=di_data[1], di_check=is_di)
             if not stop_res[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, stop_res[1])
+                return stop_res
             del_resp = self.delete_s3_acc_buckets_objects(di_data[1])
             if not del_resp[0]:
-                raise CTException(err.S3_STOP_IO_FAILED, del_resp[1])
+                return del_resp
             return True, "Di check for IOs passed successfully"
-        except (ValueError, CTException) as error:
+        except ValueError as error:
             LOGGER.error("%s %s: %s",
                          Const.EXCEPTION_ERROR,
                          HAK8s.perform_ios_ops.__name__,
                          error)
-            if io_data:
-                del_resp = self.delete_s3_acc_buckets_objects(io_data)
-                if not del_resp[0]:
-                    return False, (error, del_resp[1])
             return False, error
 
     def perform_io_read_parallel(self, di_data, is_di=True, start_read=True):
@@ -444,8 +434,7 @@ class HAK8s:
             return False, "Some/All not online yet."
         # TODO: just a placeholder for cluster status
         LOGGER.info("Check the cluster status.")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True,
-                                    exc=False)
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True, exc=False)
         if not resp[0]:
             return False, "Cluster is not started"
         return True, resp
@@ -463,3 +452,140 @@ class HAK8s:
             if "Running" in line or "Completed" in line:
                 return True, resp
         return False, resp
+
+    @staticmethod
+    def create_bucket_to_complete_mpu(s3_data, bucket_name, object_name, file_size, total_parts,
+                                      multipart_obj_path):
+        """
+        Helper function to complete multipart upload.
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param file_size: Size of the file to be created to upload
+        :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
+        :return: response
+        """
+        access_key = s3_data["access_key"]
+        secret_key = s3_data["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
+                                            secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
+
+        LOGGER.info("Creating a bucket with name : %s", bucket_name)
+        res = s3_test_obj.create_bucket(bucket_name)
+        if not res[0] or res[1] != bucket_name:
+            return res
+        LOGGER.info("Created a bucket with name : %s", bucket_name)
+        LOGGER.info("Initiating multipart upload")
+        res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+        if not res[0]:
+            return res
+        mpu_id = res[1]["UploadId"]
+        LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        LOGGER.info("Uploading parts into bucket")
+        res = s3_mp_test_obj.upload_parts(mpu_id=mpu_id, bucket_name=bucket_name,
+                                          object_name=object_name, multipart_obj_size=file_size,
+                                          total_parts=total_parts,
+                                          multipart_obj_path=multipart_obj_path)
+        if not res[0] or len(res[1]) != total_parts:
+            return res
+        parts = res[1]
+        LOGGER.info("Uploaded parts into bucket: %s", parts)
+        LOGGER.info("Successfully uploaded object")
+
+        LOGGER.info("Listing parts of multipart upload")
+        res = s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
+        if not res[0] or len(res[1]["Parts"]) != total_parts:
+            return res
+        LOGGER.info("Listed parts of multipart upload: %s", res[1])
+        LOGGER.info("Completing multipart upload")
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
+        if not res[0]:
+            return res
+        res = s3_test_obj.object_list(bucket_name)
+        if object_name not in res[1]:
+            return res
+        LOGGER.info("Multipart upload completed")
+        return True, s3_data
+
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
+        """
+        Helper function to do partial multipart upload.
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param part_numbers: List of parts to be uploaded
+        :return: response
+        """
+        try:
+            total_parts = kwargs.get("total_parts", None)
+            multipart_obj_size = kwargs.get("multipart_obj_size", None)
+            multipart_obj_path = kwargs.get("multipart_obj_path", None)
+            remaining_upload = kwargs.get("remaining_upload", False)
+            parts = kwargs.get("parts", None)
+            mpu_id = kwargs.get("mpu_id", None)
+            access_key = s3_data["access_key"]
+            secret_key = s3_data["secret_key"]
+            s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                    endpoint_url=S3_CFG["s3_url"])
+            s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                                endpoint_url=S3_CFG["s3_url"])
+
+            if not remaining_upload:
+                LOGGER.info("Creating a bucket with name : %s", bucket_name)
+                res = s3_test_obj.create_bucket(bucket_name)
+                if not res[0] or res[1] != bucket_name:
+                    return res
+                LOGGER.info("Created a bucket with name : %s", bucket_name)
+                LOGGER.info("Initiating multipart upload")
+                res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+                if not res[0]:
+                    return res
+                mpu_id = res[1]["UploadId"]
+                LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+
+                LOGGER.info("Creating parts of data")
+                if os.path.exists(multipart_obj_path):
+                    os.remove(multipart_obj_path)
+                system_utils.create_file(multipart_obj_path, multipart_obj_size)
+                parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
+                                                        multipart_obj_path=multipart_obj_path,
+                                                        total_parts=total_parts)
+                LOGGER.info("Created parts of data: %s", parts)
+
+            LOGGER.info("Uploading parts %s", part_numbers)
+            for part in part_numbers:
+                resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
+                                                       object_name=object_name, upload_id=mpu_id,
+                                                       part_number=part)
+                LOGGER.info("Uploaded part %s", part)
+            return True, mpu_id, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
+            return False, error
+
+    @staticmethod
+    def create_multiple_data_parts(multipart_obj_path, multipart_obj_size, total_parts):
+        """
+        :param multipart_obj_size: Size of the file to be created to upload
+        :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
+        :return: response
+        """
+        parts = {}
+        uploaded_bytes = 0
+        single_part_size = int(multipart_obj_size) // int(total_parts)
+        with open(multipart_obj_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                data = file_pointer.read(1048576 * single_part_size)
+                LOGGER.info("data_len %s", str(len(data)))
+                if not data:
+                    break
+                parts[i] = data
+                uploaded_bytes += len(data)
+                i += 1
+
+        return parts

@@ -21,7 +21,8 @@ from libs.ha.ha_common_libs import HALibs
 from libs.csm.cli.cortx_node_cli_resource import CortxNodeCLIResourceOps
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.s3 import S3H_OBJ, s3_test_lib
-from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG, S3_CFG
+from config import CMN_CFG, RAS_VAL, RAS_TEST_CFG
+from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
