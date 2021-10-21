@@ -517,8 +517,7 @@ class TestClusterShutdownStart:
         """
         This test tests multipart upload and download during cluster restart
         """
-        LOGGER.info(
-            "STARTED: Test to verify multipart upload and download during cluster restart")
+        LOGGER.info("STARTED: Test to verify multipart upload and download during cluster restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = range(1, total_parts)
@@ -610,4 +609,4 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
-        LOGGER.info("ENDED: Start multipart upload for 5GB object in multiple parts one by one")
+        LOGGER.info("ENDED: Test to verify multipart upload and download during cluster restart")
