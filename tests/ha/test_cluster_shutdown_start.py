@@ -35,6 +35,7 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons import commands as com_cmd
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -503,3 +504,94 @@ class TestClusterShutdownStart:
         self.restored = False
         LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
         LOGGER.info("Completed: Test to check WRITEs after cluster restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29479")
+    @CTFailOn(error_handler)
+    def test_cluster_restart_without_signal(self):
+        """
+        This test tests the cluster restart functionality without sending the shutdown signal.
+        """
+        LOGGER.info(
+            "STARTED: Test to verify cluster restart functionality without sending the "
+            "shutdown signal.")
+
+        LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: All pods are running.")
+
+        LOGGER.info(
+            "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29479', nusers=1,
+                                           nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        LOGGER.info("Step 2: IOs are started successfully.")
+
+        LOGGER.info(
+            "Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info(
+            "Step 3: Cluster restarted fine and all Pods online.")
+
+        LOGGER.info("Step 4: Check DI for IOs run before restart.")
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 4: Verified DI for IOs run before restart.")
+
+        LOGGER.info("Step 5: Create new S3 account and perform IOs.")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29301-1')
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        resp = self.ha_obj.perform_ios_ops(
+            di_data=di_check_data, is_di=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: IOs running successfully with new S3 account.")
+        self.restored = False
+
+        LOGGER.info(
+            "Completed: Test to verify cluster restart functionality without sending the"
+            "shutdown signal.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29480")
+    @CTFailOn(error_handler)
+    def test_cluster_restart_without_signal(self):
+        """
+        This test tests the cluster behaviour when cluster restarted before shutdown completes.
+        (negative scenario)
+        """
+        LOGGER.info(
+            "STARTED: Test to check cluster stability when cluster start is initiated before"
+            "shutdown completes ")
+
+        LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: All pods are running.")
+
+        LOGGER.info(
+            "Step 2: Start IOs (create s3 acc, buckets and upload objects).")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29480', nusers=1,
+                                           nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        di_check_data = (resp[1], resp[2])
+        self.s3_clean = resp[2]
+        LOGGER.info("Step 2: IOs are started successfully.")
+
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster shutdown signal is successful.")
+
+        LOGGER.info("Step 4: Shutdown the cluster and start it back before shutdown completes.")
+        self.node_master_list[0].execute_cmd(com_cmd.CLSTR_STOP_CMD, read_lines=True, exc=False)
+        
