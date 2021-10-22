@@ -300,6 +300,9 @@ class ProvDeployK8sCortxLib:
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
+        :Keyword: dix_data:
+        :Keyword: dix_parity:
+        :Keyword: dix_spare:
         :Keyword: skip_disk_count_check: disk count check
         returns the status, filepath and system reserved disk
 
@@ -399,10 +402,6 @@ class ProvDeployK8sCortxLib:
             parent_key = conf['solution']  # Parent key
             node = parent_key['nodes']  # Child Key
             total_nodes = node.keys()
-            # Creating Default Schema to update the yaml file
-            share_value = "/mnt/fs-local-volume"  # This needs to changed
-            device_schema = {'system': share_value}
-            device_key = {'devices': device_schema}
             # Removing the elements from the node dict
             for key_count in list(total_nodes):
                 node.pop(key_count)
@@ -411,7 +410,6 @@ class ProvDeployK8sCortxLib:
                 dict_node = {}
                 name = {'name': host.hostname}
                 dict_node.update(name)
-                dict_node.update(device_key)
                 new_node = {'node{}'.format(item + 1): dict_node}
                 node.update(new_node)
             conf['solution']['nodes'] = node
@@ -504,7 +502,7 @@ class ProvDeployK8sCortxLib:
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
         cortx_image: this is cortx image name
-        third_party_image: dict of
+        third_party_image: dict of third party image
         :returns the status, filepath
         """
         third_party_images_dict = kwargs.get("third_party_images",
@@ -523,9 +521,9 @@ class ProvDeployK8sCortxLib:
             image = parent_key['images']  # Parent key
             conf['solution']['images'] = image
             image.update(cortx_im)
-            for key in list(third_party_images_dict.keys()):
+            for key, value in list(third_party_images_dict.items()):
                 if key in list(self.deploy_cfg['third_party_images'].keys()):
-                    image.update(third_party_images_dict)
+                    image.update({key: value})
                     image_default_dict.pop(key)
             image.update(image_default_dict)
             soln.close()
@@ -548,6 +546,8 @@ class ProvDeployK8sCortxLib:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
             content = parent_key['secrets']['content']
+            common = parent_key['common']
+            common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
             passwd_dict = {}
             for key, value in self.deploy_cfg['password']:
                 passwd_dict[key] = pswdmanager.decrypt(value)
