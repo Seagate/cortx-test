@@ -275,6 +275,7 @@ CMD_SW_VER = "provisioner get_release_version"
 CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
+CMD_SPACE_CHK = "df -h"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -334,6 +335,7 @@ CMD_AWSCLI_LIST_PARTS = "aws s3api list-parts --bucket {0} --key {1} --upload-id
 CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart-upload " \
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
+CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
 CMD_AWSCLI_CONF = "aws configure"
 # Upload directory recursively to s3.
 CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
@@ -356,7 +358,7 @@ CMD_RESOURCE_SHOW_HEALTH_RES = "cortx_setup resource show --health --resource_ty
 
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
-                        ' -X PUT http://127.0.0.1:28081â€‹'
+                        ' -X PUT http://127.0.0.1:28081'
 
 # VM power operations:
 CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
@@ -413,7 +415,8 @@ FI_CLIENT_CMD = "fi_pingpong {} -e msg -p {}"
 R2_CMD_GENERATE_SUPPORT_BUNDLE = "support_bundle generate"
 
 # Deployment using Factory and Field
-CMD_GET_PROV_INSTALL = "curl --create-dirs --output /mnt/cortx/install.sh {}; chmod +x /mnt/cortx/install.sh "
+CMD_GET_PROV_INSTALL = "curl --create-dirs " \
+                       "--output /mnt/cortx/install.sh {}; chmod +x /mnt/cortx/install.sh "
 CMD_INSTALL_CORTX_RPM = "sh /mnt/cortx/install.sh -t {}"
 CMD_SERVER_CFG = "cortx_setup server config --name {} --type {}"  # server name, type - VM/HW
 CMD_GET_NETWORK_INTERFACE = "netstat -i | grep eth | awk '{print $1}'"
@@ -450,5 +453,30 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
 CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
+
+# Maintenance mode for DI
+HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
+HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
+
+# DI Flags
+RUN_FI_FLAG = 'curl -X PUT -H "x-seagate-faultinjection: {},always,{},0,0" {}'
+S3_FI_FLAG_DC_ON_WRITE = 'di_data_corrupted_on_write'
+S3_FI_FLAG_DC_ON_READ = 'di_data_corrupted_on_read'
+S3_FI_FLAG_CSUM_CORRUPT = 'di_obj_md5_corrupted'
+
+FI_ENABLE = 'enable'
+FI_DISABLE = 'disable'
+FI_TEST = 'test'
+
+S3_SRV_PORT = S3_SRV_START_PORT = 28081
+
+# corrupts file before storing;
+DI_DATA_CORRUPT_ON_WRITE = 'di_data_corrupted_on_write'
+
+# corrupts file during retrieval;
+DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
+
+# instead of md5 hash of the object stores md5 hash of empty string.
+DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 CLSTR_RESET_COMMAND="cortx_setup cluster reset --type all"
 CLSTR_RESET_H_COMMAND="cortx_setup cluster reset -h"
