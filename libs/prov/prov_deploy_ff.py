@@ -26,13 +26,9 @@ import time
 from configparser import ConfigParser, SectionProxy
 
 from commons import commands as common_cmd
-from commons import pswdmanager
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
-from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
-from libs.csm.csm_setup import CSMConfigsCheck
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -112,27 +108,26 @@ class ProvDeployFFLib:
         """
         Installs Cortx packages(RPM)
         param: nd_obj: Node object to execute commands on
-        param: build: Build no to be deployed
+        param: build_branch: Branch of the build to be deployed
         param: build_url: Build URL
         """
         try:
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
             LOGGER.info("Download the install.sh script to the node")
             install_sh_path = f"{build_url}iso/install-2.0.0-{build}.sh"
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(install_sh_path),
                                       read_lines=True)
             LOGGER.debug("Downloaded install.sh : %s", resp)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Installs CORTX packages (RPM) and their dependencies ")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(build_url),
                                       read_lines=True)
             LOGGER.debug("Installed RPM's : %s", resp)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Initialize command shell env")
             nd_obj.execute_cmd(cmd=common_cmd.CORTX_SETUP_HELP, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -176,40 +171,32 @@ class ProvDeployFFLib:
         """
         try:
             LOGGER.info("Configure Network ")
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
             LOGGER.info("Configure Network transport")
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_TRANSPORT.format(
                 network_trans), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Management Interface")
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
                 "eth0", "management"), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Data Interface")
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
                 "eth1", "data"), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Private Interface")
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_INTERFACE.format(
                 "eth3", "private"), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure BMC Interface")
-            bmc_username = deploy_ff_cfg["bmc_username"]
-            bmc_password = deploy_ff_cfg["bmc_password"]
-            if CMN_CFG["bmc"]["username"] != "":
-                bmc_username = CMN_CFG["bmc"]["username"]
-            if CMN_CFG["bmc"]["password"] != "":
-                bmc_password = CMN_CFG["bmc"]["password"]
-
             nd_obj.execute_cmd(cmd=common_cmd.NETWORK_CFG_BMC.format("127.0.0.1",
-                                                                     bmc_username,
-                                                                     bmc_password),
+                                                                     CMN_CFG["bmc"]["username"],
+                                                                     CMN_CFG["bmc"]["password"]),
                                read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -222,25 +209,26 @@ class ProvDeployFFLib:
         return True, "configure_network Successful!!"
 
     @staticmethod
-    def configure_storage(nd_obj: Node, node_config: SectionProxy):
+    def configure_storage(nd_obj: Node,  node_config: SectionProxy):
         """
         Configure Storage
         param: nd_obj: node object for commands to be executed on
+        param: node_no: Node number
         param: node_config: Section of particular Node from config.ini
         """
         try:
             LOGGER.info("Configure Storage")
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
+
             LOGGER.info("Configure Storage name")
-            encl_name = deploy_ff_cfg["encl_name"]
+            encl_name = "enclosure1"
             nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_NAME.format(encl_name), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Storage Config")
             for cnt_type in ["primary", "secondary"]:
                 nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CONT.format(cnt_type),
                                    read_lines=True)
-                time.sleep(deploy_ff_cfg["per_step_delay"])
+                time.sleep(10)
 
             LOGGER.info("Configure CVG")
             for key in node_config.keys():
@@ -251,7 +239,7 @@ class ProvDeployFFLib:
                     nd_obj.execute_cmd(cmd=common_cmd.STORAGE_CFG_CVG.format(cvg_no, data_devices,
                                                                              meta_devices),
                                        read_lines=True)
-                    time.sleep(deploy_ff_cfg["per_step_delay"])
+                    time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -273,7 +261,7 @@ class ProvDeployFFLib:
         try:
             LOGGER.info("Configure Security")
             nd_obj.execute_cmd(cmd=common_cmd.SECURITY_CFG.format(cert_path, read_lines=True))
-            time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
+            time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -296,7 +284,7 @@ class ProvDeployFFLib:
             LOGGER.info("Configure Feature")
             for key, val in feature_conf.items():
                 nd_obj.execute_cmd(cmd=common_cmd.FEATURE_CFG.format(key, val), read_lines=True)
-                time.sleep(PROV_CFG["deploy_ff"]["per_step_delay"])
+                time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -313,21 +301,21 @@ class ProvDeployFFLib:
         """
         Initialize and Finalize node configuration
         param:  nd_obj: node object for commands to be executed on
+        param: nd_no: srvnode number
         """
         try:
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
             LOGGER.info("Initialize Node")
             nd_obj.execute_cmd(cmd=common_cmd.INITIALIZE_NODE, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Setup Node signature")
-            nd_obj.execute_cmd(cmd=common_cmd.SET_NODE_SIGN.format(deploy_ff_cfg["lr_sign"]),
+            nd_obj.execute_cmd(cmd=common_cmd.SET_NODE_SIGN.format("HP1_5U84"),
                                read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Finalize Node Configuration")
             nd_obj.execute_cmd(cmd=common_cmd.NODE_FINALIZE, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -352,14 +340,11 @@ class ProvDeployFFLib:
         network_trans = kwargs.get("network_trans", deploy_ff_cfg["network_trans"])
         security_path = kwargs.get("security_path", deploy_ff_cfg["security_path"])
         s3_service_instances = kwargs.get("s3_service_instances",
-                                          deploy_ff_cfg["feature_config"][
-                                              "'cortx>software>s3>service>instances'"])
+                                          deploy_ff_cfg["feature_config"]["'cortx>software>s3>service>instances'"])
         s3_io_max_units = kwargs.get("s3_service_instances",
-                                     deploy_ff_cfg["feature_config"][
-                                         "'cortx>software>s3>io>max_units'"])
+                                     deploy_ff_cfg["feature_config"]["'cortx>software>s3>io>max_units'"])
         motr_client_instances = kwargs.get("s3_service_instances",
-                                           deploy_ff_cfg["feature_config"][
-                                               "'cortx>software>motr>service>client_instances'"])
+                                           deploy_ff_cfg["feature_config"]["'cortx>software>motr>service>client_instances'"])
 
         feature_conf = {"'cortx>software>s3>service>instances'": s3_service_instances,
                         "'cortx>software>s3>io>max_units'": s3_io_max_units,
@@ -393,7 +378,7 @@ class ProvDeployFFLib:
             LOGGER.info("Prepare Node")
             LOGGER.info("Configure Server Identification")
             nd_obj.execute_cmd(cmd=common_cmd.PREPARE_NODE.format(1, 1, nd_no), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Prepare Network")
             nd_obj.execute_cmd(cmd=
@@ -401,7 +386,7 @@ class ProvDeployFFLib:
                 CMN_CFG["nodes"][nd_no - 1]["hostname"],
                 deploy_ff_cfg["search_domains"], deploy_ff_cfg["dns_servers"]),
                 read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Network")
             ips = {"management": CMN_CFG["nodes"][nd_no - 1]["ip"],
@@ -418,22 +403,22 @@ class ProvDeployFFLib:
                                                                               ip_addr, netmask,
                                                                               gateway),
                                    read_lines=True)
-                time.sleep(deploy_ff_cfg["per_step_delay"])
+                time.sleep(10)
 
             LOGGER.info("Configure Firewall")
             nd_obj.execute_cmd(cmd=
             common_cmd.CFG_FIREWALL.format(
                 deploy_ff_cfg["firewall_url"]),
                 read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Network Time Server")
             nd_obj.execute_cmd(cmd=common_cmd.CFG_NTP.format("UTC"), read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Node Finalize")
             nd_obj.execute_cmd(cmd=common_cmd.NODE_PREP_FINALIZE, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -512,8 +497,6 @@ class ProvDeployFFLib:
         param: deploy_config: Config.ini path
         """
         try:
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
-
             LOGGER.info("Create Storage Set")
             nd1_obj.execute_cmd(cmd=
             common_cmd.STORAGE_SET_CREATE.format(
@@ -525,13 +508,13 @@ class ProvDeployFFLib:
             nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_NODE.format(
                 storage_set_name, srvnames),
                 read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Add Enclosure to Storage Set")
             nd1_obj.execute_cmd(cmd=common_cmd.STORAGE_SET_ADD_ENCL.format(
                 storage_set_name, srvnames),
                 read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Add Durability Config")
             for cfg_type in ["sns", "dix"]:
@@ -542,7 +525,7 @@ class ProvDeployFFLib:
                     storage_set_name, cfg_type, data, parity,
                     spare),
                     read_lines=True)
-                time.sleep(deploy_ff_cfg["per_step_delay"])
+                time.sleep(10)
 
         except IOError as error:
             LOGGER.error(
@@ -601,27 +584,27 @@ class ProvDeployFFLib:
             LOGGER.info("Cluster Definition")
             resp = self.cluster_definition(nd1_obj, hostnames, build_url)
             assert_utils.assert_true(resp[0], resp[1])
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Cluster Show")
-            resp = nd1_obj.execute_cmd(cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
-            LOGGER.debug("Resp: %s", resp)
+            resp = nd1_obj.execute_cmd(cmd=common_cmd.CORTX_CLUSTER_SHOW,read_lines=True)
+            time.sleep(10)
+            LOGGER.debug("Resp: %s",resp)
 
             LOGGER.info("Define Storage Set")
             resp = self.define_storage_set(nd1_obj, srvnodes,
                                            deploy_ff_cfg["storage_set_name"], deploy_cfg)
             assert_utils.assert_true(resp[0], resp[1])
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Prepare Cluster")
             nd1_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Configure Cluster")
             resp = self.config_cluster(nd1_obj)
             assert_utils.assert_true(resp[0], "Deploy Failed")
-            time.sleep(deploy_ff_cfg["per_step_delay"])
+            time.sleep(10)
 
             LOGGER.info("Starting Cluster")
             resp = nd1_obj.execute_cmd(
@@ -629,6 +612,7 @@ class ProvDeployFFLib:
                 read_lines=True)[0].strip()
             assert_utils.assert_exact_string(resp, deploy_ff_cfg["cluster_start_msg"])
             time.sleep(deploy_ff_cfg["cluster_start_delay"])
+            # LOGGER.info("START COMMAND : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -648,22 +632,25 @@ class ProvDeployFFLib:
         param: nd1_obj: primary node object
         """
         try:
-            sys_state = PROV_CFG["system"]
-            LOGGER.info("Check that all the services are up in hctl")
+            # sys_state = PROV_CFG["system"]
+            # LOGGER.info("Check that all the services are up in hctl")
+            # resp = nd1_obj.execute_cmd(
+            #     cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)
+            # LOGGER.info("hctl status: %s", resp)
+            # for line in resp:
+            #     assert_utils.assert_not_in(
+            #         sys_state["offline"], line, "Some services look offline")
+            #
+            # LOGGER.info("Check that all services are up in pcs")
+            # resp = nd1_obj.execute_cmd(
+            #     cmd=common_cmd.PCS_STATUS_CMD, read_lines=True)
+            # LOGGER.info("PCS status: %s", resp)
+            # for line in resp:
+            #     assert_utils.assert_not_in(
+            #         sys_state["stopped"], line, "Some services are not up")
             resp = nd1_obj.execute_cmd(
-                cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)
-            LOGGER.info("hctl status: %s", resp)
-            for line in resp:
-                assert_utils.assert_not_in(
-                    sys_state["offline"], line, "Some services look offline")
-
-            LOGGER.info("Check that all services are up in pcs")
-            resp = nd1_obj.execute_cmd(
-                cmd=common_cmd.PCS_STATUS_CMD, read_lines=True)
-            LOGGER.info("PCS status: %s", resp)
-            for line in resp:
-                assert_utils.assert_not_in(
-                    sys_state["stopped"], line, "Some services are not up")
+                cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
+            LOGGER.info("STATUS COMMAND : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -676,12 +663,34 @@ class ProvDeployFFLib:
 
         return True, "post_deploy_check Successful!!"
 
-    def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
+    @staticmethod
+    def reset_deployment_check(nd1_obj: Node):
+        resp = nd1_obj.execute_cmd(
+            cmd=common_cmd.CLSTR_RESET_COMMAND, read_lines=True)
+        LOGGER.info("Cluster Reset COMMAND : %s", resp)
+
+    @staticmethod
+    def reset_h_check(nd1_obj: Node):
+        resp = nd1_obj.execute_cmd(
+            cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
+        LOGGER.info("Cluster Reset COMMAND : %s", resp)
+
+    @staticmethod
+    def cluster_show(nd1_obj: Node):
+        resp = nd1_obj.execute_cmd(
+            cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
+        LOGGER.info("Cluster Reset COMMAND : %s", resp)
+
+    @staticmethod
+    def prov_cluster_json(nd1_obj: Node):
+        resp = nd1_obj.execute_cmd(
+            cmd=common_cmd.PROV_CLUSTER, read_lines=True)
+        LOGGER.info("Cluster Reset COMMAND : %s", resp)
+
+    def deploy_3node_vm_ff(self, build, build_url, deploy_config_file):
         """
         Perform Deployment Using factory and field method
-        param: build: Build No
-        param: build_url: Build URL
-        param: deploy_config_file : Deployment config file (config.ini) path
+        param: deploy_config_file : Deployment config file (config.ini)
         """
 
         LOGGER.info("Starting Deployment with Build:\n %s", build_url)
@@ -729,46 +738,3 @@ class ProvDeployFFLib:
 
         LOGGER.info("Deployment Successful!!")
         return True
-
-    @staticmethod
-    def post_deployment_steps():
-        """
-        Perform Preboarding, S3 account creation and AWS configuration on client
-        """
-        LOGGER.info("Post Deployment Steps")
-        post_deploy_cfg = PROV_CFG["post_deployment_steps"]
-
-        LOGGER.info("Perform Preboarding")
-        cortx_obj = CortxCliTestLib()
-        config_chk = CSMConfigsCheck()
-        csm_def_pswd = pswdmanager.decrypt(post_deploy_cfg["csm_default_pswd"])
-        resp = config_chk.preboarding(CMN_CFG["csm"]["csm_admin_user"]["username"],
-                                      csm_def_pswd,
-                                      CMN_CFG["csm"]["csm_admin_user"]["password"])
-        assert_utils.assert_true(resp, "Failure in Preboarding")
-
-        LOGGER.info("Create S3 account")
-        s3user_pswd = pswdmanager.decrypt(post_deploy_cfg["s3user_pswd"])
-        resp = cortx_obj.create_account_cortxcli(post_deploy_cfg["s3user_name"],
-                                                 post_deploy_cfg["s3user_email"],
-                                                 s3user_pswd)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Response for account creation: %s",resp)
-        cortx_obj.close_connection()
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        try:
-            LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
-                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-        except IOError as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployFFLib.post_deployment_steps.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
-
-        return True, "Post Deloyment Steps Successful!!"
