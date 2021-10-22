@@ -362,3 +362,6 @@ class Sizes:
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+
+# K8s env
+K8s_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"
