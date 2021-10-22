@@ -36,8 +36,6 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
-from commons import commands as com_cmd
-from commons import constants as const
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -566,7 +564,7 @@ class TestClusterShutdownStart:
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29480")
     @CTFailOn(error_handler)
-    def test_cluster_restart_without_signal(self):
+    def test_cluster_start_before_shutdown(self):
         """
         This test tests the cluster behaviour when cluster restarted before shutdown completes.
         (negative scenario)
@@ -604,7 +602,8 @@ class TestClusterShutdownStart:
         proc.join()
         LOGGER.info("Step 4: Shutdown and restart completed.")
 
-        LOGGER.info("Step 5: Check the cluster status and start the cluster in case its still down.")
+        LOGGER.info("Step 5: Check the cluster status and start the cluster "
+                    "in case its still down.")
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         if not resp[0]:
             LOGGER.info("Cluster not in good state, trying to restart it.")
