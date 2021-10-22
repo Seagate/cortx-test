@@ -170,8 +170,8 @@ class ProvDeployK8sCortxLib:
 
     def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str, git_tag: str):
         """
-        Checkout cortx-k8s code on the master node. Delete is any previous exists.
-        param: node_obj : Node object to checkout code - Master node.
+        Checkout cortx-k8s code on the  node. Delete is any previous exists.
+        param: node_obj : Node object to checkout code - node.
         param: git_id : Git ID
         param: git_token : Git token for accessing cortx-k8s repo.
         """
@@ -189,52 +189,21 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
-    def copy_prereq_file(self, node_obj: LogicalNode, git_token: str, git_tag: str,
-                         local_sol_path: str):
-        """
-        Copy prerequisite files to worker nodes(Solution.yaml and prereq-deploy-cortx-cloud).
-        param: node_obj: Logical node object of worker nodes
-        param: git_token: Git token
-        param: git_tag: Git tag for service teams cortx-k8 repo
-        param: local_sol_path: Solution file path which is to be copied to worker node
-        return: Boolean and message
-        """
-        prereq_file = self.deploy_cfg["prereq_file"]
-        LOGGER.info("Download %s on %s", prereq_file, node_obj.hostname)
-        url = self.deploy_cfg["git_k8_repo_raw"].format(git_token, git_tag, prereq_file)
-        cmd = common_cmd.CMD_CURL.format(prereq_file, url)
-        node_obj.execute_cmd(cmd=cmd)
-
-        if system_utils.path_exists(local_sol_path):
-            node_obj.copy_file_to_remote(local_sol_path, self.deploy_cfg["worker_path"])
-            return True, f"{local_sol_path} copied to {node_obj.hostname}"
-        return False, f"{local_sol_path} not found"
-
-    def execute_prereq_cortx(self, node_obj: LogicalNode, system_disk: str):
+    def execute_prereq_cortx(self, node_obj: LogicalNode, remote_code_path: str, system_disk: str):
         """
         Execute prerq script on worker node,
         param: node_obj: Worker node object
         param: system_disk: parameter to prereq script
         """
-        LOGGER.info("Executing prereq script")
-        prereq_path = self.deploy_cfg["worker_exe_path"] + self.deploy_cfg["prereq_file"]
-        resp = node_obj.execute_cmd(cmd=common_cmd.FILE_MODE_CHANGE_CMD.format(prereq_path))
-        LOGGER.debug("resp:%s",resp)
-        cmd = " ".join(
-            ["sh", prereq_path, system_disk, self.deploy_cfg["worker_path"]])
-        resp = node_obj.execute_cmd(cmd=cmd,read_lines=True)
-        LOGGER.debug("\n".join(resp.args[0]).replace("\\n", "\n"))
+        LOGGER.info("Execute prereq script")
+        cmd = "cd {}; {} {}".format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
 
-
-    def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str,
-                       remote_code_path: str) -> tuple:
+    def copy_sol_file(self, node_obj: LogicalNode, local_sol_path: str,
+                      remote_code_path: str):
         """
-        Copy solution file from local path to remote path and deploy cortx cluster.
-        cortx-k8s repo code should be checked out on node at remote_code_path
-        param: node_obj: Node object
-        param: local_sol_path: Local path for solution.yaml
-        param: remote_code_path: Cortx-k8's repo Path on node
-        return : True/False and resp
+        Copy Solution file from local path tp remote path
         """
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
@@ -242,13 +211,21 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Remote path %s", remote_path)
         if system_utils.path_exists(local_sol_path):
             node_obj.copy_file_to_remote(local_sol_path, remote_path)
-        else:
-            return False, f"{local_sol_path} not found"
+            return True, f"File copied at {remote_path}"
+        return False, f"{local_sol_path} not found"
 
+    def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
+        """
+        Deploy cortx cluster.
+        cortx-k8s repo code should be checked out on node at remote_code_path
+        param: node_obj: Node object
+        param: remote_code_path: Cortx-k8's repo Path on node
+        return : True/False and resp
+        """
         LOGGER.info("Deploy Cortx cloud")
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
-        resp = node_obj.execute_cmd(cmd)
-        LOGGER.debug("resp :%s", resp)
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -275,17 +252,16 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
-            self.docker_login(node,docker_username,docker_password)
+            self.docker_login(node, docker_username, docker_password)
+            self.prereq_git(node, git_id, git_token, git_tag)
+            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            resp = self.copy_prereq_file(node, git_token, git_tag, sol_file_path)
-            if not resp[0]:
-                return resp
-            self.execute_prereq_cortx(node, system_disk)
+            self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
-        resp = self.deploy_cluster(master_node_list[0], sol_file_path,
-                                   self.deploy_cfg["git_remote_dir"])
+        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
+        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate all cluster services are online using hclt status")
             health_obj = Health(hostname=master_node_list[0].hostname,
