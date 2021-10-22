@@ -27,6 +27,7 @@ import time
 from multiprocessing import Process
 
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
@@ -589,3 +590,25 @@ class HAK8s:
                 i += 1
 
         return parts
+
+    def check_cluster_status(self, pod_obj):
+        """
+        :param pod_obj: Object for master node
+        :return: boolean, response
+        """
+        LOGGER.info("Check the overall K8s cluster status.")
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD)
+        LOGGER.info("Response for cluster status: %s", resp)
+        for line in resp:
+            if "FAILED" in line:
+                return False, resp
+        res = pod_obj.send_k8s_cmd(
+            operation="exec", pod=common_const.POD_NAME, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
+            decode=True)
+        LOGGER.info("Response for cortx cluster: %s", res)
+        for line in res:
+            if "started" not in line:
+                return False, res
+
+        return True, "K8s and cortx both cluster up."
