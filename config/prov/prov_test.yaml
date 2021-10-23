@@ -128,4 +128,3 @@ k8s_cortx_deploy:
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   template_path: "config/prov/solution.yaml"
-  cortx_image: "ghcr.io/seagate/cortx-all:2.0.0-358-RC3"

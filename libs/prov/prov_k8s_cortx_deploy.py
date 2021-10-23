@@ -48,7 +48,7 @@ class ProvDeployK8sCortxLib:
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
                           taint_master: bool = True) -> tuple:
         """
-        Setup K8's cluster using RE jenkins job
+        Setup k8s cluster using RE jenkins job
         param: master_node_list : List of all master nodes(Logical Node object)
         param: worker_node_list : List of all worker nodes(Logical Node object)
         param: taint_master : Taint master - boolean
@@ -84,10 +84,10 @@ class ProvDeployK8sCortxLib:
             k8s_deploy_cfg["jenkins_url"])
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
         if output['result'] == "SUCCESS":
-            LOGGER.info("k8's Cluster Deployment successful")
+            LOGGER.info("k8s Cluster Deployment successful")
             return True, output['result']
         else:
-            LOGGER.error(f"k8's Cluster Deployment {output['result']},please check URL")
+            LOGGER.error(f"k8s Cluster Deployment {output['result']},please check URL")
             return False, output['result']
 
     @staticmethod
@@ -219,7 +219,7 @@ class ProvDeployK8sCortxLib:
         Deploy cortx cluster.
         cortx-k8s repo code should be checked out on node at remote_code_path
         param: node_obj: Node object
-        param: remote_code_path: Cortx-k8's repo Path on node
+        param: remote_code_path: Cortx-k8s repo Path on node
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
