@@ -20,12 +20,15 @@
 #
 """ This is the core module for REST API. """
 
-import logging
 import json
-import requests
+import logging
 
+import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from commons import constants
 from commons.constants import Rest as const
+from config import CMN_CFG
 
 
 class RestClient:
@@ -74,9 +77,14 @@ class RestClient:
         self.log.debug("Request URL : %s", request_url)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)
-        self.log.debug("Data : %s", data)
         self.log.debug("Parameters : %s", params)
         self.log.debug("json_dict: %s", json_dict)
+        # TODO: Need to be verified and fix by CSM team. Temporary fix for s3 failures
+        if CMN_CFG.get("product_family") == constants.PROD_FAMILY_LC:
+            # To Resolve {'error_code': '4099', 'message': 'Invalid request message received.',
+            # 'error_format_args': 'Request body missing'}
+            data = json.dumps(data) if isinstance(data, dict) else data
+        self.log.debug("Data : %s", data)
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,
