@@ -200,7 +200,8 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
 
-    def copy_sol_file(self, node_obj: LogicalNode, local_sol_path: str,
+    @staticmethod
+    def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
                       remote_code_path: str):
         """
         Copy Solution file from local path tp remote path
