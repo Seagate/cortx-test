@@ -26,6 +26,7 @@ import ast
 
 from commons import configmanager
 from commons.params import S3_CONFIG
+from commons.params import DEL_CFG_PATH
 from commons.params import S3_OBJ_TEST_CONFIG
 from commons.params import S3_BKT_TEST_CONFIG
 from commons.params import S3CMD_TEST_CONFIG
@@ -76,6 +77,7 @@ if target:
     S3_CFG = build_s3_endpoints()
 else:
     S3_CFG = configmanager.get_config_wrapper(fpath=S3_CONFIG)
+DEL_CFG = configmanager.get_config_wrapper(fpath=DEL_CFG_PATH)
 S3_OBJ_TST = configmanager.get_config_wrapper(fpath=S3_OBJ_TEST_CONFIG)
 S3_BKT_TST = configmanager.get_config_wrapper(fpath=S3_BKT_TEST_CONFIG)
 S3CMD_CNF = configmanager.get_config_wrapper(fpath=S3CMD_TEST_CONFIG)

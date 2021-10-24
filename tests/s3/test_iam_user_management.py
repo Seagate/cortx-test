@@ -503,7 +503,6 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-
         self.log.info("Step 2: create s3iamuser with special character using REST API call.")
         for schar in ["_", "-", "@"]:
             self.iam_user = "iamuser{}{}".format(schar, perf_counter_ns())
@@ -671,7 +670,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: use REST API call to create more than 2 Accesskeys for s3iamuser.")
 
-    @pytest.mark.skip("Need more validation")
+    @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28776")
@@ -753,7 +752,7 @@ class TestIAMUserManagement:
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("####### Test Completed! #########")
 
-    @pytest.mark.skip("Need more validation")
+    @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28852")

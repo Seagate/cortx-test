@@ -530,7 +530,6 @@ class S3TestLib(S3Lib):
         :param max_size: Maximum size of object in MB.
         :keyword: delete_file: enables the flag to delete the file
         :return: True or False and list of objects or error.
-        :return: True or False and list of objects or error.
         """
         object_count = kwargs.get("object_count", None)
         file_path = kwargs.get("file_path", None)
@@ -561,7 +560,7 @@ class S3TestLib(S3Lib):
                 objects_list.append(objects)
                 if delete_file:
                     os.remove(file_path)
-        except BaseException as error:
+        except (ClientError, Exception) as error:
             LOGGER.error(
                 "Error in %s: %s",
                 S3TestLib.put_random_size_objects.__name__,
