@@ -562,9 +562,9 @@ class HAK8s:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
                                                        object_name=object_name, upload_id=mpu_id,
                                                        part_number=part)
-                p = resp[1]
-                LOGGER.debug("Part : %s", str(p))
-                parts_etag.append({"PartNumber": part, "ETag": p["ETag"]})
+                p_etag = resp[1]
+                LOGGER.debug("Part : %s", str(p_etag))
+                parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
             return True, mpu_id, parts, parts_etag
         except BaseException as error:
@@ -598,7 +598,8 @@ class HAK8s:
     def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
         """
-        Function is used to start multipart upload of random parts in background
+        Function can be run in background to start process multipart upload of random parts in
+        background
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -643,9 +644,9 @@ class HAK8s:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
                                                        object_name=object_name, upload_id=mpu_id,
                                                        part_number=i)
-                p = resp[1]
-                LOGGER.debug("Part : %s", str(p))
-                parts_etag.append({"PartNumber": i, "ETag": p["ETag"]})
+                p_tag = resp[1]
+                LOGGER.debug("Part : %s", str(p_tag))
+                parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
                 resp = (parts_etag, mpu_id)
             except (Exception, CTException) as error:
                 LOGGER.error("Error: %s", error)

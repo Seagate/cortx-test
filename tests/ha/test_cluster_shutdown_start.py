@@ -526,7 +526,6 @@ class TestClusterShutdownStart:
         failed_parts = dict()
         parts_etag = list()
 
-        LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts one by one")
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
                                                email_id=self.s3acc_email,
