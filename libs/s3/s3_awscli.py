@@ -25,11 +25,11 @@ import os
 import logging
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
-
+from libs.s3.s3_core_lib import S3Lib
 LOGGER = logging.getLogger(__name__)
 
 
-class S3LibCmd:
+class S3LibCmd(S3Lib):
     """Class containing methods to implement aws cmd functionality."""
 
     def upload_object_cli(

@@ -58,9 +58,9 @@ JMeterConfig:
   test_data_csv: "test_config.csv"
 
 Restcall_LC:
-  secure: False
+  secure: True
   msg_check: "enable"    #Set msg check to enable or disable
-  port : 32101
+  port : 32102
   jsonfile : 'rest_call.json'
   csm_user_manage:
     username: "csm_user_manage"

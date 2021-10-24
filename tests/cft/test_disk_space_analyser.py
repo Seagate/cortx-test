@@ -4,6 +4,7 @@ import time
 import signal
 import os
 import sys
+import argparse
 #import getpass
 import logging
 #import socket
@@ -63,12 +64,11 @@ BASE_DIR = "/var"
 log = logging.getLogger("LogAnalyzer")
 LOG_CFG = read_yaml("config/cft/test_logrotation.yaml")
 USER = LOG_CFG["username"]
-passwords = args.node_pass
-        elif len(vm_machines) == 3:
-vm_machines = args.hosts.split(',')
+passwords = {}  # args.node_pass
+vm_machines = {}  # args.hosts.split(',')
 core_hosts = list()
-        for host in vm_machines:
-            core_hosts.append('.'.join([host.strip(), suffix]))
+# for host in vm_machines:
+#     core_hosts.append('.'.join([host.strip(), suffix]))
 # core_hosts = ["%s.%s" % (node, LOG_CFG["host_domain"]) 
 #              if not re.match("^\d{1,3}(?:\.\d{1,3}){3}$", node) 
 #              else node
@@ -212,7 +212,7 @@ class LogAnalyser(TestCase):
             return stats
         except GroupException as ge:
             for cd, runner in ge.result.items():
-                if isinstance(r, runners.Result):
+                if isinstance(runner, runners.Result):
                     log.info("Successfully executed cmd on {} and output is {}"
                                     .format(cd.host, runner.stdout.strip()))
                     if cd.host not in stats:
