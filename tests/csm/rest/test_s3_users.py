@@ -814,7 +814,7 @@ class TestS3user():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
-    #@pytest.mark.lc
+    @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-28931")
