@@ -44,7 +44,7 @@ class TestFailureDomainK8Cortx:
         cls.git_id = os.getenv("GIT_ID")
         cls.git_token = os.getenv("GIT_PASSWORD")
         cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG", PROV_CFG["k8s_cortx_deploy"]["git_tag"])
-        # TODO: Update Docker credentials
+        cls.cortx_image = os.getenv("CORTX_IMAGE")
         cls.docker_username = os.getenv("DOCKER_USERNAME")
         cls.docker_password = os.getenv("DOCKER_PASSWORD")
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
@@ -93,16 +93,23 @@ class TestFailureDomainK8Cortx:
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Step 2: Download solution file template")
+        self.log.info("Step 2: Taint master nodes if not already done.")
+        for node in self.master_node_list:
+            resp = self.deploy_lc_obj.validate_master_tainted(node)
+            if not resp:
+                self.deploy_lc_obj.taint_master(node)
+
+        self.log.info("Step 3: Download solution file template")
         path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
 
-        self.log.info("Step 3 : Update solution file template")
-        resp = self.deploy_lc_obj.update_sol_yaml(self.worker_node_list, path)
+        self.log.info("Step 4 : Update solution file template")
+        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
+                                                  cortx_image=self.cortx_image)
         assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
 
-        self.log.info("Step 4: Perform Cortx Cluster Deployment")
+        self.log.info("Step 5: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
                                                        self.worker_node_list, system_disk_dict,
                                                        self.docker_username,
