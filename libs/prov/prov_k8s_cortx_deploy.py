@@ -547,9 +547,6 @@ class ProvDeployK8sCortxLib:
             for key, value in self.deploy_cfg['password']:
                 passwd_dict[key] = pswdmanager.decrypt(value)
             content.update(passwd_dict)
-            # parent_key['3rdparty']['openldap']['password'] = \
-            #     pswdmanager.decrypt(self.deploy_cfg['password']['openldap_admin_secret'])
-
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True

@@ -135,7 +135,7 @@ k8s_cortx_deploy:
     zookeeper: "bitnami/zookeeper"
     gluster: "docker.io/gluster/gluster-centos"
     rancher: "rancher/local-path-provisioner:v0.0.20"
-  cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata', 'cortxsupport']
+  cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
   cortx_images_val: 'ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci'
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
