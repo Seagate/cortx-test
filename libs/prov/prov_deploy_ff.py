@@ -632,25 +632,6 @@ class ProvDeployFFLib:
         param: nd1_obj: primary node object
         """
         try:
-<<<<<<< HEAD
-=======
-            # sys_state = PROV_CFG["system"]
-            # LOGGER.info("Check that all the services are up in hctl")
-            # resp = nd1_obj.execute_cmd(
-            #     cmd=common_cmd.MOTR_STATUS_CMD, read_lines=True)
-            # LOGGER.info("hctl status: %s", resp)
-            # for line in resp:
-            #     assert_utils.assert_not_in(
-            #         sys_state["offline"], line, "Some services look offline")
-            #
-            # LOGGER.info("Check that all services are up in pcs")
-            # resp = nd1_obj.execute_cmd(
-            #     cmd=common_cmd.PCS_STATUS_CMD, read_lines=True)
-            # LOGGER.info("PCS status: %s", resp)
-            # for line in resp:
-            #     assert_utils.assert_not_in(
-            #         sys_state["stopped"], line, "Some services are not up")
->>>>>>> added tests for post deployment
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
             LOGGER.info("STATUS COMMAND : %s", resp)
@@ -684,15 +665,6 @@ class ProvDeployFFLib:
             cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
         LOGGER.info("Cluster Reset COMMAND : %s", resp)
 
-<<<<<<< HEAD
-=======
-    @staticmethod
-    def prov_cluster_json(nd1_obj: Node):
-        resp = nd1_obj.execute_cmd(
-            cmd=common_cmd.PROV_CLUSTER, read_lines=True)
-        LOGGER.info("Cluster Reset COMMAND : %s", resp)
-
->>>>>>> added tests for post deployment
     def deploy_3node_vm_ff(self, build, build_url, deploy_config_file):
         """
         Perform Deployment Using factory and field method
