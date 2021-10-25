@@ -623,12 +623,13 @@ class HAK8s:
         try:
             LOGGER.info("Creating a bucket with name : %s", bucket_name)
             res = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Response: %s", res)
             LOGGER.info("Created a bucket with name : %s", bucket_name)
             LOGGER.info("Initiating multipart upload")
             res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+            LOGGER.info("Response: %s", res)
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-            LOGGER.info("Uploading parts into bucket")
         except (Exception, CTException) as error:
             LOGGER.error("Exiting from background process with error %s", error)
             sys.exit(1)
@@ -641,18 +642,20 @@ class HAK8s:
                                                 multipart_obj_path=multipart_obj_path,
                                                 total_parts=total_parts)
         LOGGER.debug("Created parts of data: %s", parts)
+        LOGGER.info("Uploading parts into bucket")
         for i in part_numbers:
             try:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
                                                        object_name=object_name, upload_id=mpu_id,
                                                        part_number=i)
+                LOGGER.info("Response: %s", resp)
                 p_tag = resp[1]
                 LOGGER.debug("Part : %s", str(p_tag))
                 parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
-                resp = (parts_etag, mpu_id)
+                res = (parts_etag, mpu_id)
             except (Exception, CTException) as error:
                 LOGGER.error("Error: %s", error)
                 failed_parts[i] = parts[i]
-                resp = (failed_parts, parts_etag, mpu_id)
+                res = (failed_parts, parts_etag, mpu_id)
 
-        output.put(resp)
+        output.put(res)
