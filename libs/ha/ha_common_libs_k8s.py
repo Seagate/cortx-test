@@ -24,6 +24,7 @@ HA common utility methods
 import logging
 import os
 import time
+import sys
 from multiprocessing import Process
 
 from commons import commands as common_cmd
@@ -589,3 +590,81 @@ class HAK8s:
                 i += 1
 
         return parts
+
+    @staticmethod
+    def create_bucket_copy_obj(s3_test_obj=None, bucket_name1=None, bucket_name2=None,
+                               bucket_name3=None, object_name1=None, object_name2=None,
+                               object_name3=None, output=None, **kwargs):
+        """
+        Function create multiple buckets and upload and copy objects
+        :param s3_test_obj: s3 test lib object
+        :param bucket_name1: Name of the bucket1
+        :param object_name1: Name of the object1
+        :param bucket_name2: Name of the bucket2
+        :param object_name2: Name of the object2
+        :param bucket_name3: Name of the bucket3
+        :param object_name3: Name of the object3
+        :param output: Queue used to fill output
+        :return: response
+        """
+        file_path = kwargs.get("file_path", None)
+        background = kwargs.get("background", False)
+        LOGGER.info("Create bucket and put object.")
+        resp = s3_test_obj.create_bucket(bucket_name1)
+        LOGGER.info(resp)
+        if not resp[0]:
+            return resp if not background else sys.exit()
+        resp, bktlist = s3_test_obj.bucket_list()
+        LOGGER.info("Bucket list: %s", bktlist)
+        if bucket_name1 not in bktlist:
+            return False, bktlist if not background else sys.exit()
+        resp = system_utils.create_file(fpath=file_path, count=10, b_size="1M")
+        LOGGER.info(resp)
+        if not resp[0]:
+            return resp if not background else sys.exit()
+        put_resp = s3_test_obj.put_object(bucket_name=bucket_name1, object_name=object_name1,
+                                          file_path=file_path,
+                                          metadata={"City": "Pune", "Country": "India"})
+        LOGGER.info("Put object response: %s", put_resp)
+        put_etag = put_resp[1]["ETag"]
+        if not put_resp[0]:
+            return resp if not background else sys.exit()
+        resp = s3_test_obj.object_list(bucket_name1)
+        LOGGER.info(resp)
+        if not resp[0] or object_name1 not in resp[1]:
+            return resp if not background else sys.exit()
+        LOGGER.info("Copy object to different bucket with different object name.")
+        resp = s3_test_obj.create_bucket(bucket_name2)
+        if not resp[0]:
+            return resp if not background else sys.exit()
+        status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
+                                                   source_object=object_name1,
+                                                   dest_bucket=bucket_name2,
+                                                   dest_object=object_name2)
+        copy_etag1 = response['CopyObjectResult']['ETag']
+        if put_etag == copy_etag1:
+            LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
+                        object_name1, bucket_name2, object_name2)
+        else:
+            LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
+                        object_name1, bucket_name2, object_name2)
+            return status, response
+
+        LOGGER.info("Step 4: Copy object to another bucket with another object name.")
+        resp = s3_test_obj.create_bucket(bucket_name3)
+        if not resp[0]:
+            return resp if not background else sys.exit()
+        status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
+                                                   source_object=object_name1,
+                                                   dest_bucket=bucket_name3,
+                                                   dest_object=object_name3)
+        copy_etag2 = response['CopyObjectResult']['ETag']
+        if put_etag == copy_etag2:
+            LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
+                        object_name1, bucket_name3, object_name3)
+        else:
+            LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
+                        object_name1, bucket_name3, object_name3)
+            return status, response
+
+        return True, put_etag if not background else output.put((True, put_etag))

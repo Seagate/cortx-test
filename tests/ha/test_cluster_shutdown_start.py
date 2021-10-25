@@ -27,6 +27,7 @@ import os
 import random
 import time
 from time import perf_counter_ns
+from multiprocessing import Process, Queue
 
 import pytest
 
@@ -503,3 +504,153 @@ class TestClusterShutdownStart:
         self.restored = False
         LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
         LOGGER.info("Completed: Test to check WRITEs after cluster restart.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29475")
+    @CTFailOn(error_handler)
+    def test_copy_obj_aftr_clstr_rstrt_29475(self):
+        """
+        This test tests copy object after cluster restart
+        """
+        LOGGER.info("STARTED: Test to verify copy object after cluster restart")
+        self.bucket_name1 = "ha1-mp-bkt-{}".format(self.random_time)
+        self.object_name1 = "ha1-mp-obj-{}".format(self.random_time)
+        self.bucket_name2 = "ha2-mp-bkt-{}".format(self.random_time)
+        self.object_name2 = "ha2-mp-obj-{}".format(self.random_time)
+
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account")
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        LOGGER.info("Step 1: Create multiple buckets and upload object to bucket1 and copy to "
+                    "bucket2 and bucket3")
+        resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
+                                                  bucket_name1=self.bucket_name,
+                                                  bucket_name2=self.bucket_name1,
+                                                  bucket_name3=self.bucket_name2,
+                                                  object_name1=self.object_name,
+                                                  object_name2=self.object_name1,
+                                                  object_name3=self.object_name2,
+                                                  file_path=self.multipart_obj_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        put_etag = resp[1]
+        LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to bucket1 "
+                    "and copied to bucket2 and bucket3")
+
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
+
+        LOGGER.info("Step 4: Download the uploaded object and verify checksum")
+        resp = s3_test_obj.get_object(bucket=self.bucket_name1, key=self.object_name1)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag1 = resp[1]["ETag"]
+        resp = s3_test_obj.get_object(bucket=self.bucket_name2, key=self.object_name2)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag2 = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag1, "Failed in checksum verification of object1."
+                                                       " Put and Get Etag mismatch")
+        assert_utils.assert_equal(put_etag, get_etag2, "Failed in checksum verification of object2."
+                                                       " Put and Get Etag mismatch")
+        LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Step 5: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29475', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify copy object after cluster restart")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-29476")
+    @CTFailOn(error_handler)
+    def test_copy_obj_during_clstr_rstrt_29476(self):
+        """
+        This test tests copy object during cluster restart
+        """
+        LOGGER.info("STARTED: Test to verify copy object during cluster restart")
+        self.bucket_name1 = "ha1-mp-bkt-{}".format(self.random_time)
+        self.object_name1 = "ha1-mp-obj-{}".format(self.random_time)
+        self.bucket_name2 = "ha2-mp-bkt-{}".format(self.random_time)
+        self.object_name2 = "ha2-mp-obj-{}".format(self.random_time)
+        output = Queue()
+
+        LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email,
+                                               passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
+        assert_utils.assert_true(resp[0], resp[1])
+        access_key = resp[1]["access_key"]
+        secret_key = resp[1]["secret_key"]
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        LOGGER.info("Successfully created s3 account")
+        self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
+                                    'user_name': self.s3acc_name}}
+
+        LOGGER.info("Step 1: Create multiple buckets and upload object to bucket1 and copy to "
+                    "bucket2 and bucket3 in background")
+        args = {'s3_test_obj': s3_test_obj, 'bucket_name1': self.bucket_name,
+                'bucket_name2': self.bucket_name1, 'bucket_name3': self.bucket_name2,
+                'object_name1': self.object_name, 'object_name2': self.object_name1,
+                'object_name3': self.object_name2, 'output': output,
+                'file_path': self.multipart_obj_path, 'background': True}
+        p = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
+        p.start()
+        LOGGER.info("Step 1: Successfully started background process")
+
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+
+        LOGGER.info("Step 3: Restart the cluster and check cluster status.")
+        resp = self.ha_obj.restart_cluster(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
+
+        p.join()
+        if output.empty():
+            assert_utils.assert_true(False, "Failed in Copy Object process")
+
+        res = output.get()
+        put_etag = res[1]
+
+        LOGGER.info("Step 4: Download the uploaded object and verify checksum")
+        resp = s3_test_obj.get_object(bucket=self.bucket_name1, key=self.object_name1)
+        LOGGER.info("Get object1 response: %s", resp)
+        get_etag1 = resp[1]["ETag"]
+        resp = s3_test_obj.get_object(bucket=self.bucket_name2, key=self.object_name2)
+        LOGGER.info("Get object response: %s", resp)
+        get_etag2 = resp[1]["ETag"]
+        assert_utils.assert_equal(put_etag, get_etag1, "Failed in checksum verification of object1."
+                                                       " Put and Get Etag mismatch")
+        assert_utils.assert_equal(put_etag, get_etag2, "Failed in checksum verification of object2."
+                                                       " Put and Get Etag mismatch")
+        LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Step 5: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29476', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info("ENDED: Test to verify copy object after cluster restart")
