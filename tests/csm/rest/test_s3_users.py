@@ -91,7 +91,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3user.create_and_verify_s3account(
-            user="valid", expect_status_code=const.SUCCESS_STATUS)
+            user="valid", expect_status_code=HTTPStatus.CREATED.value)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -453,7 +453,7 @@ class TestS3user():
         response = self.s3user.create_s3_account()
 
         self.log.debug("Verifying new S3 account got created successfully")
-        assert response.status_code == const.SUCCESS_STATUS
+        assert response.status_code == HTTPStatus.CREATED.value
         self.log.debug("Verified new S3 account %s got created successfully",
                        response.json()["account_name"])
 
@@ -577,10 +577,11 @@ class TestS3user():
             err = resp.json()
             self.log.info("Verifying error code...")
             assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying message id...")
+                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+                self.log.info("Verifying message...")
+                assert err["message"] == err_msg["message"], "Message check failed."
             self.log.info("[END] Secret Key : %s", secret_key)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -623,11 +624,12 @@ class TestS3user():
             err = resp.json()
             self.log.info("Verifying error code...")
             assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-            self.log.info("Verifying message id...")
-            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-            self.log.info("Verifying message...")
-            assert err["message"] == err_msg["message"], "Message check failed."
-            self.log.info("[END] Access Key : %s", access_key)
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying message id...")
+                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+                self.log.info("Verifying message...")
+                assert err["message"] == err_msg["message"], "Message check failed."
+                self.log.info("[END] Access Key : %s", access_key)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -649,10 +651,11 @@ class TestS3user():
         err = resp.json()
         self.log.info("Verifying error code...")
         assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-        self.log.info("Verifying message id...")
-        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-        self.log.info("Verifying message...")
-        assert err["message"] == err_msg["message"], "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -674,10 +677,11 @@ class TestS3user():
         err = resp.json()
         self.log.info("Verifying error code...")
         assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-        self.log.info("Verifying message id...")
-        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-        self.log.info("Verifying message...")
-        assert err["message"] == err_msg["message"], "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -699,10 +703,11 @@ class TestS3user():
         err = resp.json()
         self.log.info("Verifying error code...")
         assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-        self.log.info("Verifying message id...")
-        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-        self.log.info("Verifying message...")
-        assert err["message"] == err_msg["message"], "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -725,10 +730,11 @@ class TestS3user():
         err = resp.json()
         self.log.info("Verifying error code...")
         assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-        self.log.info("Verifying message id...")
-        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-        self.log.info("Verifying message...")
-        assert err["message"] == err_msg["message"], "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -751,10 +757,11 @@ class TestS3user():
         err = resp.json()
         self.log.info("Verifying error code...")
         assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
-        self.log.info("Verifying message id...")
-        assert err["message_id"] == err_msg["message_id"], "Message id check failed."
-        self.log.info("Verifying message...")
-        assert err["message"] == err_msg["message"], "Message check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
@@ -807,7 +814,7 @@ class TestS3user():
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     # pylint: disable-msg=too-many-locals
-    @pytest.mark.lc
+    #@pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags("TEST-28931")
