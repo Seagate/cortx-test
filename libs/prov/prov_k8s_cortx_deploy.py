@@ -292,6 +292,8 @@ class ProvDeployK8sCortxLib:
         :Keyword: cvg_count: cvg_count per node
         :Keyword: type_cvg: ios or cas
         :Keyword: data_disk_per_cvg: data disk required per cvg
+        :Keyword: size_metadata: size of metadata disk
+        :Keyword: size_data_disk: size of data disk
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
@@ -299,6 +301,8 @@ class ProvDeployK8sCortxLib:
         :Keyword: dix_parity:
         :Keyword: dix_spare:
         :Keyword: skip_disk_count_check: disk count check
+        :Keyword: cortx_image: this is cortx image name
+        :Keyword: third_party_image: dict of third party image
         returns the status, filepath and system reserved disk
 
         """
