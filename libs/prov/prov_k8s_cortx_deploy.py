@@ -26,6 +26,7 @@ import logging
 import yaml
 
 from commons import commands as common_cmd
+from commons import pswdmanager
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
@@ -291,37 +292,31 @@ class ProvDeployK8sCortxLib:
         :Keyword: cvg_count: cvg_count per node
         :Keyword: type_cvg: ios or cas
         :Keyword: data_disk_per_cvg: data disk required per cvg
+        :Keyword: size_metadata: size of metadata disk
+        :Keyword: size_data_disk: size of data disk
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
         :Keyword: dix_data:
         :Keyword: dix_parity:
         :Keyword: dix_spare:
-        :Keyword: size_metadata: size of metadata disk
-        :Keyword: size_data_disk: size of data disk
         :Keyword: skip_disk_count_check: disk count check
+        :Keyword: cortx_image: this is cortx image name
+        :Keyword: third_party_image: dict of third party image
         returns the status, filepath and system reserved disk
 
         """
         # cluster_id = kwargs.get("cluster_id", 1)
         cvg_count = kwargs.get("cvg_count", 1)
-        cvg_type = kwargs.get("cvg_type", "ios")
         data_disk_per_cvg = kwargs.get("data_disk_per_cvg", "0")
         sns_data = kwargs.get("sns_data", 1)
         sns_parity = kwargs.get("sns_parity", 0)
         sns_spare = kwargs.get("sns_spare", 0)
-        dix_data = kwargs.get("dix_data", 1)
-        dix_parity = kwargs.get("dix_parity", 2)
-        dix_spare = kwargs.get("dix_spare", 0)
-        size_metadata = kwargs.get("size_metadata", '5Gi')
-        size_data_disk = kwargs.get("size_data_disk", '5Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         new_filepath = self.deploy_cfg['new_file_path']
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
-        nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
-        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         valid_disk_count = sns_spare + sns_data + sns_parity
         metadata_devices = []
         for node_count, node_obj in enumerate(worker_obj, start=1):
@@ -370,38 +365,110 @@ class ProvDeployK8sCortxLib:
             system_disk = device_list[0]
             schema = {node_obj.hostname: system_disk}
             sys_disk_pernode.update(schema)
+        LOGGER.info("Metadata disk %s", metadata_devices)
+        LOGGER.info("data disk %s", data_devices)
+        # Update the solution yaml file with password
+        resp_passwd = self.update_password_sol_file(filepath)
+        if not resp_passwd[0]:
+            return False, "Failed to update passwords in solution file"
+        # Update the solution yaml file with images
+        resp_image = self.update_image_section_sol_file(filepath)
+        if not resp_image[0]:
+            return False, "Failed to update images in solution file"
+        # Update the solution yaml file with nodes
+        resp_node = self.update_nodes_sol_file(filepath, worker_obj)
+        if not resp_node[0]:
+            return False, "Failed to update nodes details in solution file"
+        # Update the solution yaml file with cvg
+        resp_cvg = self.update_cvg_sol_file(filepath, metadata_devices,
+                                            data_devices)
+        if not resp_cvg[0]:
+            return False, "Fail to update the cvg details in solution file"
 
-        # Reading the yaml file
+        return True, new_filepath, sys_disk_pernode
+
+    def update_nodes_sol_file(self, filepath, worker_obj):
+        """
+        Method to update the nodes section in solution.yaml
+        Param: filepath: Filename with complete path
+        Param: worker_obj: list of node object
+        :returns the filepath and status True
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        node_list = len(worker_obj)
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            node = parent_key['nodes']  # Child Key
+            total_nodes = node.keys()
+            # Removing the elements from the node dict
+            for key_count in list(total_nodes):
+                node.pop(key_count)
+            # Updating the node dict
+            for item, host in zip(list(range(node_list)), worker_obj):
+                dict_node = {}
+                name = {'name': host.hostname}
+                dict_node.update(name)
+                new_node = {'node{}'.format(item + 1): dict_node}
+                node.update(new_node)
+            conf['solution']['nodes'] = node
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath
+
+    def update_cvg_sol_file(self, filepath,
+                            metadata_devices: list,
+                            data_devices: list,
+                            **kwargs):
+        """
+        Method to update the cvg
+        :Param: metadata_devices: list of meta devices
+        :Param: data_devices: list of data devices
+        :Param: filepath: file with complete path
+        :Keyword: cvg_count: cvg_count per node
+        :Keyword: type_cvg: ios or cas
+        :Keyword: data_disk_per_cvg: data disk required per cvg
+        :Keyword: sns_data: N
+        :Keyword: sns_parity: K
+        :Keyword: sns_spare: S
+        :Keyword: dix_data:
+        :Keyword: dix_parity:
+        :Keyword: dix_spare:
+        :Keyword: size_metadata: size of metadata disk
+        :Keyword: size_data_disk: size of data disk
+        :returns the status ,filepath
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        cvg_count = kwargs.get("cvg_count", 1)
+        cvg_type = kwargs.get("cvg_type", "ios")
+        data_disk_per_cvg = kwargs.get("data_disk_per_cvg", "0")
+        sns_data = kwargs.get("sns_data", 1)
+        sns_parity = kwargs.get("sns_parity", 0)
+        sns_spare = kwargs.get("sns_spare", 0)
+        dix_data = kwargs.get("dix_data", 1)
+        dix_parity = kwargs.get("dix_parity", 2)
+        dix_spare = kwargs.get("dix_spare", 0)
+        size_metadata = kwargs.get("size_metadata", '5Gi')
+        size_data_disk = kwargs.get("size_data_disk", '5Gi')
+        nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
+        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
             common = parent_key['common']  # Parent key
             storage = parent_key['storage']  # child of child key
             cmn_storage_sets = common['storage_sets']  # child of child key
-            node = parent_key['nodes']  # Child Key
-            total_nodes = node.keys()
             total_cvg = storage.keys()
-            # Creating Default Schema to update the yaml file
-            share_value = "/mnt/fs-local-volume"  # This needs to changed
-            device_schema = {'system': share_value}
-            device_key = {'devices': device_schema}
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
-            # Removing the elements from the node dict
-            for key_count in list(total_nodes):
-                node.pop(key_count)
-            for cvg in list(total_cvg):
-                storage.pop(cvg)
-            # Updating the node dict
-            for item, host in zip(list(range(node_list)), worker_obj):
-                dict_node = {}
-                name = {'name': host.hostname}
-                dict_node.update(name)
-                dict_node.update(device_key)
-                new_node = {'node{}'.format(item + 1): dict_node}
-                node.update(new_node)
-            # Updating the metadata and data disk
+            for cvg_item in list(total_cvg):
+                storage.pop(cvg_item)
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
                 metadata_schema_upd = {'devices': metadata_devices[cvg], 'size': size_metadata}
@@ -419,8 +486,6 @@ class ProvDeployK8sCortxLib:
                 cvg_dict.update(key_cvg_devices)
                 cvg_key = {'cvg{}'.format(cvg + 1): cvg_dict}
                 storage.update(cvg_key)
-
-            conf['solution']['nodes'] = node
             conf['solution']['storage'] = storage
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
@@ -429,4 +494,68 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, new_filepath, sys_disk_pernode
+        return True, new_filepath
+
+    def update_image_section_sol_file(self, filepath, **kwargs):
+        """
+        Method use to update the Images section in solution.yaml
+        Param: filepath: filename with complete path
+        cortx_image: this is cortx image name
+        third_party_image: dict of third party image
+        :returns the status, filepath
+        """
+        third_party_images_dict = kwargs.get("third_party_images",
+                                             self.deploy_cfg['third_party_images'])
+        cortx_images_val = kwargs.get("cortx_image",
+                                      self.deploy_cfg['cortx_images_val'])
+        cortx_im = dict()
+        new_filepath = self.deploy_cfg['new_file_path']
+        image_default_dict = self.deploy_cfg['third_party_images']
+
+        for image_key in self.deploy_cfg['cortx_images_key']:
+            cortx_im[image_key] = cortx_images_val
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            image = parent_key['images']  # Parent key
+            conf['solution']['images'] = image
+            image.update(cortx_im)
+            for key, value in list(third_party_images_dict.items()):
+                if key in list(self.deploy_cfg['third_party_images'].keys()):
+                    image.update({key: value})
+                    image_default_dict.pop(key)
+            image.update(image_default_dict)
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath
+
+    def update_password_sol_file(self, filepath):
+        """
+        This Method update the password in solution.yaml file
+        Param: filepath: filename with complete path
+        :returns the status, filepath
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            content = parent_key['secrets']['content']
+            common = parent_key['common']
+            common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
+            passwd_dict = {}
+            for key, value in self.deploy_cfg['password']:
+                passwd_dict[key] = pswdmanager.decrypt(value)
+            content.update(passwd_dict)
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath

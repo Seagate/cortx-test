@@ -128,3 +128,20 @@ k8s_cortx_deploy:
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   template_path: "config/prov/solution.yaml"
+  third_party_images:
+    openldap: 'ghcr.io/seagate/symas-openldap:standalone'
+    consul: 'hashicorp/consul:1.10.0'
+    kafka: 'bitnami/kafka:3.0.0-debian-10-r7'
+    zookeeper: 'bitnami/zookeeper:3.7.0-debian-10-r182'
+    gluster: 'docker.io/gluster/gluster-centos:latest'
+    rancher: 'rancher/local-path-provisioner:v0.0.20'
+  cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
+  cortx_images_val: 'ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci'
+  password:
+    openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
+    kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
+    csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
+    csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
