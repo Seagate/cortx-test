@@ -611,32 +611,34 @@ class HAK8s:
         background = kwargs.get("background", False)
         LOGGER.info("Create bucket and put object.")
         resp = s3_test_obj.create_bucket(bucket_name1)
-        LOGGER.info(resp)
+        LOGGER.info("Response: %s", resp)
         if not resp[0]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         resp, bktlist = s3_test_obj.bucket_list()
+        LOGGER.info("Response: %s", resp)
         LOGGER.info("Bucket list: %s", bktlist)
         if bucket_name1 not in bktlist:
-            return False, bktlist if not background else sys.exit()
+            return False, bktlist if not background else sys.exit(1)
         resp = system_utils.create_file(fpath=file_path, count=10, b_size="1M")
-        LOGGER.info(resp)
+        LOGGER.info("Response: %s", resp)
         if not resp[0]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         put_resp = s3_test_obj.put_object(bucket_name=bucket_name1, object_name=object_name1,
                                           file_path=file_path,
                                           metadata={"City": "Pune", "Country": "India"})
         LOGGER.info("Put object response: %s", put_resp)
         put_etag = put_resp[1]["ETag"]
         if not put_resp[0]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         resp = s3_test_obj.object_list(bucket_name1)
-        LOGGER.info(resp)
+        LOGGER.info("Response: %s", resp)
         if not resp[0] or object_name1 not in resp[1]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         LOGGER.info("Copy object to different bucket with different object name.")
         resp = s3_test_obj.create_bucket(bucket_name2)
+        LOGGER.info("Response: %s", resp)
         if not resp[0]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
                                                    source_object=object_name1,
                                                    dest_bucket=bucket_name2,
@@ -652,8 +654,9 @@ class HAK8s:
 
         LOGGER.info("Step 4: Copy object to another bucket with another object name.")
         resp = s3_test_obj.create_bucket(bucket_name3)
+        LOGGER.info("Response: %s", resp)
         if not resp[0]:
-            return resp if not background else sys.exit()
+            return resp if not background else sys.exit(1)
         status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
                                                    source_object=object_name1,
                                                    dest_bucket=bucket_name3,
