@@ -574,6 +574,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29475', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created during IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify copy object after cluster restart")
@@ -650,6 +653,9 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 5: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29476', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created during IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 5: Successfully created multiple buckets and ran IOs")
 
