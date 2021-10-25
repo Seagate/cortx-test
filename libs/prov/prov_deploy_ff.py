@@ -117,17 +117,17 @@ class ProvDeployFFLib:
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_GET_PROV_INSTALL.format(install_sh_path),
                                       read_lines=True)
             LOGGER.debug("Downloaded install.sh : %s", resp)
-            time.sleep(10)
+            time.sleep(deploy_ff_cfg["per_step_delay"])
 
             LOGGER.info("Installs CORTX packages (RPM) and their dependencies ")
             resp = nd_obj.execute_cmd(cmd=common_cmd.CMD_INSTALL_CORTX_RPM.format(build_url),
                                       read_lines=True)
             LOGGER.debug("Installed RPM's : %s", resp)
-            time.sleep(10)
+            time.sleep(deploy_ff_cfg["per_step_delay"])
 
             LOGGER.info("Initialize command shell env")
             nd_obj.execute_cmd(cmd=common_cmd.CORTX_SETUP_HELP, read_lines=True)
-            time.sleep(10)
+            time.sleep(deploy_ff_cfg["per_step_delay"])
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
