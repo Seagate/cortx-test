@@ -127,7 +127,6 @@ k8s_cortx_deploy:
   git_tag: "v0.0.9"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
-  template_path: "config/prov/solution.yaml"
   third_party_images:
     openldap: 'ghcr.io/seagate/symas-openldap:standalone'
     consul: 'hashicorp/consul:1.10.0'

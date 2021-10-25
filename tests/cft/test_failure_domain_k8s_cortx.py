@@ -105,10 +105,11 @@ class TestFailureDomainK8Cortx:
         self.log.info("Step 4 : Update solution file template")
         resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
                                                   cortx_image=self.cortx_image)
-        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+        assert_utils.assert_true(resp[0], resp[1])
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
-
+        self.log.info("Solution File Path : %s", sol_file_path)
+        self.log.info("Sys disk : %s", system_disk_dict)
         self.log.info("Step 5: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
                                                        self.worker_node_list, system_disk_dict,
