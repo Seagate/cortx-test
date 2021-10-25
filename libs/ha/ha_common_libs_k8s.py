@@ -25,6 +25,7 @@ import logging
 import os
 import time
 from multiprocessing import Process
+import sys
 
 from commons import commands as common_cmd
 from commons import pswdmanager
@@ -619,17 +620,18 @@ class HAK8s:
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
                                             secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
 
-        LOGGER.info("Creating a bucket with name : %s", bucket_name)
-        res = s3_test_obj.create_bucket(bucket_name)
-        if not res[0]:
-            output.put(res)
-            raise Exception(res, "Expected bucket is not created")
-        LOGGER.info("Created a bucket with name : %s", bucket_name)
-        LOGGER.info("Initiating multipart upload")
-        res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
-        mpu_id = res[1]["UploadId"]
-        LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
-        LOGGER.info("Uploading parts into bucket")
+        try:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
+            LOGGER.info("Initiating multipart upload")
+            res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+            mpu_id = res[1]["UploadId"]
+            LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+            LOGGER.info("Uploading parts into bucket")
+        except (Exception, CTException) as error:
+            LOGGER.error("Exiting from background process with error %s", error)
+            sys.exit(1)
 
         LOGGER.info("Creating parts of data")
         if os.path.exists(multipart_obj_path):

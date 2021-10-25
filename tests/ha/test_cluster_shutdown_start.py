@@ -420,6 +420,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29474', nusers=1, nbuckets=10)
         assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created in IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 9: Successfully created multiple buckets and ran IOs")
 
         LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
@@ -560,6 +563,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
         p.join()
+        if output.empty():
+            assert_utils.assert_true(False, "Background process failed to do multipart upload")
+
         res = output.get()
         if isinstance(res[0], dict):
             failed_parts = res[0]
@@ -569,8 +575,6 @@ class TestClusterShutdownStart:
             LOGGER.info("All the parts are uploaded successfully")
             parts_etag = res[0]
             mpu_id = res[1]
-        else:
-            assert_utils.assert_true(False, res)
 
         if bool(failed_parts):
             LOGGER.info("Step 4: Upload remaining parts")
@@ -593,8 +597,7 @@ class TestClusterShutdownStart:
                                                             self.object_name)
         assert_utils.assert_true(res[0], res)
         res = s3_test_obj.object_list(self.bucket_name)
-        if self.object_name not in res[1]:
-            assert_utils.assert_true(False, res)
+        assert_utils.assert_in(self.object_name, res[1], res)
         LOGGER.info("Step 6: Multipart upload completed")
 
         LOGGER.info("Step 7: Download the uploaded object and verify checksum")
@@ -605,6 +608,9 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
         resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-29473', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created in IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 8: Successfully created multiple buckets and ran IOs")
 
