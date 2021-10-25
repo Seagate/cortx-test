@@ -643,6 +643,7 @@ class HAK8s:
                                                    source_object=object_name1,
                                                    dest_bucket=bucket_name2,
                                                    dest_object=object_name2)
+        LOGGER.info("Response: %s", response)
         copy_etag1 = response['CopyObjectResult']['ETag']
         if put_etag == copy_etag1:
             LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
@@ -652,7 +653,7 @@ class HAK8s:
                         object_name1, bucket_name2, object_name2)
             return status, response
 
-        LOGGER.info("Step 4: Copy object to another bucket with another object name.")
+        LOGGER.info("Copy object to another bucket with another object name.")
         resp = s3_test_obj.create_bucket(bucket_name3)
         LOGGER.info("Response: %s", resp)
         if not resp[0]:
@@ -661,6 +662,7 @@ class HAK8s:
                                                    source_object=object_name1,
                                                    dest_bucket=bucket_name3,
                                                    dest_object=object_name3)
+        LOGGER.info("Response: %s", response)
         copy_etag2 = response['CopyObjectResult']['ETag']
         if put_etag == copy_etag2:
             LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
