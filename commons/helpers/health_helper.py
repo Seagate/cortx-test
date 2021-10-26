@@ -32,7 +32,7 @@ from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
-from commons.utils.assert_utils import *
+from commons.utils.assert_utils import assert_true
 from config import RAS_VAL
 from config import CMN_CFG
 
