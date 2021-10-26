@@ -234,7 +234,7 @@ class ProvDeployK8sCortxLib:
     def validate_cluster_status(self, node_obj: LogicalNode, remote_code_path):
         LOGGER.info("Validate Cluster status")
         cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
-                                                          self.deploy_cfg["exe_status_check"])
+                                                          common_cmd.CLSTR_STATUS_CMD)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         if "FAILED" in resp:
@@ -288,7 +288,8 @@ class ProvDeployK8sCortxLib:
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
 
-    def update_sol_yaml(self, worker_obj: list, filepath, cortx_image, control_lb_ip, data_lb_ip,
+    def update_sol_yaml(self, worker_obj: list, filepath: str, cortx_image: str,
+                        control_lb_ip: list, data_lb_ip: list,
                         **kwargs):
         """
         This function updates the yaml file
