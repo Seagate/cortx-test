@@ -826,9 +826,7 @@ def pytest_runtest_logstart(nodeid, location):
     # Check health status of target
     target = Globals.TARGET
     h_chk = Globals.HEALTH_CHK
-    if not Globals.LOCAL_RUN and not skip_health_check:
-        check_health(target)
-    elif Globals.LOCAL_RUN and h_chk and not skip_health_check:
+    if h_chk and not skip_health_check:
         check_health(target)
 
 
