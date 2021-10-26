@@ -18,6 +18,7 @@
 #
 
 """S3 utility Library."""
+import base64
 import os
 import urllib
 import hmac
@@ -233,7 +234,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, md5(data).hexdigest()]
+                parts[i] = [data, base64.b64encode(md5(data).digest()).decode('utf-8')]
                 i += 1
         if random:
             keys = list(parts.keys())
@@ -277,13 +278,39 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, md5(data).hexdigest()]
+                parts[i] = [data, base64.b64encode(md5(data).digest()).decode('utf-8')]
                 i += 1
         if random:
             keys = list(parts.keys())
             shuffle(keys)
             parts = {k: parts[k] for k in keys}
 
+        return parts
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
+
+
+def get_precalculated_parts(file_path, part_list, chunk_size=1048576) -> dict:
+    """
+    Split the source file into the specified part sizes.
+
+    :param file_path: Path of object file.
+    :param part_list: List of dict with keys 'part_size' (in bytes) and 'count'
+    :param chunk_size: chunk size used to read each check default is 1MB.
+    :return: Parts details with data, checksum.
+    """
+    total_part_list = []
+    for part in part_list:
+        total_part_list.extend([part['part_size']] * part['count'])
+    shuffle(total_part_list)
+    parts = dict()
+    try:
+        with open(file_path, "rb") as file_pointer:
+            for i, part_size in enumerate(total_part_list, 1):
+                data = file_pointer.read(int(part_size * chunk_size))
+                checksum = base64.b64encode(md5(data).digest()).decode('utf-8')
+                parts[i] = [data, checksum]
         return parts
     except OSError as error:
         LOGGER.error(str(error))

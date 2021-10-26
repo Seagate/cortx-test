@@ -118,6 +118,7 @@ class TestMultipartUploadDelete:
                     s3bench.LOG_DIR, log_prefix)
                 assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.skip(reason=" size is not supported on vm hence marking skip.")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-29163')
     @CTFailOn(error_handler)
