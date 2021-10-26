@@ -323,6 +323,15 @@ class TestPostDeployMultiNode:
                 resp.count(
                     PROV_CFG["system"]["active"]), len(
                     PROV_CFG["services"]["all"]))
+            resp = node.send_systemctl_cmd(
+                command="is-active",
+                services=PROV_CFG["services"]["multinode"],
+                decode=True,
+                exc=False)
+            assert_utils.assert_equal(
+                resp.count(
+                    PROV_CFG["system"]["active"]), len(
+                    PROV_CFG["services"]["multinode"]))
             if self.setup_type == "HW":
                 resp = node.send_systemctl_cmd(
                     command="is-active",

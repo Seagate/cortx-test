@@ -11,11 +11,12 @@ services:
     - "rsyslog.service"
     - "haproxy.service"
     - "slapd.service"
-    - "glusterd.service"
     - "kafka-zookeeper.service"
     - "salt-master.service"
     - "salt-minion.service"
     - "lnet.service"
+  multinode:
+    - "glusterd.service"
   hw_specific:
     - "multipathd.service"
     - "scsi-network-relay.service"
@@ -30,7 +31,6 @@ service_ports:
   salt-master: ["4505", "4506"]
   smtp: ["25"]
   s3: ["9443"]
-  uds: ["5000"]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
 build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso"
 build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso.sig"
@@ -97,6 +97,8 @@ deploy_ff:
   per_step_delay: 10
   encl_name: "enclosure1"
   lr_sign: "HP1_5U84"
+  bmc_username: "admin"
+  bmc_password: "admin"
 
 post_deployment_steps:
   csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="

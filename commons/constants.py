@@ -20,8 +20,9 @@
 #
 
 """All common constants from cortx-test."""
-from commons import const
+import tempfile
 
+from commons import const
 
 #: NWORKERS specifies number of worker (python) threads  in a worker pool.
 NWORKERS = 32
@@ -29,6 +30,12 @@ NWORKERS = 32
 #: NGREENLETS specifies number of greenlets in a thread. These greenlets will
 # run in parallel.
 NGREENLETS = 32
+
+# Product Family and versions
+PROD_FAMILY_LC = "LC"
+PROD_FAMILY_LR = "LR"
+PROD_TYPE_K8S = "k8s"
+PROD_TYPE_NODE = "node"
 
 # RAS Paths
 BYTES_TO_READ = 8000
@@ -98,11 +105,12 @@ SSPL_CFG_URL = "yaml:///etc/sspl.conf"
 SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
 CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
+AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
+LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
-const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",

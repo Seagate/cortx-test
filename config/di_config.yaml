@@ -79,3 +79,4 @@ logs:
 logging_Level: INFO
 retries: 3
 
+fault_injection_script: "scripts/server_scripts/enable_disable_fault_injection.sh"
