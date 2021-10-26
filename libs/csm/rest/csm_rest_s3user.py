@@ -366,8 +366,7 @@ class RestS3user(RestTestLib):
             self.log.debug("editing user %s", user_payload)
             response = self.edit_s3_account_user(
                 username=account_name,
-                payload=user_payload,
-                login_as="new_s3_account_user")
+                payload=user_payload)
 
             # Handling Unchanged access scenario
             if user_payload in ("unchanged_access", "only_password"):
@@ -432,7 +431,7 @@ class RestS3user(RestTestLib):
             self.log.debug(
                 "deleting new s3 account user name : %s", account_name)
             response = self.delete_s3_account_user(
-                username=account_name, login_as="new_s3_account_user")
+                username=account_name)
 
             # Checking status code
             self.log.debug(
