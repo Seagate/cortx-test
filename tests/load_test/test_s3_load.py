@@ -28,6 +28,7 @@ from commons.utils import assert_utils
 from scripts.locust import locust_runner
 from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from scripts.locust import LOCUST_CFG
 
 
 class TestS3Load:
@@ -48,6 +49,7 @@ class TestS3Load:
         os.environ.setdefault("CA_CERT", S3_CFG["s3_cert_path"])
         cls.log.info("account prefix: %s, Bucket prefix:", cls.account_prefix)
         cls.log.info("ENDED: setup test suite operations.")
+        cls.checksumfile = LOCUST_CFG["default"]["CHECKSUM_FILE"]
 
     @classmethod
     def teardown_class(cls):
@@ -73,6 +75,8 @@ class TestS3Load:
         os.environ["AWS_ACCESS_KEY_ID"] = ACCESS_KEY
         os.environ["AWS_SECRET_ACCESS_KEY"] = SECRET_KEY
         self.log.info("ENDED: Setup operations.")
+        if os.path.exists(self.checksumfile):
+            os.remove(self.checksumfile)
 
     def teardown_method(self):
         """
@@ -82,6 +86,8 @@ class TestS3Load:
         """
         self.log.info("STARTED: Teardown operations.")
         self.log.info("ENDED: Teardown operations.")
+        if os.path.exists(self.checksumfile):
+            os.remove(self.checksumfile)
 
     @pytest.mark.s3_io_load
     @pytest.mark.tags("TEST-19533")

@@ -21,7 +21,7 @@
 """
 Utility methods written for use accross all the locust test scenarios
 """
-
+import csv
 import time
 import os
 import logging
@@ -54,9 +54,9 @@ class LocustUtils:
             'AWS_SECRET_ACCESS_KEY',
             LOCUST_CFG['default']['SECRET_KEY'])
         endpoint_url = os.getenv(
-            'ENDPOINT_URL',LOCUST_CFG['default']['ENDPOINT_URL'])
+            'ENDPOINT_URL', LOCUST_CFG['default']['ENDPOINT_URL'])
         s3_cert_path = os.getenv(
-            'CA_CERT',LOCUST_CFG['default']['S3_CERT_PATH'])
+            'CA_CERT', LOCUST_CFG['default']['S3_CERT_PATH'])
         max_pool_connections = int(
             LOCUST_CFG['default']['MAX_POOL_CONNECTIONS'])
         self.bucket_list = list()
@@ -76,6 +76,25 @@ class LocustUtils:
             aws_secret_access_key=secret_key,
             endpoint_url=endpoint_url,
             config=Config(max_pool_connections=max_pool_connections))
+
+        self.checksumfile = LOCUST_CFG["default"]["CHECKSUM_FILE"]
+
+    def store_checksum(self, bucket, object, checksum):
+        with open(self.checksumfile, "a", newline='') as checksum_f:
+            w = csv.writer(checksum_f)
+            w.writerow((bucket, object, checksum))
+
+    def get_checksum(self):
+        data = {}
+        with open(self.checksumfile, "r") as checksum_f:
+            raw = list(csv.reader(checksum_f))
+        for item in raw:
+            bucket, obj, checksum = item[0], item[1], item[2]
+            if bucket in data:
+                data[bucket].update({obj: checksum})
+            else:
+                data.update({bucket: {obj: checksum}})
+        return data
 
     @staticmethod
     def create_file(object_size: int):
@@ -177,8 +196,10 @@ class LocustUtils:
         self.delete_local_obj(OBJ_NAME)
         self.create_file(object_size)
         obj_name = "test_obj{0}".format(str(time.time()))
-        LOGGER.info(
-            "Uploading object %s into bucket %s", obj_name, bucket_name)
+        checksum = system_utils.calculate_checksum(OBJ_NAME)[1]
+        self.store_checksum(bucket_name, obj_name, checksum)
+        LOGGER.info("Uploading object %s into bucket %s checksum %s",
+                    obj_name, bucket_name, checksum)
         start_time = time.time()
         try:
             self.s3_client.upload_file(OBJ_NAME, bucket_name, obj_name)
@@ -226,6 +247,14 @@ class LocustUtils:
                         response_time=self.total_time(start_time),
                         response_length=10
                     )
+                    checksums = self.get_checksum()
+                    checksum = system_utils.calculate_checksum(GET_OBJ_PATH)[1]
+                    if checksums[bucket_name][obj_name] != checksum:
+                        LOGGER.error("Stored Checksum: %s & Calculated Checksum: %s",
+                                     checksums[bucket_name][obj_name], checksum)
+                    else:
+                        LOGGER.info("Object %s bucket %s downloaded successfully, checksum %s",
+                                    obj_name, bucket_name, checksum)
                 else:
                     LOGGER.info(
                         "The %s has been already downloaded and deleted successfully from %s ",
