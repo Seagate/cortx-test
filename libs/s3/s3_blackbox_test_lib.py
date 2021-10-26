@@ -76,7 +76,8 @@ class JCloudClient:
 
         return bool(".jar" in res_ls)
 
-    def update_jclient_jcloud_properties(self):
+    @staticmethod
+    def update_jclient_jcloud_properties():
         """
         Update jclient, jcloud properties with correct s3, iam endpoint.
         :return: True
@@ -88,14 +89,21 @@ class JCloudClient:
             prop_dict = config_utils.read_properties_file(prop_path)
             if prop_dict:
                 if prop_dict['iam_endpoint'] != S3_CFG["iam_url"]:
-                    prop_dict['iam_endpoint'] = S3_CFG["iam_url"]
+                    iam_endpoint = (S3_CFG["iam_url"].split('//')[1]).split(':')[0]
+                    prop_dict['iam_endpoint'] = iam_endpoint
                 if prop_dict['s3_endpoint'] != S3_CFG["s3_url"]:
-                    prop_dict['s3_endpoint'] = S3_CFG["s3_url"]
+                    s3_endpoint = S3_CFG["s3_url"].split('//')[1]
+                    prop_dict['s3_endpoint'] = s3_endpoint
+                if S3_CFG['use_ssl']:
+                    prop_dict['use_https'] = 'true'
+                else:
+                    prop_dict['use_https'] = 'false'
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
 
-    def create_cmd_format(self, bucket, operation, jtool=None, chunk=None):
+    @staticmethod
+    def create_cmd_format(bucket, operation, jtool=None, chunk=None):
         """
         Function forms a command to perform specified operation.
 
