@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash_bootstrap_components import Card, CardBody, Row, Button, Tab
+from dash_bootstrap_components import Card, CardBody, Row, Button, Tab  # , Tabs
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
@@ -29,8 +29,14 @@ from Performance.styles import style_sub_tab, style_table_caption,\
 
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+
 ]
 
 
@@ -132,13 +138,13 @@ stats_input_options = [
         [
             html.P("User Configuration » ", style=style_filters_captions),
             Dropdown(
-                id='perf_iteration_dropdown',
-                placeholder="Select Iterations",
+                id='perf_custom_dropdown',
+                placeholder="Select Tag",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
-                id='perf_custom_dropdown',
-                placeholder="Select Tag",
+                id='perf_iteration_dropdown',
+                placeholder="Select Iterations",
                 style=dict_Style_Stats_input_options
             )
         ],
@@ -164,6 +170,76 @@ stats_input_options = [
         justify='center', style={'margin-bottom': '20px'}
     )
 ]
+
+degraded_read_layout = Card(
+    CardBody([
+        html.P(html.U("Read Performance of Degraded Cluster"),
+               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
+        html.P("Note: Each data point represents PER CLUSTER data.",  style={
+            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
+
+        html.P("S3Bench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("Throughput Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_throughput"),
+        html.P("Latency Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_latency"),
+        html.P("IOPS Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_iops"),
+        html.P("TTFB Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_s3bench_degraded_ttfb"),
+
+        # html.P("COSBench", style=style_perf_captions),
+        # Markdown('''
+        #     ___
+        #     '''),
+
+        # html.P("Throughput Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_throughput"),
+        # html.P("Latency Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_latency"),
+        # html.P("IOPS Chart",
+        #        style=style_table_caption),
+        # html.Div(id="statistics_cosbench_degraded_iops"),
+
+        html.P("HSBench", style=style_perf_captions),
+        Markdown('''
+            ___
+            '''),
+
+        html.P("Throughput Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_throughput"),
+        html.P("Latency Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_latency"),
+        html.P("IOPS Chart",
+               style=style_table_caption),
+        html.Div(id="statistics_hsbench_degraded_iops"),
+    ]),
+    className="flex-sm-fill nav-link"
+)
+
+
+# statistics_perf_tabs = Tabs([
+#     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",
+#         style=style_sub_tab, label_style=style_sub_label
+#         ),
+#     Tab(degraded_read_layout, id="perf_degraded_read_content", label="Degraded Read Performance",
+#         style=style_sub_tab, label_style=style_sub_label
+#         )
+#     ],
+#     className="nav nav nav-pills nav-fill nav-pills flex-column flex-sm-row"
+# )
 
 statistics_perf_tabs = html.Div(
     Tab(statistics_layout, id="perf_statistics_content", label="Performance Statistics",

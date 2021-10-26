@@ -18,6 +18,9 @@ haproxy_service:
 audit_service: "auditd.service"
 statsd_service: "statsd"
 
+product_type: "k8s"
+product_family: "LC"
+
 
 
 

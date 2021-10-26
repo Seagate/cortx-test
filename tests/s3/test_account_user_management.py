@@ -267,10 +267,9 @@ class TestAccountUserManagement:
         self.log.info(
             "END: Tested creating new account with existing account name")
 
+    @pytest.mark.skip (reason="Need to be Modified with boto3")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5434")
     @CTFailOn(error_handler)
     def test_crud_operations_with_valid_cred_1973(self):
@@ -417,10 +416,9 @@ class TestAccountUserManagement:
         self.users_list.append(self.user_name)
         self.log.info("END: CRUD operations with invalid login credentials")
 
+    @pytest.mark.skip (reason="Need to be Modified with boto3")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5439")
     @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):

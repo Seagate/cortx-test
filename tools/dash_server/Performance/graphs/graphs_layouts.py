@@ -27,8 +27,7 @@ import dash_html_components as html
 import dash_daq as daq
 
 from Performance.styles import style_sub_tab, style_sub_label,\
-    style_dropdown_small, style_dropdown_small_2, \
-    style_dropdown_medium, dict_button_style
+    style_dropdown_small_2, style_dropdown_medium, dict_button_style, style_dropdown_large
 
 # Variable declarations
 Xfilter = [
@@ -37,8 +36,13 @@ Xfilter = [
 ]
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
 ]
 
 benchmarks = [  # get from database
@@ -94,7 +98,7 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_small
+                style=style_dropdown_large
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
@@ -117,14 +121,14 @@ graphs_input_options = [
                 style=style_dropdown_small_2
             ),
             Dropdown(
-                id='graphs_iteration_dropdown',
-                placeholder="Iterations",
-                style=style_dropdown_small_2
-            ),
-            Dropdown(
                 id='graphs_custom_dropdown',
                 placeholder="Select Tag",
                 style=style_dropdown_medium
+            ),
+            Dropdown(
+                id='graphs_iteration_dropdown',
+                placeholder="Iterations",
+                style=style_dropdown_small_2
             ),
             Dropdown(
                 id='graphs_sessions_dropdown',
@@ -136,11 +140,6 @@ graphs_input_options = [
                 placeholder="Buckets",
                 style=style_dropdown_medium
             ),
-        ],
-        justify='center'
-    ),
-    Row(
-        [
             daq.ToggleSwitch(
                 id="compare_flag",
                 label="Compare",
@@ -148,6 +147,11 @@ graphs_input_options = [
                 style={'color': '#FFFFFF', 'margin-top': '15px',
                        'margin-right': '10px'}
             ),
+        ],
+        justify='center'
+    ),
+    Row(
+        [
             Dropdown(
                 id="graphs_release_compare_dropdown",
                 options=release,
@@ -175,13 +179,13 @@ graphs_input_options = [
                 style={'display': 'none'}
             ),
             Dropdown(
-                id='graphs_iteration_compare_dropdown',
-                placeholder="Iterations",
+                id='graphs_custom_compare_dropdown',
+                placeholder="Select Tag",
                 style={'display': 'none'}
             ),
             Dropdown(
-                id='graphs_custom_compare_dropdown',
-                placeholder="Select Tag",
+                id='graphs_iteration_compare_dropdown',
+                placeholder="Iterations",
                 style={'display': 'none'}
             ),
             Dropdown(
