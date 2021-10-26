@@ -114,6 +114,8 @@ AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
 CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
+CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
+CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -167,6 +169,7 @@ class Rest:
     FORBIDDEN = 403
     METHOD_NOT_FOUND = 404
     SUCCESS_STATUS_FOR_POST = 201
+    SERVICE_UNAVAILABLE = 503
     USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
                 " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
                 "\"alert_notification\":true}"
