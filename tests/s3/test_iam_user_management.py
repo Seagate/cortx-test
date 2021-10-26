@@ -242,8 +242,8 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23398_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23398_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -266,8 +266,8 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23399_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23399_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -294,8 +294,8 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23400_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23400_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
@@ -331,8 +331,8 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23401_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23401_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
@@ -357,8 +357,8 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23402_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23402_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
@@ -393,8 +393,8 @@ class TestIAMUserManagement:
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23402_ios")
         self.log.info("Step 10: Deleting access keys associated with iam user")
         for key in access_keys:
-            resp = self.iam_test_obj.delete_access_key(user_name=self.user_name,
-                                                       access_key_id=key)
+            resp = self.iam_test_obj.delete_access_key(
+                user_name=self.user_name, access_key_id=key)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
@@ -410,14 +410,13 @@ class TestIAMUserManagement:
         """
         self.log.info("%s %s", self.START_LOG_FORMAT, log.get_frame())
         self.log.info("Step 1: Start S3 IO.")
-        self.start_stop_validate_parallel_s3ios(ios="Start", log_prefix="test_23463_ios",
-                                                duration="0h1m")
+        self.start_stop_validate_parallel_s3ios(
+            ios="Start", log_prefix="test_23463_ios", duration="0h1m")
         self.log.info("Step 2: Creating iam user with name %s", self.user_name)
         resp = self.iam_test_obj.create_user(user_name=self.user_name)
         assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
         self.log.info("Created iam user with name %s", self.user_name)
         self.del_iam_user = True
-
         self.log.info("Step 3: Creating access key for IAM user %s", self.user_name)
         create_access_key = self.iam_test_obj.create_access_key(self.user_name)
         assert_utils.assert_true(create_access_key[0], create_access_key[1])
@@ -429,8 +428,8 @@ class TestIAMUserManagement:
         assert_utils.assert_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
         self.log.info("Verified access key is created")
         self.log.info("Step 5: Deleting access key of IAM user %s", self.user_name)
-        resp = self.iam_test_obj.delete_access_key(user_name=self.user_name,
-                                                   access_key_id=iam_access_key)
+        resp = self.iam_test_obj.delete_access_key(
+            user_name=self.user_name, access_key_id=iam_access_key)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Deleted access key of IAM user %s", self.user_name)
         self.log.info("Step 6: Verify access key is deleted for IAM user %s", self.user_name)
@@ -438,7 +437,6 @@ class TestIAMUserManagement:
         access_keys = [i['AccessKeyId'] for i in resp[1]['AccessKeyMetadata']]
         assert_utils.assert_not_in(create_access_key[1]['AccessKey']['AccessKeyId'], access_keys)
         self.log.info("Verified access key is deleted for IAM user %s", self.user_name)
-
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23463_ios")
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
@@ -790,7 +788,6 @@ class TestIAMUserManagement:
             self.log.error("Can not create s3 accounts beyond maximum limit: %s", error)
         self.log.info("Verified s3 accounts can not be created beyond maximum limit mentioned in"
                       " authserver.properties file")
-
         self.log.info("Step 9: Deleting all s3 accounts")
         for acc in s3_accounts:
             resp = self.rest_obj.delete_s3_account(acc_name=acc)
