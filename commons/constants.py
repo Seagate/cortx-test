@@ -38,8 +38,8 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME = "storage-node1"
-HAX_CONTAINER_NAME = "cortx-hax"
+POD_NAME_PREFIX = "cortx-data-pod"
+HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 
 # RAS Paths

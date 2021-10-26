@@ -32,6 +32,7 @@ from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils.system_utils import check_ping
 from commons.utils.system_utils import run_remote_cmd
+from commons.utils.assert_utils import *
 from config import RAS_VAL
 from config import CMN_CFG
 
@@ -79,7 +80,7 @@ class Health(Host):
         return ports
 
     def get_disk_usage(self, dir_path: str, field_val: int = 3,
-                       pod_name: str = const.POD_NAME,
+                       pod_name: str = None,
                        container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function will return disk usage associated with given path.
@@ -104,6 +105,11 @@ class Health(Host):
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
+
             res = node.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container_name} -- {cmd}",
@@ -112,7 +118,7 @@ class Health(Host):
 
         return float(res.replace('\n', ''))
 
-    def get_cpu_usage(self, pod_name: str = const.POD_NAME,
+    def get_cpu_usage(self, pod_name: str = None,
                       container_name: str = const.HAX_CONTAINER_NAME) -> float:
         """
         Function with fetch the system cpu usage percentage from remote host
@@ -132,6 +138,10 @@ class Health(Host):
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
+            if pod_name is None:
+                resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+                assert_true(resp[0], resp[1])
+                pod_name = resp[1]
             res = node.send_k8s_cmd(
                 operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container_name} -- {commands.CPU_USAGE_CMD}",
@@ -155,13 +165,16 @@ class Health(Host):
             LOG.debug(res)
             res = res.decode("utf-8")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            pod = const.POD_NAME
             container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
+
+            resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+            assert_true(resp[0], resp[1])
+            pod_name = resp[1]
             res = node.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=namespace,
+                operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container} -- {commands.MEM_USAGE_CMD}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.MEM_USAGE_CMD, res)
@@ -296,13 +309,15 @@ class Health(Host):
                     LOG.debug(output)
             LOG.debug("Machine is already configured..!")
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            pod = const.POD_NAME
             container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
+            resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+            assert_true(resp[0], resp[1])
+            pod_name = resp[1]
             cmd_output = node.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=namespace,
+                operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container} -- {motr_status_cmd}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", motr_status_cmd, cmd_output)
@@ -376,13 +391,15 @@ class Health(Host):
             #          hctl_command, result)
             result = json.loads(result)
         elif CMN_CFG.get("product_family") == const.PROD_FAMILY_LC:
-            pod = const.POD_NAME
             container = const.HAX_CONTAINER_NAME
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
+            resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
+            assert_true(resp[0], resp[1])
+            pod_name = resp[1]
             out = node.send_k8s_cmd(
-                operation="exec", pod=pod, namespace=namespace,
+                operation="exec", pod=pod_name, namespace=namespace,
                 command_suffix=f"-c {container} -- {commands.HCTL_STATUS_CMD_JSON}",
                 decode=True)
             LOG.debug("Response of %s:\n %s ", commands.HCTL_STATUS_CMD_JSON, out)
