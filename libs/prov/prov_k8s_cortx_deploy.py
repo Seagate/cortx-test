@@ -196,10 +196,8 @@ class ProvDeployK8sCortxLib:
         param: system_disk: parameter to prereq script
         """
         LOGGER.info("Execute prereq script")
-        cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log".format(remote_code_path,
-                                                                       self.deploy_cfg[
-                                                                           "exe_prereq"],
-                                                                       system_disk)
+        cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log". \
+            format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
 
@@ -279,7 +277,8 @@ class ProvDeployK8sCortxLib:
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
-            resp = self.validate_cluster_status(master_node_list[0],self.deploy_cfg["git_remote_dir"])
+            resp = self.validate_cluster_status(master_node_list[0],
+                                                self.deploy_cfg["git_remote_dir"])
             return resp
         return resp
 
