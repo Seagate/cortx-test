@@ -547,8 +547,8 @@ class TestClusterShutdownStart:
                 'object_name': self.object_name, 'file_size': file_size, 'total_parts': total_parts,
                 'multipart_obj_path': self.multipart_obj_path, 'part_numbers': part_numbers,
                 'parts_etag': parts_etag, 'output': output}
-        p = Process(target=self.ha_obj.start_random_mpu, kwargs=args)
-        p.start()
+        prc = Process(target=self.ha_obj.start_random_mpu, kwargs=args)
+        prc.start()
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
@@ -562,7 +562,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
-        p.join()
+        prc.join()
         if output.empty():
             assert_utils.assert_true(False, "Background process failed to do multipart upload")
 

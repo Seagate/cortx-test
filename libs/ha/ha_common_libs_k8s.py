@@ -599,8 +599,7 @@ class HAK8s:
     def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
         """
-        Function can be run in background to start process multipart upload of random parts in
-        background
+        Helper function to start mpu (To start mpu in background, this function needs to be used)
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
@@ -631,7 +630,7 @@ class HAK8s:
             mpu_id = res[1]["UploadId"]
             LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         except (Exception, CTException) as error:
-            LOGGER.error("Exiting from background process with error %s", error)
+            LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
             sys.exit(1)
 
         LOGGER.info("Creating parts of data")
