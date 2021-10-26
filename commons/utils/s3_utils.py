@@ -196,7 +196,7 @@ def calc_checksum(file_path, part_size=0):
     try:
         hash_digests = list()
         with open(file_path, 'rb') as f_obj:
-            if part_size and os.stat(file_path).st_size < part_size:
+            if part_size and os.stat(file_path).st_size > part_size:
                 for chunk in iter(lambda: f_obj.read(part_size), b''):
                     hash_digests.append(md5(chunk).digest())
             else:
@@ -210,7 +210,7 @@ def calc_checksum(file_path, part_size=0):
 
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
-    Create the upload parts dict with aligned part size.
+    Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
 
     https://www.gbmb.org/mb-to-bytes
     Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
@@ -225,7 +225,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
         with open(file_path, "rb") as file_pointer:
             i = 1
             while True:
@@ -238,7 +238,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
         if random:
             keys = list(parts.keys())
             shuffle(keys)
-            parts = dict({(k, parts[k]) for k in keys})
+            parts = {k: parts[k] for k in keys}
 
         return parts
     except OSError as error:
@@ -248,7 +248,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
 
 def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
-    Create the upload parts dict with unaligned part size.
+    Create the upload parts dict with unaligned part size(limitation: not supported more than 10G).
 
     https://www.gbmb.org/mb-to-bytes
     Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
@@ -266,7 +266,7 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
         unaligned = [104857, 209715, 314572, 419430, 524288,
                      629145, 734003, 838860, 943718, 1048576]
         with open(file_path, "rb") as file_pointer:
@@ -282,7 +282,7 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
         if random:
             keys = list(parts.keys())
             shuffle(keys)
-            parts = dict({(k, parts[k]) for k in keys})
+            parts = {k: parts[k] for k in keys}
 
         return parts
     except OSError as error:
@@ -298,6 +298,7 @@ def create_multipart_json(json_path, parts_list) -> tuple:
     """
     parts_list = sorted(parts_list, key=lambda d: d['PartNumber'])
     parts = {"Parts": parts_list}
+    LOGGER.info("Parts: %s", parts)
     with open(json_path, 'w') as file_obj:
         json.dump(parts, file_obj)
 
