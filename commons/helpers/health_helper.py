@@ -169,7 +169,6 @@ class Health(Host):
             namespace = const.NAMESPACE
             node = LogicalNode(hostname=self.hostname, username=self.username,
                                password=self.password)
-
             resp = node.get_pod_name(pod_prefix=const.POD_NAME_PREFIX)
             assert_true(resp[0], resp[1])
             pod_name = resp[1]

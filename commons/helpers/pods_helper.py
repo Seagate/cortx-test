@@ -84,6 +84,7 @@ class LogicalNode(Host):
         return True, "Node shutdown successfully"
 
     def get_pod_name(self, pod_prefix: str = const.POD_NAME_PREFIX):
+        """Function to get pod name with given prefix."""
         output = self.execute_cmd(commands.CMD_POD_STATUS, read_lines=True)
         for lines in output:
             if pod_prefix in lines.split(" ")[0]:
