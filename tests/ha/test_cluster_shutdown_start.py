@@ -616,8 +616,8 @@ class TestClusterShutdownStart:
                 'object_name1': self.object_name, 'object_name2': self.object_name1,
                 'object_name3': self.object_name2, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True}
-        p = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
-        p.start()
+        prc = Process(target=self.ha_obj.create_bucket_copy_obj, kwargs=args)
+        prc.start()
         LOGGER.info("Step 1: Successfully started background process")
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
@@ -631,7 +631,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
-        p.join()
+        prc.join()
         if output.empty():
             assert_utils.assert_true(False, "Failed in Copy Object process")
 

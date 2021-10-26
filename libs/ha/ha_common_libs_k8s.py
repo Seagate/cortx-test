@@ -596,7 +596,8 @@ class HAK8s:
                                bucket_name3=None, object_name1=None, object_name2=None,
                                object_name3=None, output=None, **kwargs):
         """
-        Function create multiple buckets and upload and copy objects
+        Function create multiple buckets and upload and copy objects (Can be used to start
+        background process for the same)
         :param s3_test_obj: s3 test lib object
         :param bucket_name1: Name of the bucket1
         :param object_name1: Name of the object1
