@@ -233,8 +233,8 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
-    def validate_custer_status(self, node_obj: LogicalNode, remote_code_path):
-        LOGGER.info("Deploy Cortx cloud")
+    def validate_cluster_status(self, node_obj: LogicalNode, remote_code_path):
+        LOGGER.info("Validate Cluster status")
         cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
                                                           self.deploy_cfg["exe_status_check"])
         resp = node_obj.execute_cmd(cmd, read_lines=True)
@@ -278,8 +278,8 @@ class ProvDeployK8sCortxLib:
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
-            LOGGER.info("Validate all cluster using status-cortx-cloud.sh")
-            resp = self.validate_custer_status(master_node_list[0],self.deploy_cfg["git_remote_dir"])
+            LOGGER.info("Validate cluster status using status-cortx-cloud.sh")
+            resp = self.validate_cluster_status(master_node_list[0],self.deploy_cfg["git_remote_dir"])
             return resp
         return resp
 
