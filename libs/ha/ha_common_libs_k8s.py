@@ -387,7 +387,7 @@ class HAK8s:
         """
         LOGGER.info("Start the cluster")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
-                                   read_lines=True,exc=False)
+                                   read_lines=True, exc=False)
         LOGGER.info("Cluster start response: {}".format(resp))
         if resp[0]:
             return True, resp
@@ -591,7 +591,7 @@ class HAK8s:
         """
         LOGGER.info("Check the overall K8s cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
-        LOGGER.info("Response for cluster status: %s", resp)
+        LOGGER.info("Response for K8s cluster status: %s", resp)
         for line in resp:
             if "FAILED" in line:
                 return False, resp
@@ -599,7 +599,7 @@ class HAK8s:
             operation="exec", pod=common_const.POD_NAME, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
-        LOGGER.info("Response for cortx cluster: %s", res)
+        LOGGER.info("Response for cortx cluster status: %s", res)
         for line in res:
             if "started" not in line:
                 return False, res
