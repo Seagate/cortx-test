@@ -324,6 +324,8 @@ class ProvDeployK8sCortxLib:
         size_metadata = kwargs.get("size_metadata", '20Gi')
         size_data_disk = kwargs.get("size_data_disk", '20Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
+        third_party_images_dict = kwargs.get("third_party_images",
+                                             self.deploy_cfg['third_party_images'])
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
@@ -391,7 +393,8 @@ class ProvDeployK8sCortxLib:
             return False, "Failed to update lb ip in solution file"
 
         # Update the solution yaml file with images
-        resp_image = self.update_image_section_sol_file(filepath, cortx_image)
+        resp_image = self.update_image_section_sol_file(filepath, cortx_image,
+                                                        third_party_images_dict)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -527,7 +530,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_image_section_sol_file(self, filepath, cortx_image, **kwargs):
+    def update_image_section_sol_file(self, filepath, cortx_image, third_party_images_dict):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
@@ -535,9 +538,6 @@ class ProvDeployK8sCortxLib:
         third_party_image: dict of third party image
         :returns the status, filepath
         """
-        third_party_images_dict = kwargs.get("third_party_images",
-                                             self.deploy_cfg['third_party_images'])
-
         cortx_im = dict()
         image_default_dict = self.deploy_cfg['third_party_images']
 
