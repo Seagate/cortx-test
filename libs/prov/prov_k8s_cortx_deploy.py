@@ -281,13 +281,14 @@ class ProvDeployK8sCortxLib:
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
 
-    def update_sol_yaml(self, worker_obj: list, filepath,
+    def update_sol_yaml(self, worker_obj: list, filepath, cortx_image, control_lb_ip, data_lb_ip,
                         **kwargs):
         """
         This function updates the yaml file
         :Param: obj: list of node object
         :Param: node_list:int the count of worker nodes
         :Param: filepath: Filename with complete path
+        :Param: cortx_image: this is cortx image name
         :Keyword: cluster_id: cluster id
         :Keyword: cvg_count: cvg_count per node
         :Keyword: type_cvg: ios or cas
@@ -301,7 +302,6 @@ class ProvDeployK8sCortxLib:
         :Keyword: dix_parity:
         :Keyword: dix_spare:
         :Keyword: skip_disk_count_check: disk count check
-        :Keyword: cortx_image: this is cortx image name
         :Keyword: third_party_image: dict of third party image
         returns the status, filepath and system reserved disk
 
@@ -352,7 +352,7 @@ class ProvDeployK8sCortxLib:
                               " the data disk available on the system"
             # This condition validated the total available disk count
             # and split the disks per cvg.
-            data_devices_f = device_list[cvg_count+1:]
+            data_devices_f = device_list[cvg_count + 1:]
             if (data_disk_per_cvg * cvg_count) < new_device_lst_len:
                 count_end = int(data_disk_per_cvg)
                 data_devices.append(data_devices_f[0:count_end])
@@ -365,8 +365,8 @@ class ProvDeployK8sCortxLib:
                     count_end = int(count_end + data_disk_per_cvg)
                     data_devices.append(data_devices_ad)
             else:
-                LOGGER.debug("Data devices : else : %s",data_devices_f)
-                LOGGER.debug("data disk per cvg : %s",data_disk_per_cvg)
+                LOGGER.debug("Data devices : else : %s", data_devices_f)
+                LOGGER.debug("data disk per cvg : %s", data_disk_per_cvg)
                 data_devices = [data_devices_f[i:i + data_disk_per_cvg]
                                 for i in range(0, len(data_devices_f), data_disk_per_cvg)]
 
@@ -380,8 +380,13 @@ class ProvDeployK8sCortxLib:
         resp_passwd = self.update_password_sol_file(filepath)
         if not resp_passwd[0]:
             return False, "Failed to update passwords in solution file"
+        # Update load balancer ips
+        resp_lb_ip = self.update_lb_ip(filepath, control_ip=control_lb_ip, data_ip = data_lb_ip)
+        if not resp_lb_ip[0]:
+            return False, "Failed to update lb ip in solution file"
+
         # Update the solution yaml file with images
-        resp_image = self.update_image_section_sol_file(filepath)
+        resp_image = self.update_image_section_sol_file(filepath, cortx_image)
         if not resp_image[0]:
             return False, "Failed to update images in solution file"
 
@@ -491,7 +496,7 @@ class ProvDeployK8sCortxLib:
                 storage.pop(cvg_item)
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
-                metadata_schema_upd = {'devices': metadata_devices[cvg], 'size': size_metadata}
+                metadata_schema_upd = {'device': metadata_devices[cvg], 'size': size_metadata}
                 data_schema = {}
                 for disk in range(0, data_disk_per_cvg):
                     disk_schema_upd = {'device': data_devices[cvg][disk], 'size': size_data_disk}
@@ -517,7 +522,7 @@ class ProvDeployK8sCortxLib:
             soln.close()
         return True, filepath
 
-    def update_image_section_sol_file(self, filepath, **kwargs):
+    def update_image_section_sol_file(self, filepath, cortx_image, **kwargs):
         """
         Method use to update the Images section in solution.yaml
         Param: filepath: filename with complete path
@@ -527,13 +532,12 @@ class ProvDeployK8sCortxLib:
         """
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
-        cortx_images_val = kwargs.get("cortx_image",
-                                      self.deploy_cfg['cortx_images_val'])
+
         cortx_im = dict()
         image_default_dict = self.deploy_cfg['third_party_images']
 
         for image_key in self.deploy_cfg['cortx_images_key']:
-            cortx_im[image_key] = cortx_images_val
+            cortx_im[image_key] = cortx_image
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
@@ -546,6 +550,7 @@ class ProvDeployK8sCortxLib:
                     image_default_dict.pop(key)
             image.update(image_default_dict)
             soln.close()
+        LOGGER.debug("Images used for deployment : %s", image)
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(filepath, 'w') as soln:
@@ -571,6 +576,42 @@ class ProvDeployK8sCortxLib:
                 passwd_dict[key] = pswdmanager.decrypt(value)
             content.update(passwd_dict)
             soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, filepath
+
+    def update_lb_ip(self, filepath, data_ip: list, control_ip: list):
+        """
+        This Method is used to update the lb IP's
+        :Param: filepath: solution.yaml file path
+        :Param: data_ip: list of ip of data lb pod
+        :Param: control_ip: ip of data lb pod
+        """
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            loadbal = parent_key['common']['loadbal']
+            control_lb_dict = loadbal['control']
+            cip_dict = {}
+            for num, c_ip in zip(range(len(control_ip)), control_ip):
+                control_schema = {"ip{}".format(num+1): c_ip}
+                LOGGER.debug("Control %s",control_schema)
+                cip_dict.update(control_schema)
+            control_lb_dict.update({"externalips": cip_dict})
+
+            data_lb_dict = loadbal['data']
+            ip_dict = {}
+            for num, d_ip in zip(range(len(data_ip)), data_ip):
+                ip_schema = {"ip{}".format(num+1): d_ip}
+                LOGGER.debug("data %s", ip_schema)
+                ip_dict.update(ip_schema)
+            data_lb_dict.update({"externalips": ip_dict})
+            soln.close()
+            LOGGER.debug("Load balancer : %s", loadbal)
         noalias_dumper = yaml.dumper.SafeDumper
         noalias_dumper.ignore_aliases = lambda self, data: True
         with open(filepath, 'w') as soln:
