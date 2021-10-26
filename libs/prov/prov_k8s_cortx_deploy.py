@@ -285,11 +285,11 @@ class ProvDeployK8sCortxLib:
                         **kwargs):
         """
         This function updates the yaml file
-        :Param: obj: list of node object
-        :Param: node_list:int the count of worker nodes
+        :Param: worker_obj: list of worker node object
         :Param: filepath: Filename with complete path
         :Param: cortx_image: this is cortx image name
-        :Keyword: cluster_id: cluster id
+        :Param: control_lb_ip : List of control ips
+        :Param: data_lb_ip : List of data ips
         :Keyword: cvg_count: cvg_count per node
         :Keyword: type_cvg: ios or cas
         :Keyword: data_disk_per_cvg: data disk required per cvg
@@ -304,9 +304,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: skip_disk_count_check: disk count check
         :Keyword: third_party_image: dict of third party image
         returns the status, filepath and system reserved disk
-
         """
-        # cluster_id = kwargs.get("cluster_id", 1)
         cvg_count = kwargs.get("cvg_count", 2)
         data_disk_per_cvg = kwargs.get("data_disk_per_cvg", 0)
         cvg_type = kwargs.get("cvg_type", "ios")
