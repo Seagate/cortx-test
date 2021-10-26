@@ -32,6 +32,7 @@ from config.s3 import S3_CFG, S3_BLKBOX_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from commons.utils.assert_utils import assert_true, assert_in
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from libs.s3.s3_test_lib import S3TestLib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -219,6 +220,14 @@ class MinIOClient:
 
 class S3FS:
     """Class for s4fs Tools operations."""
+    def __init__(self, access: str = None, secret: str = None,) -> None:
+        """
+        method initializes members for s3fs client.
+        """
+        self.access = access
+        self.secret = secret
+        self.s3_test_obj = S3TestLib(access_key=self.access, secret_key=self.secret,
+                                     endpoint_url=S3_CFG["s3_url"])
 
     @staticmethod
     def configure_s3fs(
@@ -279,31 +288,31 @@ class S3FS:
         :return tuple: bucket_name & dir_name
         """
         if not bucket_name:
-            bucket_name = self.s3fs_cfg["bucket_name"].format(time.perf_counter_ns())
+            bucket_name = S3FS_CNF["s3fs_cfg"]["bucket_name"].format(time.perf_counter_ns())
         LOGGER.info("Creating bucket %s", bucket_name)
         resp = self.s3_test_obj.create_bucket(bucket_name)
         assert_true(resp[0], resp[1])
         LOGGER.info("Bucket created %s", bucket_name)
         LOGGER.info("Create a directory and list mount directory")
-        dir_name = self.s3fs_cfg["dir_name"].format(int(time.perf_counter_ns()))
-        command = " ".join([self.s3fs_cfg["make_dir_cmd"], dir_name])
+        dir_name = S3FS_CNF["s3fs_cfg"]["dir_name"].format(int(time.perf_counter_ns()))
+        command = " ".join([S3FS_CNF["s3fs_cfg"]["make_dir_cmd"], dir_name])
         resp = execute_cmd(command)
         assert_true(resp[0], resp[1])
         LOGGER.info("Created a directory and list mount directory")
         LOGGER.info("Mount bucket")
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
-            self.s3fs_cfg["passwd_file"],
-            self.s3fs_cfg["url"],
-            self.s3fs_cfg["path_style"],
-            self.s3fs_cfg["dbglevel"]]
+            S3FS_CNF["s3fs_cfg"]["passwd_file"],
+            S3FS_CNF["s3fs_cfg"]["url"],
+            S3FS_CNF["s3fs_cfg"]["path_style"],
+            S3FS_CNF["s3fs_cfg"]["dbglevel"]]
         command = self.create_cmd(
             operation, cmd_arguments)
         resp = execute_cmd(command)
         assert_true(resp[0], resp[1])
         LOGGER.info("Mount bucket successfully")
         LOGGER.info("Check the mounted directory present")
-        resp = execute_cmd(self.s3fs_cfg["cmd_check_mount"].format(dir_name))
+        resp = execute_cmd(S3FS_CNF["s3fs_cfg"]["cmd_check_mount"].format(dir_name))
         assert_in(
             dir_name,
             str(resp[1]),
