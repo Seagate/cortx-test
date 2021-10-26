@@ -124,7 +124,8 @@ k8s_cortx_deploy:
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
-  git_tag: "v0.0.9"
+  exe_status_check: "sh status-cortx-cloud.sh"
+  git_tag: "v0.0.10"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   third_party_images:
@@ -135,7 +136,6 @@ k8s_cortx_deploy:
     gluster: 'docker.io/gluster/gluster-centos:latest'
     rancher: 'rancher/local-path-provisioner:v0.0.20'
   cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
-  cortx_images_val: 'ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci'
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
     kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='

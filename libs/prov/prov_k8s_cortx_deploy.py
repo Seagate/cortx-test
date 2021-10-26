@@ -27,7 +27,6 @@ import yaml
 
 from commons import commands as common_cmd
 from commons import pswdmanager
-from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
 from config import PROV_CFG
@@ -197,7 +196,10 @@ class ProvDeployK8sCortxLib:
         param: system_disk: parameter to prereq script
         """
         LOGGER.info("Execute prereq script")
-        cmd = "cd {}; {} {}".format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
+        cmd = "cd {}; {} {}| tee prereq-deploy-cortx-cloud.log".format(remote_code_path,
+                                                                       self.deploy_cfg[
+                                                                           "exe_prereq"],
+                                                                       system_disk)
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
 
@@ -225,9 +227,20 @@ class ProvDeployK8sCortxLib:
         return : True/False and resp
         """
         LOGGER.info("Deploy Cortx cloud")
-        cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
+        cmd = "cd {}; {} | tee deployment.log".format(remote_code_path,
+                                                      self.deploy_cfg["deploy_cluster"])
         resp = node_obj.execute_cmd(cmd, read_lines=True)
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+        return True, resp
+
+    def validate_custer_status(self, node_obj: LogicalNode, remote_code_path):
+        LOGGER.info("Deploy Cortx cloud")
+        cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
+                                                          self.deploy_cfg["exe_status_check"])
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+        if "FAILED" in resp:
+            return False, resp
         return True, resp
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
@@ -265,14 +278,9 @@ class ProvDeployK8sCortxLib:
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
-            LOGGER.info("Validate all cluster services are online using hclt status")
-            health_obj = Health(hostname=master_node_list[0].hostname,
-                                username=master_node_list[0].username,
-                                password=master_node_list[0].password)
-            resp = health_obj.all_cluster_services_online()
-            LOGGER.debug("resp: %s", resp)
+            LOGGER.info("Validate all cluster using status-cortx-cloud.sh")
+            resp = self.validate_custer_status(master_node_list[0],self.deploy_cfg["git_remote_dir"])
             return resp
-
         return resp
 
     def checkout_solution_file(self, token, git_tag):
@@ -312,10 +320,10 @@ class ProvDeployK8sCortxLib:
         sns_parity = kwargs.get("sns_parity", 0)
         sns_spare = kwargs.get("sns_spare", 0)
         dix_data = kwargs.get("dix_data", 1)
-        dix_parity = kwargs.get("dix_parity", 2)
+        dix_parity = kwargs.get("dix_parity", 0)
         dix_spare = kwargs.get("dix_spare", 0)
-        size_metadata = kwargs.get("size_metadata", '5Gi')
-        size_data_disk = kwargs.get("size_data_disk", '5Gi')
+        size_metadata = kwargs.get("size_metadata", '20Gi')
+        size_data_disk = kwargs.get("size_data_disk", '20Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
@@ -379,7 +387,7 @@ class ProvDeployK8sCortxLib:
         if not resp_passwd[0]:
             return False, "Failed to update passwords in solution file"
         # Update load balancer ips
-        resp_lb_ip = self.update_lb_ip(filepath, control_ip=control_lb_ip, data_ip = data_lb_ip)
+        resp_lb_ip = self.update_lb_ip(filepath, control_ip=control_lb_ip, data_ip=data_lb_ip)
         if not resp_lb_ip[0]:
             return False, "Failed to update lb ip in solution file"
 
@@ -596,15 +604,15 @@ class ProvDeployK8sCortxLib:
             control_lb_dict = loadbal['control']
             cip_dict = {}
             for num, c_ip in zip(range(len(control_ip)), control_ip):
-                control_schema = {"ip{}".format(num+1): c_ip}
-                LOGGER.debug("Control %s",control_schema)
+                control_schema = {"ip{}".format(num + 1): c_ip}
+                LOGGER.debug("Control %s", control_schema)
                 cip_dict.update(control_schema)
             control_lb_dict.update({"externalips": cip_dict})
 
             data_lb_dict = loadbal['data']
             ip_dict = {}
             for num, d_ip in zip(range(len(data_ip)), data_ip):
-                ip_schema = {"ip{}".format(num+1): d_ip}
+                ip_schema = {"ip{}".format(num + 1): d_ip}
                 LOGGER.debug("data %s", ip_schema)
                 ip_dict.update(ip_schema)
             data_lb_dict.update({"externalips": ip_dict})

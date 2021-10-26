@@ -104,14 +104,24 @@ class TestFailureDomainK8Cortx:
 
         control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
         data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
-        self.log.debug("Control Load balancer ip : %s",control_lb_ip)
+        control_lb_ip = control_lb_ip.split(",")
+        data_lb_ip = data_lb_ip.split(",")
+        self.log.debug("Control Load balancer ip : %s", control_lb_ip)
         self.log.debug("Data Load balancer ip : %s", data_lb_ip)
 
         self.log.info("Step 4 : Update solution file template")
         resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
                                                   cortx_image=self.cortx_image,
                                                   control_lb_ip=control_lb_ip,
-                                                  data_lb_ip=data_lb_ip)
+                                                  data_lb_ip=data_lb_ip,
+                                                  sns_data=4,
+                                                  sns_parity=2,
+                                                  sns_spare=0,
+                                                  dix_data=1,
+                                                  dix_parity=2,
+                                                  dix_spare=0,
+                                                  size_data_disk='20Gi',
+                                                  size_metadata='20Gi')
         assert_utils.assert_true(resp[0], resp[1])
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
