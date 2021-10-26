@@ -22,6 +22,7 @@
 Locust tasks set for put object, get object and delete object from bucket
 with step users and constant object size
 """
+import glob
 import os
 import math
 import logging
@@ -57,28 +58,27 @@ class LocustUser(HttpUser):
         LOGGER.info("Starting test setup with %s %s", kwargs.get('--u'), kwargs.get('--t'))
         UTILS_OBJ.create_buckets(BUCKET_COUNT)
 
-    @task(1)
+    @task(2)
     def put_object(self):
         for bucket in BUCKET_LIST:
             self.utils.put_object(bucket, OBJECT_SIZE)
 
     @task(1)
     def get_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.download_object(bucket)
+        self.utils.download_object()
 
     @task(1)
     def delete_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.delete_object(bucket)
+        self.utils.delete_object()
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         LOGGER.info("Starting test cleanup.")
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
-        for local_obj in (
-                locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
-            UTILS_OBJ.delete_local_obj(local_obj)
+        for f in glob.glob(f"{locust_utils.OBJ_NAME}*"):
+            UTILS_OBJ.delete_local_obj(f)
+        for f in glob.glob(f"{locust_utils.GET_OBJ_PATH}*"):
+            UTILS_OBJ.delete_local_obj(f)
         LOGGER.info("Log path: %s", kwargs.get('--logfile'))
         LOGGER.info("HTML path: %s", kwargs.get('--html'))
 

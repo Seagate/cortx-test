@@ -44,11 +44,11 @@ def run_cmd(cmd):
     return result
 
 
-def check_log_file(file_path, error):
+def check_log_file(file_path, errors):
     """
     Function to find out error is reported in given file or not
     :param str file_path: the file in which error is to be searched
-    :param str error: error sting to be searched for
+    :param list errors: error strings to be searched for
     :return: errorFound: True (if error is seen) else False
     :rtype: Boolean
     """
@@ -56,21 +56,23 @@ def check_log_file(file_path, error):
     os.write(1, str.encode("Debug: Log File Path {}".format(file_path)))
     with open(file_path, "r") as log_file:
         for line in log_file:
-            if error in line:
-                error_found = True
-                os.write(1, str.encode(
-                    "checkLogFileError: Error Found in S3Bench Run : {}".format(line)))
-                return error_found
+            for error in errors:
+                if error.lower() in line.lower():
+                    error_found = True
+                    os.write(1, str.encode(
+                        "checkLogFileError: Error Found in Locust Run : {}".format(line)))
+                    return error_found
 
     os.write(1, str.encode("No Error Found"))
     return error_found
 
 
 def run_locust(
-        host: str, locust_file: str, users: int, hatch_rate: int = 1,
+        test_id: str, host: str, locust_file: str, users: int, hatch_rate: int = 1,
         duration: str = "3m") -> tuple:
     """
     Function to run locust.
+    :param test_id: test number
     :param host: host FQDN
     :param locust_file: path to the locust file
     :param users: number of concurrent users
@@ -79,10 +81,10 @@ def run_locust(
     :return: tupple resp with over all execution and log and html file path
     """
     upper_limit_cmd = "ulimit -n 100000"
-    log_file = "".join([LOCUST_CFG['default']['LOGFILE'],
-                        str(time.strftime("-%Y%m%d-%H%M%S")), ".log"])
-    html_file = "".join([LOCUST_CFG['default']['HTMLFILE'], str(
-        time.strftime("-%Y%m%d-%H%M%S")), ".html"])
+    log_dir = "log/latest/"
+    time_str = str(time.strftime("-%Y%m%d-%H%M%S"))
+    log_file = f"{log_dir}{test_id}-{LOCUST_CFG['default']['LOGFILE']}-{time_str}.log"
+    html_file = f"{log_dir}{test_id}-{LOCUST_CFG['default']['HTMLFILE']}-{time_str}.html"
     locust_run_cmd = \
         "locust --host={} -f {} --headless -u {} -r {} --run-time {} --html {} --logfile {}"
     os.write(1, str.encode("Setting ulimit for locust\n"))

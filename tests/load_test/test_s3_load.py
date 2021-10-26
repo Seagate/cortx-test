@@ -27,7 +27,13 @@ import pytest
 from commons.utils import assert_utils
 from scripts.locust import locust_runner
 from config.s3 import S3_CFG
+from commons.constants import Sizes
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+
+error_strings = ["InternalError", "Gateway Timeout", "Service Unavailable", "ValueError",
+                 "bad interpreter", "exceptions", "stderr", "error"]
+
+duration = "10m"
 
 
 class TestS3Load:
@@ -48,6 +54,8 @@ class TestS3Load:
         os.environ.setdefault("CA_CERT", S3_CFG["s3_cert_path"])
         cls.log.info("account prefix: %s, Bucket prefix:", cls.account_prefix)
         cls.log.info("ENDED: setup test suite operations.")
+        cls.locust_file = "scripts/locust/locustfile.py"
+        cls.locust_step_user_file = "scripts/locust/locustfile_step_users.py"
 
     @classmethod
     def teardown_class(cls):
@@ -83,11 +91,17 @@ class TestS3Load:
         self.log.info("STARTED: Teardown operations.")
         self.log.info("ENDED: Teardown operations.")
 
+    @staticmethod
+    def check_errors(log_file):
+        if os.path.exists(log_file):
+            res = locust_runner.check_log_file(log_file, error_strings)
+            assert_utils.assert_false(res, "Few IO failed due to some reason")
+
     @pytest.mark.s3_io_load
     @pytest.mark.tags("TEST-19533")
     def test_single_bkt_small_obj_max_session_19533(self):
         """
-        Load test with single bucket, fixed small size objects and max supported concurrent sessions.
+        Load test with single bucket, fixed small size objects and max supported concurrent sessions
         """
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
@@ -95,16 +109,13 @@ class TestS3Load:
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(102400)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19533", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -117,23 +128,20 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(1)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(102400)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(100*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21039", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -145,19 +153,16 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19526", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -169,23 +174,20 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21195", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -197,19 +199,16 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(100)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19534", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -222,23 +221,20 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(100)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25000)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(25*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21210", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -253,19 +249,17 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(60)
         os.environ["STEP_LOAD"] = str(50)
         os.environ["SPAWN_RATE"] = str(3)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10240)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile_step_users.py",
-            users=10, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19537", host=self.host_url,
+                                       locust_file=self.locust_step_user_file,
+                                       users=10, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -280,23 +274,21 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(60)
         os.environ["STEP_LOAD"] = str(50)
         os.environ["SPAWN_RATE"] = str(3)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10240)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile_step_users.py",
-            users=10, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21211", host=host_url,
+                                       locust_file=self.locust_step_user_file,
+                                       users=10, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -311,19 +303,17 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(1800)
         os.environ["STEP_LOAD"] = str(150)
         os.environ["SPAWN_RATE"] = str(10)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10240)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile_step_users.py",
-            users=150, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19538", host=self.host_url,
+                                       locust_file=self.locust_step_user_file,
+                                       users=150, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -338,23 +328,21 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(1800)
         os.environ["STEP_LOAD"] = str(150)
         os.environ["SPAWN_RATE"] = str(10)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10240)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile_step_users.py",
-            users=10, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21214", host=host_url,
+                                       locust_file=self.locust_step_user_file,
+                                       users=10, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -367,20 +355,17 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = str(26214400)
-        os.environ["MAX_OBJECT_SIZE"] = str(524288000)
+        os.environ["MIN_OBJECT_SIZE"] = str(25*Sizes.MB)
+        os.environ["MAX_OBJECT_SIZE"] = str(500*Sizes.MB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19542", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -393,24 +378,21 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = str(26214400)
-        os.environ["MAX_OBJECT_SIZE"] = str(524288000)
+        os.environ["MIN_OBJECT_SIZE"] = str(25*Sizes.MB)
+        os.environ["MAX_OBJECT_SIZE"] = str(500*Sizes.MB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21227", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -423,19 +405,16 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(419430400)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(400*Sizes.MB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19539", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -448,23 +427,20 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(419430400)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(400*Sizes.MB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21228", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -477,19 +453,16 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(1)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1*Sizes.GB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19544", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -502,23 +475,20 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(1)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1*Sizes.GB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21229", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -531,19 +501,16 @@ class TestS3Load:
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1*Sizes.GB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
-        res = locust_runner.run_locust(
-            host=self.host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-19545", host=self.host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
 
     @pytest.mark.s3_io_load
@@ -551,26 +518,24 @@ class TestS3Load:
     @pytest.mark.skip(reason="workload is not supported")
     def test_large_obj_multiple_buckets_with_http_21230(self):
         """
-        Load test with larger object size with multiple buckets and constant number of users using HTTP endpoint
+        Load test with larger object size with multiple buckets and constant number of users
+        using HTTP endpoint
         """
         self.log.info("Setting up test configurations")
         os.environ["MAX_POOL_CONNECTIONS"] = str(100)
         os.environ["BUCKET_COUNT"] = str(30)
-        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1073741824)
+        os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(1*Sizes.GB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         if "https" in self.host_url:
             host_url = self.host_url.replace("https", "http")
         else:
             host_url = self.host_url
-        res = locust_runner.run_locust(
-            host=host_url, locust_file="scripts/locust/locustfile.py",
-            users=30, duration="15m")
+        res = locust_runner.run_locust(test_id="TEST-21230", host=host_url,
+                                       locust_file=self.locust_file, users=30, duration=duration)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
         log_file = res[1]["log-file"]
-        if os.path.exists(log_file):
-            res = locust_runner.check_log_file(log_file, error="InternalError")
-            assert_utils.assert_false(res, "Few IO failed due to some reason")
+        self.check_errors(log_file)
         self.log.info("Validated locust log file.")
