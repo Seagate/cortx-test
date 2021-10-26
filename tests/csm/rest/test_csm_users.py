@@ -93,6 +93,7 @@ class TestCsmUser():
         return res
 
     @pytest.mark.lc
+    @pytest.mark.cluster_user_ops
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-28936")
     def test_28936(self):
@@ -109,7 +110,7 @@ class TestCsmUser():
         #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
               cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
-               pod_name, self.csm_conf_path , self.csm_copy_path),
+               pod_name, self.csm_conf_path , self.csm_copy_path, cons.CORTX_CSM_POD),
                          read_lines=False,
                          exc=False)
         resp = self.nd_obj.copy_file_to_local(
@@ -127,7 +128,7 @@ class TestCsmUser():
         #cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
                 cmd=comm.K8S_CP_TO_CONTAINER_CMD.format(
-              self.csm_copy_path, pod_name, self.csm_conf_path),
+              self.csm_copy_path, pod_name, self.csm_conf_path, cons.CORTX_CSM_POD),
             read_lines=False,
             exc=False)
         self.log.info("Step 2: Delete control pod")
@@ -152,8 +153,8 @@ class TestCsmUser():
         self.log.info("Step 5: Edit csm.conf file for incorrect s3 data endpoint")
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream)
-        data['S3']['iam']['endpoints'] = "https://cortx-io-svc:9443"
-        data['S3']['iam']['host'] = "cortx-io-svc"
+        data['S3']['iam']['endpoints'] = cons.S3_ENDPOINT
+        data['S3']['iam']['host'] = cons.S3_HOST
         with open(self.local_csm_path, 'w') as yaml_file:
              yaml_file.write( yaml.dump(data, default_flow_style=False))
         resp = self.nd_obj.copy_file_to_remote(
