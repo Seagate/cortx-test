@@ -81,14 +81,15 @@ class TestFailureDomainK8Cortx:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-    @pytest.mark.run(order=1)
-    @pytest.mark.data_durability
-    @pytest.mark.tags("TEST-29485")
-    def test_29485(self):
+    def test_deployment(self, sns_data, sns_parity,
+                        sns_spare, dix_data,
+                        dix_parity, dix_spare,
+                        cvg_count, data_disk_per_cvg):
         """
-        Intel ISA  - 3node - SNS- 4+2+0 Deployment
+        This method is ued for deployment with various config on N nodes
         """
-        self.log.info("STARTED: 3node (SNS-4+2+0) k8s based Cortx Deployment")
+        self.log.info("STARTED: {%s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
+                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
         self.log.info("Step 1: Perform k8s Cluster Deployment")
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
@@ -101,32 +102,23 @@ class TestFailureDomainK8Cortx:
 
         self.log.info("Step 3: Download solution file template")
         path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
-
         control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
         data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
         control_lb_ip = control_lb_ip.split(",")
         data_lb_ip = data_lb_ip.split(",")
-        self.log.debug("Control Load balancer ip : %s", control_lb_ip)
-        self.log.debug("Data Load balancer ip : %s", data_lb_ip)
-
         self.log.info("Step 4 : Update solution file template")
         resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
                                                   cortx_image=self.cortx_image,
-                                                  control_lb_ip=control_lb_ip,
-                                                  data_lb_ip=data_lb_ip,
-                                                  sns_data=4,
-                                                  sns_parity=2,
-                                                  sns_spare=0,
-                                                  dix_data=1,
-                                                  dix_parity=2,
-                                                  dix_spare=0,
-                                                  size_data_disk='20Gi',
-                                                  size_metadata='20Gi')
-        assert_utils.assert_true(resp[0], resp[1])
+                                                  control_lb_ip=control_lb_ip, data_lb_ip=data_lb_ip,
+                                                  sns_data=sns_data, sns_parity=sns_parity,
+                                                  sns_spare=sns_spare, dix_data=dix_data, dix_parity=dix_parity,
+                                                  dix_spare=dix_spare, cvg_count=cvg_count,
+                                                  data_disk_per_cvg=data_disk_per_cvg, size_data_disk="20Gi",
+                                                  size_metadata="20Gi")
+        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
-        self.log.info("Solution File Path : %s", sol_file_path)
-        self.log.info("Sys disk : %s", system_disk_dict)
+
         self.log.info("Step 5: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
                                                        self.worker_node_list, system_disk_dict,
@@ -134,4 +126,55 @@ class TestFailureDomainK8Cortx:
                                                        self.docker_password, self.git_id,
                                                        self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("ENDED: 3node (SNS-4+2+0) k8s based Cortx Deployment")
+        self.log.info("ENDED: %s node (SNS-%s+5s+%s) k8s based Cortx Deployment",
+                      len(self.worker_node_list), sns_parity, sns_spare)
+
+    @pytest.mark.run(order=1)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29485")
+    def test_29485(self):
+        """
+        Intel ISA  - 3node - SNS- 4+2+0 dix 1+2+0 Deployment
+        """
+        self.test_deployment(sns_data=4, sns_parity=2, sns_spare=0, dix_data=1,
+                             dix_parity=2, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
+
+    @pytest.mark.run(order=4)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29488")
+    def test_29488(self):
+        """
+        Intel ISA -5node -SNS - 10+5+0, dix 1+2+0 Deployment
+        """
+        self.test_deployment(sns_data=10, sns_parity=5, sns_spare=0,
+                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=3, data_disk_per_cvg=1)
+
+    @pytest.mark.run(order=7)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29491")
+    def test_29491(self):
+        """
+        Intel ISA  - 5node - SNS- 6+4+0 , dix 1+2+0 Deployment
+        """
+        self.test_deployment(sns_data=6, sns_parity=4, sns_spare=0,
+                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
+
+    @pytest.mark.run(order=10)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29494")
+    def test_29494(self):
+        """
+        Intel ISA  - 16node - SNS- 8+8+0 dix 1+8+0 Deployment
+        """
+        self.test_deployment(sns_data=8, sns_parity=8, sns_spare=0, dix_data=1,
+                             dix_parity=8, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
+
+    @pytest.mark.run(order=13)
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29497")
+    def test_29497(self):
+        """
+        Intel ISA  - 16node - SNS- 16+4+0 dix 1+4+0 Deployment
+        """
+        self.test_deployment(sns_data=16, sns_parity=4, sns_spare=0, dix_data=1,
+                             dix_parity=4, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
