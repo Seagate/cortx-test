@@ -27,6 +27,7 @@ from datetime import datetime
 import paramiko
 import pytest
 
+from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from config.s3 import S3_LDAP_TST_CFG
 from commons.constants import const

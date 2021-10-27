@@ -25,7 +25,6 @@ Note: S3 helper is singleton so please import it's object from libs.s3 __init__
  as 'from libs.s3 import S3H_OBJ'.
 """
 
-import json
 import logging
 import os
 import time
@@ -158,9 +157,8 @@ class S3Helper:
         try:
             if self.cmn_cfg["product_family"] == const.PROD_FAMILY_LR and \
                     self.cmn_cfg["product_type"] == const.PROD_TYPE_NODE:
-                status, result = run_remote_cmd(
-                    commands.SYSTEM_CTL_STATUS_CMD.format(service), host, user, pwd,
-                    read_lines=True)
+                status, result = run_remote_cmd(commands.SYSTEM_CTL_STATUS_CMD.format(service),
+                                                host, user, pwd, read_lines=True)
                 if not status:
                     return status, result
                 result_ = ''.join(result)
@@ -563,7 +561,6 @@ class S3Helper:
     def s3server_inject_faulttolerance(self, enable=False, **kwargs) -> tuple:
         """
         Inject(enable/disable) fault tolerance in s3server.
-        TODo: Move to s3misc
         TODO: Code will be revised based on F-24A feature availability.
         # :param host: IP of the host.
         # :param user: user name of the host.
@@ -590,7 +587,6 @@ class S3Helper:
     def verify_and_validate_created_object_fragement(object_name) -> tuple:
         """
         Verify in m0kv output.
-        ToDo: Move to s3 test lib
         TODO: Code will be revised based on F-24A feature availability.
         Verify the Validate that object list index contains extended entries using m0kv.
         Verify in m0kv output. Main object size and fragment size.
