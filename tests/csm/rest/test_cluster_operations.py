@@ -44,15 +44,19 @@ class TestCluster():
         cls.config = CSMConfigsCheck()
         cls.csm_cluster = RestCsmCluster()
         cls.csm_user = RestCsmUser()
-        cls.csm_cluster.pull_provisioner()
-        cls.csm_cluster.trigger_prov_command('reimage')
+        cls.csm_cluster.recover_files(False)
 
-    def teardown_method(self):
-        """Teardown method which run after each function.
+    @classmethod
+    def teardown_class(cls):
         """
-        self.log.info("Teardown started")
-        self.csm_cluster.trigger_prov_command('destroy')
-        self.log.info("Teardown ended")
+        Function will be invoked after completion of all test case.
+        """
+        cls.log.info("Teardown started")
+        cls.csm_cluster.destroy_cluster()
+        cls.csm_cluster.recover_files(True)
+        cls.csm_cluster.install_prerequisites()
+        cls.csm_cluster.deploy_cluster()
+        cls.log.info("Teardown ended")
 
     @pytest.mark.lc
     @pytest.mark.csmrest
@@ -64,8 +68,13 @@ class TestCluster():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.csm_cluster.trigger_prov_command('deploy')
-        self.csm_cluster.apply_csm_service()
+        self.log.info("Destroying existing cluster")
+        self.csm_cluster.destroy_cluster()
+        self.log.info("Modify endpoint to https")
+        self.csm_cluster.modify_config_template('endpoints', 'https')
+        self.log.info("Deploy cluster")
+        self.csm_cluster.install_prerequisites()
+        self.csm_cluster.deploy_cluster()
         username = self.csm_user.config["csm_admin_user"]["username"]
         password = self.csm_user.config["csm_admin_user"]["password"]
         self.log.info("Verifying login with secure mode")
@@ -88,9 +97,13 @@ class TestCluster():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        self.csm_cluster.modify_config_file('endpoints', 'http')
-        self.csm_cluster.trigger_prov_command('deploy')
-        self.csm_cluster.apply_csm_service()
+        self.log.info("Destroying existing cluster")
+        self.csm_cluster.destroy_cluster()
+        self.log.info("Modify endpoint to http")
+        self.csm_cluster.modify_config_template('endpoints', 'http')
+        self.log.info("Deploy cluster")
+        self.csm_cluster.install_prerequisites()
+        self.csm_cluster.deploy_cluster()
         username = self.csm_user.config["csm_admin_user"]["username"]
         password = self.csm_user.config["csm_admin_user"]["password"]
         self.log.info("Verifying login with unsecure mode")
@@ -101,7 +114,6 @@ class TestCluster():
         self.log.info("Actual Response: %s", response.status_code)
         assert_utils.assert_equals(response.status_code, HTTPStatus.OK)
         self.log.info("Verified login with unsecure mode")
-        self.csm_cluster.trigger_destroy()
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -114,12 +126,15 @@ class TestCluster():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Destroying existing cluster")
+        self.csm_cluster.destroy_cluster()
         self.log.info("Starting deployment with invalid username")
-        self.csm_cluster.modify_config_file('mgmt_admin', 'abc')
-        self.csm_cluster.trigger_prov_command('deploy')
-        time.sleep(120)
-        res = self.csm_cluster.get_pod_status()
-        assert_utils.assert_false(res, "Control node is successfully created")
+        self.csm_cluster.modify_config_template('mgmt_admin', 'abc')
+        self.csm_cluster.install_prerequisites()
+        self.csm_cluster.deploy_cluster()
+        res = self.csm_cluster.get_pod_status_value('control')
+        assert res, "Control pod with Error state not found"
+        self.log.info("Control pod with Error state found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lc
@@ -132,10 +147,13 @@ class TestCluster():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Destroying existing cluster")
+        self.csm_cluster.destroy_cluster()
         self.log.info("Starting deployment with invalid password")
-        self.csm_cluster.modify_secrets_file('123')
-        self.csm_cluster.trigger_prov_command('deploy')
-        time.sleep(120)
-        res = self.csm_cluster.get_pod_status()
-        assert_utils.assert_false(res, "Control node is successfully created")
+        self.csm_cluster.modify_solution_file('csm_mgmt_admin_secret', '123')
+        self.csm_cluster.install_prerequisites()
+        self.csm_cluster.deploy_cluster()
+        res = self.csm_cluster.get_pod_status_value('control')
+        assert res, "Control pod with Error state not found"
+        self.log.info("Control pod with Error state found")
         self.log.info("##### Test completed -  %s #####", test_case_name)
