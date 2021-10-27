@@ -388,10 +388,10 @@ class ProvDeployK8sCortxLib:
         resp_passwd = self.update_password_sol_file(filepath)
         if not resp_passwd[0]:
             return False, "Failed to update passwords in solution file"
-        # Update load balancer ips
-        resp_lb_ip = self.update_lb_ip(filepath, control_ip=control_lb_ip, data_ip=data_lb_ip)
-        if not resp_lb_ip[0]:
-            return False, "Failed to update lb ip in solution file"
+        # # Update load balancer ips
+        # resp_lb_ip = self.update_lb_ip(filepath, control_ip=control_lb_ip, data_ip=data_lb_ip)
+        # if not resp_lb_ip[0]:
+        #     return False, "Failed to update lb ip in solution file"
 
         # Update the solution yaml file with images
         resp_image = self.update_image_section_sol_file(filepath, cortx_image,
