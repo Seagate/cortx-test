@@ -151,7 +151,8 @@ class TestFailureDomainK8Cortx:
         Intel ISA -5node -SNS - 10+5+0, dix 1+2+0 Deployment
         """
         self.test_deployment(sns_data=10, sns_parity=5, sns_spare=0,
-                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=3, data_disk_per_cvg=1)
+                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=3,
+                             data_disk_per_cvg=1)
 
     @pytest.mark.run(order=7)
     @pytest.mark.data_durability
@@ -161,7 +162,8 @@ class TestFailureDomainK8Cortx:
         Intel ISA  - 5node - SNS- 6+4+0 , dix 1+2+0 Deployment
         """
         self.test_deployment(sns_data=6, sns_parity=4, sns_spare=0,
-                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
+                             dix_data=1, dix_parity=2, dix_spare=0, cvg_count=2,
+                             data_disk_per_cvg=1)
 
     @pytest.mark.run(order=10)
     @pytest.mark.data_durability
