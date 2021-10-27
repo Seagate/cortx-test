@@ -28,6 +28,7 @@ from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
+from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.utils import assert_utils
@@ -294,7 +295,11 @@ class S3BackgroundIO:
         self.io_bucket_name = io_bucket_name
         self.log_prefix = None
         self.parallel_ios = None
-        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+
+        try:
+            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        except CTException:
+            bucket_exists = False
         if not bucket_exists:
             LOG.info("Creating IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
@@ -400,7 +405,10 @@ class S3BackgroundIO:
         """
         if self.is_alive():
             self.parallel_ios.join()
-        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        try:
+            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        except CTException:
+            bucket_exists = False
         if bucket_exists:
             LOG.info("Deleting IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.delete_bucket(self.io_bucket_name, force=True)
