@@ -47,7 +47,7 @@ class TestS3fs:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
-        self.random_time = int(time.time())
+        self.random_time = int(time.perf_counter_ns())
         resp = system_utils.is_rpm_installed(const.S3FS)
         assert_true(resp[0], resp[1])
         access, secret = ACCESS_KEY, SECRET_KEY
