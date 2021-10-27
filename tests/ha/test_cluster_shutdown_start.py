@@ -596,6 +596,9 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 4: Shutdown the cluster and start it back before shutdown completes.")
         proc = Process(target=self.ha_obj.cortx_stop_cluster(self.node_master_list[0]))
         proc.start()
+        # TODO: Need to check if any sleep needed before cluster status is checked.
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], "Cluster has not started shutdown yet.")
         LOGGER.info("Cluster shutdown started.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         LOGGER.info("Response for cluster start: %s", resp)
