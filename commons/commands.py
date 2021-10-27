@@ -220,6 +220,7 @@ CMD_SW_VER = "provisioner get_release_version"
 CMD_SW_SET_REPO = "provisioner set_swupgrade_repo {0} --sig-file {1} --gpg-pub-key {2}"
 CMD_ISO_VER = "provisioner get_iso_version"
 CMD_SW_UP = "provisioner sw_upgrade --offline"
+CMD_SPACE_CHK = "df -h"
 
 # Deployment commands
 CMD_YUM_UTILS = "yum install -y yum-utils"
@@ -400,11 +401,38 @@ CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
 HCTL_UNMAINTENANCE_MODE_CMD = "hctl node unmaintenance --all"
 
+# DI Flags
+RUN_FI_FLAG = 'curl -X PUT -H "x-seagate-faultinjection: {},always,{},0,0" {}'
+S3_FI_FLAG_DC_ON_WRITE = 'di_data_corrupted_on_write'
+S3_FI_FLAG_DC_ON_READ = 'di_data_corrupted_on_read'
+S3_FI_FLAG_CSUM_CORRUPT = 'di_obj_md5_corrupted'
+
+FI_ENABLE = 'enable'
+FI_DISABLE = 'disable'
+FI_TEST = 'test'
+
+S3_SRV_PORT = S3_SRV_START_PORT = 28081
+
+# corrupts file before storing;
+DI_DATA_CORRUPT_ON_WRITE = 'di_data_corrupted_on_write'
+
+# corrupts file during retrieval;
+DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
+
+# instead of md5 hash of the object stores md5 hash of empty string.
+DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 
 # Kubernetes commands to interact with service/pods.
+LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
+                 +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
+K8S_LDAP_CMD = "kubectl exec -it symas-openldap-pod -- /bin/bash -c \"{}\""
+K8S_SVC_CMD ="kubectl get svc"
+K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
+K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
+K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 
 # Kubectl command prefix
-KUBECTL_CMD = "kubectl {} {} -n {}"
+KUBECTL_CMD = "kubectl {} {} -n {} {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
@@ -412,9 +440,21 @@ FETCH_LOGS = ""
 RESTART_POD_CMD = ""
 
 # LC commands
-CLSTR_START_CMD = ""
-CLSTR_STOP_CMD = ""
-CLSTR_STATUS_CMD = ""
+CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
+
+#LC deployment
+CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
+CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
+CMD_CURL = "curl -o {} {}"
+
+#Git commands
+CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CHECKOUT = "git checkout {}"
+
+#docker commands
+CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"

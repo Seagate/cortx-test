@@ -37,6 +37,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# K8s for cortx
+POD_NAME = "storage-node1"
+HAX_CONTAINER_NAME = "cortx-hax"
+NAMESPACE = "default"
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
@@ -107,6 +112,8 @@ CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
+LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
+CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -190,6 +197,8 @@ class Rest:
     S3_ACCESS_LL = 16
     S3_SECRET_UL = 40
     S3_SECRET_LL = 8
+    MAX_S3_USERS = 1000
+    MAX_BUCKETS = 1000
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -353,3 +362,6 @@ class Sizes:
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+
+# K8s env
+K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"

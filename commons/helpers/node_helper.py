@@ -25,7 +25,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-from commons import commands, const
+from commons import commands, constants
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
@@ -178,5 +178,26 @@ class Node(Host):
 
             return ldap_user, ldap_passwd
         except Exception as error:
-            log.error("%s %s: %s", const.EXCEPTION_ERROR, self.get_ldap_credential.__name__, error)
+            log.error("%s %s: %s", constants.EXCEPTION_ERROR, self.get_ldap_credential.__name__,
+                      error)
             return None, None
+
+    def make_remote_file_copy(self, path: str, backup_path: str) -> \
+            Tuple[bool, Tuple[Union[List[str], str, bytes]]]:
+        """
+        copy file with remote machine cp cmd.
+
+        :param path: source path
+        :param backup_path: destination path
+        :return: response in tuple
+        """
+        try:
+            cmd = commands.COPY_FILE_CMD.format(path, backup_path)
+            resp = self.execute_cmd(cmd=cmd, read_nbytes=constants.BYTES_TO_READ)
+        except Exception as error:
+            log.error(
+                "%s %s: %s", constants.EXCEPTION_ERROR,
+                self.make_remote_file_copy.__name__, error)
+            return False, error
+
+        return True, resp

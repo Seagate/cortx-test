@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash_bootstrap_components import Card, CardBody, Row, Button, Tab #, Tabs
+from dash_bootstrap_components import Card, CardBody, Row, Button, Tab  # , Tabs
 from dash_core_components import Dropdown, Markdown
 import dash_html_components as html
 from Performance.styles import style_sub_tab, style_table_caption,\
@@ -29,8 +29,14 @@ from Performance.styles import style_sub_tab, style_table_caption,\
 
 
 release = [
-    {'label': 'LR-R1', 'value': '1'},
-    {'label': 'LR-R2', 'value': '2'}
+    {'label': 'LR-R2-CentOS-7.9',
+        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+    {'label': 'LR-R2-CentOS-7.8',
+        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-CentOS',
+        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+    {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+
 ]
 
 
@@ -132,13 +138,13 @@ stats_input_options = [
         [
             html.P("User Configuration » ", style=style_filters_captions),
             Dropdown(
-                id='perf_iteration_dropdown',
-                placeholder="Select Iterations",
+                id='perf_custom_dropdown',
+                placeholder="Select Tag",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(
-                id='perf_custom_dropdown',
-                placeholder="Select Tag",
+                id='perf_iteration_dropdown',
+                placeholder="Select Iterations",
                 style=dict_Style_Stats_input_options
             )
         ],

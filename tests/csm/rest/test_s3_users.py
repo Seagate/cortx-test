@@ -18,6 +18,7 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
+# pylint: disable-msg=too-many-statements
 """Tests operations on S3 Users using REST API"""
 
 import json
@@ -90,7 +91,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         assert self.s3user.create_and_verify_s3account(
-            user="valid", expect_status_code=const.SUCCESS_STATUS)
+            user="valid", expect_status_code=HTTPStatus.CREATED.value)
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -452,7 +453,7 @@ class TestS3user():
         response = self.s3user.create_s3_account()
 
         self.log.debug("Verifying new S3 account got created successfully")
-        assert response.status_code == const.SUCCESS_STATUS
+        assert response.status_code == HTTPStatus.CREATED.value
         self.log.debug("Verified new S3 account %s got created successfully",
                        response.json()["account_name"])
 
@@ -479,6 +480,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -491,7 +493,7 @@ class TestS3user():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         access_keys = []
-        access_keys.append("_divya_kachhwaha")
+        access_keys.append("_" + config_utils.gen_rand_string(length=const.S3_ACCESS_LL))
         access_keys.append("a" * const.S3_ACCESS_UL)
         access_keys.append(config_utils.gen_rand_string(chars=string.digits,
                                                         length=const.S3_ACCESS_LL))
@@ -510,9 +512,9 @@ class TestS3user():
             akey = resp.json()["access_key"]
             skey = resp.json()["secret_key"]
             s3_user = resp.json()["account_name"]
-            iam_user = "{}{}".format("iam", s3_user)
-            bucket = "{}{}".format("bucket", s3_user)
-            obj = "{}{}.txt".format("object", s3_user)
+            iam_user = f"iam{s3_user}"
+            bucket = f"bucket{s3_user}"
+            obj = f"object{s3_user}.txt"
 
             self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                           iam_user, akey, skey)
@@ -537,5 +539,422 @@ class TestS3user():
             self.log.info("Verify Delete S3 user: %s with access key: %s and secret key: %s",
                           s3_user, akey, skey)
             resp = self.s3user.delete_s3_account_user(s3_user)
-            assert resp.status_code == HTTPStatus.OK.value
+            assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28924")
+    def test_28924(self):
+        """
+        Test create S3 account with Invalid AWS secret key.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28924"]
+        secret_keys = []
+        self.log.info("Key 1: Empty Secret key")
+        secret_keys.append("")
+
+        sk_len = const.S3_SECRET_LL - 1
+        self.log.info("Key 2: Secret key less than %s", const.S3_SECRET_LL)
+        secret_keys.append("a" * sk_len)
+
+        sk_len = const.S3_SECRET_UL + 1
+        self.log.info("Key 3: Secret key greather than %s", const.S3_SECRET_UL)
+        secret_keys.append("x" * sk_len)
+
+        for secret_key in secret_keys:
+            self.log.info("[START] Secret Key : %s", secret_key)
+            self.log.info("Creating custom S3 account with Secret key %s.", secret_key)
+            user_data = self.s3user.create_custom_s3_payload("valid")
+            user_data.update({"secret_key": secret_key})
+            resp = self.s3user.create_custom_s3_user(user_data)
+            assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying message id...")
+                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+                self.log.info("Verifying message...")
+                assert err["message"] == err_msg["message"], "Message check failed."
+            self.log.info("[END] Secret Key : %s", secret_key)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28773")
+    def test_28773(self):
+        """
+        Test create S3 account with Invalid AWS access key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28773"]
+        access_keys = []
+
+        self.log.info("Key 1: Empty Access key")
+        access_keys.append("")
+
+        ak_len = const.S3_ACCESS_LL - 1
+        self.log.info("Key 2: Access key less than %s", const.S3_ACCESS_LL)
+        access_keys.append("a" * ak_len)
+
+        ak_len = const.S3_ACCESS_UL + 1
+        self.log.info("Key 3: Access key greather than %s", const.S3_ACCESS_UL)
+        access_keys.append("x" * ak_len)
+
+        self.log.info("Key 4: Access key special character except _")
+        access_keys.append(string.punctuation)
+
+        for access_key in access_keys:
+            self.log.info("[START] Access Key : %s", access_key)
+            self.log.info("Creating custom S3 account with access key %s.", access_key)
+            user_data = self.s3user.create_custom_s3_payload("valid")
+            user_data.update({"access_key": access_key})
+            resp = self.s3user.create_custom_s3_user(user_data)
+            assert resp.status_code == HTTPStatus.BAD_REQUEST, "Status code check failed."
+            err_msg = test_cfg["response_msg"]
+            err = resp.json()
+            self.log.info("Verifying error code...")
+            assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+            if CSM_REST_CFG["msg_check"] == "enable":
+                self.log.info("Verifying message id...")
+                assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+                self.log.info("Verifying message...")
+                assert err["message"] == err_msg["message"], "Message check failed."
+                self.log.info("[END] Access Key : %s", access_key)
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28925")
+    def test_28925(self):
+        """
+        Test create S3 account with missing AWS access key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28925"]
+        result, resp = self.s3user.create_verify_s3_custom(
+            "missing_access", expected_response=HTTPStatus.BAD_REQUEST.value)
+        assert result, "Status code check failed."
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28926")
+    def test_28926(self):
+        """
+        Test create S3 account with missing AWS secret key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28926"]
+        result, resp = self.s3user.create_verify_s3_custom(
+            "missing_secret", expected_response=HTTPStatus.BAD_REQUEST.value)
+        assert result, "Status code check failed."
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28927")
+    def test_28927(self):
+        """
+        Test create S3 account with duplicate usernames
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28927"]
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_user", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+        assert result, "Status code check or error arg check failed."
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28928")
+    def test_28928(self):
+        """
+        Test create S3 account with duplicate email address
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28928"]
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_email", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+        assert result, "Status code check or error arg check failed."
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28929")
+    def test_28929(self):
+        """
+        Test create S3 account with duplicate AWS access key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28929"]
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_access", expected_response=HTTPStatus.CONFLICT.value, verify_err_args=True)
+        assert result, "Status code check or error arg check failed."
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28930")
+    def test_28930(self):
+        """
+        Test create S3 account with duplicate AWS secret key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        result, resp = self.s3user.create_verify_s3_custom(
+            "duplicate_secret", expected_response=HTTPStatus.CREATED.value)
+        assert result, "Status code check failed."
+
+        akey = resp.json()["access_key"]
+        skey = resp.json()["secret_key"]
+        s3_user = resp.json()["account_name"]
+        iam_user = f"iam{s3_user}"
+        bucket = f"bucket{s3_user}"
+        obj = f"object{s3_user}.txt"
+        self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
+                      iam_user, akey, skey)
+        assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
+
+        self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", bucket,
+                      akey, skey)
+        assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
+
+        self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and secret "
+                      "key: %s", obj, bucket, akey, skey)
+        assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
+
+        self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
+                      "secret key: %s", obj, bucket, akey, skey)
+        assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+
+        self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                      iam_user, akey, skey)
+        assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
+
+        self.log.info("Verify Delete S3 user: %s with access key: %s and secret key: %s",
+                      s3_user, akey, skey)
+        resp = self.s3user.delete_s3_account_user(s3_user)
+        assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    # pylint: disable-msg=too-many-locals
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28931")
+    def test_28931(self):
+        """
+        Test create , get, edit and delete max number of S3 account with custom AWS access key and
+        secret key
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        self.log.info("Deleting all S3 users except predefined ones...")
+        self.config.delete_s3_users()
+        self.log.info("Users except pre-defined ones deleted.")
+
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        user_data = resp.json()
+        self.log.info("List user response : %s", user_data)
+        existing_user = len(user_data['s3_accounts'])
+        self.log.info("Existing S3 users count: %s", existing_user)
+
+        self.log.info("Max S3 users : %s", const.MAX_S3_USERS)
+        new_users = const.MAX_S3_USERS - existing_user
+        self.log.info("New users to create: %s", new_users)
+        created_users = []
+        self.log.info("Creating %s S3 users...", new_users)
+        for i in range(new_users):
+            self.log.info("[START] Create User count : %s", i + 1)
+            result, resp = self.s3user.create_verify_s3_custom("valid")
+            user_data = resp.json()
+            self.log.info("Created S3 user : %s", user_data["account_name"])
+            created_users.append(user_data)
+            usr = user_data["account_name"]
+            assert result, f"Status code check failed for {usr} user"
+            self.log.info("[END] Create User count : %s", i + 1)
+
+        resp = self.s3user.list_all_created_s3account()
+        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        user_data = resp.json()
+        s3_users = user_data['s3_accounts']
+        self.log.info("Listed user count : %s", len(s3_users))
+        err_msg = f"Number of users less than {const.MAX_S3_USERS}"
+        assert len(s3_users) == const.MAX_S3_USERS, err_msg
+
+        for created_user in created_users:
+            self.log.info("-" * 50)
+            akey = created_user["access_key"]
+            skey = created_user["secret_key"]
+            usr = created_user["account_name"]
+            self.log.info("Creating objects for %s user", usr)
+            for i in range(const.MAX_BUCKETS):
+                self.log.info("[START] Create Bucket count : %s", i + 1)
+                bucket = f"bucket{i}"
+                self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
+                              bucket, akey, skey)
+                assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
+                obj = f"object{i}.txt"
+                self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
+                              "secret key: %s", obj, bucket, akey, skey)
+                assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
+                self.log.info("[END] Create Bucket count : %s", i + 1)
+
+            for i in range(const.MAX_BUCKETS):
+                self.log.info("[START] Delete Bucket count : %s", i + 1)
+                bucket = f"bucket{i}"
+                self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
+                              "secret key: %s", bucket, akey, skey)
+                assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+                self.log.info("[END] Delete Bucket count : %s", i + 1)
+
+        for created_user in created_users:
+            s3_user = created_user["account_name"]
+            self.log.info("Verify Delete S3 user: %s", s3_user)
+            resp = self.s3user.delete_s3_account_user(s3_user)
+            assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
+
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.parallel
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags("TEST-28933")
+    def test_28933(self):
+        """
+        Test create S3 account with different combination of the valid AWS secret key and run IO
+        using it.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        secret_keys = []
+        secret_keys.append("_" + config_utils.gen_rand_string(length=const.S3_SECRET_LL))
+        secret_keys.append("a" * const.S3_SECRET_UL)
+        secret_keys.append(config_utils.gen_rand_string(chars=string.digits,
+                                                        length=const.S3_SECRET_LL))
+        secret_keys.append(string.punctuation)
+
+        for secret_key in secret_keys:
+            self.log.info("-" * 50)
+            self.log.info("Creating custom S3 account with secret key: %s.", secret_key)
+            user_data = self.s3user.create_custom_s3_payload("valid")
+            user_data.update({"secret_key": secret_key})
+            resp = self.s3user.create_custom_s3_user(user_data)
+
+            self.log.info("Verify Status code of the Create user operation.")
+            assert resp.status_code == HTTPStatus.CREATED.value, "Unexpected Status code"
+
+            self.log.info("Verify created S3 account returns correct secret key.")
+            assert resp.json()["secret_key"] == secret_key, "Access key mismatch"
+
+            akey = resp.json()["access_key"]
+            skey = resp.json()["secret_key"]
+            s3_user = resp.json()["account_name"]
+            iam_user = f"iam{s3_user}"
+            bucket = f"bucket{s3_user}"
+            obj = f"object{s3_user}.txt"
+
+            self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
+                          iam_user, akey, skey)
+            assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
+
+            self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s", bucket,
+                          akey, skey)
+            assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
+
+            self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and secret "
+                          "key: %s", obj, bucket, akey, skey)
+            assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
+
+            self.log.info("Verify Delete Object: %s and bucket: %s with access key: %s and "
+                          "secret key: %s", obj, bucket, akey, skey)
+            assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+
+            self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                          iam_user, akey, skey)
+            assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
+
+            self.log.info("Verify Delete S3 user: %s with access key: %s and secret key: %s",
+                          s3_user, akey, skey)
+            resp = self.s3user.delete_s3_account_user(s3_user)
+            assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
+            self.log.info("-" * 50)
         self.log.info("##### Test completed -  %s #####", test_case_name)

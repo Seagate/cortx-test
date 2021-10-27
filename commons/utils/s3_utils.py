@@ -19,6 +19,7 @@
 
 """S3 utility Library."""
 
+import os
 import time
 import urllib
 import hmac
@@ -26,9 +27,12 @@ import datetime
 import hashlib
 import logging
 import json
+from hashlib import md5
+from random import shuffle
 from typing import Any
 
 import xmltodict
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -206,3 +210,116 @@ def poll(target, *args, **kwargs) -> Any:
         time.sleep(step)
 
     return target(*args, **kwargs)
+
+
+def calc_checksum(file_path, part_size=0):
+    """Calculating an checksum using encryption algorithm."""
+    try:
+        hash_digests = list()
+        with open(file_path, 'rb') as f_obj:
+            if part_size and os.stat(file_path).st_size < part_size:
+                for chunk in iter(lambda: f_obj.read(part_size), b''):
+                    hash_digests.append(md5(chunk).digest())
+            else:
+                hash_digests.append(md5(f_obj.read()).digest())
+
+        return md5(b''.join(hash_digests)).hexdigest() + '-' + str(len(hash_digests))
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
+
+
+def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
+    """
+    Create the upload parts dict with aligned part size.
+
+    https://www.gbmb.org/mb-to-bytes
+    Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
+    1 MB	        1,000,000 Bytes	    1,048,576 Bytes
+    5 MB	        5,000,000 Bytes	    5,242,880 Bytes
+    :param total_parts: No. of parts to be uploaded.
+    :param file_path: Path of object file.
+    :param chunk_size: chunk size used to read each check default is 5MB.
+    :param random: Generate random else sequential part order.
+    :return: Parts details with data, checksum.
+    """
+    try:
+        obj_size = os.stat(file_path).st_size
+        parts = dict()
+        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        with open(file_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                data = file_pointer.read(chunk_size * part_size)
+                if not data:
+                    break
+                LOGGER.info("data_len %s", str(len(data)))
+                parts[i] = [data, md5(data).hexdigest()]
+                i += 1
+        if random:
+            keys = list(parts.keys())
+            shuffle(keys)
+            parts = dict({(k, parts[k]) for k in keys})
+
+        return parts
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
+
+
+def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
+    """
+    Create the upload parts dict with unaligned part size.
+
+    https://www.gbmb.org/mb-to-bytes
+    Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
+    1.2 MB          1,200,000 bytes     1,258,291 bytes
+    1.5 MB          1,500,000 bytes     1,572,864 bytes
+    1.8 MB          1,800,000 bytes     1,887,437 bytes
+    1 MB	        1,000,000 Bytes	    1,048,576 Bytes
+    5 MB	        5,000,000 Bytes	    5,242,880 Bytes
+    :param total_parts: No. of parts to be uploaded.
+    :param file_path: Path of object file.
+    :param chunk_size: chunk size used to read each check default is 5MB.
+    :param random: Generate random else sequential part order.
+    :return: Parts details with data, checksum.
+    """
+    try:
+        obj_size = os.stat(file_path).st_size
+        parts = dict()
+        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        unaligned = [104857, 209715, 314572, 419430, 524288,
+                     629145, 734003, 838860, 943718, 1048576]
+        with open(file_path, "rb") as file_pointer:
+            i = 1
+            while True:
+                shuffle(unaligned)
+                data = file_pointer.read((chunk_size + unaligned[0]) * part_size)
+                if not data:
+                    break
+                LOGGER.info("data_len %s", str(len(data)))
+                parts[i] = [data, md5(data).hexdigest()]
+                i += 1
+        if random:
+            keys = list(parts.keys())
+            shuffle(keys)
+            parts = dict({(k, parts[k]) for k in keys})
+
+        return parts
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
+
+
+def create_multipart_json(json_path, parts_list) -> tuple:
+    """
+    Create json file with all multipart upload details in sorted order.
+
+    parts should be list of {"PartNumber": i, "ETag": part["ETag"]}.
+    """
+    parts_list = sorted(parts_list, key=lambda d: d['PartNumber'])
+    parts = {"Parts": parts_list}
+    with open(json_path, 'w') as file_obj:
+        json.dump(parts, file_obj)
+
+    return os.path.exists(json_path), json_path

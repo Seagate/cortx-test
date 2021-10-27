@@ -160,25 +160,33 @@ def run_local_cmd(cmd: str = None, flg: bool = False, chk_stderr: bool = False) 
     if not cmd:
         raise ValueError("Missing required parameter: {}".format(cmd))
     LOGGER.debug("Command: %s", cmd)
-    proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
-    output, error = proc.communicate()
-    LOGGER.debug("output = %s", str(output))
-    LOGGER.debug("error = %s", str(error))
-    if flg:
-        return True, str((output, error))
-    if chk_stderr:
-        if error and check_aws_cli_error(str(error)):
+    proc = None
+    try:
+        proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        output, error = proc.communicate()
+        LOGGER.debug("output = %s", str(output))
+        LOGGER.debug("error = %s", str(error))
+        if flg:
+            return True, str((output, error))
+        if chk_stderr:
+            if error and check_aws_cli_error(str(error)):
+                return False, str(error)
+            return True, str(output)
+        if proc.returncode != 0:
             return False, str(error)
-        return True, str(output)
-    if proc.returncode != 0:
-        return False, str(error)
-    if b"Number of key(s) added: 1" in output:
-        return True, str(output)
-    if b"command not found" in error or \
-            b"not recognized as an internal or external command" in error or error:
-        return False, str(error)
+        if b"Number of key(s) added: 1" in output:
+            return True, str(output)
+        if b"command not found" in error or \
+                b"not recognized as an internal or external command" in error or error:
+            return False, str(error)
 
-    return True, str(output)
+        return True, str(output)
+    except Exception as ex:
+        LOGGER.error(ex)
+        return False, ex
+    finally:
+        if proc:
+            proc.terminate()
 
 
 def check_aws_cli_error(str_error: str):
@@ -281,20 +289,33 @@ def calculate_checksum(
         options: str = "",
         **kwargs) -> tuple:
     """
-    Calculate MD5 checksum with/without binary coversion for a file.
+    Calculate MD5 checksum with/without binary conversion for a file.
     :param file_path: Name of the file with path
-    :param binary_bz64: Calulate binary base64 checksum for file,
+    :param binary_bz64: Calculate binary base64 checksum for file,
     if False it will return MD5 checksum digest
     :param options: option for md5sum tool
     :keyword filter_resp: filter md5 checksum cmd response True/False
+    # :param hash_algo: calculate checksum for given hash algo
     :return: string or MD5 object
     """
+    hash_algo = kwargs.get("hash_algo", "md5")
     if not os.path.exists(file_path):
         return False, "Please pass proper file path"
-    if binary_bz64:
-        cmd = "openssl md5 -binary {} | base64".format(file_path)
-    else:
-        cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "md5":
+        if binary_bz64:
+            cmd = "openssl md5 -binary {} | base64".format(file_path)
+        else:
+            cmd = "md5sum {} {}".format(options, file_path)
+    if hash_algo == "SHA-1":
+        cmd = "sha1sum {}".format(file_path)
+    if hash_algo == "SHA-224":
+        cmd = "sha224sum {}".format(file_path)
+    if hash_algo == "SHA-256":
+        cmd = "sha256sum {}".format(file_path)
+    if hash_algo == "SHA-384":
+        cmd = "sha384sum {}".format(file_path)
+    if hash_algo == "SHA-512":
+        cmd = "sha512sum {}".format(file_path)
 
     LOGGER.debug("Executing cmd: %s", cmd)
     result = run_local_cmd(cmd)
@@ -561,18 +582,26 @@ def create_file(
     :param b_size: block size.
     :return:
     """
-    cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
-    LOGGER.debug(cmd)
-    proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")
-    output, error = proc.communicate()
-    LOGGER.debug("output = %s", str(output))
-    LOGGER.debug("error = %s", str(error))
-    if proc.returncode != 0:
-        if os.path.isfile(fpath):
-            os.remove(fpath)
-        raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
+    proc = None
+    try:
+        cmd = commands.CREATE_FILE.format(dev, fpath, b_size, count)
+        LOGGER.debug(cmd)
+        proc = Popen(cmd, shell=True, stderr=PIPE, stdout=PIPE, encoding="utf-8")
+        output, error = proc.communicate()
+        LOGGER.debug("output = %s", str(output))
+        LOGGER.debug("error = %s", str(error))
+        if proc.returncode != 0:
+            if os.path.isfile(fpath):
+                os.remove(fpath)
+            raise IOError(f"Unable to create file. command: {cmd}, error: {error}")
 
-    return os.path.exists(fpath), ", ".join([output, error])
+        return os.path.exists(fpath), ", ".join([output, error])
+    except Exception as ex:
+        LOGGER.error(ex)
+        return fpath, ex
+    finally:
+        if proc:
+            proc.terminate()
 
 
 def create_multiple_size_files(
@@ -687,8 +716,8 @@ def is_utility_present(utility_name: str, filepath: str) -> bool:
 
 
 def backup_or_restore_files(action,
-                            backup_path,
-                            backup_list):
+        backup_path,
+        backup_list):
     """
     Used to take backup or restore mentioned files at the required path
     """
@@ -813,7 +842,7 @@ def install_new_cli_rpm(
 
 
 def list_rpms(*remoteargs, filter_str="", remote=False,
-              **remoteKwargs) -> Tuple[bool, list]:
+        **remoteKwargs) -> Tuple[bool, list]:
     """
     This function lists the rpms installed on a given host and filters by given string.
     :param str filter_str: string to search in rpm names for filtering results,
@@ -966,7 +995,7 @@ def insert_into_builtins(name, obj):
 
 
 def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
-                           remote_path: str = None, local_path: str = None) \
+        remote_path: str = None, local_path: str = None) \
         -> tuple:
     """Mount NFS directory and upload file to NFS
     :param host_dir: Link of NFS server directory
@@ -1044,6 +1073,7 @@ def get_s3_url(cfg, node_index):
     final_urls["iam_url"] = f"https://{cfg['s3_dns'][node_index]}:9443"
     return final_urls
 
+
 def random_metadata_generator(
         size: int = 6,
         chars: str = string.ascii_uppercase + string.digits + string.ascii_lowercase) -> str:
@@ -1073,7 +1103,7 @@ def create_file_fallocate(filepath=None, size="1MB", option="l"):
 
 
 def toggle_nw_status(device: str, status: str, host: str, username: str,
-                     pwd: str):
+        pwd: str):
     """
     Toggle network device status using ip set command.
     :param str device: Name of the ip network device
@@ -1097,10 +1127,10 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
 
 
 def create_dir_hierarchy_and_objects(directory_path=None,
-                                     obj_prefix=None,
-                                     depth: int = 1,
-                                     obj_count: int = 1,
-                                     **kwargs) -> list:
+        obj_prefix=None,
+        depth: int = 1,
+        obj_count: int = 1,
+        **kwargs) -> list:
     """
     Create directory hierarchy as per depth and create number of objects in each folder.
 
@@ -1186,7 +1216,7 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
 
 
 def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
-                          pwd: str):
+        pwd: str):
     """
     Toggle network interface status using ip set command.
     :param str device: Name of the ip network device
@@ -1207,3 +1237,15 @@ def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
 
     LOGGER.debug(res)
     return res[0]
+
+def validate_checksum(file_path_1: str, file_path_2: str, **kwargs):
+    """
+    validate MD5 checksum for 2 files
+    # :param hash_algo: calculate checksum for given hash algo
+    """
+    hash_algo = kwargs.get("hash_algo", "md5")
+    check_1 = calculate_checksum(file_path=file_path_1, hash_algo=hash_algo)
+    check_2 = calculate_checksum(file_path=file_path_2, hash_algo=hash_algo)
+    if check_1 == check_2:
+        return True
+    return False

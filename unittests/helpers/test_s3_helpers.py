@@ -71,7 +71,7 @@ class TestS3helper:
             cls.log.info("status: %s, response: %s", status, resp)
             assert status, resp
             status, resp = S3H_OBJ.restart_s3server_service(
-                cls.slapd_service, CM_CFG["host2"])
+                cls.slapd_service, CM_CFG["nodes"][0]['fqdn'])
             cls.log.info("status: %s, response: %s", status, resp)
             assert status, resp
         if not cls.enable_instances:
@@ -150,14 +150,14 @@ class TestS3helper:
         status, resp = S3H_OBJ.check_s3services_online()
         self.log.info("status: %s, response: %s", status, resp)
         assert status, resp
-        status, resp = S3H_OBJ.check_s3services_online(host=CM_CFG["host2"])
+        status, resp = S3H_OBJ.check_s3services_online(host=CM_CFG["nodes"][0]['fqdn'])
         self.log.info("status: %s, response: %s", status, resp)
         assert status, resp
         status, resp = S3H_OBJ.check_s3services_online(user="xyz")
         self.log.info("status: %s, response: %s", status, resp)
         assert not status, resp
         status, resp = S3H_OBJ.check_s3services_online(
-            host=CM_CFG["host2"], pwd="qawzsx")
+            host=CM_CFG["nodes"][0]['fqdn'], pwd="qawzsx")
         self.log.info("status: %s, response: %s", status, resp)
         assert not status, resp
         self.log.info("END: Tested check s3services online.")

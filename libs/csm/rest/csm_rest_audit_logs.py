@@ -772,52 +772,35 @@ class RestAuditLogs(RestTestLib):
         for string in str_search:
             for item in response_log['logs']:
                 if item['payload']:
-                    if string in item['payload']:
+                    if string in item.get('payload'):
                         result = True
                         break
             response.append(result)
-            if result:
-                self.log.info("Audit logs contains the entries for %s user", str_search)
-            else:
-                self.log.error("Audit logs does not contain the entries for %s user", str_search)
+        if result:
+            self.log.info("CSM Audit logs contains the entries for %s user", str_search)
+        else:
+            self.log.error("CSM Audit logs does not contain the entries for %s user", str_search)
         return response
 
-    def verify_s3_bucket_exist(self, response_log, str_search):
+    def verify_s3_audit_logs_contents(self, response_log, str_search):
         """
-        This function will verify the csm audit log show contents match for given users
-        :param response_log: will take response from csm audit logs show
-        :param str_search will take bucket to search in csm audit logs
+        This function will verify the s3 audit log show contents match for given bucket or object
+        :param response_log: will take response from s3 audit logs show
+        :param str_search will take bucket or object to search in s3 audit logs
         """
         response = []
         result = False
         for string in str_search:
             for item in response_log['logs']:
-                if string in item['bucket']:
+                if string in item.get('key'):
+                    result = True
+                    break
+                if string in item.get('bucket'):
                     result = True
                     break
             response.append(result)
-            if result:
-                self.log.info("Audit logs contains the entries for bucket %s", str_search)
-            else:
-                self.log.error("Audit logs does not contain the entries for bucket %s", str_search)
-        return response
-
-    def verify_s3_object_exist(self, response_log, str_search):
-        """
-        This function will verify the csm audit log show contents match for given users
-        :param response_log: will take response from csm audit logs show
-        :param str_search will take object to search in csm audit logs
-        """
-        response = []
-        result = False
-        for string in str_search:
-            for item in response_log['logs']:
-                if string in item['key']:
-                    result = True
-                    break
-            response.append(result)
-            if result:
-                self.log.info("Audit logs contains the entries for object %s", str_search)
-            else:
-                self.log.error("Audit logs does not contain the entries for object %s", str_search)
+        if result:
+            self.log.info("S3 Audit logs contains the entries for %s", str_search)
+        else:
+            self.log.error("S3 Audit logs does not contain the entries for %s", str_search)
         return response

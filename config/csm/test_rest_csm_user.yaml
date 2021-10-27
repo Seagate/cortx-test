@@ -1,7 +1,7 @@
 test_5001:
   invalid_sortby: "roles"
   response_msg:
-    error_code: 4099 
+    error_code: 4099
     message_id: "{'sort_by': ['Must be one of: user_id, username, user_type, alert_notification, email, created_time, updated_time.']}"
     message: "Invalid Parameter for user"
 test_5004:
@@ -111,7 +111,7 @@ test_5005:
     message: "Invalid parameter for user"
 test_5002:
   response_msg:
-    error_code: 4099 
+    error_code: 4099
     message_id: "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time.']}"
     message: "Invalid Parameter for user"
 test_5020:

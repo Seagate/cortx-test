@@ -11,11 +11,12 @@ services:
     - "rsyslog.service"
     - "haproxy.service"
     - "slapd.service"
-    - "glusterd.service"
     - "kafka-zookeeper.service"
     - "salt-master.service"
     - "salt-minion.service"
     - "lnet.service"
+  multinode:
+    - "glusterd.service"
   hw_specific:
     - "multipathd.service"
     - "scsi-network-relay.service"
@@ -30,7 +31,6 @@ service_ports:
   salt-master: ["4505", "4506"]
   smtp: ["25"]
   s3: ["9443"]
-  uds: ["5000"]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
 build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso"
 build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso.sig"
@@ -106,3 +106,42 @@ post_deployment_steps:
   s3user_email: 's3user@seagate.com'
   s3user_pswd: 'xPUfs2X7OhXgirxG6au/T9FHd+q7mWHYo3P2OS7KlWs='
 
+k8s_cluster_deploy:
+  job_name: "setup-kubernetes-cluster"
+  jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/"
+  auth_token: "$eagate@123"
+
+k8s_cortx_deploy:
+  prereq:
+    min_disks: 8
+    os_release: [ "CentOS Linux release 7.9.2009 (Core)" ]
+    kernel: [ "3.10.0-1160.el7.x86_64" ]
+    cpu_cores: 8
+    memory: 16
+  local_path_prov: "/mnt/fs-local-volume/"
+  deploy_cluster: "sh deploy-cortx-cloud.sh"
+  destroy_cluster: "sh destroy-cortx-cloud.sh"
+  git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
+  git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
+  exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
+  git_tag: "v0.0.9"
+  git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
+  new_file_path: "solution.yaml"
+  template_path: "config/prov/solution.yaml"
+  third_party_images:
+    openldap: 'ghcr.io/seagate/symas-openldap:standalone'
+    consul: 'hashicorp/consul:1.10.0'
+    kafka: 'bitnami/kafka:3.0.0-debian-10-r7'
+    zookeeper: 'bitnami/zookeeper:3.7.0-debian-10-r182'
+    gluster: 'docker.io/gluster/gluster-centos:latest'
+    rancher: 'rancher/local-path-provisioner:v0.0.20'
+  cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
+  cortx_images_val: 'ghcr.io/seagate/cortx-all:2.0.0-latest-custom-ci'
+  password:
+    openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
+    kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    consul_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    common_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
+    s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
+    csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
+    csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='

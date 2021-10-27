@@ -27,8 +27,8 @@ from datetime import datetime
 import paramiko
 import pytest
 
-from commons.helpers.node_helper import Node
-from config import CMN_CFG, S3_LDAP_TST_CFG
+from config import CMN_CFG
+from config.s3 import S3_LDAP_TST_CFG
 from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -373,6 +373,7 @@ class TestOpenLdap:
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7948')
     @CTFailOn(error_handler)
     def test_5066(self):
@@ -417,6 +418,7 @@ class TestOpenLdap:
             "configuration directory is done successfully")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7949')
     @CTFailOn(error_handler)
     def test_5067(self):
@@ -460,6 +462,7 @@ class TestOpenLdap:
             "ENDED: Test to verify & check backup of openldap Data Directory is done successfully")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7950')
     @CTFailOn(error_handler)
     def test_5068(self):
@@ -556,6 +559,7 @@ class TestOpenLdap:
             "configuration directory is done successfully")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7951')
     @CTFailOn(error_handler)
     def test_5069(self):
@@ -666,6 +670,7 @@ class TestOpenLdap:
             "to what it was previously before restore.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7952')
     @CTFailOn(error_handler)
     def test_5070(self):
@@ -761,6 +766,7 @@ class TestOpenLdap:
             "openldap data directories is done successfully")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-7953')
     @CTFailOn(error_handler)
     def test_5071(self):
@@ -866,6 +872,7 @@ class TestOpenLdap:
             "permissions of the data directory to what it was previously")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-8020')
     @CTFailOn(error_handler)
     def test_5073(self):
@@ -904,6 +911,7 @@ class TestOpenLdap:
             "enc_ldap_passwd_in_cfg.sh script.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-8021')
     @CTFailOn(error_handler)
     def test_5074(self):
@@ -956,6 +964,7 @@ class TestOpenLdap:
             "file is updated post password change/reset")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-8022')
     @CTFailOn(error_handler)
     def test_5075(self):
@@ -1010,6 +1019,7 @@ class TestOpenLdap:
             " with uppercase/lowercase characters")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_openldap
     @pytest.mark.tags('TEST-8023')
     @CTFailOn(error_handler)
     def test_5076(self):
