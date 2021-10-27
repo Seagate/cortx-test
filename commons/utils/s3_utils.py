@@ -287,7 +287,7 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, base64.b64encode(md5(data).digest()).decode('utf-8')]
+                parts[i] = [data, calc_contentmd5(data)]
                 i += 1
         if random:
             keys = list(parts.keys())
