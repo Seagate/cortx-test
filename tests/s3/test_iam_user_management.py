@@ -24,21 +24,21 @@ import os
 import logging
 from time import perf_counter_ns
 from multiprocessing import Process
+
 import pytest
-import time
 from commons import constants as cons
 from commons.helpers import node_helper
 from commons.utils import assert_utils, system_utils
 from commons.configmanager import config_utils
 from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
+from commons.exceptions import CTException
 from config import CMN_CFG
 from config import CSM_CFG
 from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ, s3_test_lib
 from libs.s3 import iam_test_lib
-from commons.exceptions import CTException
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -666,7 +666,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 7: Creating 6 iam users.")
         for i in range(6):
-            self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
+            self.user_name = "{0}{1}-{2}".format("iam_user", str(perf_counter_ns()), i)
             resp = self.iam_test_obj.create_user(user_name=self.user_name)
             assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
             iam_users.append(self.user_name)
@@ -674,7 +674,7 @@ class TestIAMUserManagement:
         self.log.info("6 iam users creation successful")
         self.log.info("Step 8: Try creating one more iam user")
         try:
-            self.user_name = "{0}{1}".format("iam_user", str(time.time()))
+            self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
             resp = self.iam_test_obj.create_user(user_name=self.user_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
