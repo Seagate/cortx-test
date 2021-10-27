@@ -254,8 +254,9 @@ class S3MultipartTestLib(Multipart):
             parts_details = []
             for part_number in parts:
                 LOGGER.info("Uploading part: %s", part_number)
-                resp = super().upload_part(parts[part_number][0], bucket_name, object_name, upload_id=upload_id,
-                                           part_number=part_number, content_md5=parts[part_number][1])
+                resp = super().upload_part(parts[part_number][0], bucket_name, object_name,
+                                           upload_id=upload_id, part_number=part_number,
+                                           content_md5=parts[part_number][1])
                 parts_details.append({"PartNumber": part_number, "ETag": resp["ETag"]})
 
             return True, parts_details
