@@ -119,7 +119,7 @@ def create_json_reps(list_resp):
 
     return js_res
 
-
+# pylint: disable-msg=too-many-arguments
 def s3bench_workload(end_point, bucket_name, log_prefix, object_size, client, sample,
                      access_key=ACCESS_KEY, secret_key=SECRET_KEY):
     """S3bench Workload worker can be used to run multiple workloads in parallel"""
