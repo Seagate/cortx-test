@@ -26,6 +26,7 @@ import logging
 import yaml
 
 from commons import commands as common_cmd
+from commons import pswdmanager
 from commons.helpers.health_helper import Health
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
@@ -46,9 +47,9 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
-                          taint_master: bool = False) -> tuple:
+                          taint_master: bool = True) -> tuple:
         """
-        Setup K8's cluster using RE jenkins job
+        Setup k8s cluster using RE jenkins job
         param: master_node_list : List of all master nodes(Logical Node object)
         param: worker_node_list : List of all worker nodes(Logical Node object)
         param: taint_master : Taint master - boolean
@@ -84,11 +85,39 @@ class ProvDeployK8sCortxLib:
             k8s_deploy_cfg["jenkins_url"])
         LOGGER.info("Jenkins Build URL: {}".format(output['url']))
         if output['result'] == "SUCCESS":
-            LOGGER.info("k8's Cluster Deployment successful")
+            LOGGER.info("k8s Cluster Deployment successful")
             return True, output['result']
         else:
-            LOGGER.error(f"k8's Cluster Deployment {output['result']},please check URL")
+            LOGGER.error(f"k8s Cluster Deployment {output['result']},please check URL")
             return False, output['result']
+
+    @staticmethod
+    def validate_master_tainted(node_obj: LogicalNode) -> bool:
+        """
+        Validate master node tainted.
+        param: node_obj: Master node object
+        return: Boolean
+        """
+        LOGGER.info("Check if master is tainted")
+        resp = node_obj.execute_cmd(common_cmd.K8S_CHK_TAINT.format(node_obj.hostname))
+        LOGGER.debug("resp: %s", resp)
+        if isinstance(resp, bytes):
+            resp = str(resp, 'UTF-8')
+        if "NoSchedule" in resp:
+            LOGGER.info("%s is tainted", node_obj.hostname)
+            return True
+        LOGGER.info("%s is not tainted", node_obj.hostname)
+        return False
+
+    @staticmethod
+    def taint_master(node_obj: LogicalNode):
+        """
+        Taint master node.
+        param: node_obj: Master node object
+        """
+        LOGGER.info("Adding taint to %s", node_obj.hostname)
+        resp = node_obj.execute_cmd(common_cmd.K8S_TAINT_NODE.format(node_obj.hostname))
+        LOGGER.debug("resp: %s", resp)
 
     def prereq_vm(self, node_obj: LogicalNode) -> tuple:
         """
@@ -128,55 +157,6 @@ class ProvDeployK8sCortxLib:
 
         return True, "Prerequisite VM check successful"
 
-    def prereq_local_path_prov(self, node_obj: LogicalNode, disk_partition: str):
-        """
-        Perform the prerequisite for Local Path Provisioner
-        param: node_obj: Node object
-        param: disk_partition : Mount this partition for Local Path Prov.
-        """
-        LOGGER.info("Create directory for Local Path provisioner")
-        node_obj.make_dir(self.deploy_cfg["local_path_prov"])
-
-        LOGGER.info("Validate if any mount point present on the disk,unmount it")
-        cmd = "lsblk | grep \"{}\" |awk '{{print $7}}'".format(disk_partition)
-        resp = node_obj.execute_cmd(cmd, read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-        for mp in resp:
-            node_obj.execute_cmd("umount {}".format(mp))
-
-        LOGGER.info("mkfs %s", disk_partition)
-        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_MKFS_EXT4.format(disk_partition),
-                                    read_lines=True)
-        LOGGER.debug("resp: %s", resp)
-
-        LOGGER.info("Mount the file system")
-        resp = node_obj.execute_cmd(
-            common_cmd.CMD_MOUNT_EXT4.format(disk_partition, self.deploy_cfg["local_path_prov"]))
-        LOGGER.debug("resp: %s", resp)
-
-    def prereq_glusterfs(self, node_obj: LogicalNode):
-        """
-        Prerequisite for GlusterFS - Create specified directory
-        param: node_obj : Node Object
-        """
-        LOGGER.info("Create Directories for GlusterFS")
-        for each in self.deploy_cfg["glusterfs_dir"]:
-            node_obj.make_dir(each)
-
-        LOGGER.info("Install Gluster-fuse package")
-        resp = node_obj.execute_cmd(
-            common_cmd.RPM_INSTALL_CMD.format(self.deploy_cfg["gluster_pkg"]))
-        LOGGER.debug("resp: %s", resp)
-
-    def prereq_3rd_party_srv(self, node_obj: LogicalNode):
-        """
-        Prerequisite for 3rd Party Services - Create specified directory
-        param: node_obj : Node Object
-        """
-        LOGGER.info("Create directory for 3rd Party services")
-        for each in self.deploy_cfg["3rd_party_dir"]:
-            node_obj.make_dir(each)
-
     @staticmethod
     def docker_login(node_obj: LogicalNode, docker_user: str, docker_pswd: str):
         """
@@ -191,8 +171,8 @@ class ProvDeployK8sCortxLib:
 
     def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str, git_tag: str):
         """
-        Checkout cortx-k8s code on the master node. Delete is any previous exists.
-        param: node_obj : Node object to checkout code - Master node.
+        Checkout cortx-k8s code on the  node. Delete is any previous exists.
+        param: node_obj : Node object to checkout code - node.
         param: git_id : Git ID
         param: git_token : Git token for accessing cortx-k8s repo.
         """
@@ -210,15 +190,22 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(cmd)
         LOGGER.debug("resp: %s", resp)
 
-    def deploy_cluster(self, node_obj: LogicalNode, local_sol_path: str,
-                       remote_code_path: str) -> tuple:
+    def execute_prereq_cortx(self, node_obj: LogicalNode, remote_code_path: str, system_disk: str):
         """
-        Copy solution file from local path to remote path and deploy cortx cluster.
-        cortx-k8s repo code should be checked out on node at remote_code_path
-        param: node_obj: Node object
-        param: local_sol_path: Local path for solution.yaml
-        param: remote_code_path: Cortx-k8's repo Path on node
-        return : True/False and resp
+        Execute prerq script on worker node,
+        param: node_obj: Worker node object
+        param: system_disk: parameter to prereq script
+        """
+        LOGGER.info("Execute prereq script")
+        cmd = "cd {}; {} {}".format(remote_code_path, self.deploy_cfg["exe_prereq"], system_disk)
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
+
+    @staticmethod
+    def copy_sol_file(node_obj: LogicalNode, local_sol_path: str,
+                      remote_code_path: str):
+        """
+        Copy Solution file from local path tp remote path
         """
         LOGGER.info("Copy Solution file to remote path")
         LOGGER.debug("Local path %s", local_sol_path)
@@ -226,16 +213,24 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("Remote path %s", remote_path)
         if system_utils.path_exists(local_sol_path):
             node_obj.copy_file_to_remote(local_sol_path, remote_path)
-        else:
-            return False, f"{local_sol_path} not found"
+            return True, f"File copied at {remote_path}"
+        return False, f"{local_sol_path} not found"
 
+    def deploy_cluster(self, node_obj: LogicalNode, remote_code_path: str) -> tuple:
+        """
+        Deploy cortx cluster.
+        cortx-k8s repo code should be checked out on node at remote_code_path
+        param: node_obj: Node object
+        param: remote_code_path: Cortx-k8s repo Path on node
+        return : True/False and resp
+        """
         LOGGER.info("Deploy Cortx cloud")
         cmd = "cd {}; {}".format(remote_code_path, self.deploy_cfg["deploy_cluster"])
-        resp = node_obj.execute_cmd(cmd)
-        LOGGER.debug("resp :%s", resp)
+        resp = node_obj.execute_cmd(cmd, read_lines=True)
+        LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
-    def deploy_cortx_cluster(self, solution_file_path: str, master_node_list: list,
+    def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
                              docker_username: str, docker_password: str, git_id: str,
                              git_token: str, git_tag) -> tuple:
@@ -259,15 +254,16 @@ class ProvDeployK8sCortxLib:
             resp = self.prereq_vm(node)
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
+            self.docker_login(node, docker_username, docker_password)
+            self.prereq_git(node, git_id, git_token, git_tag)
+            self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
-            self.prereq_local_path_prov(node, system_disk)
-            self.prereq_glusterfs(node)
-            self.prereq_3rd_party_srv(node)
+            self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
-        resp = self.deploy_cluster(master_node_list[0], solution_file_path,
-                                   self.deploy_cfg["git_remote_dir"])
+        self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
+        resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
             LOGGER.info("Validate all cluster services are online using hclt status")
             health_obj = Health(hostname=master_node_list[0].hostname,
@@ -296,37 +292,31 @@ class ProvDeployK8sCortxLib:
         :Keyword: cvg_count: cvg_count per node
         :Keyword: type_cvg: ios or cas
         :Keyword: data_disk_per_cvg: data disk required per cvg
+        :Keyword: size_metadata: size of metadata disk
+        :Keyword: size_data_disk: size of data disk
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
         :Keyword: dix_data:
         :Keyword: dix_parity:
         :Keyword: dix_spare:
-        :Keyword: size_metadata: size of metadata disk
-        :Keyword: size_data_disk: size of data disk
         :Keyword: skip_disk_count_check: disk count check
+        :Keyword: cortx_image: this is cortx image name
+        :Keyword: third_party_image: dict of third party image
         returns the status, filepath and system reserved disk
 
         """
         # cluster_id = kwargs.get("cluster_id", 1)
         cvg_count = kwargs.get("cvg_count", 1)
-        cvg_type = kwargs.get("cvg_type", "ios")
         data_disk_per_cvg = kwargs.get("data_disk_per_cvg", "0")
         sns_data = kwargs.get("sns_data", 1)
         sns_parity = kwargs.get("sns_parity", 0)
         sns_spare = kwargs.get("sns_spare", 0)
-        dix_data = kwargs.get("dix_data", 1)
-        dix_parity = kwargs.get("dix_parity", 2)
-        dix_spare = kwargs.get("dix_spare", 0)
-        size_metadata = kwargs.get("size_metadata", '5Gi')
-        size_data_disk = kwargs.get("size_data_disk", '5Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         new_filepath = self.deploy_cfg['new_file_path']
         data_devices = list()  # empty list for data disk
         sys_disk_pernode = {}  # empty dict
         node_list = len(worker_obj)
-        nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
-        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         valid_disk_count = sns_spare + sns_data + sns_parity
         metadata_devices = []
         for node_count, node_obj in enumerate(worker_obj, start=1):
@@ -349,7 +339,7 @@ class ProvDeployK8sCortxLib:
                     (data_disk_per_cvg * cvg_count * node_list):
                 return False, "The sum of data disks per cvg " \
                               "is less than N+K+S count"
-            if len(data_devices) < data_disk_per_cvg*cvg_count:
+            if len(data_devices) < data_disk_per_cvg * cvg_count:
                 return False, "The requested data disk is more than" \
                               " the data disk available on the system"
             # This condition validated the total available disk count
@@ -375,38 +365,110 @@ class ProvDeployK8sCortxLib:
             system_disk = device_list[0]
             schema = {node_obj.hostname: system_disk}
             sys_disk_pernode.update(schema)
+        LOGGER.info("Metadata disk %s", metadata_devices)
+        LOGGER.info("data disk %s", data_devices)
+        # Update the solution yaml file with password
+        resp_passwd = self.update_password_sol_file(filepath)
+        if not resp_passwd[0]:
+            return False, "Failed to update passwords in solution file"
+        # Update the solution yaml file with images
+        resp_image = self.update_image_section_sol_file(filepath)
+        if not resp_image[0]:
+            return False, "Failed to update images in solution file"
+        # Update the solution yaml file with nodes
+        resp_node = self.update_nodes_sol_file(filepath, worker_obj)
+        if not resp_node[0]:
+            return False, "Failed to update nodes details in solution file"
+        # Update the solution yaml file with cvg
+        resp_cvg = self.update_cvg_sol_file(filepath, metadata_devices,
+                                            data_devices)
+        if not resp_cvg[0]:
+            return False, "Fail to update the cvg details in solution file"
 
-        # Reading the yaml file
+        return True, new_filepath, sys_disk_pernode
+
+    def update_nodes_sol_file(self, filepath, worker_obj):
+        """
+        Method to update the nodes section in solution.yaml
+        Param: filepath: Filename with complete path
+        Param: worker_obj: list of node object
+        :returns the filepath and status True
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        node_list = len(worker_obj)
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            node = parent_key['nodes']  # Child Key
+            total_nodes = node.keys()
+            # Removing the elements from the node dict
+            for key_count in list(total_nodes):
+                node.pop(key_count)
+            # Updating the node dict
+            for item, host in zip(list(range(node_list)), worker_obj):
+                dict_node = {}
+                name = {'name': host.hostname}
+                dict_node.update(name)
+                new_node = {'node{}'.format(item + 1): dict_node}
+                node.update(new_node)
+            conf['solution']['nodes'] = node
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath
+
+    def update_cvg_sol_file(self, filepath,
+                            metadata_devices: list,
+                            data_devices: list,
+                            **kwargs):
+        """
+        Method to update the cvg
+        :Param: metadata_devices: list of meta devices
+        :Param: data_devices: list of data devices
+        :Param: filepath: file with complete path
+        :Keyword: cvg_count: cvg_count per node
+        :Keyword: type_cvg: ios or cas
+        :Keyword: data_disk_per_cvg: data disk required per cvg
+        :Keyword: sns_data: N
+        :Keyword: sns_parity: K
+        :Keyword: sns_spare: S
+        :Keyword: dix_data:
+        :Keyword: dix_parity:
+        :Keyword: dix_spare:
+        :Keyword: size_metadata: size of metadata disk
+        :Keyword: size_data_disk: size of data disk
+        :returns the status ,filepath
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        cvg_count = kwargs.get("cvg_count", 1)
+        cvg_type = kwargs.get("cvg_type", "ios")
+        data_disk_per_cvg = kwargs.get("data_disk_per_cvg", "0")
+        sns_data = kwargs.get("sns_data", 1)
+        sns_parity = kwargs.get("sns_parity", 0)
+        sns_spare = kwargs.get("sns_spare", 0)
+        dix_data = kwargs.get("dix_data", 1)
+        dix_parity = kwargs.get("dix_parity", 2)
+        dix_spare = kwargs.get("dix_spare", 0)
+        size_metadata = kwargs.get("size_metadata", '5Gi')
+        size_data_disk = kwargs.get("size_data_disk", '5Gi')
+        nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
+        dix = "{}+{}+{}".format(dix_data, dix_parity, dix_spare)  # Value of N+K+S for dix
         with open(filepath) as soln:
             conf = yaml.safe_load(soln)
             parent_key = conf['solution']  # Parent key
             common = parent_key['common']  # Parent key
             storage = parent_key['storage']  # child of child key
             cmn_storage_sets = common['storage_sets']  # child of child key
-            node = parent_key['nodes']  # Child Key
-            total_nodes = node.keys()
             total_cvg = storage.keys()
-            # Creating Default Schema to update the yaml file
-            share_value = "/mnt/fs-local-volume"  # This needs to changed
-            device_schema = {'system': share_value}
-            device_key = {'devices': device_schema}
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks
             cmn_storage_sets['durability']['dix'] = dix
-            # Removing the elements from the node dict
-            for key_count in list(total_nodes):
-                node.pop(key_count)
-            for cvg in list(total_cvg):
-                storage.pop(cvg)
-            # Updating the node dict
-            for item, host in zip(list(range(node_list)), worker_obj):
-                dict_node = {}
-                name = {'name': host.hostname}
-                dict_node.update(name)
-                dict_node.update(device_key)
-                new_node = {'node{}'.format(item + 1): dict_node}
-                node.update(new_node)
-            # Updating the metadata and data disk
+            for cvg_item in list(total_cvg):
+                storage.pop(cvg_item)
             for cvg in range(0, cvg_count):
                 cvg_dict = {}
                 metadata_schema_upd = {'devices': metadata_devices[cvg], 'size': size_metadata}
@@ -424,8 +486,6 @@ class ProvDeployK8sCortxLib:
                 cvg_dict.update(key_cvg_devices)
                 cvg_key = {'cvg{}'.format(cvg + 1): cvg_dict}
                 storage.update(cvg_key)
-
-            conf['solution']['nodes'] = node
             conf['solution']['storage'] = storage
             soln.close()
         noalias_dumper = yaml.dumper.SafeDumper
@@ -434,4 +494,68 @@ class ProvDeployK8sCortxLib:
             yaml.dump(conf, soln, default_flow_style=False,
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
-        return True, new_filepath, sys_disk_pernode
+        return True, new_filepath
+
+    def update_image_section_sol_file(self, filepath, **kwargs):
+        """
+        Method use to update the Images section in solution.yaml
+        Param: filepath: filename with complete path
+        cortx_image: this is cortx image name
+        third_party_image: dict of third party image
+        :returns the status, filepath
+        """
+        third_party_images_dict = kwargs.get("third_party_images",
+                                             self.deploy_cfg['third_party_images'])
+        cortx_images_val = kwargs.get("cortx_image",
+                                      self.deploy_cfg['cortx_images_val'])
+        cortx_im = dict()
+        new_filepath = self.deploy_cfg['new_file_path']
+        image_default_dict = self.deploy_cfg['third_party_images']
+
+        for image_key in self.deploy_cfg['cortx_images_key']:
+            cortx_im[image_key] = cortx_images_val
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            image = parent_key['images']  # Parent key
+            conf['solution']['images'] = image
+            image.update(cortx_im)
+            for key, value in list(third_party_images_dict.items()):
+                if key in list(self.deploy_cfg['third_party_images'].keys()):
+                    image.update({key: value})
+                    image_default_dict.pop(key)
+            image.update(image_default_dict)
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath
+
+    def update_password_sol_file(self, filepath):
+        """
+        This Method update the password in solution.yaml file
+        Param: filepath: filename with complete path
+        :returns the status, filepath
+        """
+        new_filepath = self.deploy_cfg['new_file_path']
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            parent_key = conf['solution']  # Parent key
+            content = parent_key['secrets']['content']
+            common = parent_key['common']
+            common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
+            passwd_dict = {}
+            for key, value in self.deploy_cfg['password']:
+                passwd_dict[key] = pswdmanager.decrypt(value)
+            content.update(passwd_dict)
+            soln.close()
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(new_filepath, 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+            soln.close()
+        return True, new_filepath
