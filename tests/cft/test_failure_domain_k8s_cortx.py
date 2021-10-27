@@ -102,13 +102,31 @@ class TestFailureDomainK8Cortx:
         self.log.info("Step 3: Download solution file template")
         path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
 
+        control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
+        data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
+        control_lb_ip = control_lb_ip.split(",")
+        data_lb_ip = data_lb_ip.split(",")
+        self.log.debug("Control Load balancer ip : %s", control_lb_ip)
+        self.log.debug("Data Load balancer ip : %s", data_lb_ip)
+
         self.log.info("Step 4 : Update solution file template")
         resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
-                                                  cortx_image=self.cortx_image)
-        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+                                                  cortx_image=self.cortx_image,
+                                                  control_lb_ip=control_lb_ip,
+                                                  data_lb_ip=data_lb_ip,
+                                                  sns_data=4,
+                                                  sns_parity=2,
+                                                  sns_spare=0,
+                                                  dix_data=1,
+                                                  dix_parity=2,
+                                                  dix_spare=0,
+                                                  size_data_disk='20Gi',
+                                                  size_metadata='20Gi')
+        assert_utils.assert_true(resp[0], resp[1])
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
-
+        self.log.info("Solution File Path : %s", sol_file_path)
+        self.log.info("Sys disk : %s", system_disk_dict)
         self.log.info("Step 5: Perform Cortx Cluster Deployment")
         resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
                                                        self.worker_node_list, system_disk_dict,
