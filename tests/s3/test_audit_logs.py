@@ -197,20 +197,23 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             folder = "audit"
             audit_path = "{}/{}/{}".format(
                 S3_CFG["s3_logs"],
                 folder,
                 "audit.log")
             self.log.debug(audit_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(audit_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(audit_path)
             if resp:
                 cmd = f"grep {value} {audit_path}"
                 status, res = system_utils.run_remote_cmd(
                     cmd,
                     host_name,
-                    CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    username,
+                    password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res
@@ -234,15 +237,16 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             log_msg_path = const.LOG_MSG_PATH
             self.log.debug(log_msg_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                log_msg_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(log_msg_path)
             if resp:
                 cmd = f"grep {value} {log_msg_path}"
                 status, res = system_utils.run_remote_cmd(
-                    cmd, host_name, CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    cmd, host_name, username, password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res

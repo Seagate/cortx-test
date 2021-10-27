@@ -838,7 +838,7 @@ class TestAccountUserManagement:
     def test_ssl_certificate_2090(self):
         """SSL certificate."""
         self.log.info("START: SSL certificate.")
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
         status, resp = self.node_obj.copy_file_to_local(
@@ -866,7 +866,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 1: Checking if %s file exists on server", str(
                 self.ca_cert_path))
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
         self.log.info(

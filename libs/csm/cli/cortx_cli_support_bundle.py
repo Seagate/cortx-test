@@ -95,12 +95,9 @@ class CortxCliSupportBundle(CortxCli):
             const.TAR_POSTFIX)
 
         # Check if file is exists on node
-        resp = S3H_OBJ.is_s3_server_path_exists(
-            tar_file_name,
-            host,
-            user,
-            pwd)
-        if not resp[0]:
+        obj = node_helper.Node(hostname=host, username=user, password=pwd)
+        resp = obj.path_exists(tar_file_name)
+        if not resp:
             return False, resp
 
         obj = node_helper.Node(hostname=host, username=user, password=pwd)
