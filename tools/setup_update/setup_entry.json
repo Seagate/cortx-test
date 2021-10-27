@@ -1,121 +1,162 @@
 {
-"setupname":"T2",
-"setup_type":"VM",
-"setup_in_useby": "",
-"in_use_for_parallel": false,
-"parallel_client_cnt": 0,
-"is_setup_free": true,
-"lb": "FQDN without protocol(http/s)",
-"nodes":[
+    "setupname":"ssc-vm-rhev4-1389",
+    "setup_type":"VM",
+    "setup_in_useby": "",
+    "in_use_for_parallel": false,
+    "parallel_client_cnt": 0,
+    "is_setup_free": true,
+    "lb": "FQDN without protocol(http/s)",
+    "nodes":[
+        {
+            "host": "srvnode-1",
+            "hostname": "ssc-vm-rhev4-1389.colo.seagate.com",
+            "ip": "10.230.241.166",
+            "username": "root",
+            "password": "seagate123",
+            "public_data_ip":"192.168.62.71",
+            "private_data_ip":"192.168.90.44",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        },
+        {
+            "host": "srvnode-2",
+            "hostname": "ssc-vm-g2-rhev4-1621.colo.seagate.com",
+            "ip": "10.230.249.124",
+            "username": "root",
+            "password": "1234",
+            "public_data_ip":"192.168.63.106",
+            "private_data_ip":"192.168.86.197",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        },
+        {
+            "host": "srvnode-3",
+            "hostname": "ssc-vm-g2-rhev4-1898.colo.seagate.com",
+            "ip": "10.230.244.248",
+            "username": "root",
+            "password": "seagate123",
+            "public_data_ip":"192.168.57.219",
+            "private_data_ip":"192.168.79.137",
+            "lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_lpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "encl_rpdu": {
+                "ip": "",
+                "port": "",
+                "user": "",
+                "pwd": ""
+                 },
+            "gem_controller": {
+                "ip": "",
+                "user": "",
+                "pwd": "",
+                "port1": "",
+                "port2": ""
+                }
+        }
+    ],
+
+    "enclosure":
     {
-        "host": "srv-node-0",
-        "hostname": "node 0 hostname",
-        "ip": "node 0 ip",
-        "username": "node 0 username",
-        "password": "node 0 password",
-        "public_data_ip":"",
-        "private_data_ip":"",
-        "lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "gem_controller": {
-            "ip": "",
-            "user": "",
-            "pwd": "",
-            "port1": "",
-            "port2": ""
-            }
+        "primary_enclosure_ip": "10.0.0.2",
+        "secondary_enclosure_ip": "10.0.0.3",
+        "enclosure_user": "",
+        "enclosure_pwd": ""
     },
+
+    "bmc":
     {
-        "host": "srv-node-1",
-        "hostname": "node 1 hostname",
-        "ip": "node 1 ip address",
-        "username": "node 1 username",
-        "password": "node 1 password",
-        "public_data_ip":"",
-        "private_data_ip":"",
-        "lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_lpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "encl_rpdu": {
-            "ip": "",
-            "port": "",
-            "user": "",
-            "pwd": ""
-             },
-        "gem_controller": {
-            "ip": "",
-            "user": "",
-            "pwd": "",
-            "port1": "",
-            "port2": ""
-            }
+        "username": "admin",
+        "password": "admin"
+    },
+
+    "ldap":
+    {
+        "username": "",
+        "password": "",
+        "sspl_pass": ""
+    },
+
+    "csm":
+    {
+      "mgmt_vip": "10.230.255.164",
+      "csm_admin_user":{
+        "username": "",
+        "password": ""
+      }
     }
-],
+    }
 
-"enclosure":
-{
-    "primary_enclosure_ip": "10.0.0.2",
-    "secondary_enclosure_ip": "10.0.0.3",
-    "enclosure_user": "",
-    "enclosure_pwd": ""
-},
-
-"bmc":
-{
-    "username": "",
-    "password": ""
-},
-
-"ldap":
-{
-    "username": "",
-    "password": "",
-    "sspl_pass": ""
-},
-
-"csm":
-{
-  "mgmt_vip": "",
-  "csm_admin_user":{
-    "username": "",
-    "password": ""
-  }
-}
-}

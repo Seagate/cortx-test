@@ -97,23 +97,26 @@ class TestProvisionerPostDeployment:
     def test_26253(self):
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         """Performing reset command"""
+        resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
+        assert_utils.assert_exact_string(resp, deploy_ff_cfg["Cluster name"])
         resp = self.deploy_ff_obj.reset_deployment_check(self.nd1_obj)
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["srv-glusterfs-volume_prvsnr_data"])
         LOGGER.info("Response for reset command: %s", resp)
-
+        resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
+        assert_utils.assert_exact_string(resp, deploy_ff_cfg["Cluster name"])
+        resp = self.deploy_ff_obj.cluster_show(self.nd1_obj)
+        assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-1"])
+        LOGGER.info("Response for cluster show command: %s", resp)
 
     @pytest.mark.tags("TEST-26220")
     def test_26220(self):
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
         """Performing cluster show command"""
-        resp = self.deploy_ff_obj.reset_deployment_check(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg[""])
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["No such file or directory"])
         resp = self.deploy_ff_obj.cluster_show(self.nd1_obj)
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-0"])
         LOGGER.info("Response for cluster show command: %s", resp)
-
 
     @pytest.mark.tags("TEST-26206")
     def test_26206(self):
