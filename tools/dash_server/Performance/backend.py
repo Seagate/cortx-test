@@ -375,12 +375,12 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
     #     results[data_needed_for_query['objsize']] = temp_data
 
 
-def get_dash_table_from_dataframe(df, bench, column_id, states=[]):
+def get_dash_table_from_dataframe(dataframe, bench, column_id, states=None):
     """
     functional to get dash table to show stats from dataframe
 
     Args:
-        df: pandas dataframe containing data
+        dataframe: pandas dataframe containing data
         bench: bench for which the data is
         column_id: column id needed for the column to plot
 
@@ -390,12 +390,12 @@ def get_dash_table_from_dataframe(df, bench, column_id, states=[]):
     def style_conditiona_func(states):
         if states:
             style_set = []
-            for i in range(len(states)):
-                if states[i] == 'failed':
+            for i, state in enumerate(states):
+                if state == 'failed':
                     style_set.append(
                         {'if': {'row_index': i}, 'backgroundColor': '#FADBD8'
                          })
-                elif(i % 2 != 0):
+                elif i%2!=0:
                     style_set.append(
                         {'if': {'row_index': i}, 'backgroundColor': '#E5E4E2'})
             style_set.append({'if': {'column_id': column_id},
@@ -408,7 +408,7 @@ def get_dash_table_from_dataframe(df, bench, column_id, states=[]):
             ]
         return style_set
 
-    if len(df) < 1:
+    if len(dataframe) < 1:
         benchmark = html.P("Data is not Available.")
     else:
         if bench == 'metadata_s3bench':
@@ -428,13 +428,13 @@ def get_dash_table_from_dataframe(df, bench, column_id, states=[]):
             ]
         else:
             headings = [
-                {'name': column, 'id': column} for column in list(df.columns)
+                {'name': column, 'id': column} for column in list(dataframe.columns)
             ]
 
         benchmark = dash_table.DataTable(
             id=f"{bench}_table",
             columns=headings,
-            data=df.to_dict('records'),
+            data=dataframe.to_dict('records'),
             merge_duplicate_headers=True,
             sort_action="native",
             style_header=style_dashtable_header,
