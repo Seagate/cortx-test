@@ -209,6 +209,15 @@ def calc_checksum(file_path, part_size=0):
         raise error from OSError
 
 
+def calc_contentmd5(data) -> str:
+    """
+    Calculate Content-MD5 S3 request header value
+
+    :param data: bytes literal containing the data being sent in an S3 request
+    :return: String literal representing the base64 encoded MD5 checksum of the data
+    """
+    return base64.b64encode(md5(data).digest()).decode('utf-8')
+
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
     Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
@@ -234,7 +243,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, base64.b64encode(md5(data).digest()).decode('utf-8')]
+                parts[i] = [data, calc_contentmd5(data)]
                 i += 1
         if random:
             keys = list(parts.keys())
@@ -309,8 +318,7 @@ def get_precalculated_parts(file_path, part_list, chunk_size=1048576) -> dict:
         with open(file_path, "rb") as file_pointer:
             for i, part_size in enumerate(total_part_list, 1):
                 data = file_pointer.read(int(part_size * chunk_size))
-                checksum = base64.b64encode(md5(data).digest()).decode('utf-8')
-                parts[i] = [data, checksum]
+                parts[i] = [data, calc_contentmd5(data)]
         return parts
     except OSError as error:
         LOGGER.error(str(error))
