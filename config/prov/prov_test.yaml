@@ -116,7 +116,7 @@ k8s_cortx_deploy:
     min_disks: 8
     os_release: [ "CentOS Linux release 7.9.2009 (Core)" ]
     kernel: [ "3.10.0-1160.el7.x86_64" ]
-    cpu_cores: 8
+    cpu_cores: 16
     memory: 16
   local_path_prov: "/mnt/fs-local-volume/"
   deploy_cluster: "sh deploy-cortx-cloud.sh"

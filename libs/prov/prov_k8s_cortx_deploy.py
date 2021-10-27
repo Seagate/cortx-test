@@ -130,6 +130,13 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Check that the host is pinging")
         node_obj.execute_cmd(cmd=
                              common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
+        LOGGER.info("Checking No of CPU's")
+        resp = node_obj.execute_cmd(cmd=
+                                    common_cmd.CMD_NUM_CPU,
+                                    read_lines=True)[0].strip()
+        LOGGER.info("No of CPU : %s", resp)
+        if resp not in self.deploy_cfg["prereq"]["cpu_cores"]:
+            return False, "No of CPU are as expected."
 
         LOGGER.info("Checking number of disks present")
         count = node_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
