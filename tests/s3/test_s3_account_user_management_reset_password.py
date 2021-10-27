@@ -177,6 +177,7 @@ class TestAccountUserManagementResetPassword:
                 resp = system_utils.validate_s3bench_parallel_execution(s3bench.LOG_DIR, log_prefix)
                 assert_utils.assert_true(resp[0], resp[1])
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -330,6 +331,7 @@ class TestAccountUserManagementResetPassword:
             "ENDED: Test reset s3 account password using csm user having manage role and "
             "create resources while S3 IO's are in progress.")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -420,6 +422,7 @@ class TestAccountUserManagementResetPassword:
             "ENDED: Test reset s3 account password using csm admin user and create s3 resources"
             " while S3 IO's are in progress.")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
@@ -588,6 +591,7 @@ class TestAccountUserManagementResetPassword:
             "ENDED: Test reset s3 account password using csm user having manage role and check"
             " resource intact while S3 IO's are in progress.	")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
