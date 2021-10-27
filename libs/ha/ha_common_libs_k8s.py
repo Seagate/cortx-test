@@ -27,6 +27,7 @@ import time
 from multiprocessing import Process
 
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
@@ -68,6 +69,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
+        self.dir_path = common_const.K8s_SCRIPTS_PATH
 
     def polling_host(self,
                      max_timeout: int,
@@ -377,40 +379,37 @@ class HAK8s:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
 
-    @staticmethod
-    def cortx_start_cluster(pod_obj):
+    def cortx_start_cluster(self, pod_obj):
         """
         This function starts the cluster
         :param pod_obj : Pod object from which the command should be triggered
         :return: Boolean, response
         """
         LOGGER.info("Start the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD, read_lines=True,
-                                    exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp[0]))
-        if "message to be checked" in resp[0]:
-            return True, resp[0]
-        return False, resp[0]
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
+                                   read_lines=True, exc=False)
+        LOGGER.info("Cluster start response: {}".format(resp))
+        if resp[0]:
+            return True, resp
+        return False, resp
 
-    @staticmethod
-    def cortx_stop_cluster(pod_obj):
+    def cortx_stop_cluster(self, pod_obj):
         """
         This function stops the cluster
         :param pod_obj : Pod object from which the command should be triggered
         :return: Boolean, response
         """
         LOGGER.info("Stop the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD, read_lines=True,
-                                    exc=False)
-        LOGGER.info("Cluster stop response: {}".format(resp[0]))
-        if "message to be checked" in resp[0]:
-            return True, resp[0]
-        return False, resp[0]
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
+                                   read_lines=True, exc=False)
+        LOGGER.info("Cluster stop response: {}".format(resp))
+        if resp[0]:
+            return True, resp
+        return False, resp
 
     def restart_cluster(self, pod_obj):
         """
         Restart the cluster and check all nodes health.
-        Validate health of all the nodes.
         :param pod_obj: pod object for stop/start cluster
         """
         LOGGER.info("Stop the cluster")
@@ -420,7 +419,7 @@ class HAK8s:
         # TODO: will need to check if delay needed when stopping or starting cluster
         time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Check all Pods are offline.")
-        resp = self.check_pod_status(pod_obj)
+        resp = self.check_cluster_status(pod_obj)
         if resp[0]:
             return False, "Pods are still running."
         LOGGER.info("Start the cluster")
@@ -428,13 +427,8 @@ class HAK8s:
         if not resp[0]:
             return False, "Error during Starting cluster"
         time.sleep(CMN_CFG["delay_60sec"])
-        LOGGER.info("Check all Pods came back online.")
-        resp = self.check_pod_status(pod_obj)
-        if not resp[0]:
-            return False, "Some/All not online yet."
-        # TODO: just a placeholder for cluster status
-        LOGGER.info("Check the cluster status.")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True, exc=False)
+        LOGGER.info("Check all Pods and cluster online.")
+        resp = self.check_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
         return True, resp
@@ -589,3 +583,25 @@ class HAK8s:
                 i += 1
 
         return parts
+
+    def check_cluster_status(self, pod_obj):
+        """
+        :param pod_obj: Object for master node
+        :return: boolean, response
+        """
+        LOGGER.info("Check the overall K8s cluster status.")
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+        LOGGER.info("Response for K8s cluster status: %s", resp)
+        for line in resp:
+            if "FAILED" in line:
+                return False, resp
+        res = pod_obj.send_k8s_cmd(
+            operation="exec", pod=common_const.POD_NAME, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
+            decode=True)
+        LOGGER.info("Response for cortx cluster status: %s", res)
+        for line in res:
+            if "started" not in line:
+                return False, res
+
+        return True, "K8s and cortx both cluster up."
