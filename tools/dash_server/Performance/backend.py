@@ -92,18 +92,22 @@ def get_data_for_stats(data):
     objects = sort_object_sizes_list(objects)
 
     if data_needed_for_query['name'] == 'S3bench':
+        # stats_headings = statistics_column_headings.copy()
         results = {
             'Object Sizes': statistics_column_headings
         }
     else:
+        # mult_headings = multiple_buckets_headings.copy()
         results = {
             'Object Sizes': multiple_buckets_headings
         }
 
+    run_state_list = []
     for obj in objects:
         data_needed_for_query['objsize'] = obj
-        temp_data = get_benchmark_data(data_needed_for_query)
+        temp_data, run_state = get_benchmark_data(data_needed_for_query)
         if not check_empty_list(temp_data):
+            run_state_list.append(run_state)
             results[obj] = temp_data
 
     df = pd.DataFrame(results)
@@ -112,7 +116,7 @@ def get_data_for_stats(data):
     df.columns = df.iloc[0]
     df = df[1:]
 
-    return df
+    return df, run_state_list
 
 
 def get_data_for_degraded_stats(data):
@@ -250,7 +254,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         for session in sessions:
             data_needed_for_query['sessions'] = session
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[session] = temp_data
 
@@ -271,7 +275,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
 
         for obj in objects:
             data_needed_for_query['objsize'] = obj
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[obj] = temp_data
     else:
@@ -290,7 +294,7 @@ def get_data_for_graphs(data, xfilter, xfilter_tag):
             }
         for build in builds:
             data_needed_for_query['build'] = build
-            temp_data = get_benchmark_data(data_needed_for_query)
+            temp_data, _ = get_benchmark_data(data_needed_for_query)
             if not check_empty_list(temp_data):
                 results[build] = temp_data
 
@@ -313,6 +317,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
         results: dictionary to with appended data for this particular instance
     """
     temp_data = []
+    run_state = "successful"
     added_objects = False
     operations = ["Write", "Read"]
 
@@ -341,6 +346,9 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             except KeyError:
                 num_objects = "NA"
 
+            if "Run_State" in db_data[0].keys():
+                run_state = db_data[0]['Run_State']
+
             temp_data.append(num_objects)
             added_objects = True
 
@@ -357,7 +365,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
                     temp_data.append(get_average_data(
                         count, db_data, stat, "Avg", 1))
 
-    return temp_data
+    return temp_data, run_state
     # if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
     #     if data_needed_for_query['xfilter'] == 'Build':
     #         results[data_needed_for_query['objsize']] = temp_data
@@ -367,7 +375,7 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
     #     results[data_needed_for_query['objsize']] = temp_data
 
 
-def get_dash_table_from_dataframe(df, bench, column_id):
+def get_dash_table_from_dataframe(df, bench, column_id, states=[]):
     """
     functional to get dash table to show stats from dataframe
 
@@ -379,6 +387,27 @@ def get_dash_table_from_dataframe(df, bench, column_id):
     Returns:
         figure: dashtable figure with plotted plots
     """
+    def style_conditiona_func(states):
+        if states:
+            style_set = []
+            for i in range(len(states)):
+                if states[i] == 'failed':
+                    style_set.append(
+                        {'if': {'row_index': i}, 'backgroundColor': '#FADBD8'
+                         })
+                elif(i % 2 != 0):
+                    style_set.append(
+                        {'if': {'row_index': i}, 'backgroundColor': '#E5E4E2'})
+            style_set.append({'if': {'column_id': column_id},
+                             'backgroundColor': '#D8D8D8'})
+
+        else:
+            style_set = [
+                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
+                {'if': {'column_id': column_id}, 'backgroundColor': '#D8D8D8'}
+            ]
+        return style_set
+
     if len(df) < 1:
         benchmark = html.P("Data is not Available.")
     else:
@@ -409,10 +438,7 @@ def get_dash_table_from_dataframe(df, bench, column_id):
             merge_duplicate_headers=True,
             sort_action="native",
             style_header=style_dashtable_header,
-            style_data_conditional=[
-                {'if': {'row_index': 'odd'}, 'backgroundColor': '#E5E4E2'},
-                {'if': {'column_id': column_id}, 'backgroundColor': '#D8D8D8'}
-            ],
+            style_data_conditional=style_conditiona_func(states),
             style_cell=style_table_cell
         )
 
@@ -451,6 +477,8 @@ def get_metadata_latencies(data_needed_for_query):
         'Statistics': ['Add / Edit Object Tags', 'Read Object Tags',
                        'Read Object Metadata']
     }
+
+    run_state_list = []
     for obj in objects:
         temp_data = []
         operations = ["PutObjTag", "GetObjTag", "HeadObj"]
@@ -459,6 +487,7 @@ def get_metadata_latencies(data_needed_for_query):
             data_needed_for_query['release'])
 
         for operation in operations:
+            run_state = "successful"
             data_needed_for_query['operation'] = operation
             data_needed_for_query['objsize'] = obj
             query = get_complete_schema(data_needed_for_query)
@@ -467,8 +496,13 @@ def get_metadata_latencies(data_needed_for_query):
             db_data = find_documents(query=query, uri=uri, db_name=db_name,
                                      collection=db_collection)
 
+            if "Run_State" in db_data[0].keys():
+                run_state = db_data[0]['Run_State']
+
             temp_data.append(get_average_data(
                 count, db_data, "Latency", "Avg", 1000))
+
+            run_state_list.append(run_state)
 
         if not check_empty_list(temp_data):
             results[obj] = temp_data
@@ -478,7 +512,7 @@ def get_metadata_latencies(data_needed_for_query):
     else:
         data_frame = pd.DataFrame()
 
-    return data_frame
+    return data_frame, run_state_list
 
 
 def get_bucktops(data_needed_for_query):
@@ -508,8 +542,13 @@ def get_bucktops(data_needed_for_query):
                             collection=db_collection)
     db_data = find_documents(query=query, uri=uri, db_name=db_name,
                              collection=db_collection)
+    run_state_list = "successful" * len(bucket_ops)
+
     try:
         results = db_data[0]["Bucket_Ops"]
+
+        if "Run_State" in db_data[0].keys():
+            run_state_list = db_data[0]['Run_State'] * len(bucket_ops)
 
         for bucket_operation in bucket_ops:
             temp_data = []
@@ -523,16 +562,16 @@ def get_bucktops(data_needed_for_query):
             if not check_empty_list(temp_data):
                 data[bucket_operation] = temp_data
     except IndexError:
-        return pd.DataFrame()
+        return pd.DataFrame(), run_state_list
     except KeyError:
-        return pd.DataFrame()
+        return pd.DataFrame(), run_state_list
 
     if len(data) > 1:
         data_frame = pd.DataFrame(data)
     else:
         data_frame = pd.DataFrame()
 
-    return data_frame
+    return data_frame, run_state_list
 
 
 def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
