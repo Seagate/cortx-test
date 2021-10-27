@@ -31,6 +31,7 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.s3_utils import get_unaligned_parts
 from commons.utils.s3_utils import get_precalculated_parts
+from commons.utils.s3_utils import get_multipart_etag
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils.system_utils import calculate_checksum
@@ -275,9 +276,9 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_precalculated_parts(
             self.mp_obj_path, mp_config["part_sizes"], chunk_size=mp_config["chunk_size"])
+        source_etag = get_multipart_etag(parts)
         uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)

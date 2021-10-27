@@ -218,6 +218,15 @@ def calc_contentmd5(data) -> str:
     """
     return base64.b64encode(md5(data).digest()).decode('utf-8')
 
+
+def get_multipart_etag(parts):
+    """TODO"""
+    md5_digests = []
+    for part, _ in parts:
+        md5_digests.append(md5(part).digest())
+    return md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+
+
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
     Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
