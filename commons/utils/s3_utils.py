@@ -222,9 +222,10 @@ def calc_contentmd5(data) -> str:
 def get_multipart_etag(parts):
     """TODO"""
     md5_digests = []
-    for part, _ in parts:
-        md5_digests.append(md5(part).digest())
-    return md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    for _, part in parts.items():
+        md5_digests.append(md5(part[0]).digest())
+    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    return '"%s"' % multipart_etag
 
 
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:

@@ -25,6 +25,7 @@ import time
 import logging
 from multiprocessing import Process
 import pytest
+from time import perf_counter_ns
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -293,7 +294,7 @@ class TestMultipartAbortCopy:
         self.log.info("Step 4: Copy multipart object 10 times")
         src_bkt = self.bucket_name
         for _ in range(10):
-            dst_bkt = "mp-bkt-{}".format(self.random_time)
+            dst_bkt = "mp-bkt-{}".format(perf_counter_ns())
             self.log.info("Creating a bucket with name : %s",dst_bkt)
             resp = self.s3_test_obj.create_bucket(dst_bkt)
             assert_utils.assert_true(resp[0], resp[1])
