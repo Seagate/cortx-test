@@ -66,6 +66,10 @@ class TestFailureDomainK8Cortx:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
+        cls.control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
+        cls.data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
+        cls.control_lb_ip = cls.control_lb_ip.split(",")
+        cls.data_lb_ip = cls.data_lb_ip.split(",")
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -81,12 +85,13 @@ class TestFailureDomainK8Cortx:
 
         assert_utils.assert_true(resp[0], resp[1])
 
+    # pylint: disable=too-many-arguments
     def test_deployment(self, sns_data, sns_parity,
                         sns_spare, dix_data,
                         dix_parity, dix_spare,
                         cvg_count, data_disk_per_cvg):
         """
-        This method is ued for deployment with various config on N nodes
+        This method is used for deployment with various config on N nodes
         """
         self.log.info("STARTED: {%s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                       len(self.worker_node_list), sns_data, sns_parity, sns_spare)
@@ -102,18 +107,17 @@ class TestFailureDomainK8Cortx:
 
         self.log.info("Step 3: Download solution file template")
         path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
-        control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
-        data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
-        control_lb_ip = control_lb_ip.split(",")
-        data_lb_ip = data_lb_ip.split(",")
         self.log.info("Step 4 : Update solution file template")
         resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
                                                   cortx_image=self.cortx_image,
-                                                  control_lb_ip=control_lb_ip, data_lb_ip=data_lb_ip,
+                                                  control_lb_ip=self.control_lb_ip,
+                                                  data_lb_ip=self.data_lb_ip,
                                                   sns_data=sns_data, sns_parity=sns_parity,
-                                                  sns_spare=sns_spare, dix_data=dix_data, dix_parity=dix_parity,
+                                                  sns_spare=sns_spare, dix_data=dix_data,
+                                                  dix_parity=dix_parity,
                                                   dix_spare=dix_spare, cvg_count=cvg_count,
-                                                  data_disk_per_cvg=data_disk_per_cvg, size_data_disk="20Gi",
+                                                  data_disk_per_cvg=data_disk_per_cvg,
+                                                  size_data_disk="20Gi",
                                                   size_metadata="20Gi")
         assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
         sol_file_path = resp[1]
