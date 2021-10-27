@@ -391,7 +391,7 @@ class TestIAMUserManagement:
             self.log.info("Verified IAM user can not have more than two access keys")
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
         self.start_stop_validate_parallel_s3ios(ios="Stop", log_prefix="test_23402_ios")
-        self.log.info("Step 10: Deleting access keys associated with iam user")
+        self.log.info("Step 8: Deleting access keys associated with iam user")
         for key in access_keys:
             resp = self.iam_test_obj.delete_access_key(
                 user_name=self.user_name, access_key_id=key)
