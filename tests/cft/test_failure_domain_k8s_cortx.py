@@ -118,7 +118,8 @@ class TestFailureDomainK8Cortx:
                                                   dix_spare=dix_spare, cvg_count=cvg_count,
                                                   data_disk_per_cvg=data_disk_per_cvg,
                                                   size_data_disk="20Gi",
-                                                  size_metadata="20Gi")
+                                                  size_metadata="20Gi",
+                                                  glusterfs_size="20Gi")
         assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
         sol_file_path = resp[1]
         system_disk_dict = resp[2]
@@ -163,7 +164,7 @@ class TestFailureDomainK8Cortx:
         """
         self.test_deployment(sns_data=6, sns_parity=4, sns_spare=0,
                              dix_data=1, dix_parity=2, dix_spare=0, cvg_count=2,
-                             data_disk_per_cvg=1)
+                             data_disk_per_cvg=2)
 
     @pytest.mark.run(order=10)
     @pytest.mark.data_durability
@@ -173,7 +174,7 @@ class TestFailureDomainK8Cortx:
         Intel ISA  - 16node - SNS- 8+8+0 dix 1+8+0 Deployment
         """
         self.test_deployment(sns_data=8, sns_parity=8, sns_spare=0, dix_data=1,
-                             dix_parity=8, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
+                             dix_parity=8, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
 
     @pytest.mark.run(order=13)
     @pytest.mark.data_durability
@@ -183,4 +184,4 @@ class TestFailureDomainK8Cortx:
         Intel ISA  - 16node - SNS- 16+4+0 dix 1+4+0 Deployment
         """
         self.test_deployment(sns_data=16, sns_parity=4, sns_spare=0, dix_data=1,
-                             dix_parity=4, dix_spare=0, cvg_count=2, data_disk_per_cvg=1)
+                             dix_parity=4, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
