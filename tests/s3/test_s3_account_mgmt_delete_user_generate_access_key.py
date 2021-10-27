@@ -425,6 +425,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             "ENDED: Test delete s3 account user own resources using csm user having monitor role"
             " and check s3 resources are intact while S3 IO's are in progress.")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_key
@@ -543,6 +544,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
             "ENDED: Test delete n number of s3 account user using csm user having different role "
             "(admin, manage, monitor) while S3 IO's are in progress.")
 
+    @pytest.mark.skip(reason="EOS-22292: CSM APIs which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_key
@@ -644,6 +646,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23382")
     @CTFailOn(error_handler)
@@ -694,6 +697,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.s3_acc_mgnt_key
     @pytest.mark.tags("TEST-23395")
     @CTFailOn(error_handler)
