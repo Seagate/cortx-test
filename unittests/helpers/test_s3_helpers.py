@@ -304,24 +304,6 @@ class TestS3helper:
         self.log.info("END: Tested get s3server fids.")
 
     @pytest.mark.s3unittest
-    def test_copy_s3server_file(self):
-        """Test copy s3server file."""
-        self.log.info("START: Test copy s3server file.")
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.local_path, local_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.s3_config_path, local_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.s3_config_path, local_path=self.local_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        self.log.info("END: Tested copy s3server file.")
-
-    @pytest.mark.s3unittest
     def test_enable_disable_s3server_instances(self):
         """Test enable disable s3server instances."""
         self.log.info("START: Test enable disable s3server instance.")

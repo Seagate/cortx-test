@@ -30,9 +30,10 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.system_utils import create_file, remove_file
-from config import S3_CFG
+from config import S3_CFG, CMN_CFG
 from config import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
@@ -61,6 +62,11 @@ class TestAccountUserManagement:
         cls.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         cls.log.info("STARTED: Test setup operations.")
         cls.log.info("Certificate path: %s", cls.ca_cert_path)
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+                            password=cls.passwd)
         cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
@@ -835,7 +841,7 @@ class TestAccountUserManagement:
         resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
-        status, resp = S3H_OBJ.copy_s3server_file(
+        status, resp = self.node_obj.copy_file_to_local(
             self.ca_cert_path, "ca.crt")
         assert status, resp
         with open("ca.crt", "r") as file:

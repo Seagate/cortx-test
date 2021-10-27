@@ -107,7 +107,7 @@ class TestAuditLogs:
         self.test_cfg = {}
         if system_utils.path_exists(self.lcl_path):
             system_utils.remove_file(self.lcl_path)
-        resp = S3H_OBJ.copy_s3server_file(self.rem_path, self.lcl_path)
+        resp = self.node_obj.copy_file_to_local(self.rem_path, self.lcl_path)
         assert_utils.assert_true(resp[0], resp[1])
         audit_config = read_yaml(self.lcl_path)[1]
         self.log.info(audit_config)
@@ -157,9 +157,12 @@ class TestAuditLogs:
         if self.old_value != new_value:
             for node in range(len(self.nodes)):
                 host_name = CMN_CFG["nodes"][node]["host"]
-                resp = S3H_OBJ.copy_s3server_file(
-                    self.rem_path, self.lcl_path, host=host_name)
-                assert_utils.assert_true(resp[0], resp)
+                node_obj = Node(hostname=host_name,
+                                username=self.uname,
+                                password=self.passwd)
+                resp = node_obj.copy_file_to_local(
+                    self.rem_path, self.lcl_path)
+                assert_utils.assert_true(resp[0], resp[1])
                 resp = update_cfg_based_on_separator(
                     self.lcl_path,
                     self.key,
