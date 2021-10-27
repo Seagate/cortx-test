@@ -626,6 +626,7 @@ class TestMultipartUploadGetPut:
         self.log.info("ENDED: Test multipart upload of object from 5 different client sessions "
                       "and restarting s3server randomly")
 
+    @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28526')
     @CTFailOn(error_handler)
