@@ -26,8 +26,10 @@ import os
 import time
 import sys
 from multiprocessing import Process
+import sys
 
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons import pswdmanager
 from commons.constants import Rest as Const
 from commons.exceptions import CTException
@@ -69,6 +71,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
+        self.dir_path = common_const.K8s_SCRIPTS_PATH
 
     def polling_host(self,
                      max_timeout: int,
@@ -378,40 +381,37 @@ class HAK8s:
                 return resp, f"s3bench operation failed with {resp[1]}"
         return True, "Sucessfully completed s3bench operation"
 
-    @staticmethod
-    def cortx_start_cluster(pod_obj):
+    def cortx_start_cluster(self, pod_obj):
         """
         This function starts the cluster
         :param pod_obj : Pod object from which the command should be triggered
         :return: Boolean, response
         """
         LOGGER.info("Start the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD, read_lines=True,
-                                    exc=False)
-        LOGGER.info("Cluster start response: {}".format(resp[0]))
-        if "message to be checked" in resp[0]:
-            return True, resp[0]
-        return False, resp[0]
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_START_CMD.format(self.dir_path),
+                                   read_lines=True, exc=False)
+        LOGGER.info("Cluster start response: {}".format(resp))
+        if resp[0]:
+            return True, resp
+        return False, resp
 
-    @staticmethod
-    def cortx_stop_cluster(pod_obj):
+    def cortx_stop_cluster(self, pod_obj):
         """
         This function stops the cluster
         :param pod_obj : Pod object from which the command should be triggered
         :return: Boolean, response
         """
         LOGGER.info("Stop the cluster")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD, read_lines=True,
-                                    exc=False)
-        LOGGER.info("Cluster stop response: {}".format(resp[0]))
-        if "message to be checked" in resp[0]:
-            return True, resp[0]
-        return False, resp[0]
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
+                                   read_lines=True, exc=False)
+        LOGGER.info("Cluster stop response: {}".format(resp))
+        if resp[0]:
+            return True, resp
+        return False, resp
 
     def restart_cluster(self, pod_obj):
         """
         Restart the cluster and check all nodes health.
-        Validate health of all the nodes.
         :param pod_obj: pod object for stop/start cluster
         """
         LOGGER.info("Stop the cluster")
@@ -421,7 +421,7 @@ class HAK8s:
         # TODO: will need to check if delay needed when stopping or starting cluster
         time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Check all Pods are offline.")
-        resp = self.check_pod_status(pod_obj)
+        resp = self.check_cluster_status(pod_obj)
         if resp[0]:
             return False, "Pods are still running."
         LOGGER.info("Start the cluster")
@@ -429,13 +429,8 @@ class HAK8s:
         if not resp[0]:
             return False, "Error during Starting cluster"
         time.sleep(CMN_CFG["delay_60sec"])
-        LOGGER.info("Check all Pods came back online.")
-        resp = self.check_pod_status(pod_obj)
-        if not resp[0]:
-            return False, "Some/All not online yet."
-        # TODO: just a placeholder for cluster status
-        LOGGER.info("Check the cluster status.")
-        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD, read_lines=True, exc=False)
+        LOGGER.info("Check all Pods and cluster online.")
+        resp = self.check_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
         return True, resp
@@ -511,13 +506,15 @@ class HAK8s:
         LOGGER.info("Multipart upload completed")
         return True, s3_data
 
-    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, parts_etag,
+                                 **kwargs):
         """
         Helper function to do partial multipart upload.
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param part_numbers: List of parts to be uploaded
+        :param parts_etag: List containing uploaded part number with its ETag
         :return: response
         """
         try:
@@ -561,8 +558,11 @@ class HAK8s:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
                                                        object_name=object_name, upload_id=mpu_id,
                                                        part_number=part)
+                p_etag = resp[1]
+                LOGGER.debug("Part : %s", str(p_etag))
+                parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
-            return True, mpu_id, parts
+            return True, mpu_id, parts, parts_etag
         except BaseException as error:
             LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
@@ -674,3 +674,88 @@ class HAK8s:
             return status, response
 
         return True, put_etag if not background else output.put((True, put_etag))
+
+    def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
+                         multipart_obj_path, part_numbers, parts_etag, output):
+        """
+        Helper function to start mpu (To start mpu in background, this function needs to be used)
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param file_size: Size of the file to be created to upload
+        :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
+        :param part_numbers: List of random parts to be uploaded
+        :param parts_etag: List containing uploaded part number with its ETag
+        :param output: Queue used to fill output
+        :return: response
+        """
+        access_key = s3_data["access_key"]
+        secret_key = s3_data["secret_key"]
+        failed_parts = {}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
+                                            secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
+
+        try:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Response: %s", res)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
+            LOGGER.info("Initiating multipart upload")
+            res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+            LOGGER.info("Response: %s", res)
+            mpu_id = res[1]["UploadId"]
+            LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        except (Exception, CTException) as error:
+            LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
+            sys.exit(1)
+
+        LOGGER.info("Creating parts of data")
+        if os.path.exists(multipart_obj_path):
+            os.remove(multipart_obj_path)
+        system_utils.create_file(multipart_obj_path, file_size)
+        parts = self.create_multiple_data_parts(multipart_obj_size=file_size,
+                                                multipart_obj_path=multipart_obj_path,
+                                                total_parts=total_parts)
+        LOGGER.debug("Created parts of data: %s", parts)
+        LOGGER.info("Uploading parts into bucket")
+        for i in part_numbers:
+            try:
+                resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
+                                                       object_name=object_name, upload_id=mpu_id,
+                                                       part_number=i)
+                LOGGER.info("Response: %s", resp)
+                p_tag = resp[1]
+                LOGGER.debug("Part : %s", str(p_tag))
+                parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
+                res = (parts_etag, mpu_id)
+            except (Exception, CTException) as error:
+                LOGGER.error("Error: %s", error)
+                failed_parts[i] = parts[i]
+                res = (failed_parts, parts_etag, mpu_id)
+
+        output.put(res)
+
+    def check_cluster_status(self, pod_obj):
+        """
+        :param pod_obj: Object for master node
+        :return: boolean, response
+        """
+        LOGGER.info("Check the overall K8s cluster status.")
+        resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
+        LOGGER.info("Response for K8s cluster status: %s", resp)
+        for line in resp:
+            if "FAILED" in line:
+                return False, resp
+        res = pod_obj.send_k8s_cmd(
+            operation="exec", pod=common_const.POD_NAME, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
+            decode=True)
+        LOGGER.info("Response for cortx cluster status: %s", res)
+        for line in res:
+            if "started" not in line:
+                return False, res
+
+        return True, "K8s and cortx both cluster up."
