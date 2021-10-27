@@ -42,17 +42,11 @@ release = [
 
 statistics_layout = Card(
     CardBody([
-        html.P(html.U("Performance Metrics Statistics Summary"),
-               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data. \
-            Data is displayed for the builds on which PerfPro has run.",
-               style={"font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-        html.P("Run Details", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
-        html.P(id="statistics_workload",
-               style=style_workload_captions),
+        html.P([html.I(className="fa fa-info-circle"), " Each data point is PER CLUSTER. \
+                Red colored row(s) highlight error(s) encountered during that test."],
+               style={'font-size': '20px', 'color': '#3131b0'}),
+        # html.P(id="statistics_workload", style=style_workload_captions),
+
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___

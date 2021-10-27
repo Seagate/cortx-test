@@ -346,11 +346,11 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             except KeyError:
                 num_objects = "NA"
 
-            if "Run_State" in db_data[0].keys():
-                run_state = db_data[0]['Run_State']
-
             temp_data.append(num_objects)
             added_objects = True
+
+        if "Run_State" in db_data[0].keys() and db_data[0]['Run_State'].lower() == "failed":
+            run_state = "failed"
 
         for stat in stats:
             if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
@@ -395,7 +395,7 @@ def get_dash_table_from_dataframe(dataframe, bench, column_id, states=None):
                     style_set.append(
                         {'if': {'row_index': i}, 'backgroundColor': '#FADBD8'
                          })
-                elif i%2!=0:
+                elif i % 2 != 0:
                     style_set.append(
                         {'if': {'row_index': i}, 'backgroundColor': '#E5E4E2'})
             style_set.append({'if': {'column_id': column_id},
@@ -542,13 +542,13 @@ def get_bucktops(data_needed_for_query):
                             collection=db_collection)
     db_data = find_documents(query=query, uri=uri, db_name=db_name,
                              collection=db_collection)
-    run_state_list = "successful" * len(bucket_ops)
+    run_state_list = ["successful"] * len(bucket_ops)
 
     try:
         results = db_data[0]["Bucket_Ops"]
 
         if "Run_State" in db_data[0].keys():
-            run_state_list = db_data[0]['Run_State'] * len(bucket_ops)
+            run_state_list = [db_data[0]['Run_State']] * len(bucket_ops)
 
         for bucket_operation in bucket_ops:
             temp_data = []

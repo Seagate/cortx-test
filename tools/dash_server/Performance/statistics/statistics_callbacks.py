@@ -24,7 +24,7 @@ from dash.exceptions import PreventUpdate
 from common import app
 from Performance.backend import *
 
-
+'''
 @app.callback(
     Output('statistics_workload', 'children'),
     Input('perf_release_dropdown', 'value'),
@@ -58,7 +58,7 @@ def update_workload(release_combined, branch, build, nodes,
         workload = get_workload_headings(data)
 
     return workload
-
+'''
 
 @app.callback(
     Output('statistics_s3bench_table', 'children'),
