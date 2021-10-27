@@ -67,6 +67,7 @@ def build_s3_endpoints() -> dict:
     s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
     # As per observation iam operations required https only.
     s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['iam_port']}"
+    s3_conf["s3b_url"] = f"{'https' if cert_flg else 'http'}://{s3_url}"
     s3_conf["use_ssl"] = ssl_flg
     s3_conf["validate_certs"] = cert_flg
 
