@@ -25,6 +25,7 @@ import logging
 import os
 import time
 from multiprocessing import Process
+import sys
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -504,13 +505,15 @@ class HAK8s:
         LOGGER.info("Multipart upload completed")
         return True, s3_data
 
-    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, parts_etag,
+                                 **kwargs):
         """
         Helper function to do partial multipart upload.
         :param s3_data: s3 account details
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param part_numbers: List of parts to be uploaded
+        :param parts_etag: List containing uploaded part number with its ETag
         :return: response
         """
         try:
@@ -554,8 +557,11 @@ class HAK8s:
                 resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
                                                        object_name=object_name, upload_id=mpu_id,
                                                        part_number=part)
+                p_etag = resp[1]
+                LOGGER.debug("Part : %s", str(p_etag))
+                parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
-            return True, mpu_id, parts
+            return True, mpu_id, parts, parts_etag
         except BaseException as error:
             LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
@@ -583,6 +589,69 @@ class HAK8s:
                 i += 1
 
         return parts
+
+    def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
+                         multipart_obj_path, part_numbers, parts_etag, output):
+        """
+        Helper function to start mpu (To start mpu in background, this function needs to be used)
+        :param s3_data: s3 account details
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param file_size: Size of the file to be created to upload
+        :param total_parts: Total parts to be uploaded
+        :param multipart_obj_path: Path of the file to be uploaded
+        :param part_numbers: List of random parts to be uploaded
+        :param parts_etag: List containing uploaded part number with its ETag
+        :param output: Queue used to fill output
+        :return: response
+        """
+        access_key = s3_data["access_key"]
+        secret_key = s3_data["secret_key"]
+        failed_parts = {}
+        s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
+                                endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
+                                            secret_key=secret_key, endpoint_url=S3_CFG["s3_url"])
+
+        try:
+            LOGGER.info("Creating a bucket with name : %s", bucket_name)
+            res = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Response: %s", res)
+            LOGGER.info("Created a bucket with name : %s", bucket_name)
+            LOGGER.info("Initiating multipart upload")
+            res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
+            LOGGER.info("Response: %s", res)
+            mpu_id = res[1]["UploadId"]
+            LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        except (Exception, CTException) as error:
+            LOGGER.error("Failed mpu due to error %s. Exiting from background process.", error)
+            sys.exit(1)
+
+        LOGGER.info("Creating parts of data")
+        if os.path.exists(multipart_obj_path):
+            os.remove(multipart_obj_path)
+        system_utils.create_file(multipart_obj_path, file_size)
+        parts = self.create_multiple_data_parts(multipart_obj_size=file_size,
+                                                multipart_obj_path=multipart_obj_path,
+                                                total_parts=total_parts)
+        LOGGER.debug("Created parts of data: %s", parts)
+        LOGGER.info("Uploading parts into bucket")
+        for i in part_numbers:
+            try:
+                resp = s3_mp_test_obj.upload_multipart(body=parts[i], bucket_name=bucket_name,
+                                                       object_name=object_name, upload_id=mpu_id,
+                                                       part_number=i)
+                LOGGER.info("Response: %s", resp)
+                p_tag = resp[1]
+                LOGGER.debug("Part : %s", str(p_tag))
+                parts_etag.append({"PartNumber": i, "ETag": p_tag["ETag"]})
+                res = (parts_etag, mpu_id)
+            except (Exception, CTException) as error:
+                LOGGER.error("Error: %s", error)
+                failed_parts[i] = parts[i]
+                res = (failed_parts, parts_etag, mpu_id)
+
+        output.put(res)
 
     def check_cluster_status(self, pod_obj):
         """
