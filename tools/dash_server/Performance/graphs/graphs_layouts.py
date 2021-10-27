@@ -212,7 +212,7 @@ graphs_perf_tabs = html.Div(
             CardBody(
                 [
                     html.P([html.I(className="fa fa-info-circle"),
-                            " Each data point is PER CLUSTER.."],
+                            " Each data point is PER CLUSTER."],
                            style={'font-size': '20px', 'color': '#3131b0'}),
 
                     Graph(id='plot_Throughput'),
