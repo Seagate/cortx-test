@@ -135,7 +135,7 @@ class ProvDeployK8sCortxLib:
                                     common_cmd.CMD_NUM_CPU,
                                     read_lines=True)[0].strip()
         LOGGER.info("No of CPU : %s", resp)
-        if int(resp) != self.deploy_cfg["prereq"]["cpu_cores"]:
+        if int(resp) >= self.deploy_cfg["prereq"]["cpu_cores"]:
             return False, "No of CPU are not as expected."
         LOGGER.info("Checking number of disks present")
         count = node_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)

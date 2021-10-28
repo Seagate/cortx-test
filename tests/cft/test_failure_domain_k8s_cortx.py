@@ -43,7 +43,7 @@ class TestFailureDomainK8Cortx:
         cls.log = logging.getLogger(__name__)
         cls.git_id = os.getenv("GIT_ID")
         cls.git_token = os.getenv("GIT_PASSWORD")
-        cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG", PROV_CFG["k8s_cortx_deploy"]["git_tag"])
+        cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         cls.cortx_image = os.getenv("CORTX_IMAGE")
         cls.docker_username = os.getenv("DOCKER_USERNAME")
         cls.docker_password = os.getenv("DOCKER_PASSWORD")
