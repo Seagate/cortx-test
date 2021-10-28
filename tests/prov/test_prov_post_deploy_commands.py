@@ -72,6 +72,8 @@ class TestProvisionerPostDeployment:
             cls.build_branch, version, cls.build)
         cls.deploy_ff_obj = ProvDeployFFLib()
 
+    @pytest.mark.lr
+    @pytest.mark.prov
     @pytest.mark.tags("TEST-26562")
     def test_26563(self):
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
@@ -79,6 +81,8 @@ class TestProvisionerPostDeployment:
         resp = self.deploy_ff_obj.check_start_command(self.nd1_obj)
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["status"])
 
+    @pytest.mark.lr
+    @pytest.mark.prov
     @pytest.mark.tags("TEST-26563")
     def test_26563(self):
         sys_state = PROV_CFG["system"]
@@ -93,6 +97,8 @@ class TestProvisionerPostDeployment:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
         LOGGER.info("Response for status command: %s", resp)
 
+    @pytest.mark.lr
+    @pytest.mark.prov
     @pytest.mark.tags("TEST-26253")
     def test_26253(self):
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
@@ -108,6 +114,8 @@ class TestProvisionerPostDeployment:
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-1"])
         LOGGER.info("Response for cluster show command: %s", resp)
 
+    @pytest.mark.lr
+    @pytest.mark.prov
     @pytest.mark.tags("TEST-26220")
     def test_26220(self):
         deploy_ff_cfg = PROV_CFG["deploy_ff"]
@@ -118,6 +126,8 @@ class TestProvisionerPostDeployment:
         assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-0"])
         LOGGER.info("Response for cluster show command: %s", resp)
 
+    @pytest.mark.lr
+    @pytest.mark.prov
     @pytest.mark.tags("TEST-26206")
     def test_26206(self):
         """ Performing reset_h_check command"""
