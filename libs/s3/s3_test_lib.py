@@ -723,10 +723,10 @@ class S3TestLib(S3Lib):
         LOGGER.info("Creating a bucket with name: %s", bucket_name)
         success_msg = "make_bucket: {}".format(bucket_name)
         cmd = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name) + self.cmd_endpoint
-        response = run_local_cmd(cmd=cmd)[1]
+        response = run_local_cmd(cmd=cmd, chk_stderr=True)[1]
         LOGGER.info("Response returned: %s", response)
         cmd = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
-        buckets_list = run_local_cmd(cmd=cmd)[1]
+        buckets_list = run_local_cmd(cmd=cmd, chk_stderr=True)[1]
         if success_msg in response and bucket_name in buckets_list:
             return True, response
 
@@ -745,10 +745,10 @@ class S3TestLib(S3Lib):
         delete_bkt_cmd = commands.CMD_AWSCLI_DELETE_BUCKET + self.cmd_endpoint
         if force:
             delete_bkt_cmd = " ".join([delete_bkt_cmd, "--force"])
-        response = run_local_cmd(cmd=delete_bkt_cmd.format(bucket_name))[1]
+        response = run_local_cmd(cmd=delete_bkt_cmd.format(bucket_name), chk_stderr=True)[1]
         LOGGER.info("Response returned: %s", response)
         cmd = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
-        buckets_list = run_local_cmd(cmd=cmd)[1]
+        buckets_list = run_local_cmd(cmd=cmd, chk_stderr=True)[1]
         if success_msg in response and bucket_name not in buckets_list:
             return True, response
 

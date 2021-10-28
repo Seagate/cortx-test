@@ -38,8 +38,8 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME = "storage-node1"
-HAX_CONTAINER_NAME = "cortx-hax"
+POD_NAME_PREFIX = "cortx-data-pod"
+HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 
 # RAS Paths
@@ -368,3 +368,6 @@ class Sizes:
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+
+# K8s env
+K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"

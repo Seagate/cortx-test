@@ -89,17 +89,23 @@ class Multipart(S3Lib):
             self,
             mpu_id: str = None,
             bucket: str = None,
-            object_name: str = None) -> dict:
+            object_name: str = None,
+            part_number_marker: int = 0) -> dict:
         """
         list parts of a specific multipart upload.
-
         :param mpu_id: Multipart upload ID
         :param bucket: Name of the bucket
         :param object_name: Name of the object
+        :param part_number_marker: next part number in case parts greater than 1000.
         :return: response
         """
-        response = self.s3_client.list_parts(
-            Bucket=bucket, Key=object_name, UploadId=mpu_id)
+        if part_number_marker:
+            response = self.s3_client.list_parts(
+                Bucket=bucket, Key=object_name, UploadId=mpu_id,
+                PartNumberMarker=part_number_marker)
+        else:
+            response = self.s3_client.list_parts(
+                Bucket=bucket, Key=object_name, UploadId=mpu_id)
         LOGGER.debug(response)
 
         return response

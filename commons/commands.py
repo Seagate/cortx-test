@@ -444,9 +444,9 @@ FETCH_LOGS = ""
 RESTART_POD_CMD = ""
 
 # LC commands
-CLSTR_START_CMD = ""
-CLSTR_STOP_CMD = ""
-CLSTR_STATUS_CMD = ""
+CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"

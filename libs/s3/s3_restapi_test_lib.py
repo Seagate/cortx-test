@@ -225,9 +225,7 @@ class S3AuthServerRestAPI(RestS3user):
     def __init__(self, host=None):
         """S3AutheServer operations constructor."""
         super().__init__()
-        nodes = CMN_CFG.get("nodes")
-        host = host if host else nodes[0]["public_data_ip"] if nodes else None
-        self.endpoint = S3_CFG["s3auth_endpoint"].format(host)
+        self.endpoint = S3_CFG["s3auth_endpoint"].format(host) if host else S3_CFG["iam_url"]
 
     def execute_restapi_on_s3authserver(
             self, payload, access_key, secret_key, **kwargs) -> tuple:
