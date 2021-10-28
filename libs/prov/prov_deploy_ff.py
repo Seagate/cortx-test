@@ -557,27 +557,6 @@ class ProvDeployFFLib:
         return True, "define_storage_set Successful!!"
 
     @staticmethod
-    def prepare_cluster(nd_obj: Node) -> tuple:
-        """
-        Prepare Cluster
-        :param nd_obj: Host object of the primary node
-        :return: True/False and command status
-        """
-        try:
-            nd_obj.execute_cmd(cmd=common_cmd.CLUSTER_PREPARE, read_lines=True)
-        except Exception as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployFFLib.prepare_cluster.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
-
-        return True, "Prepare Cluster Completed"
-
-    @staticmethod
     def config_cluster(nd_obj1: Node) -> tuple:
         """
         This method deploys cortx and 3rd party software components on given VM setup
@@ -661,7 +640,6 @@ class ProvDeployFFLib:
             return False, error
 
         return True, "field_deployment_cluster Successful!!"
-
 
     @staticmethod
     def post_deploy_check(nd1_obj: Node):
@@ -901,41 +879,3 @@ class ProvDeployFFLib:
             return False, error
 
         return True, "Post Deloyment Steps Successful!!"
-
-    @staticmethod
-    def execute_cmd_using_field_user_prompt(node_obj, cmd: str, timeout: int = 120) -> tuple:
-        """
-        Execute field deployment command on field user prompt.
-        :param: node_obj: node object for command execution.
-        :param: cmd: Command to execute.
-        :param: timeout: timeout for command completion
-        :return: True/False and output
-        """
-        try:
-            node_obj.connect(shell=True)
-            channel = node_obj.shell_obj
-            LOGGER.debug(f"Executing command: {cmd}")
-            cmd = "".join([cmd, "\n"])
-            channel.send(cmd)
-            output = ""
-            start_time = time.time()
-            while (time.time() - start_time) < timeout:
-                time.sleep(10)
-                if channel.recv_ready():
-                    output = channel.recv(9999).decode("utf-8")
-                    output += output
-                    LOGGER.info(output)
-                if "command failed" in output:
-                    LOGGER.error(output)
-                    break
-                elif "Error" in output:
-                    LOGGER.error(output)
-                    break
-            if "command failed" or "Error" in output:
-                return False, output
-        except Exception as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployFFLib.execute_cmd_using_field_user_prompt.__name__)
-            return False, error
-        return True, output
