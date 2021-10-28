@@ -83,6 +83,7 @@ class TestS3accountK8s:
                 break
         return res
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-28934")
@@ -124,6 +125,7 @@ class TestS3accountK8s:
         assert secret_key not in resp_str, "{} is present in the openldap".format(secret_key)
         self.log.info("##############Test Completed##############")
 
+    @pytest.mark.cluster_user_ops
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-28935")
