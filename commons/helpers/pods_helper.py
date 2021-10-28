@@ -25,6 +25,7 @@ like send_k8s_cmd.
 import logging
 from typing import Tuple
 from commons import commands
+from commons import constants as const
 from commons.helpers.host import Host
 
 log = logging.getLogger(__name__)
@@ -81,3 +82,12 @@ class LogicalNode(Host):
             return False, error
 
         return True, "Node shutdown successfully"
+
+    def get_pod_name(self, pod_prefix: str = const.POD_NAME_PREFIX):
+        """Function to get pod name with given prefix."""
+        output = self.execute_cmd(commands.CMD_POD_STATUS +
+                                  " -o=custom-columns=NAME:.metadata.name", read_lines=True)
+        for lines in output:
+            if pod_prefix in lines:
+                return True, lines.strip()
+        return False, f"pod with prefix \"{pod_prefix}\" not found"
