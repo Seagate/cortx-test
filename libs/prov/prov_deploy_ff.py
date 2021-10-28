@@ -446,15 +446,13 @@ class ProvDeployFFLib:
         return True, "field_deployment_node Successful!!"
 
     @staticmethod
-    def cluster_definition(nd1_obj: Node, hostnames: str, build_url: str, timeout: int = 1800,
-                           field_user: bool = False):
+    def cluster_definition(nd1_obj: Node, hostnames: str, build_url: str, timeout: int = 1800):
         """
         Cluster Definition
         param: nd1_obj : Object of node class for primary node
         param: hostnames: Space seperated String of hostnames for all nodes
         param: build_url: Build URL used for deployment
         param: timeout: timeout for command completion
-        param: field_user: Flag to get field user command
         """
         try:
             LOGGER.info("Hostname : %s", hostnames)
@@ -463,24 +461,9 @@ class ProvDeployFFLib:
             output = ""
             current_output = ""
             start_time = time.time()
-            if len(CMN_CFG["nodes"]) > 1:
-                if field_user:
-                    cmd = "".join(
-                        [common_cmd.FIELD_CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
-                         "\n"])
-                else:
-                    cmd = "".join(
-                        [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
-                         "\n"])
-            else:
-                if field_user:
-                    cmd = "".join(
-                        [common_cmd.FIELD_CLUSTER_CREATE_SINGLE_NODE.format(hostnames, build_url),
-                         "\n"])
-                else:
-                    cmd = "".join(
-                        [common_cmd.CLUSTER_CREATE_SINGLE_NODE.format(hostnames, build_url),
-                         "\n"])
+            cmd = "".join(
+                [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
+                 "\n"])
             LOGGER.info("Command : %s", cmd)
             LOGGER.info("no of nodes: %s", len(CMN_CFG["nodes"]))
             channel.send(cmd)
@@ -496,15 +479,7 @@ class ProvDeployFFLib:
                     pswd = "".join([CMN_CFG["nodes"][passwd_counter]["password"], "\n"])
                     channel.send(pswd)
                     passwd_counter += 1
-                elif "Enter nodeadmin user password for srvnode" in current_output \
-                        and passwd_counter < len(CMN_CFG["nodes"]):
-                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
-                    channel.send(pswd)
-                    passwd_counter += 1
-                elif "Enter nodeadmin user password for current node:" in current_output:
-                    pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
-                    channel.send(pswd)
-                elif "command Failed" in output:
+                elif "cortx_setup command Failed" in output:
                     LOGGER.error(current_output)
                     break
                 elif "Environment set up!" in output:
@@ -830,7 +805,7 @@ class ProvDeployFFLib:
             return False, error
         return True
 
-    def deploy_3node_vm_ff(self, build, build_url, deploy_config_file):
+    def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
         """
         Perform Deployment Using factory and field method
         param: build: Build No
