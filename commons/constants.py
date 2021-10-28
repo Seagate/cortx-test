@@ -117,8 +117,6 @@ CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
 CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
 CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
 CORTX_CSM_POD = "cortx-csm-agent"
-S3_ENDPOINT = "https://cortx-io-svc:9443"
-S3_HOST = "cortx-io-svc"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -171,7 +169,7 @@ class Rest:
     SUCCESS_STATUS = 200
     FORBIDDEN = 403
     METHOD_NOT_FOUND = 404
-    SUCCESS_STATUS_FOR_POST = 201
+    SUCCESS_STATUS_FOR_POST = 201 
     USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
                 " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
                 "\"alert_notification\":true}"

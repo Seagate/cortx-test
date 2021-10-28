@@ -81,27 +81,14 @@ class TestCsmUser():
         cls.s3_accounts = RestS3user()
         cls.log.info("Initiating Rest Client ...")
 
-    def get_pod_name(self, resp):
-        self.log.info("getting control pod name")
-        data = str(resp, 'UTF-8')
-        data = data.split("\n")
-        res = False
-        for line in data:
-            if "cortx-control-pod" in line:
-                line_found = line
-                res = re.sub(' +', ' ', line_found)
-                res = res.split()[0]
-                break
-        return res
-
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.csmrest
     @pytest.mark.tags("TEST-28936")
     def test_28936(self):
         """
-        Test S3 accounts passwords are encrypted on openldap
-        and available for direct use for creating buckets
+        Test S3 account creation returns error 503 service unavailable
+        for wrong values of endpoint and host in csm conf
         """
         #Test will fail until EOS-25584 is fixec for returning error code 503
         self.log.info("Step 1: Edit csm.conf file for incorrect s3 data endpoint")
@@ -152,7 +139,7 @@ class TestCsmUser():
              else:
                  time.sleep(30)
         if not pod_up:
-            self.log.info("Pod is not up so cannot proceed. Test Failed")
+            assert pod_up, "Pod is not up so cannot proceed. Test Failed"
         self.log.info("Step 4: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
         assert response.status_code == const.SERVICE_UNAVAILABLE, "Account creation failed."
@@ -165,8 +152,8 @@ class TestCsmUser():
         self.log.info("Step 5: Edit csm.conf file for correct s3 data endpoint")
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream)
-        data['S3']['iam']['endpoints'] = cons.S3_ENDPOINT
-        data['S3']['iam']['host'] = cons.S3_HOST
+        data['S3']['iam']['endpoints'] = s3_endpoint
+        data['S3']['iam']['host'] = s3_host
         with open(self.local_csm_path, 'w') as yaml_file:
              yaml_file.write( yaml.dump(data, default_flow_style=False))
         yaml_file.close()
@@ -195,7 +182,7 @@ class TestCsmUser():
              else:
                  time.sleep(30)
         if not pod_up:
-            self.log.info("Pod is not up so cannot proceed. Test Failed")
+            assert pod_up, "Pod is not up so cannot proceed. Test Failed"
         self.log.info("Step 8: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
         username = response.json()["account_name"]
