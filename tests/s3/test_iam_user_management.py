@@ -387,6 +387,8 @@ class TestIAMUserManagement:
             create_access_key2 = self.iam_test_obj.create_access_key(self.user_name)
             assert_utils.assert_false(create_access_key2[0], create_access_key2[1])
         except CTException as error:
+            assert_utils.assert_in("AccessKeyQuotaExceeded", error.message,
+                                   f"Expected error: AccessKeyQuotaExceeded Actual error: {error}")
             self.log.error("IAM user already has two access keys: %s", error)
             self.log.info("Verified IAM user can not have more than two access keys")
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
