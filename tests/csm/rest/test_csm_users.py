@@ -142,7 +142,7 @@ class TestCsmUser():
             assert pod_up, "Pod is not up so cannot proceed. Test Failed"
         self.log.info("Step 4: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
-        assert response.status_code == const.SERVICE_UNAVAILABLE, "Account creation failed."
+        assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
         self.log.info("Repeating above steps for correct host and endpoint value")
         self.log.info("Fetch new pod name")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
