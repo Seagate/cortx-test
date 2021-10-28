@@ -35,7 +35,7 @@ from commons import commands
 LOGGER = logging.getLogger(__name__)
 
 
-class TestProvConfigServiceKeys:
+class TestProvFFCommands:
 
     @classmethod
     def setup_class(cls):
@@ -43,6 +43,8 @@ class TestProvConfigServiceKeys:
         LOGGER.info("STARTED: Setup Module operations")
         cls.node_list = []
         cls.setup_type = CMN_CFG["setup_type"]
+        cls.product_family = CMN_CFG["product_family"]
+        cls.product_type = CMN_CFG["product_type"]
         for node in range(len(CMN_CFG["nodes"])):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
@@ -72,6 +74,7 @@ class TestProvConfigServiceKeys:
             assert_utils.assert_true(result[0])
         LOGGER.info("Done: Setup module operations")
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24960")
     def test_24960(self):
         """Verify cortx_setup config set command fails for MOTR Client Instances when value is not given."""
@@ -81,6 +84,7 @@ class TestProvConfigServiceKeys:
                                         read_lines=True)
         assert_utils.assert_exact_string(out, res[1][0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24958")
     def test_24958(self):
         """Verify cortx_setup config set to add MOTR Client Instances key and value in Confstore and Pillar."""
@@ -90,6 +94,7 @@ class TestProvConfigServiceKeys:
         res = ProvDeployFFLib.configure_feature(self.node_obj, feature_conf)
         assert_utils.assert_true(res[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24959")
     def test_24959(self):
         """Verify cortx_setup config get is returning MOTR Client Instances set key."""
@@ -99,6 +104,7 @@ class TestProvConfigServiceKeys:
         res = self.node_obj.execute_cmd(cmd=commands.FEATURE_GET_CFG.format(key)).decode("utf-8").strip()
         assert_utils.assert_equal(int(res), motr_client_instances)
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24954")
     def test_24954(self):
         """Verify cortx_setup config set fails for S3 IO Max Units when value is not given."""
@@ -108,6 +114,7 @@ class TestProvConfigServiceKeys:
                                         read_lines=True)
         assert_utils.assert_exact_string(out, res[1][0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24952")
     def test_24952(self):
         """Verify cortx_setup config set to add S3 IO Max Units key and value in Confstore and Pillar."""
@@ -117,6 +124,7 @@ class TestProvConfigServiceKeys:
         res = ProvDeployFFLib.configure_feature(self.node_obj, feature_conf)
         assert_utils.assert_true(res[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24953")
     def test_24953(self):
         """Verify cortx_setup config get is returning S3 IO Max Units set key."""

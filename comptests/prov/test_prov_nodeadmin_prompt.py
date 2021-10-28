@@ -46,6 +46,8 @@ class TestProvNodeAdmin:
         cls.node_list = []
         cls.field_node_list = []
         cls.setup_type = CMN_CFG["setup_type"]
+        cls.product_family = CMN_CFG["product_family"]
+        cls.product_type = CMN_CFG["product_type"]
         for node in range(len(CMN_CFG["nodes"])):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
@@ -105,6 +107,7 @@ class TestProvNodeAdmin:
             field_node_list.append(field_user_node_obj)
         return field_node_list
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24873")
     def test_24873(self):
         """Verify nodeadmin user reset the password during first login."""
@@ -113,6 +116,7 @@ class TestProvNodeAdmin:
             resp = Provisioner.change_field_user_password(field_user_node_obj, new_password=self.field_pwd)
             assert_utils.assert_true(resp)
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24745")
     def test_24745(self, field_user_node_list):
         """Verify server identification command with nodeadmin user."""
@@ -121,6 +125,7 @@ class TestProvNodeAdmin:
                                                                       cmd=commands.FIELD_PREPARE_NODE.format(1, 1, nd_no))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24750")
     def test_24750(self, field_user_node_list):
         """Verify nodeadmin user able to configure search domain name and hostname during field deployment."""
@@ -132,6 +137,7 @@ class TestProvNodeAdmin:
                                                                           PROV_CFG["deploy_ff"]["dns_servers"]))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24760")
     def test_24760(self, field_user_node_list):
         """Verify nodeadmin user able to configure static network configuration for management network."""
@@ -149,6 +155,7 @@ class TestProvNodeAdmin:
                                                                           gateway))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24880")
     def test_24880(self, field_user_node_list):
         """Verify nodeadmin user able to configure static network configuration for data network."""
@@ -166,6 +173,7 @@ class TestProvNodeAdmin:
                                                                           gateway))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24881")
     def test_24881(self, field_user_node_list):
         """Verify nodeadmin user able to configure static network configuration for private network."""
@@ -183,6 +191,7 @@ class TestProvNodeAdmin:
                                                                           gateway))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24885")
     def test_24885(self, field_user_node_list):
         """Verify nodeadmin user able to configure firewall during field deployment."""
@@ -193,6 +202,7 @@ class TestProvNodeAdmin:
                                                                       timeout=300)
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24886")
     def test_24886(self, field_user_node_list):
         """Verify nodeadmin user able to configure time server during field deployment."""
@@ -201,6 +211,7 @@ class TestProvNodeAdmin:
                                                                       cmd=commands.FIELD_CFG_NTP.format("UTC"))
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24887")
     def test_24887(self, field_user_node_list):
         """Verify nodeadmin user able to run node finalize command during field deployment."""
@@ -209,6 +220,7 @@ class TestProvNodeAdmin:
                                                                       cmd=commands.FIELD_NODE_PREP_FINALIZE)
             assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24962")
     def test_24962(self, field_user_node_list):
         """Verify nodeadmin user able to create cluster."""
@@ -220,6 +232,7 @@ class TestProvNodeAdmin:
         resp = self.deploy_ff.cluster_definition(primary_node_obj, hostnames, self.build_url, field_user=True)
         assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24963")
     def test_24963(self, field_user_node_list):
         """Verify nodeadmin user able to returns cluster information."""
@@ -229,6 +242,7 @@ class TestProvNodeAdmin:
                                                                   cmd=cmd)
         assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24912")
     def test_24912(self, field_user_node_list):
         """Verify nodeadmin user able to configure storage-set name and count during field deployment."""
@@ -240,6 +254,7 @@ class TestProvNodeAdmin:
                                                                   ))
         assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24914")
     def test_24914(self, field_user_node_list):
         """
@@ -258,6 +273,7 @@ class TestProvNodeAdmin:
                                                                   ))
         assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-24915")
     def test_24915(self, field_user_node_list):
         """
@@ -276,6 +292,7 @@ class TestProvNodeAdmin:
                                                                   ))
         assert_utils.assert_true(resp[0])
 
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-249156")
     def test_24916(self, field_user_node_list):
         """
