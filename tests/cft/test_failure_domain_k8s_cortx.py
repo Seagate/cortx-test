@@ -135,6 +135,7 @@ class TestFailureDomainK8Cortx:
                       len(self.worker_node_list), sns_data, sns_parity, sns_spare)
 
     @pytest.mark.run(order=1)
+    @pytest.mark.lc
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29485")
     def test_29485(self):
@@ -145,6 +146,7 @@ class TestFailureDomainK8Cortx:
                              dix_parity=2, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
 
     @pytest.mark.run(order=4)
+    @pytest.mark.lc
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29488")
     def test_29488(self):
@@ -156,6 +158,7 @@ class TestFailureDomainK8Cortx:
                              data_disk_per_cvg=1)
 
     @pytest.mark.run(order=7)
+    @pytest.mark.lc
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29491")
     def test_29491(self):
@@ -167,6 +170,7 @@ class TestFailureDomainK8Cortx:
                              data_disk_per_cvg=2)
 
     @pytest.mark.run(order=10)
+    @pytest.mark.lc
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29494")
     def test_29494(self):
@@ -177,6 +181,7 @@ class TestFailureDomainK8Cortx:
                              dix_parity=8, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
 
     @pytest.mark.run(order=13)
+    @pytest.mark.lc
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-29497")
     def test_29497(self):
