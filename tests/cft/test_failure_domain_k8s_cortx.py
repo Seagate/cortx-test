@@ -132,7 +132,7 @@ class TestFailureDomainK8Cortx:
                                                        self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                      len(self.worker_node_list), sns_parity, sns_spare)
+                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
 
     @pytest.mark.run(order=1)
     @pytest.mark.data_durability
