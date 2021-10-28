@@ -43,6 +43,7 @@ from libs.csm.rest.csm_rest_bucket import RestS3BucketPolicy
 from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 
 class TestCsmUser():
     """REST API Test cases for CSM users
@@ -57,6 +58,7 @@ class TestCsmUser():
         cls.rest_resp_conf = configmanager.get_config_wrapper(
             fpath="config/csm/rest_response_data.yaml")
         cls.config = CSMConfigsCheck()
+        cls.csm_cluster = RestCsmCluster()
         cls.host = CMN_CFG["nodes"][0]["hostname"]
         cls.uname = CMN_CFG["nodes"][0]["username"]
         cls.passwd = CMN_CFG["nodes"][0]["password"]
@@ -106,7 +108,7 @@ class TestCsmUser():
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
-        pod_name = self.get_pod_name(resp_node)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
         #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
               cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
@@ -115,16 +117,19 @@ class TestCsmUser():
                          exc=False)
         resp = self.nd_obj.copy_file_to_local(
             remote_path=self.csm_copy_path, local_path=self.local_csm_path)
-        assert_utils.assert_true(resp[0], resp)
+        assert_utils.assert_true(resp[0], resp[1])
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream)
+        s3_endpoint = data['S3']['iam']['endpoints']
+        s3_host = data['S3']['iam']['host']
         data['S3']['iam']['endpoints'] = "https://cortx-io-svc1:9443"
         data['S3']['iam']['host'] = "cortx-io-svc1" 
         with open(self.local_csm_path, 'w') as yaml_file:
              yaml_file.write( yaml.dump(data, default_flow_style=False))
+        yaml_file.close()
         resp = self.nd_obj.copy_file_to_remote(
             local_path=self.local_csm_path, remote_path=self.csm_copy_path)
-        assert_utils.assert_true(resp[0], resp)
+        assert_utils.assert_true(resp[0], resp[1])
         #cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
                 cmd=comm.K8S_CP_TO_CONTAINER_CMD.format(
@@ -143,27 +148,28 @@ class TestCsmUser():
              self.log.info("Control pod recreated with new configuration")
         self.log.info("Step 4: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
-        assert response.status_code == const.SERVICE_UNAVAILABLE, "Account creation failed."
+        assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
         self.log.info("Repeating above steps for correct host and endpoint value")
         self.log.info("Fetch new pod name")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
         pod_name = self.get_pod_name(resp_node)
-        self.log.info("Step 5: Edit csm.conf file for incorrect s3 data endpoint")
+        self.log.info("Step 5: Edit csm.conf file for correct s3 data endpoint")
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream)
         data['S3']['iam']['endpoints'] = cons.S3_ENDPOINT
         data['S3']['iam']['host'] = cons.S3_HOST
         with open(self.local_csm_path, 'w') as yaml_file:
              yaml_file.write( yaml.dump(data, default_flow_style=False))
+        yaml_file.close()
         resp = self.nd_obj.copy_file_to_remote(
             local_path=self.local_csm_path, remote_path=self.csm_copy_path)
-        assert_utils.assert_true(resp[0], resp)
+        assert_utils.assert_true(resp[0], resp[1])
         #cmd = kubectl cp /root/a.text cortx-control-pod-6cb946fc6c-k298q:/tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
                cmd=comm.K8S_CP_TO_CONTAINER_CMD.format(
-                    self.csm_copy_path, pod_name, self.csm_conf_path),
+                    self.csm_copy_path, pod_name, self.csm_conf_path, cons.CORTX_CSM_POD),
             read_lines=False,
             exc=False)
         self.log.info("Step 6: Delete control pod")
@@ -178,7 +184,10 @@ class TestCsmUser():
              self.log.info("Control pod recreated with new configuration")
         self.log.info("Step 8: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
+        username = response.json()["account_name"]
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Account creation successful."
+        response = self.s3_accounts.delete_s3_account_user(username=username)
+        assert response.status_code == const.SUCCESS_STATUS, "User deleted"
         self.log.info("################Test Passed##################")
 
     @pytest.mark.lc

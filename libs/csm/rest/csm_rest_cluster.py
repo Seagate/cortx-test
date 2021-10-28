@@ -24,6 +24,7 @@ import json
 import random
 import time
 import yaml
+import re
 
 from commons import commands as common_cmd
 from commons.helpers.node_helper import Node
@@ -54,6 +55,19 @@ class RestCsmCluster(RestTestLib):
 
         # self.service_repo = "/root/deploy-scripts/k8_cortx_cloud"
         self.service_repo = os.getenv("Solution_yaml_path", "/root/cortx-k8s/k8_cortx_cloud")
+
+    def get_pod_name(self, resp):
+        self.log.info("getting control pod name")
+        data = str(resp, 'UTF-8')
+        data = data.split("\n")
+        res = False
+        for line in data:
+            if "cortx-control-pod" in line:
+                line_found = line
+                res = re.sub(' +', ' ', line_found)
+                res = res.split()[0]
+                break
+        return res
 
     def modify_solution_file(self, key, value):
         """

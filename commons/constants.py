@@ -172,7 +172,6 @@ class Rest:
     FORBIDDEN = 403
     METHOD_NOT_FOUND = 404
     SUCCESS_STATUS_FOR_POST = 201
-    SERVICE_UNAVAILABLE = 503
     USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
                 " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
                 "\"alert_notification\":true}"
