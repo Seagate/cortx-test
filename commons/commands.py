@@ -446,6 +446,7 @@ CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
+CMD_GET_NODE = "Kubectl get nodes"
 
 #LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
