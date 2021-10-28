@@ -105,7 +105,6 @@ def create_s3_acc(
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
-    :param account_dict:
     :return tuple: It returns multiple values such as access_key,
     secret_key and s3 objects which required to perform further operations.
     """
@@ -266,7 +265,7 @@ def s3_ios(
         access_key,
         secret_key,
         bucket=bucket,
-        end_point=kwargs["end_point"],
+        end_point=S3_CFG["s3b_url"],
         num_clients=kwargs["num_clients"],
         num_sample=kwargs["num_sample"],
         obj_name_pref=kwargs["obj_name_pref"],
@@ -325,14 +324,14 @@ class S3BackgroundIO:
         kwargs.setdefault("num_clients", 2)
         kwargs.setdefault("num_sample", 5)
         kwargs.setdefault("obj_name_pref", "load_gen_")
-        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        kwargs.setdefault("end_point", S3_CFG["s3b_url"])
         LOG.info("STARTED: s3 io's operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=kwargs["end_point"],
+            end_point=S3_CFG["s3b_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
