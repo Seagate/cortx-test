@@ -737,7 +737,7 @@ class ProvDeployFFLib:
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
-            LOGGER.info("Cluster Reset COMMAND : %s", resp)
+            LOGGER.info("Cluster Reset_H COMMAND : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -754,7 +754,7 @@ class ProvDeployFFLib:
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
-            LOGGER.info("Cluster Reset COMMAND : %s", resp)
+            LOGGER.info("Cluster Show COMMAND : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -771,7 +771,7 @@ class ProvDeployFFLib:
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.PROV_CLUSTER, read_lines=True)
-            LOGGER.info("Cluster Reset COMMAND : %s", resp)
+            LOGGER.info("Cluster Json COMMAND : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
