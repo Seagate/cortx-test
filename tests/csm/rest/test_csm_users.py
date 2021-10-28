@@ -141,14 +141,21 @@ class TestCsmUser():
                                             read_lines=False,
                                             exc=False)
         self.log.info("Step 3: Check if control pod is re-deployed")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+        pod_up = False 
+        for _ in range(3):
+             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
-        if "cortx-control-pod" in resp_node.decode('UTF-8'):
-             self.log.info("Control pod recreated with new configuration")
+             if "cortx-control-pod" in resp_node.decode('UTF-8'):
+                 pod_up = True
+                 break
+             else:
+                 time.sleep(30)
+        if not pod_up:
+            self.log.info("Pod is not up so cannot proceed. Test Failed")
         self.log.info("Step 4: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
-        assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
+        assert response.status_code == const.SERVICE_UNAVAILABLE, "Account creation failed."
         self.log.info("Repeating above steps for correct host and endpoint value")
         self.log.info("Fetch new pod name")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
@@ -177,11 +184,18 @@ class TestCsmUser():
                                             read_lines=False,
                                             exc=False)
         self.log.info("Step 7: Check if control pod is re-deployed")
-        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+        pod_up = False
+        for _ in range(3):
+             resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
-        if "cortx-control-pod" in resp_node.decode('UTF-8'):
-             self.log.info("Control pod recreated with new configuration")
+             if "cortx-control-pod" in resp_node.decode('UTF-8'):
+                 pod_up = True
+                 break
+             else:
+                 time.sleep(30)
+        if not pod_up:
+            self.log.info("Pod is not up so cannot proceed. Test Failed")
         self.log.info("Step 8: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
         username = response.json()["account_name"]
