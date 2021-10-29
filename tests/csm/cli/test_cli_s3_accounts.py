@@ -116,6 +116,7 @@ class TestCliS3ACC:
         self.s3acc_obj.close_connection()
         self.logger.info("ENDED : Teardown operations at test function level")
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -145,6 +146,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -261,6 +263,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10873")
@@ -298,6 +301,7 @@ class TestCliS3ACC:
             "Verified that account is not deleted with 'no' on confirmation")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10874")
@@ -344,6 +348,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10875")
@@ -378,6 +383,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10881")
@@ -407,6 +413,7 @@ class TestCliS3ACC:
             "Successfully logged into CORTX CLI by passing username as parameter")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -464,6 +471,7 @@ class TestCliS3ACC:
             csm_user_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -508,6 +516,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
@@ -622,6 +631,7 @@ class TestCliS3ACC:
         assert_utils.assert_exact_string(resp[1], error_msg)
         self.logger.info("Creating s3 account failed with error %s", resp[1])
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10891")
@@ -655,6 +665,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10892")
@@ -692,6 +703,7 @@ class TestCliS3ACC:
             "Verified s3account password not updated when user selects 'No' on confirmation")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10893")
@@ -751,7 +763,8 @@ class TestCliS3ACC:
         self.logger.info(
             "Successfully verified that admin user can create S3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
-
+    
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11231")
@@ -789,6 +802,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.release_regression
@@ -824,6 +838,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted buckets %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11233")
@@ -851,6 +866,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, result, login[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11741")
@@ -881,6 +897,7 @@ class TestCliS3ACC:
         self.logger.info("Successfully verified help response for s3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11747")
@@ -931,6 +948,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-11746")
@@ -963,6 +981,7 @@ class TestCliS3ACC:
             "Verified csm user option is not available in s3 account help")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-12844")
@@ -1000,6 +1019,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted IAM user %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13136")
@@ -1048,6 +1068,7 @@ class TestCliS3ACC:
             "Creating s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-13139")
@@ -1092,6 +1113,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
@@ -1121,6 +1143,7 @@ class TestCliS3ACC:
             "List alert with s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-14033")
@@ -1154,6 +1177,7 @@ class TestCliS3ACC:
             "Creating s3 account failed with error %s", resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10879")
@@ -1205,6 +1229,7 @@ class TestCliS3ACC:
             "Successfully verified help responses for all s3 account commands")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18190")
@@ -1239,6 +1264,7 @@ class TestCliS3ACC:
         self.logger.info("Logged in cortxcli using new password")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18191")
@@ -1303,6 +1329,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI with new password")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18192")
@@ -1346,6 +1373,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18193")
@@ -1439,6 +1467,7 @@ class TestCliS3ACC:
             "Verified reset password of S3 account using CSM monitor user")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18195")
@@ -1471,6 +1500,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18196")
@@ -1501,6 +1531,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18197")
@@ -1538,6 +1569,7 @@ class TestCliS3ACC:
             "Verified reset password of IAM user operation is perfomed successfully")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18198")
@@ -1595,6 +1627,7 @@ class TestCliS3ACC:
             "Verified reset password of IAM user operation is perfomed successfully")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18199")
@@ -1634,6 +1667,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18200")
@@ -1672,6 +1706,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18201")
@@ -1742,6 +1777,7 @@ class TestCliS3ACC:
             "Successfully logged in to CORTX CLI with new password")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18202")
@@ -1775,6 +1811,7 @@ class TestCliS3ACC:
             "Performed help command for reset password of S3 account")
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-18203")
@@ -1878,6 +1915,7 @@ class TestCliS3ACC:
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Deleted S3 account using CSM manage user")
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22448")
@@ -1927,6 +1965,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22449")
@@ -2196,6 +2235,7 @@ class TestCliS3ACC:
             resp[1])
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22457")
@@ -2231,6 +2271,7 @@ class TestCliS3ACC:
         self.logger.info(resp)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
+    @pytest.mark.skip(reason="EOS-22299: CSM CLI which requires S3 Account login are unsupported")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-22757")
