@@ -29,6 +29,9 @@ from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.di import di_lib
+from libs.di.di_feature_control import DIFeatureControl
+from libs.di.data_generator import DataGenerator
+from libs.di.fi_adapter import S3FailureInjection
 from config import CMN_CFG
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
@@ -51,6 +54,9 @@ class TestDIWithChangingS3Params:
         cls.log = logging.getLogger(__name__)
         cls.log.info("STARTED: setup test suite operations.")
         cls.s3obj = S3TestLib()
+        cls.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
+        cls.data_gen = DataGenerator()
+        cls.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.obj_name_1 = "di-test-obj-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.obj_name_2 = "di-test-obj-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
@@ -65,7 +71,6 @@ class TestDIWithChangingS3Params:
         if not sys_util.path_exists(cls.test_dir_path):
             resp = sys_util.make_dirs(cls.test_dir_path)
             cls.log.info("Created path: %s", resp)
-        cls.LOCAL_PATH = cls.test_dir_path + "/s3config.yaml"
         cls.F_PATH = cls.test_dir_path + "/temp.txt"
         cls.F_PATH_COPY = cls.test_dir_path + "/temp-copy.txt"
         cls.log.info("ENDED: setup test suite operations.")
@@ -77,9 +82,6 @@ class TestDIWithChangingS3Params:
         It will perform prerequisite test steps if any
         """
         self.log.info("STARTED: Setup operations")
-        self.log.info("Getting s3 server config file")
-        self.get_config_file()
-        self.log.info("Saving s3config file to %s", self.LOCAL_PATH)
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -89,7 +91,6 @@ class TestDIWithChangingS3Params:
         This function will delete buckets and accounts and files created for tests.
         """
         self.log.info("STARTED: Teardown operations.")
-        self.put_config_file_restart_server()
         self.log.info("ENDED: Teardown operations.")
 
     @classmethod
@@ -109,6 +110,24 @@ class TestDIWithChangingS3Params:
             sys_util.remove_dirs(cls.test_dir_path)
         cls.log.info("Deleted a backup file and directory")
         cls.log.info("ENDED: Teardown class operations.")
+
+    def validate_config(self):
+        """
+        function will check for default configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are not set with default
+        and will return false if configs are set to default
+        """
+        skip_mark = True
+        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.write_param)
+        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.read_param)
+        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.integrity_param)
+        if write_flag[0] and not read_flag[0] and integrity_flag[0]:
+            skip_mark = False
+        return skip_mark
 
     def get_config_file(self):
         """
@@ -269,6 +288,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
@@ -277,9 +297,6 @@ class TestDIWithChangingS3Params:
         Test to verify copy of copied object using simple object upload with
         Data Integrity flag ON for write and OFF for read
         """
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_3)
@@ -310,6 +327,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
@@ -319,9 +337,6 @@ class TestDIWithChangingS3Params:
         GET operation with range read with file size 50mb
         with Data Integrity flag ON for write and OFF for read
         """
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         sys_util.create_file(fpath=self.F_PATH, count=50)
@@ -346,6 +361,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
@@ -354,9 +370,6 @@ class TestDIWithChangingS3Params:
         Test to overwrite an object using copy object api with
         Data Integrity flag ON for write and OFF for read
         """
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         sys_util.create_file(fpath=self.F_PATH, count=50)
@@ -383,6 +396,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
@@ -392,9 +406,6 @@ class TestDIWithChangingS3Params:
         with Data Integrity flag ON for write and OFF for read
         """
         parts = list()
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
         res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
                                           split_count=5, random_part_size=False)
         self.log.info(res_sp_file)
@@ -429,7 +440,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skip(reason="Not tested, hence marking skip.")
+    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
@@ -439,58 +450,54 @@ class TestDIWithChangingS3Params:
         using simple object upload with Data Integrity
         flag ON for write and OFF for read
         """
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
-        first_byte_for_write = ['f', 'z', 'k']
-        first_byte_for_read = ['F', 'Z', 'K']
-        # todo change server config introduce data corruption
-        # buff, csum = data_gen.generate(size=1024 * 1024 * 5, seed=data_gen.get_random_seed())
-        # buff[0] = ord(first_byte_for_write[0])
-        # data_gen.save_buf_to_file(fbuf=buff, csum=csum, size=1024 * 1024, name="test_di")
-        sys_util.create_file(fpath=self.F_PATH, count=1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         # test scene 1
-        with open(self.F_PATH, 'rb+') as f_random:
-            data = f_random.read()
-            byt_ary = bytearray(data)
-            byt_ary[0] = ord(first_byte_for_write[0])
-            data = bytes(byt_ary)
-            f_random.write(data)
+        self.log.info("Step 1: Create a corrupted file.")
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        buff = self.data_gen.add_first_byte_to_buffer(first_byte='f', buffer=buff)
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: enable data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 2: enabled data corruption")
+        else:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                              file_path=self.F_PATH)
-        self.s3obj.copy_object(source_bucket=self.bucket_name_1,
-                               source_object=self.obj_name_1,
-                               dest_bucket=self.bucket_name_2,
-                               dest_object=self.obj_name_2)
+                              file_path=location)
+        resp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                                      source_object=self.obj_name_1,
+                                      dest_bucket=self.bucket_name_2,
+                                      dest_object=self.obj_name_2)
+        self.log.info(resp)
         # this copy operation should fail
-        self.s3obj.object_download(bucket_name=self.bucket_name_1,
-                                   obj_name=self.obj_name_1, file_path=self.F_PATH)
+        resp = self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                          obj_name=self.obj_name_1, file_path=self.F_PATH)
+        self.log.info(resp)
         # this get operation should fail
         # test scene 2
-        with open(self.F_PATH, 'rb+') as f_random:
-            data = f_random.read()
-            byt_ary = bytearray(data)
-            byt_ary[0] = ord(first_byte_for_write[1])
-            data = bytes(byt_ary)
-            f_random.write(data)
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        buff = self.data_gen.add_first_byte_to_buffer(first_byte='z', buffer=buff)
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                              file_path=self.F_PATH)
-        self.s3obj.copy_object(source_bucket=self.bucket_name_1,
-                               source_object=self.obj_name_1,
-                               dest_bucket=self.bucket_name_2,
-                               dest_object=self.obj_name_2)
+                              file_path=location)
+        resp = self.s3obj.copy_object(source_bucket=self.bucket_name_1,
+                                      source_object=self.obj_name_1,
+                                      dest_bucket=self.bucket_name_2,
+                                      dest_object=self.obj_name_2)
+        self.log.info(resp)
         # this copy operation should fail
-        self.s3obj.object_download(bucket_name=self.bucket_name_1,
-                                   obj_name=self.obj_name_1, file_path=self.F_PATH)
+        resp = self.s3obj.object_download(bucket_name=self.bucket_name_1,
+                                          obj_name=self.obj_name_1,
+                                          file_path=self.F_PATH)
+        self.log.info(resp)
         # this get operation should fail
-        with open(self.F_PATH, 'rb+') as f_random:
-            data = f_random.read()
-            byt_ary = bytearray(data)
-            byt_ary[0] = ord(first_byte_for_write[2])
-            data = bytes(byt_ary)
-            f_random.write(data)
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
                               file_path=self.F_PATH)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
@@ -501,16 +508,18 @@ class TestDIWithChangingS3Params:
             assert True
         else:
             assert False
+        # to do disable corruption
         # ETAG should match
         # test scene 3
-        with open(self.F_PATH, 'rb+') as f_random:
-            data = f_random.read()
-            byt_ary = bytearray(data)
-            byt_ary[0] = ord(first_byte_for_read[2])
-            data = bytes(byt_ary)
-            f_random.write(data)
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+
+        buff = self.data_gen.add_first_byte_to_buffer(first_byte='K', buffer=buff)
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
+        # to do enable read corruption
         self.s3obj.put_object(bucket_name=self.bucket_name_1, object_name=self.obj_name_1,
-                              file_path=self.F_PATH)
+                              file_path=location)
         self.s3obj.object_download(bucket_name=self.bucket_name_1,
                                    obj_name=self.obj_name_1, file_path=self.F_PATH_COPY)
         result = sys_util.validate_checksum(file_path_1=self.F_PATH,
