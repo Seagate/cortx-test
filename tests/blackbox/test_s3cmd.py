@@ -77,7 +77,7 @@ class TestS3cmdClient:
         self.file_path1 = os.path.join(self.root_path, "s3cmdtestfile{}.txt")
         self.file_path2 = os.path.join(self.root_path, "s3cmdtestfile{}.txt")
         self.bucket_name = self.s3cmd_cfg["bucket_name"].format(time.perf_counter_ns())
-        self.bucket_list = list()
+        self.s3cmd_bucket_list = list()
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -88,10 +88,10 @@ class TestS3cmdClient:
         It will also delete the local files.
         """
         self.log.info("STARTED: Teardown operations")
-        if self.bucket_list:
+        if self.s3cmd_bucket_list:
             self.log.info("Deleting buckets...")
-            self.log.info(self.bucket_list)
-            resp = self.s3_test_obj.delete_multiple_buckets(self.bucket_list)
+            self.log.info(self.s3cmd_bucket_list)
+            resp = self.s3_test_obj.delete_multiple_buckets(self.s3cmd_bucket_list)
             assert_true(resp[0], resp[1])
             self.log.info("Deleted buckets")
         for filepath in [self.file_path1, self.file_path2]:
@@ -120,7 +120,7 @@ class TestS3cmdClient:
                 self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                     resp[1]), resp[1])
             self.log.info("STEP: 1 Bucket was created %s", bucket_name)
-            self.bucket_list.append(bucket_name)
+            self.s3cmd_bucket_list.append(bucket_name)
         self.log.info("ENDED: create multiple bucket using s3cmd client")
 
     @pytest.mark.parallel
@@ -154,7 +154,7 @@ class TestS3cmdClient:
                     bucket_url), str(resp[1]), resp[1])
                 self.log.info(
                     "STEP: 1 Bucket was created %s", bucket_name)
-                self.bucket_list.append(bucket_name)
+                self.s3cmd_bucket_list.append(bucket_name)
         self.log.info("ENDED: max no of buckets supported using s3cmd")
 
     @pytest.mark.parallel
@@ -184,7 +184,7 @@ class TestS3cmdClient:
         assert_in(self.s3cmd_cfg["success_msg_del"].format(
             bucket_url), str(resp[1]), resp[1])
         if not resp[0]:
-            self.bucket_list.append(self.bucket_name)
+            self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 1 Bucket was deleted %s", self.bucket_name)
         self.log.info("ENDED: Delete empty bucket using s3cmd client")
 
@@ -207,7 +207,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Listing buckets")
         command = self.s3cmd_test_obj.command_formatter(
             S3CMD_CNF, self.s3cmd_cfg["list_bucket"], )
@@ -260,7 +260,7 @@ class TestS3cmdClient:
             S3CMD_CNF, self.s3cmd_cfg["remove_bucket"], cmd_arguments)
         resp = system_utils.run_local_cmd(command)
         if not resp[0]:
-            self.bucket_list.extend([bucket_name_1, bucket_name_2])
+            self.s3cmd_bucket_list.extend([bucket_name_1, bucket_name_2])
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_del"].format(
             bucket_url_1), str(resp[1]), resp)
@@ -289,7 +289,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Creating bucket with existing bucket name")
         command = self.s3cmd_test_obj.command_formatter(
             S3CMD_CNF, self.s3cmd_cfg["make_bucket"], cmd_arguments)
@@ -319,7 +319,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Listing buckets")
         command = self.s3cmd_test_obj.command_formatter(
             S3CMD_CNF, self.s3cmd_cfg["list_bucket"], )
@@ -354,7 +354,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 File upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -387,7 +387,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 File upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -428,7 +428,7 @@ class TestS3cmdClient:
             self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(
                 resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Upload file to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -468,7 +468,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Files upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -517,7 +517,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 File upload to bucket")
         filename = self.file_path1.format(time.perf_counter_ns())
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -558,7 +558,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Files upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -625,7 +625,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Getting bucket information")
         cmd_arguments = [bucket_url]
         command = self.s3cmd_test_obj.command_formatter(
@@ -654,7 +654,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 File upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -696,7 +696,7 @@ class TestS3cmdClient:
         assert_true(resp[0], resp[1])
         assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
         self.log.info("STEP: 1 Bucket was created %s", self.bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3cmd_bucket_list.append(self.bucket_name)
         self.log.info("STEP: 2 Files upload to bucket")
         filename = self.file_path1.format(int(time.perf_counter_ns()))
         system_utils.run_local_cmd(self.s3cmd_cfg["file_creation"].format(filename))
@@ -723,7 +723,7 @@ class TestS3cmdClient:
         assert_true("WARNING" in str(resp[1]), resp[1])
         assert_in(self.s3cmd_cfg["success_msg_del"].format(bucket_url), str(resp[1]), resp[1])
         self.log.info("STEP: 3 Deleted bucket forcefully")
-        self.bucket_list = list()
+        self.s3cmd_bucket_list = list()
         self.log.info("STEP: 4 Listing object in bucket")
         cmd_arguments = [bucket_url]
         command = self.s3cmd_test_obj.command_formatter(
@@ -751,7 +751,7 @@ class TestS3cmdClient:
             assert_true(resp[0], resp[1])
             assert_in(self.s3cmd_cfg["success_msg_crt"].format(bucket_url), str(resp[1]), resp)
             self.log.info("STEP: 1 Bucket was created %s", bucket_name)
-            self.bucket_list.append(bucket_name)
+            self.s3cmd_bucket_list.append(bucket_name)
             self.log.info("STEP: 2 File upload to bucket")
             filename = self.file_path1.format(int(time.perf_counter_ns()))
             system_utils.run_local_cmd(

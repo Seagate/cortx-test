@@ -194,7 +194,7 @@ class TestAwsCliS3Api:
         """Verify HEAD bucket using aws client."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         cmd = commands.CMD_AWSCLI_HEAD_BUCKET.format(self.bucket_name) + self.s3t_obj.cmd_endpoint
         resp = system_utils.run_local_cmd(cmd=cmd, chk_stderr=True)
         assert_utils.assert_true(resp[0], resp[1])
@@ -209,7 +209,7 @@ class TestAwsCliS3Api:
         location = '"LocationConstraint": "US"'
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         cmd = commands.CMD_AWSCLI_GET_BUCKET_LOCATION.format(self.bucket_name) \
             + self.s3t_obj.cmd_endpoint
         resp = system_utils.run_local_cmd(cmd=cmd, chk_stderr=True)
@@ -226,7 +226,7 @@ class TestAwsCliS3Api:
         error_msg = "BucketAlreadyOwnedByYou"
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_false(resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], error_msg)
@@ -240,7 +240,7 @@ class TestAwsCliS3Api:
         """Delete bucket forcefully which has objects using aws cli."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if status:
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -251,7 +251,7 @@ class TestAwsCliS3Api:
             self.log.info("file is not created because: %s", output)
         resp = self.s3t_obj.delete_bucket_awscli(bucket_name=self.bucket_name, force=True)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list = list()
+        self.aws_buckets_list = list()
         self.log.info("Successfully deleted bucket having objects in it")
 
     @pytest.mark.parallel
@@ -262,7 +262,7 @@ class TestAwsCliS3Api:
         """list objects in bucket using AWS."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -285,7 +285,7 @@ class TestAwsCliS3Api:
         """delete single object using aws cli."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -316,7 +316,7 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(file_status, output)
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         for i in range(object_count):
             self.object_name = "".join([self.file_name, str(i)])
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -353,7 +353,7 @@ class TestAwsCliS3Api:
         assert_utils.assert_true(file_status, output)
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         for i in range(object_count):
             self.object_name = "".join([self.file_name, str(i)])
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -385,7 +385,7 @@ class TestAwsCliS3Api:
         mpu_parts_list = [part["Output"] for part in split_parts]
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         self.log.info("Creating Multipart upload")
         cmd = commands.CMD_AWSCLI_CREATE_MULTIPART_UPLOAD.format(self.bucket_name, self.object_name)\
             + self.s3t_obj.cmd_endpoint
@@ -447,7 +447,7 @@ class TestAwsCliS3Api:
         """copy object from bucket using aws cli."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         if file_status:
             cmd = commands.CMD_AWSCLI_PUT_OBJECT.format(self.file_path, self.bucket_name,
@@ -470,7 +470,7 @@ class TestAwsCliS3Api:
         """download an object using aws cli."""
         resp = self.s3t_obj.create_bucket_awscli(bucket_name=self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        self.buckets_list.append(self.bucket_name)
+        self.aws_buckets_list.append(self.bucket_name)
         file_status, output = system_utils.create_file(fpath=self.file_path, count=1)
         assert_utils.assert_true(file_status, output)
         before_checksum = system_utils.calculate_checksum(self.file_path)
