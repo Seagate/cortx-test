@@ -217,10 +217,10 @@ test_29165:
           count: 1
 
 test_29166:
-    file_size: 5120
+    file_size: 500
     chunk_size: 1048576
     total_parts: 20
-    error_msg: "Not Found"
+    error_msg: "An error occurred (404) when calling the HeadObject operation: Not Found"
 
 test_29168:
     file_size: 5242880
