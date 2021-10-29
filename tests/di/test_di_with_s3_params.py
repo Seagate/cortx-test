@@ -129,42 +129,7 @@ class TestDIWithChangingS3Params:
             skip_mark = False
         return skip_mark
 
-    def get_config_file(self):
-        """
-        this will get config file and store in temp location
-        """
-        S3H_OBJ.copy_s3server_file(file_path=const.S3_CONFIG, local_path=self.LOCAL_PATH)
-
-    def put_config_file_restart_server(self):
-        """
-        this will put config file and
-        restart s3 server
-        """
-        nodes = CMN_CFG["nodes"]
-        for node in nodes:
-            di_lib.copy_local_to_s3_config(backup_path=self.LOCAL_PATH, host=node['hostname'],
-                                           user=node['username'],
-                                           password=node['password'])
-            S3H_OBJ.restart_s3server_processes(host=node['hostname'],
-                                               user=node['username'],
-                                               pwd=node['password'])
-        self.log.info("updated config to default and restarted s3 server")
-
-    def update_s3config_and_restart_s3_server(self, params):
-        """
-        this will accept params and values
-        update s3 config files and restarts s3 server
-        """
-        nodes = CMN_CFG["nodes"]
-        for node in nodes:
-            S3H_OBJ.update_s3config(parameter=self.WRITE_PARAM, value=params[self.WRITE_PARAM],
-                                    host=node['hostname'], user=node['username'],
-                                    password=node['password'])
-            S3H_OBJ.update_s3config(parameter=self.READ_PARAM, value=params[self.READ_PARAM],
-                                    host=node['hostname'], user=node['username'],
-                                    password=node['password'])
-            S3H_OBJ.restart_s3server_processes()
-
+    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
@@ -173,10 +138,8 @@ class TestDIWithChangingS3Params:
         this will test normal file upload
         with DI flag ON for both write and read
         """
+        # to do verify configs
         self.log.info("Step 1::: Setting up params and restarting server")
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = True
-        self.update_s3config_and_restart_s3_server(params=self.params)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         file_size = [1, 2, 3, 4, 5]
         result = True
@@ -199,6 +162,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29276')
     @CTFailOn(error_handler)
@@ -207,10 +171,8 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI disabled
         """
+        # to do verify configs
         self.log.info("Step 1::: Setting up params and restarting server")
-        self.params[self.WRITE_PARAM] = False
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
         self.log.info("Step 2::: Creating file and bucket")
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         sys_util.create_file(fpath=self.F_PATH, count=1)
@@ -229,6 +191,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29277')
     @CTFailOn(error_handler)
@@ -237,10 +200,7 @@ class TestDIWithChangingS3Params:
         this will test copy object to same bucket with diff name
         with DI enabled
         """
-        self.log.info("Step 1::: Setting up params and restarting server")
-        self.params[self.WRITE_PARAM] = True
-        self.params[self.READ_PARAM] = True
-        self.update_s3config_and_restart_s3_server(params=self.params)
+        # to do verify configs
         self.log.info("Step 2::: Creating file and bucket")
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         sys_util.create_file(fpath=self.F_PATH, count=1)
@@ -259,6 +219,7 @@ class TestDIWithChangingS3Params:
         else:
             assert True
 
+    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29281')
     @CTFailOn(error_handler)
@@ -267,9 +228,7 @@ class TestDIWithChangingS3Params:
         Test to verify copy object to different bucket with same
         object name with Data Integrity disabled.
         """
-        self.params[self.WRITE_PARAM] = False
-        self.params[self.READ_PARAM] = False
-        self.update_s3config_and_restart_s3_server(params=self.params)
+        # to do verify configs
         self.s3obj.create_bucket(bucket_name=self.bucket_name_1)
         self.s3obj.create_bucket(bucket_name=self.bucket_name_2)
         sys_util.create_file(fpath=self.F_PATH, count=1)
