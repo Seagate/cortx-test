@@ -987,8 +987,8 @@ class TestDIDurability:
         self.s3_test_obj.put_object(bucket_name=self.bucket_name,
                                     object_name=self.object_name,
                                     file_path=location)
-        self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name_2,
-                                                     my_key=self.obj_name_2,
+        self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
+                                                     my_key=self.obj_name,
                                                      start_byte=8888,
                                                      stop_byte=9999)
         self.log.info("Step 4: verify download object fails with 5xx error code")
