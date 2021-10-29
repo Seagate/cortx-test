@@ -19,9 +19,11 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 """Test library for CSM related cluster operations."""
+import os
 import json
 import random
 import time
+import re
 import yaml
 
 from commons import commands as common_cmd
@@ -39,128 +41,134 @@ class RestCsmCluster(RestTestLib):
 
     def __init__(self):
         super(RestCsmCluster, self).__init__()
-        self.config_file = '/root/cortx-prvsnr/test/deploy/kubernetes/solution-config/config.yaml'
-        self.secret_file = '/root/cortx-prvsnr/test/deploy/kubernetes/solution-config/secrets.yaml'
-        self.host1 = CMN_CFG["nodes"][0]["hostname"]
-        self.uname1 = CMN_CFG["nodes"][0]["username"]
-        self.passwd1 = CMN_CFG["nodes"][0]["password"]
-        self.nd_obj1 = Node(hostname=self.host1, username=self.uname1,
-                            password=self.passwd1)
+        self.hosts = []
+        self.unames = []
+        self.passwds = []
+        self.nd_objs = []
 
-        self.host2 = CMN_CFG["nodes"][1]["hostname"]
-        self.uname2 = CMN_CFG["nodes"][1]["username"]
-        self.passwd2 = CMN_CFG["nodes"][1]["password"]
-        self.nd_obj2 = Node(hostname=self.host2, username=self.uname2,
-                            password=self.passwd2)
+        for i in range(len(CMN_CFG["nodes"])):
+            self.hosts.append(CMN_CFG["nodes"][i]["hostname"])
+            self.unames.append(CMN_CFG["nodes"][i]["username"])
+            self.passwds.append(CMN_CFG["nodes"][i]["password"])
+            self.nd_objs.append(Node(hostname=self.hosts[i], username=self.unames[i],
+                                     password=self.passwds[i]))
 
-        self.host3 = CMN_CFG["nodes"][2]["hostname"]
-        self.uname3 = CMN_CFG["nodes"][2]["username"]
-        self.passwd3 = CMN_CFG["nodes"][2]["password"]
-        self.nd_obj3 = Node(hostname=self.host3, username=self.uname3,
-                            password=self.passwd3)
+        # self.service_repo = "/root/deploy-scripts/k8_cortx_cloud"
+        self.service_repo = os.getenv("Solution_yaml_path", "/root/cortx-k8s/k8_cortx_cloud")
 
-    def modify_config_file(self, key, value):
+    def get_pod_name(self, resp):
         """
-        modify config file
+        Function for getting cortx control pod name from master node
         """
-        local_config_file = '/tmp/config.yaml'
-        self.nd_obj1.copy_file_to_local(self.config_file, local_config_file)
-        input_stream = open(local_config_file, 'r')
-        data = yaml.load(input_stream, Loader=yaml.FullLoader)
-        if key == 'endpoints':
-            endpoint = data['cortx']['csm']['agent']['endpoints']
-            if value == 'http':
-                endpoint[0] = endpoint[0].replace('https', 'http')
-            else:
-                endpoint[0] = endpoint[0].replace('http', 'https')
-            data['cortx']['csm']['agent']['endpoints'] = endpoint
-        elif key == 'mgmt_admin':
-            data['cortx']['csm']['mgmt_admin'] = value
-        with open(local_config_file, 'w') as yaml_file:
+        self.log.info("getting control pod name")
+        data = str(resp, 'UTF-8')
+        data = data.split("\n")
+        res = False
+        for line in data:
+            if "cortx-control-pod" in line:
+                line_found = line
+                res = re.sub(' +', ' ', line_found)
+                res = res.split()[0]
+                break
+        return res
+
+    def modify_solution_file(self, key, value):
+        """
+        Modify solution yaml file
+        """
+        local_file = '/root/solution.yaml'
+        if os.path.exists(local_file):
+            os.remove(local_file)
+        remote_file = os.path.join(self.service_repo, 'solution.yaml')
+        self.nd_objs[0].copy_file_to_local(remote_file, local_file)
+        input_stream = open(local_file, 'r')
+        data = yaml.safe_load(input_stream)
+        if key == 'csm_mgmt_admin_secret':
+            data['solution']['secrets']['content']['csm_mgmt_admin_secret'] = value
+        with open(local_file, 'w') as yaml_file:
             yaml_file.write(yaml.dump(data))
-        self.nd_obj1.copy_file_to_remote(local_config_file, self.config_file)
+        self.nd_objs[0].copy_file_to_remote(local_file, remote_file)
 
-    def modify_secrets_file(self, value):
+    def recover_files(self, recover):
         """
-        modify secrets file
+        Recover files modified during tests
         """
-        local_secrets_file = '/tmp/secrets.yaml'
-        self.nd_obj1.copy_file_to_local(self.secret_file, local_secrets_file)
-        input_stream = open(local_secrets_file, 'r')
-        data = yaml.load(input_stream, Loader=yaml.FullLoader)
-        data['stringData']['csm_mgmt_admin_secret'] = value
-        with open(local_secrets_file, 'w') as yaml_file:
-            yaml_file.write(yaml.dump(data))
-        self.nd_obj1.copy_file_to_remote(local_secrets_file, self.secret_file)
+        local_config_file = '/tmp/config-template.yaml'
+        local_sol_file = '/tmp/solution.yaml'
+        remote_config_file = os.path.join(self.service_repo,
+                                          'cortx-cloud-helm-pkg/cortx-configmap/'
+                                          'templates/config-template.yaml')
+        remote_sol_file = os.path.join(self.service_repo, 'solution.yaml')
+        if not recover:
+            if os.path.exists(local_config_file):
+                os.remove(local_config_file)
+            if os.path.exists(local_sol_file):
+                os.remove(local_sol_file)
+            self.nd_objs[0].copy_file_to_local(remote_config_file, local_config_file)
+            self.nd_objs[0].copy_file_to_local(remote_sol_file, local_sol_file)
+        else:
+            self.nd_objs[0].copy_file_to_remote(local_config_file, remote_config_file)
+            self.nd_objs[0].copy_file_to_remote(local_sol_file, remote_sol_file)
 
-    def pull_provisioner(self):
+    def modify_config_template(self, key, value):
         """
-        Pull provisioner scripts
+        Modify config template file
         """
-        cmds = ["rm -rf /root/cortx-prvsnr",
-                "cd /root && git clone https://github.com/Seagate/cortx-prvsnr -b kubernetes"]
-        for cmd in cmds:
-            self.nd_obj1.execute_cmd(cmd, read_lines=True)
-            self.nd_obj2.execute_cmd(cmd, read_lines=True)
-            self.nd_obj3.execute_cmd(cmd, read_lines=True)
-
-    def trigger_prov_command(self, cmd_name):
-        """
-        Trigger prov scripts
-        """
-        if cmd_name == 'reimage':
-            cmd = "cd /root/cortx-prvsnr/test/deploy/kubernetes && ./reimage.sh"
-            self.nd_obj2.execute_cmd(cmd, read_lines=True)
-            self.nd_obj3.execute_cmd(cmd, read_lines=True)
-        elif cmd_name == 'destroy':
-            cmd = "cd /root/cortx-prvsnr/test/deploy/kubernetes && ./destroy.sh"
-        elif cmd_name == 'deploy':
-            cmd = "cd /root/cortx-prvsnr/test/deploy/kubernetes && ./deploy.sh"
-        elif cmd_name == 'service':
-            cmd = "cd /root/cortx-prvsnr/test/deploy/kubernetes && ./service.sh"
-        self.nd_obj1.execute_cmd(cmd, read_lines=True)
-
-    def get_pod_status(self):
-        """
-        Get control pod status
-        """
-        for _ in range(3):
-            data = self.nd_obj1.execute_cmd(cmd=common_cmd.CMD_POD_STATUS, read_lines=True)
-            complete_status = 0
-            self.log.info(data)
+        local_file = '/root/config-template.yaml'
+        if os.path.exists(local_file):
+            os.remove(local_file)
+        remote_file = os.path.join(self.service_repo,
+                                   'cortx-cloud-helm-pkg/cortx-configmap/'
+                                   'templates/config-template.yaml')
+        self.nd_objs[0].copy_file_to_local(remote_file, local_file)
+        with open(local_file, "r") as f:
+            data = f.readlines()
+        with open(local_file, "w") as f:
             for line in data:
-                self.log.info(line)
-                if 'control-node' in line and 'Completed' in line:
-                    complete_status = complete_status + 1
-            self.log.info(complete_status)
-            if complete_status == 1:
+                if key == 'endpoints':
+                    if "https://<<.Values.cortx.io.svc>>:8081" in line and value == 'http':
+                        line = line.replace('https', 'http')
+                    if "http://<<.Values.cortx.io.svc>>:8081" in line and value == 'https':
+                        line = line.replace('http', 'https')
+                elif key == 'mgmt_admin' and 'mgmt_admin: cortxadmin' in line:
+                    line = line.replace('cortxadmin', value)
+                f.write(line)
+        self.nd_objs[0].copy_file_to_remote(local_file, remote_file)
+
+    def destroy_cluster(self):
+        """
+        Exceute destroy cluster command
+        """
+        destroy_cmd = "cd " + self.service_repo + " && ./destroy-cortx-cloud.sh"
+        self.nd_objs[0].execute_cmd(destroy_cmd, read_lines=True)
+        additional_cmds = ["rm -rf /etc/3rd-party/openldap/var/data/3rd-party/*",
+                           "rm -rf /mnt/fs-local-volume/local-path-provisioner/*",
+                           "rm -rf /mnt/fs-local-volume/etc/gluster/var/log/cortx/*"]
+        for cmd in additional_cmds:
+            for i in range(len(self.nd_objs)):
+                self.nd_objs[i].execute_cmd(cmd, read_lines=True)
+
+    def install_prerequisites(self):
+        """
+        Execute prerequisites command
+        """
+        prereq_cmd = "cd " + self.service_repo + " && ./prereq-deploy-cortx-cloud.sh /dev/sdb"
+        for i in range(len(self.nd_objs)):
+            self.nd_objs[i].execute_cmd(prereq_cmd, read_lines=True)
+
+    def deploy_cluster(self):
+        """
+        Execute deploy cluster command
+        """
+        deploy_cmd = 'cd ' + self.service_repo + " && ./deploy-cortx-cloud.sh"
+        self.nd_objs[0].execute_cmd(deploy_cmd, read_lines=True, exc=False)
+
+    def get_pod_status_value(self, pod_name):
+        """
+        Check for required status in pod
+        """
+        data = self.nd_objs[0].execute_cmd(cmd=common_cmd.CMD_POD_STATUS, read_lines=True)
+        for line in data:
+            if pod_name in line and 'Error' in line:
                 return True
-            time.sleep(3 * 60)
         return False
-
-    def apply_csm_service(self):
-        """
-        Apply csm service to access endpoint
-        """
-        yaml_str = """\
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: csm-agent
-          labels:
-            app: control-node
-        spec:
-          type: NodePort
-          ports:
-          - port: 8081
-            nodePort: 32101
-          selector:
-            app: control-node
-        """
-
-        data = yaml.load(yaml_str, Loader=yaml.FullLoader)
-        with open('csm_service.yaml', 'w') as outfile:
-            yaml.dump(data, outfile, default_flow_style=False)
-        self.nd_obj1.copy_file_to_remote('csm_service.yaml', '/root/csm_service.yaml')
-        cmd = "kubectl apply -f /root/csm_service.yaml"
-        self.nd_obj1.execute_cmd(cmd, read_lines=True)

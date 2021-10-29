@@ -38,8 +38,8 @@ PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
 # K8s for cortx
-POD_NAME = "storage-node1"
-HAX_CONTAINER_NAME = "cortx-hax"
+POD_NAME_PREFIX = "cortx-data-pod"
+HAX_CONTAINER_NAME = "cortx-motr-hax"
 NAMESPACE = "default"
 
 # RAS Paths
@@ -114,6 +114,9 @@ AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
 LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
 CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
+CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
+CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
+CORTX_CSM_POD = "cortx-csm-agent"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
@@ -362,3 +365,6 @@ class Sizes:
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+
+# K8s env
+K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"

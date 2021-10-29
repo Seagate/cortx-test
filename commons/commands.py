@@ -198,6 +198,7 @@ CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
 CMD_PRVSNR_VER = "provisioner --version"
@@ -430,6 +431,10 @@ K8S_SVC_CMD ="kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
+K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
+K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
+K8S_GET_PODS = "kubectl get pods"
+K8S_DELETE_POD = "kubectl delete pod {}"
 
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
@@ -440,9 +445,9 @@ FETCH_LOGS = ""
 RESTART_POD_CMD = ""
 
 # LC commands
-CLSTR_START_CMD = ""
-CLSTR_STOP_CMD = ""
-CLSTR_STATUS_CMD = ""
+CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
