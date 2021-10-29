@@ -592,86 +592,72 @@ class HAK8s:
         return parts
 
     @staticmethod
-    def create_bucket_copy_obj(s3_test_obj=None, bucket_name1=None, bucket_name2=None,
-                               bucket_name3=None, object_name1=None, object_name2=None,
-                               object_name3=None, output=None, **kwargs):
+    def create_bucket_copy_obj(s3_test_obj=None, bucket_name=None, object_name=None,
+                               bkt_obj_dict=None, output=None, **kwargs):
         """
         Function create multiple buckets and upload and copy objects (Can be used to start
         background process for the same)
         :param s3_test_obj: s3 test lib object
-        :param bucket_name1: Name of the bucket1
-        :param object_name1: Name of the object1
-        :param bucket_name2: Name of the bucket2
-        :param object_name2: Name of the object2
-        :param bucket_name3: Name of the bucket3
-        :param object_name3: Name of the object3
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param bkt_obj_dict: Dict of buckets and objects
         :param output: Queue used to fill output
         :return: response
         """
         file_path = kwargs.get("file_path", None)
         background = kwargs.get("background", False)
-        LOGGER.info("Create bucket and put object.")
-        resp = s3_test_obj.create_bucket(bucket_name1)
-        LOGGER.info("Response: %s", resp)
-        if not resp[0]:
-            return resp if not background else sys.exit(1)
-        resp, bktlist = s3_test_obj.bucket_list()
-        LOGGER.info("Response: %s", resp)
-        LOGGER.info("Bucket list: %s", bktlist)
-        if bucket_name1 not in bktlist:
-            return False, bktlist if not background else sys.exit(1)
-        resp = system_utils.create_file(fpath=file_path, count=10, b_size="1M")
-        LOGGER.info("Response: %s", resp)
-        if not resp[0]:
-            return resp if not background else sys.exit(1)
-        put_resp = s3_test_obj.put_object(bucket_name=bucket_name1, object_name=object_name1,
-                                          file_path=file_path,
-                                          metadata={"City": "Pune", "Country": "India"})
-        LOGGER.info("Put object response: %s", put_resp)
-        put_etag = put_resp[1]["ETag"]
-        if not put_resp[0]:
-            return resp if not background else sys.exit(1)
-        resp = s3_test_obj.object_list(bucket_name1)
-        LOGGER.info("Response: %s", resp)
-        if not resp[0] or object_name1 not in resp[1]:
-            return resp if not background else sys.exit(1)
-        LOGGER.info("Copy object to different bucket with different object name.")
-        resp = s3_test_obj.create_bucket(bucket_name2)
-        LOGGER.info("Response: %s", resp)
-        if not resp[0]:
-            return resp if not background else sys.exit(1)
-        status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
-                                                   source_object=object_name1,
-                                                   dest_bucket=bucket_name2,
-                                                   dest_object=object_name2)
-        LOGGER.info("Response: %s", response)
-        copy_etag1 = response['CopyObjectResult']['ETag']
-        if put_etag == copy_etag1:
-            LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
-                        object_name1, bucket_name2, object_name2)
-        else:
-            LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
-                        object_name1, bucket_name2, object_name2)
-            return status, response
+        bkt_op = kwargs.get("bkt_op", True)
+        put_etag = kwargs.get("put_etag", None)
+        if bkt_op:
+            LOGGER.info("Create bucket and put object.")
+            resp = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                return resp if not background else sys.exit(1)
+            resp, bktlist = s3_test_obj.bucket_list()
+            LOGGER.info("Response: %s", resp)
+            LOGGER.info("Bucket list: %s", bktlist)
+            if bucket_name not in bktlist:
+                return False, bktlist if not background else sys.exit(1)
+            resp = system_utils.create_file(fpath=file_path, count=1000, b_size="1M")
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                return resp if not background else sys.exit(1)
+            put_resp = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                              file_path=file_path,
+                                              metadata={"City": "Pune", "Country": "India"})
+            LOGGER.info("Put object response: %s", put_resp)
+            if not put_resp[0]:
+                return resp if not background else sys.exit(1)
+            put_etag = put_resp[1]["ETag"]
+            resp = s3_test_obj.object_list(bucket_name)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0] or object_name not in resp[1]:
+                return resp if not background else sys.exit(1)
 
-        LOGGER.info("Copy object to another bucket with another object name.")
-        resp = s3_test_obj.create_bucket(bucket_name3)
-        LOGGER.info("Response: %s", resp)
-        if not resp[0]:
-            return resp if not background else sys.exit(1)
-        status, response = s3_test_obj.copy_object(source_bucket=bucket_name1,
-                                                   source_object=object_name1,
-                                                   dest_bucket=bucket_name3,
-                                                   dest_object=object_name3)
-        LOGGER.info("Response: %s", response)
-        copy_etag2 = response['CopyObjectResult']['ETag']
-        if put_etag == copy_etag2:
-            LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
-                        object_name1, bucket_name3, object_name3)
-        else:
-            LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
-                        object_name1, bucket_name3, object_name3)
-            return status, response
+        LOGGER.info("Copy object to different bucket with different object name.")
+        for k, v in bkt_obj_dict.items():
+            bkt_name = k
+            obj_name = v
+            resp, bktlist = s3_test_obj.bucket_list()
+            if bkt_name not in bktlist:
+                resp = s3_test_obj.create_bucket(bkt_name)
+                LOGGER.info("Response: %s", resp)
+                if not resp[0]:
+                    return resp if not background else sys.exit(1)
+            status, response = s3_test_obj.copy_object(source_bucket=bucket_name,
+                                                       source_object=object_name,
+                                                       dest_bucket=bkt_name,
+                                                       dest_object=obj_name)
+            LOGGER.info("Response: %s", response)
+            copy_etag = response['CopyObjectResult']['ETag']
+            if put_etag == copy_etag:
+                LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
+                            object_name, bkt_name, obj_name)
+            else:
+                LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
+                            object_name, bkt_name, obj_name)
+                return False, response if not background else sys.exit()
 
         return True, put_etag if not background else output.put((True, put_etag))
 
