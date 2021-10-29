@@ -429,7 +429,10 @@ def get_workload_headings(data):
     Returns:
         H5: heading with workload string
     """
-    return html.H5(f"Data for {data['build']} build on branch {data['branch']} with {data['nodes']} nodes, {data['pfull']}% utilization having workload of {data['buckets']} bucket(s) and {data['sessions']} session(s).")
+    return html.H5(f"Data for {data['build']} build with {data['OS']} OS\
+        on branch {data['branch']} with {data['nodes']} nodes, \
+        {data['pfull']}% utilization having workload of {data['buckets']} \
+        bucket(s) and {data['sessions']} session(s).")
 
 
 def get_metadata_latencies(data_needed_for_query):
@@ -545,8 +548,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
         color: color to be given to the plot
     """
     trace = go.Scatter(
-        name='{} {} - {} {}'.format(
-            plot_data['operation'], plot_data['metric'], plot_data['option'], plot_data['custom']),
+        name='{} - {}'.format(
+            plot_data['operation'], plot_data['name']),
         x=x_data,
         y=y_data,
         hovertemplate='<br>%{x}, %{y}<br>' + '<b>{} - {} {}</b><extra></extra>'.format(
@@ -556,6 +559,8 @@ def plot_graphs_with_given_data(fig, fig_all, x_data, y_data, plot_data):
     )
 
     fig.add_trace(trace)
+    trace.update(
+        name=f"{plot_data['operation']} {plot_data['metric']} - {plot_data['name']}")
     fig_all.add_trace(trace)
 
 
