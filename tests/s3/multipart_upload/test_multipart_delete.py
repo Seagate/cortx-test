@@ -133,8 +133,9 @@ class TestMultipartUploadDelete:
             res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
             assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: Perform CompleteMultipartUpload.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id, parts, self.bucket_name, self.object_name)
+            mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 6: Verify uploaded object and downloaded object are identical.")
         resp = self.s3_test_obj.object_download(
@@ -198,8 +199,9 @@ class TestMultipartUploadDelete:
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 6: Perform CompleteMultipartUpload.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id, parts, self.bucket_name, self.object_name)
+            mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 7: List the contents of bucket to verify object deleted.")
         resp = self.s3_test_obj.object_list(self.bucket_name)
@@ -248,8 +250,9 @@ class TestMultipartUploadDelete:
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 6: Perform CompleteMultipartUpload.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id, parts, self.bucket_name, self.object_name)
+            mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 7: Initiate 5th objectUpload by performing CreateMultipartUpload.")
         res = self.s3_mp_test_obj.create_multipart_upload(
@@ -359,8 +362,9 @@ class TestMultipartUploadDelete:
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: uploaded perform CompleteMultipartUpload.")
+        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
         res = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id, parts, self.bucket_name, self.object_name)
+            mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         resp = self.s3_mp_test_obj.object_download(
             self.bucket_name, self.object_name, self.download_path)
