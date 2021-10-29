@@ -40,7 +40,6 @@ from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3 import S3H_OBJ
-from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -152,7 +151,6 @@ class TestMultipartAbortCopy:
         self.log.info("Deleted a backup file and directory")
         self.log.info("Cleanup S3 background IO artifacts")
         self.s3_background_io.cleanup()
-        check_cluster_health()
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
@@ -169,7 +167,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test uploading parts to an aborted multipart upload")
         mp_config = MPART_CFG["test_29167"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29167_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29167_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -217,7 +215,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test aborting multipart upload that is in progress")
         mp_config = MPART_CFG["test_29164"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29164_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29164_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -267,7 +265,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test copying a copied object uploaded using multipart")
         mp_config = MPART_CFG["test_29165"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29165_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29165_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiating multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name, self.object_name)
@@ -328,7 +326,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test deleting completed multipart object during copy operation")
         mp_config = MPART_CFG["test_29166"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
