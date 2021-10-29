@@ -28,7 +28,7 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import cal_percent
-from commons.greenlet_worker import GreenletThread
+from commons.greenlet_worker import GeventPool
 from commons.greenlet_worker import THREADS
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Multipart
@@ -199,41 +199,29 @@ class S3MultipartTestLib(Multipart):
         :param upload_id: Multipart Upload ID.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
-        # :param total_parts: No. of parts to be uploaded.
-        # :param multipart_obj_path: Path of object file.
         :return: (Boolean, List of uploaded parts).
         """
         try:
             parts = kwargs.get("parts", None)
             parallel_thread = kwargs.get("parallel_thread", 5)
-            total_iteration = len(parts)
-            part_number_list = parts.key()
-            part_number = part_number_list[0]
-            while total_iteration:
-                for i in range(parallel_thread):
-                    part = parts.get(part_number, None)
-                    if not part:
-                        break
-                    t_obj = GreenletThread(i, run=self.upload_multipart,
-                                           body=part[0], bucket_name=bucket_name,
-                                           object_name=object_name, upload_id=upload_id,
-                                           part_number=part_number, content_md5=part[1])
-                    t_obj.start()
-                    THREADS.append(t_obj)
-                    total_iteration -= 1
-                    part_number = part_number_list[part_number + i]
-                status, response = GreenletThread.terminate()
-                LOGGER.info(response)
-                if status:
-                    raise Exception(response)
-            response = self.list_parts(upload_id, bucket_name, object_name)
+            gevent_pool = GeventPool(parallel_thread)
+            part_number_list = list(parts.keys())
 
+            for part_number in part_number_list:
+                part = parts.get(part_number, None)
+                gevent_pool.wait_available()
+                gevent_pool.spawn(super().upload_part,
+                                  part[0], bucket_name,
+                                  object_name, upload_id=upload_id,
+                                  part_number=part_number, content_md5=part[1])
+            gevent_pool.join_group()
+            response = self.list_parts(upload_id, bucket_name, object_name)
             return response
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts_parallel.__name__,
                          error)
-            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+            raise CTException(err.S3_CLIENT_ERROR, error)
 
     def upload_parts_sequential(self,
                                 upload_id: int = None,

@@ -220,10 +220,14 @@ def calc_contentmd5(data) -> str:
 
 
 def get_multipart_etag(parts):
-    """TODO"""
+    """
+    Calculate expected ETag for a multipart upload
+
+    :param parts: List of dict with the format {part_number: (data_bytes, content_md5), ...}
+    """
     md5_digests = []
-    for _, part in parts.items():
-        md5_digests.append(md5(part[0]).digest())
+    for part_number in sorted(parts.keys()):
+        md5_digests.append(md5(parts[part_number][0]).digest())
     multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
     return '"%s"' % multipart_etag
 

@@ -35,7 +35,6 @@ from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.s3_utils import get_multipart_etag
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
-from commons.utils.system_utils import calculate_checksum
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
@@ -249,6 +248,7 @@ class TestMultipartAbortCopy:
         self.log.info("Step 4: Check list multipart uploads result does not contain "
                       "upload id")
         assert_utils.assert_not_in(mpu_id, resp[1], resp[1])
+        process.join()
         self.log.info("Stop background S3 IOs")
         self.s3_background_io.stop()
         self.log.info("ENDED: Test aborting multipart upload that is in progress")
@@ -280,12 +280,14 @@ class TestMultipartAbortCopy:
         parts = get_precalculated_parts(
             self.mp_obj_path, mp_config["part_sizes"], chunk_size=mp_config["chunk_size"])
         source_etag = get_multipart_etag(parts)
-        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
+        status, uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
+        assert_utils.assert_true(status, uploaded_parts)
+        sorted_part_list = sorted(uploaded_parts, key=lambda x: x['PartNumber'])
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, parts=uploaded_parts[1], bucket=self.bucket_name,
+            mpu_id=mpu_id, parts=sorted_part_list, bucket=self.bucket_name,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
@@ -335,22 +337,24 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
                                     chunk_size=mp_config["chunk_size"], random=True)
-        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
+        source_etag = get_multipart_etag(parts)
+        status, uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
+        assert_utils.assert_true(status, uploaded_parts)
+        sorted_part_list = sorted(uploaded_parts, key=lambda x: x['PartNumber'])
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, bucket=self.bucket_name, parts=uploaded_parts,
+            mpu_id=mpu_id, bucket=self.bucket_name, parts=sorted_part_list,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
         resp = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, resp[1], resp[1])
         self.log.info("Step 4: Copy multipart object in a separate process")
-        dst_bkt = "mp-bkt-{}".format(self.random_time)
+        dst_bkt = "mp-bkt-{}".format(perf_counter_ns())
         resp = self.s3_test_obj.create_bucket(dst_bkt)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(resp[1], dst_bkt, resp[1])
@@ -394,9 +398,9 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
                                     chunk_size=mp_config["chunk_size"], random=True)
+        source_etag = get_multipart_etag(parts)
         mpu_list = []
         process_list = []
         for i in range(mp_config["mpu_count"]):
