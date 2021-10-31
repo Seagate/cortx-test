@@ -187,8 +187,13 @@ test_29172:
 
 test_29173:
     file_size: 20000
-    total_parts: 20
     delay: 3600
+    chunk_size: 1048576
+    part_sizes:
+      - part_size: 990.5
+        count: 10
+      - part_size: 1009.5
+        count: 10
 
 test_29167:
     file_size: 300

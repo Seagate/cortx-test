@@ -73,6 +73,7 @@ class TestMultipartUploadDelete:
             system_utils.make_dirs(self.test_dir_path)
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.download_path = os.path.join(self.test_dir_path, "s3-obj-{}".format(perf_counter_ns()))
+        self.group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
         self.log.info("Setting up S3 background IO")
         self.s3_background_io = S3BackgroundIO(s3_test_lib_obj=self.s3_test_obj)
         self.log.info("ENDED: Setup operations.")
@@ -203,10 +204,10 @@ class TestMultipartUploadDelete:
         res = self.s3_mp_test_obj.complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
-        self.log.info("Step 7: List the contents of bucket to verify object deleted.")
+        self.log.info("Step 7: List the contents of bucket to verify object is not deleted.")
         resp = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_not_in(self.object_name, resp[1],
-                                   f"Failed to delete object {self.object_name}")
+                                   f"Object is not present {self.object_name}")
         self.log.info("Stop S3 IO & Validate logs.")
         self.s3_background_io.stop()
         self.log.info("ENDED: Initiate multipart and try to delete the object before even "
@@ -287,40 +288,36 @@ class TestMultipartUploadDelete:
         self.log.info("Step 1: Multipart upload an object1 in bucket1 from accnt1")
         acc1 = self.acc_name.format(perf_counter_ns())
         acc_resp1 = create_s3_account_get_s3lib_objects(
-            acc1, self.acc_mail.format(self.acc_name), self.acc_password)
+            acc1, self.acc_mail.format(acc1), self.acc_password)
         self.s3_accounts.append(acc1)
         acc2 = self.acc_name.format(perf_counter_ns())
         acc_resp2 = create_s3_account_get_s3lib_objects(
-            acc2, self.acc_mail.format(self.acc_name), self.acc_password)
+            acc2, self.acc_mail.format(acc2), self.acc_password)
         self.s3_accounts.append(acc2)
         resp = acc_resp1[1].create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = acc_resp1[-1].simple_multipart_upload(
+        acc_resp1[1].simple_multipart_upload(
             self.bucket_name, self.object_name, MPART_CFG["test_29172"]["file_size"],
             self.file_path, parts=MPART_CFG["test_29172"]["total_parts"])
-        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 2: list contents of bucket1.")
         resp = acc_resp1[1].object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 3: Grant accnt2 a write permission on bucket of accnt1.")
-        resp = acc_resp1[3].put_bucket_acl(
+        resp = acc_resp1[2].put_bucket_acl(
             bucket_name=self.bucket_name,
-            grant_write="id={}".format(acc_resp2[0]))
+            grant_full_control=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 4: upload object2 from accnt 2 to accnt1’s bucket.")
-        resp = acc_resp2[-1].simple_multipart_upload(
+        acc_resp2[-1].simple_multipart_upload(
             self.bucket_name, f"{self.object_name}-{1}", MPART_CFG["test_29172"]["file_size"],
             self.file_path, parts=MPART_CFG["test_29172"]["total_parts"])
-        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 5: list contents of bucket1.")
         resp = acc_resp1[1].object_list(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_in(f"{self.object_name}-{1}", resp[1])
-        self.log.info("Step 6: DeleteObjects (object1 and 2) from accnt1.")
+        self.log.info("Step 6: DeleteObjects object1 from accnt1.")
         resp = acc_resp1[1].delete_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = acc_resp1[1].delete_object(self.bucket_name, f"{self.object_name}-{1}")
-        assert_utils.assert_false(resp[0], resp[1])
         self.log.info("Step 7: DeleteObjects from accnt2.")
         resp = acc_resp2[1].delete_object(self.bucket_name, f"{self.object_name}-{1}")
         assert_utils.assert_true(resp[0], resp[1])
@@ -352,25 +349,20 @@ class TestMultipartUploadDelete:
         self.log.info("Step 3: Upload 20GB Object : Upload 20 parts of various sizes.")
         resp = system_utils.create_file(self.file_path, count=MPART_CFG["test_29173"]["file_size"])
         assert_utils.assert_true(resp[0], resp[1])
-        put_checksum = s3_utils.calc_checksum(self.file_path)
-        chunks = s3_utils.get_unaligned_parts(
-            self.file_path, total_parts=MPART_CFG["test_29173"]["total_parts"], random=True)
-        status, parts = self.s3_mp_test_obj.upload_parts_sequential(
-            mpu_id, self.bucket_name, self.object_name, parts=chunks)
-        assert_utils.assert_true(status, f"Failed to upload parts: {parts}")
+        status, mpu_upload = self.s3_mp_test_obj.upload_precalculated_parts(
+            mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
+            part_sizes=MPART_CFG["test_29173"]["part_sizes"],
+            chunk_size=MPART_CFG["test_29173"]["chunk_size"])
+        assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
         self.log.info("Step 4: Do ListParts to see the parts uploaded.")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 5: uploaded perform CompleteMultipartUpload.")
-        sorted_part_list = sorted(parts, key=lambda x: x['PartNumber'])
+        sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
         res = self.s3_mp_test_obj.complete_multipart_upload(
             mpu_id, sorted_part_list, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
-        resp = self.s3_mp_test_obj.object_download(
-            self.bucket_name, self.object_name, self.download_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        download_checksum = s3_utils.calc_checksum(self.download_path)
-        assert_utils.assert_equal(put_checksum, download_checksum, "Data Integrity failed.")
+        assert_utils.assert_equal(mpu_upload["expected_etag"], res[1]["ETag"])
         self.log.info("Step 6: Delete the object.")
         resp = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])

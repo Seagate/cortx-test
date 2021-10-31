@@ -225,7 +225,7 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
         resp = s3_obj.create_bucket(s3_bucket)
         assert_utils.assert_true(resp[0], resp[1])
     objects = []
-    for i in range(1, num_sample):
+    for i in range(1, num_sample + 1):
         fpath = os.path.join(os.getcwd(), f"{obj_prefix}-{i}")
         resp = system_utils.create_file(fpath, count=size*i)
         assert_utils.assert_true(resp[0], resp[1])

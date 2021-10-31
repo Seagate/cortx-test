@@ -23,13 +23,14 @@
 
 import os
 import logging
+from hashlib import md5
+from numpy.random import permutation
 
 from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from commons.utils.system_utils import cal_percent
 from commons.greenlet_worker import GeventPool
-from commons.greenlet_worker import THREADS
 from libs.s3 import S3_CFG, ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_core_lib import Multipart
 
@@ -182,6 +183,43 @@ class S3MultipartTestLib(Multipart):
             LOGGER.info(parts)
 
             return True, parts
+        except BaseException as error:
+            LOGGER.error("Error in %s: %s",
+                         S3MultipartTestLib.upload_parts.__name__,
+                         error)
+            raise CTException(err.S3_CLIENT_ERROR, error.args[0])
+
+    def upload_precalculated_parts(self,
+                                   upload_id: int = None,
+                                   bucket_name: str = None,
+                                   object_name: str = None,
+                                   **kwargs) -> tuple:
+        """
+        TODO
+
+        """
+        try:
+            multipart_obj_path = kwargs.get("multipart_obj_path", None)
+            part_sizes = kwargs.get("part_sizes", None)
+            chunk_size = kwargs.get("chunk_size", None)
+            uploaded_parts = list()
+            total_part_list = list()
+            for part in part_sizes:
+                total_part_list.extend([part['part_size']] * part['count'])
+            md5_digests = [None] * len(total_part_list)
+            with open(multipart_obj_path, "rb") as file_pointer:
+                for i, partnum in enumerate(permutation(len(total_part_list))):
+                    data = file_pointer.read(int(chunk_size * total_part_list[i]))
+                    LOGGER.info("data_len %s", str(len(data)))
+                    part = super().upload_part(
+                        data, bucket_name, object_name, upload_id=upload_id,
+                        part_number=int(partnum) + 1)
+                    LOGGER.debug("Part : %s", str(part))
+                    uploaded_parts.append({"PartNumber": int(partnum) + 1, "ETag": part["ETag"]})
+                    md5_digests[int(partnum)] = md5(data).digest()
+            multipart_etag = '"%s"' % \
+                             (md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests)))
+            return True, {'uploaded_parts': uploaded_parts, 'expected_etag': multipart_etag}
         except BaseException as error:
             LOGGER.error("Error in %s: %s",
                          S3MultipartTestLib.upload_parts.__name__,
