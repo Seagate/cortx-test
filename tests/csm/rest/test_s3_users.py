@@ -62,7 +62,7 @@ class TestS3user():
         if not system_utils.path_exists(TEST_DATA_FOLDER):
             system_utils.make_dirs(TEST_DATA_FOLDER)
         cls.log.info("[COMPLETED] ######### Setup class #########")
-    
+
     def teardown_method(self):
         """"
         Teardown for deleting any S3 user which is not deleted due to test failure.
@@ -864,7 +864,7 @@ class TestS3user():
             assert result, f"Status code check failed for {usr} user"
             self.log.info("[END] Create User count : %s", i + 1)
 
-        # TODO: check error on 1001 user
+        #  check error on 1001 user
         resp = self.s3user.list_all_created_s3account()
         assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
         user_data = resp.json()
@@ -892,7 +892,6 @@ class TestS3user():
                               "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
                 self.log.info("[END] Create Bucket count : %s", i + 1)
-            # TODO IAM user create
 
         # cleanup loop
         for created_user in created_users:
@@ -903,7 +902,6 @@ class TestS3user():
                               "secret key: %s", bucket, akey, skey)
                 assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
                 self.log.info("[END] Delete Bucket count : %s", i + 1)
-            # TODO IAM user delete
 
         for created_user in created_users:
             s3_user = created_user["account_name"]
