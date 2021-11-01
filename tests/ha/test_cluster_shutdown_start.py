@@ -718,13 +718,7 @@ class TestClusterShutdownStart:
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
 
-        LOGGER.info("Step 1: Send the cluster shutdown signal through CSM REST.")
-        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-                                                     resource="cluster")
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 1: Cluster shutdown signal sent successfully.")
-
-        LOGGER.info("Step 2: Create multiple buckets and upload object to %s and copy to other "
+        LOGGER.info("Step 1: Create multiple buckets and upload object to %s and copy to other "
                     "buckets".format(self.bucket_name))
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
@@ -733,14 +727,20 @@ class TestClusterShutdownStart:
                                                   file_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
-        LOGGER.info("Step 2: Successfully Created multiple buckets and uploaded object to %s "
+        LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other buckets", format(self.bucket_name))
+
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         bkt_obj_dict1 = dict()
         bkt_obj_dict1["ha-bkt-{}".format(perf_counter_ns())] = "ha-obj-{}".format(perf_counter_ns())
         bkt_obj_dict.update(bkt_obj_dict1)
-        LOGGER.info("Step 3: Create multiple buckets and upload object to %s and copy to other "
-                    "buckets in background".format(self.bucket_name))
+        LOGGER.info("Step 3: Create multiple buckets and copy object from %s to other buckets in "
+                    "background".format(self.bucket_name))
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict1, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
