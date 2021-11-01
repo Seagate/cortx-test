@@ -45,8 +45,8 @@ class TestS3user():
     @classmethod
     def setup_class(cls):
         """This is method is for test suite set-up"""
-        self.log.info("[STARTED] ######### Setup class #########")
         cls.log = logging.getLogger(__name__)
+        cls.log.info("[STARTED] ######### Setup class #########")
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -61,7 +61,7 @@ class TestS3user():
         cls.log.info("Initiating Rest Client for Alert ...")
         if not system_utils.path_exists(TEST_DATA_FOLDER):
             system_utils.make_dirs(TEST_DATA_FOLDER)
-        self.log.info("[COMPLETED] ######### Setup class #########")
+        cls.log.info("[COMPLETED] ######### Setup class #########")
     
     def teardown_method(self):
         """"

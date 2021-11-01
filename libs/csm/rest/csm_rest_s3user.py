@@ -641,12 +641,12 @@ class RestS3user(RestTestLib):
         if user_type == "missing_access":
             template = const.CUSTOM_S3_USER.copy()
             template.remove("access_key")
-            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, secret]))
+            user_data = dict(zip(template, [user_name, email_id, password, secret]))
 
         if user_type == "missing_secret":
             template = const.CUSTOM_S3_USER.copy()
             template.remove("secret_key")
-            user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access]))
+            user_data = dict(zip(template, [user_name, email_id, password, access]))
         return user_data
 
     def create_verify_s3_custom(self, user_type: str,
