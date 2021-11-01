@@ -835,7 +835,7 @@ class TestBucketPolicy:
             self.bucket_name,
             self.account_name)
         self.delete_bucket_and_verify(create_account[1], self.bucket_name)
-        time.sleep(30)
+        time.sleep(S3_CFG["sync_delay"])
         self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test resource arn combination with bucket name and all objects.")
@@ -4997,7 +4997,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4502_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateEquals', "
@@ -5086,7 +5086,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(account_id, date_time, effect,
                                                  s3_obj_2, test_4506_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5201,7 +5201,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5231,7 +5231,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5261,7 +5261,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5291,7 +5291,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
@@ -5321,7 +5321,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
@@ -5351,7 +5351,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThanEquals', "
@@ -5382,7 +5382,7 @@ _date."""
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, random_id, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
@@ -5412,7 +5412,7 @@ _date."""
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
@@ -5933,7 +5933,7 @@ _date."""
             self.file_path,
             grant_full_control="id={}".format(canonical_id_2))
         assert resp[0], resp[1]
-        time.sleep(30)
+        time.sleep(S3_CFG["sync_delay"])
         self.log.debug("Waiting for Policy to be synced for bucket")
         try:
             s3_obj_2.put_object(
@@ -12791,7 +12791,7 @@ _date."""
             resp = self.s3_bkt_policy_obj.delete_bucket_policy(
                 self.bucket_name)
             assert resp[0], resp[1]
-            time.sleep(30)
+            time.sleep(S3_CFG["sync_delay"])
             self.log.debug("Waiting for Policy to be synced for bucket")
             self.log.info(
                 "Step 5: Deleted a bucket policy for bucket %s",
