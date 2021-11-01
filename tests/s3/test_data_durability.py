@@ -153,6 +153,7 @@ class TestDataDurability:
                 self.bucket_name))
         return chksm_before_put_obj
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
     @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8005')
@@ -206,6 +207,7 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of service restart- %s", service)
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
     @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8006')
@@ -300,6 +302,7 @@ class TestDataDurability:
         self.log.info(
             "ENDED: Test NO data loss in case of account credentials change")
 
+    @pytest.mark.lr
     @pytest.mark.s3_ops
     @pytest.mark.s3_data_durability
     @pytest.mark.tags('TEST-8004')
