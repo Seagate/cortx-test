@@ -460,4 +460,3 @@ CMD_GIT_CHECKOUT = "git checkout {}"
 
 #docker commands
 CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"
-

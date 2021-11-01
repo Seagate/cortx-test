@@ -1,3 +1,4 @@
+#!/bin/bash
 yum install gcc pcre-devel tar make -y
 yum install openssl-devel pcre-devel -y
 wget http://www.haproxy.org/download/2.4/src/haproxy-2.4.2.tar.gz

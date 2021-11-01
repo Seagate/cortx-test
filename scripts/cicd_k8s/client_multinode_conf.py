@@ -19,24 +19,24 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-Setup file for multinode server and client configuration for executing the R2 regression.
+Setup file for multinode server and client configuration for executing
+the sanity in K8s environment.
 """
 import os
 import configparser
 import json
 import logging
 import argparse
-from scripts.jenkins_job import client_conf
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils as sysutils
 from commons import commands as com_cmds
 
-config_file = 'scripts/cicd_k8s/config.ini'
+CONF_FILE = 'scripts/cicd_k8s/config.ini'
 config = configparser.ConfigParser()
-config.read(config_file)
+config.read(CONF_FILE)
 LOGGER = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-arguments
 def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
                     admin_user: str, admin_passwd: str, ext_ip) -> str:
     """
@@ -60,7 +60,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
         if "worker" in line:
             out = line.split()[0]
             host_list.append(out)
-    LOGGER.info("Creating DB entry for setup: {}".format(new_setupname))
+    LOGGER.info("Creating DB entry for setup: %s", new_setupname)
     with open(json_file, 'r') as file:
         json_data = json.load(file)
 
@@ -93,7 +93,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
     json_data["csm"]["csm_admin_user"].update(
         username=admin_user, password=admin_passwd)
 
-    LOGGER.info("new file data: {}".format(json_data))
+    LOGGER.info("new file data: %s", json_data)
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
@@ -110,14 +110,19 @@ def configure_haproxy_lb(m_node_obj: object):
     LOGGER.info("Setting s3 endpoints of ext LB on client.")
     sysutils.execute_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:
-        file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
-        file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
-        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n"
-                   .format(ext_ip))
+        file.write("127.0.0.1   localhost localhost.localdomain localhost4 "
+                   "localhost4.localdomain4\n")
+        file.write("::1         localhost localhost.localdomain localhost6 "
+                   "localhost6.localdomain6\n")
+        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com "
+                   "sts.cloud.seagate.com\n".format(ext_ip))
     return ext_ip
 
 
 def main():
+    """
+    Main Function.
+    """
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("--master_node", help="Hostname for master node", required=True)
@@ -138,23 +143,23 @@ def main():
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 mgmt_vip=args.mgmt_vip, admin_user=admin_user,
                                 admin_passwd=admin_passwd, ext_ip=ext_ip)
-    print("target_name: %s", setupname)
-    client_conf.run_cmd("cp /root/secrets.json .")
+    LOGGER.info("target_name: %s", setupname)
+    sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
-    output = client_conf.run_cmd(
+    output = sysutils.execute_cmd(
         "python3.7 tools/setup_update/setup_entry.py "
         "--dbuser {} --dbpassword {}".format(
             json_data['DB_USER'],
             json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
-        print("DB already exists for target: {}, so will update it.".format(setupname))
-        client_conf.run_cmd(
+        LOGGER.info("DB already exists for target: {}, so will update it.".format(setupname))
+        sysutils.execute_cmd(
             "python3.7 tools/setup_update/setup_entry.py "
             "--dbuser {} --dbpassword {} --new_entry False".format(
                 json_data['DB_USER'], json_data['DB_PASSWORD']))
 
-    print("Mutlinode Server-Client Setup Done.")
+    LOGGER.info("Mutlinode Server-Client Setup Done.")
 
 
 if __name__ == "__main__":
