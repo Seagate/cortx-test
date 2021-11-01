@@ -56,7 +56,6 @@ validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1] if _validat
 
 def build_s3_endpoints() -> dict:
     """This function will create s3/iam url based on certificates availability and ssl usages."""
-    setup_query = {"setupname": target}
     s3_conf = configmanager.get_config_wrapper(fpath=S3_CONFIG)
     setup_details = configmanager.get_config_wrapper(target=target)
     lb_flg = setup_details.get('lb') not in [None, '', "FQDN without protocol(http/s)"]
@@ -65,8 +64,10 @@ def build_s3_endpoints() -> dict:
     ssl_flg = ast.literal_eval(str(use_ssl).title())
     cert_flg = ast.literal_eval(str(validate_certs).title())
     s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
-    # As per observation iam operations required https only.
-    s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['iam_port']}"
+    if cert_flg:
+        s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
+    else:
+        s3_conf["iam_url"] = f"http://{iam_url}:{s3_conf['http_iam_port']}"
     s3_conf["s3b_url"] = f"{'https' if cert_flg else 'http'}://{s3_url}"
     s3_conf["use_ssl"] = ssl_flg
     s3_conf["validate_certs"] = cert_flg
