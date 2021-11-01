@@ -19,16 +19,22 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com
 
 """
- HA: Publish the pod failure event in message bus to Hare - Shutdown node.
+ HA: To test Publish the pod failure event in message bus to Hare - Node becomes unreachable (network interface is down).
 """
 import logging
 import pytest
 import json
 import time
+import yaml
 from config import CMN_CFG
 from commons.helpers.node_helper import Node
+from libs.ras.sw_alerts import SoftwareAlert
+from commons.alerts_simulator.generate_alert_wrappers import \
+    GenerateAlertWrapper
 
 LOGGER = logging.getLogger(__name__)
+ALERT_WRAP = GenerateAlertWrapper()
+
 
 class TestHA:
     @classmethod
@@ -46,7 +52,7 @@ class TestHA:
             cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
 
     def test_ha(self):
-        """Verify Publish the pod online event in message bus to Hare - restart node"""
+        """Verify Publish the pod failure event in message bus to Hare - Node becomes unreachable (network interface is down) """
         for index in range(0,3):
             LOGGER.info("Running test:Node"+ str(index))
             LOGGER.info("hostname: " + CMN_CFG["nodes"][index]["hostname"])
@@ -60,10 +66,12 @@ class TestHA:
             LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
             response2 = self.node_obj.execute_cmd("python /root/daemon.py")
             LOGGER.info(response2.decode("utf-8").strip())
-            """ Shutdown down the worker node """            
-            LOGGER.info("Shutdown down the node...")
-            response3 = self.node_list[1].shutdown_node()
-            LOGGER.info(response3)
+            """ Induce network fault"""
+            LOGGER.info("Induce network fault: ifdown eth1")
+            response1 = ALERT_WRAP.create_network_port_fault(CMN_CFG["nodes"][1]["hostname"],CMN_CFG["nodes"][1]["username"], CMN_CFG["nodes"][1]["password"], { "device":"eth1"} )
+            response2 = ALERT_WRAP.resolve_network_port_fault(CMN_CFG["nodes"][1]["hostname"],CMN_CFG["nodes"][1]["username"], CMN_CFG["nodes"][1]["password"], { "device":"eth1"})
+            LOGGER.info(str(response1))
+            LOGGER.info(str(response2))
             LOGGER.info("\n Publishing  the event... \n")
             response4 = self.node_obj.execute_cmd("/root/publish.py")
             LOGGER.info(response4.decode("utf-8").strip())
@@ -81,7 +89,6 @@ class TestHA:
             LOGGER.info(response7.decode("utf-8").strip())
             LOGGER.info("Removed pidfile successfully") 
         except Exception as error:
-            LOGGER.info(error)
+            print(error)
             assert False
         assert True
-

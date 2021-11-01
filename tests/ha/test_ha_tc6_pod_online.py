@@ -19,16 +19,19 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com
 
 """
- HA: Publish the pod failure event in message bus to Hare - Shutdown node.
+ HA: Publish the pod online event in message bus to Hare - deployment stage, pods is online
 """
 import logging
 import pytest
 import json
 import time
+import yaml
 from config import CMN_CFG
 from commons.helpers.node_helper import Node
+from libs.ras.sw_alerts import SoftwareAlert
 
 LOGGER = logging.getLogger(__name__)
+
 
 class TestHA:
     @classmethod
@@ -46,7 +49,7 @@ class TestHA:
             cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
 
     def test_ha(self):
-        """Verify Publish the pod online event in message bus to Hare - restart node"""
+        """Verify Publish the pod online event in message bus to Hare - deployment stage, pods is online """
         for index in range(0,3):
             LOGGER.info("Running test:Node"+ str(index))
             LOGGER.info("hostname: " + CMN_CFG["nodes"][index]["hostname"])
@@ -54,16 +57,27 @@ class TestHA:
             LOGGER.info("user: " + CMN_CFG["nodes"][index]["username"])
         LOGGER.info("Done: Setup operations finished.")
         try:
+            """ Deploy Cortx Stack with kubernetes configured """
             LOGGER.info("pre-condition: subscribe.py, publish.py, test_receiver.py, daemon.py should be available in Cortx Stack root dirctory \n")
             response1 = self.node_obj.execute_cmd("/root/subscribe.py")
             LOGGER.info("1." + response1.decode("utf-8").strip() + " Subscribe event successfully")
             LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
             response2 = self.node_obj.execute_cmd("python /root/daemon.py")
             LOGGER.info(response2.decode("utf-8").strip())
-            """ Shutdown down the worker node """            
-            LOGGER.info("Shutdown down the node...")
-            response3 = self.node_list[1].shutdown_node()
-            LOGGER.info(response3)
+            """ List the pod and status of each Pod """
+            LOGGER.info("List the pod")
+            response2 = self.node_list[0].execute_cmd("kubectl get pod", read_lines=True)
+            LOGGER.info(response2)
+            """ Specify pod name """
+            pod_name='tomcat' 
+            cmd = "kubectl get pods " + pod_name + " -o jsonpath={.status.phase}"
+            response3 = self.node_list[0].execute_cmd(cmd, read_lines=True)
+            res3 = str(response3)[2:-2]
+            LOGGER.info(res3)
+            if res3 == "Running":
+                LOGGER.info("The status of pod is Running")
+            elif res3 == "Pending":
+                LOGGER.info("The status of pod is ContainerCreating")
             LOGGER.info("\n Publishing  the event... \n")
             response4 = self.node_obj.execute_cmd("/root/publish.py")
             LOGGER.info(response4.decode("utf-8").strip())
@@ -79,9 +93,8 @@ class TestHA:
             LOGGER.info("\n 7. Removing pidfile...")
             response7 = self.node_obj.execute_cmd("rm -f /root/pidfile")
             LOGGER.info(response7.decode("utf-8").strip())
-            LOGGER.info("Removed pidfile successfully") 
+            LOGGER.info("Removed pidfile successfully")
         except Exception as error:
             LOGGER.info(error)
             assert False
         assert True
-

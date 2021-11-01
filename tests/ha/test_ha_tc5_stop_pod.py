@@ -19,16 +19,19 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com
 
 """
- HA: Publish the pod failure event in message bus to Hare - Shutdown node.
+ HA: Publish the pod failure event in message bus to Hare - Stop pod using replicaset
 """
 import logging
 import pytest
 import json
 import time
+import yaml
 from config import CMN_CFG
 from commons.helpers.node_helper import Node
+from libs.ras.sw_alerts import SoftwareAlert
 
 LOGGER = logging.getLogger(__name__)
+
 
 class TestHA:
     @classmethod
@@ -44,9 +47,9 @@ class TestHA:
                         password=cls.passwd)
             cls.node_list.append(cls.node_obj)
             cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
-
     def test_ha(self):
-        """Verify Publish the pod online event in message bus to Hare - restart node"""
+        """Verify Publish the pod failure event in message bus to Hare - Stop pod using replicaset"""
+        import pdb;pdb.set_trace()
         for index in range(0,3):
             LOGGER.info("Running test:Node"+ str(index))
             LOGGER.info("hostname: " + CMN_CFG["nodes"][index]["hostname"])
@@ -60,10 +63,22 @@ class TestHA:
             LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
             response2 = self.node_obj.execute_cmd("python /root/daemon.py")
             LOGGER.info(response2.decode("utf-8").strip())
-            """ Shutdown down the worker node """            
-            LOGGER.info("Shutdown down the node...")
-            response3 = self.node_list[1].shutdown_node()
-            LOGGER.info(response3)
+            """ Stop pod using replicaset """
+            LOGGER.info("Create replicaset for storage-node1...")
+            response2 = self.node_list[0].execute_cmd("kubectl create -f /root/deployment.yaml", read_lines=True)
+            res = response2[0].strip()
+            if res == "replicaset.apps/my-replicaset created":
+                LOGGER.info("The replicaset is successfully created")
+            elif res.find("already exists"):
+                LOGGER.info("The replicaset already exists, first delete it")
+                response1 = self.node_list[0].execute_cmd("kubectl delete rs my-replicaset")
+                LOGGER.info("Replicaset delete successfully")
+                LOGGER.info(response1)
+            LOGGER.info(response2)
+            response3 = self.node_list[0].execute_cmd("kubectl get replicaset my-replicaset")
+            response4 = self.node_list[0].execute_cmd("kubectl get pods")
+            """ Scale down replica """
+            response5 = self.node_list[0].execute_cmd("kubectl scale --replicas=0 replicaset my-replicaset")
             LOGGER.info("\n Publishing  the event... \n")
             response4 = self.node_obj.execute_cmd("/root/publish.py")
             LOGGER.info(response4.decode("utf-8").strip())
@@ -79,9 +94,8 @@ class TestHA:
             LOGGER.info("\n 7. Removing pidfile...")
             response7 = self.node_obj.execute_cmd("rm -f /root/pidfile")
             LOGGER.info(response7.decode("utf-8").strip())
-            LOGGER.info("Removed pidfile successfully") 
+            LOGGER.info("Removed pidfile successfully")
         except Exception as error:
             LOGGER.info(error)
             assert False
         assert True
-

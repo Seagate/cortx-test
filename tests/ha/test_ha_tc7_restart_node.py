@@ -1,3 +1,4 @@
+[root@ssc-vm-g2-rhev4-1257 ha]# cat test_ha_tc7_restart_node.py
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -19,7 +20,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com
 
 """
- HA: Publish the pod failure event in message bus to Hare - Shutdown node.
+ HA: To test Publish the pod online event in message bus to Hare - restart node.
 """
 import logging
 import pytest
@@ -27,8 +28,10 @@ import json
 import time
 from config import CMN_CFG
 from commons.helpers.node_helper import Node
+from libs.ras.sw_alerts import SoftwareAlert
 
 LOGGER = logging.getLogger(__name__)
+
 
 class TestHA:
     @classmethod
@@ -60,11 +63,14 @@ class TestHA:
             LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
             response2 = self.node_obj.execute_cmd("python /root/daemon.py")
             LOGGER.info(response2.decode("utf-8").strip())
-            """ Shutdown down the worker node """            
-            LOGGER.info("Shutdown down the node...")
-            response3 = self.node_list[1].shutdown_node()
+            """ Restart the node """
+            LOGGER.info("3. Restart the node...")
+            response3 = self.sw_alert_obj.restart_node()
             LOGGER.info(response3)
-            LOGGER.info("\n Publishing  the event... \n")
+            LOGGER.info("List the pod")
+            response2 = self.node_list[0].execute_cmd("kubectl get pod", read_lines=True)
+            LOGGER.info("Listed pod successfully")
+            LOGGER.info("\n 4. Publishing  the event... \n")
             response4 = self.node_obj.execute_cmd("/root/publish.py")
             LOGGER.info(response4.decode("utf-8").strip())
             LOGGER.info("\n Publish event successfully")
@@ -79,9 +85,8 @@ class TestHA:
             LOGGER.info("\n 7. Removing pidfile...")
             response7 = self.node_obj.execute_cmd("rm -f /root/pidfile")
             LOGGER.info(response7.decode("utf-8").strip())
-            LOGGER.info("Removed pidfile successfully") 
+            LOGGER.info("Removed pidfile successfully")
         except Exception as error:
-            LOGGER.info(error)
+            print(error)
             assert False
         assert True
-
