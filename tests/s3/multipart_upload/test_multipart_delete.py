@@ -23,7 +23,6 @@
 import os
 import logging
 import time
-from multiprocessing import Process
 from time import perf_counter_ns
 
 import pytest
@@ -35,11 +34,9 @@ from commons.utils import assert_utils
 from commons.utils import s3_utils
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
-from scripts.s3_bench import s3bench
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
-from libs.s3.s3_common_test_lib import s3_ios
 from libs.s3.s3_common_test_lib import get_cortx_capacity
 from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import upload_random_size_objects
@@ -206,8 +203,8 @@ class TestMultipartUploadDelete:
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Step 7: List the contents of bucket to verify object is not deleted.")
         resp = self.s3_test_obj.object_list(self.bucket_name)
-        assert_utils.assert_not_in(self.object_name, resp[1],
-                                   f"Object is not present {self.object_name}")
+        assert_utils.assert_in(self.object_name, resp[1],
+                               f"Object is not present {self.object_name}")
         self.log.info("Stop S3 IO & Validate logs.")
         self.s3_background_io.stop()
         self.log.info("ENDED: Initiate multipart and try to delete the object before even "
@@ -296,7 +293,7 @@ class TestMultipartUploadDelete:
         self.s3_accounts.append(acc2)
         resp = acc_resp1[1].create_bucket(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        acc_resp1[1].simple_multipart_upload(
+        acc_resp1[-1].simple_multipart_upload(
             self.bucket_name, self.object_name, MPART_CFG["test_29172"]["file_size"],
             self.file_path, parts=MPART_CFG["test_29172"]["total_parts"])
         self.log.info("Step 2: list contents of bucket1.")

@@ -195,8 +195,13 @@ class S3MultipartTestLib(Multipart):
                                    object_name: str = None,
                                    **kwargs) -> tuple:
         """
-        TODO
+        Upload specified/precalculated part sizes for a specific multipart upload ID one part
+        at a time.
 
+        :param mpu_id: Multipart Upload ID.
+        :param bucket_name: Name of the bucket.
+        :param object_name: Name of the object.
+        :return: (Boolean, Dict of uploaded parts and expected multipart ETag).
         """
         try:
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
