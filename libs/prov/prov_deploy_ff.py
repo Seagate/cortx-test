@@ -788,8 +788,8 @@ class ProvDeployFFLib:
         csm_default_user = kwargs.get("csm_default_user",
                                       PROV_CFG["post_deployment_steps"]["csm_default_user_name"])
         passwd = pswdmanager.decrypt(post_deploy_cfg['csm_default_pswd'])
-        kwargs.get("old_password", passwd)
-        kwargs.get("new_password", passwd)
+        old_passwd = kwargs.get("old_password", passwd)
+        new_passwd = kwargs.get("new_password", passwd)
         config_chk = CSMConfigsCheck()
         csm_s3 = RestS3user()
         config_chk.preboarding(username=csm_default_user,
