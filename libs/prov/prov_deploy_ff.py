@@ -774,15 +774,18 @@ class ProvDeployFFLib:
         return True, "Post Deloyment Steps Successful!!"
 
     @staticmethod
-    def post_deployment_steps_lc():
+    def post_deployment_steps_lc(**kwargs):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
         """
+
         LOGGER.info("Post Deployment Steps")
         post_deploy_cfg = PROV_CFG["post_deployment_steps"]
-        csm_default_user = PROV_CFG["post_deployment_steps"]["csm_default_user_name"]
-        old_passwd = pswdmanager.decrypt(PROV_CFG['post_deployment_steps']['csm_default_pswd'])
-        new_passwd = pswdmanager.decrypt(PROV_CFG['post_deployment_steps']['csm_default_pswd'])
+        csm_default_user = kwargs.get("csm_default_user",
+                                      PROV_CFG["post_deployment_steps"]["csm_default_user_name"])
+        passwd = pswdmanager.decrypt(post_deploy_cfg['csm_default_pswd'])
+        kwargs.get("old_password", passwd)
+        kwargs.get("new_password", passwd)
         config_chk = CSMConfigsCheck()
         csm_s3 = RestS3user()
         config_chk.preboarding(username=csm_default_user,
