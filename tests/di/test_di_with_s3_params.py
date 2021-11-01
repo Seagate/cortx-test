@@ -24,6 +24,8 @@ import os
 import logging
 from datetime import datetime
 import pytest
+
+from libs.di.di_error_detection_test_lib import DITestLib
 from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -33,11 +35,12 @@ from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from config import CMN_CFG
+from commons.constants import S3_DI_WRITE_CHECK
+from commons.constants import S3_DI_READ_CHECK
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_PATH
 from commons.utils import system_utils as sys_util
-from commons.constants import const
 
 
 class TestDIWithChangingS3Params:
@@ -58,14 +61,15 @@ class TestDIWithChangingS3Params:
         cls.data_gen = DataGenerator()
         cls.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
+        cls.di_test_lib = DITestLib()
         cls.obj_name_1 = "di-test-obj-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.obj_name_2 = "di-test-obj-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.obj_name_3 = "di-test-obj-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.bucket_name_1 = "di-test-bkt-1-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.bucket_name_2 = "di-test-bkt-2-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
         cls.bucket_name_3 = "di-test-bkt-3-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
-        cls.WRITE_PARAM = "S3_WRITE_DATA_INTEGRITY_CHECK"
-        cls.READ_PARAM = "S3_READ_DATA_INTEGRITY_CHECK"
+        cls.WRITE_PARAM = S3_DI_WRITE_CHECK
+        cls.READ_PARAM = S3_DI_READ_CHECK
         cls.params = dict()
         cls.test_dir_path = os.path.join(TEST_DATA_PATH, "TestDI")
         if not sys_util.path_exists(cls.test_dir_path):
@@ -110,24 +114,6 @@ class TestDIWithChangingS3Params:
             sys_util.remove_dirs(cls.test_dir_path)
         cls.log.info("Deleted a backup file and directory")
         cls.log.info("ENDED: Teardown class operations.")
-
-    def validate_config(self):
-        """
-        function will check for default configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are not set with default
-        and will return false if configs are set to default
-        """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.integrity_param)
-        if write_flag[0] and not read_flag[0] and integrity_flag[0]:
-            skip_mark = False
-        return skip_mark
 
     @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
@@ -247,7 +233,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
@@ -286,7 +273,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
@@ -320,7 +308,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
@@ -355,7 +344,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
@@ -399,7 +389,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)
