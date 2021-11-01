@@ -101,6 +101,7 @@ deploy_ff:
   bmc_password: "admin"
 
 post_deployment_steps:
+  csm_default_user_name: "cortxadmin"
   csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
   s3user_name: 's3user'
   s3user_email: 's3user@seagate.com'
