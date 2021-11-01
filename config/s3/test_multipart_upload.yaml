@@ -288,8 +288,13 @@ test_29172:
 
 test_29173:
     file_size: 20000
-    total_parts: 20
     delay: 3600
+    chunk_size: 1048576
+    part_sizes:
+      - part_size: 990.5
+        count: 10
+      - part_size: 1009.5
+        count: 10
 
 test_29167:
     file_size: 300
@@ -318,10 +323,10 @@ test_29165:
           count: 1
 
 test_29166:
-    file_size: 5120
+    file_size: 500
     chunk_size: 1048576
     total_parts: 20
-    error_msg: "Not Found"
+    error_msg: "An error occurred (404) when calling the HeadObject operation: Not Found"
 
 test_29168:
     file_size: 5242880
