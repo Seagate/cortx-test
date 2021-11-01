@@ -37,6 +37,7 @@ config.read(CONF_FILE)
 LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
+# pylint: disable-msg=too-many-locals
 def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
                     admin_user: str, admin_passwd: str, ext_ip) -> str:
     """
@@ -99,14 +100,19 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
 
     return new_setupname
 
-def configure_haproxy_lb(m_node_obj: object):
+def configure_haproxy_lb(m_node: str, username: str, password: str):
     """
     Implement external Haproxy LB
-    :param str m_node_obj: object for master node
+    :param m_node: hostname for master node
+    :param username: username for node
+    :param password: password for node
     :return: external LB IP
     """
-    # TODO: HAProxy changes to file
     ext_ip = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE)
+    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
+    resp = m_node_obj.execute_cmd(cmd=com_cmds.CMD_SRVC_STATUS, read_lines=True)
+    LOGGER.info("Response for services status: %s", resp)
+    # TODO: HAProxy changes to file
     LOGGER.info("Setting s3 endpoints of ext LB on client.")
     sysutils.execute_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:
@@ -138,8 +144,7 @@ def main():
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
 
-    nd_obj_host = LogicalNode(hostname=master_node, username=username, password=args.password)
-    ext_ip = configure_haproxy_lb(m_node_obj=nd_obj_host)
+    ext_ip = configure_haproxy_lb(master_node, username=username, password=args.password)
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 mgmt_vip=args.mgmt_vip, admin_user=admin_user,
                                 admin_passwd=admin_passwd, ext_ip=ext_ip)
@@ -153,7 +158,7 @@ def main():
             json_data['DB_USER'],
             json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
-        LOGGER.info("DB already exists for target: {}, so will update it.".format(setupname))
+        LOGGER.info("DB already exists for target: , so will update it.", setupname)
         sysutils.execute_cmd(
             "python3.7 tools/setup_update/setup_entry.py "
             "--dbuser {} --dbpassword {} --new_entry False".format(
