@@ -37,29 +37,24 @@ config.read(config_file)
 LOGGER = logging.getLogger(__name__)
 
 
-def create_db_entry(
-    m_node,
-    username: str,
-    password: str,
-    mgmt_vip: str,
-    admin_user: str,
-    admin_passwd: str,
-    node_obj) -> str:
+def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
+                    admin_user: str, admin_passwd: str, ext_ip) -> str:
     """
     Creation of new host entry in database.
-    :param str hostname: hostnames of all the nodes
+    :param str m_node: hostname of master node
     :param str username: username of nodes
     :param str password: password of nodes
     :param str mgmt_vip: csm mgmt vip
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
-    :param node_obj: node helper object to run cmd and get IPs
+    :param str ext_ip: external LB IP
     :return: Target name
     """
     host_list = []
     host_list.append(m_node)
     json_file = config['default']['setup_entry_json']
     new_setupname = os.getenv("Target_Node")
+    node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     output_node = node_obj.execute_cmd(com_cmds.CMD_GET_NODE, read_lines=True)
     for line in output_node:
         if "worker" in line:
@@ -72,7 +67,7 @@ def create_db_entry(
     json_data["setupname"] = new_setupname
     json_data["product_family"] = "LC"
     json_data["product_type"] = "k8s"
-    json_data["lb"] = "ext LB IP" # TODO
+    json_data["lb"] = ext_ip
     nodes = list()
     node_info = {
         "host": "srv-node-1",
@@ -104,13 +99,32 @@ def create_db_entry(
 
     return new_setupname
 
+def configure_haproxy_lb(m_node_obj: object):
+    """
+    Implement external Haproxy LB
+    :param str m_node_obj: object for master node
+    :return: external LB IP
+    """
+    # TODO: HAProxy changes to file
+    ext_ip = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE)
+    LOGGER.info("Setting s3 endpoints of ext LB on client.")
+    sysutils.execute_cmd(cmd="rm -f /etc/hosts")
+    with open("/etc/hosts", 'w') as file:
+        file.write("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n")
+        file.write("::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n")
+        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com sts.cloud.seagate.com\n"
+                   .format(ext_ip))
+    return ext_ip
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
-    parser.add_argument("--master_node", help="Hostname for master node", nargs="+")
+    parser.add_argument("--master_node", help="Hostname for master node", required=True)
     parser.add_argument("--node_count", help="Number of nodes in cluster", required=True, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
     parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
+    parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=True)
     args = parser.parse_args()
     master_node = args.master_node
     node_count = args.node_count
@@ -119,19 +133,11 @@ def main():
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
 
-    nd_obj_host = LogicalNode(
-        hostname=master_node,
-        username=username,
-        password=args.password)
-
-    setupname = create_db_entry(
-        master_node,
-        username=username,
-        password=args.password,
-        mgmt_vip=args.mgmt_vip,
-        admin_user=admin_user,
-        admin_passwd=admin_passwd,
-        node_obj=nd_obj_host)
+    nd_obj_host = LogicalNode(hostname=master_node, username=username, password=args.password)
+    ext_ip = configure_haproxy_lb(m_node_obj=nd_obj_host)
+    setupname = create_db_entry(master_node, username=username, password=args.password,
+                                mgmt_vip=args.mgmt_vip, admin_user=admin_user,
+                                admin_passwd=admin_passwd, ext_ip=ext_ip)
     print("target_name: %s", setupname)
     client_conf.run_cmd("cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
@@ -148,8 +154,6 @@ def main():
             "--dbuser {} --dbpassword {} --new_entry False".format(
                 json_data['DB_USER'], json_data['DB_PASSWORD']))
 
-    client_conf.setup_chrome()
-    configure_haproxy_lb(*nodes, username=username, password=args.password)
     print("Mutlinode Server-Client Setup Done.")
 
 
