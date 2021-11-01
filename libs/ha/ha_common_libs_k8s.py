@@ -24,6 +24,7 @@ HA common utility methods
 import logging
 import os
 import time
+import sys
 from multiprocessing import Process
 import sys
 
@@ -589,6 +590,76 @@ class HAK8s:
                 i += 1
 
         return parts
+
+    @staticmethod
+    def create_bucket_copy_obj(s3_test_obj=None, bucket_name=None, object_name=None,
+                               bkt_obj_dict=None, output=None, **kwargs):
+        """
+        Function create multiple buckets and upload and copy objects (Can be used to start
+        background process for the same)
+        :param s3_test_obj: s3 test lib object
+        :param bucket_name: Name of the bucket
+        :param object_name: Name of the object
+        :param bkt_obj_dict: Dict of buckets and objects
+        :param output: Queue used to fill output
+        :return: response
+        """
+        file_path = kwargs.get("file_path", None)
+        background = kwargs.get("background", False)
+        bkt_op = kwargs.get("bkt_op", True)
+        put_etag = kwargs.get("put_etag", None)
+        if bkt_op:
+            LOGGER.info("Create bucket and put object.")
+            resp = s3_test_obj.create_bucket(bucket_name)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                return resp if not background else sys.exit(1)
+            resp, bktlist = s3_test_obj.bucket_list()
+            LOGGER.info("Response: %s", resp)
+            LOGGER.info("Bucket list: %s", bktlist)
+            if bucket_name not in bktlist:
+                return False, bktlist if not background else sys.exit(1)
+            resp = system_utils.create_file(fpath=file_path, count=1000, b_size="1M")
+            LOGGER.info("Response: %s", resp)
+            if not resp[0]:
+                return resp if not background else sys.exit(1)
+            put_resp = s3_test_obj.put_object(bucket_name=bucket_name, object_name=object_name,
+                                              file_path=file_path,
+                                              metadata={"City": "Pune", "Country": "India"})
+            LOGGER.info("Put object response: %s", put_resp)
+            if not put_resp[0]:
+                return resp if not background else sys.exit(1)
+            put_etag = put_resp[1]["ETag"]
+            resp = s3_test_obj.object_list(bucket_name)
+            LOGGER.info("Response: %s", resp)
+            if not resp[0] or object_name not in resp[1]:
+                return resp if not background else sys.exit(1)
+
+        LOGGER.info("Copy object to different bucket with different object name.")
+        for k, v in bkt_obj_dict.items():
+            bkt_name = k
+            obj_name = v
+            resp, bktlist = s3_test_obj.bucket_list()
+            if bkt_name not in bktlist:
+                resp = s3_test_obj.create_bucket(bkt_name)
+                LOGGER.info("Response: %s", resp)
+                if not resp[0]:
+                    return resp if not background else sys.exit(1)
+            status, response = s3_test_obj.copy_object(source_bucket=bucket_name,
+                                                       source_object=object_name,
+                                                       dest_bucket=bkt_name,
+                                                       dest_object=obj_name)
+            LOGGER.info("Response: %s", response)
+            copy_etag = response['CopyObjectResult']['ETag']
+            if put_etag == copy_etag:
+                LOGGER.info("Object %s copied to bucket %s with object name %s successfully",
+                            object_name, bkt_name, obj_name)
+            else:
+                LOGGER.info("Failed to copy object %s to bucket %s with object name %s",
+                            object_name, bkt_name, obj_name)
+                return False, response if not background else sys.exit()
+
+        return True, put_etag if not background else output.put((True, put_etag))
 
     def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
