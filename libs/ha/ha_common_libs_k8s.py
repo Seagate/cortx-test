@@ -374,7 +374,8 @@ class HAK8s:
                 s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
-                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}")
+                skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
+                end_point=S3_CFG["s3_url"])
             resp = s3bench.check_log_file_error(resp[1])
             if resp:
                 return resp, f"s3bench operation failed with {resp[1]}"
