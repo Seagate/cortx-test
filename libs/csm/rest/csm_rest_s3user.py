@@ -639,12 +639,12 @@ class RestS3user(RestTestLib):
                              user_name, email_id, password, access, secret]))
 
         if user_type == "missing_access":
-            template = const.CUSTOM_S3_USER
+            template = const.CUSTOM_S3_USER.copy()
             template.remove("access_key")
             user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, secret]))
 
         if user_type == "missing_secret":
-            template = const.CUSTOM_S3_USER
+            template = const.CUSTOM_S3_USER.copy()
             template.remove("secret_key")
             user_data = dict(zip(const.CUSTOM_S3_USER, [user_name, email_id, password, access]))
         return user_data
