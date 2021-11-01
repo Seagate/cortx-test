@@ -30,6 +30,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.s3_utils import get_unaligned_parts
+from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils.system_utils import calculate_checksum
@@ -275,15 +276,14 @@ class TestMultipartAbortCopy:
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
         source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
-        parts = get_unaligned_parts(
-            self.mp_obj_path, total_parts=mp_config["total_parts"],
-            chunk_size=mp_config["chunk_size"], random=True)
+        parts = get_precalculated_parts(
+            self.mp_obj_path, mp_config["part_sizes"], chunk_size=mp_config["chunk_size"])
         uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, parts=uploaded_parts, bucket=self.bucket_name,
+            mpu_id=mpu_id, parts=uploaded_parts[1], bucket=self.bucket_name,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
