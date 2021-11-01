@@ -152,17 +152,15 @@ def main():
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
-    output = sysutils.execute_cmd(
-        "python3.7 tools/setup_update/setup_entry.py "
-        "--dbuser {} --dbpassword {}".format(
-            json_data['DB_USER'],
-            json_data['DB_PASSWORD']))
+    output = sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
+        "--dbuser {} --dbpassword {}".format(config['default']['setup_entry_json'],
+                    json_data['DB_USER'], json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
         LOGGER.info("DB already exists for target: %s, so will update it.", setupname)
-        sysutils.execute_cmd(
-            "python3.7 tools/setup_update/setup_entry.py "
-            "--dbuser {} --dbpassword {} --new_entry False".format(
-                json_data['DB_USER'], json_data['DB_PASSWORD']))
+        sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
+            "--dbuser {} --dbpassword {} --new_entry False"
+                             .format(config['default']['setup_entry_json'],
+                                     json_data['DB_USER'], json_data['DB_PASSWORD']))
 
     LOGGER.info("Mutlinode Server-Client Setup Done.")
 
