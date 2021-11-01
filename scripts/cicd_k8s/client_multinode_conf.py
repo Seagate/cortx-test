@@ -158,7 +158,7 @@ def main():
             json_data['DB_USER'],
             json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
-        LOGGER.info("DB already exists for target: , so will update it.", setupname)
+        LOGGER.info("DB already exists for target: %s, so will update it.", setupname)
         sysutils.execute_cmd(
             "python3.7 tools/setup_update/setup_entry.py "
             "--dbuser {} --dbpassword {} --new_entry False".format(
