@@ -71,7 +71,7 @@ class HAK8s:
         self.num_pods = ""
         self.s3_rest_obj = S3AccountOperationsRestAPI()
         self.parallel_ios = None
-        self.dir_path = common_const.K8s_SCRIPTS_PATH
+        self.dir_path = common_const.K8S_SCRIPTS_PATH
 
     def polling_host(self,
                      max_timeout: int,
@@ -735,8 +735,10 @@ class HAK8s:
         for line in resp:
             if "FAILED" in line:
                 return False, resp
+        resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = resp[1]
         res = pod_obj.send_k8s_cmd(
-            operation="exec", pod=common_const.POD_NAME, namespace=common_const.NAMESPACE,
+            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
         LOGGER.info("Response for cortx cluster status: %s", res)
