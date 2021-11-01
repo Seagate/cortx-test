@@ -171,7 +171,7 @@ degraded_read_layout = Card(
         html.P(["Note: Each data point is PER CLUSTER. \
                 Red colored row(s) highlight error(s) encountered during that test."],
                style={'font-size': '20px', 'color': '#3131b0'}),
-        # html.I(className="fa fa-info-circle"), 
+        # html.I(className="fa fa-info-circle"),
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
