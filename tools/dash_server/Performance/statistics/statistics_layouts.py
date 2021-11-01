@@ -42,10 +42,11 @@ release = [
 
 statistics_layout = Card(
     CardBody([
-        html.P([html.I(className="fa fa-info-circle"), " Each data point is PER CLUSTER. \
+        html.P(["Note: Each data point is PER CLUSTER. \
                 Red colored row(s) highlight error(s) encountered during that test."],
                style={'font-size': '20px', 'color': '#3131b0'}),
         # html.P(id="statistics_workload", style=style_workload_captions),
+        # html.I(className="fa fa-info-circle"), 
 
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
@@ -167,10 +168,10 @@ stats_input_options = [
 
 degraded_read_layout = Card(
     CardBody([
-        html.P([html.I(className="fa fa-info-circle"), " Each data point is PER CLUSTER. \
+        html.P(["Note: Each data point is PER CLUSTER. \
                 Red colored row(s) highlight error(s) encountered during that test."],
                style={'font-size': '20px', 'color': '#3131b0'}),
-
+        # html.I(className="fa fa-info-circle"), 
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -217,7 +218,7 @@ degraded_read_layout = Card(
         html.Div(id="statistics_hsbench_degraded_latency"),
         html.P("IOPS Chart",
                style=style_table_caption),
-        html.Div(id="statistics_hsbench_degraded_iops"),
+        html.Div(id="statistics_hsbench_degraded_iops")
     ]),
     className="flex-sm-fill nav-link"
 )
