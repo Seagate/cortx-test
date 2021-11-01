@@ -777,6 +777,10 @@ class ProvDeployFFLib:
     def post_deployment_steps_lc(**kwargs):
         """
         Perform CSM login, S3 account creation and AWS configuration on client
+        :Keyword: csm_default_user : CSM default user
+        :Keyword: old_password : Default password
+        :Keyword: new_password : new password
+        returns status true
         """
 
         LOGGER.info("Post Deployment Steps")
