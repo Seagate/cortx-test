@@ -63,7 +63,7 @@ class TestS3fs:
         resp = system_utils.path_exists(S3_CFG['s3fs_path'])
         assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
         self.bucket_name = "s3fs-bkt-{}".format(self.random_time)
-        self.bucket_list = list()
+        self.s3fs_bucket_list = list()
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -83,8 +83,8 @@ class TestS3fs:
         command = " ".join([self.s3fs_cfg["rm_file_cmd"], dir_to_del])
         execute_cmd(command)
         self.log.info("unmounted the bucket directory and remove it")
-        if self.bucket_list:
-            self.s3_test_obj.delete_multiple_buckets(self.bucket_list)
+        if self.s3fs_bucket_list:
+            self.s3_test_obj.delete_multiple_buckets(self.s3fs_bucket_list)
         self.log.info("ENDED: Teardown Operations")
 
     def create_and_mount_bucket(self):
@@ -105,7 +105,7 @@ class TestS3fs:
         """Mount bucket using s3fs client."""
         self.log.info("STARTED: mount bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("ENDED: mount bucket using s3fs client")
 
     @pytest.mark.parallel
@@ -117,7 +117,7 @@ class TestS3fs:
         self.log.info("STARTED: umount bucket directory using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Created Bucket Name is %s", bucket_name)
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 umount the bucket directory")
         command = " ".join([self.s3fs_cfg["unmount_cmd"], dir_name])
         resp = execute_cmd(command)
@@ -139,7 +139,7 @@ class TestS3fs:
             "STARTED: list objects on Mount directory with mounted bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("STEP: 1 create a file on mount directory")
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
@@ -166,7 +166,7 @@ class TestS3fs:
             "check bucket objects using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Create a file on mount directory")
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
@@ -199,7 +199,7 @@ class TestS3fs:
             "check object is present in bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Create a file on mount directory")
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
@@ -237,7 +237,7 @@ class TestS3fs:
             "STARTED: Create sub directory under mount directory and list the bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("STEP: 1 Create sub directory")
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         new_dir_name = self.s3fs_cfg["new_dir_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, new_dir_name])
         command = " ".join([self.s3fs_cfg["make_dir_cmd"], file_pth])
@@ -263,7 +263,7 @@ class TestS3fs:
             "STARTED: upload large file on mount directory and "
             "check its present in bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 upload large file")
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
@@ -293,7 +293,7 @@ class TestS3fs:
         self.log.info(
             "STARTED: upload file in mount directory and check that object is present in bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 create a file on mount directory")
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
