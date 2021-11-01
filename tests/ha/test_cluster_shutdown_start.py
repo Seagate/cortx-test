@@ -924,8 +924,7 @@ class TestClusterShutdownStart:
             operation="shutdown_signal",
             resource="cluster",
             expected_response=HTTPStatus.UNAUTHORIZED,
-            login_as={"username": self.s3acc_name,
-                      "password": S3_CFG["CliConfig"]["s3_account"]["password"]})
+            negative_resp="inva@lid!toke#n")
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Verified REST API cluster shutdown signal with unauthorized request")
         LOGGER.info("Step 4: Send the cluster shutdown signal through CSM REST.")
