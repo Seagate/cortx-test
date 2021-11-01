@@ -24,8 +24,8 @@ import os
 import time
 import logging
 from multiprocessing import Process
-import pytest
 from time import perf_counter_ns
+import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
