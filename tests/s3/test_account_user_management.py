@@ -117,12 +117,13 @@ class TestAccountUserManagement:
         if os.path.exists(self.test_file_path):
             os.remove(self.test_file_path)
             self.log.info("Cleaned test directory: %s", self.test_dir_path)
+        usr_list = self.iam_obj.list_users()[1]
+        all_users = [usr["UserName"]
+                     for usr in usr_list if self.user_name in usr["UserName"]]
+        if all_users:
+            resp = self.iam_obj.delete_users_with_access_key(all_users)
+            assert resp, "Failed to Delete IAM users"
         for acc in self.accounts_list:
-            self.log.info("deleting all users in account %s", acc)
-            for user in self.users_list:
-                resp = self.iam_obj.delete_user(user)
-                assert resp[0], resp[1]
-            self.log.info("deleting %s", acc)
             self.s3acc_obj.delete_s3_account(acc)
         self.log.info("ENDED: Test teardown Operations.")
 
@@ -226,7 +227,7 @@ class TestAccountUserManagement:
             timestamp = time.strftime("%Y%m%d-%H%M%S")
             account_name = f"{acc_name}{cnt}{cnt}{str(timestamp)}"
             email_id = f"{account_name}{str(int(time.time()))}{cnt}@seagate.com"
-            self.log.info("account name: %s", str(account_name))
+            self.log.info("Creating account number %s with name: %s", cnt, str(account_name))
             self.log.info("email id: %s", str(email_id))
             resp = self.s3acc_obj.create_s3_account(account_name,
                                                     email_id,
@@ -242,8 +243,7 @@ class TestAccountUserManagement:
             str(total_account))
         list_of_accounts = self.s3acc_obj.list_s3_accounts()
         assert list_of_accounts[0], list_of_accounts[1]
-        # new_accounts = [account_name for account_name in list_of_accounts[1]]
-        # self.log.info(new_accounts)
+        self.log.info(list_of_accounts[1])
         for cnt in range(total_account):
             assert account_list[cnt] in list_of_accounts[1]
         self.log.info(
@@ -586,7 +586,7 @@ class TestAccountUserManagement:
         iam_obj = IamTestLib(access_key=access_key, secret_key=secret_key)
         for cnt in range(total_users):
             my_user_name = f"{self.user_name}{cnt}"
-            self.log.info("Creating user with name %s", str(my_user_name))
+            self.log.info("Creating user number %s with name %s", cnt, str(my_user_name))
             iam_obj.create_user(my_user_name)
             self.log.info(resp)
             assert resp[0], resp[1]
@@ -858,6 +858,7 @@ class TestAccountUserManagement:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-5427")
     @CTFailOn(error_handler)
     def test_ssl_certificate_2090(self):

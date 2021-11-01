@@ -46,6 +46,7 @@ class TestS3user():
     def setup_class(cls):
         """This is method is for test suite set-up"""
         cls.log = logging.getLogger(__name__)
+        cls.log.info("[STARTED] ######### Setup class #########")
         cls.log.info("Initializing test setups ......")
         cls.config = CSMConfigsCheck()
         cls.rest_resp_conf = configmanager.get_config_wrapper(
@@ -54,11 +55,23 @@ class TestS3user():
         if not user_already_present:
             user_already_present = cls.config.setup_csm_s3()
         assert user_already_present
+
         cls.s3user = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
         if not system_utils.path_exists(TEST_DATA_FOLDER):
             system_utils.make_dirs(TEST_DATA_FOLDER)
+        cls.log.info("[COMPLETED] ######### Setup class #########")
+
+    def teardown_method(self):
+        """"
+        Teardown for deleting any S3 user which is not deleted due to test failure.
+        """
+        self.log.info("[STARTED] ######### Teardown #########")
+        self.log.info("Deleting all S3 users except predefined ones...")
+        self.config.delete_s3_users()
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("[COMPLETED] ######### Teardown #########")
 
     @pytest.mark.lc
     @pytest.mark.parallel
@@ -851,6 +864,7 @@ class TestS3user():
             assert result, f"Status code check failed for {usr} user"
             self.log.info("[END] Create User count : %s", i + 1)
 
+        #  check error on 1001 user
         resp = self.s3user.list_all_created_s3account()
         assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
         user_data = resp.json()
@@ -859,6 +873,8 @@ class TestS3user():
         err_msg = f"Number of users less than {const.MAX_S3_USERS}"
         assert len(s3_users) == const.MAX_S3_USERS, err_msg
 
+        # add pre-defined user to the created_user
+        # create loop
         for created_user in created_users:
             self.log.info("-" * 50)
             akey = created_user["access_key"]
@@ -877,6 +893,8 @@ class TestS3user():
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
                 self.log.info("[END] Create Bucket count : %s", i + 1)
 
+        # cleanup loop
+        for created_user in created_users:
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
                 bucket = f"bucket{i}"

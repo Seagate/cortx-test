@@ -32,7 +32,7 @@ from commons.utils.assert_utils import assert_true, assert_in
 from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG as S3FS_CNF
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3 import ACCESS_KEY, SECRET_KEY, S3H_OBJ
+from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_blackbox_test_lib import S3FS
 
 
@@ -47,11 +47,13 @@ class TestS3fs:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
-        self.s3_test_obj = S3TestLib()
-        self.s3fs_obj = S3FS()
+        self.random_time = int(time.perf_counter_ns())
         resp = system_utils.is_rpm_installed(const.S3FS)
         assert_true(resp[0], resp[1])
         access, secret = ACCESS_KEY, SECRET_KEY
+        self.s3fs_obj = S3FS(access=access, secret=secret)
+        self.s3_test_obj = S3TestLib(access_key=access, secret_key=secret,
+                                     endpoint_url=S3_CFG["s3_url"])
         res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
         if f"{access}:{secret}" != res[1]:
             self.log.info("Setting access and secret key for s3fs.")
@@ -60,7 +62,8 @@ class TestS3fs:
         self.s3fs_cfg = S3FS_CNF["s3fs_cfg"]
         resp = system_utils.path_exists(S3_CFG['s3fs_path'])
         assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
-        self.bucket_list = list()
+        self.bucket_name = "s3fs-bkt-{}".format(self.random_time)
+        self.s3fs_bucket_list = list()
         self.log.info("ENDED: Setup operations")
 
     def teardown_method(self):
@@ -80,8 +83,8 @@ class TestS3fs:
         command = " ".join([self.s3fs_cfg["rm_file_cmd"], dir_to_del])
         execute_cmd(command)
         self.log.info("unmounted the bucket directory and remove it")
-        if self.bucket_list:
-            self.s3_test_obj.delete_multiple_buckets(self.bucket_list)
+        if self.s3fs_bucket_list:
+            self.s3_test_obj.delete_multiple_buckets(self.s3fs_bucket_list)
         self.log.info("ENDED: Teardown Operations")
 
     def create_and_mount_bucket(self):
@@ -101,8 +104,8 @@ class TestS3fs:
     def test_mount_bucket_2359(self):
         """Mount bucket using s3fs client."""
         self.log.info("STARTED: mount bucket using s3fs client")
-        self.create_and_mount_bucket()
-        self.bucket_list.append(self.bucket_name)
+        bucket_name, dir_name = self.create_and_mount_bucket()
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("ENDED: mount bucket using s3fs client")
 
     @pytest.mark.parallel
@@ -114,7 +117,7 @@ class TestS3fs:
         self.log.info("STARTED: umount bucket directory using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Created Bucket Name is %s", bucket_name)
-        self.bucket_list.append(self.bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 umount the bucket directory")
         command = " ".join([self.s3fs_cfg["unmount_cmd"], dir_name])
         resp = execute_cmd(command)
@@ -136,27 +139,19 @@ class TestS3fs:
             "STARTED: list objects on Mount directory with mounted bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("STEP: 1 create a file on mount directory")
-        self.bucket_list.append(self.bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
         execute_cmd(command)
         self.log.info("STEP: 1 created a file on mount directory")
-        self.log.info(
-            "STEP: 2 List the mount directory files and bucket files")
+        self.log.info("STEP: 2 List the mount directory files and bucket files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(file_name, str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info(
-            "STEP: 2 Listed the mount directory files and bucket files")
+        assert_in(file_name, str(resp[1]), resp[1])
+        self.log.info("STEP: 2 Listed the mount directory files and bucket files")
         self.log.info(
             "ENDED: list objects on Mount directory with mounted bucket using s3fs client")
 
@@ -171,7 +166,7 @@ class TestS3fs:
             "check bucket objects using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Create a file on mount directory")
-        self.bucket_list.append(self.bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
@@ -182,18 +177,13 @@ class TestS3fs:
         resp = execute_cmd(command)
         assert_true(resp[0], resp[1])
         self.log.info("STEP: 1 umounted the bucket directory")
-        self.log.info(
-            "STEP: 2 List the bucket files and not mount directory files")
+        self.log.info("STEP: 2 List the bucket files and not mount directory files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
         assert_true(file_name not in str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info(
-            "STEP: 2 Listed the bucket files and not mount directory files")
+        assert_in(file_name, str(resp[1]), resp[1])
+        self.log.info("STEP: 2 Listed the bucket files and not mount directory files")
         self.log.info(
             "ENDED: list objects where directory was umount and "
             "check bucket objects using s3fs client")
@@ -209,27 +199,19 @@ class TestS3fs:
             "check object is present in bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("Create a file on mount directory")
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
         execute_cmd(command)
         self.log.info("Created a file on mount directory")
-        self.log.info(
-            "STEP: 1 List the mount directory files and bucket files")
+        self.log.info("STEP: 1 List the mount directory files and bucket files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(file_name, str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info(
-            "STEP: 1 Listed the mount directory files and bucket files")
+        assert_in(file_name, str(resp[1]), resp[1])
+        self.log.info("STEP: 1 Listed the mount directory files and bucket files")
         self.log.info("STEP: 2 Remove file from mount directory")
         command = " ".join([self.s3fs_cfg["rm_file_cmd"], file_pth])
         resp = execute_cmd(command)
@@ -255,7 +237,7 @@ class TestS3fs:
             "STARTED: Create sub directory under mount directory and list the bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
         self.log.info("STEP: 1 Create sub directory")
-        self.bucket_list.append(self.bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         new_dir_name = self.s3fs_cfg["new_dir_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, new_dir_name])
         command = " ".join([self.s3fs_cfg["make_dir_cmd"], file_pth])
@@ -264,15 +246,9 @@ class TestS3fs:
         self.log.info("STEP: 2 List sub directory and bucket files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
-        assert_in(
-            new_dir_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(new_dir_name, str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            new_dir_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(new_dir_name, str(resp[1]), resp[1])
         self.log.info("STEP: 2 Listed sub directory and bucket files")
         self.log.info(
             "ENDED: Create sub directory under mount directory and list the bucket")
@@ -287,7 +263,7 @@ class TestS3fs:
             "STARTED: upload large file on mount directory and "
             "check its present in bucket using s3fs client")
         bucket_name, dir_name = self.create_and_mount_bucket()
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 upload large file")
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
@@ -297,21 +273,13 @@ class TestS3fs:
                             self.s3fs_cfg["block_size"].format(5242880)])
         execute_cmd(command)
         self.log.info("STEP: 1 uploaded large file")
-        self.log.info(
-            "STEP: 2 List the mount directory files and bucket files")
+        self.log.info("STEP: 2 List the mount directory files and bucket files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(file_name, str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info(
-            "STEP: 2 Listed the mount directory files and bucket files")
+        assert_in(file_name, str(resp[1]), resp[1])
+        self.log.info("STEP: 2 Listed the mount directory files and bucket files")
         self.log.info(
             "ENDED: upload large file on mount directory and "
             "check its present in bucket using s3fs client")
@@ -325,27 +293,19 @@ class TestS3fs:
         self.log.info(
             "STARTED: upload file in mount directory and check that object is present in bucket")
         bucket_name, dir_name = self.create_and_mount_bucket()
-        self.bucket_list.append(bucket_name)
+        self.s3fs_bucket_list.append(bucket_name)
         self.log.info("STEP: 1 create a file on mount directory")
         file_name = self.s3fs_cfg["file_name"].format(int(time.perf_counter_ns()))
         file_pth = "/".join([dir_name, file_name])
         command = " ".join([self.s3fs_cfg["create_file_cmd"], file_pth])
         execute_cmd(command)
         self.log.info("STEP: 1 created a file on mount directory")
-        self.log.info(
-            "STEP: 2 List the mount directory files and bucket files")
+        self.log.info("STEP: 2 List the mount directory files and bucket files")
         command = " ".join([self.s3fs_cfg["ls_mnt_dir_cmd"], dir_name])
         resp = execute_cmd(command)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
+        assert_in(file_name, str(resp[1]), resp[1])
         resp = self.s3_test_obj.object_list(bucket_name)
-        assert_in(
-            file_name,
-            str(resp[1]),
-            resp[1])
-        self.log.info(
-            "STEP: 2 Listed the mount directory files and bucket files")
+        assert_in(file_name, str(resp[1]), resp[1])
+        self.log.info("STEP: 2 Listed the mount directory files and bucket files")
         self.log.info(
             "ENDED: upload file in mount directory and check that object is present in bucket")
