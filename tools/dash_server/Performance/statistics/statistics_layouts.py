@@ -46,7 +46,7 @@ statistics_layout = Card(
                 Red colored row(s) highlight error(s) encountered during that test."],
                style={'font-size': '20px', 'color': '#3131b0'}),
         # html.P(id="statistics_workload", style=style_workload_captions),
-        # html.I(className="fa fa-info-circle"), 
+        # html.I(className="fa fa-info-circle"),
 
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
