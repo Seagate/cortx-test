@@ -862,21 +862,22 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Shutdown the cluster and check the cluster status.")
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        time.sleep(CMN_CFG["delay_60sec"])
-        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
-        assert_utils.assert_false(resp[0], resp[1])
-        LOGGER.info("Step 3: Sucessfully shutdown the cluster and verified pods are offline.")
+        # TODO: Need to check if any sleep needed before cluster status is checked.
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Sucessfully shutdown the cluster and verified all pods are offline.")
         LOGGER.info("Step 4: Check the parallel s3 IO status while cluster restart in progress")
         # TODO: Need to debug s3bench log file once logs are available with failures
         LOGGER.info("Step 5: Start the cluster and verify all pods are running.")
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        time.sleep(CMN_CFG["delay_60sec"])
-        resp = self.ha_obj.check_pod_status(self.node_master_list[0])
+        # TODO: Need to check if any sleep needed before cluster status is checked.
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 5: Sucessfully started the cluster and verified pods are online.")
+        LOGGER.info("Step 5: Sucessfully started the cluster and verified all pods are running.")
         LOGGER.info("Step 6. Stop parallel S3.")
         self.s3ios.stop()
+        # TODO: Need to add check for s3bench log file once logs are available with failures
         LOGGER.info("Step 7: Create 10 buckets and run S3 IOs on variable size objects.")
         buckets = [f"test-29478-bucket-{i}-{str(int(time.time()))}" for i in range(11)]
         for bucket in buckets:
@@ -936,6 +937,7 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Check the overall status of the cluster.")
+        # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_false(resp[0], resp[1])
         LOGGER.info("Step 5: Sucessfully shutdown the cluster.")
@@ -950,6 +952,7 @@ class TestClusterShutdownStart:
         resp = self.ha_obj.cortx_start_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Check the overall status of the cluster.")
+        # TODO: Need to check if any sleep needed before cluster status is checked.
         resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 7: Sucessfully started the cluster and verified all pods are running.")
