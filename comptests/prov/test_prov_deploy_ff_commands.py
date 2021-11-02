@@ -75,7 +75,7 @@ class TestProvFFCommands:
         LOGGER.info("Done: Setup module operations")
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24960")
     def test_24960(self):
         """Verify cortx_setup config set command fails for MOTR Client Instances when value is not given."""
@@ -86,7 +86,7 @@ class TestProvFFCommands:
         assert_utils.assert_exact_string(out, res[1][0])
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24958")
     def test_24958(self):
         """Verify cortx_setup config set to add MOTR Client Instances key and value in Confstore and Pillar."""
@@ -97,7 +97,7 @@ class TestProvFFCommands:
         assert_utils.assert_true(res[0])
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24959")
     def test_24959(self):
         """Verify cortx_setup config get is returning MOTR Client Instances set key."""
@@ -108,7 +108,7 @@ class TestProvFFCommands:
         assert_utils.assert_equal(int(res), motr_client_instances)
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24954")
     def test_24954(self):
         """Verify cortx_setup config set fails for S3 IO Max Units when value is not given."""
@@ -119,7 +119,7 @@ class TestProvFFCommands:
         assert_utils.assert_exact_string(out, res[1][0])
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24952")
     def test_24952(self):
         """Verify cortx_setup config set to add S3 IO Max Units key and value in Confstore and Pillar."""
@@ -130,7 +130,7 @@ class TestProvFFCommands:
         assert_utils.assert_true(res[0])
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24953")
     def test_24953(self):
         """Verify cortx_setup config get is returning S3 IO Max Units set key."""
