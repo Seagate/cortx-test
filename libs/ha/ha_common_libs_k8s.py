@@ -463,8 +463,8 @@ class HAK8s:
         :param multipart_obj_path: Path of the file to be uploaded
         :return: response
         """
-        access_key = s3_data["access_key"]
-        secret_key = s3_data["secret_key"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
         s3_mp_test_obj = S3MultipartTestLib(access_key=access_key,
@@ -525,8 +525,8 @@ class HAK8s:
             remaining_upload = kwargs.get("remaining_upload", False)
             parts = kwargs.get("parts", None)
             mpu_id = kwargs.get("mpu_id", None)
-            access_key = s3_data["access_key"]
-            secret_key = s3_data["secret_key"]
+            access_key = s3_data["s3_acc"]["accesskey"]
+            secret_key = s3_data["s3_acc"]["secretkey"]
             s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                     endpoint_url=S3_CFG["s3_url"])
             s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
@@ -677,8 +677,8 @@ class HAK8s:
         :param output: Queue used to fill output
         :return: response
         """
-        access_key = s3_data["access_key"]
-        secret_key = s3_data["secret_key"]
+        access_key = s3_data["s3_acc"]["accesskey"]
+        secret_key = s3_data["s3_acc"]["secretkey"]
         failed_parts = {}
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
@@ -732,8 +732,10 @@ class HAK8s:
         """
         LOGGER.info("Check the overall K8s cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
-        LOGGER.info("Response for K8s cluster status: %s", resp)
+        resp = (resp.decode('utf-8')).split('\n')
+        LOGGER.info("Response for K8s cluster status:")
         for line in resp:
+            LOGGER.debug(line)
             if "FAILED" in line:
                 return False, resp
         resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
@@ -744,7 +746,7 @@ class HAK8s:
             decode=True)
         LOGGER.info("Response for cortx cluster status: %s", res)
         for line in res:
-            if "started" not in line:
+            if "failed" in line or "offline" in line:
                 return False, res
 
         return True, "K8s and cortx both cluster up."
