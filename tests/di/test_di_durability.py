@@ -32,10 +32,7 @@ from commons.utils import system_utils
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
-from commons.constants import S3_DI_WRITE_CHECK
-from commons.constants import S3_DI_READ_CHECK
-from commons.constants import S3_METADATA_CHECK
-from libs.di.di_error_detection_test_lib import DITestLib
+from commons.constants import const
 from libs.s3 import CMN_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -64,7 +61,6 @@ class TestDIDurability:
         self.s3_mp_test_obj = S3MultipartTestLib()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         self.data_gen = DataGenerator()
-        self.di_test_lib = DITestLib()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -72,9 +68,9 @@ class TestDIDurability:
         self.test_file = "data_durability{}.txt".format(perf_counter_ns())
         self.object_name = "obj_data_durability"
         self.config_section = "S3_SERVER_CONFIG"
-        self.write_param = S3_DI_WRITE_CHECK
-        self.read_param = S3_DI_READ_CHECK
-        self.integrity_param = S3_METADATA_CHECK
+        self.write_param = const.S3_DI_WRITE_CHECK
+        self.read_param = const.S3_DI_READ_CHECK
+        self.integrity_param = const.S3_METADATA_CHECK
         self.sleep_time = 10
         self.file_size = 5
         self.host_ip = CMN_CFG["nodes"][0]["host"]
@@ -123,6 +119,42 @@ class TestDIDurability:
         self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
+
+    def validate_default_config(self):
+        """
+        function will check for default configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are not set with default
+        and will return false if configs are set to default
+        """
+        skip_mark = True
+        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.write_param)
+        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.read_param)
+        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.integrity_param)
+        if write_flag[0] and not read_flag[0] and integrity_flag[0]:
+            skip_mark = False
+        return skip_mark
+
+    def validate_disabled_config(self):
+        """
+        function will check for disabled configs
+        and decide whether test should be skipped during execution or not
+        function will return True if configs are enabled
+        will return false if configs are disabled
+        """
+        skip_mark = True
+        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.write_param)
+        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.read_param)
+        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.integrity_param)
+        if write_flag[0] and read_flag[0] and integrity_flag[0]:
+            skip_mark = True
+        return skip_mark
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
@@ -251,7 +283,8 @@ class TestDIDurability:
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
 
-    @pytest.mark.skipif(self.di_test_lib.validate_default_config(), reason="Test should be executed in default config")
+    @pytest.mark.skipif(validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22497')
@@ -524,7 +557,7 @@ class TestDIDurability:
             "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
             "digest, CRC ( check multi-part))")
 
-    @pytest.mark.skipif(self.di_test_lib.validate_default_config(),
+    @pytest.mark.skipif(validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -540,11 +573,8 @@ class TestDIDurability:
         self.log.info("Step 1: Create a bucket.")
         self.s3_test_obj.create_bucket(self.bucket_name)
         self.log.info("Step 2: Create a corrupted file.")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        buff = self.data_gen.add_first_byte_to_buffer(first_byte='z', buffer=buff)
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
         self.log.info("Step 2: created a corrupted file at location %s", location)
         self.log.info("Step 3: enable data corruption")
         status = self.fi_adapter.enable_data_block_corruption()
@@ -693,7 +723,7 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
-    @pytest.mark.skipif(self.di_test_lib.validate_disabled_config(),
+    @pytest.mark.skipif(validate_disabled_config(),
                         reason="Server configs is not matching with test's required configs")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -707,11 +737,8 @@ class TestDIDurability:
             "STARTED: Disabling of Checksum feature should not do any checksum validation even "
             "if data corrupted")
         self.s3_test_obj.create_bucket(self.bucket_name)
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        buff = self.data_gen.add_first_byte_to_buffer(first_byte='f', buffer=buff)
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='f',
+                                                         data_folder_prefix=self.test_dir_path)
         self.log.info("Step 3: created a corrupted file at location %s", location)
         self.log.info("Step 4: enable data corruption")
         status = self.fi_adapter.enable_data_block_corruption()

@@ -23,57 +23,28 @@ Python module to maintain all data error detection (F-23B) tests libraries.
 These are top level functions and classes used by test classes.
 """
 
-from commons.constants import S3_DI_WRITE_CHECK
-from commons.constants import S3_DI_READ_CHECK
-from commons.constants import S3_METADATA_CHECK
-from libs.di.di_feature_control import DIFeatureControl
-from libs.s3 import CMN_CFG
+from libs.di.data_generator import DataGenerator
 
 
-class DITestLib:
+class DIErrorDetectionLib:
     """
-    class for DI methods
+    class having lib methods for DI
+    error detection
     """
-
     def __init__(self):
-        self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
-        self.config_section = "S3_SERVER_CONFIG"
-        self.write_param = S3_DI_WRITE_CHECK
-        self.read_param = S3_DI_READ_CHECK
-        self.integrity_param = S3_METADATA_CHECK
+        self.data_gen = DataGenerator()
 
-    def validate_default_config(self):
+    def create_corrupted_file(self, size, first_byte, data_folder_prefix):
         """
-        function will check for default configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are not set with default
-        and will return false if configs are set to default
+        this function will create a corrupted file
+        :param size: size of file
+        :param first_byte: first byte of file
+        :param data_folder_prefix: data folder prefix
+        :return location of file
         """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.integrity_param)
-        if write_flag[0] and not read_flag[0] and integrity_flag[0]:
-            skip_mark = False
-        return skip_mark
-
-    def validate_disabled_config(self):
-        """
-        function will check for disabled configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are enabled
-        will return false if configs are disabled
-        """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.integrity_param)
-        if write_flag[0] and read_flag[0] and integrity_flag[0]:
-            skip_mark = True
-        return skip_mark
+        buff, csm = self.data_gen.generate(size=size,
+                                           seed=self.data_gen.get_random_seed())
+        buff = self.data_gen.add_first_byte_to_buffer(first_byte=first_byte, buffer=buff)
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=size,
+                                                  data_folder_prefix=data_folder_prefix)
+        return location
