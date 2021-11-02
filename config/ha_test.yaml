@@ -15,3 +15,6 @@ s3_operation_data:
 5gb_mpu_data:
   file_size = 4800
   total_parts = 100
+
+copy_obj_data:
+  bkt_cnt = 2

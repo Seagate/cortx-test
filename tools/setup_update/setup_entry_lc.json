@@ -140,6 +140,7 @@
 "csm":
 {
   "mgmt_vip": "fqdn",
+  "port": "31169",
   "csm_admin_user":{
     "username": "",
     "password": ""

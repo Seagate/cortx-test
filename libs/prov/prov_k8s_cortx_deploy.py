@@ -130,7 +130,13 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Check that the host is pinging")
         node_obj.execute_cmd(cmd=
                              common_cmd.CMD_PING.format(node_obj.hostname), read_lines=True)
-
+        LOGGER.info("Checking No of CPU's")
+        resp = node_obj.execute_cmd(cmd=
+                                    common_cmd.CMD_NUM_CPU,
+                                    read_lines=True)[0].strip()
+        LOGGER.info("No of CPU : %s", resp)
+        if int(resp) < self.deploy_cfg["prereq"]["cpu_cores"]:
+            return False, "No of CPU are not as expected."
         LOGGER.info("Checking number of disks present")
         count = node_obj.execute_cmd(cmd=common_cmd.CMD_LSBLK, read_lines=True)
         LOGGER.info("No. of disks : %s", count[0])
@@ -303,6 +309,7 @@ class ProvDeployK8sCortxLib:
         :Keyword: data_disk_per_cvg: data disk required per cvg
         :Keyword: size_metadata: size of metadata disk
         :Keyword: size_data_disk: size of data disk
+        :Keyword: glusterfs_size: size of glusterfs
         :Keyword: sns_data: N
         :Keyword: sns_parity: K
         :Keyword: sns_spare: S
@@ -324,6 +331,7 @@ class ProvDeployK8sCortxLib:
         dix_spare = kwargs.get("dix_spare", 0)
         size_metadata = kwargs.get("size_metadata", '20Gi')
         size_data_disk = kwargs.get("size_data_disk", '20Gi')
+        glusterfs_size = kwargs.get("glusterfs_size", '20Gi')
         skip_disk_count_check = kwargs.get("skip_disk_count_check", False)
         third_party_images_dict = kwargs.get("third_party_images",
                                              self.deploy_cfg['third_party_images'])
@@ -412,7 +420,8 @@ class ProvDeployK8sCortxLib:
                                             dix_parity,
                                             dix_spare,
                                             size_metadata,
-                                            size_data_disk)
+                                            size_data_disk,
+                                            glusterfs_size)
         if not resp_cvg[0]:
             return False, "Fail to update the cvg details in solution file"
 
@@ -469,7 +478,8 @@ class ProvDeployK8sCortxLib:
                             dix_parity: int,
                             dix_spare: int,
                             size_metadata: str,
-                            size_data_disk: str):
+                            size_data_disk: str,
+                            glusterfs_size: str):
 
         """
         Method to update the cvg
@@ -487,6 +497,7 @@ class ProvDeployK8sCortxLib:
         :Param: dix_spare:
         :Param: size_metadata: size of metadata disk
         :Param: size_data_disk: size of data disk
+        :Param: glusterfs_size: size of glusterfs
         :returns the status ,filepath
         """
         nks = "{}+{}+{}".format(sns_data, sns_parity, sns_spare)  # Value of N+K+S for sns
@@ -497,6 +508,7 @@ class ProvDeployK8sCortxLib:
             common = parent_key['common']  # Parent key
             storage = parent_key['storage']  # child of child key
             cmn_storage_sets = common['storage_sets']  # child of child key
+            common['glusterfs']['size'] = glusterfs_size
             total_cvg = storage.keys()
             # SNS and dix value update
             cmn_storage_sets['durability']['sns'] = nks

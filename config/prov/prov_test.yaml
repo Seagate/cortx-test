@@ -101,6 +101,7 @@ deploy_ff:
   bmc_password: "admin"
 
 post_deployment_steps:
+  csm_default_user_name: "cortxadmin"
   csm_default_pswd: "vTevsWHDYUeKielyECfjmCcQxfcQLBuYZ9uqTiXD0Xc="
   s3user_name: 's3user'
   s3user_email: 's3user@seagate.com'
@@ -124,7 +125,6 @@ k8s_cortx_deploy:
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
-  git_tag: "v0.0.11"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   third_party_images:
