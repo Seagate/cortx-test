@@ -464,7 +464,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
-    #TODO
+    # 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
@@ -1186,7 +1186,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("New password is set to S3 account")
         self.logger.info("Login into cortxcli using new password")
-        #TODO s3 login
+        #  s3 login
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -1243,7 +1243,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info(
             "Verified reset password of S3 account using CSM manage user")
-        #TODO: login chk
+        # : login chk
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_equals(True, resp[0], resp[1])
@@ -1848,7 +1848,7 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        #TODO : Create bucket
+        #  : Create bucket
         self.logger.info(
             "Deleting S3 account when bucket is present for s3account user")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
@@ -2170,7 +2170,7 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        #TODO: Create bucket
+        # : Create bucket
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_false(resp[0], resp[1])
