@@ -313,10 +313,10 @@ class S3MultipartTestLib(Multipart):
         """
         upload_id = kwargs.get("upload_id", None)
         part_number = kwargs.get("part_number", None)
-        # content_md5 = kwargs.get("content_md5", None)
+        content_md5 = kwargs.get("content_md5", None)
         try:
             part = super().upload_part(body, bucket_name, object_name, upload_id=upload_id,
-                                       part_number=part_number)
+                                       part_number=part_number, content_md5=content_md5)
 
             return True, part
         except BaseException as error:
