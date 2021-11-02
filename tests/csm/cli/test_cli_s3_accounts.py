@@ -464,7 +464,7 @@ class TestCliS3ACC:
         self.logger.info("Deleted s3 account %s", self.s3acc_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
 
-    # 
+    @pytest.mark.skip(reason="EOS-22249: TODO")
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
     @pytest.mark.tags("TEST-10887")
