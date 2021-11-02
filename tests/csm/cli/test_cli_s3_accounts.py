@@ -270,6 +270,13 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        self.logger.info("Logging into CORTX CLI as %s", self.s3acc_name)
+        login = self.s3acc_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
         self.logger.info("Deleting s3 account %s", self.s3acc_name)
         response = self.s3acc_obj.execute_cli_commands(
             cmd=delete_s3acc_cmd, patterns=["[Y/n]"])[1]
@@ -349,6 +356,13 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        self.logger.info("Logging into CORTX CLI as %s", self.s3acc_name)
+        login = self.s3acc_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=dummy_acc)
         assert_utils.assert_equals(False, resp[0], resp[1])
@@ -396,7 +410,7 @@ class TestCliS3ACC:
     @CTFailOn(error_handler)
     def test_1147_s3_acc_login(self):
         """
-        Test that csm admin and csm user can login to csm interactive session
+        Test that s3 account, csm admin and csm user can login to csm interactive session
         without passing username as direct parameter in command
         """
         self.logger.info("%s %s", self.start_log_format, log.get_frame())
@@ -414,6 +428,26 @@ class TestCliS3ACC:
             True, resp[0], resp[1])
         assert_utils.assert_exact_string(resp[1], "User created")
         self.logger.info("Created csm user with name %s", csm_user_name)
+        resp = self.s3acc_obj.create_s3account_cortx_cli(
+            account_name=self.s3acc_name,
+            account_email=self.s3acc_email,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, resp[0], resp[1])
+        self.logger.info("Created s3 account %s", self.s3acc_name)
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        self.logger.info(
+            "Logging into CORTX CLI as s3 account %s",
+            self.s3acc_name)
+        login = self.s3acc_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_equals(True, login[0], login[1])
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_equals(True, logout[0], logout[1])
+        self.logger.info(
+            "Successfully logged in to CORTX CLI as s3 account %s",
+            self.s3acc_name)
         self.logger.info(
             "Logging into CORTX CLI as csm user %s",
             csm_user_name)
@@ -501,6 +535,7 @@ class TestCliS3ACC:
         assert_utils.assert_equals(True, resp[0], resp[1])
         self.logger.info("Deleted bucket %s", bucket_name)
         self.logger.info("%s %s", self.end_log_format, log.get_frame())
+
 
     @pytest.mark.cluster_user_ops
     @pytest.mark.csm_cli
@@ -1848,7 +1883,26 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        #  : Create bucket
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_true(logout[0], logout[1])
+        self.logger.info(
+            "Logging into CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        login = self.s3bkt_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_true(login[0], login[1])
+        self.logger.info(
+            "Successfully logged in to CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        self.logger.info("Creating bucket %s", bucket_name)
+        resp = self.s3bkt_obj.create_bucket_cortx_cli(bucket_name=bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Created bucket %s", bucket_name)
+        logout = self.s3bkt_obj.logout_cortx_cli()
+        assert_utils.assert_true(logout[0], logout[1])
+        login = self.s3bkt_obj.login_cortx_cli()
+        assert_utils.assert_true(login[0], login[1])
         self.logger.info(
             "Deleting S3 account when bucket is present for s3account user")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
@@ -1902,7 +1956,23 @@ class TestCliS3ACC:
         self.logger.info("Created s3 account %s", self.s3acc_name)
         logout = self.s3acc_obj.logout_cortx_cli()
         assert_utils.assert_true(logout[0], logout[1])
-        # TODO: create bucket
+        self.logger.info(
+            "Logging into CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        login = self.s3bkt_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_true(login[0], login[1])
+        self.logger.info(
+            "Successfully logged in to CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        self.logger.info("Creating bucket %s", self.bucket_name)
+        resp = self.s3bkt_obj.create_bucket_cortx_cli(
+            bucket_name=self.bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Created bucket %s", self.bucket_name)
+        logout = self.s3bkt_obj.logout_cortx_cli()
+        assert_utils.assert_true(logout[0], logout[1])
         self.logger.info(
             "Logging into CORTX CLI as csm user %s",
             self.csm_user_name)
@@ -2170,7 +2240,33 @@ class TestCliS3ACC:
             password=self.s3acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         self.logger.info("Created s3 account %s", self.s3acc_name)
-        # : Create bucket
+        logout = self.s3acc_obj.logout_cortx_cli()
+        assert_utils.assert_true(logout[0], logout[1])
+        self.logger.info(
+            "Logging into CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        login = self.s3bkt_obj.login_cortx_cli(
+            username=self.s3acc_name,
+            password=self.s3acc_password)
+        assert_utils.assert_true(login[0], login[1])
+        self.logger.info(
+            "Successfully logged in to CORTX CLI as S3 account %s",
+            self.s3acc_name)
+        self.logger.info("Creating bucket %s", bucket_name)
+        resp = self.s3bkt_obj.create_bucket_cortx_cli(bucket_name=bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.logger.info("Created bucket %s", bucket_name)
+        self.logger.info("Verify bucket is created")
+        resp = self.s3bkt_obj.list_buckets_cortx_cli()
+        assert_utils.assert_exact_string(resp[1], bucket_name)
+        self.logger.info("Bucket list : %s", resp)
+        self.logger.info("Verified bucket is created")
+        logout = self.s3bkt_obj.logout_cortx_cli()
+        assert_utils.assert_true(logout[0], logout[1])
+        login = self.s3bkt_obj.login_cortx_cli()
+        assert_utils.assert_true(login[0], login[1])
+        self.logger.info(
+            "Deleting S3 account when bucket is present for s3account user")
         resp = self.s3acc_obj.delete_s3account_cortx_cli(
             account_name=self.s3acc_name)
         assert_utils.assert_false(resp[0], resp[1])
