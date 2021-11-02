@@ -218,6 +218,20 @@ def calc_contentmd5(data) -> str:
     """
     return base64.b64encode(md5(data).digest()).decode('utf-8')
 
+
+def get_multipart_etag(parts):
+    """
+    Calculate expected ETag for a multipart upload
+
+    :param parts: List of dict with the format {part_number: (data_bytes, content_md5), ...}
+    """
+    md5_digests = []
+    for part_number in sorted(parts.keys()):
+        md5_digests.append(md5(parts[part_number][0]).digest())
+    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    return '"%s"' % multipart_etag
+
+
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
     Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
