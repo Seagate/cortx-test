@@ -122,7 +122,7 @@ class TestDIDurability:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip. ")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22483')
