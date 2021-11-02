@@ -110,7 +110,6 @@ class TestS3accountK8s:
                                             read_lines=False,
                                             exc=False)
         pod_name = self.csm_cluster.get_pod_name(resp_node)
-        #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
         cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
           pod_name, self.remote_path , self.local_path, cons.CORTX_CSM_POD),
@@ -159,7 +158,6 @@ class TestS3accountK8s:
                                             read_lines=False,
                                             exc=False)
         pod_name = self.csm_cluster.get_pod_name(resp_node)
-        #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
         resp_node = self.nd_obj.execute_cmd(
         cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
           pod_name, self.remote_path , self.local_path, cons.CORTX_CSM_POD),
