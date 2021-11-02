@@ -30,7 +30,6 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file, remove_file, path_exists
-from commons.utils.s3_utils import get_unaligned_parts
 from commons.utils.s3_utils import get_precalculated_parts
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
 from commons.utils import assert_utils
@@ -106,30 +105,6 @@ class TestMultipartUploadGetPut:
         This is called after each test in this test suite
         """
         self.log.info("STARTED: Teardown operations")
-        """
-        self.log.info("Restoring aws config file from %s to %s...",
-                      self.config_backup_path, self.aws_config_path)
-        resp = backup_or_restore_files(self.actions[1], self.config_backup_path,
-                                       self.aws_config_path)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Restored aws config file from %s to %s",
-                      self.config_backup_path, self.aws_config_path)
-        self.log.info("Deleting a backup file and directory...")
-        if path_exists(self.config_backup_path):
-            remove_dirs(self.config_backup_path)
-        if path_exists(self.mp_obj_path):
-            remove_file(self.mp_obj_path)
-        self.log.info("Deleted a backup file and directory")
-        # test cleanup
-        self.log.info("Test cleanup")
-        self.log.info("Deleting object in a bucket")
-        res = self.s3_test_obj.delete_object(self.bucket_name, self.object_name)
-        assert_utils.assert_true(res[0], res[1])
-        self.log.info("Deleting Bucket")
-        resp = self.s3_mpu_test_obj.delete_bucket(self.bucket_name, force=True)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Deleted Bucket")
-        """
         resp = self.s3_test_obj.bucket_list()
         pref_list = [
             each_bucket for each_bucket in resp[1] if each_bucket.startswith("mpu-bkt")]
@@ -199,10 +174,9 @@ class TestMultipartUploadGetPut:
         self.log.info("Creating s3_client session")
         client_instance = S3MultipartTestLib()
         self.log.info("uploading parts in client session")
-        response = client_instance.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                          self.object_name,
-                                                          parts=parts)
-
+        response = client_instance.upload_parts_parallel(mpu_id, self.bucket_name,
+                                                           self.object_name,
+                                                           parts=parts)
         # response = self.multipart  # To - check field content_md5
         all_parts.append(response[1])
         return all_parts
@@ -216,7 +190,7 @@ class TestMultipartUploadGetPut:
         status, res = self.s3_test_obj.get_object(bucket_name, object_name)
         assert_utils.assert_true(status, res)
         get_etag = res['ETag']
-        self.log.info ("Uploaded ETag is %s", upload_checksum)
+        self.log.info("Uploaded ETag is %s", upload_checksum)
         self.log.info("get object ETag is %s", res["ETag"])
         self.compare_checksums(upload_checksum, get_etag)
 
@@ -286,9 +260,10 @@ class TestMultipartUploadGetPut:
         # failure on wrong json in completeMultipartUplaod
         self.log.info("wait for 30 mins to confirm object is not cleared because of wrong json")
         time.sleep(30*60)
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(mpu_id,
-                                                                  dict(sorted(new_parts.items())),
+                                                                  sorted_part_list,
                                                                   self.bucket_name,
                                                                   self.object_name)
             assert_utils.assert_true(resp[0], resp[1])
@@ -391,10 +366,11 @@ class TestMultipartUploadGetPut:
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
-                    mpu_id, dict(sorted(new_parts.items())), self.bucket_name, self.object_name)
+                    mpu_id, sorted_part_list, self.bucket_name, self.object_name)
             assert_utils.assert_true(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
@@ -422,7 +398,7 @@ class TestMultipartUploadGetPut:
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         uploaded_parts = get_precalculated_parts(self.mp_obj_path, mp_config1["part_sizes"],
-                                        chunk_size=mp_config1["chunk_size"])
+                                                 chunk_size=mp_config1["chunk_size"])
         keys = list(uploaded_parts.keys())
         random.shuffle(keys)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
@@ -433,10 +409,11 @@ class TestMultipartUploadGetPut:
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         self.log.info("Complete the multipart upload with 2 parts")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
-                mpu_id, dict(sorted(new_parts.items())), self.bucket_name, self.object_name)
+                mpu_id, sorted_part_list, self.bucket_name, self.object_name)
             assert_utils.assert_true(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)
@@ -452,10 +429,11 @@ class TestMultipartUploadGetPut:
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
         self.log.info("Listed parts of multipart upload: %s", res[1])
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         self.log.info("Complete the multipart upload with 3 parts")
         try:
             resp2 = self.s3_mpu_test_obj.complete_multipart_upload(
-                mpu_id, dict(sorted(new_parts.items())), self.bucket_name, self.object_name)
+                mpu_id, sorted_part_list, self.bucket_name, self.object_name)
             assert_utils.assert_true(resp2[0], resp2[1])
         except CTException as error:
             self.log.error(error)
@@ -510,13 +488,10 @@ class TestMultipartUploadGetPut:
         self.log.info("list 2 multipart uploads")
         response2 = self.s3_mpu_test_obj.list_multipart_uploads_with_keymarker(
             self.bucket_name, response[1]['NextKeyMarker'])
-        self.log.info("..........................")
-        self.log.info (response2)
-
-        mpuids_FromList1 = []
+        mpuids_fromlist1 = []
         for k in response2["Uploads"]:
-            mpuids_FromList1.append(k["UploadId"])
-        total_mpuids_listed = [*mpuids_FromList, *mpuids_FromList1]
+            mpuids_fromlist1.append(k["UploadId"])
+        total_mpuids_listed = [*mpuids_FromList, *mpuids_fromlist1]
         assert_utils.assert_list_equal(all_mpuids, total_mpuids_listed)
         self.log.info("Aborting multipart uploads")
         for i in range(100):
@@ -559,20 +534,18 @@ class TestMultipartUploadGetPut:
         for i in parts:
             listp.append(parts[i])
         all_parts = []
-        manager = multiprocessing.Manager()
-        return_dict = manager.dict()
         pool = multiprocessing.Pool(processes=10)
         all_parts = pool.starmap(self.multiprocess_uploads,
-                     [(mpu_id, all_parts, dict(list(parts.items())[0:2])),
-                       (mpu_id, all_parts, dict(list(parts.items())[2:4])),
-                      (mpu_id, all_parts, dict(list(parts.items())[4:6])),
-                       (mpu_id, all_parts, dict(list(parts.items())[6:7])),
-                      (mpu_id, all_parts, dict(list(parts.items())[12:13])),
-                       (mpu_id, all_parts, dict(list(parts.items())[7:9])),
-                      (mpu_id, all_parts, dict(list(parts.items())[9:11])),
-                       (mpu_id, all_parts, dict(list(parts.items())[11:12])),
-                      (mpu_id, all_parts, dict(list(parts.items())[13:15])),
-                       (mpu_id, all_parts, dict(list(parts.items())[15:]))])
+                                 [(mpu_id, all_parts, dict(list(parts.items())[0:2])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[2:4])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[4:6])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[6:7])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[12:13])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[7:9])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[9:11])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[11:12])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[13:15])),
+                                  (mpu_id, all_parts, dict(list(parts.items())[15:]))])
         new_list = []
         new_lst = []
         for k in all_parts:
@@ -583,8 +556,8 @@ class TestMultipartUploadGetPut:
                 new_lst.append(j)
         sorted_lst = sorted(new_lst, key=lambda d: d['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
-                                    object_name=self.object_name,
-                                    parts_list=sorted_lst)
+                                          object_name=self.object_name,
+                                          parts_list=sorted_lst)
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         s3_background_io.stop()
@@ -614,15 +587,16 @@ class TestMultipartUploadGetPut:
         all_parts = []
         pool = multiprocessing.Pool(processes=8)
         all_parts = pool.starmap(self.multiprocess_uploads,
-                     [(mpu_id, all_parts, dict(list(uploaded_parts.items())[0:2])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[2:4])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[4:6])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[6:7])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[11:13])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[7:9])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[9:11])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[13:14])),
-                      (mpu_id, all_parts, dict(list(uploaded_parts.items())[14:15]))])
+                                 [(mpu_id, all_parts, dict(list(uploaded_parts.items())[0:2])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[2:4])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[4:6])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[6:7])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[11:13])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[7:9])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[9:11])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[13:14])),
+                                  (mpu_id, all_parts, dict(list(uploaded_parts.items())[14:15]))
+                                  ])
         new_list = []
         new_lst = []
         proc_4 = multiprocessing.Process(target=self.multiprocess_uploads,
@@ -680,9 +654,10 @@ class TestMultipartUploadGetPut:
                                                                          self.object_name,
                                                                          parts=uploaded_parts)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
+        sorted_part_list = sorted(new_parts, key=lambda x: x['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
-                                          parts_list=dict(sorted(new_parts.items())))
+                                          parts_list=sorted_part_list)
         self.log.info("Listing parts of multipart upload upon completion of multipart upload")
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, res[1]["ETag"])
         try:
@@ -711,20 +686,19 @@ class TestMultipartUploadGetPut:
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
         parts = get_precalculated_parts(self.mp_obj_path, mp_config["part_sizes"],
-                                       chunk_size=mp_config["chunk_size"])
+                                        chunk_size=mp_config["chunk_size"])
         keys = list(parts.keys())
         random.shuffle(keys)
         status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
                                                                          self.object_name,
                                                                          parts=parts)
         assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
-        res = self.list_parts_completempu(mpu_id, mp_config, self.bucket_name,
-                                    object_name=self.object_name,
-                                    parts_list=dict(sorted(new_parts.items())))
+        res = self.list_parts_completempu(mpu_id, self.bucket_name,
+                                          object_name=self.object_name,
+                                          parts_list=dict(sorted(new_parts.items())))
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, res["ETag"])
         self.log.info("ENDED: Test multipart upload of 5TB object")
 
-    @pytest.mark.skip(reason="need to execute on hw as vm has limited RAM space")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28528')
     @CTFailOn(error_handler)
@@ -740,15 +714,13 @@ class TestMultipartUploadGetPut:
         # s3_background_io.start(log_prefix="TEST-28528_s3bench_ios", duration="0h30m")
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.log.info("calculating parts...")
-        uploaded_parts = get_precalculated_parts(self.mp_obj_path, mp_config["part_sizes"],
-                                                 chunk_size=mp_config["chunk_size"])
-        keys = list(uploaded_parts.keys())
-        random.shuffle(keys)
-        self.log.info("Upload all the parts")
-        status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name,
-                                                                         parts=uploaded_parts)
-        assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
+        status, mpu_upload = self.s3_mpu_test_obj.upload_precalculated_parts(
+            mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.mp_obj_path,
+            part_sizes=mp_config["part_sizes"],
+            chunk_size=mp_config["chunk_size"])
+
+        assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
+        sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
         self.log.info("Listing parts of multipart upload")
         res = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res[1])
@@ -772,7 +744,7 @@ class TestMultipartUploadGetPut:
         self.log.info("Complete the multipart upload")
         try:
             resp = self.s3_mpu_test_obj.complete_multipart_upload(
-                mpu_id, dict(sorted(new_parts.items())), self.bucket_name, self.object_name)
+                mpu_id, sorted_part_list, self.bucket_name, self.object_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error)

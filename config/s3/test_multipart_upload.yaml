@@ -176,18 +176,8 @@ test_28534:
         count: 2
       - part_size: 40.3
         count: 2
-      - part_size: 30
-        count: 1
-      - part_size: 70
-        count: 1
       - part_size: 100
-        count: 1
-      - part_size: 100
-        count: 1
-      - part_size: 100
-        count: 2
-      - part_size: 100
-        count: 2
+        count: 7
       - part_size: 24
         count: 1
 
