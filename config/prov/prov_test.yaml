@@ -67,9 +67,9 @@ single-node:
   cluster_start_delay: 180
 
 system_ntp:
-    ntp_data: ['time_server:', 'time_zone:']
-    timeserver: ['10.30.127.102', 'time.seagate.com']
-    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
+  ntp_data: ['time_server:', 'time_zone:']
+  timeserver: ['10.30.127.102', 'time.seagate.com']
+  timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
 
 deploy_ff:
   deployment_template: "config/prov/three_node_config.ini"
@@ -109,6 +109,7 @@ post_deployment_steps:
 
 k8s_cluster_deploy:
   job_name: "setup-kubernetes-cluster"
+  cortx_job_name: "deploy-cortx-k8-cluster"
   jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/"
   auth_token: "$eagate@123"
 
