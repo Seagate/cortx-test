@@ -33,6 +33,7 @@ from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from commons.constants import const
+from libs.di.di_error_detection_test_lib import DIErrorDetectionLib
 from libs.s3 import CMN_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -61,6 +62,7 @@ class TestDIDurability:
         self.s3_mp_test_obj = S3MultipartTestLib()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         self.data_gen = DataGenerator()
+        self.data_error_lib = DIErrorDetectionLib()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -119,42 +121,6 @@ class TestDIDurability:
         self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
-
-    def validate_default_config(self):
-        """
-        function will check for default configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are not set with default
-        and will return false if configs are set to default
-        """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.integrity_param)
-        if write_flag[0] and not read_flag[0] and integrity_flag[0]:
-            skip_mark = False
-        return skip_mark
-
-    def validate_disabled_config(self):
-        """
-        function will check for disabled configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are enabled
-        will return false if configs are disabled
-        """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        integrity_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.integrity_param)
-        if write_flag[0] and read_flag[0] and integrity_flag[0]:
-            skip_mark = True
-        return skip_mark
 
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
@@ -283,7 +249,7 @@ class TestDIDurability:
             "ENDED: Corrupt metadata of an object at Motr level and verify "
             "range read (Get).")
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -557,7 +523,7 @@ class TestDIDurability:
             "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
             "digest, CRC ( check multi-part))")
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
@@ -723,7 +689,7 @@ class TestDIDurability:
             "ENDED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
 
-    @pytest.mark.skipif(validate_disabled_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_disabled_config(),
                         reason="Server configs is not matching with test's required configs")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability

@@ -71,29 +71,13 @@ class TestDIWithChangingS3Params:
         cls.F_PATH_COPY = cls.test_dir_path + "/temp-copy.txt"
         cls.log.info("ENDED: setup test suite operations.")
 
-    def validate_default_config(self):
-        """
-        function will check for default configs
-        and decide whether test should be skipped during execution or not
-        function will return True if configs are not set with default
-        and will return false if configs are set to default
-        """
-        skip_mark = True
-        write_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.write_param)
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if write_flag[0] and not read_flag[0]:
-            skip_mark = False
-        return skip_mark
-
     @staticmethod
     def get_bucket_name():
-        return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
     @staticmethod
     def get_object_name():
-        return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+        return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
     def setup_method(self):
         """
@@ -260,7 +244,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
@@ -306,7 +290,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
@@ -345,7 +329,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
@@ -384,7 +368,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
@@ -431,7 +415,7 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
-    @pytest.mark.skipif(validate_default_config(),
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
                         reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
