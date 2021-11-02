@@ -62,7 +62,7 @@ class TestDIDurability:
         self.s3_mp_test_obj = S3MultipartTestLib()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         self.data_gen = DataGenerator()
-        self.data_error_lib = DIErrorDetectionLib()
+        self.di_err_lib = DIErrorDetectionLib()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
@@ -959,7 +959,7 @@ class TestDIDurability:
                                     object_name=self.object_name,
                                     file_path=location)
         self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
-                                                     my_key=self.obj_name,
+                                                     my_key=self.object_name,
                                                      start_byte=8888,
                                                      stop_byte=9999)
         self.log.info("Step 4: verify download object fails with 5xx error code")

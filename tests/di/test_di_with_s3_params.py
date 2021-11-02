@@ -73,10 +73,16 @@ class TestDIWithChangingS3Params:
 
     @staticmethod
     def get_bucket_name():
+        """
+        function will return bucket name
+        """
         return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
     @staticmethod
     def get_object_name():
+        """
+        function will return object name
+        """
         return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
     def setup_method(self):
@@ -165,7 +171,7 @@ class TestDIWithChangingS3Params:
         bucket_name = self.get_bucket_name()
         obj_name_1 = self.get_object_name()
         obj_name_2 = self.get_object_name()
-        self.s3obj.create_bucket(bucket_name=self.bucket_name)
+        self.s3obj.create_bucket(bucket_name=bucket_name)
         sys_util.create_file(fpath=self.F_PATH, count=1)
         resp = self.s3obj.put_object(bucket_name=bucket_name, object_name=obj_name_1,
                                      file_path=self.F_PATH)
