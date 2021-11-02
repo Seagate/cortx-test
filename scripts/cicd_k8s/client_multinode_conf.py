@@ -82,12 +82,12 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
         node_info["hostname"] = host
         node_info["username"] = username
         node_info["password"] = password
-        node.update(node_info)
-        nodes.append(node)
         if count == 1:
             node_info["node_type"] = "master"
         else:
             node_info["node_type"] = "worker"
+        node.update(node_info)
+        nodes.append(node)
 
     json_data["nodes"] = nodes
     json_data["csm"]["mgmt_vip"] = mgmt_vip
@@ -108,7 +108,9 @@ def configure_haproxy_lb(m_node: str, username: str, password: str):
     :param password: password for node
     :return: external LB IP
     """
-    ext_ip = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE)
+    resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
+    ext_ip = resp[1].strip("'\\n'b'")
+    LOGGER.info("External LB IP: %s", ext_ip)
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=com_cmds.CMD_SRVC_STATUS, read_lines=True)
     LOGGER.info("Response for services status: %s", resp)
@@ -132,7 +134,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("--master_node", help="Hostname for master node", required=True)
-    parser.add_argument("--node_count", help="Number of nodes in cluster", required=True, type=int)
+    parser.add_argument("--node_count", help="Number of worker nodes in cluster", required=True, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
     parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
     parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=True)

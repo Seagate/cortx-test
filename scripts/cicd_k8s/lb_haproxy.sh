@@ -15,3 +15,6 @@ sudo cp ~/haproxy-2.4.2/examples/haproxy.init /etc/init.d/haproxy
 sudo chmod 755 /etc/init.d/haproxy
 sudo systemctl daemon-reload
 sudo useradd -r haproxy
+systemctl stop firewalld
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+puppet agent --disable
