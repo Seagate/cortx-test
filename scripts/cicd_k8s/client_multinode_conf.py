@@ -134,7 +134,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("--master_node", help="Hostname for master node", required=True)
-    parser.add_argument("--node_count", help="Number of worker nodes in cluster", required=True, type=int)
+    parser.add_argument("--node_count", help="Number of worker nodes in cluster",
+                        required=True, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
     parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
     parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=True)
