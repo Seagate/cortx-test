@@ -426,7 +426,7 @@ DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 # Kubernetes commands to interact with service/pods.
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
                  +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
-K8S_LDAP_CMD = "kubectl exec -it symas-openldap-pod -- /bin/bash -c \"{}\""
+K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
 K8S_SVC_CMD ="kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"

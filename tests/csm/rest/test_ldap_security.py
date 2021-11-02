@@ -36,6 +36,7 @@ from config import CMN_CFG
 from config import CSM_REST_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_s3user import RestS3user
+from libs.csm.rest.csm_rest_cluster import RestCsmCluster
 
 class TestS3accountK8s:
     """S3 user test class"""
@@ -58,7 +59,8 @@ class TestS3accountK8s:
         assert s3acc_already_present
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
-
+        cls.csm_cluster = RestCsmCluster()
+ 
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""
@@ -104,8 +106,18 @@ class TestS3accountK8s:
                                         exc=False)
         cluster_ip = self.get_cluster_ip(resp_node)
         self.log.info("Openldap service ip is: %s",cluster_ip)
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                            read_lines=False,
+                                            exc=False)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
+        resp_node = self.nd_obj.execute_cmd(
+        cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
+          pod_name, self.remote_path , self.local_path, cons.CORTX_CSM_POD),
+          read_lines=False,
+          exc=False)
         resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.local_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
@@ -143,8 +155,18 @@ class TestS3accountK8s:
                                         exc=False)
         cluster_ip = self.get_cluster_ip(resp_node)
         self.log.info("Openldap service ip is: %s",cluster_ip)
+        resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
+                                            read_lines=False,
+                                            exc=False)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
+        #cmd = kubectl cp cortx-control-pod-6cb946fc6c-k298q:/etc/cortx/csm/csm.conf /tmp -c cortx-csm-agent
+        resp_node = self.nd_obj.execute_cmd(
+        cmd=comm.K8S_CP_TO_LOCAL_CMD.format(
+          pod_name, self.remote_path , self.local_path, cons.CORTX_CSM_POD),
+          read_lines=False,
+          exc=False)
         resp = self.nd_obj.copy_file_to_local(
-            remote_path=self.remote_path, local_path=self.local_path)
+            remote_path=self.local_path, local_path=self.local_path)
         assert_utils.assert_true(resp[0], resp)
         stream = open(self.local_path, 'r')
         data = yaml.safe_load(stream)
