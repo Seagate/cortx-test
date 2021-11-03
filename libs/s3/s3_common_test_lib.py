@@ -28,7 +28,6 @@ from time import perf_counter_ns
 
 from config import CMN_CFG
 from config.s3 import S3_CFG
-from config import S3_CFG
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
