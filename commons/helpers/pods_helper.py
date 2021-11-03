@@ -63,7 +63,7 @@ class LogicalNode(Host):
         cmd = commands.KUBECTL_CMD.format(operation, pod, namespace, command_suffix)
         resp = self.execute_cmd(cmd, **kwargs)
         if decode:
-            resp = resp.decode("utf8").strip()
+            resp = (resp.decode("utf8")).strip()
         return resp
 
     def shutdown_node(self, options=None):

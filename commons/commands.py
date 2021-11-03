@@ -194,6 +194,7 @@ CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
 CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
+CMD_GET_IP_IFACE = "/sbin/ifconfig \"{}\" | awk '/inet / {{print $2}}'"
 CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
@@ -426,7 +427,7 @@ DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 # Kubernetes commands to interact with service/pods.
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
                  +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
-K8S_LDAP_CMD = "kubectl exec -it symas-openldap-pod -- /bin/bash -c \"{}\""
+K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
 K8S_SVC_CMD ="kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
@@ -451,6 +452,7 @@ CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
 
 CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
+CMD_GET_NODE = "kubectl get nodes"
 
 #LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
