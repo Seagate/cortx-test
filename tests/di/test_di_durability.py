@@ -521,7 +521,8 @@
 #             "Step 3: Put an object with checksum, checksum algo or ETAG.")
 #         self.log.info(
 #             "ENDED: Test to verify object integrity during an upload with correct checksum."
-#             "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
+#             "Specify checksum and checksum algorithm or "
+#             "ETAG during PUT(SHA1, MD5 with and without"
 #             "digest, CRC ( check multi-part))")
 #
 #     @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
@@ -773,7 +774,7 @@
 #         self.log.info(
 #             "Step 3: Verified get object from another node")
 #         self.log.info(
-#             "ENDED: Combine checksum feature with HA, corrupt from a node and read with other "
+#             "ENDED: Combine checksum feature with HA, corrupt from a node and read with other"
 #             "nodes")
 #
 #     @pytest.mark.data_durability
@@ -784,7 +785,8 @@
 #         to value just lower the object size.
 #         """
 #         self.log.info(
-#             "STARTED: Test to verify object integrity of large objects with the multipart threshold"
+#             "STARTED: Test to verify object integrity of "
+#             "large objects with the multipart threshold"
 #             "to value just lower the object size.")
 #         resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
 #         assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
