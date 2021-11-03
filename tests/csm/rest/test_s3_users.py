@@ -48,7 +48,7 @@ class TestS3user():
         assert user_already_present
         cls.s3user = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
-        cls.log.info("Initiating Rest Client for Alert ...")
+        cls.log.info("Initiating Rest Client for S3 users ...")
 
     @pytest.mark.lc
     @pytest.mark.parallel

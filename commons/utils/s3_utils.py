@@ -18,6 +18,7 @@
 #
 
 """S3 utility Library."""
+import base64
 import os
 import urllib
 import hmac
@@ -196,7 +197,7 @@ def calc_checksum(file_path, part_size=0):
     try:
         hash_digests = list()
         with open(file_path, 'rb') as f_obj:
-            if part_size and os.stat(file_path).st_size < part_size:
+            if part_size and os.stat(file_path).st_size > part_size:
                 for chunk in iter(lambda: f_obj.read(part_size), b''):
                     hash_digests.append(md5(chunk).digest())
             else:
@@ -208,9 +209,32 @@ def calc_checksum(file_path, part_size=0):
         raise error from OSError
 
 
+def calc_contentmd5(data) -> str:
+    """
+    Calculate Content-MD5 S3 request header value
+
+    :param data: bytes literal containing the data being sent in an S3 request
+    :return: String literal representing the base64 encoded MD5 checksum of the data
+    """
+    return base64.b64encode(md5(data).digest()).decode('utf-8')
+
+
+def get_multipart_etag(parts):
+    """
+    Calculate expected ETag for a multipart upload
+
+    :param parts: List of dict with the format {part_number: (data_bytes, content_md5), ...}
+    """
+    md5_digests = []
+    for part_number in sorted(parts.keys()):
+        md5_digests.append(md5(parts[part_number][0]).digest())
+    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    return '"%s"' % multipart_etag
+
+
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
-    Create the upload parts dict with aligned part size.
+    Create the upload parts dict with aligned part size(limitation: not supported more than 10G).
 
     https://www.gbmb.org/mb-to-bytes
     Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
@@ -225,7 +249,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
         with open(file_path, "rb") as file_pointer:
             i = 1
             while True:
@@ -233,12 +257,12 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, md5(data).hexdigest()]
+                parts[i] = [data, calc_contentmd5(data)]
                 i += 1
         if random:
             keys = list(parts.keys())
             shuffle(keys)
-            parts = dict({(k, parts[k]) for k in keys})
+            parts = {k: parts[k] for k in keys}
 
         return parts
     except OSError as error:
@@ -248,7 +272,7 @@ def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False
 
 def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """
-    Create the upload parts dict with unaligned part size.
+    Create the upload parts dict with unaligned part size(limitation: not supported more than 10G).
 
     https://www.gbmb.org/mb-to-bytes
     Megabytes (MB)	Bytes (B) decimal	Bytes (B) binary
@@ -266,7 +290,7 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
     try:
         obj_size = os.stat(file_path).st_size
         parts = dict()
-        part_size = int(int(obj_size)/int(1048576)) // int(total_parts)
+        part_size = int(int(obj_size) / int(chunk_size)) // int(total_parts)
         unaligned = [104857, 209715, 314572, 419430, 524288,
                      629145, 734003, 838860, 943718, 1048576]
         with open(file_path, "rb") as file_pointer:
@@ -277,13 +301,38 @@ def get_unaligned_parts(file_path, total_parts=1, chunk_size=5242880, random=Fal
                 if not data:
                     break
                 LOGGER.info("data_len %s", str(len(data)))
-                parts[i] = [data, md5(data).hexdigest()]
+                parts[i] = [data, calc_contentmd5(data)]
                 i += 1
         if random:
             keys = list(parts.keys())
             shuffle(keys)
-            parts = dict({(k, parts[k]) for k in keys})
+            parts = {k: parts[k] for k in keys}
 
+        return parts
+    except OSError as error:
+        LOGGER.error(str(error))
+        raise error from OSError
+
+
+def get_precalculated_parts(file_path, part_list, chunk_size=1048576) -> dict:
+    """
+    Split the source file into the specified part sizes.
+
+    :param file_path: Path of object file.
+    :param part_list: List of dict with keys 'part_size' (in bytes) and 'count'
+    :param chunk_size: chunk size used to read each check default is 1MB.
+    :return: Parts details with data, checksum.
+    """
+    total_part_list = []
+    for part in part_list:
+        total_part_list.extend([part['part_size']] * part['count'])
+    shuffle(total_part_list)
+    parts = dict()
+    try:
+        with open(file_path, "rb") as file_pointer:
+            for i, part_size in enumerate(total_part_list, 1):
+                data = file_pointer.read(int(part_size * chunk_size))
+                parts[i] = [data, calc_contentmd5(data)]
         return parts
     except OSError as error:
         LOGGER.error(str(error))
@@ -298,6 +347,7 @@ def create_multipart_json(json_path, parts_list) -> tuple:
     """
     parts_list = sorted(parts_list, key=lambda d: d['PartNumber'])
     parts = {"Parts": parts_list}
+    LOGGER.info("Parts: %s", parts)
     with open(json_path, 'w') as file_obj:
         json.dump(parts, file_obj)
 

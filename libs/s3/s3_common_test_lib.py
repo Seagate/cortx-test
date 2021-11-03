@@ -28,6 +28,7 @@ from time import perf_counter_ns
 
 from config import CMN_CFG
 from config import S3_CFG
+from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
 from commons.helpers.pods_helper import LogicalNode
@@ -231,7 +232,7 @@ def upload_random_size_objects(s3_obj, s3_bucket, obj_prefix="s3-obj", size=10, 
         resp = s3_obj.create_bucket(s3_bucket)
         assert_utils.assert_true(resp[0], resp[1])
     objects = []
-    for i in range(1, num_sample):
+    for i in range(1, num_sample + 1):
         fpath = os.path.join(os.getcwd(), f"{obj_prefix}-{i}")
         resp = system_utils.create_file(fpath, count=size*i)
         assert_utils.assert_true(resp[0], resp[1])
@@ -301,7 +302,11 @@ class S3BackgroundIO:
         self.io_bucket_name = io_bucket_name
         self.log_prefix = None
         self.parallel_ios = None
-        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+
+        try:
+            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        except CTException:
+            bucket_exists = False
         if not bucket_exists:
             LOG.info("Creating IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.create_bucket(self.io_bucket_name)
@@ -407,7 +412,10 @@ class S3BackgroundIO:
         """
         if self.is_alive():
             self.parallel_ios.join()
-        bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        try:
+            bucket_exists, _ = self.s3_test_lib_obj.head_bucket(self.io_bucket_name)
+        except CTException:
+            bucket_exists = False
         if bucket_exists:
             LOG.info("Deleting IO bucket: %s", self.io_bucket_name)
             resp = self.s3_test_lib_obj.delete_bucket(self.io_bucket_name, force=True)

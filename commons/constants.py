@@ -132,6 +132,9 @@ const.S3_LOG_PATH = "/var/log/seagate/s3"
 const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
 const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
 const.LOG_MSG_PATH = "/var/log/messages"
+const.S3_DI_WRITE_CHECK = "S3_WRITE_DATA_INTEGRITY_CHECK"
+const.S3_DI_READ_CHECK = "S3_READ_DATA_INTEGRITY_CHECK"
+const.S3_METADATA_CHECK = "S3_METADATA_INTEGRITY_CHECK"
 
 
 class Rest:
