@@ -681,15 +681,12 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        parts = get_precalculated_parts(self.mp_obj_path, mp_config["part_sizes"],
-                                        chunk_size=mp_config["chunk_size"])
-        keys = list(parts.keys())
-        random.shuffle(keys)
-        status, new_parts = self.s3_mpu_test_obj.upload_parts_sequential(mpu_id, self.bucket_name,
-                                                                         self.object_name,
-                                                                         parts=parts)
-        assert_utils.assert_true(status, f"Failed to upload parts: {new_parts}")
-        sorted_part_list = sorted(new_parts["uploaded_parts"], key=lambda x: x['PartNumber'])
+        status, mpu_upload = self.s3_mp_test_obj.upload_precalculated_parts(
+            mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
+            part_sizes=MPART_CFG["test_28526"]["part_sizes"],
+            chunk_size=MPART_CFG["test_28526"]["chunk_size"])
+        assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
+        sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
                                           parts_list=sorted_part_list)
