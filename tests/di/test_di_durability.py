@@ -494,7 +494,8 @@
 #         """
 #         self.log.info(
 #             "STARTED: Test to verify object integrity during an upload with correct checksum."
-#             "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
+#             "Specify checksum and checksum algorithm or
+#             ETAG during PUT(SHA1, MD5 with and without"
 #             "digest, CRC ( check multi-part))")
 #         self.log.info(
 #             "Step 1: Create a bucket.")
@@ -534,7 +535,8 @@
 #         checksum error detection by S3/Motr.
 #         """
 #         self.log.info(
-#             "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
+#             "STARTED: Data chunk checksum validation
+#             (Motr blocks data or metadata of data blocks)"
 #             "and validate checksum error detection by S3/Motr")
 #         self.log.info("Step 1: Create a bucket.")
 #         self.s3_test_obj.create_bucket(self.bucket_name)
@@ -811,7 +813,8 @@
 #             resp_upload = self.s3_test_obj.object_upload(
 #                 self.bucket_name, self.object_name, self.file_path)
 #             assert_utils.assert_true(resp_upload[0], resp_upload[1])
-#             self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
+#               self.log.info("Uploaded an object %s into bucket %s",
+#                             self.file_path, self.bucket_name)
 #             self.log.info("Removing uploaded object from a local path.")
 #             os.remove(self.file_path)
 #             self.log.info("Setting multipart threshold value to %s, less than uploaded obj size",
@@ -873,11 +876,12 @@
 #             resp_upload = self.s3_test_obj.object_upload(
 #                 self.bucket_name, self.object_name, self.file_path)
 #             assert_utils.assert_true(resp_upload[0], resp_upload[1])
-#             self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
+#               self.log.info("Uploaded an object %s into bucket %s",
+#                             self.file_path, self.bucket_name)
 #             self.log.info("Removing uploaded object from a local path.")
 #             os.remove(self.file_path)
-#             self.log.info("Setting multipart threshold value to %s, greater than uploaded obj size",
-#                           up_sz * gb_sz)
+#               self.log.info("Setting multipart threshold value to %s, "
+#                             "greater than uploaded obj size",up_sz * gb_sz)
 #             config = TransferConfig(multipart_threshold=up_sz * gb_sz)
 #             download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
 #             self.log.debug("Downloading obj from %s bucket at local path %s",

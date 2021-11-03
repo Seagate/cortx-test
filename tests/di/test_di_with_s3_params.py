@@ -289,8 +289,9 @@
 #         self.s3obj.delete_bucket(bucket_name_2, force=True)
 #         self.s3obj.delete_bucket(bucket_name_3, force=True)
 #         if result:
-#             if resp_cp[1]['CopyObjectResult']['ETag'] == resp_cp_cp[1]['CopyObjectResult']['ETag']:
-#                 assert True
+#              if resp_cp[1]['CopyObjectResult']['ETag'] == \
+#                      resp_cp_cp[1]['CopyObjectResult']['ETag']:
+#                  assert True
 #             else:
 #                 assert False
 #         else:
