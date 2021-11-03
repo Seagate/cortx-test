@@ -669,7 +669,7 @@ class TestMultipartUploadGetPut:
         s3_background_io.cleanup()
         self.log.info("ENDED: Test List multipart followed by completion of multipart upload")
 
-    @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
+    # @pytest.mark.skip(reason="need to execute on hw as vm has limited space")
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-28526')
     @CTFailOn(error_handler)
