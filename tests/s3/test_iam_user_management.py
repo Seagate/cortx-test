@@ -24,6 +24,7 @@ import os
 import logging
 from time import perf_counter_ns
 from multiprocessing import Process
+
 import pytest
 import time
 from commons import constants as cons
@@ -32,6 +33,7 @@ from commons.utils import assert_utils, system_utils
 from commons.configmanager import config_utils
 from commons import cortxlogging as log
 from commons.params import TEST_DATA_FOLDER
+from commons.exceptions import CTException
 from config import CMN_CFG
 from config import CSM_CFG
 from config.s3 import S3_CFG

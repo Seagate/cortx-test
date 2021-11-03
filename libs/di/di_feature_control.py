@@ -53,6 +53,7 @@ class DIFeatureControl:
         """This method initializes members of DIFeatureControl
         :param cmn_cfg: common config injected object
         """
+        self.cmn_cfg = cmn_cfg
         self.nodes = cmn_cfg["nodes"]
         self.connections = list()
         hostnames = list()

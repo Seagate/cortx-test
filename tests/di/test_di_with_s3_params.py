@@ -24,12 +24,18 @@ import os
 import logging
 from datetime import datetime
 import pytest
+from libs.di.di_error_detection_test_lib import DIErrorDetectionLib
 from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.di import di_lib
 from config import CMN_CFG
+from libs.di.di_feature_control import DIFeatureControl
+from libs.di.data_generator import DataGenerator
+from libs.di.fi_adapter import S3FailureInjection
+from config import CMN_CFG
+from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_PATH
@@ -69,6 +75,20 @@ class TestDIWithChangingS3Params:
         cls.F_PATH = cls.test_dir_path + "/temp.txt"
         cls.F_PATH_COPY = cls.test_dir_path + "/temp-copy.txt"
         cls.log.info("ENDED: setup test suite operations.")
+
+    @staticmethod
+    def get_bucket_name():
+        """
+        function will return bucket name
+        """
+        return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+
+    @staticmethod
+    def get_object_name():
+        """
+        function will return object name
+        """
+        return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
 
     def setup_method(self):
         """
@@ -146,6 +166,7 @@ class TestDIWithChangingS3Params:
                                     password=node['password'])
             S3H_OBJ.restart_s3server_processes()
 
+    @pytest.mark.skip(reason="not tested hence marking skip")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29273')
     @CTFailOn(error_handler)
@@ -269,6 +290,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29282')
     @CTFailOn(error_handler)
@@ -310,6 +333,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29284')
     @CTFailOn(error_handler)
@@ -346,6 +371,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29286')
     @CTFailOn(error_handler)
@@ -383,6 +410,8 @@ class TestDIWithChangingS3Params:
         else:
             assert False
 
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29288')
     @CTFailOn(error_handler)
@@ -430,6 +459,8 @@ class TestDIWithChangingS3Params:
             assert False
 
     @pytest.mark.skip(reason="Not tested, hence marking skip.")
+    @pytest.mark.skipif(DIErrorDetectionLib().validate_default_config(),
+                        reason="Test should be executed in default config")
     @pytest.mark.data_integrity
     @pytest.mark.tags('TEST-29289')
     @CTFailOn(error_handler)

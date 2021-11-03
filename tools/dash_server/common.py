@@ -32,8 +32,11 @@ import pandas as pd
 import requests
 from jira import JIRA
 
-external_stylesheets = [dbc.themes.COSMO]
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
+external_stylesheets = [
+    dbc.themes.COSMO,
+    dbc.themes.BOOTSTRAP,
+    ] # 'https://use.fontawesome.com/releases/v5.8.1/css/all.css'
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 prevent_initial_callbacks=True, suppress_callback_exceptions=True)
 
 app.title = "CORTX Companion"
