@@ -681,7 +681,7 @@ class TestMultipartUploadGetPut:
         mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
         self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
-        status, mpu_upload = self.s3_mp_test_obj.upload_precalculated_parts(
+        status, mpu_upload = self.s3_mpu_test_obj.upload_precalculated_parts(
             mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
             part_sizes=MPART_CFG["test_28526"]["part_sizes"],
             chunk_size=MPART_CFG["test_28526"]["chunk_size"])
