@@ -152,7 +152,7 @@ class TestMultipartUploadGetPut:
         multipart_obj_path = object_path
         if os.path.exists(multipart_obj_path):
             os.remove(multipart_obj_path)
-        create_file(multipart_obj_path, multipart_obj_size)
+        return create_file(multipart_obj_path, multipart_obj_size)
 
     def compare_checksums(self, upload_checksum, download_checksum):
         """
@@ -680,7 +680,10 @@ class TestMultipartUploadGetPut:
         self.log.info("STARTED: Multipart upload of 5TB object ")
         mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
-        self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        status, output = self.create_file_mpu(mp_config["file_size"], self.mp_obj_path)
+        if status:
+            self.file_path = self.mp_obj_path
+            self.log.info(output)
         status, mpu_upload = self.s3_mpu_test_obj.upload_precalculated_parts(
             mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.file_path,
             part_sizes=MPART_CFG["test_28526"]["part_sizes"],
