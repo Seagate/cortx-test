@@ -1,6 +1,3 @@
-
-"""Stub file for the 'time' module."""
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -73,61 +70,55 @@ class TestProvisionerPostDeployment:
         cls.deploy_ff_obj = ProvDeployFFLib()
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.prov_comp
     @pytest.mark.tags("TEST-26562")
     def test_26563(self):
-        deploy_ff_cfg = PROV_CFG["deploy_ff"]
         """Performing start command"""
         resp = self.deploy_ff_obj.check_start_command(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["status"])
+        assert_utils.assert_exact_string(resp,"status")
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.prov_comp
     @pytest.mark.tags("TEST-26563")
     def test_26563(self):
-        sys_state = PROV_CFG["system"]
         """Performing status command"""
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
                                                               )
-        for line in resp:
-            assert_utils.assert_not_in(
-                sys_state["stopped"], line, "Some services are not up")
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
+        assert_utils.assert_exact_string(resp,"status")
         LOGGER.info("Response for status command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.prov_comp
     @pytest.mark.tags("TEST-26253")
     def test_26253(self):
-        deploy_ff_cfg = PROV_CFG["deploy_ff"]
         """Performing reset command"""
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["Cluster name"])
+        assert_utils.assert_exact_string(resp,"Cluster name")
         resp = self.deploy_ff_obj.reset_deployment_check(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["srv-glusterfs-volume_prvsnr_data"])
+        assert_utils.assert_exact_string(resp,"srv-glusterfs-volume_prvsnr_data")
         LOGGER.info("Response for reset command: %s", resp)
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["Cluster name"])
+        assert_utils.assert_exact_string(resp,"Cluster name")
         resp = self.deploy_ff_obj.cluster_show(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-1"])
+        assert_utils.assert_exact_string(resp,"srvnode-1")
         LOGGER.info("Response for cluster show command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.prov_comp
     @pytest.mark.tags("TEST-26220")
     def test_26220(self):
-        deploy_ff_cfg = PROV_CFG["deploy_ff"]
         """Performing cluster show command"""
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["No such file or directory"])
+        assert_utils.assert_exact_string(resp,"No such file or directory")
         resp = self.deploy_ff_obj.cluster_show(self.nd1_obj)
-        assert_utils.assert_exact_string(resp, deploy_ff_cfg["srvnode-0"])
+        assert_utils.assert_exact_string(resp,"srvnode-0")
         LOGGER.info("Response for cluster show command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov
+    @pytest.mark.prov_comp
     @pytest.mark.tags("TEST-26206")
     def test_26206(self):
         """ Performing reset_h_check command"""

@@ -675,19 +675,22 @@ class ProvDeployFFLib:
             return False, error
 
         return True, "post_deploy_check Successful!!"
+
     @staticmethod
     def check_start_command(nd1_obj: Node):
+        """
+        Deployment new start command response
+        param: nd1_obj: primary node object
+        """
         try:
-            deploy_ff_cfg = PROV_CFG["deploy_ff"]
             resp = nd1_obj.execute_cmd(
-                cmd=common_cmd.CMD_START_CLSTR,
-                read_lines=True)[0].strip()
-            assert_utils.assert_exact_string(resp, deploy_ff_cfg["status"])
-            time.sleep(deploy_ff_cfg["cluster_start_delay"])
+                cmd=common_cmd.CMD_START_CLSTR_NEW,
+                read_lines=True)
+            LOGGER.info("START COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
-                ProvDeployFFLib.field_deployment_cluster.__name__)
+                ProvDeployFFLib.post_deploy_check.__name__)
             if isinstance(error.args[0], list):
                 LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
             else:
@@ -699,10 +702,14 @@ class ProvDeployFFLib:
 
     @staticmethod
     def check_status(nd1_obj: Node):
+        """
+        Deployment status command response
+        param: nd1_obj: primary node object
+        """
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
-            LOGGER.info("STATUS COMMAND : %s", resp)
+            LOGGER.info("STATUS COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -717,10 +724,14 @@ class ProvDeployFFLib:
 
     @staticmethod
     def reset_deployment_check(nd1_obj: Node):
+        """
+        Deployment reset command response
+        param: nd1_obj: primary node object
+        """
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CLSTR_RESET_COMMAND, read_lines=True)
-            LOGGER.info("Cluster Reset COMMAND : %s", resp)
+            LOGGER.info("Cluster Reset COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -734,10 +745,14 @@ class ProvDeployFFLib:
 
     @staticmethod
     def reset_h_check(nd1_obj: Node):
+        """
+        Deployment reset_h command response
+        param: nd1_obj: primary node object
+        """
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
-            LOGGER.info("Cluster Reset_H COMMAND : %s", resp)
+            LOGGER.info("Cluster Reset_H COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -751,10 +766,14 @@ class ProvDeployFFLib:
 
     @staticmethod
     def cluster_show(nd1_obj: Node):
+        """
+        Deployment cluster show command response
+        param: nd1_obj: primary node object
+        """
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
-            LOGGER.info("Cluster Show COMMAND : %s", resp)
+            LOGGER.info("Cluster Show COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
@@ -768,10 +787,14 @@ class ProvDeployFFLib:
 
     @staticmethod
     def prov_cluster_json(nd1_obj: Node):
+        """
+        Deployment prov_cluster json command response
+        param: nd1_obj: primary node object
+        """
         try:
             resp = nd1_obj.execute_cmd(
                 cmd=common_cmd.PROV_CLUSTER, read_lines=True)
-            LOGGER.info("Cluster Json COMMAND : %s", resp)
+            LOGGER.info("Cluster Json COMMAND RESPONSE : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
