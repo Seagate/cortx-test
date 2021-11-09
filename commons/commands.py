@@ -431,6 +431,7 @@ STORAGE_CFG_NAME = "cortx_setup storage config --name {} --type virtual"
 STORAGE_CFG_CVG = "cortx_setup storage config --cvg {} --data-devices {} --metadata-devices {}"
 SECURITY_CFG = "cortx_setup security config --certificate {}"
 FEATURE_CFG = "cortx_setup config set --key {} --val {}"
+FEATURE_GET_CFG = "cortx_setup config get --key {}"
 INITIALIZE_NODE = "cortx_setup node initialize"
 SET_NODE_SIGN = "cortx_setup signature set --key LR_SIGNATURE --value {}"
 NODE_FINALIZE = "cortx_setup node finalize --force"
@@ -444,6 +445,8 @@ CFG_NTP = "cortx_setup node prepare time --server time.seagate.com --timezone {}
 NODE_PREP_FINALIZE = "cortx_setup node prepare finalize"
 CLUSTER_CREATE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
                  "--storageset_count 1 --virtual_host {} --target_build {}"
+CLUSTER_CREATE_SINGLE_NODE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
+                             "--storageset_count 1 --target_build {}"
 CLUSTER_PREPARE = "cortx_setup cluster prepare"
 
 STORAGE_SET_CREATE = "cortx_setup storageset create --name {} --count {}"
@@ -454,6 +457,8 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
 CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
+CLSTR_RESET_COMMAND="cortx_setup cluster reset --type all"
+CLSTR_RESET_H_COMMAND="cortx_setup cluster reset -h"
 
 # Maintenance mode for DI
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
@@ -479,5 +484,24 @@ DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
 
 # instead of md5 hash of the object stores md5 hash of empty string.
 DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
-CLSTR_RESET_COMMAND="cortx_setup cluster reset --type all"
-CLSTR_RESET_H_COMMAND="cortx_setup cluster reset -h"
+
+# Deployment using Field User
+FIELD_PREPARE_NODE = "node prepare server --site_id {} --rack_id {} --node_id {}"
+FIELD_PREPARE_NETWORK = "node prepare network --hostname {} --search_domains {} " \
+                        "--dns_servers {}"
+FIELD_PREPARE_NETWORK_TYPE = "node prepare network --type {} --ip_address {} --netmask {} " \
+                             "--gateway {}"
+FIELD_CFG_FIREWALL = "node prepare firewall --config {}"
+FIELD_CFG_NTP = "node prepare time --server time.seagate.com --timezone {}"
+FIELD_NODE_PREP_FINALIZE = "node prepare finalize"
+FIELD_CLUSTER_CREATE = "cluster create {} --name cortx_cluster --site_count 1 " \
+                       "--storageset_count 1 --virtual_host {} --target_build {}"
+FIELD_CLUSTER_CREATE_SINGLE_NODE = "cluster create {} --name cortx_cluster --site_count 1 " \
+                                   "--storageset_count 1 --target_build {}"
+FIELD_STORAGE_SET_CREATE = "storageset create --name {} --count {}"
+FIELD_STORAGE_SET_ADD_NODE = "storageset add node {} {}"
+FIELD_STORAGE_SET_ADD_ENCL = "storageset add enclosure {} {}"
+FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} " \
+                           "--parity {} --spare {}"
+FIELD_CLUSTER_PREPARE = "cluster prepare"
+FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
