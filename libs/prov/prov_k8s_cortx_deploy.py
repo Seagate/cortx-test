@@ -24,6 +24,7 @@ Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 import logging
 
 import yaml
+import json
 
 from commons import commands as common_cmd
 from commons import pswdmanager
@@ -61,8 +62,8 @@ class ProvDeployK8sCortxLib:
         if len(master_node_list) > 0:
             # TODO : handle multiple master node case.
             input_str = f'hostname={master_node_list[0].hostname},' \
-                        f'user={master_node_list[0].username},' \
-                        f'pass={master_node_list[0].password}'
+                f'user={master_node_list[0].username},' \
+                f'pass={master_node_list[0].password}'
             hosts_input_str.append(input_str)
         else:
             return False, "Master Node List is empty"
@@ -70,8 +71,8 @@ class ProvDeployK8sCortxLib:
         if len(worker_node_list) > 0:
             for each in worker_node_list:
                 input_str = f'hostname={each.hostname},' \
-                            f'user={each.username},' \
-                            f'pass={each.password}'
+                    f'user={each.username},' \
+                    f'pass={each.password}'
                 hosts_input_str.append(input_str)
         else:
             return False, "Worker Node List is empty"
@@ -142,7 +143,7 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("No. of disks : %s", count[0])
         if int(count[0]) < self.deploy_cfg["prereq"]["min_disks"]:
             return False, f"Need at least " \
-                          f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
+                f"{self.deploy_cfg['prereq']['min_disks']} disks for deployment"
 
         LOGGER.info("Checking OS release version")
         resp = node_obj.execute_cmd(cmd=
@@ -637,3 +638,69 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
+
+    @staticmethod
+    def deploy_cortx_k8s_cluster(master_node_list: list, worker_node_list: list,
+                                 deploy_target: str = "CORTX-CLUSTER") -> tuple:
+        """
+        Setup k8s cluster using RE jenkins job
+        param: master_node_list : List of all master nodes(Logical Node object)
+        param: worker_node_list : List of all worker nodes(Logical Node object)
+        param: deploy_target : Only Third Party Components or Cortx Cluster
+        return : True/False and success/failure message
+        """
+        k8s_deploy_cfg = PROV_CFG["k8s_cluster_deploy"]
+        LOGGER.info("Create inputs for RE jenkins job")
+        hosts_input_str = []
+        jen_parameter = {}
+        if len(master_node_list) > 0:
+            input_str = f'hostname={master_node_list[0].hostname},' \
+                f'user={master_node_list[0].username},' \
+                f'pass={master_node_list[0].password}'
+            hosts_input_str.append(input_str)
+        else:
+            return False, "Master Node List is empty"
+
+        if len(worker_node_list) > 0:
+            for each in worker_node_list:
+                input_str = f'hostname={each.hostname},' \
+                    f'user={each.username},' \
+                    f'pass={each.password}'
+                hosts_input_str.append(input_str)
+        else:
+            return False, "Worker Node List is empty"
+        hosts = "\n".join(each for each in hosts_input_str)
+        jen_parameter["hosts"] = hosts
+        jen_parameter["DEPLOY_TARGET"] = deploy_target
+
+        output = Provisioner.build_job(
+            k8s_deploy_cfg["cortx_job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
+            k8s_deploy_cfg["jenkins_url"])
+        LOGGER.info("Jenkins Build URL: {}".format(output['url']))
+        if output['result'] == "SUCCESS":
+            LOGGER.info("k8s Cluster Deployment successful")
+            return True, output['result']
+        else:
+            LOGGER.error(f"k8s Cluster Deployment {output['result']},please check URL")
+            return False, output['result']
+
+    @staticmethod
+    def get_hctl_status(node_obj, pod_name: str) -> tuple:
+        """
+        Get hctl status for cortx.
+        param: master_node: Master node(Logical Node object)
+        param: pod_name: Running Data Pod
+        return: True/False and success/failure message
+        """
+        LOGGER.info("Get Cluster status")
+        cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.format(pod_name)).decode('UTF-8')
+        cluster_status = json.loads(cluster_status)
+        if cluster_status is not None:
+            nodes_data = cluster_status["nodes"]
+            for node_data in nodes_data:
+                services = node_data["svcs"]
+                for svc in services:
+                    if svc["status"] != "started":
+                        return False, "Service {} not started.".format(svc["name"])
+            return True, "Cluster is up and running."
+        return False, "Cluster status is not retrieved."

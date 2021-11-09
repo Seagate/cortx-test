@@ -141,14 +141,13 @@ class TestCsmUser():
         if not pod_up:
             assert pod_up, "Pod is not up so cannot proceed. Test Failed"
         self.log.info("Step 4: Create s3account s3acc.")
-        response = self.s3_accounts.create_s3_account(user_type="valid")
-        assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
+        response1 = self.s3_accounts.create_s3_account(user_type="valid")
         self.log.info("Repeating above steps for correct host and endpoint value")
         self.log.info("Fetch new pod name")
         resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
                                             exc=False)
-        pod_name = self.get_pod_name(resp_node)
+        pod_name = self.csm_cluster.get_pod_name(resp_node)
         self.log.info("Step 5: Edit csm.conf file for correct s3 data endpoint")
         stream = open(self.local_csm_path, 'r')
         data = yaml.load(stream)
@@ -183,6 +182,7 @@ class TestCsmUser():
                  time.sleep(30)
         if not pod_up:
             assert pod_up, "Pod is not up so cannot proceed. Test Failed"
+        assert response1.status_code == HTTPStatus.SERVICE_UNAVAILABLE.value, "Account creation failed."
         self.log.info("Step 8: Create s3account s3acc.")
         response = self.s3_accounts.create_s3_account(user_type="valid")
         username = response.json()["account_name"]
