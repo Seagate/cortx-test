@@ -690,7 +690,7 @@ class ProvDeployFFLib:
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
-                ProvDeployFFLib.post_deploy_check.__name__)
+                ProvDeployFFLib.check_start_command.__name__)
             if isinstance(error.args[0], list):
                 LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
             else:
@@ -713,7 +713,7 @@ class ProvDeployFFLib:
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",
-                ProvDeployFFLib.post_deploy_check.__name__)
+                ProvDeployFFLib.check_status.__name__)
             if isinstance(error.args[0], list):
                 LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
             else:
