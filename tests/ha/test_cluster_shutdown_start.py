@@ -277,6 +277,7 @@ class TestClusterShutdownStart:
                                                email_id=self.s3acc_email,
                                                passwd=S3_CFG["CliConfig"]["s3_account"]["password"])
         assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.debug("Response: %s", resp)
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
