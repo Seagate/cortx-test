@@ -70,7 +70,7 @@ class TestProvisionerPostDeployment:
         cls.deploy_ff_obj = ProvDeployFFLib()
 
     @pytest.mark.lr
-    @pytest.mark.prov_comp
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26562")
     def test_26563(self):
         """Performing start command"""
@@ -78,7 +78,7 @@ class TestProvisionerPostDeployment:
         assert_utils.assert_exact_string(resp,"status")
 
     @pytest.mark.lr
-    @pytest.mark.prov_comp
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26563")
     def test_26563(self):
         """Performing status command"""
@@ -91,7 +91,7 @@ class TestProvisionerPostDeployment:
         LOGGER.info("Response for status command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov_comp
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26253")
     def test_26253(self):
         """Performing reset command"""
@@ -107,7 +107,7 @@ class TestProvisionerPostDeployment:
         LOGGER.info("Response for cluster show command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov_comp
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26220")
     def test_26220(self):
         """Performing cluster show command"""
@@ -118,7 +118,7 @@ class TestProvisionerPostDeployment:
         LOGGER.info("Response for cluster show command: %s", resp)
 
     @pytest.mark.lr
-    @pytest.mark.prov_comp
+    @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26206")
     def test_26206(self):
         """ Performing reset_h_check command"""
