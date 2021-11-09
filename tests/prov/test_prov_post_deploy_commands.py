@@ -74,14 +74,17 @@ class TestProvisionerPostDeployment:
     @pytest.mark.tags("TEST-26562")
     def test_26563(self):
         """Performing start command"""
+        LOGGER.info("Starting Start Command Response")
         resp = self.deploy_ff_obj.check_start_command(self.nd1_obj)
         assert_utils.assert_exact_string(resp,"status")
+        LOGGER.info("Completed Start Command Response")
 
     @pytest.mark.lr
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26563")
     def test_26563(self):
         """Performing status command"""
+        LOGGER.info("Starting Status Command")
         resp = Provisioner.create_deployment_config_universal(self.test_config_template,
                                                               self.node_list,
                                                               mgmt_vip=self.mgmt_vip,
@@ -95,6 +98,7 @@ class TestProvisionerPostDeployment:
     @pytest.mark.tags("TEST-26253")
     def test_26253(self):
         """Performing reset command"""
+        LOGGER.info("Starting Cluster Show Command Response")
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
         assert_utils.assert_exact_string(resp,"Cluster name")
         resp = self.deploy_ff_obj.reset_deployment_check(self.nd1_obj)
@@ -111,6 +115,7 @@ class TestProvisionerPostDeployment:
     @pytest.mark.tags("TEST-26220")
     def test_26220(self):
         """Performing cluster show command"""
+        LOGGER.info("Starting Cluster Show Command Response")
         resp = self.deploy_ff_obj.post_deploy_check(self.nd1_obj)
         assert_utils.assert_exact_string(resp,"No such file or directory")
         resp = self.deploy_ff_obj.cluster_show(self.nd1_obj)
@@ -122,6 +127,7 @@ class TestProvisionerPostDeployment:
     @pytest.mark.tags("TEST-26206")
     def test_26206(self):
         """ Performing reset_h_check command"""
+        LOGGER.info("Starting Reset_H Command Response")
         resp = self.deploy_ff_obj.reset_h_check(self.nd1_obj)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Response for reset_h_check command: %s", resp)
