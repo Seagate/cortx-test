@@ -471,25 +471,29 @@ class TestDIDurability:
             "ENDED: Exercise Data unit checksum validation (Motr metadata extent corrupt) and"
             "validate checksum error detection by S3/Motr")
 
+    @pytest.mark.data_integrity
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
-    def test_verify_data_integrity_during_upload_combination_checksum_22912(self):
+    def test_verify_data_integrity_with_correct_checksum_22912(self):
         """
         Test to verify object integrity during an upload with correct checksum.
         Specify checksum and checksum algorithm or ETAG during
         PUT(SHA1, MD5 with and without digest, CRC ( check multi-part)).
+
+        Multi part Put
+        with data 64 MB file
+        provide correct etag during put
+        Verify that get does not fail with internal error
+        ** Check CRC/checksum passed header. or s3 logs, Motr logs
+        Verify checksum at client side
+
+
         """
-        self.log.info(
-            "STARTED: Test to verify object integrity during an upload with correct checksum."
-            "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
-            "digest, CRC ( check multi-part))")
-        self.log.info(
-            "Step 1: Create a bucket.")
+        self.log.info("STARTED: Verify data integrity check during read with correct checksum.")
+        self.log.info("Step 1: Create a bucket.")
         self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info(
-            "Step 1: Created a bucket.")
-        self.log.info(
-            "Step 2: Put and object with checksum algo or ETAG.")
+        self.log.info("Step 1: Created a bucket.")
+        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
         system_utils.create_file(self.file_path, 8)
         file_checksum = system_utils.calculate_checksum(self.file_path, filter_resp=True)[1]
         res = self.s3_test_obj.put_object_with_all_kwargs(
