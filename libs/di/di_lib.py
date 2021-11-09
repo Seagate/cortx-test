@@ -20,6 +20,7 @@
 #
 
 """Data Integrity test library"""
+import os
 import time
 import sys
 import logging
@@ -28,11 +29,14 @@ from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
+from paramiko.ssh_exception import SSHException
 from libs.di.di_mgmt_ops import ManagementOPs
 from libs.di.di_base import _init_s3_conn
 from commons.exceptions import CortxTestException
 from commons import params
 from commons.utils import assert_utils
+from commons import constants as const
+from commons.helpers.node_helper import Node
 
 IAM_UTYPE = 1
 S3_ACC_UTYPE = 2
@@ -157,3 +161,32 @@ def read_file(filepath, size=0, algo=CKSUM_ALGO_1):
             buf = fp.read(read_sz)
         c_sum = file_hash.hexdigest()
     return c_sum.strip()  # not required. Recheck.
+
+
+def copy_local_to_s3_config(self, **kwargs) -> tuple:
+    """
+    Copy files to remote server
+    # :param host: IP of the host.
+    # :param user: user name of the host.
+    # :param password: password for the user.
+    # :param backup_path: backup_path.
+    :return: True/False, response.
+    """
+    host = kwargs.get("host", self.host)
+    user = kwargs.get("username", self.user)
+    pwd = kwargs.get("password", self.pwd)
+    backup_path = kwargs.get("backup_path", const.LOCAL_S3_CONFIG)
+    try:
+        nobj = Node(hostname=host, username=user, password=pwd)
+        status, resp = nobj.copy_file_to_remote(backup_path, const.S3_CONFIG)
+        if not status:
+            return status, resp
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+        nobj.disconnect()
+
+        return status
+    except (SSHException, OSError) as error:
+        LOGGER.error(
+            "Error in %s: %s", copy_local_to_s3_config, error)
+        return False, error
