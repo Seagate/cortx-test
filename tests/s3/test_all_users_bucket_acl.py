@@ -1065,6 +1065,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_read_acp=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = self.acl_obj.get_bucket_acl(
@@ -1275,6 +1276,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_write_acp=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
@@ -1816,6 +1818,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_full_control=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")

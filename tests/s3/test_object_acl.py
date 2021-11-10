@@ -3712,6 +3712,7 @@ class TestObjectACL:
         put_acl_res = s3obj_user2.put_object_canned_acl(
             self.bucket_name, self.obj_name, acl=S3_OBJ_TST["test_175"]["bucket_read"])
         assert put_acl_res[0]
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "Step 7: Put object canned acl with bucket read permission was successfull")
         self.log.info(
