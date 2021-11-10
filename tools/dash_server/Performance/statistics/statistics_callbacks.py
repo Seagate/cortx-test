@@ -55,9 +55,9 @@ def update_workload(release_combined, branch, build, nodes,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
-        workload = get_workload_headings(data)
+#         workload = get_workload_headings(data)
 
-    return workload
+#     return workload
 
 
 @app.callback(
@@ -91,9 +91,9 @@ def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 's3bench', 'Object Sizes')
+            dataframe, 's3bench', 'Object Sizes', states)
 
     return table
 
@@ -128,9 +128,9 @@ def update_metadata(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
         }
-        dataframe = get_metadata_latencies(data)
+        dataframe, run_states = get_metadata_latencies(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'metadata_s3bench', 'Statistics')
+            dataframe, 'metadata_s3bench', 'Statistics', run_states)
 
     return table
 
@@ -164,9 +164,9 @@ def update_hsbench(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'hsbench', 'Object Sizes')
+            dataframe, 'hsbench', 'Object Sizes', states)
 
     return table
 
@@ -200,9 +200,9 @@ def update_bucketops(release_combined, branch, build, nodes,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
-        dataframe = get_bucktops(data)
+        dataframe, run_states = get_bucktops(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'bucketops_hsbench', 'Operations')
+            dataframe, 'bucketops_hsbench', 'Operations', run_states)
 
     return table
 
@@ -236,8 +236,8 @@ def update_cosbench(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'cosbench', 'Object Sizes')
+            dataframe, 'cosbench', 'Object Sizes', states)
 
     return table

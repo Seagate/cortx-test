@@ -122,6 +122,21 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.s3_accounts
         self.log.info("ENDED: test teardown.")
 
+    def check_cluster_health(self):
+        """Check the cluster health."""
+        self.log.info("Check cluster status, all services are running.")
+        nodes = CMN_CFG["nodes"]
+        self.log.info(nodes)
+        for _, node in enumerate(nodes):
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
+            resp = health_obj.check_node_health(resource_cleanup=True)
+            self.log.info(resp)
+            assert_utils.assert_true(resp[0], resp[1])
+            health_obj.disconnect()
+        self.log.info("Checked cluster status, all services are running.")
+
     def s3_ios(self,
                bucket=None,
                log_file_prefix="parallel_io",
