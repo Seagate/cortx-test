@@ -23,14 +23,15 @@ Prov test file for all the commands needs to be checked after deployment.
 """
 
 import os
+import logging
 import pytest
 from commons import commands as common_cmd
 from commons.utils import assert_utils
+from commons.helpers.node_helper import Node
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
 from libs.prov.provisioner import Provisioner
-import logging
-from commons.helpers.node_helper import Node
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -38,7 +39,9 @@ class TestProvisionerPostDeployment:
 
     @classmethod
     def setup_class(cls):
-        """Setup class"""
+        """
+        Setup class
+        """
         cls.log = logging.getLogger(__name__)
 
         cls.deplymt_cfg = PROV_CFG["deploy_ff"]
@@ -72,7 +75,7 @@ class TestProvisionerPostDeployment:
     @pytest.mark.lr
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-26562")
-    def test_26563(self):
+    def test_26562(self):
         """Performing start command"""
         LOGGER.info("Starting Start Command Response")
         resp = self.deploy_ff_obj.check_start_command(self.nd1_obj)
