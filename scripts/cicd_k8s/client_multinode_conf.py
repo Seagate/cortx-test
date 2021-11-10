@@ -64,7 +64,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
         if "worker" in line:
             out = line.split()[0]
             host_list.append(out)
-    LOGGER.info("Creating DB entry for setup: %s", new_setupname)
+    print("Creating DB entry for setup: %s", new_setupname)
     with open(json_file, 'r') as file:
         json_data = json.load(file)
 
@@ -97,7 +97,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
     json_data["csm"]["csm_admin_user"].update(
         username=admin_user, password=admin_passwd)
 
-    LOGGER.info("new file data: %s", json_data)
+    print("new file data: %s", json_data)
     with open(json_file, 'w') as file:
         json.dump(json_data, file)
 
@@ -114,12 +114,12 @@ def configure_haproxy_lb(m_node: str, username: str, password: str):
     """
     resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
     ext_ip = resp[1].strip("'\\n'b'")
-    LOGGER.info("External LB IP: %s", ext_ip)
+    print("External LB IP: %s", ext_ip)
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=com_cmds.CMD_SRVC_STATUS, read_lines=True)
-    LOGGER.info("Response for services status: %s", resp)
+    print("Response for services status: %s", resp)
     # TODO: HAProxy changes to file
-    LOGGER.info("Setting s3 endpoints of ext LB on client.")
+    print("Setting s3 endpoints of ext LB on client.")
     sysutils.execute_cmd(cmd="rm -f /etc/hosts")
     with open("/etc/hosts", 'w') as file:
         file.write("127.0.0.1   localhost localhost.localdomain localhost4 "
@@ -139,28 +139,32 @@ def main():
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("--master_node", help="Hostname for master node", required=True)
     parser.add_argument("--node_count", help="Number of worker nodes in cluster",
-                        required=True, type=int)
+                        required=False, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
     parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
-    parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=True)
+    parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=False)
     args = parser.parse_args()
     master_node = args.master_node
     node_count = args.node_count
-    LOGGER.info("Total number of nodes in cluster: %s", node_count)
+    print("Total number of nodes in cluster: %s", node_count)
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
 
     resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
     ext_ip = resp[1].strip("'\\n'b'")
-    LOGGER.info("External LB IP: {}".format(ext_ip))
+    print("External LB IP: {}".format(ext_ip))
+    print("Creating haproxy.cfg for {} Node setup".format(args.master_node))
     extlb_utils.configure_haproxy_lb(
         master_node, username=username, password=args.password, ext_ip=ext_ip)
-    ext_ip = configure_haproxy_lb(master_node, username=username, password=args.password)
+    with open(config['default']['haproxy_config'], 'r') as f_read:
+        print((45*"*" + "haproxy.cfg" + 45*"*" + "\n"))
+        print(f_read.read())
+        print((100*"*" + "\n"))
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 mgmt_vip=args.mgmt_vip, admin_user=admin_user,
                                 admin_passwd=admin_passwd, ext_ip=ext_ip)
-    LOGGER.info("target_name: %s", setupname)
+    print("target_name: %s", setupname)
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)
@@ -168,13 +172,13 @@ def main():
         "--dbuser {} --dbpassword {}".format(config['default']['setup_entry_json'],
                     json_data['DB_USER'], json_data['DB_PASSWORD']))
     if "Entry already exits" in str(output):
-        LOGGER.info("DB already exists for target: %s, so will update it.", setupname)
+        print("DB already exists for target: %s, so will update it.", setupname)
         sysutils.execute_cmd("python3.7 tools/setup_update/setup_entry.py --fpath {} "
             "--dbuser {} --dbpassword {} --new_entry False"
                              .format(config['default']['setup_entry_json'],
                                      json_data['DB_USER'], json_data['DB_PASSWORD']))
 
-    LOGGER.info("Mutlinode Server-Client Setup Done.")
+    print("Mutlinode Server-Client Setup Done.")
 
 
 if __name__ == "__main__":
