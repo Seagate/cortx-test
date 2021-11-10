@@ -256,7 +256,7 @@ class TestDIWithChangingS3Params:
         Test to verify copy of copied object using simple object upload with
         Data Integrity flag ON for write and OFF for read
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
@@ -287,9 +287,8 @@ class TestDIWithChangingS3Params:
         self.s3obj.delete_bucket(bucket_name_2, force=True)
         self.s3obj.delete_bucket(bucket_name_3, force=True)
         if result:
-             if resp_cp[1]['CopyObjectResult']['ETag'] == \
-                     resp_cp_cp[1]['CopyObjectResult']['ETag']:
-                 assert True
+            if resp_cp[1]['CopyObjectResult']['ETag'] == resp_cp_cp[1]['CopyObjectResult']['ETag']:
+                assert True
             else:
                 assert False
         else:
@@ -304,7 +303,7 @@ class TestDIWithChangingS3Params:
         GET operation with range read with file size 50mb
         with Data Integrity flag ON for write and OFF for read
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
@@ -342,7 +341,7 @@ class TestDIWithChangingS3Params:
         Test to overwrite an object using copy object api with
         Data Integrity flag ON for write and OFF for read
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()
@@ -381,7 +380,7 @@ class TestDIWithChangingS3Params:
         Test to verify multipart upload with s3server restart after every upload
         with Data Integrity flag ON for write and OFF for read
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         bucket_name = self.get_bucket_name()
         obj_name = self.get_object_name()
@@ -429,7 +428,7 @@ class TestDIWithChangingS3Params:
         using simple object upload with Data Integrity
         flag ON for write and OFF for read
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         bucket_name_1 = self.get_bucket_name()
         bucket_name_2 = self.get_bucket_name()

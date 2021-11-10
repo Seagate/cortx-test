@@ -257,7 +257,7 @@ class TestDIDurability:
         Test to verify object integrity during the the upload with correct
         checksum.
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         self.log.info(
             "STARTED: Test to verify object integrity during the the upload "
@@ -532,11 +532,10 @@ class TestDIDurability:
         Data chunk checksum validation (Motr blocks data or metadata of data blocks) and validate
         checksum error detection by S3/Motr.
         """
-        if DIErrorDetectionLib.validate_default_config():
+        if self.di_err_lib.validate_default_config():
             pytest.skip()
         self.log.info(
-            "STARTED: Data chunk checksum validation
-            (Motr blocks data or metadata of data blocks)"
+            "STARTED: Data chunk checksum validation (Motr blocks data or metadata of data blocks)"
             "and validate checksum error detection by S3/Motr")
         self.log.info("Step 1: Create a bucket.")
         self.s3_test_obj.create_bucket(self.bucket_name)
@@ -699,7 +698,7 @@ class TestDIDurability:
         Disabling of Checksum feature should not do any checksum validation even if data
         corrupted.
         """
-        if DIErrorDetectionLib.validate_disabled_config():
+        if self.di_err_lib.validate_disabled_config():
             pytest.skip()
         self.log.info(
             "STARTED: Disabling of Checksum feature should not do any checksum validation even "
@@ -814,8 +813,7 @@ class TestDIDurability:
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
             assert_utils.assert_true(resp_upload[0], resp_upload[1])
-              self.log.info("Uploaded an object %s into bucket %s",
-                            self.file_path, self.bucket_name)
+            self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(self.file_path)
             self.log.info("Setting multipart threshold value to %s, less than uploaded obj size",
@@ -877,12 +875,11 @@ class TestDIDurability:
             resp_upload = self.s3_test_obj.object_upload(
                 self.bucket_name, self.object_name, self.file_path)
             assert_utils.assert_true(resp_upload[0], resp_upload[1])
-              self.log.info("Uploaded an object %s into bucket %s",
-                            self.file_path, self.bucket_name)
+            self.log.info("Uploaded an object %s into bucket %s", self.file_path, self.bucket_name)
             self.log.info("Removing uploaded object from a local path.")
             os.remove(self.file_path)
-              self.log.info("Setting multipart threshold value to %s, "
-                            "greater than uploaded obj size",up_sz * gb_sz)
+            self.log.info("Setting multipart threshold value to %s, "
+                          "greater than uploaded obj size", up_sz * gb_sz)
             config = TransferConfig(multipart_threshold=up_sz * gb_sz)
             download_obj_path = os.path.join(self.test_dir_path, "downloaded_obj")
             self.log.debug("Downloading obj from %s bucket at local path %s",
