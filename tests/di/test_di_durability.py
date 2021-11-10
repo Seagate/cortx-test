@@ -24,9 +24,10 @@ F-23B : Data Durability/Integrity test module.
 
 import os
 import logging
-import pytest
 import secrets
 from time import perf_counter_ns
+from boto3.s3.transfer import TransferConfig
+import pytest
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
@@ -41,7 +42,6 @@ from libs.s3 import cortxcli_test_lib
 from libs.di.di_feature_control import DIFeatureControl
 from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
-from boto3.s3.transfer import TransferConfig
 
 
 class TestDIDurability:
@@ -789,7 +789,7 @@ class TestDIDurability:
         resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
         # Due to space constrain, using MB size obj in VM and GB size obj in HW
-        if "VM" == CMN_CFG.get("setup_type"):
+        if CMN_CFG.get("setup_type") == "VM":
             base_limit = 500
             upper_limit = 5001
             step_limit = 500
@@ -851,7 +851,7 @@ class TestDIDurability:
             "threshold to value greater than the object size.")
         resp_bkt = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(resp_bkt[0], resp_bkt[1])
-        if "VM" == CMN_CFG.get("setup_type"):
+        if CMN_CFG.get("setup_type") == "VM":
             base_limit = 500
             upper_limit = 5001
             step_limit = 500
