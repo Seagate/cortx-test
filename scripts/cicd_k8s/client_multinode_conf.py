@@ -22,19 +22,22 @@
 Setup file for multinode server and client configuration for executing
 the sanity in K8s environment.
 """
-import os
+import argparse
 import configparser
 import json
 import logging
-import argparse
-from commons.helpers.pods_helper import LogicalNode
-from commons.utils import system_utils as sysutils
+import os
+
 from commons import commands as com_cmds
+from commons.helpers.pods_helper import LogicalNode
+from commons.utils import ext_lbconfig_utils as extlb_utils
+from commons.utils import system_utils as sysutils
 
 CONF_FILE = 'scripts/cicd_k8s/config.ini'
 config = configparser.ConfigParser()
 config.read(CONF_FILE)
 LOGGER = logging.getLogger(__name__)
+
 
 # pylint: disable=too-many-arguments
 # pylint: disable-msg=too-many-locals
@@ -51,7 +54,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
     :param str ext_ip: external LB IP
     :return: Target name
     """
-    host_list = []
+    host_list = list()
     host_list.append(m_node)
     json_file = config['default']['setup_entry_json']
     new_setupname = os.getenv("Target_Node")
@@ -100,6 +103,7 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
 
     return new_setupname
 
+
 def configure_haproxy_lb(m_node: str, username: str, password: str):
     """
     Implement external Haproxy LB
@@ -147,6 +151,11 @@ def main():
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
 
+    resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
+    ext_ip = resp[1].strip("'\\n'b'")
+    LOGGER.info("External LB IP: {}".format(ext_ip))
+    extlb_utils.configure_haproxy_lb(
+        master_node, username=username, password=args.password, ext_ip=ext_ip)
     ext_ip = configure_haproxy_lb(master_node, username=username, password=args.password)
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 mgmt_vip=args.mgmt_vip, admin_user=admin_user,
