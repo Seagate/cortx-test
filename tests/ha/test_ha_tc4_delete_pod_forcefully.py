@@ -47,26 +47,22 @@ class TestHA:
                         password=cls.passwd)
             cls.node_list.append(cls.node_obj)
             cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
-
-    def test_ha(self):
-        """Verify Publish the pod failure event in message bus to Hare - Delete pod forcefully """
-        for index in range(0,3):
             LOGGER.info("Running test:Node"+ str(index))
             LOGGER.info("hostname: " + CMN_CFG["nodes"][index]["hostname"])
             LOGGER.info("password: " + CMN_CFG["nodes"][index]["password"])
             LOGGER.info("user: " + CMN_CFG["nodes"][index]["username"])
         LOGGER.info("Done: Setup operations finished.")
+
+    def test_ha(self):
+        """ TC4: To Verify Publish the pod failure event in message bus to Hare - Delete pod forcefully """
         try:
-            LOGGER.info("pre-condition: subscribe.py, publish.py, test_receiver.py, daemon.py should be available in Cortx Stack root dirctory \n")
-            response1 = self.node_obj.execute_cmd("/root/subscribe.py")
-            LOGGER.info("1." + response1.decode("utf-8").strip() + " Subscribe event successfully")
-            LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
-            response2 = self.node_obj.execute_cmd("python /root/daemon.py")
-            LOGGER.info(response2.decode("utf-8").strip())
-            LOGGER.info("List the pod")
+            """ Running test_receiver.py in background and Waiting for event to publish...") """
+            response1 = self.node_obj.execute_cmd("python /root/daemon.py")
+            LOGGER.info(response1.decode("utf-8").strip())
+            """List the pod """ 
             response2 = self.node_list[0].execute_cmd("kubectl get pod", read_lines=True)
             LOGGER.info(response2)
-            """ Specify pod name to Delete """
+            """ Step1: Delete pod forcefully """
             pod_name='tomcat' 
             cmd = "kubectl get pods " + pod_name + " -o jsonpath={.status.phase}"
             response3 = self.node_list[0].execute_cmd(cmd, read_lines=True)
@@ -75,33 +71,26 @@ class TestHA:
             if res3 == "Running":
                 LOGGER.info("The status of pod is Running")
                 try:
-                    """ Delete Pod forcefully"""
-                    LOGGER.info("Step2: Delete the pod")
                     cmd = "kubectl delete pod " + pod_name + "--grace-period=0 --force"
                     response4 = self.node_list[0].execute_cmd(cmd, read_lines=True)
                     LOGGER.info(response4)
-                    LOGGER.info("Deleted the pod sucessfully")
                 except Exception as error:
-                    LOGGER.info(error)
+                    LOGGER.error(error)
             elif res3 == "Pending":
                 LOGGER.info("The status of pod is ContainerCreating")
-            LOGGER.info("\n Publishing  the event... \n")
-            response4 = self.node_obj.execute_cmd("/root/publish.py")
-            LOGGER.info(response4.decode("utf-8").strip())
-            LOGGER.info("\n Publish event successfully")
-            LOGGER.info("\n 5. Event Message printing... \n")
+            """ Step2: Node status """
+            TODO:
+            """ Step3: Check node alert """
+            TODO:
+            """ Step4: Publish the event """
             response5 = self.node_obj.execute_cmd("cat /root/file.txt")
             LOGGER.info(response5.decode("utf-8").strip())
-            LOGGER.info("\n Event Message printed successfully")
-            LOGGER.info("\n 6. Killng process test reciever...")
+            """ Cleanup steps """ 
             response6 = self.node_obj.execute_cmd("pkill -f /root/test_receiver.py")
             LOGGER.info(response6.decode("utf-8").strip())
-            LOGGER.info("Killed test_receiver successfully")
-            LOGGER.info("\n 7. Removing pidfile...")
             response7 = self.node_obj.execute_cmd("rm -f /root/pidfile")
             LOGGER.info(response7.decode("utf-8").strip())
-            LOGGER.info("Removed pidfile successfully")
         except Exception as error:
-            LOGGER.info(error)
+            LOGGER.error(error)
             assert False
         assert True

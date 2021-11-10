@@ -47,55 +47,44 @@ class TestHA:
                         password=cls.passwd)
             cls.node_list.append(cls.node_obj)
             cls.sw_alert_obj = SoftwareAlert(cls.host, cls.uname, cls.passwd)
-    def test_ha(self):
-        """Verify Publish the pod failure event in message bus to Hare - Stop pod using replicaset"""
-        import pdb;pdb.set_trace()
-        for index in range(0,3):
-            LOGGER.info("Running test:Node"+ str(index))
-            LOGGER.info("hostname: " + CMN_CFG["nodes"][index]["hostname"])
-            LOGGER.info("password: " + CMN_CFG["nodes"][index]["password"])
-            LOGGER.info("user: " + CMN_CFG["nodes"][index]["username"])
+            LOGGER.info("Running test:Node"+ str(node))
+            LOGGER.info("hostname: " + CMN_CFG["nodes"][node]["hostname"])
+            LOGGER.info("password: " + CMN_CFG["nodes"][node]["password"])
+            LOGGER.info("user: " + CMN_CFG["nodes"][node]["username"])
         LOGGER.info("Done: Setup operations finished.")
+
+    def test_ha(self):
+        """TC5: To verify Publish the pod failure event in message bus to Hare - Stop pod using replicaset"""
         try:
-            LOGGER.info("pre-condition: subscribe.py, publish.py, test_receiver.py, daemon.py should be available in Cortx Stack root dirctory \n")
-            response1 = self.node_obj.execute_cmd("/root/subscribe.py")
-            LOGGER.info("1." + response1.decode("utf-8").strip() + " Subscribe event successfully")
-            LOGGER.info("\n 2. Running test_receiver.py in background and Waiting for event to publish...")
-            response2 = self.node_obj.execute_cmd("python /root/daemon.py")
-            LOGGER.info(response2.decode("utf-8").strip())
-            """ Stop pod using replicaset """
-            LOGGER.info("Create replicaset for storage-node1...")
+            """ Running test_receiver.py in background and Waiting for event to publish...") """
+            response1 = self.node_obj.execute_cmd("python /root/daemon.py")
+            LOGGER.info(response1.decode("utf-8").strip())
+            """ Step1: Stop pod using replicaset """
+            #Note: deployement.yaml file which may change once cortx-stack+ kubernetes is availab
             response2 = self.node_list[0].execute_cmd("kubectl create -f /root/deployment.yaml", read_lines=True)
             res = response2[0].strip()
             if res == "replicaset.apps/my-replicaset created":
                 LOGGER.info("The replicaset is successfully created")
             elif res.find("already exists"):
-                LOGGER.info("The replicaset already exists, first delete it")
                 response1 = self.node_list[0].execute_cmd("kubectl delete rs my-replicaset")
-                LOGGER.info("Replicaset delete successfully")
-                LOGGER.info(response1)
+                LOGGER.info("Replicaset delete successfully")            
             LOGGER.info(response2)
             response3 = self.node_list[0].execute_cmd("kubectl get replicaset my-replicaset")
             response4 = self.node_list[0].execute_cmd("kubectl get pods")
-            """ Scale down replica """
             response5 = self.node_list[0].execute_cmd("kubectl scale --replicas=0 replicaset my-replicaset")
-            LOGGER.info("\n Publishing  the event... \n")
-            response4 = self.node_obj.execute_cmd("/root/publish.py")
-            LOGGER.info(response4.decode("utf-8").strip())
-            LOGGER.info("\n Publish event successfully")
-            LOGGER.info("\n 5. Event Message printing... \n")
+            """ Step2: Node status """
+            TODO:
+            """ Step3: Check node alert """
+            TODO:
+            """ Step4: Publish the event """
             response5 = self.node_obj.execute_cmd("cat /root/file.txt")
             LOGGER.info(response5.decode("utf-8").strip())
-            LOGGER.info("\n Event Message printed successfully")
-            LOGGER.info("\n 6. Killng process test reciever...")
+            """ Cleanup steps """ 
             response6 = self.node_obj.execute_cmd("pkill -f /root/test_receiver.py")
             LOGGER.info(response6.decode("utf-8").strip())
-            LOGGER.info("Killed test_receiver successfully")
-            LOGGER.info("\n 7. Removing pidfile...")
             response7 = self.node_obj.execute_cmd("rm -f /root/pidfile")
             LOGGER.info(response7.decode("utf-8").strip())
-            LOGGER.info("Removed pidfile successfully")
         except Exception as error:
-            LOGGER.info(error)
+            LOGGER.error(error)
             assert False
         assert True
