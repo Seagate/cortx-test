@@ -36,6 +36,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProvisionerPostDeployment:
+    """
+        Test suite for post deploy commands.
+        """
 
     @classmethod
     def setup_class(cls):
