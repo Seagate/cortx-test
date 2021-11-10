@@ -484,9 +484,9 @@ FI_DISABLE = 'disable'
 FI_TEST = 'test'
 # Kubernetes commands to interact with service/pods.
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
-                 +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
+                    +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
 K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
-K8S_SVC_CMD ="kubectl get svc"
+K8S_SVC_CMD = "kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
@@ -494,6 +494,7 @@ K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
 K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_DELETE_POD = "kubectl delete pod {}"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- /bin/bash -- hctl status --json"
 
 S3_SRV_PORT = S3_SRV_START_PORT = 28081
 # Kubectl command prefix
