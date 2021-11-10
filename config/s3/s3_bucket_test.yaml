@@ -555,7 +555,6 @@ test_554:
         Principal: "*"
         Action: "s3:GetObject"
         Resource: "arn:aws:s3:::{}/*"
-        Principal: "*"
       - Effect: "Deny"
         Principal: "*"
         Action: "s3:DeleteObject"

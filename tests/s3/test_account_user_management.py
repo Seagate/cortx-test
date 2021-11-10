@@ -30,9 +30,11 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.assert_utils import assert_in
 from commons.utils.system_utils import create_file, remove_file
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
@@ -68,6 +70,11 @@ class TestAccountUserManagement:
         cls.users_list = cls.accounts_list = cls.account_name = cls.test_file = None
         cls.timestamp = cls.test_dir_path = cls.test_file_path = cls.user_name = None
         cls.bucket_name = cls.obj_name = cls.s3acc_obj = None
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+                            password=cls.passwd)
 
     def setup_method(self):
         """
@@ -864,10 +871,10 @@ class TestAccountUserManagement:
     def test_ssl_certificate_2090(self):
         """SSL certificate."""
         self.log.info("START: SSL certificate.")
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
-        status, resp = S3H_OBJ.copy_s3server_file(
+        status, resp = self.node_obj.copy_file_to_local(
             self.ca_cert_path, "ca.crt")
         assert status, resp
         with open("ca.crt", "r") as file:
@@ -892,7 +899,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 1: Checking if %s file exists on server", str(
                 self.ca_cert_path))
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
         self.log.info(

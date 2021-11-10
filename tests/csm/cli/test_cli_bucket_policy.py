@@ -132,13 +132,12 @@ class TestCliBucketPolicy:
         self.log.info("Removing policy files")
         remove_cmd = commands.CMD_REMOVE_DIR.format(self.remote_file_path)
 
-        for each_node in self.node_list:
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                self.remote_file_path,
-                each_node,
-                CMN_CFG["nodes"][0]["username"],
-                CMN_CFG["nodes"][0]["password"])
-            if resp[0]:
+        for node_id, each_node in enumerate(self.node_list):
+            node_obj = Node(hostname=each_node,
+                            username=CMN_CFG["nodes"][node_id]["username"],
+                            password=CMN_CFG["nodes"][node_id]["password"])
+            resp = node_obj.path_exists(self.remote_file_path)
+            if resp:
                 system_utils.run_remote_cmd(
                     cmd=remove_cmd,
                     hostname=each_node,
