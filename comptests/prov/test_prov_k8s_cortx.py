@@ -116,7 +116,7 @@ class TestProvK8Cortx:
         LOGGER.info("Step 2: Check secret files are copied to each data pod.")
         secrets_path = "ls /etc/cortx/solution/secret/"
         for pod_name in data_pod_list[1]:
-            resp = self.master_node_obj.execute_cmd(cmd=commands.K8S_GET_CMD.
+            resp = self.master_node_obj.execute_cmd(cmd=commands.K8S_POD_INTERACTIVE_CMD.
                                                     format(pod_name, secrets_path),
                                                     read_lines=True)
             assert_utils.assert_is_not_none(resp)
