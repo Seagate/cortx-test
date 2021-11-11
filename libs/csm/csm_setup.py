@@ -5,7 +5,6 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from commons.constants import Rest as const
 from commons.utils import config_utils
-from config import CSM_REST_CFG
 
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
@@ -27,8 +26,6 @@ class CSMConfigsCheck:
             result, response = self._s3account.create_verify_s3_custom(user_type="pre-define")
             result = response.status_code in (
                 const.CONFLICT, const.SUCCESS_STATUS_FOR_POST)
-            CSM_REST_CFG["s3account_user"]["access_key"] = response.json()["access_key"]
-            CSM_REST_CFG["s3account_user"]["secret_key"] = response.json()["secret_key"]
         except Exception as error:
             # CTP Exception handling not done here as this is being called in setup for every test suit
             # CTP Exception handling shall get complicated
