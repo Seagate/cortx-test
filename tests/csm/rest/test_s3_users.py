@@ -853,6 +853,12 @@ class TestS3user():
         new_users = const.MAX_S3_USERS - existing_user
         self.log.info("New users to create: %s", new_users)
         created_users = []
+        user_data = {"account_name": CSM_REST_CFG["s3account_user"]["username"],
+                     "account_email": CSM_REST_CFG["s3account_user"]["email"],
+                     "access_key": CSM_REST_CFG["s3account_user"]["access_key"],
+                     "secret_key": CSM_REST_CFG["s3account_user"]["secret_key"]}
+        self.log.error("Adding Predefined user %s", user_data)
+        created_users.append(user_data)
         self.log.info("Creating %s S3 users...", new_users)
         for i in range(new_users):
             self.log.info("[START] Create User count : %s", i + 1)
@@ -880,7 +886,14 @@ class TestS3user():
             akey = created_user["access_key"]
             skey = created_user["secret_key"]
             usr = created_user["account_name"]
-            self.log.info("Creating objects for %s user", usr)
+            self.log.info("Creating IAM users for %s user", usr)
+            for i in range(const.MAX_IAM_USERS):
+                iam_user = f"iamuser{i}"
+                self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
+                      iam_user, akey, skey)
+                assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
+
+            self.log.info("Creating Buckets and objects for %s user", usr)
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Create Bucket count : %s", i + 1)
                 bucket = f"bucket{i}"
@@ -895,6 +908,12 @@ class TestS3user():
 
         # cleanup loop
         for created_user in created_users:
+            for i in range(const.MAX_IAM_USERS):
+                iam_user = f"iamuser{i}"
+                self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                        iam_user, akey, skey)
+                assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
+
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
                 bucket = f"bucket{i}"

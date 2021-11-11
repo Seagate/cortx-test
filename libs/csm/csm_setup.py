@@ -24,7 +24,7 @@ class CSMConfigsCheck:
         result = False
         try:
             self._log.info("Creating S3 account for setup ")
-            response = self._s3account.create_s3_account(user_type="pre-define")
+            result, response = self._s3account.create_verify_s3_custom(user_type="pre-define")
             result = response.status_code in (
                 const.CONFLICT, const.SUCCESS_STATUS_FOR_POST)
             CSM_REST_CFG["s3account_user"]["access_key"] = response.json()["access_key"]
