@@ -139,8 +139,8 @@ class TestFailureDomainK8Cortx:
                                                        self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Delay : 300 seconds")
-        time.sleep(300)
+        self.log.info("Delay : 420 seconds")
+        time.sleep(420)
 
         self.log.info("Step 6: Check s3 server status")
         resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])

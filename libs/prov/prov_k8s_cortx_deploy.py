@@ -760,11 +760,13 @@ class ProvDeployK8sCortxLib:
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
                            f"-- {'consul kv get -recurse | grep s3 | grep name'}",
             decode=True)
-        LOGGER.info("Response for cortx cluster status: %s", res)
-        for line in res:
-            if "failed" in line or "offline" in line:
-                return False, res
-        return True, res
+        resp = res.split('\n')
+        LOGGER.info("Response for cortx cluster status: %s", resp)
+        for line in resp:
+            if "online" not in line:
+                LOGGER.debug("Line: %s",line)
+                return False, resp
+        return True, resp
 
     @staticmethod
     def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
@@ -831,19 +833,15 @@ class ProvDeployK8sCortxLib:
         returns status boolean
         """
         LOGGER.info("Post Deployment Steps")
-        post_deploy_cfg = PROV_CFG["post_deployment_steps"]
         csm_s3 = RestS3user()
 
         LOGGER.info("Create S3 account")
-        s3user_pswd = pswdmanager.decrypt(post_deploy_cfg["s3user_pswd"])
         csm_s3.create_custom_s3_payload("valid")
-        resp = csm_s3.create_s3_account(post_deploy_cfg["s3user_name"],
-                                        post_deploy_cfg["s3user_email"],
-                                        s3user_pswd)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Response for account creation: %s", resp)
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
+        resp = csm_s3.create_s3_account()
+        LOGGER.info("Response for account creation: %s", resp.json())
+        details = resp.json()
+        access_key = details['access_key']
+        secret_key = details["secret_key"]
         try:
             LOGGER.info("Configure AWS keys on Client")
             system_utils.execute_cmd(
