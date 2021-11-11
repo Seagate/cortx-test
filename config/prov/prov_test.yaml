@@ -128,6 +128,7 @@ k8s_cortx_deploy:
   git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
+  pem_file_path: "/root/cortx-k8s/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/ssl-cert/s3.seagate.com.pem"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
   third_party_images:

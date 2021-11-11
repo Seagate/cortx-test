@@ -32,7 +32,8 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from config import CMN_CFG, HA_CFG
+from commons.utils import ext_lbconfig_utils
+from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 
@@ -144,6 +145,18 @@ class TestFailureDomainK8Cortx:
         self.log.info("Step 6: Check s3 server status")
         resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
         assert_utils.assert_true(resp[0], resp[1])
+
+        resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
+        eth1_ip = resp[1].strip("'\\n'b'")
+        self.log.info("Step 7: Configure HAproxy on client")
+        ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
+                                                       self.master_node_list[0].username,
+                                                       self.master_node_list[0].password,eth1_ip,
+                                                       PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+
+        self.log.info("Step 8: Create S3 account and configure credentials")
+        resp = self.deploy_lc_obj.post_deployment_steps_lc()
+        assert_utils.assert_true(resp[0],resp[1])
 
         self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                       len(self.worker_node_list), sns_data, sns_parity, sns_spare)
