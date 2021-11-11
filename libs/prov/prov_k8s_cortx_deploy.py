@@ -27,6 +27,7 @@ import yaml
 import json
 
 from commons import commands as common_cmd
+from commons import constants as const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
@@ -704,3 +705,33 @@ class ProvDeployK8sCortxLib:
                         return False, "Service {} not started.".format(svc["name"])
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
+
+    @staticmethod
+    def get_data_pods(node_obj) -> tuple:
+        """
+        Get list of data pods in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of data pods in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        data_pod_list = [pod.strip() for pod in output if const.POD_NAME_PREFIX in pod]
+        if data_pod_list is not None:
+            return True, data_pod_list
+        return False, "Data PODS are not retrieved for cluster."
+
+    @staticmethod
+    def check_pods_status(node_obj) -> bool:
+        """
+        Helper function to check pods status.
+        :param node_obj: Master node(Logical Node object)
+        :return: True/False
+        """
+        LOGGER.info("Checking all Pods are online.")
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS, read_lines=True)
+        for line in range(1, len(resp)):
+            if "Running" not in resp[line]:
+                return False
+        return True

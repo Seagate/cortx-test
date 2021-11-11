@@ -439,6 +439,7 @@ K8S_DELETE_POD = "kubectl delete pod {}"
 K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- /bin/bash -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
+K8S_GET_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
 
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"

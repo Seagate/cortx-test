@@ -21,15 +21,19 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
-
 import pytest
 
+from commons import commands
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from config import CMN_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 LOGGER = logging.getLogger(__name__)
+
+SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
+                      "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
+                      "common_admin_secret"]
 
 
 class TestProvK8Cortx:
@@ -64,7 +68,8 @@ class TestProvK8Cortx:
         """
         LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
         LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        resp = self.deploy_lc_obj.deploy_cortx_k8s_cluster(self.master_node_list, self.worker_node_list)
+        resp = self.deploy_lc_obj.deploy_cortx_k8s_cluster(self.master_node_list,
+                                                           self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
 
@@ -82,3 +87,40 @@ class TestProvK8Cortx:
         assert_utils.assert_true(resp[0])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-29269")
+    def test_29269(self):
+        """
+        Verify if all the third party services (kafka, consul, openldap) pods are running.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Check third party services Pods status.")
+        resp = ProvDeployK8sCortxLib.check_pods_status(self.master_node_obj)
+        assert_utils.assert_true(resp)
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-28387")
+    def test_28387(self):
+        """
+        Verify if components secrets are copied inside the POD.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Check secret files are copied inside the POD.")
+        LOGGER.info("Step 1: Get all running data pods from cluster.")
+        data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        assert_utils.assert_true(data_pod_list[0])
+        LOGGER.info("Step 2: Check secret files are copied to each data pod.")
+        secrets_path = "ls /etc/cortx/solution/secret/"
+        for pod_name in data_pod_list[1]:
+            resp = self.master_node_obj.execute_cmd(cmd=commands.K8S_GET_CMD.
+                                                    format(pod_name, secrets_path),
+                                                    read_lines=True)
+            assert_utils.assert_is_not_none(resp)
+            for secret in resp:
+                secret = secret.split("\n")
+                assert_utils.assert_in(secret[0], SECRETS_FILES_LIST)
+        LOGGER.info("Test Completed.")
