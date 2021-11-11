@@ -45,7 +45,6 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     :param username: username for node
     :param password: password for node
     :param ext_ip: External LB IP from client node setup
-    :return: bool
     """
     m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
     resp = m_node_obj.execute_cmd(cmd=cm_cmd.K8S_WORKER_NODES, read_lines=True)
@@ -103,7 +102,6 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
                 continue
             f_write.write(line)
     LOGGER.info("Coping the PEM from one of the nodes of CORTX deployment to the LB host.")
-    sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
     pem_local_path = "/etc/ssl/stx/stx.pem"
     if os.path.exists(pem_local_path):
         sys_utils.execute_cmd("rm -f {}".format(pem_local_path))

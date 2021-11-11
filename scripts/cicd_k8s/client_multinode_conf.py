@@ -104,33 +104,6 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
     return new_setupname
 
 
-def configure_haproxy_lb(m_node: str, username: str, password: str):
-    """
-    Implement external Haproxy LB
-    :param m_node: hostname for master node
-    :param username: username for node
-    :param password: password for node
-    :return: external LB IP
-    """
-    resp = sysutils.execute_cmd(cmd=com_cmds.CMD_GET_IP_IFACE.format("eth1"))
-    ext_ip = resp[1].strip("'\\n'b'")
-    print("External LB IP: %s", ext_ip)
-    m_node_obj = LogicalNode(hostname=m_node, username=username, password=password)
-    resp = m_node_obj.execute_cmd(cmd=com_cmds.CMD_SRVC_STATUS, read_lines=True)
-    print("Response for services status: %s", resp)
-    # TODO: HAProxy changes to file
-    print("Setting s3 endpoints of ext LB on client.")
-    sysutils.execute_cmd(cmd="rm -f /etc/hosts")
-    with open("/etc/hosts", 'w') as file:
-        file.write("127.0.0.1   localhost localhost.localdomain localhost4 "
-                   "localhost4.localdomain4\n")
-        file.write("::1         localhost localhost.localdomain localhost6 "
-                   "localhost6.localdomain6\n")
-        file.write("{} s3.seagate.com sts.seagate.com iam.seagate.com "
-                   "sts.cloud.seagate.com\n".format(ext_ip))
-    return ext_ip
-
-
 def main():
     """
     Main Function.
