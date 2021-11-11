@@ -26,11 +26,11 @@ import os
 import logging
 import pytest
 
+from commons import commands
+from commons.utils import assert_utils
 from commons.helpers.node_helper import Node
 from config import CMN_CFG, PROV_CFG
-from commons.utils import assert_utils
 from libs.prov.prov_deploy_ff import ProvDeployFFLib
-from commons import commands
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,10 +79,14 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24960")
     def test_24960(self):
-        """Verify cortx_setup config set command fails for MOTR Client Instances when value is not given."""
+        """
+        Verify cortx_setup config set command fails for MOTR Client
+        Instances when value is not given.
+        """
         LOGGER.info("Test Started.")
         cmd = "cortx_setup config set --key 'cortx>software>motr>service>client_instances'"
-        out = "cortx_setup command Failed: Invalid input. Expected Config param format: --key 'key' --value 'value'"
+        out = "cortx_setup command Failed: Invalid input. " \
+              "Expected Config param format: --key 'key' --value 'value'"
         for node_obj in self.node_list:
             res = node_obj.execute_cmd(cmd=cmd, exc=False,
                                        read_lines=True)
@@ -93,9 +97,13 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24958")
     def test_24958(self):
-        """Verify cortx_setup config set to add MOTR Client Instances key and value in Confstore and Pillar."""
+        """
+        Verify cortx_setup config set to add MOTR Client Instances
+        key and value in Confstore and Pillar.
+        """
         LOGGER.info("Test Started.")
-        motr_client_instances = self.deploy_cfg["feature_config"]["'cortx>software>motr>service>client_instances'"]
+        motr_client_instances = self.deploy_cfg["feature_config"][
+            "'cortx>software>motr>service>client_instances'"]
         feature_conf = {"'cortx>software>motr>service>client_instances'": motr_client_instances}
         for node_obj in self.node_list:
             res = ProvDeployFFLib.configure_feature(node_obj, feature_conf)
@@ -106,12 +114,16 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24959")
     def test_24959(self):
-        """Verify cortx_setup config get is returning MOTR Client Instances set key."""
+        """
+        Verify cortx_setup config get is returning MOTR Client Instances set key.
+        """
         LOGGER.info("Test Started.")
-        motr_client_instances = self.deploy_cfg["feature_config"]["'cortx>software>motr>service>client_instances'"]
+        motr_client_instances = self.deploy_cfg["feature_config"][
+            "'cortx>software>motr>service>client_instances'"]
         key = "'cortx>software>motr>service>client_instances'"
         for node_obj in self.node_list:
-            res = node_obj.execute_cmd(cmd=commands.FEATURE_GET_CFG.format(key)).decode("utf-8").strip()
+            res = node_obj.execute_cmd(cmd=commands.FEATURE_GET_CFG.
+                                       format(key)).decode("utf-8").strip()
             assert_utils.assert_equal(int(res), motr_client_instances)
         LOGGER.info("Test Completed.")
 
@@ -119,10 +131,13 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24954")
     def test_24954(self):
-        """Verify cortx_setup config set fails for S3 IO Max Units when value is not given."""
+        """
+        Verify cortx_setup config set fails for S3 IO Max Units when value is not given.
+        """
         LOGGER.info("Test Started.")
         cmd = "cortx_setup config set --key 'cortx>software>s3>io>max_units'"
-        out = "cortx_setup command Failed: Invalid input. Expected Config param format: --key 'key' --value 'value'"
+        out = "cortx_setup command Failed: Invalid input. " \
+              "Expected Config param format: --key 'key' --value 'value'"
         for node_obj in self.node_list:
             res = node_obj.execute_cmd(cmd=cmd, exc=False,
                                        read_lines=True)
@@ -133,9 +148,12 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24952")
     def test_24952(self):
-        """Verify cortx_setup config set to add S3 IO Max Units key and value in Confstore and Pillar."""
+        """
+        Verify cortx_setup config set to add S3 IO Max Units key and value in Confstore and Pillar.
+        """
         LOGGER.info("Test Started.")
-        motr_client_instances = self.deploy_cfg["feature_config"]["'cortx>software>s3>io>max_units'"]
+        motr_client_instances = self.deploy_cfg["feature_config"][
+            "'cortx>software>s3>io>max_units'"]
         feature_conf = {"'cortx>software>s3>io>max_units'": motr_client_instances}
         for node_obj in self.node_list:
             res = ProvDeployFFLib.configure_feature(node_obj, feature_conf)
@@ -146,11 +164,15 @@ class TestProvFFCommands:
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-24953")
     def test_24953(self):
-        """Verify cortx_setup config get is returning S3 IO Max Units set key."""
+        """
+        Verify cortx_setup config get is returning S3 IO Max Units set key.
+        """
         LOGGER.info("Test Started.")
-        motr_client_instances = self.deploy_cfg["feature_config"]["'cortx>software>s3>io>max_units'"]
+        motr_client_instances = self.deploy_cfg["feature_config"][
+            "'cortx>software>s3>io>max_units'"]
         key = "'cortx>software>s3>io>max_units'"
         for node_obj in self.node_list:
-            res = node_obj.execute_cmd(cmd=commands.FEATURE_GET_CFG.format(key)).decode("utf-8").strip()
+            res = node_obj.execute_cmd(cmd=commands.FEATURE_GET_CFG.
+                                       format(key)).decode("utf-8").strip()
             assert_utils.assert_equal(int(res), motr_client_instances)
         LOGGER.info("Test Completed.")
