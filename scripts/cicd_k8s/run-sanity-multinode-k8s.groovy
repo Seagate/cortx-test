@@ -48,20 +48,12 @@ deactivate
 			    sh label: '', script: '''source venv/bin/activate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --node_count "${NUM_NODES}" --mgmt_vip "${MGMT_VIP}"
+sh scripts/cicd_k8s/lb_haproxy.sh
+python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
 deactivate
 '''
 			}
-		}
-		stage('CSM_Boarding') {
-			steps{
-			    sh label: '', script: '''source venv/bin/activate
-export MGMT_VIP="${MGMT_VIP}"
-pytest scripts/jenkins_job/aws_configure.py::test_preboarding --local True --target ${Target_Node}
-deactivate
-'''
-			}
-		}
+	    }
 		stage('COPY_TP_TE') {
 			steps{
 				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
@@ -83,7 +75,7 @@ deactivate
 source venv/bin/activate
 set +x
 echo 'Creating s3 account and configuring awscli on client'
-pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node}
+pytest scripts/jenkins_job/aws_configure.py::test_create_s3_acc_rest --local True --target ${Target_Node}
 set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
@@ -169,7 +161,7 @@ deactivate
             		  def records = readCSV file: 'cloned_tp_info.csv'
             		  env.Current_TP = records[0][0]
         		  }
-        		  if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
+        		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
 export MGMT_VIP="${HOSTNAME}"
@@ -179,11 +171,6 @@ deactivate
 } catch (err) {
     echo "Caught error in SB: ${err}"
 }
-                      /* if ( "${CREATE_JIRA_ISSUE}" ) {
-                        jiraIssue = createJiraIssue(env.Current_TP)
-                        env.jira_issue="https://jts.seagate.com/browse/${jiraIssue}"
-                        echo "${jira_issue}"
-                      } */
                   }
              try {
              sh label: '', script: '''source venv/bin/activate
@@ -193,40 +180,11 @@ deactivate
 } catch (err) {
     echo "Caught error in crash files collection: ${err}"
 }
-		     }
+		     } */
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
 				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
-}
-
-def createJiraIssue(String Current_TP) {
-
-    def issue = [
-                    fields: [
-                        project: [key: 'EOS'],
-                        issuetype: [name: 'Bug'],
-                        priority: [name: "High"],
-                        versions: [[name: "CORTX-R2"]],
-                        labels: ["CORTX_QA", "Sanity"],
-                        components: [[name: "Automation"]],
-                        summary: "${JOB_BASE_NAME} Failed on Build ${CORTX_BUILD}",
-                        description: "{panel}${JOB_BASE_NAME} is failed for the build ${CORTX_BUILD}. Please check Jenkins console log and deployment log for more info.\n"+
-                                    "\n h4. Test Details \n"+
-                                    "|Cortx build|${CORTX_BUILD}|\n"+
-                                    "|Jenkins build|[${JOB_BASE_NAME}#${BUILD_NUMBER} |${BUILD_URL}]|\n"+
-                                    "|Test Plan |${Current_TP}|\n"+
-                                    "|Test Results|[${JOB_BASE_NAME}/${BUILD_NUMBER}/testReport|${BUILD_URL}testReport]|\n"+
-                                    "|Client Node|${NODE_NAME}|\n"+
-                                    "\n\n"+
-                                    "Please find test and support bundle logs at below location: \n"+
-                                    "[${JOB_BASE_NAME}/${BUILD_NUMBER}/artifact|${BUILD_URL}artifact] \n {panel}"
-                    ]
-                ]
-
-
-    def newIssue = jiraNewIssue issue: issue, failOnError: false, site: 'SEAGATE_QA_JIRA'
-    return newIssue.data.key
 }

@@ -33,6 +33,7 @@ from commons.utils import support_bundle_utils as sb
 from config import CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
+from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 # Global Constants
 LOGGER = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ config_file = 'scripts/jenkins_job/config.ini'
 config = configparser.ConfigParser()
 config.read(config_file)
 cortx_obj = CortxCliTestLib()
+rest_obj = S3AccountOperationsRestAPI()
 config_chk = CSMConfigsCheck()
 
 
@@ -117,6 +119,16 @@ def test_create_acc_aws_conf():
     configure_awscli(access_key, secret_key)
     cortx_obj.close_connection()
 
+def test_create_s3_acc_rest():
+    LOGGER.info("Getting access and secret key for configuring AWS")
+    acc_name = "nightly_s3acc{}".format(perf_counter_ns())
+    acc_email = "nightly_s3acc{}@seagate.com".format(perf_counter_ns())
+    acc_passwd = pswdmanager.decrypt(config['s3creds']['acc_passwd'])
+    resp = rest_obj.create_s3_account(acc_name, acc_email, acc_passwd)
+    print("Response for account creation: {}".format(resp))
+    access_key = resp[1]["access_key"]
+    secret_key = resp[1]["secret_key"]
+    configure_awscli(access_key, secret_key)
 
 def test_preboarding():
     """
