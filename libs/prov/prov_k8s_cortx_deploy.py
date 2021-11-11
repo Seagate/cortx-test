@@ -21,11 +21,11 @@
 """
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
+import json
 import logging
+import os
 
 import yaml
-import json
-import os
 
 from commons import commands as common_cmd
 from commons import constants as common_const
