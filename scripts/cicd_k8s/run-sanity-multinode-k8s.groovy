@@ -75,7 +75,7 @@ deactivate
 source venv/bin/activate
 set +x
 echo 'Creating s3 account and configuring awscli on client'
-pytest scripts/jenkins_job/aws_configure.py::test_create_s3_acc_rest --local True --target ${Target_Node} --health_check False
+pytest scripts/jenkins_job/aws_configure.py::test_create_acc_aws_conf --local True --target ${Target_Node} --health_check False
 set -e
 INPUT=cloned_tp_info.csv
 OLDIFS=$IFS
