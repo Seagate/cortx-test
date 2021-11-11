@@ -147,6 +147,7 @@ class TestUserLoginProfileTests:
                 "Created user login profile for user %s", user_name)
         return access_key, secret_key
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
@@ -154,7 +155,10 @@ class TestUserLoginProfileTests:
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
     def test_2846(self):
-        """Verify update-login-profile (password change) for IAM user."""
+        """
+        Verify update-login-profile (password change) for IAM user.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info(
             "STARTED:Verify update-login-profile (password change) for IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
@@ -423,6 +427,7 @@ class TestUserLoginProfileTests:
         self.log.info("STARTED: Update login profile for IAM user without "
                       "password and reset flag enabled")
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.release_regression
@@ -430,7 +435,10 @@ class TestUserLoginProfileTests:
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)
     def test_2858(self):
-        """Create a login profile for the existing IAM user."""
+        """
+        Create a login profile for the existing IAM user.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info(
             "STARTED: Create a login profile for the existing IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
