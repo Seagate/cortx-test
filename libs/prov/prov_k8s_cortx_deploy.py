@@ -25,6 +25,7 @@ import logging
 
 import yaml
 import json
+import os
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -46,6 +47,7 @@ class ProvDeployK8sCortxLib:
 
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
+        self.cortx_image = os.getenv("CORTX_IMAGE")
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -259,15 +261,15 @@ class ProvDeployK8sCortxLib:
 
     def pull_third_party_images(self, worker_obj_list: list):
         """
-        This method pulls the third party images
+        This method pulls  cortx and 3rd party images
         param: worker_obj_list: Worker Object list
         return : Boolean
         """
-        LOGGER.info("Pull 3rd party images on all worker nodes.")
+        LOGGER.info("Pull Cortx and 3rd party images on all worker nodes.")
         LOGGER.debug(self.deploy_cfg['third_party_images'])
         data = self.deploy_cfg['third_party_images']
-        LOGGER.debug("Data: %s", data)
         for obj in worker_obj_list:
+            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
             for key, value in data.items():
                 if key in ("kafka", "zookeeper"):
                     value = "bitnami/" + key + ":" + value
