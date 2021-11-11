@@ -41,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str,
-                         pem_remote_path: str):
+                         pem_remote_path: str = cm_const.K8S_PEM_PATH):
     """
     Implement external Haproxy LB
     :param m_node: hostname for master node

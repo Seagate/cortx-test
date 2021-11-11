@@ -152,7 +152,7 @@ class TestFailureDomainK8Cortx:
         ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
                                                        self.master_node_list[0].username,
                                                        self.master_node_list[0].password,eth1_ip,
-                                                       PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
 
         self.log.info("Step 8: Create S3 account and configure credentials")
         resp = self.deploy_lc_obj.post_deployment_steps_lc()

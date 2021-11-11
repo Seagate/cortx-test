@@ -242,6 +242,12 @@ class ProvDeployK8sCortxLib:
 
     @staticmethod
     def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
+        """
+        Validate cluster status
+        param: node_obj : Logical node object of Master node
+        param: remote_code_path: Remote code path of cortx-k8s repo on master node.
+        return : Boolean
+        """
         LOGGER.info("Validate Cluster status")
         cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
                                                           common_cmd.CLSTR_STATUS_CMD)
@@ -769,6 +775,7 @@ class ProvDeployK8sCortxLib:
         return True, resp
 
     @staticmethod
+    # pylint: disable-msg=too-many-locals
     def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
         """
         Configure MetalLB on the master node
