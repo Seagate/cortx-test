@@ -55,7 +55,7 @@ class TestS3user():
         if not user_already_present:
             user_already_present = cls.config.setup_csm_s3()
         assert user_already_present
-
+        cls.created_users = []
         cls.s3user = RestS3user()
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_s3_user.yaml")
         cls.log.info("Initiating Rest Client for Alert ...")
@@ -69,6 +69,29 @@ class TestS3user():
         """
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting all S3 users except predefined ones...")
+        for created_user in self.created_users:
+            akey = created_user["access_key"]
+            skey = created_user["secret_key"]
+            usr = created_user["account_name"]
+            for i in range(const.MAX_IAM_USERS):
+                iam_user = f"{usr}iam{i}"
+                self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
+                        iam_user, akey, skey)
+                try:
+                    s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
+                except:
+                    pass
+
+            for i in range(const.MAX_BUCKETS):
+                self.log.info("[START] Delete Bucket count : %s", i + 1)
+                bucket = f"{usr}bucket{i}"
+                self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
+                              "secret key: %s", bucket, akey, skey)
+                try:
+                    s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
+                except:
+                    pass
+                self.log.info("[END] Delete Bucket count : %s", i + 1)
         self.config.delete_s3_users()
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("[COMPLETED] ######### Teardown #########")
@@ -852,20 +875,21 @@ class TestS3user():
         self.log.info("Max S3 users : %s", const.MAX_S3_USERS)
         new_users = const.MAX_S3_USERS - existing_user
         self.log.info("New users to create: %s", new_users)
-        created_users = []
+        self.created_users = []
         user_data = {"account_name": CSM_REST_CFG["s3account_user"]["username"],
                      "account_email": CSM_REST_CFG["s3account_user"]["email"],
                      "access_key": CSM_REST_CFG["s3account_user"]["access_key"],
                      "secret_key": CSM_REST_CFG["s3account_user"]["secret_key"]}
         self.log.error("Adding Predefined user %s", user_data)
-        created_users.append(user_data)
+        self.created_users.append(user_data)
+
         self.log.info("Creating %s S3 users...", new_users)
         for i in range(new_users):
             self.log.info("[START] Create User count : %s", i + 1)
             result, resp = self.s3user.create_verify_s3_custom("valid")
             user_data = resp.json()
             self.log.info("Created S3 user : %s", user_data["account_name"])
-            created_users.append(user_data)
+            self.created_users.append(user_data)
             usr = user_data["account_name"]
             assert result, f"Status code check failed for {usr} user"
             self.log.info("[END] Create User count : %s", i + 1)
@@ -881,14 +905,14 @@ class TestS3user():
 
         # add pre-defined user to the created_user
         # create loop
-        for created_user in created_users:
+        for created_user in self.created_users:
             self.log.info("-" * 50)
             akey = created_user["access_key"]
             skey = created_user["secret_key"]
             usr = created_user["account_name"]
             self.log.info("Creating IAM users for %s user", usr)
             for i in range(const.MAX_IAM_USERS):
-                iam_user = f"iamuser{i}"
+                iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                       iam_user, akey, skey)
                 assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
@@ -896,37 +920,43 @@ class TestS3user():
             self.log.info("Creating Buckets and objects for %s user", usr)
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Create Bucket count : %s", i + 1)
-                bucket = f"bucket{i}"
+                bucket = f"{usr}bucket{i}"
                 self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                               bucket, akey, skey)
                 assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
-                obj = f"object{i}.txt"
+                obj = f"{bucket}obj{i}.txt"
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                               "secret key: %s", obj, bucket, akey, skey)
                 assert s3_misc.create_put_objects(obj, bucket, akey, skey), "Put object Failed"
                 self.log.info("[END] Create Bucket count : %s", i + 1)
 
         # cleanup loop
-        for created_user in created_users:
+        for created_user in self.created_users:
+            self.log.info("-" * 50)
+            akey = created_user["access_key"]
+            skey = created_user["secret_key"]
+            usr = created_user["account_name"]
+            self.log.info("Deleting IAM users for %s user", usr)
             for i in range(const.MAX_IAM_USERS):
-                iam_user = f"iamuser{i}"
+                iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
                         iam_user, akey, skey)
                 assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
-
+            self.log.info("Deleting buckets for %s user", usr)
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
-                bucket = f"bucket{i}"
+                bucket = f"{usr}bucket{i}"
                 self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
                               "secret key: %s", bucket, akey, skey)
                 assert s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
                 self.log.info("[END] Delete Bucket count : %s", i + 1)
 
-        for created_user in created_users:
+        for created_user in self.created_users:
             s3_user = created_user["account_name"]
             self.log.info("Verify Delete S3 user: %s", s3_user)
             resp = self.s3user.delete_s3_account_user(s3_user)
             assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
+            self.created_users.remove(created_user)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
