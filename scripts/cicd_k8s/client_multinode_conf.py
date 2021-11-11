@@ -119,7 +119,7 @@ def main():
     args = parser.parse_args()
     master_node = args.master_node
     node_count = args.node_count
-    print("Total number of nodes in cluster: %s", node_count)
+    print("Total number of nodes in cluster: {}".format(node_count))
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
@@ -137,7 +137,7 @@ def main():
     setupname = create_db_entry(master_node, username=username, password=args.password,
                                 mgmt_vip=args.mgmt_vip, admin_user=admin_user,
                                 admin_passwd=admin_passwd, ext_ip=ext_ip)
-    print("target_name: %s", setupname)
+    print("target_name: {}".format(setupname))
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
         json_data = json.load(file)

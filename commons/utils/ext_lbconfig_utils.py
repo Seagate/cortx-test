@@ -64,40 +64,50 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     LOGGER.info("Worker node IP PORTs info for haproxy: %s", worker_node)
     with open(cm_const.HAPROXY_DUMMY_CONFIG, 'r') as f_read:
         haproxy_dummy = f_read.readlines()
-
+    if not os.path.exists("/etc/haproxy"):
+        sys_utils.execute_cmd("mkdir -p {}".format("/etc/haproxy"))
     with open(cm_const.const.CFG_FILES[0], "w") as f_write:
         for line in haproxy_dummy:
-            if "# *frontend main" in line:
-                line = f"    bind {ext_ip}:80\n    bind {ext_ip}:443 ssl crt /etc/ssl/stx/stx.pem\n"
+            if "# cortx_setup_1" in line:
+                line = f"    bind {ext_ip}:80\n"
                 f_write.write(line)
                 continue
-            if "# *s3 auth server port" in line:
-                line = f"    bind {ext_ip}:9080\n" \
-                       f"    bind {ext_ip}:9443 ssl crt /etc/ssl/stx/stx.pem\n"
+            if "# cortx_setup_https" in line:
+                line = f"    bind {ext_ip}:443 ssl crt /etc/ssl/stx/stx.pem\n"
                 f_write.write(line)
                 continue
-            if "# *backend cortx-setup-1" in line:
+            if "# auth_port_9080" in line:
+                line = f"    bind {ext_ip}:9080\n"
+                f_write.write(line)
+                continue
+            if "# auth_https_port_9443" in line:
+                line = f"    bind {ext_ip}:9443 ssl crt /etc/ssl/stx/stx.pem\n"
+                f_write.write(line)
+                continue
+            if "# 80 cortx_setup_1" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server ha-s3-{index} {worker_node[worker]['eth1']}:" \
                            f"{worker_node[worker]['80']}    #port mapped to 80\n"
                     f_write.write(line)
-                f_write.write("\n")
+                continue
+            if "# 443 cortx_setup_https" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server ha-s3-ssl-{index} {worker_node[worker]['eth1']}:" \
-                           f"{worker_node[worker]['443']}    #port mapped to 443\n"
+                           f"{worker_node[worker]['443']} ssl verify none    #port mapped to 443\n"
                     f_write.write(line)
                 continue
-            if "# *backend s3-auth" in line:
+            if "# 9080 s3_auth" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server s3authserver-instance{index} " \
                            f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']}    " \
                            f"#port mapped to 9080\n"
                     f_write.write(line)
-                f_write.write("\n")
+                continue
+            if "# 9443 s3_auth_https" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server s3authserver-instance-ssl-{index} " \
                            f"{worker_node[worker]['eth1']}:{worker_node[worker]['9443']} " \
-                           f"check ssl verify none    #port mapped to 9443\n"
+                           f"ssl verify none    #port mapped to 9443\n"
                     f_write.write(line)
                 continue
             f_write.write(line)
@@ -105,6 +115,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     pem_local_path = "/etc/ssl/stx/stx.pem"
     if os.path.exists(pem_local_path):
         sys_utils.execute_cmd("rm -f {}".format(pem_local_path))
+    sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
     m_node_obj.copy_file_to_local(remote_path=cm_const.K8s_PEM_PATH, local_path=pem_local_path)
 
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
