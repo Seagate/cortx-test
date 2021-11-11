@@ -978,7 +978,7 @@ class ProvDeployFFLib:
                 elif "Error" in output:
                     LOGGER.error(output)
                     break
-            if "command failed" or "Error" in output:
+            if "command failed" in output or "Error" in output:
                 return False, output
         except Exception as error:
             LOGGER.error(
