@@ -116,7 +116,7 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     if os.path.exists(pem_local_path):
         sys_utils.execute_cmd("rm -f {}".format(pem_local_path))
     sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
-    m_node_obj.copy_file_to_local(remote_path=cm_const.K8s_PEM_PATH, local_path=pem_local_path)
+    m_node_obj.copy_file_to_local(remote_path=cm_const.K8S_PEM_PATH, local_path=pem_local_path)
 
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
