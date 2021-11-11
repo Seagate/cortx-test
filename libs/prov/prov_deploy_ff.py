@@ -722,6 +722,136 @@ class ProvDeployFFLib:
 
         return True, "post_deploy_check Successful!!"
 
+    @staticmethod
+    def check_start_command(nd1_obj: Node):
+        """
+        Deployment new start command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_START_CLSTR_NEW,
+                read_lines=True)
+            LOGGER.info("START COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_start_command.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+
+    @staticmethod
+    def check_status(nd1_obj: Node):
+        """
+        Deployment status command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
+            LOGGER.info("STATUS COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_status.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+    @staticmethod
+    def reset_deployment_check(nd1_obj: Node):
+        """
+        Deployment reset command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_deployment_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def reset_h_check(nd1_obj: Node):
+        """
+        Deployment reset_h command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset_H COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_h_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def cluster_show(nd1_obj: Node):
+        """
+        Deployment cluster show command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
+            LOGGER.info("Cluster Show COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.cluster_show.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def prov_cluster_json(nd1_obj: Node):
+        """
+        Deployment prov_cluster json command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.PROV_CLUSTER, read_lines=True)
+            LOGGER.info("Cluster Json COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.prov_cluster_json.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
     def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
         """
         Perform Deployment Using factory and field method
@@ -848,7 +978,7 @@ class ProvDeployFFLib:
                 elif "Error" in output:
                     LOGGER.error(output)
                     break
-            if "command failed" or "Error" in output:
+            if "command failed" in output or "Error" in output:
                 return False, output
         except Exception as error:
             LOGGER.error(
