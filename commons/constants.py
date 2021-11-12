@@ -367,4 +367,4 @@ SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provision
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
 
 # K8s env
-K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"
+K8S_SCRIPTS_PATH = "/root/cortx-k8s/k8_cortx_cloud/"
