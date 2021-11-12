@@ -866,7 +866,7 @@ class TestS3user():
         self.log.info("Users except pre-defined ones deleted.")
 
         resp = self.s3user.list_all_created_s3account()
-        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
         user_data = resp.json()
         self.log.info("List user response : %s", user_data)
         existing_user = len(user_data['s3_accounts'])
@@ -896,7 +896,7 @@ class TestS3user():
 
         #  check error on 1001 user
         resp = self.s3user.list_all_created_s3account()
-        assert resp.status_code == HTTPStatus.OK.value, "List S3 account failed."
+        assert resp.status_code == HTTPStatus.OK, "List S3 account failed."
         user_data = resp.json()
         s3_users = user_data['s3_accounts']
         self.log.info("Listed user count : %s", len(s3_users))
@@ -955,7 +955,7 @@ class TestS3user():
             s3_user = created_user["account_name"]
             self.log.info("Verify Delete S3 user: %s", s3_user)
             resp = self.s3user.delete_s3_account_user(s3_user)
-            assert resp.status_code == HTTPStatus.OK.value, "Failed to delete S3 user"
+            assert resp.status_code == HTTPStatus.OK, "Failed to delete S3 user"
             self.created_users.remove(created_user)
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
