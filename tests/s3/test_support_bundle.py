@@ -37,7 +37,10 @@ from commons.utils.assert_utils import assert_false, assert_true
 from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
 from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
-
+from commons.utils import support_bundle_utils as sb
+from commons.params import LOG_DIR
+from commons.utils import system_utils
+from commons.utils import assert_utils
 manager = Manager()
 
 
@@ -68,6 +71,7 @@ class TestSupportBundle:
         cls.m0postfix = "m0trace"
         cls.common_dir = "s3"
         cls.log.info("ENDED: Setup operations")
+        cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
 
     def setup_method(self):
         """
@@ -80,6 +84,10 @@ class TestSupportBundle:
         self.pysftp_obj = self.host_obj.open_sftp()
         self.bundle_prefix = "auto_bundle_{}"
         self.common_dir = "s3"
+        if system_utils.path_exists(self.bundle_dir):
+            self.log.info("Removing existing directory %s", self.bundle_dir)
+            system_utils.remove_dirs(self.bundle_dir)
+        system_utils.make_dirs(self.bundle_dir)
 
     def create_support_bundle(
             self,
@@ -978,3 +986,16 @@ class TestSupportBundle:
             "Step 4 : Verified that system level stat files are not empty")
         self.log.info(
             "ENDED: Validate Support bundle collects system information and stats")
+    
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-31677")
+    def test_support_bundle_status_31677(self):
+        """
+        Validate status of support bundle collection for each of the components/nodes
+        """
+        self.log.info("Step 1: Generating support bundle through cli")
+        resp = sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_31677", comp_list="s3server")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 2: Validated status of support bundle")

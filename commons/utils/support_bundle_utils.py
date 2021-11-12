@@ -129,6 +129,9 @@ def create_support_bundle_single_cmd(local_dir, bundle_name, comp_list=None):
         LOGGER.info("Checking Support Bundle status")
         status = node_list[0].execute_cmd(
             "support_bundle get_status -b {}".format(bundle_id))
+        LOGGER.info(status)
+        if 'Success' in str(status):
+            LOGGER.info("Support bundle status generated")
         if str(status).count(success_msg) == num_nodes:
             LOGGER.info(success_msg)
             for node in range(num_nodes):
