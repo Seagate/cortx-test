@@ -948,7 +948,8 @@ class ProvDeployK8sCortxLib:
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("ENDED: Basic IO with parity check")
 
-    def io_workload(self,access_key,secret_key, bucket_prefix):
+    @staticmethod
+    def io_workload(access_key,secret_key, bucket_prefix):
         """
         S3 bench workload test executed for each of Erasure coding config
         """
