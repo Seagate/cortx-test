@@ -139,11 +139,19 @@ class TestFailureDomainK8Cortx:
                                                        self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
 
-        self.log.info("Delay : 420 seconds")
-        time.sleep(420)
-
         self.log.info("Step 6: Check s3 server status")
-        resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        while int(time.time()) < end_time:
+            resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
+            if resp[0]:
+                self.log.info("####All the services online. Time Taken : %s",
+                              (int(time.time()) - start_time))
+                break
+            time.sleep(60)
+        else:
+            self.log.error("Service are not online in 30 mins.Start time: %s, Current time : %s",
+                           start_time,time.time())
         assert_utils.assert_true(resp[0], resp[1])
 
         resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
