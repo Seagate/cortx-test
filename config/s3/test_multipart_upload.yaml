@@ -70,7 +70,7 @@ test_8924:
     total_parts: 5
     err_msg: "EntityTooSmall"
 
-test_8925:
+test_2297:
     file_size: 11000
     total_parts: 2
     err_msg: "EntityTooLarge"
