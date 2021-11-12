@@ -35,7 +35,7 @@ from commons import pswdmanager
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
-from config import PROV_CFG, DEPLOY_CFG, INTEL_ISA_CFG, TEST_FAILURE_CFG
+from config import PROV_CFG, INTEL_ISA_CFG, TEST_FAILURE_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3.s3_test_lib import S3TestLib
@@ -875,6 +875,7 @@ class ProvDeployK8sCortxLib:
 
         return True, "Post Deployment Steps Successful!!"
 
+    # pylint: disable=too-many-arguments
     def write_read_validate_file(self, s3t_obj, bucket_name,
                                  test_file, count, block_size):
         """
@@ -978,7 +979,11 @@ class ProvDeployK8sCortxLib:
                 f"Please read log file {resp[1]}"
             LOGGER.info("ENDED: S3 bench workload test")
 
-    def dump_in_csv(self, test_list: List, csv_filepath):
+    @staticmethod
+    def dump_in_csv(test_list: List, csv_filepath):
+        """
+        Method to dump the data in csv file
+        """
         fields = ['ITERATION', 'POD STATUS']
         with open(csv_filepath, 'w')as fptr:
             # writing the fields
