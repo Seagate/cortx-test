@@ -21,20 +21,27 @@
 """
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
+import csv
 import json
 import logging
 import os
+from typing import List
 
 import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
+from commons import configmanager
 from commons import pswdmanager
+from commons.params import TEST_DATA_FOLDER
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
-from config import PROV_CFG
+from config import PROV_CFG, DEPLOY_CFG, INTEL_ISA_CFG, TEST_FAILURE_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
+from libs.s3 import S3H_OBJ
+from libs.s3.s3_test_lib import S3TestLib
+from scripts.s3_bench import s3bench
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +55,9 @@ class ProvDeployK8sCortxLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.cortx_image = os.getenv("CORTX_IMAGE")
+        self.test_config = TEST_FAILURE_CFG
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestIntelISAIO")
+        self.s3_test_config = INTEL_ISA_CFG
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -866,3 +876,117 @@ class ProvDeployK8sCortxLib:
             return False, error
 
         return True, "Post Deployment Steps Successful!!"
+
+    def write_read_validate_file(self, s3t_obj, bucket_name,
+                                 test_file, count, block_size):
+        """
+        Create test_file with file_size(count*blocksize) and upload to bucket_name
+        validate checksum after download and deletes the file
+        """
+        file_path = os.path.join(self.test_dir_path, test_file)
+        if not os.path.isdir(self.test_dir_path):
+            LOGGER.debug("File pah not exists")
+            os.mkdir(self.test_dir_path)
+
+        LOGGER.info("Creating a file with name %s", test_file)
+        system_utils.create_file(file_path, count, "/dev/urandom", block_size)
+
+        LOGGER.info("Retrieving checksum of file %s", test_file)
+        resp1 = system_utils.get_file_checksum(file_path)
+        assert_utils.assert_true(resp1[0], resp1[1])
+        chksm_before_put_obj = resp1[1]
+
+        LOGGER.info("Uploading a object %s to a bucket %s", test_file, bucket_name)
+        resp = s3t_obj.put_object(bucket_name, test_file, file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Validate upload of object %s ", test_file)
+        resp = s3t_obj.object_list(bucket_name)
+        assert_utils.assert_in(test_file, resp[1], f"Failed to upload create {test_file}")
+
+        LOGGER.info("Removing local file from client and downloading object")
+        system_utils.remove_file(file_path)
+        resp = s3t_obj.object_download(bucket_name, test_file, file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Verifying checksum of downloaded file with old file should be same")
+        resp = system_utils.get_file_checksum(file_path)
+        assert_utils.assert_true(resp[0], resp[1])
+        chksm_after_dwnld_obj = resp[1]
+        assert_utils.assert_equal(chksm_before_put_obj, chksm_after_dwnld_obj)
+
+        LOGGER.info("Delete the file from the bucket")
+        s3t_obj.delete_object(bucket_name, test_file)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Delete downloaded file")
+        system_utils.remove_file(file_path)
+
+    def basic_io_with_parity_check_enabled(self,s3t_obj:S3TestLib, bucket_name:str):
+        """
+        Set the read verify flag to true
+        Restart the S3 and motr services
+        """
+        LOGGER.info("STARTED: Basic IO")
+        basic_io_config = self.s3_test_config["test_basic_io"]
+
+        LOGGER.info("Step 3: Creating bucket %s", bucket_name)
+        resp = s3t_obj.create_bucket(bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("Step 4: Perform write/read/validate/delete with multiples object sizes. ")
+        for b_size, max_count in basic_io_config["io_upper_limits"].items():
+            for count in range(0, max_count):
+                test_file = "basic_io_" + str(count) + str(b_size)
+                block_size = "1M"
+                if str(b_size).lower() == "kb":
+                    block_size = "1K"
+
+                self.write_read_validate_file(s3t_obj,bucket_name, test_file, count, block_size)
+
+        LOGGER.info("Step 5: Delete bucket %s", bucket_name)
+        resp = s3t_obj.delete_bucket(bucket_name)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("ENDED: Basic IO with parity check")
+
+    def io_workload(self,access_key,secret_key, bucket_prefix):
+        """
+        S3 bench workload test executed for each of Erasure coding config
+        """
+        LOGGER.info("STARTED: S3 bench workload test")
+        workloads = [
+            "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
+            "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
+        ]
+        clients = INTEL_ISA_CFG["test_io_workload"]["clients"]
+        resp = s3bench.setup_s3bench()
+        assert (resp, resp), "Could not setup s3bench."
+        for workload in workloads:
+            bucket_name = bucket_prefix + "-" + str(workload).lower()
+            if "Kb" in workload:
+                samples = 50
+            elif "Mb" in workload:
+                samples = 10
+            else:
+                samples = 5
+            resp = s3bench.s3bench(access_key, secret_key, bucket=bucket_name,
+                                   num_clients=clients,
+                                   num_sample=samples, obj_name_pref="test-object-",
+                                   obj_size=workload,
+                                   skip_cleanup=False, duration=None, log_file_prefix=bucket_prefix)
+            LOGGER.info("json_resp %s\n Log Path %s", resp[0], resp[1])
+            assert not s3bench.check_log_file_error(resp[1]), \
+                f"S3bench workload for object size {workload} failed. " \
+                f"Please read log file {resp[1]}"
+            LOGGER.info("ENDED: S3 bench workload test")
+
+    def dump_in_csv(self, test_list: List, csv_filepath):
+        fields = ['ITERATION', 'POD STATUS']
+        with open(csv_filepath, 'w')as fptr:
+            # writing the fields
+            write = csv.writer(fptr)
+            write.writerow(fields)
+            for test in test_list:
+                write.writerows([test])
+            fptr.close()
+        return csv_filepath

@@ -31,10 +31,13 @@ from commons.params import RAS_CONFIG_PATH
 from commons.params import SSPL_TEST_CONFIG_PATH
 from commons.params import COMMON_DESTRUCTIVE_CONFIG_PATH
 from commons.params import PROV_TEST_CONFIG_PATH
+from commons.params import DEPLOY_TEST_CONFIG_PATH
 from commons.params import DI_CONFIG_PATH
 from commons.params import DATA_PATH_CONFIG_PATH
 from commons.params import S3_LDAP_TEST_CONFIG
 from commons.params import HA_TEST_CONFIG_PATH
+from commons.params import TEST_FAILURE_CONFIG_PATH
+from commons.params import INTEL_ISA_CONFIG_PATH
 from commons.constants import PROD_FAMILY_LC
 
 
@@ -97,6 +100,9 @@ CMN_DESTRUCTIVE_CFG = configmanager.get_config_wrapper(fpath=COMMON_DESTRUCTIVE_
 RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath=DEPLOY_TEST_CONFIG_PATH)
+TEST_FAILURE_CFG = configmanager.get_config_wrapper(fpath=TEST_FAILURE_CONFIG_PATH)
+INTEL_ISA_CFG = configmanager.get_config_wrapper(fpath=INTEL_ISA_CONFIG_PATH)
 
 DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
