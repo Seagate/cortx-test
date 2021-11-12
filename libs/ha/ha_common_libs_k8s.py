@@ -24,7 +24,6 @@ HA common utility methods
 import logging
 import os
 import time
-import sys
 from multiprocessing import Process
 import sys
 
@@ -43,7 +42,6 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
-from commons.utils.s3_utils import calc_checksum
 from commons.utils.system_utils import run_local_cmd
 
 LOGGER = logging.getLogger(__name__)
