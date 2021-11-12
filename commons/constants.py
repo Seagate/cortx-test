@@ -37,11 +37,6 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
-# K8s for cortx
-POD_NAME_PREFIX = "cortx-data-pod"
-HAX_CONTAINER_NAME = "cortx-motr-hax"
-NAMESPACE = "default"
-
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
@@ -58,7 +53,7 @@ RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
 MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
-                         "/storage_enclosure.sls"
+                        "/storage_enclosure.sls"
 CLUSTER_PATH = "/opt/seagate/cortx/provisioner/pillar/components/cluster.sls"
 RAS_CONFIG_PATH = "config/ras_config.yaml"
 SSPL_TEST_CONFIG_PATH = "config/ras_test.yaml"
@@ -77,14 +72,18 @@ IEM_DIRECTORY = "/opt/seagate/cortx/iem/iec_mapping"
 SSPL_LOG_FILE_PATH = "/var/log/cortx/sspl/sspl.log"
 COMMON_CONFIG_PATH = "config/common_config.yaml"
 TELNET_OP_PATH = "scripts/server_scripts/telnet_operations.py"
+RECEIVER_OP_PATH = "scripts/server_scripts/test_receiver.py"
+DAEMON_OP_PATH = "scripts/server_scripts/daemon.py"
 CSM_CONF = "config/csm/csm_config.yaml"
 REMOTE_TELNET_PATH = "/root/telnet_operations.py"
+REMOTE_RECEIVER_PATH = "/root/test_receiver.py"
+REMOTE_DAEMON_PATH = "/root/daemon.py"
 CTRL_LOG_PATH = "/root/telnet.xml"
 SELINUX_FILE_PATH = "/etc/selinux/config"
 HEADERS_STREAM_UTILITIES = {"Content-type": "application/x-www-form-urlencoded",
                             "Accept": "text/plain"}
 URL_STREAM_UTILITIES = "http://utils-stream.sw.lcd.colo.seagate.com/utility" \
-                       "/api/public/v1/get_tripw"
+                      "/api/public/v1/get_tripw"
 NO_CMD_RECEIVED_MSG = "No command response received !!!"
 PCS_SSPL_SECTION = " Master/Slave Set: sspl-master [sspl]\n"
 RAS_CFG = "config/ras_config.yaml"
@@ -112,16 +111,10 @@ CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
-LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
-CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
-CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
-CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
-CORTX_CSM_POD = "cortx-csm-agent"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
-const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -195,13 +188,6 @@ class Rest:
                                   "\"Principal\": {\"AWS\":\"$principal\"}}]}"
     SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
                     " user_type, created_time, updated_time.\']}"
-    CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
-    S3_ACCESS_UL = 128
-    S3_ACCESS_LL = 16
-    S3_SECRET_UL = 40
-    S3_SECRET_LL = 8
-    MAX_S3_USERS = 1000
-    MAX_BUCKETS = 1000
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -225,19 +211,6 @@ class Rest:
         },
         "required": ["total", "good"]
     }
-
-
-# aws cli errors
-AWS_CLI_ERROR = ["ServiceUnavailable",
-                 "MalformedPolicy",
-                 "InvalidRequest",
-                 "Forbidden",
-                 "Conflict",
-                 "InternalError",
-                 "InvalidArgument",
-                 "AccessDenied",
-                 "Failed:"]
-
 
 # cortxcli constants
 S3BUCKET_HELP = [
@@ -267,12 +240,12 @@ S3BUCKET_DELETE_HELP = [
     "optional arguments:",
     "-h, --help   show this help message and exit"]
 S3ACCOUNT_HELP_CMDS = [
-    "s3iamusers",
-    "support_bundle",
-    "system",
-    "s3buckets",
-    "s3accounts",
-    "s3bucketpolicy"]
+        "s3iamusers",
+        "support_bundle",
+        "system",
+        "s3buckets",
+        "s3accounts",
+        "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
                   "{show,create,reset_password}",
                   "show                Displays S3 Accounts On the cli",
@@ -301,7 +274,7 @@ JSON_LIST_FORMAT = "json"
 TABLE_LIST_FORMAT = "table"
 XML_LIST_FORMAT = "xml"
 SUPPORT_BUNDLE_MSG = "Support bundle generation completed"
-CSM_USER_HELP = [
+CSM_USER_HELP =[
     "support_bundle",
     "alerts",
     "s3accounts",
@@ -315,19 +288,18 @@ TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
 PIP_CONFIG = "/etc/pip.conf"
 
-# Locking server
+#Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
 
-
 class SwAlerts:
     SVCS_3P = [
-        #  "elasticsearch.service", # brings down the csm
-        #  "hare-consul-agent.service", # Disabled on VM EOS-20861
-        #  "slapd.service", # brings down the csm
+#        "elasticsearch.service", # brings down the csm
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
+#        "slapd.service", # brings down the csm
         "statsd.service",
         "rsyslog.service",
-        #  "lnet.service", brings down motr-io service
+#        "lnet.service", brings down motr-io service
         "salt-master.service",
         "salt-minion.service",
         "glusterd.service",
@@ -343,7 +315,6 @@ class SwAlerts:
     SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
 
     SVC_LOAD_TIMEOUT_SEC = 30
-
     class AlertType:
         FAULT = "fault"
         RESOLVED = "fault_resolved"
@@ -361,16 +332,7 @@ class Sizes:
     KB = 1024
     MB = KB * KB
 
-
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
-
-# K8s env
-K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"
-K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
-               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
-
-# haproxy.cfg dummy file Path
-HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
