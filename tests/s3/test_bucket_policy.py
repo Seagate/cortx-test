@@ -5028,6 +5028,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4504_cfg)
+            time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateNotEquals', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
@@ -5057,6 +5058,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4505_cfg)
+            time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateLessThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
@@ -5117,6 +5119,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4507_cfg)
+            time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThan', "
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
@@ -5145,6 +5148,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_4508_cfg)
+            time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateGreaterThanEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")

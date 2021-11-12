@@ -361,6 +361,7 @@ class Sizes:
     KB = 1024
     MB = KB * KB
 
+
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
@@ -368,3 +369,8 @@ SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provision
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/cortx-k8s/k8_cortx_cloud/"
+K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
+               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
+
+# haproxy.cfg dummy file Path
+HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
