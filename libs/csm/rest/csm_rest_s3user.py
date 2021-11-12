@@ -27,6 +27,7 @@ from commons.constants import Rest as const
 from commons.exceptions import CTException
 from commons.utils import config_utils
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from config import CSM_REST_CFG
 
 
 class RestS3user(RestTestLib):
@@ -647,6 +648,14 @@ class RestS3user(RestTestLib):
             template = const.CUSTOM_S3_USER.copy()
             template.remove("secret_key")
             user_data = dict(zip(template, [user_name, email_id, password, access]))
+        if user_type == "pre-define":
+            template = const.CUSTOM_S3_USER.copy()
+            user_data = dict(zip(template, [CSM_REST_CFG["s3account_user"]["username"],
+                                            CSM_REST_CFG["s3account_user"]["email"],
+                                            CSM_REST_CFG["s3account_user"]["password"],
+                                            CSM_REST_CFG["s3account_user"]["access_key"],
+                                            CSM_REST_CFG["s3account_user"]["secret_key"]]))
+
         return user_data
 
     def create_verify_s3_custom(self, user_type: str,
