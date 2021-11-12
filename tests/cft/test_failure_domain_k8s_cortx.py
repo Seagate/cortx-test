@@ -21,15 +21,18 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os
+import time
 from multiprocessing import Pool
 
 import pytest
 
 from commons import commands as common_cmd
+from commons import configmanager
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils import ext_lbconfig_utils
 from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
@@ -70,12 +73,15 @@ class TestFailureDomainK8Cortx:
         cls.data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
         cls.control_lb_ip = cls.control_lb_ip.split(",")
         cls.data_lb_ip = cls.data_lb_ip.split(",")
+        test_config = "config/cft/test_failure_domain_k8s_cortx.yaml"
+        cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
-        self.log.info("Reverting all the VM before deployment")
-        with Pool(self.num_nodes) as proc_pool:
-            proc_pool.map(self.revert_vm_snapshot, self.host_list)
+        if self.test_config["revert_vm"]:
+            self.log.info("Reverting all the VM before deployment")
+            with Pool(self.num_nodes) as proc_pool:
+                proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -95,6 +101,7 @@ class TestFailureDomainK8Cortx:
         """
         self.log.info("STARTED: {%s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                       len(self.worker_node_list), sns_data, sns_parity, sns_spare)
+
         self.log.info("Step 1: Perform k8s Cluster Deployment")
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
@@ -131,6 +138,34 @@ class TestFailureDomainK8Cortx:
                                                        self.docker_password, self.git_id,
                                                        self.git_token, self.git_script_tag)
         assert_utils.assert_true(resp[0], resp[1])
+
+        self.log.info("Step 6: Check s3 server status")
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        while int(time.time()) < end_time:
+            resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
+            if resp[0]:
+                self.log.info("####All the services online. Time Taken : %s",
+                              (int(time.time()) - start_time))
+                break
+            time.sleep(60)
+        else:
+            self.log.error("Service are not online in 30 mins.Start time: %s, Current time : %s",
+                           start_time,time.time())
+        assert_utils.assert_true(resp[0], resp[1])
+
+        resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
+        eth1_ip = resp[1].strip("'\\n'b'")
+        self.log.info("Step 7: Configure HAproxy on client")
+        ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
+                                                       self.master_node_list[0].username,
+                                                       self.master_node_list[0].password,eth1_ip,
+                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+
+        self.log.info("Step 8: Create S3 account and configure credentials")
+        resp = self.deploy_lc_obj.post_deployment_steps_lc()
+        assert_utils.assert_true(resp[0],resp[1])
+
         self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                       len(self.worker_node_list), sns_data, sns_parity, sns_spare)
 
