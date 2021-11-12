@@ -455,6 +455,18 @@ nodes_9:
     total_disk_per_node : 7
     total_n_k_s : 18
     total_disk_per_cluster : 27
+  config_5:
+    sns_data: 5
+    sns_parity: 4
+    sns_spare: 0
+    dix_data: 1
+    dix_parity: 4
+    dix_spare: 0
+    cvg_per_node: 2
+    data_disk_per_cvg: 2
+    total_disk_per_node: 7
+    total_n_k_s: 9
+    total_disk_per_cluster: 36
 
 nodes_10:
   config_1:
