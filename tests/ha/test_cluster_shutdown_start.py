@@ -175,11 +175,11 @@ class TestClusterShutdownStart:
         self.s3_clean = resp[2]
         LOGGER.info("Step 2: IOs are started successfully.")
 
-        # LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 3: Cluster shutdown signal is successful.")
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
         LOGGER.info(
             "Step 4: Restart the cluster and check cluster status.")
@@ -235,11 +235,11 @@ class TestClusterShutdownStart:
             self.s3_clean = resp[2]
             LOGGER.info("Step 2: IOs are started successfully.")
 
-            # LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-            # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-            #                                              resource="cluster")
-            # assert_utils.assert_true(resp[0], resp[1])
-            # LOGGER.info("Step 3: Cluster shutdown signal is successful.")
+            LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+            resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                         resource="cluster")
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
             LOGGER.info("Step 4: Restart the cluster and check cluster status.")
             resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -303,11 +303,11 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp)
         upload_checksum = str(resp[2])
 
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -409,11 +409,11 @@ class TestClusterShutdownStart:
             assert_utils.assert_true(res[0], res)
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
-        # LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 3: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster shutdown signal sent successfully.")
 
         LOGGER.info("Step 4: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -493,11 +493,11 @@ class TestClusterShutdownStart:
             skipcleanup=True)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(
-        #     operation="shutdown_signal", resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -534,11 +534,11 @@ class TestClusterShutdownStart:
             s3userinfo=list(users.values())[0], log_prefix=self.test_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Performed IOs with variable sizes objects.")
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(
-        #     operation="shutdown_signal", resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -600,11 +600,11 @@ class TestClusterShutdownStart:
         prc.start()
         LOGGER.info("Step 1: Started multipart upload of 5GB object in background")
 
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -719,11 +719,11 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other buckets", format(self.bucket_name))
 
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         LOGGER.info("Step 3: Restart the cluster and check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
@@ -790,11 +790,11 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
                     "and copied to other buckets", format(self.bucket_name))
 
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Cluster shutdown signal sent successfully.")
 
         bkt_obj_dict1 = dict()
         bkt_obj_dict1["ha-bkt-{}".format(perf_counter_ns())] = "ha-obj-{}".format(perf_counter_ns())
@@ -930,11 +930,11 @@ class TestClusterShutdownStart:
         self.s3_clean = resp[2]
         LOGGER.info("Step 2: IOs are started successfully.")
 
-        # LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
-        #                                              resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 3: Cluster shutdown signal is successful.")
+        LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
+                                                     resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 3: Cluster shutdown signal is successful.")
 
         LOGGER.info("Step 4: Shutdown the cluster and start it back before shutdown completes.")
         proc = Process(target=self.ha_obj.cortx_stop_cluster(self.node_master_list[0]))
@@ -1023,11 +1023,11 @@ class TestClusterShutdownStart:
         resp = s3_test_obj.bucket_list()
         assert_utils.assert_equal(100, len(resp[1]), resp)
         LOGGER.info("Step 4: Verified %s has 100 buckets are remaining", self.s3_clean["user_name"])
-        # LOGGER.info("Step 5: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(
-        #     operation="shutdown_signal", resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 5: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 5: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Successfully sent the cluster shutdown signal through CSM REST.")
         LOGGER.info("Step 6: Restart the cluster & check cluster status.")
         resp = self.ha_obj.restart_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
@@ -1081,11 +1081,11 @@ class TestClusterShutdownStart:
         self.s3ios = S3BackgroundIO(s3_test_lib_obj=s3_test_obj)
         LOGGER.info("Step 1. Start parallel S3 IO for 3 minutes duration.")
         self.s3ios.start(log_prefix="TEST-29478_s3bench_ios", duration="0h3m")
-        # LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
-        # resp = SystemHealth.cluster_operation_signal(
-        #     operation="shutdown_signal", resource="cluster")
-        # assert_utils.assert_true(resp[0], resp[1])
-        # LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
+        LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
+        resp = SystemHealth.cluster_operation_signal(
+            operation="shutdown_signal", resource="cluster")
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Successfully sent the cluster shutdown signal through CSM REST.")
         LOGGER.info("Step 3: Shutdown the cluster and check the cluster status.")
         resp = self.ha_obj.cortx_stop_cluster(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
