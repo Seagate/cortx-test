@@ -76,11 +76,11 @@ class TestS3user():
             for i in range(const.MAX_IAM_USERS):
                 iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
-                        iam_user, akey, skey)
+                              iam_user, akey, skey)
                 try:
                     s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
-                except:
-                    pass
+                except BaseException as err:
+                    self.log.warning("Ignoring %s while deleting IAM user: %s", err, iam_user)
 
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
@@ -89,8 +89,8 @@ class TestS3user():
                               "secret key: %s", bucket, akey, skey)
                 try:
                     s3_misc.delete_objects_bucket(bucket, akey, skey), "Failed to delete bucket."
-                except:
-                    pass
+                except BaseException as err:
+                    self.log.warning("Ignoring %s while deleting bucket: %s", err, bucket)
                 self.log.info("[END] Delete Bucket count : %s", i + 1)
         self.config.delete_s3_users()
         self.log.info("Users except pre-defined ones deleted.")
@@ -914,7 +914,7 @@ class TestS3user():
             for i in range(const.MAX_IAM_USERS):
                 iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
-                      iam_user, akey, skey)
+                              iam_user, akey, skey)
                 assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
 
             self.log.info("Creating Buckets and objects for %s user", usr)
@@ -940,7 +940,7 @@ class TestS3user():
             for i in range(const.MAX_IAM_USERS):
                 iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
-                        iam_user, akey, skey)
+                              iam_user, akey, skey)
                 assert s3_misc.delete_iam_user(iam_user, akey, skey), "Failed to delete IAM user."
             self.log.info("Deleting buckets for %s user", usr)
             for i in range(const.MAX_BUCKETS):

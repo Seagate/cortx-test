@@ -651,8 +651,8 @@ class RestS3user(RestTestLib):
         if user_type == "pre-define":
             template = const.CUSTOM_S3_USER.copy()
             user_data = dict(zip(template, [CSM_REST_CFG["s3account_user"]["username"],
-                                            CSM_REST_CFG["s3account_user"]["email"], 
-                                            CSM_REST_CFG["s3account_user"]["password"], 
+                                            CSM_REST_CFG["s3account_user"]["email"],
+                                            CSM_REST_CFG["s3account_user"]["password"],
                                             CSM_REST_CFG["s3account_user"]["access_key"],
                                             CSM_REST_CFG["s3account_user"]["secret_key"]]))
 
