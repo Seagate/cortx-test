@@ -56,7 +56,7 @@ class TestMultipartUploadGetPut:
         cls.aws_config_path.append(S3_CFG["aws_config_path"])
         cls.actions = ["backup", "restore"]
         cls.test_file = "mpu_obj"
-        cls.test_dir_path = os.path.join("/home/", "TestMultipartUploadRedesign")
+        cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestMultipartUploadRedesign")
         cls.mp_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
         cls.config_backup_path = os.path.join(cls.test_dir_path, "config_backup")
         if not path_exists(cls.test_dir_path):
