@@ -42,3 +42,8 @@ test_28929:
     error_code: 12288
     message_id: "AccessKeyAlreadyExists"
     message: 'The request was rejected because account with this access key already exists.'
+test_28931:
+  response_msg:
+    error_code: 12288
+    message_id: "MaxAccountLimitExceeded"
+    message: 'The request was rejected because maximum limit(i.e 1000) of account creation has exceeded."

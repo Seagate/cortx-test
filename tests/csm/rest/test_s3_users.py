@@ -861,6 +861,7 @@ class TestS3user():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.csm_conf["test_28931"]
         self.log.info("Deleting all S3 users except predefined ones...")
         self.config.delete_s3_users()
         self.log.info("Users except pre-defined ones deleted.")
@@ -902,7 +903,17 @@ class TestS3user():
         self.log.info("Listed user count : %s", len(s3_users))
         err_msg = f"Number of users less than {const.MAX_S3_USERS}"
         assert len(s3_users) == const.MAX_S3_USERS, err_msg
-
+        result, resp = self.s3user.create_verify_s3_custom("valid",
+            expected_response = HTTPStatus.FORBIDDEN.value)
+        err_msg = test_cfg["response_msg"]
+        err = resp.json()
+        self.log.info("Verifying error code...")
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        if CSM_REST_CFG["msg_check"] == "enable":
+            self.log.info("Verifying message id...")
+            assert err["message_id"] == err_msg["message_id"], "Message id check failed."
+            self.log.info("Verifying message...")
+            assert err["message"] == err_msg["message"], "Message check failed."
         # add pre-defined user to the created_user
         # create loop
         for created_user in self.created_users:
