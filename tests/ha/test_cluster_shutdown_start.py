@@ -836,7 +836,7 @@ class TestClusterShutdownStart:
             get_etag = resp[1]["ETag"]
             assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {v} of bucket {k}. Put and Get "
-                                                          "checksum Etag")
+                                                          "Etag mismatch")
         LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 6: Create multiple buckets and run IOs")
