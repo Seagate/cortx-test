@@ -31,7 +31,6 @@ import yaml
 
 from commons import commands as common_cmd
 from commons import constants as common_const
-from commons import configmanager
 from commons import pswdmanager
 from commons.params import TEST_DATA_FOLDER
 from commons.helpers.pods_helper import LogicalNode
@@ -39,7 +38,6 @@ from commons.utils import system_utils, assert_utils
 from config import PROV_CFG, DEPLOY_CFG, INTEL_ISA_CFG, TEST_FAILURE_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
-from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
 

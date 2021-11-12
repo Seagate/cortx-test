@@ -124,4 +124,5 @@ S3_INSTANCES_PER_NODE = 1
 LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
+                                            'test_multiple_config_deploy']
