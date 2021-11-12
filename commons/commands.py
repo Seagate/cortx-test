@@ -437,7 +437,10 @@ K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_DELETE_POD = "kubectl delete pod {}"
 K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- /bin/bash -- hctl status --json"
+K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
+K8S_GET_SVC_JSON = "kubectl get svc -o json"
 
+K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 # Fetch logs of a pod/service in a namespace.
@@ -455,14 +458,15 @@ CMD_POD_STATUS = "kubectl get pods"
 CMD_SRVC_STATUS = "kubectl get services"
 CMD_GET_NODE = "kubectl get nodes"
 
-#LC deployment
+# LC deployment
 CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
 CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
 CMD_CURL = "curl -o {} {}"
 
-#Git commands
+# Git commands
 CMD_GIT_CLONE = "git clone {}"
 CMD_GIT_CHECKOUT = "git checkout {}"
 
-#docker commands
+# docker commands
 CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"
+CMD_DOCKER_PULL = "docker pull {}"

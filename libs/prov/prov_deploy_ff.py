@@ -32,6 +32,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
@@ -773,50 +774,3 @@ class ProvDeployFFLib:
 
         return True, "Post Deloyment Steps Successful!!"
 
-    @staticmethod
-    def post_deployment_steps_lc(**kwargs):
-        """
-        Perform CSM login, S3 account creation and AWS configuration on client
-        :Keyword: csm_default_user : CSM default user
-        :Keyword: old_password : Default password
-        :Keyword: new_password : new password
-        returns status true
-        """
-
-        LOGGER.info("Post Deployment Steps")
-        post_deploy_cfg = PROV_CFG["post_deployment_steps"]
-        csm_default_user = kwargs.get("csm_default_user",
-                                      PROV_CFG["post_deployment_steps"]["csm_default_user_name"])
-        passwd = pswdmanager.decrypt(post_deploy_cfg['csm_default_pswd'])
-        old_passwd = kwargs.get("old_password", passwd)
-        new_passwd = kwargs.get("new_password", passwd)
-        config_chk = CSMConfigsCheck()
-        csm_s3 = RestS3user()
-        config_chk.preboarding(username=csm_default_user,
-                               old_password=old_passwd,
-                               new_password=new_passwd)
-        LOGGER.info("Create S3 account")
-        s3user_pswd = pswdmanager.decrypt(post_deploy_cfg["s3user_pswd"])
-        csm_s3.create_custom_s3_payload("valid")
-        resp = csm_s3.create_s3_account(post_deploy_cfg["s3user_name"],
-                                        post_deploy_cfg["s3user_email"],
-                                        s3user_pswd)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Response for account creation: %s", resp)
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        try:
-            LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
-                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-        except IOError as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployFFLib.post_deployment_steps.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
-
-        return True, "Post Deployment Steps Successful!!"
