@@ -34,6 +34,7 @@ from commons.exceptions import CTException
 from commons.params import TEST_DATA_PATH
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from commons.utils.assert_utils import assert_true
 from config import CSM_CFG, CMN_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_bucket import RestS3Bucket
@@ -42,6 +43,7 @@ from libs.csm.rest.csm_rest_csmuser import RestCsmUser
 from libs.csm.rest.csm_rest_iamuser import RestIamUser
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.csm.rest.csm_rest_test_lib import RestTestLib
+from libs.s3 import iam_test_lib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_test_lib import S3TestLib
 from robot_gui.utils.call_robot_test import trigger_robot
@@ -153,8 +155,9 @@ class TestS3IOSystemLimits:
         for _ in range(count):
             self.log.info("Creating new S3 account...")
             res = self.s3_account_obj.create_s3_account()
-            assert res.status_code == Const.SUCCESS_STATUS, \
-                f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got {res.status_code}"
+            assert res.status_code == Const.SUCCESS_STATUS_FOR_POST, \
+                f"Status code mismatch, expected {Const.SUCCESS_STATUS_FOR_POST} and " \
+                f"got {res.status_code} "
             s3_data = res.json()
             s3_block = {"account_name": s3_data["account_name"],
                         "access_key": s3_data["access_key"],
@@ -176,25 +179,13 @@ class TestS3IOSystemLimits:
             self.log.info(f"creating {count} IAMs for {s3_acc} s3 user")
             for _ in range(count):
                 iam_user = self.iam_user_prefix + str(int(time.time()))
-                password = self.s3_original_password
                 self.log.info(f"Creating new iam user {iam_user}")
-                # pylint: disable=C0302
-                res = self.iam_user_obj.create_iam_user_under_given_account(
-                    iam_user=iam_user, iam_password=password,
-                    account_name=s3_acc["account_name"],
-                    login_as={
-                        "username": s3_acc["account_name"],
-                        "password": password
-                    })
-                assert res.status_code == Const.SUCCESS_STATUS, \
-                    f"Status code mismatch, expected {Const.SUCCESS_STATUS} and got " \
-                    f"{res.status_code}"
-                iam_data = res.json()
-                assert iam_data["user_name"] == iam_user, \
-                    f"IM user name mismatch, expected {0} and got {1}".format(iam_user,
-                                                                              iam_data["user_name"])
-
-                iam_users.append(iam_data["user_name"])
+                iam_obj = iam_test_lib.IamTestLib(
+                    access_key=s3_acc["access_key"],
+                    secret_key=s3_acc["secret_key"])
+                resp = iam_obj.create_user(iam_user)
+                assert_true(resp[0], resp[1])
+                iam_users.append(iam_user)
         self.log.info(f"Total IAM Users created: {iam_users}")
         return iam_users
 
@@ -279,23 +270,19 @@ class TestS3IOSystemLimits:
             f"Total S3 accounts listed {len(created_s3users)} :\n {created_s3users}")
         return created_s3users
 
-    def get_iam_accounts(self, s3_account, s3_password):
+    def get_iam_accounts(self, access, secret):
         """
         Get list of IAM accounts for given s3 account
         :return: list of IAM account usernames
         """
-        # pylint: disable=C0302
-        response = self.iam_user_obj.list_iam_users_for_given_s3_user(
-            user=s3_account,
-            login_as={
-                "username": s3_account,
-                "password": s3_password
-            })
-        response = response.json()
-        created_iam_users = []
-        for each in response['iam_users']:
-            if each['user_name'].startswith("test"):
-                created_iam_users.append(each['user_name'])
+        iam_obj = iam_test_lib.IamTestLib(
+            access_key=access,
+            secret_key=secret)
+        all_users = iam_obj.list_users()[1]
+        self.log.debug("all_users %s", all_users)
+        created_iam_users = [user["UserName"]
+                             for user in all_users if
+                             "test" in user["UserName"]]
         self.log.info(
             f"Total IAM accounts listed {len(created_iam_users)} : {created_iam_users}")
         return created_iam_users
@@ -325,8 +312,10 @@ class TestS3IOSystemLimits:
 
         for s3_acc in created_s3users:
             s3 = s3_acc["account_name"]
+            access = s3_acc["access_key"]
+            secret = s3_acc["secret_key"]
             # Get all IAMs under S3 account
-            iam_user_in_s3 = self.get_iam_accounts(s3, s3_password)
+            iam_user_in_s3 = self.get_iam_accounts(access, secret)
 
             # Get all buckets under S3 account
             buckets_in_s3 = self.get_buckets(s3, s3_password)
@@ -334,13 +323,11 @@ class TestS3IOSystemLimits:
             # Delete all iam users from S3 account
             for iam in iam_user_in_s3:
                 self.log.info("Deleting IMA user {}...".format(iam))
-                # pylint: disable=C0302
-                self.iam_user_obj.delete_iam_user_under_given_account(
-                    iam_user=iam, account_name=s3,
-                    login_as={
-                        "username": s3,
-                        "password": s3_password
-                    })
+                iam_obj = iam_test_lib.IamTestLib(
+                    access_key=s3_acc["access_key"],
+                    secret_key=s3_acc["secret_key"])
+                iam_obj.delete_user(iam)
+                del iam_obj
             # Delete all buckets from S3 account
             for bucket in buckets_in_s3:
                 self.log.info("Deleting S3 bucket {}...".format(bucket))
@@ -503,8 +490,10 @@ class TestS3IOSystemLimits:
 
         for each_s3 in s3_accounts:
             s3 = each_s3["account_name"]
+            access = each_s3["access_key"]
+            secret = each_s3["secret_key"]
             self.log.info(f"Getting IAMs for {s3}")
-            iam_account = self.get_iam_accounts(s3, self.s3_original_password)
+            iam_account = self.get_iam_accounts(access, secret)
             assert len(iam_account) >= self.cft_test_cfg[test]["iam_count"], \
                 f"Created iam user count != listed iam user count for s3 user {s3}"
 
@@ -549,13 +538,13 @@ class TestS3IOSystemLimits:
     @pytest.mark.tags("TEST-16910")
     def test_16910(self):
         """
-        For system limit of 1000 CSM users
-        Create 1000 csm accounts
+        For system limit of max CSM users
+        Create max csm accounts
         """
         test = "test_16910"
         self.create(test)
 
-        # List and update 1000 csm account
+        # List and update max csm account
         created_csm_users = self.get_created_csm_users()
         assert len(created_csm_users) >= self.cft_test_cfg[test][
             "csm_count"], f"Created CSM user count != listed CSM user count "
