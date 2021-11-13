@@ -260,7 +260,7 @@ def s3_ios(
     kwargs.setdefault("num_clients", 2)
     kwargs.setdefault("num_sample", 5)
     kwargs.setdefault("obj_name_pref", "load_gen_")
-    kwargs.setdefault("end_point", S3_CFG["s3_url"])
+    kwargs.setdefault("end_point", S3_CFG["s3b_url"])
     LOG.info("STARTED: s3 io's operations.")
     access_key, secret_key = S3H_OBJ.get_local_keys()
     resp = s3bench.s3bench(
@@ -330,7 +330,7 @@ class S3BackgroundIO:
         kwargs.setdefault("num_clients", 2)
         kwargs.setdefault("num_sample", 5)
         kwargs.setdefault("obj_name_pref", "load_gen_")
-        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        kwargs.setdefault("end_point", S3_CFG["s3b_url"])
         LOG.info("STARTED: s3 io's operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
