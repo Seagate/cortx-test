@@ -446,7 +446,7 @@ class HAK8s:
         resp = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS, read_lines=True)
         resp.pop(0)
         for line in resp:
-            if "Running" not in line and "Completed" not in line:
+            if "Running" not in line:
                 return False, resp
         return True, resp
 
