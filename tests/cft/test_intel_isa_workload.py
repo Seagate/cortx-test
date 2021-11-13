@@ -431,7 +431,7 @@ class TestIntelISAIO:
             5 Node Cluster
             Data Pool : NKS : 10+5+0
             Metadata Pool : NKS : 1+2+0
-            No of CVG per node: 6
+            No of CVG per node: 3
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29489")
@@ -446,7 +446,7 @@ class TestIntelISAIO:
             5 Node Cluster
             Data Pool : NKS : 10+5+0
             Metadata Pool : NKS : 1+2+0
-            No of CVG per node: 6
+            No of CVG per node: 3
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29490")
