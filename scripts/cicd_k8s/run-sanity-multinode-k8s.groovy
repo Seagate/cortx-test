@@ -49,7 +49,7 @@ deactivate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}"
+python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}" --node_count "${NUM_NODES}"
 deactivate
 '''
 			}
@@ -187,4 +187,5 @@ deactivate
 			}
 		}
 	}
+}
 }
