@@ -572,6 +572,7 @@ class TestBucketTagging:
                 tag_key,
                 "testval")
             self.log.info(resp)
+            time.sleep(S3_CFG["sync_delay"])
             assert_utils.assert_true(resp[0], resp[1])
             resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
@@ -824,6 +825,7 @@ class TestBucketTagging:
             tag_count=2)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info("Step 3: Set tag for an object %s", obj_name)
         self.log.info("Step 4: Verifying tag is set for a bucket")
         resp = self.tag_obj.get_bucket_tags(self.bucket_name)

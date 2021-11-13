@@ -6,7 +6,6 @@ from libs.csm.rest.csm_rest_test_lib import RestTestLib
 from commons.constants import Rest as const
 from commons.utils import config_utils
 
-
 class CSMConfigsCheck:
     """This class will check the configurations of CSM"""
 
@@ -24,7 +23,7 @@ class CSMConfigsCheck:
         result = False
         try:
             self._log.info("Creating S3 account for setup ")
-            response = self._s3account.create_s3_account(user_type="pre-define")
+            result, response = self._s3account.create_verify_s3_custom(user_type="pre-define")
             result = response.status_code in (
                 const.CONFLICT, const.SUCCESS_STATUS_FOR_POST)
         except Exception as error:

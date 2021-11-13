@@ -463,9 +463,6 @@ class ProvDeployFFLib:
             output = ""
             current_output = ""
             start_time = time.time()
-            cmd = "".join(
-                [common_cmd.CLUSTER_CREATE.format(hostnames, CMN_CFG["csm"]["mgmt_vip"], build_url),
-                 "\n"])
             if len(CMN_CFG["nodes"]) > 1:
                 if field_user:
                     cmd = "".join(
@@ -499,9 +496,6 @@ class ProvDeployFFLib:
                     pswd = "".join([CMN_CFG["nodes"][passwd_counter]["password"], "\n"])
                     channel.send(pswd)
                     passwd_counter += 1
-                elif "cortx_setup command Failed" in output:
-                    LOGGER.error(current_output)
-                    break
                 elif "Enter nodeadmin user password for srvnode" in current_output \
                         and passwd_counter < len(CMN_CFG["nodes"]):
                     pswd = "".join([CMN_CFG["field_users"]["nodeadmin"][passwd_counter]["password"], "\n"])
@@ -728,6 +722,136 @@ class ProvDeployFFLib:
 
         return True, "post_deploy_check Successful!!"
 
+    @staticmethod
+    def check_start_command(nd1_obj: Node):
+        """
+        Deployment new start command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_START_CLSTR_NEW,
+                read_lines=True)
+            LOGGER.info("START COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_start_command.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+
+    @staticmethod
+    def check_status(nd1_obj: Node):
+        """
+        Deployment status command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CMD_STATUS_CLSTR, read_lines=True)
+            LOGGER.info("STATUS COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.check_status.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True
+
+    @staticmethod
+    def reset_deployment_check(nd1_obj: Node):
+        """
+        Deployment reset command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_deployment_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def reset_h_check(nd1_obj: Node):
+        """
+        Deployment reset_h command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CLSTR_RESET_H_COMMAND, read_lines=True)
+            LOGGER.info("Cluster Reset_H COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.reset_h_check.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def cluster_show(nd1_obj: Node):
+        """
+        Deployment cluster show command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.CORTX_CLUSTER_SHOW, read_lines=True)
+            LOGGER.info("Cluster Show COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.cluster_show.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
+    @staticmethod
+    def prov_cluster_json(nd1_obj: Node):
+        """
+        Deployment prov_cluster json command response
+        param: nd1_obj: primary node object
+        """
+        try:
+            resp = nd1_obj.execute_cmd(
+                cmd=common_cmd.PROV_CLUSTER, read_lines=True)
+            LOGGER.info("Cluster Json COMMAND RESPONSE : %s", resp)
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployFFLib.prov_cluster_json.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+        return True
+
     def deploy_3node_vm_ff(self, build: str, build_url: str, deploy_config_file: str):
         """
         Perform Deployment Using factory and field method
@@ -826,52 +950,6 @@ class ProvDeployFFLib:
         return True, "Post Deloyment Steps Successful!!"
 
     @staticmethod
-    def post_deployment_steps_lc(**kwargs):
-        """
-        Perform CSM login, S3 account creation and AWS configuration on client
-        :Keyword: csm_default_user : CSM default user
-        :Keyword: old_password : Default password
-        :Keyword: new_password : new password
-        returns status true
-        """
-
-        LOGGER.info("Post Deployment Steps")
-        post_deploy_cfg = PROV_CFG["post_deployment_steps"]
-        csm_default_user = kwargs.get("csm_default_user",
-                                      PROV_CFG["post_deployment_steps"]["csm_default_user_name"])
-        passwd = pswdmanager.decrypt(post_deploy_cfg['csm_default_pswd'])
-        old_passwd = kwargs.get("old_password", passwd)
-        new_passwd = kwargs.get("new_password", passwd)
-        config_chk = CSMConfigsCheck()
-        csm_s3 = RestS3user()
-        config_chk.preboarding(username=csm_default_user,
-                               old_password=old_passwd,
-                               new_password=new_passwd)
-        LOGGER.info("Create S3 account")
-        s3user_pswd = pswdmanager.decrypt(post_deploy_cfg["s3user_pswd"])
-        csm_s3.create_custom_s3_payload("valid")
-        resp = csm_s3.create_s3_account(post_deploy_cfg["s3user_name"],
-                                        post_deploy_cfg["s3user_email"],
-                                        s3user_pswd)
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Response for account creation: %s", resp)
-        access_key = resp[1]["access_key"]
-        secret_key = resp[1]["secret_key"]
-        try:
-            LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
-                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
-        except IOError as error:
-            LOGGER.error(
-                "An error occurred in %s:",
-                ProvDeployFFLib.post_deployment_steps.__name__)
-            if isinstance(error.args[0], list):
-                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
-            else:
-                LOGGER.error(error.args[0])
-            return False, error
-
-        return True, "Post Deployment Steps Successful!!"
     def execute_cmd_using_field_user_prompt(node_obj, cmd: str, timeout: int = 120) -> tuple:
         """
         Execute field deployment command on field user prompt.
@@ -900,7 +978,7 @@ class ProvDeployFFLib:
                 elif "Error" in output:
                     LOGGER.error(output)
                     break
-            if "command failed" or "Error" in output:
+            if "command failed" in output or "Error" in output:
                 return False, output
         except Exception as error:
             LOGGER.error(

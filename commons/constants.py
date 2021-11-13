@@ -205,6 +205,7 @@ class Rest:
     S3_SECRET_LL = 8
     MAX_S3_USERS = 1000
     MAX_BUCKETS = 1000
+    MAX_IAM_USERS = 1000
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -362,6 +363,7 @@ class Sizes:
     KB = 1024
     MB = KB * KB
 
+
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
@@ -369,3 +371,8 @@ SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provision
 
 # K8s env
 K8S_SCRIPTS_PATH = "/root/deploy-scripts/cortx-k8s/k8_cortx_cloud/"
+K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
+               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
+
+# haproxy.cfg dummy file Path
+HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"
