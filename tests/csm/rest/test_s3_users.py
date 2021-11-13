@@ -114,6 +114,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.lr
@@ -516,6 +517,7 @@ class TestS3user():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
@@ -971,6 +973,7 @@ class TestS3user():
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.parallel
     @pytest.mark.csmrest
