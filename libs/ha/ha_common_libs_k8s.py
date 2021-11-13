@@ -759,6 +759,7 @@ class HAK8s:
         Helper function to calculate ro compare the checksums of given files
         :param file_list: List of files of which checksum is to be calculated
         :param compare: Flag to compare checksums of files
+        :return: List of md5 content or bool for md5 comparison
         """
         md5_list = []
         for file in file_list:
@@ -777,6 +778,7 @@ class HAK8s:
         Helper function to poll the cluster status
         :param pod_obj: Object for master nodes
         :param timeout: Timeout value
+        :return: bool, response
         """
         LOGGER.info("Polling cluster status")
         start_time = int(time.time())
