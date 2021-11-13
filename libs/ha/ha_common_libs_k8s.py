@@ -553,7 +553,6 @@ class HAK8s:
                 parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
                                                         multipart_obj_path=multipart_obj_path,
                                                         total_parts=total_parts)
-                LOGGER.info("Created parts of data: %s", parts)
 
             LOGGER.info("Uploading parts %s", part_numbers)
             for part in part_numbers:
@@ -584,8 +583,10 @@ class HAK8s:
             i = 1
             while True:
                 data = file_pointer.read(1048576 * single_part_size)
-                LOGGER.info("data_len %s", str(len(data)))
+                LOGGER.info("Part %s data_len %s", i, str(len(data)))
                 if not data:
+                    file_pointer.close()
+                    LOGGER.info("Created multiple data parts")
                     break
                 parts[i] = data
                 uploaded_bytes += len(data)
@@ -771,7 +772,7 @@ class HAK8s:
         else:
             return all(md5_list[0] == x for x in md5_list)
 
-    def poll_cluster_status(self, pod_obj, timeout=72000):         # default 20mins timeout
+    def poll_cluster_status(self, pod_obj, timeout=1200):         # default 20mins timeout
         """
         Helper function to poll the cluster status
         :param pod_obj: Object for master nodes

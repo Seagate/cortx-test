@@ -3,7 +3,7 @@ vm_params:
   passwd: "ItoPnYPoGVTg+IzlbzMr9wCO/aRjevBu55jkx+13WUI="
 
 common_params:
-  loop_count: 11
+  loop_count: 20
   power_on_time: 600
   power_off_time: 600
 
