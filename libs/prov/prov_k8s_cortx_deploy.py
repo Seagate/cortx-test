@@ -21,16 +21,19 @@
 """
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
+import json
 import logging
+import os
 
 import yaml
-import json
 
 from commons import commands as common_cmd
+from commons import constants as common_const
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
 from config import PROV_CFG
+from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 
 LOGGER = logging.getLogger(__name__)
@@ -44,6 +47,7 @@ class ProvDeployK8sCortxLib:
 
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
+        self.cortx_image = os.getenv("CORTX_IMAGE")
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -238,7 +242,14 @@ class ProvDeployK8sCortxLib:
         LOGGER.debug("\n".join(resp).replace("\\n", "\n"))
         return True, resp
 
-    def validate_cluster_status(self, node_obj: LogicalNode, remote_code_path):
+    @staticmethod
+    def validate_cluster_status(node_obj: LogicalNode, remote_code_path):
+        """
+        Validate cluster status
+        param: node_obj : Logical node object of Master node
+        param: remote_code_path: Remote code path of cortx-k8s repo on master node.
+        return : Boolean
+        """
         LOGGER.info("Validate Cluster status")
         cmd = "cd {}; {} | tee cluster_status.log".format(remote_code_path,
                                                           common_cmd.CLSTR_STATUS_CMD)
@@ -247,6 +258,24 @@ class ProvDeployK8sCortxLib:
         if "FAILED" in resp:
             return False, resp
         return True, resp
+
+    def pull_third_party_images(self, worker_obj_list: list):
+        """
+        This method pulls  cortx and 3rd party images
+        param: worker_obj_list: Worker Object list
+        return : Boolean
+        """
+        LOGGER.info("Pull Cortx and 3rd party images on all worker nodes.")
+        LOGGER.debug(self.deploy_cfg['third_party_images'])
+        data = self.deploy_cfg['third_party_images']
+        for obj in worker_obj_list:
+            obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
+            for key, value in data.items():
+                if key in ("kafka", "zookeeper"):
+                    value = "bitnami/" + key + ":" + value
+                cmd = common_cmd.CMD_DOCKER_PULL.format(value)
+                obj.execute_cmd(cmd=cmd)
+        return True
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
@@ -277,6 +306,7 @@ class ProvDeployK8sCortxLib:
             self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
+        self.pull_third_party_images(worker_node_list)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
         self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
@@ -553,7 +583,8 @@ class ProvDeployK8sCortxLib:
         :returns the status, filepath
         """
         cortx_im = dict()
-        image_default_dict = self.deploy_cfg['third_party_images']
+        image_default_dict = {}
+        image_default_dict.update(self.deploy_cfg['third_party_images'])
 
         for image_key in self.deploy_cfg['cortx_images_key']:
             cortx_im[image_key] = cortx_image
@@ -590,6 +621,7 @@ class ProvDeployK8sCortxLib:
             content = parent_key['secrets']['content']
             common = parent_key['common']
             common['storage_provisioner_path'] = self.deploy_cfg['local_path_prov']
+            common['s3']['max_start_timeout'] = self.deploy_cfg['s3_max_start_timeout']
             passwd_dict = {}
             for key, value in self.deploy_cfg['password'].items():
                 passwd_dict[key] = pswdmanager.decrypt(value)
@@ -704,3 +736,133 @@ class ProvDeployK8sCortxLib:
                         return False, "Service {} not started.".format(svc["name"])
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
+
+    def destroy_setup(self, master_node_obj, worker_node_obj):
+        """
+        Method used to run destroy script
+        """
+        cmd1 = "cd {} && {}".format(self.deploy_cfg["git_remote_dir"],
+                                    self.deploy_cfg["destroy_cluster"])
+        cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
+        cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
+        resp = master_node_obj.execute_cmd(cmd=cmd1)
+        LOGGER.debug("resp : %s", resp)
+        for worker in worker_node_obj:
+            resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
+            LOGGER.debug("resp : %s", resp)
+            resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+            LOGGER.debug("resp : %s", resp)
+        return resp
+
+    # use check_cluster_status from ha_common_libs once hctl status issue is resolved,
+    @staticmethod
+    def s3_service_status(master_node_obj):
+        """
+        This method is used to fetch the s3 services status
+        param: master_node_obj : Master Node object
+        """
+        resp = master_node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+        pod_name = resp[1]
+        res = master_node_obj.send_k8s_cmd(
+            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+                           f"-- {'consul kv get -recurse | grep s3 | grep name'}",
+            decode=True)
+        resp = res.split('\n')
+        LOGGER.info("Response for cortx cluster status: %s", resp)
+        for line in resp:
+            if "online" not in line:
+                LOGGER.debug("Line: %s",line)
+                return False, resp
+        return True, resp
+
+    @staticmethod
+    # pylint: disable-msg=too-many-locals
+    def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
+        """
+        Configure MetalLB on the master node
+        param: node_obj : Master node object
+        param: data_ip : List of data IPs.
+        param: control_ip : List of control IPs.
+        return : Boolean
+        """
+        LOGGER.info("Configuring MetaLB: ")
+        metallb_cfg = PROV_CFG['config_metallb']
+        LOGGER.info("Enable strict ARP mode")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_ARP'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['enable_strict_ARP'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Apply manifest")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_namespace'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['apply_manifest_metalb'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Check metallb-system namespace")
+        resp = node_obj.execute_cmd(cmd=metallb_cfg['check_namespace'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        LOGGER.info("Update config file with the provided IPs")
+        ip_list = data_ip + control_ip
+        filepath = metallb_cfg['config_path']
+        with open(filepath) as soln:
+            conf = yaml.safe_load(soln)
+            new_dict = conf['data']
+            ori_value = conf['data']['config']
+            temp1 = ori_value.split('addresses:')[1]
+            ips = ' \n\t'.join(f'- {each}-{each}' for each in ip_list)
+            temp2 = '\n\t' + ips
+            new_value = ori_value.replace(temp1, temp2)
+            schema = {'config': f'| {new_value}'}
+            new_dict.update(schema)
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        with open(metallb_cfg['new_config_file'], 'w') as soln:
+            yaml.dump(conf, soln, default_flow_style=False,
+                      sort_keys=False, Dumper=noalias_dumper)
+
+        LOGGER.info("Copy metalLB config file to master node")
+        resp = node_obj.copy_file_to_remote(metallb_cfg['new_config_file'],
+                                            metallb_cfg['remote_path'])
+        if not resp:
+            return resp
+
+        LOGGER.info("Apply metalLB config")
+        resp = node_obj.execute_cmd(metallb_cfg['apply_config'], read_lines=True)
+        LOGGER.debug("resp: %s", resp)
+
+        return True
+
+    @staticmethod
+    def post_deployment_steps_lc():
+        """
+        Perform CSM login, S3 account creation and AWS configuration on client
+        returns status boolean
+        """
+        LOGGER.info("Post Deployment Steps")
+        csm_s3 = RestS3user()
+
+        LOGGER.info("Create S3 account")
+        csm_s3.create_custom_s3_payload("valid")
+        resp = csm_s3.create_s3_account()
+        LOGGER.info("Response for account creation: %s", resp.json())
+        details = resp.json()
+        access_key = details['access_key']
+        secret_key = details["secret_key"]
+        try:
+            LOGGER.info("Configure AWS keys on Client")
+            system_utils.execute_cmd(
+                common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+        except IOError as error:
+            LOGGER.error(
+                "An error occurred in %s:",
+                ProvDeployK8sCortxLib.post_deployment_steps_lc.__name__)
+            if isinstance(error.args[0], list):
+                LOGGER.error("\n".join(error.args[0]).replace("\\n", "\n"))
+            else:
+                LOGGER.error(error.args[0])
+            return False, error
+
+        return True, "Post Deployment Steps Successful!!"
