@@ -129,9 +129,6 @@ def main():
     print("External LB IP: {}".format(ext_ip))
     print("Creating haproxy.cfg for {} Node setup".format(args.master_node))
     haproxy_cfg = config['default']['haproxy_config']
-    if os.path.exists(haproxy_cfg):
-        cmd = "rm -f {}".format(haproxy_cfg)
-        sysutils.run_local_cmd(cmd)
     extlb_utils.configure_haproxy_lb(
         master_node, username=username, password=args.password, ext_ip=ext_ip)
     with open(haproxy_cfg, 'r') as f_read:
