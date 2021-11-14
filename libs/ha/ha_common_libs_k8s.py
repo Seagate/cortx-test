@@ -24,7 +24,6 @@ HA common utility methods
 import logging
 import os
 import time
-import sys
 from multiprocessing import Process
 import sys
 
@@ -43,6 +42,7 @@ from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 from libs.s3.s3_test_lib import S3TestLib
 from scripts.s3_bench import s3bench
+from commons.utils.system_utils import run_local_cmd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -429,9 +429,8 @@ class HAK8s:
         resp = self.cortx_start_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Starting cluster"
-        time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Check all Pods and cluster online.")
-        resp = self.check_cluster_status(pod_obj)
+        resp = self.poll_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
         return True, resp
@@ -445,14 +444,14 @@ class HAK8s:
         """
         LOGGER.info("Checking if all Pods are online.")
         resp = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS, read_lines=True)
-        for line in resp[1]:
-            if "Running" in line or "Completed" in line:
-                return True, resp
-        return False, resp
+        resp.pop(0)
+        for line in resp:
+            if "Running" not in line:
+                return False, resp
+        return True, resp
 
-    @staticmethod
-    def create_bucket_to_complete_mpu(s3_data, bucket_name, object_name, file_size, total_parts,
-                                      multipart_obj_path):
+    def create_bucket_to_complete_mpu(self, s3_data, bucket_name, object_name, file_size,
+                                      total_parts, multipart_obj_path):
         """
         Helper function to complete multipart upload.
         :param s3_data: s3 account details
@@ -473,12 +472,12 @@ class HAK8s:
         LOGGER.info("Creating a bucket with name : %s", bucket_name)
         res = s3_test_obj.create_bucket(bucket_name)
         if not res[0] or res[1] != bucket_name:
-            return res
+            return res, "Failed in bucket creation"
         LOGGER.info("Created a bucket with name : %s", bucket_name)
         LOGGER.info("Initiating multipart upload")
         res = s3_mp_test_obj.create_multipart_upload(bucket_name, object_name)
         if not res[0]:
-            return res
+            return res, "Failed in initiate multipart upload"
         mpu_id = res[1]["UploadId"]
         LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         LOGGER.info("Uploading parts into bucket")
@@ -486,26 +485,28 @@ class HAK8s:
                                           object_name=object_name, multipart_obj_size=file_size,
                                           total_parts=total_parts,
                                           multipart_obj_path=multipart_obj_path)
-        if not res[0] or len(res[1]) != total_parts:
-            return res
+        if not res[0]:
+            return res, "Failed in upload parts"
         parts = res[1]
         LOGGER.info("Uploaded parts into bucket: %s", parts)
         LOGGER.info("Successfully uploaded object")
 
+        checksum = self.cal_compare_checksum(file_list=[multipart_obj_path], compare=False)[0]
+
         LOGGER.info("Listing parts of multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, bucket_name, object_name)
-        if not res[0] or len(res[1]["Parts"]) != total_parts:
-            return res
+        if not res[0] or len(res[1]["Parts"]) != len(parts):
+            return res, "Failed in list parts of multipart upload"
         LOGGER.info("Listed parts of multipart upload: %s", res[1])
         LOGGER.info("Completing multipart upload")
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts, bucket_name, object_name)
         if not res[0]:
-            return res
+            return res, "Failed in completing multipart upload"
         res = s3_test_obj.object_list(bucket_name)
         if object_name not in res[1]:
-            return res
+            return res, "Failed in object listing"
         LOGGER.info("Multipart upload completed")
-        return True, s3_data
+        return True, s3_data, checksum
 
     def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, parts_etag,
                                  **kwargs):
@@ -552,7 +553,6 @@ class HAK8s:
                 parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
                                                         multipart_obj_path=multipart_obj_path,
                                                         total_parts=total_parts)
-                LOGGER.info("Created parts of data: %s", parts)
 
             LOGGER.info("Uploading parts %s", part_numbers)
             for part in part_numbers:
@@ -583,8 +583,10 @@ class HAK8s:
             i = 1
             while True:
                 data = file_pointer.read(1048576 * single_part_size)
-                LOGGER.info("data_len %s", str(len(data)))
+                LOGGER.info("Part %s data_len %s", i, str(len(data)))
                 if not data:
+                    file_pointer.close()
+                    LOGGER.info("Created multiple data parts")
                     break
                 parts[i] = data
                 uploaded_bytes += len(data)
@@ -745,8 +747,47 @@ class HAK8s:
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
         LOGGER.info("Response for cortx cluster status: %s", res)
-        for line in res:
+        for line in res.split("\n"):
             if "failed" in line or "offline" in line:
                 return False, res
 
         return True, "K8s and cortx both cluster up."
+
+    @staticmethod
+    def cal_compare_checksum(file_list, compare=False):
+        """
+        Helper function to calculate ro compare the checksums of given files
+        :param file_list: List of files of which checksum is to be calculated
+        :param compare: Flag to compare checksums of files
+        :return: List of md5 content or bool for md5 comparison
+        """
+        md5_list = []
+        for file in file_list:
+            cmd = common_cmd.MD5SUM.format("-t", file)
+            resp = run_local_cmd(cmd=cmd)
+            md5 = (resp[1].split())[0]
+            md5_list.append(md5.replace("b'", ""))
+
+        if not compare:
+            return md5_list
+        else:
+            return all(md5_list[0] == x for x in md5_list)
+
+    def poll_cluster_status(self, pod_obj, timeout=1200):         # default 20mins timeout
+        """
+        Helper function to poll the cluster status
+        :param pod_obj: Object for master nodes
+        :param timeout: Timeout value
+        :return: bool, response
+        """
+        LOGGER.info("Polling cluster status")
+        start_time = int(time.time())
+        while timeout > int(time.time()) - start_time:
+            time.sleep(60)
+            resp = self.check_cluster_status(pod_obj)
+            if resp[0]:
+                LOGGER.info("Cortx cluster is up")
+                break
+
+        LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
+        return resp

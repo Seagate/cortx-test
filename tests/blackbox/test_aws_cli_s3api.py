@@ -68,6 +68,7 @@ class TestAwsCliS3Api:
             self.test_dir_path, self.downloaded_file)
 
         self.buckets_list = list()
+        self.aws_buckets_list = list()
         self.log.info("ENDED : Setup operations at test function level")
 
     def teardown_method(self):
