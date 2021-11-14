@@ -330,7 +330,7 @@ class TestMultipartUploadGetPut:
         s3_background_io.cleanup()
         self.log.info("ENDED: Test upload part number 1 and 10000 only")
 
-    @pytest.mark.tags('TEST_28539')
+    @pytest.mark.tags('TEST-28539')
     @pytest.mark.s3_ops
     @CTFailOn(error_handler)
     def test_multipart_upload_test_28539(self):
