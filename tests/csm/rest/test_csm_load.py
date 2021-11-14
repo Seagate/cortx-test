@@ -245,3 +245,35 @@ class TestCsmLoad():
         self.log.info("\nStep 3: Successfully verified CPU usage fault alert on CSM REST API. \n")
 
         self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-22203')
+    def test_22203_lc(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_22203_lc"]
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "s3",
+                        fieldnames[1]: CSM_REST_CFG["s3account_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["s3account_user"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Same_User_Login.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        self.log.info("##### Test completed -  %s #####", test_case_name)
