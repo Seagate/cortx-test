@@ -543,14 +543,11 @@ class TestMultipartUploadGetPut:
                                   (mpu_id, all_parts, dict(list(parts.items())[13:15])),
                                   (mpu_id, all_parts, dict(list(parts.items())[15:]))])
         new_list = []
-        new_lst = []
         for k in all_parts:
             for j in k:
-                new_list.append(j)
-        for k in new_list:
-            for j in k:
-                new_lst.append(j)
-        sorted_lst = sorted(new_lst, key=lambda d: d['PartNumber'])
+                part_list = [{'PartNumber': p['PartNumber'], 'ETag': p['ETag']} for p in j['Parts']]
+                new_list.extend(part_list)
+        sorted_lst = sorted(new_list, key=lambda d: d['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
                                           parts_list=sorted_lst)
