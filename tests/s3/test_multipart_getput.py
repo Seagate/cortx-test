@@ -710,7 +710,6 @@ class TestMultipartUploadGetPut:
             mpu_id, self.bucket_name, self.object_name, multipart_obj_path=self.mp_obj_path,
             part_sizes=mp_config["part_sizes"],
             chunk_size=mp_config["chunk_size"])
-
         assert_utils.assert_true(status, f"Failed to upload parts: {mpu_upload}")
         sorted_part_list = sorted(mpu_upload["uploaded_parts"], key=lambda x: x['PartNumber'])
         self.log.info("Listing parts of multipart upload")
@@ -721,26 +720,21 @@ class TestMultipartUploadGetPut:
                       res[1]['IsTruncated'])
         part_num_marker = res[1]['PartNumberMarker']
         is_truncated = res[1]['IsTruncated']
-        all_parts = []
+        all_parts = list()
         all_parts.append(res[1]["Parts"])
         while is_truncated:
-            response = self.s3_mpu_test_obj.list_parts(mpu_id, self.bucket_name,
-                                                       self.object_name,
-                                                       PartNumberMarker=part_num_marker)
+            response = self.s3_mpu_test_obj.list_parts(
+                mpu_id, self.bucket_name, self.object_name, PartNumberMarker=part_num_marker)
             assert_utils.assert_true(response[0], response[1])
             part_num_marker = res[1]['PartNumberMarker']
             is_truncated = response[1]['IsTruncated']
             all_parts.append(res[1]["Parts"])
-
-        self.log.info("Listed parts of multipart upload: %s", all_parts)
+        self.log.info("Listed parts of multipart upload: %s", len(all_parts))
+        assert_utils.assert_equal(len(all_parts), 10000, "Failed to list 10000 parts.")
         self.log.info("Complete the multipart upload")
-        try:
-            resp = self.s3_mpu_test_obj.complete_multipart_upload(
+        resp = self.s3_mpu_test_obj.complete_multipart_upload(
                 mpu_id, sorted_part_list, self.bucket_name, self.object_name)
-            assert_utils.assert_false(resp[0], resp[1])
-        except CTException as error:
-            self.log.error(error)
-            self.log.info("Failed to complete the multipart")
+        assert_utils.assert_true(resp[0], "Failed to complete the 10000 multipart")
         self.get_obj_compare_checksums(self.bucket_name, self.object_name, resp[1]["ETag"])
         self.log.info("Stop and validate parallel S3 IOs")
         self.log.info("ENDED: Test List multipart with 10000 parts")
