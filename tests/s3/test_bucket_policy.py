@@ -1511,7 +1511,7 @@ class TestBucketPolicy:
         canonical_id_user_2, s3_bkt_policy_obj_2 = result_2[0], result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give grant_read permissions to account 2")
-        bucket_name_566 = test_566_cfg["bucket_name"]+self.bucket_name
+        bucket_name_566 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name_566,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -1554,7 +1554,7 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write permissions to account 2")
-        bucket_name_569 = test_569_cfg["bucket_name"]+self.bucket_name
+        bucket_name_569 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name_569,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -1597,7 +1597,7 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        bucket_name_570 = test_570_cfg["bucket_name"]+self.bucket_name
+        bucket_name_570 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name_570,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -1640,7 +1640,7 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        bucket_name_574 = test_574_cfg["bucket_name"]+self.bucket_name
+        bucket_name_574 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name_574,
             grant_full_control="id={}".format(canonical_id_user_1))
@@ -1685,7 +1685,7 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give full-control permissions to account 2")
-        bucket_name_582 = test_582_cfg["bucket_name"]+self.bucket_name
+        bucket_name_582 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
             bucket_name=bucket_name_582,
             grant_full_control="id={}".format(canonical_id_user_1))
