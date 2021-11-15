@@ -37,7 +37,7 @@ from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 from libs.s3 import S3H_OBJ
 from libs.s3.s3_test_lib import S3TestLib
 
-# pylint: disable=R0904
+# pylint: disable = too-many-lines
 
 
 class TestMultipleConfDeploy:
@@ -91,8 +91,7 @@ class TestMultipleConfDeploy:
 
         assert_utils.assert_true(resp[0], resp[1])
 
-    # pylint: disable=too-many-arguments
-    # pylint: disable-msg=too-many-locals
+    # pylint: disable=too-many-arguments, too-many-locals
     def test_deployment(self, sns_data, sns_parity,
                         sns_spare, dix_data,
                         dix_parity, dix_spare,
@@ -100,8 +99,9 @@ class TestMultipleConfDeploy:
         """
         This method is used for deployment with various config on N nodes
         """
-        self.log.info("STARTED: {%s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
+        self.log.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
+                      "k8s based Cortx Deployment", len(self.worker_node_list),
+                      sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
 
         self.log.info("Step 1: Perform k8s Cluster Deployment")
         resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
