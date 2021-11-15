@@ -1,7 +1,7 @@
 nodes_3:
   config_1:
     sns_data : 5
-    sns_parity : 2
+    sns_parity : 1
     sns_spare : 0
     dix_data : 1
     dix_parity : 2
@@ -264,7 +264,7 @@ nodes_7:
     sns_parity : 7
     sns_spare : 0
     dix_data : 1
-    dix_parity : 0
+    dix_parity : 6
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2

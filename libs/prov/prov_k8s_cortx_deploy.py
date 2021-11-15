@@ -753,12 +753,15 @@ class ProvDeployK8sCortxLib:
                                     self.deploy_cfg["destroy_cluster"])
         cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
         cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
+        cmd4 = "docker image prune -a"
         resp = master_node_obj.execute_cmd(cmd=cmd1)
         LOGGER.debug("resp : %s", resp)
         for worker in worker_node_obj:
             resp = worker.execute_cmd(cmd=cmd2, read_lines=True)
             LOGGER.debug("resp : %s", resp)
             resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
+            LOGGER.debug("resp : %s", resp)
+            resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
             LOGGER.debug("resp : %s", resp)
         return resp
 
@@ -929,11 +932,11 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("STARTED: Basic IO")
         basic_io_config = self.s3_test_config["test_basic_io"]
 
-        LOGGER.info("Step 3: Creating bucket %s", bucket_name)
+        LOGGER.info("Creating bucket %s", bucket_name)
         resp = s3t_obj.create_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
 
-        LOGGER.info("Step 4: Perform write/read/validate/delete with multiples object sizes. ")
+        LOGGER.info("Perform write/read/validate/delete with multiples object sizes. ")
         for b_size, max_count in basic_io_config["io_upper_limits"].items():
             for count in range(0, max_count):
                 test_file = "basic_io_" + str(count) + str(b_size)
@@ -943,7 +946,7 @@ class ProvDeployK8sCortxLib:
 
                 self.write_read_validate_file(s3t_obj,bucket_name, test_file, count, block_size)
 
-        LOGGER.info("Step 5: Delete bucket %s", bucket_name)
+        LOGGER.info("Delete bucket %s", bucket_name)
         resp = s3t_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("ENDED: Basic IO with parity check")
