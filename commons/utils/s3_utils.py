@@ -210,6 +210,8 @@ def poll(target, *args, **kwargs) -> Any:
             LOGGER.error(response)
         time.sleep(step)
 
+    return target(*args, **kwargs)
+
 
 def calc_checksum(file_path, part_size=0):
     """Calculating an checksum using encryption algorithm."""
