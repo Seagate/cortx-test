@@ -878,7 +878,6 @@ class ProvDeployK8sCortxLib:
 
         return True, "Post Deployment Steps Successful!!"
 
-<<<<<<< HEAD
     # pylint: disable=too-many-arguments
     def write_read_validate_file(self, s3t_obj, bucket_name,
                                  test_file, count, block_size):
