@@ -749,8 +749,8 @@ class ProvDeployK8sCortxLib:
         """
         Method used to run destroy script
         """
-        cmd1 = "cd {} && {}".format(self.deploy_cfg["git_remote_dir"],
-                                    self.deploy_cfg["destroy_cluster"])
+        cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
+                                            self.deploy_cfg["destroy_cluster"])
         cmd2 = "umount {}".format(self.deploy_cfg["local_path_prov"])
         cmd3 = "rm -rf /etc/3rd-party/openldap /var/data/3rd-party/"
         cmd4 = "docker image prune -a"
