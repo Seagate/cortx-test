@@ -656,7 +656,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
-                                                           compare=False)
+                                                           compare=False)[0]
 
         LOGGER.info("Step 5: Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
