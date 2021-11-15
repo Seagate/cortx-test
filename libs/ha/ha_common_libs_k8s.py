@@ -26,7 +26,6 @@ import os
 import time
 from multiprocessing import Process
 import sys
-import json
 
 from commons import commands as common_cmd
 from commons import constants as common_const
