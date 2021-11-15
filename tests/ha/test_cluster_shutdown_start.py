@@ -40,6 +40,7 @@ from commons.utils import assert_utils
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import create_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -210,6 +211,8 @@ class TestClusterShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
 
+    @pytest.mark.ha
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-29468")
     @CTFailOn(error_handler)
     def test_cluster_restart_multiple(self):
@@ -376,6 +379,9 @@ class TestClusterShutdownStart:
         parts_etag = list()
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
+        if os.path.exists(self.multipart_obj_path):
+            os.remove(self.multipart_obj_path)
+        create_file(self.multipart_obj_path, file_size)
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially")
@@ -401,8 +407,8 @@ class TestClusterShutdownStart:
                                                     multipart_obj_size=file_size,
                                                     total_parts=total_parts,
                                                     multipart_obj_path=self.multipart_obj_path)
-        parts = resp[2]
         mpu_id = resp[1]
+        object_path = resp[2]
         parts_etag = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 1: Successfully completed partial multipart upload")
@@ -433,8 +439,10 @@ class TestClusterShutdownStart:
                                                     object_name=self.object_name,
                                                     part_numbers=remaining_parts,
                                                     parts_etag=parts_etag,
-                                                    remaining_upload=True, parts=parts,
-                                                    mpu_id=mpu_id)
+                                                    remaining_upload=True, mpu_id=mpu_id,
+                                                    multipart_obj_size=file_size,
+                                                    total_parts=total_parts,
+                                                    multipart_obj_path=object_path)
 
         assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
         LOGGER.info("Step 5: Successfully uploaded remaining parts")
@@ -481,6 +489,8 @@ class TestClusterShutdownStart:
         LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
                     "restart")
 
+    @pytest.mark.ha
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-29469")
     @CTFailOn(error_handler)
     def test_reads_after_cluster_restart(self):

@@ -26,6 +26,7 @@ import os
 import time
 from multiprocessing import Process
 import sys
+import json
 
 from commons import commands as common_cmd
 from commons import constants as common_const
@@ -415,12 +416,14 @@ class HAK8s:
         Restart the cluster and check all nodes health.
         :param pod_obj: pod object for stop/start cluster
         """
+        LOGGER.info("Send sync command")
+        resp = self.send_sync_command(pod_obj, "cortx-data-pod")
+        if not resp:
+            return resp, "Failed to send sync command"
         LOGGER.info("Stop the cluster")
         resp = self.cortx_stop_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Stopping cluster"
-        # TODO: will need to check if delay needed when stopping or starting cluster
-        time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Check all Pods are offline.")
         resp = self.check_cluster_status(pod_obj)
         if resp[0]:
@@ -433,6 +436,11 @@ class HAK8s:
         resp = self.poll_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
+        LOGGER.info("Send sync command")
+        resp = self.send_sync_command(pod_obj, "cortx-data-pod")
+        if not resp:
+            return resp, "Failed to send sync command"
+        LOGGER.info("Stop the cluster")
         return True, resp
 
     @staticmethod
@@ -524,7 +532,6 @@ class HAK8s:
             multipart_obj_size = kwargs.get("multipart_obj_size", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             remaining_upload = kwargs.get("remaining_upload", False)
-            parts = kwargs.get("parts", None)
             mpu_id = kwargs.get("mpu_id", None)
             access_key = s3_data["s3_acc"]["accesskey"]
             secret_key = s3_data["s3_acc"]["secretkey"]
@@ -546,24 +553,24 @@ class HAK8s:
                 mpu_id = res[1]["UploadId"]
                 LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
 
-                LOGGER.info("Creating parts of data")
-                if os.path.exists(multipart_obj_path):
-                    os.remove(multipart_obj_path)
-                system_utils.create_file(multipart_obj_path, multipart_obj_size)
-                parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
-                                                        multipart_obj_path=multipart_obj_path,
-                                                        total_parts=total_parts)
+            LOGGER.info("Creating parts of data")
+            parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
+                                                    multipart_obj_path=multipart_obj_path,
+                                                    total_parts=total_parts)
 
             LOGGER.info("Uploading parts %s", part_numbers)
+
             for part in part_numbers:
-                resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
-                                                       object_name=object_name, upload_id=mpu_id,
+                resp = s3_mp_test_obj.upload_multipart(body=parts[part],
+                                                       bucket_name=bucket_name,
+                                                       object_name=object_name,
+                                                       upload_id=mpu_id,
                                                        part_number=part)
                 p_etag = resp[1]
                 LOGGER.debug("Part : %s", str(p_etag))
                 parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
-            return True, mpu_id, parts, parts_etag
+            return True, mpu_id, multipart_obj_path, parts_etag
         except BaseException as error:
             LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
@@ -574,7 +581,6 @@ class HAK8s:
         :param multipart_obj_size: Size of the file to be created to upload
         :param total_parts: Total parts to be uploaded
         :param multipart_obj_path: Path of the file to be uploaded
-        :return: response
         """
         parts = {}
         uploaded_bytes = 0
@@ -735,10 +741,10 @@ class HAK8s:
         LOGGER.info("Check the overall K8s cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         resp = (resp.decode('utf-8')).split('\n')
-        LOGGER.info("Response for K8s cluster status:")
         for line in resp:
-            LOGGER.debug(line)
             if "FAILED" in line:
+                LOGGER.info("Response for K8s cluster status:")
+                LOGGER.debug(line)
                 return False, resp
         resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
         pod_name = resp[1]
@@ -746,9 +752,9 @@ class HAK8s:
             operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
-        LOGGER.info("Response for cortx cluster status: %s", res)
         for line in res.split("\n"):
             if "failed" in line or "offline" in line:
+                LOGGER.info("Response for cortx cluster status: %s", res)
                 return False, res
 
         return True, "K8s and cortx both cluster up."
@@ -791,3 +797,49 @@ class HAK8s:
 
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
+
+    def send_sync_command(self, pod_obj, pod_prefix):
+        """
+        Helper function to send sync command to all containers of given pod category
+        :param pod_obj: Object for master node
+        :param pod_prefix: Prefix to define the pod category
+        :return: Bool
+        """
+        import pdb
+        pdb.set_trace()
+        LOGGER.info("Run sync command on all containers of pods %s", pod_prefix)
+        pod_dict = self.get_all_pods_containers(pod_obj=pod_obj, pod_prefix=pod_prefix)
+        if pod_dict:
+            for pod, containers in pod_dict.items():
+                for cnt in containers:
+                    res = pod_obj.send_k8s_cmd(
+                        operation="exec", pod=pod, namespace=common_const.NAMESPACE,
+                        command_suffix=f"-c {cnt} -- sync", decode=True)
+                    LOGGER.info("Response for pod %s container %s: %s", pod, cnt, res)
+
+        return True
+
+    @staticmethod
+    def get_all_pods_containers(pod_obj, pod_prefix):
+        """
+        Helper function to get all pods with containers of given pod_prefix
+        :param pod_obj: Object for master node
+        :param pod_prefix: Prefix to define the pod category
+        :return: Dict
+        """
+        pod_containers = {}
+        pod_list = []
+        LOGGER.info("Get all data pod names of %s", pod_prefix)
+        output = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                     " -o=custom-columns=NAME:.metadata.name", read_lines=True)
+        for lines in output:
+            if pod_prefix in lines:
+                pod_list.append(lines.strip())
+
+        for pod in pod_list:
+            cmd = common_cmd.KUBECTL_GET_POD_CONTAINERS.format(pod)
+            output = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
+            output = output[0].split()
+            pod_containers[pod] = output
+
+        return pod_containers

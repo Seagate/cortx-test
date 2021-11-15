@@ -443,6 +443,7 @@ K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
