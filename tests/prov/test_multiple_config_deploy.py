@@ -108,11 +108,11 @@ class TestMultipleConfDeploy:
         # resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
         # assert_utils.assert_true(resp[0], resp[1])
         #
-        # self.log.info("Step 2: Taint master nodes if not already done.")
-        # for node in self.master_node_list:
-        #     resp = self.deploy_lc_obj.validate_master_tainted(node)
-        #     if not resp:
-        #         self.deploy_lc_obj.taint_master(node)
+        self.log.info("Step 2: Taint master nodes if not already done.")
+        for node in self.master_node_list:
+            resp = self.deploy_lc_obj.validate_master_tainted(node)
+            if not resp:
+                self.deploy_lc_obj.taint_master(node)
 
         self.log.info("Step 3: Download solution file template")
         path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
