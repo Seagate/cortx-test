@@ -888,7 +888,7 @@ class ProvDeployK8sCortxLib:
         file_path = os.path.join(self.test_dir_path, test_file)
         if not os.path.isdir(self.test_dir_path):
             LOGGER.debug("File pah not exists")
-            os.mkdir(self.test_dir_path)
+            system_utils.execute_cmd(cmd=common_cmd.CMD_MKDIR.format(self.test_dir_path))
 
         LOGGER.info("Creating a file with name %s", test_file)
         system_utils.create_file(file_path, count, "/dev/urandom", block_size)
