@@ -777,7 +777,7 @@ class ProvDeployK8sCortxLib:
         res = master_node_obj.send_k8s_cmd(
             operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {'consul kv get -recurse | grep s3 | grep name'}",
+            f"-- {'consul kv get -recurse | grep s3 | grep name'}",
             decode=True)
         resp = res.split('\n')
         LOGGER.info("Response for cortx cluster status: %s", resp)
@@ -878,6 +878,7 @@ class ProvDeployK8sCortxLib:
 
         return True, "Post Deployment Steps Successful!!"
 
+<<<<<<< HEAD
     # pylint: disable=too-many-arguments
     def write_read_validate_file(self, s3t_obj, bucket_name,
                                  test_file, count, block_size):
@@ -997,3 +998,33 @@ class ProvDeployK8sCortxLib:
                 write.writerows([test])
             fptr.close()
         return csv_filepath
+
+    @staticmethod
+    def get_data_pods(node_obj) -> tuple:
+        """
+        Get list of data pods in cluster.
+        param: node_obj: Master node(Logical Node object)
+        return: True/False and pods list/failure message
+        """
+        LOGGER.info("Get list of data pods in cluster.")
+        output = node_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
+                                      " -o=custom-columns=NAME:.metadata.name",
+                                      read_lines=True)
+        data_pod_list = [pod.strip() for pod in output if common_const.POD_NAME_PREFIX in pod]
+        if data_pod_list is not None:
+            return True, data_pod_list
+        return False, "Data PODS are not retrieved for cluster."
+
+    @staticmethod
+    def check_pods_status(node_obj) -> bool:
+        """
+        Helper function to check pods status.
+        :param node_obj: Master node(Logical Node object)
+        :return: True/False
+        """
+        LOGGER.info("Checking all Pods are online.")
+        resp = node_obj.execute_cmd(cmd=common_cmd.CMD_POD_STATUS, read_lines=True)
+        for line in range(1, len(resp)):
+            if "Running" not in resp[line]:
+                return False
+        return True
