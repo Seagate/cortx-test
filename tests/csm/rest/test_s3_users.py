@@ -73,7 +73,9 @@ class TestS3user():
             akey = created_user["access_key"]
             skey = created_user["secret_key"]
             usr = created_user["account_name"]
-            for i in range(const.MAX_IAM_USERS):
+            iam_users = created_user['iam_users']
+            buckets = created_user['buckets']
+            for i in range(iam_users):
                 iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Delete IAM user: %s with access key: %s and secret key: %s",
                               iam_user, akey, skey)
@@ -82,7 +84,7 @@ class TestS3user():
                 except BaseException as err:
                     self.log.warning("Ignoring %s while deleting IAM user: %s", err, iam_user)
 
-            for i in range(const.MAX_BUCKETS):
+            for i in range(buckets):
                 self.log.info("[START] Delete Bucket count : %s", i + 1)
                 bucket = f"{usr}bucket{i}"
                 self.log.info("Verify Delete Objects and bucket: %s with access key: %s and "
@@ -922,19 +924,29 @@ class TestS3user():
             skey = created_user["secret_key"]
             usr = created_user["account_name"]
             self.log.info("Creating IAM users for %s user", usr)
+            iam_users_cnt = 0
             for i in range(const.MAX_IAM_USERS):
                 iam_user = f"{usr}iam{i}"
                 self.log.info("Verify Create IAM user: %s with access key: %s and secret key: %s",
                               iam_user, akey, skey)
-                assert s3_misc.create_iam_user(iam_user, akey, skey), "Failed to create IAM user."
+                if s3_misc.create_iam_user(iam_user, akey, skey):
+                    iam_users_cnt = iam_users_cnt + 1
+                else:
+                    created_user.update({'iam_users': iam_users_cnt})
+                    assert False, "Failed to create IAM user."
 
             self.log.info("Creating Buckets and objects for %s user", usr)
+            bucket_cnt = 0
             for i in range(const.MAX_BUCKETS):
                 self.log.info("[START] Create Bucket count : %s", i + 1)
                 bucket = f"{usr}bucket{i}"
                 self.log.info("Verify Create bucket: %s with access key: %s and secret key: %s",
                               bucket, akey, skey)
-                assert s3_misc.create_bucket(bucket, akey, skey), "Failed to create bucket."
+                if s3_misc.create_bucket(bucket, akey, skey):
+                    bucket_cnt = bucket_cnt + 1
+                else:
+                    created_user.update({'buckets': bucket_cnt})
+                    assert False, "Failed to create bucket."
                 obj = f"{bucket}obj{i}.txt"
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                               "secret key: %s", obj, bucket, akey, skey)
