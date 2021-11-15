@@ -1511,24 +1511,25 @@ class TestBucketPolicy:
         canonical_id_user_2, s3_bkt_policy_obj_2 = result_2[0], result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give grant_read permissions to account 2")
+        bucket_name_566 = test_566_cfg["bucket_name"]+self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=test_566_cfg["bucket_name"],
+            bucket_name=bucket_name_566,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=test_566_cfg["bucket_name"],
+            bucket_name=bucket_name_566,
             grant_read="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with grant_read permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            test_566_cfg["bucket_name"],
+            bucket_name_566,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_566_cfg)
-        self.delete_bucket_and_verify(result_1[1], test_566_cfg["bucket_name"])
+        self.delete_bucket_and_verify(result_1[1], bucket_name_566)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given read permission on bucket")
 
@@ -1553,24 +1554,25 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write permissions to account 2")
+        bucket_name_569 = test_569_cfg["bucket_name"]+self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=test_569_cfg["bucket_name"],
+            bucket_name=bucket_name_569,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=test_569_cfg["bucket_name"],
+            bucket_name=bucket_name_569,
             grant_write="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with write permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            test_569_cfg["bucket_name"],
+            bucket_name_569,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_569_cfg)
-        self.delete_bucket_and_verify(result_1[1], test_569_cfg["bucket_name"])
+        self.delete_bucket_and_verify(result_1[1], bucket_name_569)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given write permission on bucket")
 
@@ -1595,24 +1597,25 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
+        bucket_name_570 = test_570_cfg["bucket_name"]+self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=test_570_cfg["bucket_name"],
+            bucket_name=bucket_name_570,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=test_570_cfg["bucket_name"],
+            bucket_name=bucket_name_570,
             grant_read_acp="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with write-acp permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            test_570_cfg["bucket_name"],
+            bucket_name_570,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_570_cfg)
-        self.delete_bucket_and_verify(result_1[1], test_570_cfg["bucket_name"])
+        self.delete_bucket_and_verify(result_1[1], bucket_name_570)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
 
@@ -1637,24 +1640,25 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
+        bucket_name_574 = test_574_cfg["bucket_name"]+self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=test_574_cfg["bucket_name"],
+            bucket_name=bucket_name_574,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=test_574_cfg["bucket_name"],
+            bucket_name=bucket_name_574,
             grant_write_acp="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with write-acp permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            test_574_cfg["bucket_name"],
+            bucket_name_574,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_574_cfg)
-        self.delete_bucket_and_verify(result_1[1], test_574_cfg["bucket_name"])
+        self.delete_bucket_and_verify(result_1[1], bucket_name_574)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
             "another account given write-acp permission on bucket")
@@ -1681,25 +1685,26 @@ class TestBucketPolicy:
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give full-control permissions to account 2")
+        bucket_name_582 = test_582_cfg["bucket_name"]+self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=test_582_cfg["bucket_name"],
+            bucket_name=bucket_name_582,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=test_582_cfg["bucket_name"],
+            bucket_name=bucket_name_582,
             grant_full_control="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with full-control permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            test_582_cfg["bucket_name"],
+            bucket_name_582,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_582_cfg)
         for s3_obj in [result_1[1], result_2[1]]:
-            self.delete_bucket_and_verify(s3_obj, test_582_cfg["bucket_name"])
+            self.delete_bucket_and_verify(s3_obj, bucket_name_582)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
             "another account given full-control permission on bucket")
@@ -5177,6 +5182,7 @@ class TestBucketPolicy:
         for effect in ["Allow", "Deny"]:
             self.put_bkt_policy_with_date_format(
                 account_id, date_time, effect, s3_obj_2, test_cfg)
+            time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "ENDED: Test Bucket Policy using Condition Operator 'DateEquals', "
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
