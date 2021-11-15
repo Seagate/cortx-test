@@ -761,8 +761,8 @@ class ProvDeployK8sCortxLib:
             LOGGER.debug("resp : %s", resp)
             resp = worker.execute_cmd(cmd=cmd3, read_lines=True)
             LOGGER.debug("resp : %s", resp)
-            resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
-            LOGGER.debug("resp : %s", resp)
+            # resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
+            # LOGGER.debug("resp : %s", resp)
         return resp
 
     # use check_cluster_status from ha_common_libs once hctl status issue is resolved,
