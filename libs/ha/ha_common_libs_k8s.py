@@ -515,8 +515,7 @@ class HAK8s:
         LOGGER.info("Multipart upload completed")
         return True, s3_data, checksum
 
-    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, parts_etag,
-                                 **kwargs):
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
         """
         Helper function to do partial multipart upload.
         :param s3_data: s3 account details
@@ -534,6 +533,7 @@ class HAK8s:
             mpu_id = kwargs.get("mpu_id", None)
             access_key = s3_data["s3_acc"]["accesskey"]
             secret_key = s3_data["s3_acc"]["secretkey"]
+            parts_etag = list()
             s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                     endpoint_url=S3_CFG["s3_url"])
             s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
@@ -804,8 +804,6 @@ class HAK8s:
         :param pod_prefix: Prefix to define the pod category
         :return: Bool
         """
-        import pdb
-        pdb.set_trace()
         LOGGER.info("Run sync command on all containers of pods %s", pod_prefix)
         pod_dict = self.get_all_pods_containers(pod_obj=pod_obj, pod_prefix=pod_prefix)
         if pod_dict:
