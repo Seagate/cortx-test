@@ -77,14 +77,14 @@ class TestProvK8Cortx:
         path = self.deploy_cfg["k8s_dir"]
         for node in self.master_node_list:
             resp = self.deploy_lc_obj.validate_cluster_status(node, path)
-            assert_utils.assert_true(resp[0])
+            assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 2: Done.")
 
         LOGGER.info("Step 3: Check hctl Status.")
         pod_name = self.master_node_obj.get_pod_name()
-        assert_utils.assert_true(pod_name[0])
+        assert_utils.assert_true(pod_name[0], pod_name[1])
         resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
-        assert_utils.assert_true(resp[0])
+        assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
 
@@ -112,7 +112,7 @@ class TestProvK8Cortx:
         LOGGER.info("Check secret files are copied inside the POD.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
-        assert_utils.assert_true(data_pod_list[0])
+        assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
         LOGGER.info("Step 2: Check secret files are copied to each data pod.")
         secrets_path = "ls /etc/cortx/solution/secret/"
         for pod_name in data_pod_list[1]:
