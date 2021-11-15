@@ -71,6 +71,7 @@ class TestBucketPolicy:
             endpoint_url=S3_CFG["s3_url"])
         self.account_list = []
         self.iam_obj_list = []
+        self.s3t_obj_list = []
         self.obj_name_prefix = "obj_policy"
         self.acc_name_prefix = "acc1policy"
         self.user_name = "userpolicy_user_{}".format(time.perf_counter_ns())
@@ -95,6 +96,7 @@ class TestBucketPolicy:
         self.file_path_2 = os.path.join(
             self.folder_path, "bkt2_policy{}.txt".format(time.perf_counter_ns()))
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.s3t_obj_list.append(self.s3test_obj_1)
         self.log.info("ENDED: Test setup operations.")
         yield
         self.log.info("STARTED: Test teardown operations.")
@@ -102,10 +104,7 @@ class TestBucketPolicy:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
         self.log.info("Deleting all buckets/objects created during TC execution.")
-        if self.s3test_obj_1:
-            res_bkt = self.s3test_obj_1.bucket_list()
-            for bkt in res_bkt[1]:
-                self.s3test_obj_1.delete_bucket(bkt, force=True)
+        self.delete_bucket_and_verify()
         bucket_list = self.s3_obj.bucket_list()[1]
         if self.bucket_name in bucket_list:
             self.acl_obj.put_bucket_acl(self.bucket_name, acl="private")
@@ -135,6 +134,16 @@ class TestBucketPolicy:
             resp = self.rest_obj.delete_s3_account(acc)
             assert_utils.assert_true(resp[0], resp[1])
             self.log.info("Deleted %s account successfully", acc)
+
+    def delete_bucket_and_verify(self):
+        """Delete bucket and all objects."""
+        for s3t_obj in self.s3t_obj_list:
+            if s3t_obj:
+                bktlist = s3t_obj.bucket_list()[1]
+                if self.bucket_name in bktlist:
+                    resp = s3t_obj.delete_bucket(self.bucket_name, force=True)
+                    assert resp[0], resp[1]
+        self.log.info(self.bucket_name)
 
     def create_bucket_put_objects(
             self,
@@ -623,14 +632,6 @@ class TestBucketPolicy:
             self.log.info(
                 "Listed objects with %s prefix successfully", obj_name_prefix)
 
-    def delete_bucket_and_verify(self, s3t_obj, bucket_name):
-        """Delete bucket and all objects."""
-        bktlist = s3t_obj.bucket_list()[1]
-        if bucket_name in bktlist:
-            resp = s3t_obj.delete_bucket(bucket_name, force=True)
-            assert resp[0], resp[1]
-        self.log.info(self.bucket_name)
-
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
@@ -813,6 +814,7 @@ class TestBucketPolicy:
         create_account = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
+        self.s3t_obj_list.append(s3_obj)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -834,7 +836,7 @@ class TestBucketPolicy:
             "Step 1: Retrieved objects from a bucket %s using another account %s",
             self.bucket_name,
             self.account_name)
-        self.delete_bucket_and_verify(create_account[1], self.bucket_name)
+
         time.sleep(S3_CFG["sync_delay"])
         self.log.debug("Waiting for Policy to be synced for bucket")
         self.log.info(
@@ -923,6 +925,7 @@ class TestBucketPolicy:
         create_account = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
+        self.s3t_obj_list.append(s3_obj)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -940,7 +943,6 @@ class TestBucketPolicy:
             "Step 1: Retrieved object from a bucket %s using another account %s",
             self.bucket_name,
             self.account_name)
-        self.delete_bucket_and_verify(create_account[1], self.bucket_name)
         self.log.info(
             "ENDED: Test resource arn combination with object name")
 
@@ -959,6 +961,7 @@ class TestBucketPolicy:
         create_account = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
+        self.s3t_obj_list.append(s3_obj)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -974,7 +977,6 @@ class TestBucketPolicy:
             "Step 1: Retrieved object from a bucket %s using another account %s",
             self.bucket_name,
             self.account_name)
-        self.delete_bucket_and_verify(create_account[1], self.bucket_name)
         self.log.info(
             "ENDED: Test resource arn combination with object name inside folder")
 
@@ -1088,6 +1090,7 @@ class TestBucketPolicy:
         create_account = self.create_s3_acc_cortxcli(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
+        self.s3t_obj_list.append(s3_obj)
         self.create_bucket_put_obj_with_dir(
             self.bucket_name,
             "obj_policy",
@@ -1105,7 +1108,6 @@ class TestBucketPolicy:
             "Step 1: Retrieved object from a bucket %s using another account %s",
             self.bucket_name,
             self.account_name)
-        self.delete_bucket_and_verify(create_account[1], self.bucket_name)
         self.log.info(
             "ENDED: Test resource arn specifying wildcard * for specifying part of object name")
 
@@ -1499,37 +1501,39 @@ class TestBucketPolicy:
     @CTFailOn(error_handler)
     def test_566(self):
         """Apply Delete-bucket-policy from another account given read permission on bucket."""
-        self.log.info(
-            "STARTED: Apply Delete-bucket-policy from another account given read permission on bucket")
+        self.log.info("STARTED: Apply Delete-bucket-policy from another account given read"
+                      " permission on bucket")
         test_566_cfg = BKT_POLICY_CONF["test_566"]
+        for i in range(2):
+            test_566_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_566_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
         result_1 = self.create_s3_acc_cortxcli(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1, acl_obj_1, s3_bkt_policy_obj_1 = result_1[
             0], result_1[2], result_1[3]
+        self.s3t_obj_list.append(acl_obj_1)
         result_2 = self.create_s3_acc_cortxcli(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2, s3_bkt_policy_obj_2 = result_2[0], result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give grant_read permissions to account 2")
-        bucket_name_566 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=bucket_name_566,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=bucket_name_566,
+            bucket_name=self.bucket_name,
             grant_read="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with grant_read permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            bucket_name_566,
+            self.bucket_name,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_566_cfg)
-        self.delete_bucket_and_verify(result_1[1], bucket_name_566)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given read permission on bucket")
 
@@ -1540,39 +1544,39 @@ class TestBucketPolicy:
     @CTFailOn(error_handler)
     def test_569(self):
         """Apply Delete-bucket-policy from another account given write permission on bucket."""
-        self.log.info(
-            "STARTED: Apply Delete-bucket-policy from another account given write permission on bucket")
+        self.log.info("STARTED: Apply Delete-bucket-policy from another account given write "
+                      "permission on bucket")
         test_569_cfg = BKT_POLICY_CONF["test_569"]
+        for i in range(2):
+            test_569_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_569_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
         result_1 = self.create_s3_acc_cortxcli(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
+        self.s3t_obj_list.append(acl_obj_1)
         result_2 = self.create_s3_acc_cortxcli(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
-        self.log.info(
-            "Step 1 : Create a new bucket and give write permissions to account 2")
-        bucket_name_569 = self.bucket_name
+        self.log.info("Step 1 : Create a new bucket and give write permissions to account 2")
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=bucket_name_569,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=bucket_name_569,
+            bucket_name=self.bucket_name,
             grant_write="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
-        self.log.info(
-            "Step 1 : Bucket was created with write permission to the account 2")
+        self.log.info("Step 1 : Bucket was created with write permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            bucket_name_569,
+            self.bucket_name,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_569_cfg)
-        self.delete_bucket_and_verify(result_1[1], bucket_name_569)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from another account given write permission on bucket")
 
@@ -1583,41 +1587,43 @@ class TestBucketPolicy:
     @CTFailOn(error_handler)
     def test_570(self):
         """Apply Delete-bucket-policy from another account given read-acp permission on bucket."""
-        self.log.info(
-            "STARTED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
+        self.log.info("STARTED: Apply Delete-bucket-policy from another account given read-acp "
+                      "permission on bucket")
         test_570_cfg = BKT_POLICY_CONF["test_570"]
+        for i in range(2):
+            test_570_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_570_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
         result_1 = self.create_s3_acc_cortxcli(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
+        self.s3t_obj_list.append(acl_obj_1)
         result_2 = self.create_s3_acc_cortxcli(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        bucket_name_570 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=bucket_name_570,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=bucket_name_570,
+            bucket_name=self.bucket_name,
             grant_read_acp="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with write-acp permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            bucket_name_570,
+            self.bucket_name,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_570_cfg)
-        self.delete_bucket_and_verify(result_1[1], bucket_name_570)
-        self.log.info(
-            "ENDED: Apply Delete-bucket-policy from another account given read-acp permission on bucket")
+        self.log.info("ENDED: Apply Delete-bucket-policy from another account given read-acp "
+                      "permission on bucket")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -1626,39 +1632,41 @@ class TestBucketPolicy:
     @CTFailOn(error_handler)
     def test_574(self):
         """Apply Delete-bucket-policy from another account given write-acp permission on bucket."""
-        self.log.info(
-            "STARTED: Apply Delete-bucket-policy from another account given write-acp permission on bucket")
+        self.log.info("STARTED: Apply Delete-bucket-policy from another account given write-acp "
+                      "permission on bucket")
         test_574_cfg = BKT_POLICY_CONF["test_574"]
+        for i in range(2):
+            test_574_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_574_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
         result_1 = self.create_s3_acc_cortxcli(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
+        self.s3t_obj_list.append(acl_obj_1)
         result_2 = self.create_s3_acc_cortxcli(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
             "Step 1 : Create a new bucket and give write-acp permissions to account 2")
-        bucket_name_574 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=bucket_name_574,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=bucket_name_574,
+            bucket_name=self.bucket_name,
             grant_write_acp="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with write-acp permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            bucket_name_574,
+            self.bucket_name,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_574_cfg)
-        self.delete_bucket_and_verify(result_1[1], bucket_name_574)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
             "another account given write-acp permission on bucket")
@@ -1674,37 +1682,39 @@ class TestBucketPolicy:
             "STARTED: Apply Delete-bucket-policy "
             "from another account given full-control permission on bucket")
         test_582_cfg = BKT_POLICY_CONF["test_582"]
+        for i in range(2):
+            test_582_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
+                test_582_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
         result_1 = self.create_s3_acc_cortxcli(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
+        self.s3t_obj_list.append(acl_obj_1)
         result_2 = self.create_s3_acc_cortxcli(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
+        self.s3t_obj_list.append(result_2[1])
         self.log.info(
             "Step 1 : Create a new bucket and give full-control permissions to account 2")
-        bucket_name_582 = self.bucket_name
         resp = acl_obj_1.create_bucket_with_acl(
-            bucket_name=bucket_name_582,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_1))
         assert resp[0], resp[1]
         resp = acl_obj_1.put_bucket_acl(
-            bucket_name=bucket_name_582,
+            bucket_name=self.bucket_name,
             grant_full_control="id={}".format(canonical_id_user_2))
         assert resp[0], resp[1]
         self.log.info(
             "Step 1 : Bucket was created with full-control permission to the account 2")
         self.delete_bucket_policy_with_err_msg(
-            bucket_name_582,
+            self.bucket_name,
             result_1[1],
             acl_obj_1,
             s3_bkt_policy_obj_1,
             s3_bkt_policy_obj_2,
             test_582_cfg)
-        for s3_obj in [result_1[1], result_2[1]]:
-            self.delete_bucket_and_verify(s3_obj, bucket_name_582)
         self.log.info(
             "ENDED: Apply Delete-bucket-policy from "
             "another account given full-control permission on bucket")
@@ -8066,6 +8076,7 @@ _date."""
             access_key=access_key_1, secret_key=secret_key_1)
         resp = s3_obj_acc_1.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
+        self.s3t_obj_list.append(s3_obj_acc_1)
         assert_utils.assert_equals(resp[1], self.bucket_name, resp[1])
         system_utils.create_file(
             self.file_path,
@@ -8143,7 +8154,6 @@ _date."""
             self.log.info(
                 "Step 7: Retrieving policy of a bucket using user of account 2 is failed with error"
                 " MethodNotAllowed")
-        self.delete_bucket_and_verify(s3_obj_acc_1, self.bucket_name)
         self.log.info(
             "ENDED: Test Give cross account user permission for "
             "Get/PutBucketPolicy and deny the bucket owner account for Get/PutBucketPolicy .")
