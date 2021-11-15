@@ -444,6 +444,7 @@ K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBERNATES_CHECK_CMD = "kubectl exec -it {} -c cortx-motr-hax -- /bin/bash -c {}"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
