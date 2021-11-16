@@ -68,7 +68,6 @@ deactivate
 			steps{
 				script {
 			        env.Sanity_Failed = true
-			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
@@ -97,11 +96,6 @@ IFS=$OLDIFS
 deactivate
 '''	)
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Sanity due to bad health of deployment')
-                    }
                     if ( fileExists('log/latest/failed_tests.log') ) {
                         def failures = readFile 'log/latest/failed_tests.log'
                         def lines = failures.readLines()
@@ -118,7 +112,6 @@ deactivate
 			steps {
 				script {
 			        env.Sanity_Failed = false
-			        env.Health = 'OK'
 
 				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
@@ -144,11 +137,6 @@ IFS=$OLDIFS
 deactivate
 ''' )
 				    }
-				    if ( status != 0 ) {
-                        currentBuild.result = 'FAILURE'
-                        env.Health = 'Not OK'
-                        error('Aborted Regression due to bad health of deployment')
-                    }
 				}
 			}
 		}
