@@ -2272,7 +2272,8 @@ class TestCsmUser():
         elif data_new2[1] == "'password'":
             role_passwd_resp = data["invalid_password_role_resp_2"]
 
-        assert_utils.assert_equals(response.json(), role_passwd_resp)
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert_utils.assert_equals(response.json(), role_passwd_resp)
 
         self.log.info(
             "Step 3: Verified that PATCH API returns 400 response code and "
