@@ -34,6 +34,7 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
+PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils"]
 
 
 class TestProvK8Cortx:
@@ -130,43 +131,46 @@ class TestProvK8Cortx:
     @pytest.mark.tags("TEST-28437")
     def test_28437(self):
         """
-        Verify machine id is unique in every pod
+        Verify machine id is unique in every POD.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Check every machine id is unique in each pod")
+        LOGGER.info("Check every machine id is unique in each pod.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
         assert_utils.assert_true(data_pod_list[0])
-        LOGGER.info("Step 2: Check machine id isK8S_GET_RUNNING_POD unique in every pod.")
+        LOGGER.info("Step 2: Check machine id is unique in every pod.")
         machine_id_list = []
         for pod_name in data_pod_list[1]:
-            resp = self.master_node_obj.execute_cmd(cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'cat /etc/machine-id'), read_lines=True)
+            resp = self.master_node_obj.execute_cmd(
+                cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'cat /etc/machine-id'),
+                read_lines=True)
             machine_id_list.append(resp[0])
-        assert_utils.assert_true(len(machine_id_list) == len(set(machine_id_list)))  
-        LOGGER.info("Test Completed.") 
+        assert_utils.assert_true(len(machine_id_list) == len(set(machine_id_list)))
+        LOGGER.info("Test Completed.")
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28384")
     def test_28384(self):
         """
-        Verify files are copied and accessible to containers through shared Persistent volume
+        Verify files are copied and accessible to containers through shared Persistent volume.
         """
         LOGGER.info("Test Started.")
-        PVC_LIST =['auth','cluster.conf','hare','motr','s3','solution','utils']
-        LOGGER.info("Check files are copied and accessible to containers")
+        LOGGER.info("Check files are copied and accessible to containers.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
         assert_utils.assert_true(data_pod_list[0])
-        LOGGER.info("Step 2: Check files are copied and accessible to containers")
+        LOGGER.info("Step 2: Check files are copied and accessible to containers.")
         for pod_name in data_pod_list[1]:
-            resp = self.master_node_obj.execute_cmd(cmd=commands.KUBERNATES_CHECK_CMD.format(pod_name, "'ls /etc/cortx/'"), read_lines=True)
+            resp = self.master_node_obj.execute_cmd(
+                cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'ls /etc/cortx'),
+                read_lines=True)
             assert_utils.assert_is_not_none(resp)
             for out in resp:
-                out =out.split("\n")
-                assert_utils.assert_in(out[0],PVC_LIST)
+                out = out.split("\n")
+                assert_utils.assert_in(out[0], PVC_LIST)
         LOGGER.info("Test Completed.")
-        
+
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28351")
@@ -175,13 +179,15 @@ class TestProvK8Cortx:
         Verify cortx_setup commands are running inside Provisioner Container.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Check cortx_setup commands are running inside Provisioner Container")
+        LOGGER.info("Check cortx_setup commands are running inside Provisioner Container.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
         assert_utils.assert_true(data_pod_list[0])
-        LOGGER.info("Step 2: Check cortx_setup commands are running inside Provisioner Container")
+        LOGGER.info("Step 2: Check cortx_setup commands are running inside Provisioner Container.")
         for pod_name in data_pod_list[1]:
-            resp = self.master_node_obj.execute_cmd(cmd=commands.KUBERNATES_CHECK_CMD.format(pod_name, "'cortx_setup --help'"), read_lines=True)
+            resp = self.master_node_obj.execute_cmd(
+                cmd=commands.K8S_POD_INTERACTIVE_CMD.format(pod_name, 'cortx_setup --help'),
+                read_lines=True)
             assert_utils.assert_is_not_none(resp)
             for output in resp:
                 output = output.split("\n")
@@ -194,17 +200,17 @@ class TestProvK8Cortx:
     @pytest.mark.tags("TEST-29114")
     def test_29114(self):
         """
-        Verify cortx_setup commands are running inside Provisioner Container.
+        Verify single Provisioner Container pod get deployed on each VM/node for three node k8s cluster.
         """
         LOGGER.info("Test Started.")
-        LOGGER.info("Check cortx_setup commands are running inside Provisioner Container")
+        LOGGER.info("Check single Provisioner Container pod get deployed on each VM/node.")
         LOGGER.info("Step 1: Get all running data pods from cluster.")
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        assert_utils.assert_true(data_pod_list[0])
         data_pod_count = (data_pod_list[1:])
         LOGGER.info("Step 2: Get all running data nodes from cluster.")
-        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE,read_lines=True)
+        resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE, read_lines=True)
         node_list = resp[2:]
         LOGGER.info("Identify pods and nodes are equal.")
-        assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list)) 
+        assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
         LOGGER.info("Test Completed.")
-
