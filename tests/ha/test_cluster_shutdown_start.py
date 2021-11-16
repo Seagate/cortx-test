@@ -37,6 +37,9 @@ from commons.errorcodes import error_handler
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
+from commons.utils.system_utils import make_dirs
+from commons.utils.system_utils import remove_dirs
+from commons.utils.system_utils import remove_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -99,6 +102,8 @@ class TestClusterShutdownStart:
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.test_file = "ha-mp_obj"
         cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "HATestMultipartUpload")
+        if not os.path.exists(cls.test_dir_path):
+            resp = make_dirs(cls.test_dir_path)
         cls.multipart_obj_path = os.path.join(cls.test_dir_path, cls.test_file)
 
     def setup_method(self):
@@ -142,6 +147,9 @@ class TestClusterShutdownStart:
                         skipwrite=True, skipread=True)
                     assert_utils.assert_true(resp[0], resp[1])
                 LOGGER.info("Cleanup: Deleted s3 objects and buckets.")
+
+            if os.path.exists(self.test_dir_path):
+                remove_dirs(self.test_dir_path)
         LOGGER.info("Done: Teardown completed.")
 
     @pytest.mark.ha
@@ -156,6 +164,7 @@ class TestClusterShutdownStart:
             "STARTED: Test to verify cluster shutdown and restart functionality.")
 
         LOGGER.info("Step 1: Check the status of the pods running in cluster.")
+
         resp = self.ha_obj.check_pod_status(self.node_master_list[0])
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: All pods are running.")
@@ -270,6 +279,8 @@ class TestClusterShutdownStart:
             "STARTED: Test to verify multipart upload and download with cluster restart")
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
+        download_file = self.test_file + "_download"
+        download_path = os.path.join(self.test_dir_path, download_file)
 
         LOGGER.info("Step 1: Do multipart upload for 5GB object")
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
@@ -292,6 +303,7 @@ class TestClusterShutdownStart:
                                                          total_parts=total_parts,
                                                          multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
+        upload_checksum = str(resp[2])
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
@@ -305,10 +317,20 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 3: Cluster restarted successfully and all Pods are online.")
 
         LOGGER.info("Step 4: Download the uploaded object and verify checksum")
-        resp = s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
-        LOGGER.info("Get object response: %s", resp)
-        # TODO: Add checksum verification
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 4: Successfully downloaded the object and verified the checksum")
+
+        LOGGER.info("Removing files %s and %s", self.multipart_obj_path, download_path)
+        remove_file(self.multipart_obj_path)
+        remove_file(download_path)
 
         LOGGER.info("Step 5: Create new bucket and multipart upload and then download 5GB object")
         bucket_name = "mp-bkt-{}".format(self.random_time)
@@ -320,9 +342,17 @@ class TestClusterShutdownStart:
                                                          total_parts=total_parts,
                                                          multipart_obj_path=self.multipart_obj_path)
         assert_utils.assert_true(resp[0], resp)
-        resp = s3_test_obj.get_object(bucket=bucket_name, key=object_name)
-        LOGGER.info("Get object response: %s", resp)
-        assert_utils.assert_true(resp[0], resp)
+        upload_checksum1 = resp[2]
+
+        resp = s3_test_obj.object_download(bucket_name, object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum1 = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                              compare=False)[0]
+        assert_utils.assert_equal(upload_checksum1, download_checksum1,
+                                  f"Failed to match checksum: {upload_checksum1},"
+                                  f" {download_checksum1}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum1, download_checksum1)
         LOGGER.info("Step 5: Successfully created bucket and did multipart upload and download "
                     "with 5GB object")
 
@@ -344,6 +374,8 @@ class TestClusterShutdownStart:
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
         part_numbers = random.sample(range(1, total_parts), total_parts//2)
         parts_etag = list()
+        download_file = self.test_file + "_download"
+        download_path = os.path.join(self.test_dir_path, download_file)
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially")
@@ -356,6 +388,8 @@ class TestClusterShutdownStart:
         secret_key = resp[1]["secret_key"]
         s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                 endpoint_url=S3_CFG["s3_url"])
+        s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
+                                            endpoint_url=S3_CFG["s3_url"])
         LOGGER.info("Successfully created s3 account")
         self.s3_clean = {'s3_acc': {'accesskey': access_key, 'secretkey': secret_key,
                                     'user_name': self.s3acc_name}}
@@ -374,9 +408,10 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 1: Successfully completed partial multipart upload")
 
         LOGGER.info("Step 2: Listing parts of partial multipart upload")
-        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
-        if not res[0] or res[1]["Parts"].sort() != part_numbers.sort():
-            assert_utils.assert_true(res[0], res)
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        for part_n in res[1]["Parts"]:
+            assert_utils.assert_list_item(part_numbers, part_n["PartNumber"])
         LOGGER.info("Step 2: Listed parts of partial multipart upload: %s", res[1])
 
         LOGGER.info("Step 3: Send the cluster shutdown signal through CSM REST.")
@@ -403,14 +438,20 @@ class TestClusterShutdownStart:
 
         assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
         LOGGER.info("Step 5: Successfully uploaded remaining parts")
+
+        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
+                                                           compare=False)
+
         LOGGER.info("Step 6: Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
-        if not res[0] or len(res[1]["Parts"]) != total_parts:
-            assert_utils.assert_true(False, res)
+        res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res)
+        for part_n in res[1]["Parts"]:
+            assert_utils.assert_list_item(remaining_parts, part_n["PartNumber"])
         LOGGER.info("Step 6: Listed parts of multipart upload: %s", res[1])
         LOGGER.info("Step 7: Completing multipart upload")
-        res = self.s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
-                                                            self.object_name)
+        res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
+                                                       self.object_name)
         assert_utils.assert_true(res[0], res)
         res = s3_test_obj.object_list(self.bucket_name)
         if self.object_name not in res[1]:
@@ -418,9 +459,15 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 7: Multipart upload completed")
 
         LOGGER.info("Step 8: Download the uploaded object and verify checksum")
-        resp = s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
-        LOGGER.info("Get object response: %s", resp)
-        # TODO: Add checksum verification
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 8: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 9: Create multiple buckets and run IOs")
@@ -534,6 +581,8 @@ class TestClusterShutdownStart:
         output = Queue()
         failed_parts = dict()
         parts_etag = list()
+        download_file = self.test_file + "_download"
+        download_path = os.path.join(self.test_dir_path, download_file)
 
         LOGGER.info("Creating s3 account with name %s", self.s3acc_name)
         resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
@@ -594,6 +643,11 @@ class TestClusterShutdownStart:
 
             assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
             LOGGER.info("Step 4: Successfully uploaded remaining parts")
+
+        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
+                                                           compare=False)
+
         LOGGER.info("Step 5: Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         if not res[0] or len(res[1]["Parts"]) != total_parts:
@@ -608,9 +662,15 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 6: Multipart upload completed")
 
         LOGGER.info("Step 7: Download the uploaded object and verify checksum")
-        resp = s3_test_obj.get_object(bucket=self.bucket_name, key=self.object_name)
-        LOGGER.info("Get object response: %s", resp)
-        # TODO: Add checksum verification
+        resp = s3_test_obj.object_download(self.bucket_name, self.object_name, download_path)
+        LOGGER.info("Download object response: %s", resp)
+        assert_utils.assert_true(resp[0], resp[1])
+        download_checksum = self.ha_obj.cal_compare_checksum(file_list=[download_path],
+                                                             compare=False)[0]
+        assert_utils.assert_equal(upload_checksum, download_checksum,
+                                  f"Failed to match checksum: {upload_checksum},"
+                                  f" {download_checksum}")
+        LOGGER.info("Matched checksum: %s, %s", upload_checksum, download_checksum)
         LOGGER.info("Step 7: Successfully downloaded the object and verified the checksum")
 
         LOGGER.info("Step 8: Create multiple buckets and run IOs")
@@ -681,7 +741,7 @@ class TestClusterShutdownStart:
             resp = s3_test_obj.get_object(bucket=k, key=v)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in checksum verification of "
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {v} of bucket {k}. Put and Get "
                                                           "Etag mismatch")
 
@@ -780,7 +840,7 @@ class TestClusterShutdownStart:
             resp = s3_test_obj.get_object(bucket=k, key=v)
             LOGGER.info("Get object response: %s", resp)
             get_etag = resp[1]["ETag"]
-            assert_utils.assert_equal(put_etag, get_etag, "Failed in checksum verification of "
+            assert_utils.assert_equal(put_etag, get_etag, "Failed in Etag verification of "
                                                           f"object {v} of bucket {k}. Put and Get "
                                                           "Etag mismatch")
         LOGGER.info("Step 5: Successfully downloaded the object and verified the checksum")

@@ -131,7 +131,7 @@ class ManagementOPs:
                 resp = s3acc_obj.create_an_account(
                     user, s3_user_passwd)
                 assert_utils.assert_equal(
-                    resp.status_code, 200,
+                    resp.status_code, 201,
                     'S3 account user not created.')
                 acc_details = json.loads(resp.text)
 
