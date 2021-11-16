@@ -140,10 +140,10 @@ class TestBucketPolicy:
         for s3t_obj in self.s3t_obj_list:
             if s3t_obj:
                 bktlist = s3t_obj.bucket_list()[1]
-                if self.bucket_name in bktlist:
-                    resp = s3t_obj.delete_bucket(self.bucket_name, force=True)
+                for bkt in bktlist:
+                    resp = s3t_obj.delete_bucket(bkt, force=True)
                     assert resp[0], resp[1]
-        self.log.info(self.bucket_name)
+                    self.log.info("Removed bucket: %s", bkt)
 
     def create_bucket_put_objects(
             self,
@@ -183,7 +183,7 @@ class TestBucketPolicy:
             obj_lst.append(obj_name)
         self.log.info("Created a bucket and uploaded %s objects", object_count)
 
-    def create_s3_acc_cortxcli(
+    def create_s3_account(
             self,
             account_name: str,
             email_id: str,
@@ -811,7 +811,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_642"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.s3t_obj_list.append(s3_obj)
@@ -922,7 +922,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_659"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.s3t_obj_list.append(s3_obj)
@@ -958,7 +958,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_679"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.s3t_obj_list.append(s3_obj)
@@ -1087,7 +1087,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_690"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.s3t_obj_list.append(s3_obj)
@@ -1507,12 +1507,12 @@ class TestBucketPolicy:
         for i in range(2):
             test_566_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_566_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1, acl_obj_1, s3_bkt_policy_obj_1 = result_1[
             0], result_1[2], result_1[3]
-        self.s3t_obj_list.append(acl_obj_1)
-        result_2 = self.create_s3_acc_cortxcli(
+        self.s3t_obj_list.append(result_1[1])
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2, s3_bkt_policy_obj_2 = result_2[0], result_2[3]
         self.log.info(
@@ -1550,13 +1550,13 @@ class TestBucketPolicy:
         for i in range(2):
             test_569_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_569_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
-        self.s3t_obj_list.append(acl_obj_1)
-        result_2 = self.create_s3_acc_cortxcli(
+        self.s3t_obj_list.append(result_1[1])
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
@@ -1593,13 +1593,13 @@ class TestBucketPolicy:
         for i in range(2):
             test_570_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_570_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
-        self.s3t_obj_list.append(acl_obj_1)
-        result_2 = self.create_s3_acc_cortxcli(
+        self.s3t_obj_list.append(result_1[1])
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
@@ -1638,13 +1638,13 @@ class TestBucketPolicy:
         for i in range(2):
             test_574_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_574_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
-        self.s3t_obj_list.append(acl_obj_1)
-        result_2 = self.create_s3_acc_cortxcli(
+        self.s3t_obj_list.append(result_1[1])
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
@@ -1685,13 +1685,13 @@ class TestBucketPolicy:
         for i in range(2):
             test_582_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_582_cfg["bucket_policy"]["Statement"][i]["Resource"].format(self.bucket_name)
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         s3_bkt_policy_obj_1 = result_1[3]
         acl_obj_1 = result_1[2]
-        self.s3t_obj_list.append(acl_obj_1)
-        result_2 = self.create_s3_acc_cortxcli(
+        self.s3t_obj_list.append(result_1[1])
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         canonical_id_user_2 = result_2[0]
         s3_bkt_policy_obj_2 = result_2[3]
@@ -1732,7 +1732,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket")
@@ -1780,7 +1780,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info(
@@ -1827,7 +1827,7 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test principal arn combination with invalid account-id")
         bucket_policy = BKT_POLICY_CONF["test_693"]["bucket_policy"]
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -1866,7 +1866,7 @@ class TestBucketPolicy:
         self.log.info(
             "STARTED: Test principal arn combination with invalid user name")
         bucket_policy = BKT_POLICY_CONF["test_694"]["bucket_policy"]
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         self.create_bucket_put_obj_with_dir(
@@ -1898,7 +1898,7 @@ class TestBucketPolicy:
             "STARTED: Test principal arn combination with "
             "valid accountid and valid user but of different account")
         bucket_policy = BKT_POLICY_CONF["test_716"]["bucket_policy"]
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         self.log.info(
@@ -1963,7 +1963,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         self.create_bucket_put_obj_with_dir(
@@ -1994,7 +1994,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         self.create_bucket_put_obj_with_dir(
@@ -2024,7 +2024,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2064,7 +2064,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2104,7 +2104,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2144,7 +2144,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2184,7 +2184,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2331,7 +2331,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1080"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.create_bucket_put_obj_with_dir(
@@ -2367,7 +2367,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1079"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         s3_obj_acl = create_account[2]
@@ -2421,7 +2421,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1078"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         acl_obj = create_account[2]
@@ -2462,7 +2462,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1077"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = create_account[1]
         self.create_bucket_put_obj_with_dir(
@@ -2617,7 +2617,7 @@ class TestBucketPolicy:
             "objkey692_2")
         self.log.info(
             "Step 1: Created a bucket and objects are uploaded using account 1")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key = create_account[4]
         secret_key = create_account[5]
@@ -2683,7 +2683,7 @@ class TestBucketPolicy:
             "objkey691_2")
         self.log.info(
             "Step 1: Created a bucket and uploading objects using account 1")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_acc_2 = create_account[1]
         access_key = create_account[4]
@@ -2745,7 +2745,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -2801,7 +2801,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -2861,7 +2861,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -2917,7 +2917,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -2977,7 +2977,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -3033,7 +3033,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -3093,7 +3093,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -3149,7 +3149,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             "obj_policy")
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         s3_obj_2 = create_account[1]
@@ -3206,7 +3206,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        create_account = self.create_s3_acc_cortxcli(
+        create_account = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = create_account[6]
         self.log.info(
@@ -3368,7 +3368,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1171"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_bkt_policy = resp[3]
         self.log.info(
@@ -3497,7 +3497,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3test_obj_1 = resp[1]
         s3_policy_obj = resp[3]
@@ -3620,7 +3620,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1177"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_policy_obj = resp[3]
         self.log.info(
@@ -3812,7 +3812,7 @@ class TestBucketPolicy:
             test_366_cfg["bucket_policy"]["Statement"][i]["Resource"] = test_366_cfg[
                 "bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
@@ -3843,7 +3843,7 @@ class TestBucketPolicy:
             test_367_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_367_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
@@ -3872,7 +3872,7 @@ class TestBucketPolicy:
         test_368_cfg["bucket_policy"]["Statement"][0]["Resource"] = \
             test_368_cfg["bucket_policy"]["Statement"][0][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
@@ -3904,7 +3904,7 @@ class TestBucketPolicy:
             test_369_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_369_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
@@ -3936,7 +3936,7 @@ class TestBucketPolicy:
             test_370_cfg["bucket_policy"]["Statement"][i]["Resource"] = \
                 test_370_cfg["bucket_policy"]["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         canonical_id_user_2 = result_2[0]
@@ -3967,7 +3967,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket")
@@ -4006,7 +4006,7 @@ class TestBucketPolicy:
         for _ in range(2):
             bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
                 "Resource"].format(self.bucket_name)
-        result_2 = self.create_s3_acc_cortxcli(
+        result_2 = self.create_s3_account(
             self.account_name_2, self.email_id_2, self.s3acc_passwd)
         s3_bkt_policy_obj_2 = result_2[3]
         self.log.info("Step 1 : Create a new bucket assign"
@@ -4134,7 +4134,7 @@ class TestBucketPolicy:
         for i in range(2):
             bucket_policy["Statement"][i]["Resource"] = bucket_policy["Statement"][i][
                 "Resource"].format(self.bucket_name)
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_policy_obj = resp[3]
         account_id = resp[6]
@@ -4184,7 +4184,7 @@ class TestBucketPolicy:
         bucket_policy = BKT_POLICY_CONF["test_1174"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_policy_obj = resp[3]
         self.create_bucket_validate(self.bucket_name)
@@ -4687,7 +4687,7 @@ class TestBucketPolicy:
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -4738,7 +4738,7 @@ class TestBucketPolicy:
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -4789,7 +4789,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -4841,7 +4841,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -4902,7 +4902,7 @@ class TestBucketPolicy:
             self.bucket_name,
             11,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -4976,7 +4976,7 @@ class TestBucketPolicy:
             self.bucket_name,
             "obj_policy",
             "objkey1075_2")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         bucket_policy["Statement"][0]["Principal"]["AWS"] = bucket_policy[
@@ -5001,7 +5001,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
         test_4502_cfg = BKT_POLICY_CONF["test_4502"]
         date_time = date.today().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5032,7 +5032,7 @@ class TestBucketPolicy:
         test_4504_cfg = BKT_POLICY_CONF["test_4504"]
         test_4504_cfg["bucket_name"] = self.bucket_name
         date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5062,7 +5062,7 @@ class TestBucketPolicy:
         test_4505_cfg = BKT_POLICY_CONF["test_4505"]
         test_4505_cfg["bucket_name"] = self.bucket_name
         date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5092,7 +5092,7 @@ class TestBucketPolicy:
         test_4506_cfg = BKT_POLICY_CONF["test_4506"]
         test_4506_cfg["bucket_name"] = self.bucket_name
         date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5123,7 +5123,7 @@ class TestBucketPolicy:
         test_4507_cfg = BKT_POLICY_CONF["test_4507"]
         test_4507_cfg["bucket_name"] = self.bucket_name
         date_time = datetime.now().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5152,7 +5152,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
         test_4508_cfg = BKT_POLICY_CONF["test_4508"]
         date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5181,7 +5181,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format")
         test_cfg = BKT_POLICY_CONF["test_4509"]
         date_time = date.today().strftime("%Y")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5210,7 +5210,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
         test_cfg = BKT_POLICY_CONF["test_4510"]
         date_time = date.today().strftime("%%Y-%m")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5240,7 +5240,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
         test_cfg = BKT_POLICY_CONF["test_4511"]
         date_time = date.today().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5270,7 +5270,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
         test_cfg = BKT_POLICY_CONF["test_4512"]
         date_time = date.today().strftime("%Y")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5300,7 +5300,7 @@ class TestBucketPolicy:
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format")
         random_id = str(time.time())
         test_cfg = BKT_POLICY_CONF["test_4513"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5330,7 +5330,7 @@ class TestBucketPolicy:
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
         random_id = str(time.time())
         test_cfg = BKT_POLICY_CONF["test_4514"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5360,7 +5360,7 @@ class TestBucketPolicy:
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
         date_time = str(time.time()).split(".")[0]
         test_cfg = BKT_POLICY_CONF["test_4515"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5391,7 +5391,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject' and Date format")
         random_id = str(time.time())
         test_cfg = BKT_POLICY_CONF["test_4507"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5421,7 +5421,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject' and Date format")
         date_time = time.time()
         test_cfg = BKT_POLICY_CONF["test_4508"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5451,7 +5451,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5770"]
         date_time = date.today().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5478,7 +5478,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
         date_time = str(time.time()).split(".")[0]
         test_cfg = BKT_POLICY_CONF["test_5831"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5505,7 +5505,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Deny' and Action 'PutObject'.")
         date_time = str(time.time()).split(".")[0]
         test_cfg = BKT_POLICY_CONF["test_5832"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5532,7 +5532,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5778"]
         date_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5559,7 +5559,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Allow', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5740"]
         date_time = date.today().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5586,7 +5586,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5751"]
         date_time = date.today().strftime("%Y-%m-%dT%H:%M:%SZ")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5613,7 +5613,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5773"]
         date_time = date.today().strftime("%Y-%m-%d")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5643,7 +5643,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         date_time_res = datetime.now() + timedelta(1)
         date_time = date_time_res.strftime("%Y-%m-%dT%H:%M:%SZ")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5686,7 +5686,7 @@ _date."""
             "key 'aws:CurrentTime', Effect 'Deny', Action 'PutObject' and Date format.")
         test_cfg = BKT_POLICY_CONF["test_5758"]
         date_time = date.today().strftime("%Y-%m-%dT%H:%M:%S")
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5717,7 +5717,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.create_bucket_validate(self.bucket_name)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5761,7 +5761,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Deny', Action 'PutObject'.")
         date_time = str(time.time()).split(".")[0]
         test_cfg = BKT_POLICY_CONF["test_5926"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5788,7 +5788,7 @@ _date."""
             "key 'aws:EpochTime', Effect 'Allow', Action 'PutObject'.")
         date_time = str(time.time()).split(".")[0]
         test_cfg = BKT_POLICY_CONF["test_5937"]
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         account_id = result[6]
@@ -5816,7 +5816,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_1902"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         acl_obj_2 = result[2]
@@ -5870,7 +5870,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_1903"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         acl_obj_2 = result[2]
@@ -5924,7 +5924,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_1904"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         acl_obj_2 = result[2]
@@ -5984,7 +5984,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_1908"]["bucket_policy"]
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
-        result = self.create_s3_acc_cortxcli(
+        result = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_2 = result[1]
         acl_obj_2 = result[2]
@@ -6839,7 +6839,7 @@ _date."""
             self.bucket_name,
             11,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         self.log.info(
@@ -7082,7 +7082,7 @@ _date."""
             self.bucket_name,
             4,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7140,7 +7140,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7202,7 +7202,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7263,7 +7263,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7324,7 +7324,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -7375,7 +7375,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_obj = acc_details[1]
         account_id = acc_details[6]
@@ -7426,7 +7426,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7487,7 +7487,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7548,7 +7548,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7608,7 +7608,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7669,7 +7669,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7730,7 +7730,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7790,7 +7790,7 @@ _date."""
             4,
             self.obj_name_prefix)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3test_acl_obj = acc_details[2]
         self.s3_obj = acc_details[1]
@@ -7862,7 +7862,7 @@ _date."""
             " and from user deny its account for Get/PutBucketPolicy")
         bucket_policy_1 = BKT_POLICY_CONF["test_5211"]["bucket_policy_1"]
         bucket_policy_2 = BKT_POLICY_CONF["test_5211"]["bucket_policy_2"]
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         resp = self.iam_obj.create_user_access_key(self.user_name)
@@ -7934,7 +7934,7 @@ _date."""
             time.time()))
         user_name_2 = "{0}{1}".format(self.user_name, str(
             time.time()))
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key_2 = acc_details[4]
         secret_key_2 = acc_details[5]
@@ -8171,7 +8171,7 @@ _date."""
             " from user allow Get/PutBucketPolicy,GetBucketAcl permission to cross account")
         bucket_policy_1 = BKT_POLICY_CONF["test_5214"]["bucket_policy_1"]
         bucket_policy_2 = BKT_POLICY_CONF["test_5214"]["bucket_policy_2"]
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_bkt_policy_2 = acc_details[3]
@@ -8259,7 +8259,7 @@ _date."""
             time.time()))
         user_name_2 = "{0}{1}".format(self.user_name, str(
             time.time()))
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         access_key_2 = acc_details[4]
         secret_key_2 = acc_details[5]
@@ -8373,7 +8373,7 @@ _date."""
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         canonical_id = acc_details[0]
@@ -8434,7 +8434,7 @@ _date."""
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         canonical_id = acc_details[0]
@@ -8488,7 +8488,7 @@ _date."""
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc_2 = acc_details[1]
@@ -8533,7 +8533,7 @@ _date."""
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8581,7 +8581,7 @@ _date."""
             self.bucket_name,
             2,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc_2 = acc_details[1]
@@ -8636,7 +8636,7 @@ _date."""
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created a bucket and objects are uploaded to a bucket")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc_2 = acc_details[1]
@@ -8695,7 +8695,7 @@ _date."""
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created a bucket and objects are uploaded to a bucket")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8754,7 +8754,7 @@ _date."""
         assert resp[0], resp[1]
         self.log.info(
             "Step 1: Created a bucket and objects are uploaded to a bucket")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8797,7 +8797,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8843,7 +8843,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8885,7 +8885,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8926,7 +8926,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -8984,7 +8984,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -9043,7 +9043,7 @@ _date."""
             self.bucket_name,
             3,
             self.obj_name_prefix)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_obj_acc2 = acc_details[1]
@@ -9101,7 +9101,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -9190,7 +9190,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -9271,7 +9271,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -9352,7 +9352,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -9469,7 +9469,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -9536,7 +9536,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
@@ -9638,7 +9638,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
@@ -9736,7 +9736,7 @@ _date."""
             "STARTED: Test Create Bucket Policy using StringEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
         bucket_policy = BKT_POLICY_CONF["test_7056"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -9806,7 +9806,7 @@ _date."""
             "STARTED: Test Create Bucket Policy using StringNotEqualsIgnoreCase Condition Operator, key 's3:prefix' and Effect Allow")
         bucket_policy = BKT_POLICY_CONF["test_7057"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -9892,7 +9892,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
@@ -9959,7 +9959,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
@@ -10035,7 +10035,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_5134"]["bucket_policy"]
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -10330,7 +10330,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_5136"]["bucket_policy"]
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -10586,7 +10586,7 @@ _date."""
         bucket_policy = BKT_POLICY_CONF["test_5138"]["bucket_policy"]
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -10689,7 +10689,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -10850,7 +10850,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
@@ -10951,7 +10951,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11031,7 +11031,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
@@ -11113,7 +11113,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
@@ -11196,7 +11196,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11282,7 +11282,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11364,7 +11364,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11463,7 +11463,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11562,7 +11562,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         self.s3test_obj_1 = result_1[1]
@@ -11641,7 +11641,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11716,7 +11716,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11796,7 +11796,7 @@ _date."""
             "Resource"].format(self.bucket_name)
         obj_prefix = self.obj_name_prefix
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11875,7 +11875,7 @@ _date."""
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_5137"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         canonical_id_user_1 = result_1[0]
         acl_obj_1 = result_1[2]
@@ -11978,7 +11978,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12033,7 +12033,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         acl_obj_1 = result_1[2]
         account_id_1 = result_1[6]
@@ -12096,7 +12096,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         s3_bkt_policy_obj_1 = result_1[3]
@@ -12161,7 +12161,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         s3_bkt_policy_obj_1 = result_1[3]
@@ -12223,7 +12223,7 @@ _date."""
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6999"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12297,7 +12297,7 @@ _date."""
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_7000"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12371,7 +12371,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12436,7 +12436,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12504,7 +12504,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12561,7 +12561,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12631,7 +12631,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12694,7 +12694,7 @@ _date."""
         obj_prefix = self.obj_name_prefix
         bucket_policy = BKT_POLICY_CONF["test_6997"]["bucket_policy"]
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -12884,7 +12884,7 @@ _date."""
         self.create_bucket_put_objects(
             self.bucket_name, obj_count, self.obj_name_prefix)
         self.log.info("Step 1: Created a bucket and uploaded objects to it")
-        resp = self.create_s3_acc_cortxcli(
+        resp = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = resp[6]
         self.log.info("Step 2: Creating a json for bucket policy")
@@ -12924,7 +12924,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
@@ -12963,7 +12963,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.acl_obj_acc2 = acc_details[2]
         account_id = acc_details[6]
@@ -13011,7 +13011,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
@@ -13054,7 +13054,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
@@ -13094,7 +13094,7 @@ _date."""
             "STARTED: Test bucket policy authorization on object with API ListMultipartUploadParts")
         bucket_policy = BKT_POLICY_CONF["test_7015"]["bucket_policy"]
         self.create_bucket_validate(self.bucket_name)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_mp_obj_acc2 = acc_details[8]
@@ -13152,7 +13152,7 @@ _date."""
             "STARTED: Test bucket policy authorization on object with API AbortMultipartUpload")
         bucket_policy = BKT_POLICY_CONF["test_7016"]["bucket_policy"]
         self.create_bucket_validate(self.bucket_name)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         account_id = acc_details[6]
         s3_mp_obj_acc2 = acc_details[8]
@@ -13204,7 +13204,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
@@ -13262,7 +13262,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         s3_obj_acc2 = acc_details[1]
         account_id = acc_details[6]
@@ -13308,7 +13308,7 @@ _date."""
         bucket_policy_1 = BKT_POLICY_CONF["test_7851"]["bucket_policy_1"]
         bucket_policy_2 = BKT_POLICY_CONF["test_7851"]["bucket_policy_2"]
         self.create_bucket_validate(self.bucket_name)
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
@@ -13366,7 +13366,7 @@ _date."""
             self.obj_name_prefix,
             object_lst)
         self.log.info("Step 1: Created bucket with multiple objects")
-        acc_details = self.create_s3_acc_cortxcli(
+        acc_details = self.create_s3_account(
             self.account_name, self.email_id, self.s3acc_passwd)
         self.s3_tag_obj_acc2 = acc_details[7]
         account_id = acc_details[6]
@@ -13408,7 +13408,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
@@ -13456,7 +13456,7 @@ _date."""
         bucket_policy["Statement"][0]["Resource"] = bucket_policy["Statement"][0][
             "Resource"].format(self.bucket_name)
         self.log.info("Create new account.")
-        result_1 = self.create_s3_acc_cortxcli(
+        result_1 = self.create_s3_account(
             self.account_name_1, self.email_id_1, self.s3acc_passwd)
         account_id_1 = result_1[6]
         self.s3test_obj_1 = result_1[1]
