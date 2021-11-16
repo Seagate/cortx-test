@@ -124,7 +124,7 @@ class TestProvK8Cortx:
                 secret = secret.split("\n")
                 assert_utils.assert_in(secret[0], SECRETS_FILES_LIST)
         LOGGER.info("Test Completed.")
-    
+
     @pytest.mark.lc
     @pytest.mark.comp_prov
     @pytest.mark.tags("TEST-28437")
