@@ -200,7 +200,7 @@ class TestProvK8Cortx:
     @pytest.mark.tags("TEST-29114")
     def test_29114(self):
         """
-        Verify single Provisioner Container pod get deployed on each VM/node for three node k8s cluster.
+        Verify single Provisioner Container pod get deployed on each VM/node.
         """
         LOGGER.info("Test Started.")
         LOGGER.info("Check single Provisioner Container pod get deployed on each VM/node.")
