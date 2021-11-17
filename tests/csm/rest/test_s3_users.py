@@ -913,7 +913,7 @@ class TestS3user():
         err_msg = test_cfg["response_msg"]
         err = resp.json()
         self.log.info("Verifying error code...")
-        #assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
+        assert int(err["error_code"]) == err_msg["error_code"], "Error code check failed."
         if CSM_REST_CFG["msg_check"] == "enable":
             self.log.info("Verifying message id...")
             assert err["message_id"] == err_msg["message_id"], "Message id check failed."
