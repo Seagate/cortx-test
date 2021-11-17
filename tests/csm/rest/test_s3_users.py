@@ -954,10 +954,10 @@ class TestS3user():
                 self.log.info("Verify Put Object: %s in the bucket: %s with access key: %s and "
                               "secret key: %s", obj, bucket, akey, skey)
                 if not s3_misc.create_put_objects(obj, bucket, akey, skey):
-                   created_user.update({'buckets': bucket_cnt})
-                   assert False, "Put object Failed"
+                    created_user.update({'buckets': bucket_cnt})
+                    assert False, "Put object Failed"
                 self.log.info("[END] Create Bucket count : %s", i + 1)
-            created_user.update({'buckets': bucket_cnt})        
+            created_user.update({'buckets': bucket_cnt})
         # cleanup loop
         for created_user in self.created_users:
             self.log.info("-" * 50)
