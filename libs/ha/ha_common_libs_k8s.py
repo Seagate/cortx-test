@@ -410,15 +410,17 @@ class HAK8s:
             return True, resp
         return False, resp
 
-    def restart_cluster(self, pod_obj):
+    def restart_cluster(self, pod_obj, sync=True):
         """
         Restart the cluster and check all nodes health.
         :param pod_obj: pod object for stop/start cluster
+        :param sync: Flag to run sync command
         """
-        LOGGER.info("Send sync command")
-        resp = self.send_sync_command(pod_obj, "cortx-data-pod")
-        if not resp:
-            return resp, "Failed to send sync command"
+        if sync:
+            LOGGER.info("Send sync command")
+            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            if not resp:
+                LOGGER.info("Cluster is restarting without sync")
         LOGGER.info("Stop the cluster")
         resp = self.cortx_stop_cluster(pod_obj)
         if not resp[0]:
@@ -435,10 +437,11 @@ class HAK8s:
         resp = self.poll_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
-        LOGGER.info("Send sync command")
-        resp = self.send_sync_command(pod_obj, "cortx-data-pod")
-        if not resp:
-            return resp, "Failed to send sync command"
+        if sync:
+            LOGGER.info("Send sync command")
+            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            if not resp:
+                LOGGER.info("Sync command is not executed")
         LOGGER.info("Stop the cluster")
         return True, resp
 
@@ -796,47 +799,3 @@ class HAK8s:
 
         LOGGER.debug("Time taken by cluster restart is %s seconds", int(time.time()) - start_time)
         return resp
-
-    def send_sync_command(self, pod_obj, pod_prefix):
-        """
-        Helper function to send sync command to all containers of given pod category
-        :param pod_obj: Object for master node
-        :param pod_prefix: Prefix to define the pod category
-        :return: Bool
-        """
-        LOGGER.info("Run sync command on all containers of pods %s", pod_prefix)
-        pod_dict = self.get_all_pods_containers(pod_obj=pod_obj, pod_prefix=pod_prefix)
-        if pod_dict:
-            for pod, containers in pod_dict.items():
-                for cnt in containers:
-                    res = pod_obj.send_k8s_cmd(
-                        operation="exec", pod=pod, namespace=common_const.NAMESPACE,
-                        command_suffix=f"-c {cnt} -- sync", decode=True)
-                    LOGGER.info("Response for pod %s container %s: %s", pod, cnt, res)
-
-        return True
-
-    @staticmethod
-    def get_all_pods_containers(pod_obj, pod_prefix):
-        """
-        Helper function to get all pods with containers of given pod_prefix
-        :param pod_obj: Object for master node
-        :param pod_prefix: Prefix to define the pod category
-        :return: Dict
-        """
-        pod_containers = {}
-        pod_list = []
-        LOGGER.info("Get all data pod names of %s", pod_prefix)
-        output = pod_obj.execute_cmd(common_cmd.CMD_POD_STATUS +
-                                     " -o=custom-columns=NAME:.metadata.name", read_lines=True)
-        for lines in output:
-            if pod_prefix in lines:
-                pod_list.append(lines.strip())
-
-        for pod in pod_list:
-            cmd = common_cmd.KUBECTL_GET_POD_CONTAINERS.format(pod)
-            output = pod_obj.execute_cmd(cmd=cmd, read_lines=True)
-            output = output[0].split()
-            pod_containers[pod] = output
-
-        return pod_containers
