@@ -91,3 +91,44 @@ class LogicalNode(Host):
             if pod_prefix in lines:
                 return True, lines.strip()
         return False, f"pod with prefix \"{pod_prefix}\" not found"
+
+    def send_sync_command(self, pod_prefix):
+        """
+        Helper function to send sync command to all containers of given pod category
+        :param pod_prefix: Prefix to define the pod category
+        :return: Bool
+        """
+        log.info("Run sync command on all containers of pods %s", pod_prefix)
+        pod_dict = self.get_all_pods_containers(pod_prefix=pod_prefix)
+        if pod_dict:
+            for pod, containers in pod_dict.items():
+                for cnt in containers:
+                    res = self.send_k8s_cmd(
+                        operation="exec", pod=pod, namespace=const.NAMESPACE,
+                        command_suffix=f"-c {cnt} -- sync", decode=True)
+                    log.info("Response for pod %s container %s: %s", pod, cnt, res)
+
+        return True
+
+    def get_all_pods_containers(self, pod_prefix):
+        """
+        Helper function to get all pods with containers of given pod_prefix
+        :param pod_prefix: Prefix to define the pod category
+        :return: Dict
+        """
+        pod_containers = {}
+        pod_list = []
+        log.info("Get all data pod names of %s", pod_prefix)
+        output = self.execute_cmd(commands.CMD_POD_STATUS +
+                                  " -o=custom-columns=NAME:.metadata.name", read_lines=True)
+        for lines in output:
+            if pod_prefix in lines:
+                pod_list.append(lines.strip())
+
+        for pod in pod_list:
+            cmd = commands.KUBECTL_GET_POD_CONTAINERS.format(pod)
+            output = self.execute_cmd(cmd=cmd, read_lines=True)
+            output = output[0].split()
+            pod_containers[pod] = output
+
+        return pod_containers

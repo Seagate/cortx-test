@@ -410,17 +410,21 @@ class HAK8s:
             return True, resp
         return False, resp
 
-    def restart_cluster(self, pod_obj):
+    def restart_cluster(self, pod_obj, sync=True):
         """
         Restart the cluster and check all nodes health.
         :param pod_obj: pod object for stop/start cluster
+        :param sync: Flag to run sync command
         """
+        if sync:
+            LOGGER.info("Send sync command")
+            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            if not resp:
+                LOGGER.info("Cluster is restarting without sync")
         LOGGER.info("Stop the cluster")
         resp = self.cortx_stop_cluster(pod_obj)
         if not resp[0]:
             return False, "Error during Stopping cluster"
-        # TODO: will need to check if delay needed when stopping or starting cluster
-        time.sleep(CMN_CFG["delay_60sec"])
         LOGGER.info("Check all Pods are offline.")
         resp = self.check_cluster_status(pod_obj)
         if resp[0]:
@@ -433,6 +437,11 @@ class HAK8s:
         resp = self.poll_cluster_status(pod_obj)
         if not resp[0]:
             return False, "Cluster is not started"
+        if sync:
+            LOGGER.info("Send sync command")
+            resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
+            if not resp:
+                LOGGER.info("Sync command is not executed")
         return True, resp
 
     @staticmethod
@@ -508,8 +517,7 @@ class HAK8s:
         LOGGER.info("Multipart upload completed")
         return True, s3_data, checksum
 
-    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, parts_etag,
-                                 **kwargs):
+    def partial_multipart_upload(self, s3_data, bucket_name, object_name, part_numbers, **kwargs):
         """
         Helper function to do partial multipart upload.
         :param s3_data: s3 account details
@@ -524,10 +532,10 @@ class HAK8s:
             multipart_obj_size = kwargs.get("multipart_obj_size", None)
             multipart_obj_path = kwargs.get("multipart_obj_path", None)
             remaining_upload = kwargs.get("remaining_upload", False)
-            parts = kwargs.get("parts", None)
             mpu_id = kwargs.get("mpu_id", None)
             access_key = s3_data["s3_acc"]["accesskey"]
             secret_key = s3_data["s3_acc"]["secretkey"]
+            parts_etag = list()
             s3_test_obj = S3TestLib(access_key=access_key, secret_key=secret_key,
                                     endpoint_url=S3_CFG["s3_url"])
             s3_mp_test_obj = S3MultipartTestLib(access_key=access_key, secret_key=secret_key,
@@ -546,24 +554,24 @@ class HAK8s:
                 mpu_id = res[1]["UploadId"]
                 LOGGER.info("Multipart Upload initiated with mpu_id %s", mpu_id)
 
-                LOGGER.info("Creating parts of data")
-                if os.path.exists(multipart_obj_path):
-                    os.remove(multipart_obj_path)
-                system_utils.create_file(multipart_obj_path, multipart_obj_size)
-                parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
-                                                        multipart_obj_path=multipart_obj_path,
-                                                        total_parts=total_parts)
+            LOGGER.info("Creating parts of data")
+            parts = self.create_multiple_data_parts(multipart_obj_size=multipart_obj_size,
+                                                    multipart_obj_path=multipart_obj_path,
+                                                    total_parts=total_parts)
 
             LOGGER.info("Uploading parts %s", part_numbers)
+
             for part in part_numbers:
-                resp = s3_mp_test_obj.upload_multipart(body=parts[part], bucket_name=bucket_name,
-                                                       object_name=object_name, upload_id=mpu_id,
+                resp = s3_mp_test_obj.upload_multipart(body=parts[part],
+                                                       bucket_name=bucket_name,
+                                                       object_name=object_name,
+                                                       upload_id=mpu_id,
                                                        part_number=part)
                 p_etag = resp[1]
                 LOGGER.debug("Part : %s", str(p_etag))
                 parts_etag.append({"PartNumber": part, "ETag": p_etag["ETag"]})
                 LOGGER.info("Uploaded part %s", part)
-            return True, mpu_id, parts, parts_etag
+            return True, mpu_id, multipart_obj_path, parts_etag
         except BaseException as error:
             LOGGER.error("Error in %s: %s", HAK8s.partial_multipart_upload.__name__, error)
             return False, error
@@ -574,7 +582,6 @@ class HAK8s:
         :param multipart_obj_size: Size of the file to be created to upload
         :param total_parts: Total parts to be uploaded
         :param multipart_obj_path: Path of the file to be uploaded
-        :return: response
         """
         parts = {}
         uploaded_bytes = 0
@@ -735,10 +742,10 @@ class HAK8s:
         LOGGER.info("Check the overall K8s cluster status.")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STATUS_CMD.format(self.dir_path))
         resp = (resp.decode('utf-8')).split('\n')
-        LOGGER.info("Response for K8s cluster status:")
         for line in resp:
-            LOGGER.debug(line)
             if "FAILED" in line:
+                LOGGER.info("Response for K8s cluster status:")
+                LOGGER.debug(line)
                 return False, resp
         resp = pod_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
         pod_name = resp[1]
@@ -746,9 +753,9 @@ class HAK8s:
             operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
             command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD}",
             decode=True)
-        LOGGER.info("Response for cortx cluster status: %s", res)
         for line in res.split("\n"):
             if "failed" in line or "offline" in line:
+                LOGGER.info("Response for cortx cluster status: %s", res)
                 return False, res
 
         return True, "K8s and cortx both cluster up."
