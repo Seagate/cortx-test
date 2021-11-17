@@ -191,6 +191,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS, "User deleted"
         self.log.info("################Test Passed##################")
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -3896,6 +3897,7 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.lr
     @pytest.mark.csmrest
@@ -3928,6 +3930,7 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4036,6 +4039,7 @@ class TestCsmUser():
         response = self.csm_user.custom_rest_login(username=admin_username, password=admin_password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -4177,6 +4181,7 @@ class TestCsmUser():
 
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
 
+    @pytest.mark.sanity
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
