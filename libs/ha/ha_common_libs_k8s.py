@@ -442,7 +442,6 @@ class HAK8s:
             resp = pod_obj.send_sync_command(pod_obj, "cortx-data-pod")
             if not resp:
                 LOGGER.info("Sync command is not executed")
-        LOGGER.info("Stop the cluster")
         return True, resp
 
     @staticmethod
