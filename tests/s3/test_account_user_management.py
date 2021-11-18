@@ -30,9 +30,11 @@ from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
+from commons.helpers.node_helper import Node
 from commons.params import TEST_DATA_FOLDER
 from commons.utils.assert_utils import assert_in
 from commons.utils.system_utils import create_file, remove_file
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from config.s3 import S3_USER_ACC_MGMT_CONFIG
 from libs.s3 import S3H_OBJ
@@ -68,6 +70,11 @@ class TestAccountUserManagement:
         cls.users_list = cls.accounts_list = cls.account_name = cls.test_file = None
         cls.timestamp = cls.test_dir_path = cls.test_file_path = cls.user_name = None
         cls.bucket_name = cls.obj_name = cls.s3acc_obj = None
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+                            password=cls.passwd)
 
     def setup_method(self):
         """
@@ -140,6 +147,7 @@ class TestAccountUserManagement:
                 resp[1])
         return resp
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
@@ -148,7 +156,10 @@ class TestAccountUserManagement:
     @pytest.mark.tags("TEST-5440")
     @CTFailOn(error_handler)
     def test_create_new_account_1968(self):
-        """Create new account."""
+        """
+        Create new account.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info("START: Test create new account.")
         account_name = f'{self.account_name_prefix}_{str(int(time.time()))}'
         self.log.info(
@@ -160,6 +171,7 @@ class TestAccountUserManagement:
         self.accounts_list.append(account_name)
         self.log.info("END: Tested create new account.")
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
@@ -168,7 +180,10 @@ class TestAccountUserManagement:
     @pytest.mark.tags("TEST-5429")
     @CTFailOn(error_handler)
     def test_list_account_1969(self):
-        """List account."""
+        """
+        List account.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info("START: Test List account.")
         self.log.info("Step 1: Creating a new account with name %s", str(self.account_name))
         resp = self.create_account(self.account_name)
@@ -182,6 +197,7 @@ class TestAccountUserManagement:
         self.accounts_list.append(self.account_name)
         self.log.info("END: Tested List account.")
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
@@ -190,7 +206,10 @@ class TestAccountUserManagement:
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_delete_account_1970(self):
-        """Delete Account."""
+        """
+        Delete Account.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info("START: Test Delete Account.")
         self.log.info(
             "Step 1: Creating a new account with name %s", str(
@@ -539,6 +558,7 @@ class TestAccountUserManagement:
         self.accounts_list.append(self.account_name)
         self.log.info("END: list user.")
 
+    @pytest.mark.skip(reason="EOS-25897: S3 tests which requires S3 Account login are unsupported")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
@@ -547,7 +567,10 @@ class TestAccountUserManagement:
     @pytest.mark.tags("TEST-5431")
     @CTFailOn(error_handler)
     def test_delete_user_2079(self):
-        """Delete User."""
+        """
+        Delete User.
+        TODO: EOS-25897: S3 tests which requires S3 Account login are unsupported.
+        """
         self.log.info("START: Delete User")
         self.log.info("Step 1: Create new account and new user in it.")
         resp = self.create_account(self.account_name)
@@ -864,10 +887,10 @@ class TestAccountUserManagement:
     def test_ssl_certificate_2090(self):
         """SSL certificate."""
         self.log.info("START: SSL certificate.")
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
-        status, resp = S3H_OBJ.copy_s3server_file(
+        status, resp = self.node_obj.copy_file_to_local(
             self.ca_cert_path, "ca.crt")
         assert status, resp
         with open("ca.crt", "r") as file:
@@ -892,7 +915,7 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 1: Checking if %s file exists on server", str(
                 self.ca_cert_path))
-        resp = S3H_OBJ.is_s3_server_path_exists(self.ca_cert_path)
+        resp = self.node_obj.path_exists(self.ca_cert_path)
         assert resp, "certificate path not present: {}".format(
             self.ca_cert_path)
         self.log.info(

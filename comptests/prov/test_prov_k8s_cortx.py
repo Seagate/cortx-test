@@ -36,6 +36,7 @@ SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_ad
                       "common_admin_secret"]
 PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils"]
 
+
 class TestProvK8Cortx:
 
     @classmethod

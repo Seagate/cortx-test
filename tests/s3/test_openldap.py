@@ -26,6 +26,8 @@ from datetime import datetime
 
 import paramiko
 import pytest
+
+from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from config.s3 import S3_LDAP_TST_CFG
 from commons.constants import const
@@ -61,6 +63,11 @@ class TestOpenLdap:
             cls.cm_ldap_cfg["date_format"])
         cls.backup_path = cls.cm_ldap_cfg["backup_path"]
         cls.default_ldap_pw = True
+        cls.host = CMN_CFG["nodes"][0]["host"]
+        cls.uname = CMN_CFG["nodes"][0]["username"]
+        cls.passwd = CMN_CFG["nodes"][0]["password"]
+        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
+                            password=cls.passwd)
 
     def remote_execution(self, hostname, username, password, cmd):
         """running remote cmd."""
@@ -917,7 +924,7 @@ class TestOpenLdap:
         temp_file = self.cm_ldap_cfg["temp_path"]
         new_passwd = cfg_5074["new_pwd"]
         self.log.info("Step 1: Retrieving existing openldap password")
-        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
+        self.node_obj.copy_file_to_local(const.AUTHSERVER_FILE, temp_file)
         old_pwd = get_config(
             temp_file, key=self.cm_ldap_cfg["login_pwd_section"])
         self.log.info("Password : %s", old_pwd)
@@ -945,7 +952,7 @@ class TestOpenLdap:
             self.slapd_service)
         self.log.info(
             "Step 4: Checking if new password is updated or not")
-        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
+        self.node_obj.copy_file_to_local(const.AUTHSERVER_FILE, temp_file)
         updated_pwd = get_config(
             temp_file, key=self.cm_ldap_cfg["login_pwd_section"])
         self.log.info("Password : %s", updated_pwd)
@@ -974,7 +981,7 @@ class TestOpenLdap:
         temp_file = self.cm_ldap_cfg["temp_path"]
         new_passwd = cfg_5075["new_pwd"]
         self.log.info("Step 1: Retrieving existing openldap password")
-        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
+        self.node_obj.copy_file_to_local(const.AUTHSERVER_FILE, temp_file)
         old_pwd = get_config(
             temp_file, key=self.cm_ldap_cfg["login_pwd_section"])
         self.log.info("Step 1: Retrieved existing openldap password")
@@ -1001,7 +1008,7 @@ class TestOpenLdap:
             self.slapd_service)
         self.log.info(
             "Step 4: Checking if new password is updated or not")
-        S3H_OBJ.copy_s3server_file(const.AUTHSERVER_FILE, temp_file)
+        self.node_obj.copy_file_to_local(const.AUTHSERVER_FILE, temp_file)
         updated_pwd = get_config(
             temp_file, key=self.cm_ldap_cfg["login_pwd_section"])
         assert_not_equal(old_pwd, updated_pwd, self.cm_ldap_cfg["err_message"])

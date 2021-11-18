@@ -38,6 +38,7 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.iam_core_lib import IamLib
 from libs.s3.s3_core_lib import S3Lib
 
+
 LOGGER = logging.getLogger(__name__)
 
 ACC_ACCESS_KEY = list()
@@ -122,6 +123,8 @@ class IamTestLib(IamLib):
             LOGGER.info("Creating %s user access key.", user_name)
             response = super().create_access_key(user_name)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            time.sleep(S3_CFG["access_key_delay"])
         except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
@@ -148,6 +151,8 @@ class IamTestLib(IamLib):
                 access_key_id)
             response = poll(super().delete_access_key, user_name, access_key_id)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            #time.sleep(S3_CFG["access_key_delay"])
         except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
@@ -988,8 +993,8 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
+    @staticmethod
     def change_user_password(
-            self,
             old_pwd: str = None,
             new_pwd: str = None) -> tuple:
         """
