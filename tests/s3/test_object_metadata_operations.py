@@ -121,6 +121,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5482")
     @CTFailOn(error_handler)
     def test_object_key_alphanumeric_chars_1983(self):

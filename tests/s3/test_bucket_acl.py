@@ -153,6 +153,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5717")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3012(self):
@@ -422,6 +423,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5728")
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3527(self):
@@ -1010,6 +1012,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5721")
     @CTFailOn(error_handler)
     def test_perform_head_bucket_acl_3580(self):

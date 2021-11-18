@@ -104,6 +104,7 @@ class TestListObjectV2:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-15187")
     @CTFailOn(error_handler)
     def test_15187(self):

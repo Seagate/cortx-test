@@ -263,6 +263,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-19841")
     @CTFailOn(error_handler)
     def test_19841(self):

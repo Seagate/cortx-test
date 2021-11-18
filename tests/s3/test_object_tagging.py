@@ -105,6 +105,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5549")
     @CTFailOn(error_handler)
     def test_verify_putobj_tagging_2457(self):
@@ -161,6 +162,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5561")
     @CTFailOn(error_handler)
     def test_delobj_tagging_2459(self):

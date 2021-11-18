@@ -109,6 +109,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_put_file_2208(self):
@@ -345,6 +346,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5493")
     @CTFailOn(error_handler)
     def test_retrieve_metadata_2217(self):
@@ -515,6 +517,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5497")
     @CTFailOn(error_handler)
     def test_delete_object_2220(self):

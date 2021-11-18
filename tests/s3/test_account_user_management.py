@@ -137,8 +137,8 @@ class TestAccountUserManagement:
     def create_account(self, account_name):
         """Create s3 account using REST api."""
         resp = self.s3acc_obj.create_s3_account(account_name,
-                                            self.email_id.format(account_name),
-                                            self.s3acc_password)
+                                                self.email_id.format(account_name),
+                                                self.s3acc_password)
         assert resp[0], resp[1]
         if resp[0]:
             self.log.info(
@@ -152,6 +152,7 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5440")
     @CTFailOn(error_handler)
     def test_create_new_account_1968(self):
@@ -175,6 +176,7 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5429")
     @CTFailOn(error_handler)
     def test_list_account_1969(self):
@@ -200,6 +202,7 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_delete_account_1970(self):
@@ -288,8 +291,8 @@ class TestAccountUserManagement:
         self.log.info(
             "Step 2: Creating another account with existing account name")
         resp = self.s3acc_obj.create_s3_account(self.account_name,
-                                             self.email_id.format(self.account_name),
-                                             self.s3acc_password)
+                                                self.email_id.format(self.account_name),
+                                                self.s3acc_password)
         assert "attempted to create an account that already exists" in resp[1], resp[1]
         self.log.info("Created another account with existing account name response %s", resp[1])
         self.accounts_list.append(self.account_name)
@@ -451,6 +454,7 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5439")
     @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):
@@ -484,6 +488,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5422")
     @CTFailOn(error_handler)
     def test_update_user_2077(self):
@@ -526,6 +531,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5428")
     @CTFailOn(error_handler)
     def test_list_user_2078(self):
@@ -558,6 +564,7 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5431")
     @CTFailOn(error_handler)
     def test_delete_user_2079(self):
@@ -656,6 +663,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5442")
     @CTFailOn(error_handler)
     def test_create_access_key_to_the_user_2082(self):
@@ -685,6 +693,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5430")
     @CTFailOn(error_handler)
     def test_list_access_keys_for_the_user_2083(self):
@@ -714,6 +723,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5433")
     @CTFailOn(error_handler)
     def test_delete_access_key_of_a_user_2084(self):
@@ -746,6 +756,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5425")
     @CTFailOn(error_handler)
     def test_update_access_key_of_a_user_2085(self):
@@ -783,6 +794,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5424")
     @CTFailOn(error_handler)
     def test_update_accesskey_of_user_with_inactive_mode_2086(self):
@@ -844,6 +856,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5423")
     @CTFailOn(error_handler)
     def test_update_login_profile_2088(self):

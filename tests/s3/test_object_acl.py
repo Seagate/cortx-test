@@ -196,6 +196,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5856")
     @CTFailOn(error_handler)
     def test_get_existing_obj_acl_2874(self):

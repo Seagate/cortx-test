@@ -72,7 +72,7 @@ class TestBucketLocation:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_location
-    @pytest.mark.s3_bucket_location
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_valid_bkt_272(self):
