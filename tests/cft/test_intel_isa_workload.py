@@ -55,6 +55,8 @@ class TestIntelISAIO:
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
         cls.access_key, cls.secret_key = S3H_OBJ.get_local_keys()
         cls.s3t_obj = S3TestLib(access_key=cls.access_key, secret_key=cls.secret_key)
+        cls.setup_type = CMN_CFG["setup_type"]
+        cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.ha_obj = HALibs()
         cls.node_list = []

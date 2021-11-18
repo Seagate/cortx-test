@@ -40,6 +40,7 @@ from commons.utils import assert_utils
 from commons.utils.system_utils import make_dirs
 from commons.utils.system_utils import remove_dirs
 from commons.utils.system_utils import remove_file
+from commons.utils.system_utils import create_file
 from config import CMN_CFG
 from config import HA_CFG
 from config.s3 import S3_CFG
@@ -210,6 +211,8 @@ class TestClusterShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality.")
 
+    @pytest.mark.ha
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-29468")
     @CTFailOn(error_handler)
     def test_cluster_restart_multiple(self):
@@ -372,10 +375,16 @@ class TestClusterShutdownStart:
 
         file_size = HA_CFG["5gb_mpu_data"]["file_size"]
         total_parts = HA_CFG["5gb_mpu_data"]["total_parts"]
-        part_numbers = random.sample(range(1, total_parts), total_parts//2)
-        parts_etag = list()
+        part_numbers = random.sample(range(1, total_parts+1), total_parts//2)
         download_file = self.test_file + "_download"
         download_path = os.path.join(self.test_dir_path, download_file)
+        if os.path.exists(self.multipart_obj_path):
+            os.remove(self.multipart_obj_path)
+        create_file(self.multipart_obj_path, file_size)
+
+        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
+        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
+                                                           compare=False)[0]
 
         LOGGER.info("Step 1: Start multipart upload for 5GB object in multiple parts and complete "
                     "partially")
@@ -397,13 +406,12 @@ class TestClusterShutdownStart:
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
                                                     part_numbers=part_numbers,
-                                                    parts_etag=parts_etag,
                                                     multipart_obj_size=file_size,
                                                     total_parts=total_parts,
                                                     multipart_obj_path=self.multipart_obj_path)
-        parts = resp[2]
         mpu_id = resp[1]
-        parts_etag = resp[3]
+        object_path = resp[2]
+        parts_etag1 = resp[3]
         assert_utils.assert_true(resp[0], f"Failed to upload parts. Response: {resp}")
         LOGGER.info("Step 1: Successfully completed partial multipart upload")
 
@@ -426,28 +434,28 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 4: Cluster restarted successfully and all Pods are online.")
 
         LOGGER.info("Step 5: Upload remaining parts")
-        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts)))
+        remaining_parts = list(filter(lambda i: i not in part_numbers, range(1, total_parts+1)))
 
         resp = self.ha_obj.partial_multipart_upload(s3_data=self.s3_clean,
                                                     bucket_name=self.bucket_name,
                                                     object_name=self.object_name,
                                                     part_numbers=remaining_parts,
-                                                    parts_etag=parts_etag,
-                                                    remaining_upload=True, parts=parts,
-                                                    mpu_id=mpu_id)
+                                                    remaining_upload=True, mpu_id=mpu_id,
+                                                    multipart_obj_size=file_size,
+                                                    total_parts=total_parts,
+                                                    multipart_obj_path=object_path)
 
         assert_utils.assert_true(resp[0], f"Failed to upload parts {resp[1]}")
+        parts_etag2 = resp[3]
         LOGGER.info("Step 5: Successfully uploaded remaining parts")
 
-        LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
-        upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
-                                                           compare=False)
+        etag_list = parts_etag1 + parts_etag2
+        parts_etag = sorted(etag_list, key=lambda d: d['PartNumber'])
 
         LOGGER.info("Step 6: Listing parts of multipart upload")
         res = s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
         assert_utils.assert_true(res[0], res)
-        for part_n in res[1]["Parts"]:
-            assert_utils.assert_list_item(remaining_parts, part_n["PartNumber"])
+        assert_utils.assert_equal(len(res[1]["Parts"]), total_parts)
         LOGGER.info("Step 6: Listed parts of multipart upload: %s", res[1])
         LOGGER.info("Step 7: Completing multipart upload")
         res = s3_mp_test_obj.complete_multipart_upload(mpu_id, parts_etag, self.bucket_name,
@@ -481,6 +489,8 @@ class TestClusterShutdownStart:
         LOGGER.info("ENDED: Test to verify partial multipart upload before and after cluster "
                     "restart")
 
+    @pytest.mark.ha
+    @pytest.mark.lc
     @pytest.mark.tags("TEST-29469")
     @CTFailOn(error_handler)
     def test_reads_after_cluster_restart(self):
@@ -646,7 +656,7 @@ class TestClusterShutdownStart:
 
         LOGGER.info("Calculating checksum of file %s", self.multipart_obj_path)
         upload_checksum = self.ha_obj.cal_compare_checksum(file_list=[self.multipart_obj_path],
-                                                           compare=False)
+                                                           compare=False)[0]
 
         LOGGER.info("Step 5: Listing parts of multipart upload")
         res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
