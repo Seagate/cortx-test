@@ -108,7 +108,7 @@ class TestAuditLogs:
         self.test_cfg = {}
         if system_utils.path_exists(self.lcl_path):
             system_utils.remove_file(self.lcl_path)
-        resp = S3H_OBJ.copy_s3server_file(self.rem_path, self.lcl_path)
+        resp = self.node_obj.copy_file_to_local(self.rem_path, self.lcl_path)
         assert_utils.assert_true(resp[0], resp[1])
         audit_config = read_yaml(self.lcl_path)[1]
         self.log.info(audit_config)
@@ -158,21 +158,21 @@ class TestAuditLogs:
         if self.old_value != new_value:
             for node in range(len(self.nodes)):
                 host_name = CMN_CFG["nodes"][node]["host"]
-                resp = S3H_OBJ.copy_s3server_file(
-                    self.rem_path, self.lcl_path, host=host_name)
-                assert_utils.assert_true(resp[0], resp)
+                node_obj = Node(hostname=host_name,
+                                username=self.uname,
+                                password=self.passwd)
+                resp = node_obj.copy_file_to_local(
+                    self.rem_path, self.lcl_path)
+                assert_utils.assert_true(resp[0], resp[1])
                 resp = update_cfg_based_on_separator(
                     self.lcl_path,
                     self.key,
                     self.old_value,
                     new_value)
                 assert_utils.assert_true(resp[0], resp[1])
-                node_obj = Node(
-                    hostname=host_name, username=self.uname, password=self.passwd)
                 node_obj.copy_file_to_remote(
                     self.lcl_path,
                     self.rem_path
-
                 )
                 system_utils.remove_file(self.lcl_path)
             self.log.info(
@@ -195,20 +195,23 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             folder = "audit"
             audit_path = "{}/{}/{}".format(
                 S3_CFG["s3_logs"],
                 folder,
                 "audit.log")
             self.log.debug(audit_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(audit_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(audit_path)
             if resp:
                 cmd = f"grep {value} {audit_path}"
                 status, res = system_utils.run_remote_cmd(
                     cmd,
                     host_name,
-                    CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    username,
+                    password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res
@@ -232,15 +235,16 @@ class TestAuditLogs:
         res = f"Searched value {value} doesn't exists"
         for node in range(len(self.nodes)):
             host_name = CMN_CFG["nodes"][node]["host"]
+            username = CMN_CFG["nodes"][node]["username"]
+            password = CMN_CFG["nodes"][node]["password"]
             log_msg_path = const.LOG_MSG_PATH
             self.log.debug(log_msg_path)
-            resp = S3H_OBJ.is_s3_server_path_exists(
-                log_msg_path, host=host_name)
+            node_obj = Node(hostname=host_name, username=username, password=password)
+            resp = node_obj.path_exists(log_msg_path)
             if resp:
                 cmd = f"grep {value} {log_msg_path}"
                 status, res = system_utils.run_remote_cmd(
-                    cmd, host_name, CMN_CFG["nodes"][node]["username"],
-                    CMN_CFG["nodes"][node]["password"])
+                    cmd, host_name, username, password)
                 self.log.debug("status: %s, response: %s", status, res)
                 if status:
                     return status, res

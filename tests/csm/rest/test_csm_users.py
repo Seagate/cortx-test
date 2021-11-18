@@ -110,7 +110,7 @@ class TestCsmUser():
         s3_endpoint = data['S3']['iam']['endpoints']
         s3_host = data['S3']['iam']['host']
         data['S3']['iam']['endpoints'] = "https://cortx-io-svc1:9443"
-        data['S3']['iam']['host'] = "cortx-io-svc1" 
+        data['S3']['iam']['host'] = "cortx-io-svc1"
         with open(self.local_csm_path, 'w') as yaml_file:
              yaml_file.write( yaml.dump(data, default_flow_style=False))
         yaml_file.close()
@@ -128,7 +128,7 @@ class TestCsmUser():
                                             read_lines=False,
                                             exc=False)
         self.log.info("Step 3: Check if control pod is re-deployed")
-        pod_up = False 
+        pod_up = False
         for _ in range(3):
              resp_node = self.nd_obj.execute_cmd(cmd=comm.K8S_GET_PODS,
                                             read_lines=False,
@@ -209,8 +209,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -226,8 +224,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -244,8 +240,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -261,8 +255,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -278,8 +270,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -297,8 +287,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10711')
@@ -313,8 +301,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -378,11 +364,7 @@ class TestCsmUser():
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
-        test_cfg = self.csm_conf["test_5002"]["response_msg"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
+        resp_msg = self.csm_conf["test_5002"]["response_msg"]
 
         self.log.info("Fetching csm user with empty sort by string...")
         response = self.csm_user.list_csm_users(
@@ -402,8 +384,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-17864')
@@ -647,7 +627,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -706,7 +685,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-10797')
@@ -843,8 +821,8 @@ class TestCsmUser():
             "Test Purpose 1: Step 1: Logging in as csm user and creating s3 account")
         response = self.s3_accounts.create_s3_account(
             login_as="csm_user_manage")
-        self.log.info("Verifying response code 200 was returned")
-        assert response.status_code == const.SUCCESS_STATUS
+        self.log.info("Verifying response code 201 was returned")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
 
         s3_account_name = response.json()["account_name"]
 
@@ -932,7 +910,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -953,7 +930,7 @@ class TestCsmUser():
             "Step 1: Creating s3 account")
         response = self.s3_accounts.create_s3_account()
         self.log.info("Verifying s3 account was successfully created")
-        assert response.status_code == const.SUCCESS_STATUS
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         s3_account_name = response.json()["account_name"]
         self.log.info(
             "Step 2: Verified s3 account %s was successfully created ", s3_account_name)
@@ -1051,7 +1028,6 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12024')
@@ -1121,7 +1097,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12025')
@@ -1289,7 +1264,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12026')
@@ -1506,7 +1480,6 @@ class TestCsmUser():
                       "updated successfully for csm user %s", user[3], username)
 
     @pytest.mark.skip("Test is invalid for R2")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1525,9 +1498,7 @@ class TestCsmUser():
         username = self.csm_user.config["csm_user_manage"]["username"]
         expected_response_manage = self.csm_conf["test_7422"]["response_manage"]
         expected_response_manage["error_format_args"] = username
-        resp_error_code = self.rest_resp_conf["error_codes"]
-        resp_msg = self.rest_resp_conf["messages"]
-        resp_msg_id = self.rest_resp_conf["message_ids"]
+
         self.log.info(
             "Creating payload for the Patch request")
         payload = self.csm_conf["test_7422"]["payload_manage"]
@@ -1590,7 +1561,6 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1692,7 +1662,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1706,11 +1675,8 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         payload = self.csm_conf["test_7408"]["payload"]
-        test_cfg = self.csm_conf["test_7408"]["response_mesg"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
+        resp_msg = self.csm_conf["test_7408"]["response_mesg"]
+
         self.log.info(
             "Step 1: Verifying that csm monitor user should not be able to "
             "modify its username")
@@ -1819,7 +1785,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1834,16 +1799,14 @@ class TestCsmUser():
         self.log.info("##### Test started -  %s #####", test_case_name)
 
         data = self.csm_conf["test_6220"]
-        test_cfg = data["response_duplicate_csm_manage_user"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
         self.log.info(
             "Step 1: Verifying that csm admin user should not be able to create"
             " duplicate csm user")
 
         username = self.csm_user.config["csm_user_manage"]["username"]
+        mesg = data["response_duplicate_csm_manage_user"]["message"]
+        data["response_duplicate_csm_manage_user"]["message"] = f"{mesg} {username}"
+
         self.log.info(
             "Logging in as csm admin user to create duplicate csm user %s",
             username)
@@ -1867,16 +1830,15 @@ class TestCsmUser():
         self.log.info(
             "Step 1: Verified that csm admin user is not able to create "
             "duplicate csm user")
-        test_cfg1 = data["response_duplicate_csm_monitor_user"]
-        resp_error_code = test_cfg1["error_code"]
-        resp_msg_id = test_cfg1["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
+
         self.log.info(
             "Step 2: Verifying that csm manage user should not be able to "
             "create duplicate csm user")
 
         username = self.csm_user.config["csm_user_monitor"]["username"]
+        mesg = data["response_duplicate_csm_monitor_user"]["message"]
+        data["response_duplicate_csm_monitor_user"]["message"] = f"{mesg} {username}"
+
         self.log.info(
             "Logging in as csm manage user to create duplicate csm user %s", username)
 
@@ -1907,6 +1869,7 @@ class TestCsmUser():
         msg = resp_data[0]
         s3account = self.csm_user.config["s3account_user"]["username"]
         data["response_duplicate_s3_account"]["error_format_args"]["account_name"] = s3account
+
         self.log.info(
             "Step 3: Verifying that csm admin user should not be able to create"
             " duplicate s3 account")
@@ -1963,7 +1926,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -1981,7 +1943,8 @@ class TestCsmUser():
             "Step 1: Verifying that DELETE API with default argument returns 200 "
             "response code and appropriate json data")
 
-        message = self.rest_resp_conf["messages"]["message_16"]
+        message = self.csm_conf["test_5021"]["response_message"]
+
         self.log.info("Creating csm user")
         response = self.csm_user.create_csm_user()
 
@@ -2006,7 +1969,7 @@ class TestCsmUser():
                       response.status_code)
 
         self.log.info("Verifying proper message is returned")
-        assert_utils.assert_equals(response.json()["message"],
+        assert_utils.assert_equals(response.json(),
                                    message)
         self.log.info(
             "Verified message returned is: %s", response.json())
@@ -2018,7 +1981,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2056,8 +2018,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.skip("EOS-24138")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2072,12 +2032,7 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        data = self.csm_conf["test_5020"]["response_msg"]
-        resp_error_code = data["error_code"]
-        resp_msg_id = data["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
-
+        data = self.csm_conf["test_5020"]
         payload = {}
         self.log.info(
             "Step 1: Verifying that PATCH API returns 400 response code and "
@@ -2116,7 +2071,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2131,13 +2085,11 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
 
-        data_payload = self.csm_conf["test_5017"]
-        data = self.csm_conf["test_5017"]["response_msg"]
-        resp_error_code = data["error_code"]
-        resp_msg_id = data["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
-        userid = self.csm_conf["test_5017"]["invalid_user_id"]
+        data = self.csm_conf["test_5017"]
+        mesg = data["response_msg"]["message"]
+        userid = data["invalid_user_id"]
+        data["response_msg"]["message"] = f"{mesg} {userid}"
+
         self.log.info(
             "Step 1: Verifying that PATCH API returns 404 response code and "
             "appropriate json data for user that does not exist")
@@ -2147,7 +2099,7 @@ class TestCsmUser():
             expect_status_code=const.METHOD_NOT_FOUND,
             user=userid,
             data=True,
-            payload=json.dumps(data_payload["payload"]),
+            payload=json.dumps(data["payload"]),
             return_actual_response=True)
 
         self.log.info("Verifying the status code returned : %s",
@@ -2175,7 +2127,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2231,7 +2182,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2334,7 +2284,6 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-15862')
@@ -2570,7 +2519,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2675,8 +2623,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lc
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2702,7 +2648,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2749,7 +2694,6 @@ class TestCsmUser():
 
         self.log.info("##### Test ended -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2841,7 +2785,6 @@ class TestCsmUser():
             "##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip("Test is invalid for R2")
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -2928,7 +2871,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
@@ -3065,7 +3007,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-12019')
@@ -3130,7 +3071,6 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25278')
@@ -3142,10 +3082,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25278"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
         self.log.info("Step 1: Creating csm user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Step 2: Verifying if user was created successfully")
@@ -3191,7 +3127,6 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25280')
@@ -3203,10 +3138,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25280"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[1]
         self.log.info("Step 1: Creating csm user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Step 2: Verifying if user was created successfully")
@@ -3227,6 +3158,11 @@ class TestCsmUser():
                                                             CSM_REST_CFG["csm_admin_user"][
                                                                 "username"]), "Message check failed."
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
+        assert response.json()["error_code"] == str(test_cfg["error_code"]) , (
+                                                  "Error code check failed.")
+        assert response.json()["message"] == test_cfg["message"].format("csm_user_monitor",
+                            CSM_REST_CFG["csm_admin_user"]["username"]) , "Message check failed."
+        assert response.json()["message_id"] == test_cfg["message_id"], "Message ID check failed."
         self.log.info("Step 4: Verifying edit user functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_monitor",
                                                user=CSM_REST_CFG["csm_user_manage"]["username"],
@@ -3258,7 +3194,6 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
     @pytest.mark.csmrest
     @pytest.mark.skip(reason="Bug EOS-23254")
     @pytest.mark.tags('TEST-25282')
@@ -3327,15 +3262,11 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25275"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[0]
         self.log.info("Step 1: Verify create admin user functionality for manage user")
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="admin")
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), (
+        assert response.json()["error_code"] == str(test_cfg["error_code"]), (
             "Error code check failed.")
         if CSM_REST_CFG["msg_check"] == "enable":
             assert response.json()["message"] == msg.format("admin",
@@ -3344,8 +3275,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-25279')
     def test_25279(self):
@@ -3376,8 +3306,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.skip(reason="Bug EOS-23254")
     @pytest.mark.tags('TEST-25281')
     def test_25281(self):
@@ -3388,9 +3317,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25281"]
-        resp_error_code = self.rest_resp_conf["error_codes"]
-        resp_msg = self.rest_resp_conf["messages"]
-        resp_msg_id = self.rest_resp_conf["message_ids"]
         self.log.info("Step 1: Verifying edit admin email id functionality for manage user")
         response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
                                                user=CSM_REST_CFG["csm_admin_user"]["username"],
@@ -3405,8 +3331,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25277')
@@ -3418,10 +3343,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25277"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[3]
         self.log.info("Step 1: Verify if last admin user"
                       "is not able to edit the self role to manage")
         response = self.csm_user.edit_csm_user(user=CSM_REST_CFG["csm_admin_user"]["username"],
@@ -3450,8 +3371,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25286')
@@ -3462,10 +3382,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25286"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[2]
         self.log.info("Step 1: Verify delete last admin user functionality")
         response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
@@ -3479,8 +3395,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25283')
@@ -3491,10 +3406,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25283"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[2]
         self.log.info("Step 1: Verify delete admin user functionality for manage user")
         response = self.csm_user.delete_csm_user(login_as="csm_user_manage",
                                                  user_id=CSM_REST_CFG["csm_admin_user"]["username"])
@@ -3509,8 +3420,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25285')
@@ -3522,11 +3432,6 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_25285"]
-        resp_error_code = test_cfg["error_code"]
-        resp_msg_id = test_cfg["message_id"]
-        resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
-        msg = resp_data[2]
-        msg1 = resp_data[3]
         self.log.info("Step 1: Creating csm user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="monitor")
         self.log.info("Step 2: Verifying if user was created successfully")
@@ -3565,8 +3470,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
-    @pytest.mark.lr
-    @pytest.mark.csmrest
+    @pytest.mark.csm_rest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
     @pytest.mark.tags('TEST-25276')
