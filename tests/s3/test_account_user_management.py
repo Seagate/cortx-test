@@ -152,7 +152,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5440")
     @CTFailOn(error_handler)
     def test_create_new_account_1968(self):
@@ -176,7 +175,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5429")
     @CTFailOn(error_handler)
     def test_list_account_1969(self):
@@ -202,7 +200,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
     def test_delete_account_1970(self):
@@ -304,7 +301,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5434")
     @CTFailOn(error_handler)
     def test_crud_operations_with_valid_cred_1973(self):
@@ -455,7 +451,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5439")
     @CTFailOn(error_handler)
     def test_create_new_user_from_current_account_2076(self):
@@ -563,7 +558,6 @@ class TestAccountUserManagement:
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
     @pytest.mark.release_regression
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5431")
     @CTFailOn(error_handler)
     def test_delete_user_2079(self):
