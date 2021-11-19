@@ -58,7 +58,8 @@ class MotrCoreK8s():
             self.cortx_node_list = []
         response = self.node_obj.send_k8s_cmd(
             operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.HCTL_STATUS_CMD_JSON}",
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME}"
+            f" -- {common_cmd.HCTL_STATUS_CMD_JSON}",
             decode=True)
         cluster_info = json.loads(response)
         if cluster_info is not None:
@@ -84,8 +85,7 @@ class MotrCoreK8s():
         cmd = "| awk '/cortx-data-pod/ {print $1}'"
         response = self.node_obj.send_k8s_cmd(
             operation="get", pod="pods", namespace=common_const.NAMESPACE,
-            command_suffix=f"{cmd}",
-            decode=True)
+            command_suffix=f"{cmd}", decode=True)
         return [node.strip() for node in response.split('\n')]
 
     def get_primary_cortx_node(self):
@@ -99,7 +99,8 @@ class MotrCoreK8s():
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} -- {common_cmd.MOTR_STATUS_CMD} {cmd}",
+            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
+            f"-- {common_cmd.MOTR_STATUS_CMD} {cmd}",
             decode=True)
         return primary_cortx_node
 
