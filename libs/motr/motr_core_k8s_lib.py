@@ -46,6 +46,7 @@ class MotrCoreK8s():
             else:
                 self.worker_node_list.append(CMN_CFG["nodes"][node]["hostname"])
         self.node_dict = self._get_cluster_info
+        
     
     @property
     def _get_cluster_info(self):
@@ -113,8 +114,13 @@ class MotrCoreK8s():
         :returns: Dict of a cortx node containing the endpoints details
         :rtype: dict
         """
-        if not cortx_node:
+        if cortx_node:
+            if cortx_node not in self.cortx_node_list:
+                raise ValueError(
+                    "Node must be one of %r." % str(self.cortx_node_list))
+        else:
             cortx_node = self.get_primary_cortx_node()
         for node in self.node_dict.keys():
             if node == cortx_node:
                 return self.node_dict[node]
+        return None
