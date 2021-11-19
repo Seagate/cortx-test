@@ -84,7 +84,7 @@ class LocustUser(HttpUser):
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
-        for f in glob.glob(f"{locust_utils.OBJ_NAME}*"):
-            UTILS_OBJ.delete_local_obj(f)
-        for f in glob.glob(f"{locust_utils.GET_OBJ_PATH}*"):
-            UTILS_OBJ.delete_local_obj(f)
+        for object_files in glob.glob(f"{locust_utils.OBJ_NAME}*"):
+            UTILS_OBJ.delete_local_obj(object_files)
+        for object_files in glob.glob(f"{locust_utils.GET_OBJ_PATH}*"):
+            UTILS_OBJ.delete_local_obj(object_files)

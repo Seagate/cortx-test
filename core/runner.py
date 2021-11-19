@@ -252,10 +252,9 @@ class LRUCache:
         if len(keys) == 0:
             self._lock.release()
             return False, False
-        else:
-            key = secrets.choice(keys)
-            try:
-                val = self.table.pop(key)
-            finally:
-                self._lock.release()
-            return key, val
+        key = secrets.choice(keys)
+        try:
+            val = self.table.pop(key)
+        finally:
+            self._lock.release()
+        return key, val

@@ -28,7 +28,7 @@ import time
 import boto3
 from boto3.exceptions import Boto3Error
 from botocore.client import Config
-from botocore.exceptions import BotoCoreError
+from botocore.exceptions import BotoCoreError, ClientError, ConnectionClosedError
 from locust import events
 
 from commons.utils import system_utils
@@ -82,20 +82,22 @@ class LocustUtils:
 
     @staticmethod
     def delete_checksum(bucket, object_key):
+        """Delete checksum from local DB"""
         global OBJECT_CACHE
         # LOGGER.info("delete_checksum %s/%s", bucket, object_key)
         OBJECT_CACHE.delete(f"{bucket}/{object_key}")
 
     @staticmethod
     def store_checksum(bucket, object_key, checksum):
+        """Store checksum in local DB"""
         global OBJECT_CACHE
         # LOGGER.info("store_checksum %s/%s", bucket, object_key)
         OBJECT_CACHE.store(f"{bucket}/{object_key}", checksum)
 
     @staticmethod
-    def pop_one_random(operation):
+    def pop_one_random():
+        """Pop one random object entry from local DB"""
         global OBJECT_CACHE
-        # LOGGER.info(f"Popping object for {operation}")
         bucket_object, crc = OBJECT_CACHE.pop_one()
         if not bucket_object or not crc:
             return False, False, False
@@ -146,8 +148,8 @@ class LocustUtils:
                 events.request_success.fire(request_type="put", name="create_bucket",
                                             response_time=self.total_time(start_time),
                                             response_length=10)
-            except (Boto3Error, BotoCoreError) as error:
-                LOGGER.error("Create bucket failed with error: %s", error)
+            except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+                LOGGER.error("Bucket creation %s failed: %s", bucket_name, error)
                 events.request_failure.fire(request_type="put", name="create_bucket",
                                             response_time=self.total_time(start_time),
                                             response_length=10, exception=error)
@@ -165,8 +167,8 @@ class LocustUtils:
                 bucket = self.s3_resource.Bucket(bucket)
                 bucket.objects.all().delete()
                 bucket.delete()
-            except (Boto3Error, BotoCoreError) as error:
-                LOGGER.error("Delete bucket failed with error: %s", error)
+            except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+                LOGGER.error("Bucket deletion %s failed: %s", bucket, error)
                 events.request_failure.fire(request_type="delete", name="delete_bucket",
                                             response_time=self.total_time(start_time),
                                             response_length=10, exception=error)
@@ -191,11 +193,11 @@ class LocustUtils:
         start_time = time.time()
         try:
             self.s3_client.upload_file(object_name, bucket_name, object_name)
-        except (Boto3Error, BotoCoreError) as error:
+        except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+            LOGGER.error("Upload object %s failed: %s", log_prefix, error)
             events.request_failure.fire(request_type="put", name="put_object",
                                         response_time=self.total_time(start_time),
                                         response_length=10, exception=error)
-            LOGGER.error("Uploading %s failed with error: %s", log_prefix, error)
         else:
             events.request_success.fire(request_type="put", name="put_object",
                                         response_time=self.total_time(start_time),
@@ -204,7 +206,8 @@ class LocustUtils:
         self.delete_local_obj(object_name)
 
     def head_object(self):
-        bucket_name, object_name, checksum_original = self.pop_one_random("head")
+        """Method to head random object"""
+        bucket_name, object_name, checksum_original = self.pop_one_random()
         log_prefix = f"{bucket_name}/{object_name}"
         if not bucket_name or not object_name or not checksum_original:
             LOGGER.info("Nothing to head")
@@ -213,8 +216,8 @@ class LocustUtils:
         start_time = time.time()
         try:
             self.s3_client.head_object(Bucket=bucket_name, Key=object_name)
-        except (Boto3Error, BotoCoreError) as error:
-            LOGGER.error("Head object %s failed with error: %s", log_prefix, error)
+        except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+            LOGGER.error("Head object %s failed: %s", log_prefix, error)
             events.request_failure.fire(request_type="head", name="head_object",
                                         response_time=self.total_time(start_time),
                                         response_length=10, exception=error)
@@ -231,7 +234,7 @@ class LocustUtils:
         start_time = time.time()
         download_path = GET_OBJ_PATH + str(start_time)
         self.delete_local_obj(download_path)
-        bucket_name, object_name, checksum_original = self.pop_one_random("download")
+        bucket_name, object_name, checksum_original = self.pop_one_random()
         log_prefix = f"{bucket_name}/{object_name}"
         if not bucket_name or not object_name or not checksum_original:
             LOGGER.info("Nothing to download")
@@ -240,8 +243,8 @@ class LocustUtils:
             LOGGER.info("Starting object download %s", log_prefix)
             bucket = self.s3_resource.Bucket(bucket_name)
             bucket.download_file(object_name, download_path)
-        except (Boto3Error, BotoCoreError) as error:
-            LOGGER.error("Download object %s failed with error: %s", log_prefix, error)
+        except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+            LOGGER.error("Download object %s failed: %s", log_prefix, error)
             events.request_failure.fire(request_type="get", name="download_object",
                                         response_time=self.total_time(start_time),
                                         response_length=10, exception=error)
@@ -265,7 +268,7 @@ class LocustUtils:
         Method to delete any random object from given bucket
         """
         start_time = time.time()
-        bucket_name, object_name, checksum_original = self.pop_one_random("delete")
+        bucket_name, object_name, checksum_original = self.pop_one_random()
         if not bucket_name or not object_name or not checksum_original:
             LOGGER.info("Nothing to delete")
             return
@@ -273,8 +276,8 @@ class LocustUtils:
         LOGGER.info("Deleting object %s", log_prefix)
         try:
             self.s3_resource.Object(bucket_name, object_name).delete()
-        except (Boto3Error, BotoCoreError) as error:
-            LOGGER.error("Object %s Does not exist for deletion: %s", log_prefix, error)
+        except (Boto3Error, BotoCoreError, ClientError, ConnectionClosedError) as error:
+            LOGGER.error("Deletion object %s failed: %s", log_prefix, error)
             events.request_failure.fire(request_type="delete", name="delete_object",
                                         response_time=self.total_time(start_time),
                                         response_length=10, exception=error)

@@ -20,20 +20,21 @@
 
 """Bucket Location Test Module."""
 
-import os
 import logging
+import os
+
 import pytest
 
-from commons.utils import assert_utils
-from scripts.locust import locust_runner
-from config.s3 import S3_CFG
 from commons.constants import Sizes
+from commons.utils import assert_utils
+from config.s3 import S3_CFG
 from libs.s3 import ACCESS_KEY, SECRET_KEY
+from scripts.locust import locust_runner
 
 error_strings = ["InternalError", "Gateway Timeout", "Service Unavailable", "ValueError",
                  "bad interpreter", "exceptions", "stderr", "error"]
 
-duration = "10m"
+DURATION = "10m"
 
 
 class TestS3Load:
@@ -93,6 +94,7 @@ class TestS3Load:
 
     @staticmethod
     def check_errors(log_file):
+        """Check errors in logfile"""
         if os.path.exists(log_file):
             res = locust_runner.check_log_file(log_file, error_strings)
             assert_utils.assert_false(res, "Few IO failed due to some reason")
@@ -110,7 +112,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19533", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -136,7 +138,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21039", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -157,7 +159,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19526", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -182,7 +184,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21195", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -203,7 +205,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19534", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -229,7 +231,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21210", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -254,7 +256,7 @@ class TestS3Load:
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19537", host=self.host_url,
                                        locust_file=self.locust_step_user_file,
-                                       users=10, duration=duration)
+                                       users=10, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -283,7 +285,7 @@ class TestS3Load:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21211", host=host_url,
                                        locust_file=self.locust_step_user_file,
-                                       users=10, duration=duration)
+                                       users=10, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -308,7 +310,7 @@ class TestS3Load:
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19538", host=self.host_url,
                                        locust_file=self.locust_step_user_file,
-                                       users=150, duration=duration)
+                                       users=150, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -337,7 +339,7 @@ class TestS3Load:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21214", host=host_url,
                                        locust_file=self.locust_step_user_file,
-                                       users=10, duration=duration)
+                                       users=10, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -360,7 +362,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19542", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -387,7 +389,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21227", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -409,7 +411,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19539", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -435,7 +437,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21228", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -457,7 +459,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19544", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -483,7 +485,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21229", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -505,7 +507,7 @@ class TestS3Load:
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
         res = locust_runner.run_locust(test_id="TEST-19545", host=self.host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
@@ -532,7 +534,7 @@ class TestS3Load:
         else:
             host_url = self.host_url
         res = locust_runner.run_locust(test_id="TEST-21230", host=host_url,
-                                       locust_file=self.locust_file, users=30, duration=duration)
+                                       locust_file=self.locust_file, users=30, duration=DURATION)
         self.log.info(res)
         self.log.info("Successfully executed locust run.")
         self.log.info("Checking locust log file.")
