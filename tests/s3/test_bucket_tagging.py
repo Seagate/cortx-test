@@ -378,6 +378,7 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):

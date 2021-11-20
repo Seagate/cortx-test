@@ -151,7 +151,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5440")
     @CTFailOn(error_handler)
@@ -175,7 +174,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5429")
     @CTFailOn(error_handler)
@@ -201,7 +199,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5432")
     @CTFailOn(error_handler)
@@ -303,7 +300,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5434")
     @CTFailOn(error_handler)
     def test_crud_operations_with_valid_cred_1973(self):
@@ -453,7 +450,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5439")
     @CTFailOn(error_handler)
@@ -563,7 +559,6 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5431")
     @CTFailOn(error_handler)
@@ -831,6 +826,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5441")
     @CTFailOn(error_handler)
     def test_create_max_accesskey_with_existing_user_name_2087(self):
@@ -932,6 +928,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.iam_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5444")
     @CTFailOn(error_handler)
     def test_change_pwd_for_iam_user_2092(self):
@@ -974,6 +971,7 @@ class TestAccountUserManagement:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_user_management
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-8718")
     @CTFailOn(error_handler)
     def test_create_user_account_and_check_arn_4625(self):

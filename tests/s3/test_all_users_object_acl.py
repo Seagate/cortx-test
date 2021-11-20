@@ -152,6 +152,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6019")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_without_auth_695(self):
@@ -183,6 +184,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6016")
     @CTFailOn(error_handler)
     def test_delete_object_without_authentication_697(self):
@@ -211,6 +213,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6014")
     @CTFailOn(error_handler)
     def test_read_object_acl_without_auth_698(self):
@@ -718,6 +721,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5979")
     @CTFailOn(error_handler)
     def test_put_duplicate_object_full_control_712(self):
@@ -749,6 +753,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5977")
     @CTFailOn(error_handler)
     def test_get_object_without_auth_full_control_713(self):
@@ -779,6 +784,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5975")
     @CTFailOn(error_handler)
     def test_read_object_without_auth_full_control_714(self):
@@ -808,6 +814,7 @@ class TestAllUsersObjectAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5973")
     @CTFailOn(error_handler)
     def test_update_object_without_auth_full_control_715(self):

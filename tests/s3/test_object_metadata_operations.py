@@ -137,7 +137,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5478")
     @CTFailOn(error_handler)
     def test_object_valid_special_chars_1984(self):
@@ -153,7 +153,7 @@ class TestObjectMetadataOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5480")
     @CTFailOn(error_handler)
     def test_key_alphanumeric_valid_special_chars_1985(self):

@@ -334,6 +334,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19842")
     @CTFailOn(error_handler)
     def test_19842(self):
@@ -406,6 +407,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19843")
     @CTFailOn(error_handler)
     def test_19843(self):
@@ -789,6 +791,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19849")
     @CTFailOn(error_handler)
     def test_19849(self):
@@ -929,6 +932,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19851")
     @CTFailOn(error_handler)
     def test_19851(self):

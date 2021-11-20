@@ -372,6 +372,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5862")
     @CTFailOn(error_handler)
     def test_multipart_upload_verify_obj_acl_2879(self):
@@ -3736,6 +3737,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-7566")
     @CTFailOn(error_handler)
     def test_public_read_get_obj_tagging_453(self):
@@ -4092,6 +4094,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-7570")
     @CTFailOn(error_handler)
     def test_get_object_tagging_410(self):
@@ -4317,6 +4320,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-7575")
     @CTFailOn(error_handler)
     def test_put_obj_read_acp_get_obj_acl_286(self):
@@ -5281,6 +5285,7 @@ class TestObjectACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5769")
     @CTFailOn(error_handler)
     def test_put_get_object_with_same_account_3248(self):

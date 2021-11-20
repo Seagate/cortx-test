@@ -280,6 +280,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5553")
     @CTFailOn(error_handler)
     def test_multipartupload_taggingsupport_2462(self):
@@ -348,6 +349,7 @@ class TestObjectTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5574")
     @CTFailOn(error_handler)
     def test_add_maximum_tags_existing_object_2463(self):

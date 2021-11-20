@@ -108,7 +108,6 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
@@ -136,6 +135,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5499")
     @CTFailOn(error_handler)
     def test_copy_different_sizes_2209(self):
@@ -263,7 +263,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5495")
     @CTFailOn(error_handler)
     def test_recursive_copy_local_dir_2214(self):
@@ -345,7 +345,6 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5493")
     @CTFailOn(error_handler)
@@ -392,6 +391,7 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5503")
     @CTFailOn(error_handler)
     def test_add_metadata_verify_object_2218(self):
@@ -516,7 +516,6 @@ class TestObjectWorkflowOperations:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_ops
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5497")
     @CTFailOn(error_handler)
