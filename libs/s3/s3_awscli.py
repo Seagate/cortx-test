@@ -23,14 +23,20 @@
 import ast
 import os
 import logging
+
+from config.s3 import S3_CFG
 from commons import commands
 from commons.utils.system_utils import run_local_cmd
-from libs.s3.s3_core_lib import S3Lib
+
 LOGGER = logging.getLogger(__name__)
 
 
-class S3LibCmd(S3Lib):
+class S3LibCmd:
     """Class containing methods to implement aws cmd functionality."""
+    def __init__(self):
+        """AWS cli constructor."""
+        self.cmd_endpoint = f" --endpoint-url {S3_CFG['s3_url']}" \
+                            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
 
     def upload_object_cli(
             self,
@@ -97,9 +103,12 @@ class S3LibCmd(S3Lib):
 
 class AWScliS3api:
     """Class including methods related to aws cli s3api operations."""
+    def __init__(self):
+        """AWS cli s3api constructor."""
+        self.cmd_endpoint = f" --endpoint-url {S3_CFG['s3_url']}" \
+                            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
 
-    @staticmethod
-    def create_bucket(bucket_name: str) -> tuple:
+    def create_bucket(self, bucket_name: str) -> tuple:
         """
         Create s3 bucket using s3api.
 
@@ -108,14 +117,14 @@ class AWScliS3api:
         """
         LOGGER.info("Create bucket: %s", bucket_name)
         cmd_create_bkt = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name)
-        _, output = run_local_cmd(cmd_create_bkt)
+        cmd_create_bkt += self.cmd_endpoint
+        _, output = run_local_cmd(cmd_create_bkt, chk_stderr=True)
         if bucket_name in output:
             return True, output
 
         return False, output
 
-    @staticmethod
-    def delete_bucket(bucket_name, force=False) -> tuple:
+    def delete_bucket(self, bucket_name, force=False) -> tuple:
         """
         Method to delete a bucket using awscli.
 
@@ -125,16 +134,15 @@ class AWScliS3api:
         """
         LOGGER.info("Delete bucket: %s", bucket_name)
         cmd_del_bkt = commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name)
-        cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]
-                               ) if force else cmd_del_bkt
-        _, output = run_local_cmd(cmd_del_bkt)
+        cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]) if force else cmd_del_bkt
+        cmd_del_bkt += self.cmd_endpoint
+        _, output = run_local_cmd(cmd_del_bkt, chk_stderr=True)
         if bucket_name in output:
             return True, output
 
         return False, output
 
-    @staticmethod
-    def list_bucket() -> list:
+    def list_bucket(self) -> list:
         """
         Method to list buckets using awscli.
 
@@ -142,14 +150,14 @@ class AWScliS3api:
         """
         LOGGER.info("List buckets")
         bktlist = list()
-        status, output = run_local_cmd(commands.CMD_AWSCLI_LIST_BUCKETS)
+        cmd_list_bkt = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
+        status, output = run_local_cmd(cmd_list_bkt, chk_stderr=True)
         if status:
             bktlist = [bkt.split(-1) for bkt in output.split("\n") if bkt]
 
         return bktlist
 
-    @staticmethod
-    def download_object(bucket_name, object_name, file_path):
+    def download_object(self, bucket_name, object_name, file_path):
         """
         Download s3 object to file path.
 
@@ -159,12 +167,13 @@ class AWScliS3api:
         :return: true/false, response.
         """
         LOGGER.info("Download s3 object.")
-        _, output = run_local_cmd(commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(bucket_name, object_name, file_path))
+        dwn_object = commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
+            bucket_name, object_name, file_path) + self.cmd_endpoint
+        _, output = run_local_cmd(dwn_object, chk_stderr=True)
 
         return os.path.exists(file_path), output
 
-    @staticmethod
-    def upload_directory(bucket_name, directory_path) -> tuple:
+    def upload_directory(self, bucket_name, directory_path) -> tuple:
         """
         Upload directory to s3 bucket.
 
@@ -173,14 +182,15 @@ class AWScliS3api:
         :return: true/false, response.
         """
         LOGGER.info("Upload  directory to S3 bucket.")
-        status, output = run_local_cmd(commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(directory_path, bucket_name))
+        upload_dir = commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(
+            directory_path, bucket_name) + self.cmd_endpoint
+        status, output = run_local_cmd(upload_dir, chk_stderr=True)
         upload_list = [out.split("\\r")[-1] for out in output.split("\\n") if out][:-1]
         LOGGER.info("Upload list: %s", upload_list)
 
         return status, upload_list
 
-    @staticmethod
-    def list_objects_v2(bucket_name, **kwargs):
+    def list_objects_v2(self, bucket_name, **kwargs):
         """
         Method to list objects using aws s3api.
 
@@ -197,14 +207,16 @@ class AWScliS3api:
                     options += " --{} {}".format(key, value)
                 else:
                     options += " --{}".format(key)
-            status, output = run_local_cmd(
-                commands.CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS.format(bucket_name, options))
+            cmd_list_v2_objects = commands.CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS.format(
+                bucket_name, options) + self.cmd_endpoint
+            status, output = run_local_cmd(cmd_list_v2_objects, chk_stderr=True)
         else:
-            status, output = run_local_cmd(commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(bucket_name))
+            cmd_list_v2_objects = commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(
+                bucket_name) + self.cmd_endpoint
+            status, output = run_local_cmd(cmd_list_v2_objects, chk_stderr=True)
         output = ast.literal_eval(ast.literal_eval(output.strip('b'))) if output else output
         LOGGER.info("list-objects-v2: %s", output)
         if status:
             return status, output
 
         return False, output
-
