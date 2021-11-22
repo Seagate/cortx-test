@@ -14,7 +14,6 @@ pipeline {
 		Sanity_TE = 'TEST-31311'
 		Setup_Type = 'default'
 		Platform_Type = 'VM'
-		Nodes_In_Target = "${NUM_NODES}"
 		Server_Type = 'SMC'
 		Enclosure_Type = '5U84'
 		DB_Update = false
@@ -36,7 +35,6 @@ source venv/bin/activate
 python --version
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
-export MGMT_VIP="${MGMT_VIP}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
 deactivate
@@ -49,7 +47,7 @@ deactivate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}" --node_count "${NUM_NODES}"
+python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
 '''
 			}
@@ -152,7 +150,6 @@ deactivate
         		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
-export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
 deactivate
 '''
