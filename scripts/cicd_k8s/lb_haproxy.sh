@@ -1,11 +1,9 @@
 #!/bin/bash
 yum install gcc pcre-devel tar make -y
 yum install openssl-devel pcre-devel -y
-wget http://www.haproxy.org/download/2.4/src/haproxy-2.4.2.tar.gz
-tar xzvf ~/haproxy-2.4.2.tar.gz -C ~/
-cd haproxy-2.4.2/
-make TARGET=linux-glibc USE_PCRE=1 USE_OPENSSL=1 USE_ZLIB=1 USE_CRYPT_H=1 USE_LIBCRYPT=1 # This set of flags is needed to support SSL requests
-make install
+
+yum-config-manager --add-repo http://cortx-storage.colo.seagate.com/releases/cortx/third-party-deps/centos/centos-7.9.2009-2.0.0-k8/commons/haproxy-packages/
+yum install haproxy22 --nogpgcheck -y
 
 sudo mkdir -p /etc/haproxy
 sudo mkdir -p /var/lib/haproxy

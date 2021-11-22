@@ -31,7 +31,6 @@ from commons import constants as const
 from commons import commands
 from commons.helpers import node_helper
 from commons.utils import system_utils
-from libs.s3 import S3H_OBJ
 from config import CMN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -95,15 +94,11 @@ class CortxCliSupportBundle(CortxCli):
             const.TAR_POSTFIX)
 
         # Check if file is exists on node
-        resp = S3H_OBJ.is_s3_server_path_exists(
-            tar_file_name,
-            host,
-            user,
-            pwd)
-        if not resp[0]:
+        obj = node_helper.Node(hostname=host, username=user, password=pwd)
+        resp = obj.path_exists(tar_file_name)
+        if not resp:
             return False, resp
 
-        obj = node_helper.Node(hostname=host, username=user, password=pwd)
         obj.make_dir(dpath=dest_dir)
 
         # Extract support bundle

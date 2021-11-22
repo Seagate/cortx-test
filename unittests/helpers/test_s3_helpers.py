@@ -284,19 +284,6 @@ class TestS3helper:
         self.log.info("END: Tested restart s3server resources.")
 
     @pytest.mark.s3unittest
-    def test_is_s3_server_path_exists(self):
-        """Test s3 server path exists."""
-        self.log.info("START: Test s3 server path exists.")
-        status, resp = S3H_OBJ.is_s3_server_path_exists(
-            path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        status, resp = S3H_OBJ.is_s3_server_path_exists(path=self.local_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        self.log.info("END: Tested s3 server path exists.")
-
-    @pytest.mark.s3unittest
     def test_get_s3server_fids(self):
         """Test get s3server fids."""
         self.log.info("START: Test get s3server fids.")
@@ -304,38 +291,6 @@ class TestS3helper:
         self.log.info("status: %s, response: %s", status, resp)
         assert status, resp
         self.log.info("END: Tested get s3server fids.")
-
-    @pytest.mark.s3unittest
-    def test_copy_s3server_file(self):
-        """Test copy s3server file."""
-        self.log.info("START: Test copy s3server file.")
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.local_path, local_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.s3_config_path, local_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        status, resp = S3H_OBJ.copy_s3server_file(
-            file_path=self.s3_config_path, local_path=self.local_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        self.log.info("END: Tested copy s3server file.")
-
-    @pytest.mark.s3unittest
-    def test_is_string_in_s3server_file(self):
-        """Test is string in s3server file."""
-        self.log.info("START: Test is string in s3server file.")
-        status, resp = S3H_OBJ.is_string_in_s3server_file(
-            string="syslog", file_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        status, resp = S3H_OBJ.is_string_in_s3server_file(
-            string="non-exsting-string", file_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        self.log.info("END: Tested is string in s3server file.")
 
     @pytest.mark.s3unittest
     def test_enable_disable_s3server_instances(self):
@@ -376,17 +331,3 @@ class TestS3helper:
         self.log.info("Keys: access: %s, secret: %s", access, secret)
         assert not access, secret
         self.log.info("END: Tested get local keys.")
-
-    @pytest.mark.s3unittest
-    def test_is_string_in_file(self):
-        """Test is string in file."""
-        self.log.info("START: Test is string in file.")
-        status, resp = S3H_OBJ.is_string_in_file(
-            string="syslog", file_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert status, resp
-        status, resp = S3H_OBJ.is_string_in_file(
-            string="non-existing-string", file_path=self.s3_config_path)
-        self.log.info("status: %s, response: %s", status, resp)
-        assert not status, resp
-        self.log.info("END: Tested is string in file.")

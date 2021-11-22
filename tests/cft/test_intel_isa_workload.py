@@ -55,6 +55,8 @@ class TestIntelISAIO:
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
         cls.access_key, cls.secret_key = S3H_OBJ.get_local_keys()
         cls.s3t_obj = S3TestLib(access_key=cls.access_key, secret_key=cls.secret_key)
+        cls.setup_type = CMN_CFG["setup_type"]
+        cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.ha_obj = HALibs()
         cls.node_list = []
@@ -429,7 +431,7 @@ class TestIntelISAIO:
             5 Node Cluster
             Data Pool : NKS : 10+5+0
             Metadata Pool : NKS : 1+2+0
-            No of CVG per node: 6
+            No of CVG per node: 3
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29489")
@@ -444,7 +446,7 @@ class TestIntelISAIO:
             5 Node Cluster
             Data Pool : NKS : 10+5+0
             Metadata Pool : NKS : 1+2+0
-            No of CVG per node: 6
+            No of CVG per node: 3
             No of data disk per CVG : Min 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("29490")
