@@ -68,7 +68,9 @@ def create_db_entry(m_node, username: str, password: str,
         if "worker" in line:
             out = line.split()[0]
             host_list.append(out)
-    print("Total number of nodes in cluster: %s", len(host_list) - 1)
+    num_nodes = len(host_list) - 1
+    print("Total number of nodes in cluster: %s", num_nodes)
+    os.environ["NUM_NODES"] = num_nodes
     print("Creating DB entry for setup: %s", new_setupname)
     with open(json_file, 'r') as file:
         json_data = json.load(file)
