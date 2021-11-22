@@ -92,11 +92,29 @@ class TestDelayedDelete:
         logging.info("Taken a backup of aws config"
                      " file located at %s to %s", cls.aws_config_path,
                      cls.config_backup_path)
+        cls.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
+        cls.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
         logging.info("ENDED: Setup operations")
 
     def setup_method(self):
         """Configuring all pre-requisite for tests"""
         self.log.info("STARTED: Test Setup")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = system_utils.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"])
+            logging.info(res)
+        assert_utils.assert_true(res)
+        logging.info("ENDED: Setup operations")
+
+    def setup_method(self):
+        """Create test data directory"""
+        self.log.info("STARTED: Test Setup")
+        self.update_jclient_jcloud_properties()
         logging.info("S3_SERVER_OBJECT_DELAYED_DELETE"
                      " value in s3config.yaml should be "
                      "set to True.")
@@ -232,6 +250,16 @@ class TestDelayedDelete:
         """
         self.log.info("STARTED: put object using jcloudclient")
         if option == 1:
+            self.log.info("Creating bucket %s", bucket_name)
+            command = self.create_cmd(
+                bucket_name,
+                "mb",
+                jtool=S3_BLKBOX_CFG["jcloud_cfg"]["jcloud_tool"])
+            resp = system_utils.execute_cmd(command)
+            assert_utils.assert_true(resp[0], resp[1])
+            assert_utils.assert_in(
+                "Bucket created successfully", resp[1][:-1], resp[1])
+            self.log.info("Bucket was created %s", bucket_name)
             res = system_utils.create_file(test_file_path,
                                            2048)
             logging.info("The file is %s", res)
