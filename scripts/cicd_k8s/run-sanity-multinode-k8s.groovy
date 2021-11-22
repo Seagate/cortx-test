@@ -7,8 +7,8 @@ pipeline {
     }
     environment {
 		Target_Node = 'multi-node-' + "${"${M_NODE}".split("\\.")[0]}"
-		Build_Branch = "${"${CORTX_BUILD}".split("\\#")[0]}"
-		Build_VER = "${"${CORTX_BUILD}".split("\\#")[1]}"
+		Build_Branch = "${"${CORTX_IMAGE}".split(":")[0]}"
+		Build_VER = "${"${CORTX_IMAGE}".split(":")[1]}"
 		Sequential_Execution = true
 		Original_TP = 'TEST-31310'
 		Sanity_TE = 'TEST-31311'
@@ -168,7 +168,7 @@ deactivate
 		     } */
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
