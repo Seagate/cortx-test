@@ -55,6 +55,8 @@ class TestIntelISAIO:
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
         cls.access_key, cls.secret_key = S3H_OBJ.get_local_keys()
         cls.s3t_obj = S3TestLib(access_key=cls.access_key, secret_key=cls.secret_key)
+        cls.setup_type = CMN_CFG["setup_type"]
+        cls.mgmt_vip = CMN_CFG["csm"]["mgmt_vip"]
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.ha_obj = HALibs()
         cls.node_list = []
@@ -90,6 +92,12 @@ class TestIntelISAIO:
         """
         self.log.info("STARTED: Setup Operations")
         self.reset_s3config = False
+        # TODO Fix
+        self.log.info("Checking if all nodes are reachable and PCS clean.")
+        for hlt_obj in self.hlt_list:
+            res = hlt_obj.check_node_health()
+            assert_utils.assert_true(res[0], res[1])
+        self.log.info("All nodes are reachable and PCS looks clean.")
         self.log.info("ENDED: Setup Operations")
 
     def teardown_method(self):

@@ -38,8 +38,6 @@ LOGGER = logging.getLogger(__name__)
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-
-
 def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str,
                          pem_remote_path: str = cm_const.K8S_PEM_PATH):
     """

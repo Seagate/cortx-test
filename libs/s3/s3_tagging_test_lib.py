@@ -257,13 +257,12 @@ class S3TaggingTestLib(Tagging):
 
         return True, response
 
-    def put_object_with_tagging(
-            self,
-            bucket_name: str = None,
-            object_name: str = None,
-            file_path: str = None,
-            tag: str = None,
-            **kwargs) -> tuple:
+    def put_object_with_tagging(self,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                file_path: str = None,
+                                tag: str = None,
+                                **kwargs) -> tuple:
         """
         Putting Object to the Bucket (mainly small file) with tagging and metadata.
 

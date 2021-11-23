@@ -624,44 +624,43 @@ class TestMultipartUpload:
     @CTFailOn(error_handler)
     def test_multipart_upload_few_part_more_than_5gb_2297(self):
         """Multipart upload - create few parts more than 5 GB size."""
-        self.log.info(
-            "Multipart upload - create few parts more than 5 GB size")
-        mp_config = MPART_CFG["test_8925"]
-        res = self.create_bucket_to_upload_parts(
-            self.bucket_name,
-            self.object_name,
-            mp_config["file_size"],
-            mp_config["total_parts"])
-        mpu_id, parts = res
-        self.log.info("Listing parts of multipart upload")
-        res = self.s3_mp_test_obj.list_parts(
-            mpu_id,
-            self.bucket_name,
-            self.object_name)
+        self.log.info("Multipart upload - create few parts more than 5 GB size")
+        mp_config = MPART_CFG["test_2297"]
+        file_size = mp_config["file_size"]
+        total_parts = mp_config["total_parts"]
+        self.log.info("Creating a bucket with name : %s", self.bucket_name)
+        res = self.s3_test_obj.create_bucket(self.bucket_name)
         assert_utils.assert_true(res[0], res[1])
-        assert_utils.assert_equal(len(res[1]["Parts"]),
-                                  mp_config["total_parts"],
-                                  res[1])
-        self.log.info("Listed parts of multipart upload: %s", res[1])
-        self.log.info("Completing multipart upload")
+        assert_utils.assert_equal(res[1], self.bucket_name, res[1])
+        self.log.info("Created a bucket with name : %s", self.bucket_name)
+        self.log.info("Initiating multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        self.log.info("Uploading parts into bucket")
         try:
-            resp = self.s3_mp_test_obj.complete_multipart_upload(
+            res = self.s3_mp_test_obj.upload_parts(
                 mpu_id,
-                parts,
                 self.bucket_name,
-                self.object_name)
-            assert_utils.assert_false(resp[0], resp[1])
+                self.object_name,
+                file_size,
+                total_parts=total_parts,
+                multipart_obj_path=self.mp_obj_path)
+            assert_utils.assert_false(res[0], res[1])
+            assert_utils.assert_not_equal(len(res[1]), total_parts, res[1])
         except CTException as error:
             self.log.error(error.message)
             assert_utils.assert_in(
-                MPART_CFG["test_8925"]["err_msg"],
+                MPART_CFG["test_2297"]["err_msg"],
                 error.message,
                 error.message)
-        res = self.s3_test_obj.object_list(self.bucket_name)
-        assert_utils.assert_not_in(self.object_name, res[1], res[1])
-        self.log.info("Cannot complete multipart upload")
-        self.log.info(
-            "Multipart upload - create few parts more than 5 GB size")
+        self.log.info("Listing parts of multipart upload")
+        res = self.s3_mp_test_obj.list_parts(mpu_id, self.bucket_name, self.object_name)
+        assert_utils.assert_true(res[0], res[1])
+        assert_utils.assert_not_equal(len(res[1].get("Parts", [])), mp_config["total_parts"], res)
+        self.log.info("Listed parts of multipart upload: %s", res[1])
+        self.log.info("Multipart upload - create few parts more than 5 GB size")
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_multipart_ops

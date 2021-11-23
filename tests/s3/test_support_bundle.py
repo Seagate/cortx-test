@@ -27,16 +27,20 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
+from commons.exceptions import CTException
 from commons.constants import const
 from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn
 from commons.utils.system_utils import run_remote_cmd
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_false, assert_true
+from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
-from config import CMN_CFG as CM_CFG
-from config.s3 import S3_CFG
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
+from commons.params import LOG_DIR
+from commons.utils import support_bundle_utils as sb
+from commons.utils import system_utils
+from commons.utils import assert_utils
 
 manager = Manager()
 
@@ -68,6 +72,7 @@ class TestSupportBundle:
         cls.m0postfix = "m0trace"
         cls.common_dir = "s3"
         cls.log.info("ENDED: Setup operations")
+        cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
 
     def setup_method(self):
         """
@@ -80,6 +85,10 @@ class TestSupportBundle:
         self.pysftp_obj = self.host_obj.open_sftp()
         self.bundle_prefix = "auto_bundle_{}"
         self.common_dir = "s3"
+        if system_utils.path_exists(self.bundle_dir):
+            self.log.info("Removing existing directory %s", self.bundle_dir)
+            system_utils.remove_dirs(self.bundle_dir)
+        system_utils.make_dirs(self.bundle_dir)
 
     def create_support_bundle(
             self,
@@ -466,8 +475,8 @@ class TestSupportBundle:
             "Step 2: Restarted %s service successfully", network_service)
         true_flag = all([temp[0] for temp in resp_lst])
         assert_true(true_flag, resp_lst)
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_false(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_false(resp, f"Support bundle present at {tar_file_path}")
         self.log.info("Step 1: Support bundle did not created")
         self.log.info(
             "ENDED: Test Support bundle collection with network fluctuation")
@@ -490,24 +499,28 @@ class TestSupportBundle:
         node_list = [self.host_ip, CM_CFG["nodes"][1]["host"]]
         self.log.info(
             "Step 1 Creating support bundle on primary and secondary nodes")
-        for node in node_list:
-            bundle_name = "{}_{}".format(self.bundle_prefix.format("5273"), str(node))
+        for node_id, hostname in enumerate(node_list):
+            host = CM_CFG["nodes"][node_id]["host"]
+            uname = CM_CFG["nodes"][node_id]["username"]
+            passwd = CM_CFG["nodes"][node_id]["password"]
+            node_obj = Node(hostname=host, username=uname, password=passwd)
+            bundle_name = "{}_{}".format(self.bundle_prefix.format("5273"), str(hostname))
             bundle_tar_name = "s3_{}.{}".format(
                 bundle_name, self.tar_postfix)
             tar_file_path = os.path.join(
                 remote_path, tar_dest_dir, bundle_tar_name)
             self.log.info(
                 "Step : Creating support bundle %s on node %s",
-                bundle_tar_name, node)
+                bundle_tar_name, hostname)
             resp = self.create_support_bundle(
-                bundle_name, remote_path, node)
+                bundle_name, remote_path, hostname)
             assert_true(resp[0], resp[1])
-            resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path, host=node)
+            resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path, host=hostname)
             assert_true(resp[0], resp[1])
             self.log.info(
                 "Step : Created support bundle %s on node %s",
-                bundle_tar_name, node)
-            self.node_obj.connect(node, username=self.uname, password=self.passwd)
+                bundle_tar_name, hostname)
+            self.node_obj.connect(hostname, username=self.uname, password=self.passwd)
             sftp = self.host_obj.open_sftp()
             S3H_OBJ.delete_remote_dir(sftp, remote_path)
             sftp.close()
@@ -550,8 +563,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 2: Support bundle created successfully")
         self.log.info("Step 3: Starting the service : %s", service_name)
         resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
@@ -594,8 +607,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 2: Support bundle created successfully")
         self.log.info("Step 3: Starting the service : %s", service_name)
         resp = S3H_OBJ.start_s3server_service(service_name, self.host_ip)
@@ -636,8 +649,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info(
             "ENDED: Test Support bundle collection when Cluster is shut down")
 
@@ -669,8 +682,8 @@ class TestSupportBundle:
             resp = self.create_support_bundle(
                 bundle_name, remote_path, self.host_ip)
             assert_true(resp[0], resp[1])
-            resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-            assert_true(resp[0], resp[1])
+            resp = self.node_obj.path_exists(tar_file_path)
+            assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
             self.log.info(
                 "Step : Created support bundle %s.tar.gz", bundle_name)
             self.log.info(
@@ -704,8 +717,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info(
             "Step 2: Validating the s3server logs in the support bundle tar")
@@ -746,8 +759,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info("Step 2: Validating the authserver logs in the tar")
         self.extract_tar_file(tar_file_path, tar_dest_dir)
@@ -784,8 +797,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 1: Support bundle tar created successfully")
         self.log.info("Step 2: Validating the haproxy logs in the tar")
         self.extract_tar_file(tar_file_path, tar_dest_dir)
@@ -832,8 +845,8 @@ class TestSupportBundle:
         resp = self.create_support_bundle(
             bundle_name, remote_path, self.host_ip)
         assert_true(resp[0], resp[1])
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 2: Support bundle created successfully")
         resp = S3H_OBJ.enable_disable_s3server_instances(
             resource_disable=False)
@@ -869,8 +882,8 @@ class TestSupportBundle:
         self.log.info(
             "Step 1: Created support bundle %s.tar.gz", bundle_name)
         self.log.info("Step 2: Verifying that support bundle is created")
-        resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path)
-        assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(tar_file_path)
+        assert_true(resp, f"Support bundle does not exist at {tar_file_path}")
         self.log.info("Step 2: Verified that support bundle is created")
         self.log.info(
             "ENDED: Test Support bundle collection through command/script")
@@ -916,8 +929,8 @@ class TestSupportBundle:
         cfg_5285 = const.CFG_FILES
         for file in cfg_5285:
             file_path = f"{tar_dest_dir}{file}"
-            resp = S3H_OBJ.is_s3_server_path_exists(file_path)
-            assert_true(resp[0], resp[1])
+            resp = self.node_obj.path_exists(file_path)
+            assert_true(resp, f"Support bundle does not exist at {file_path}")
             ex_cfg_files.append(file_path)
         self.log.info(
             "Step 3: Checked for config files are present under %s after "
@@ -980,8 +993,8 @@ class TestSupportBundle:
             bundle_stat_dir)
         for file in S3_CFG["stat_files"]:
             stat_file_path = f"{stat_dir_path}/{file}"
-            resp = S3H_OBJ.is_s3_server_path_exists(stat_file_path)
-            assert_true(resp[0], resp[1])
+            resp = self.node_obj.path_exists(stat_file_path)
+            assert_true(resp, f"Support bundle does not exist at {stat_file_path}")
             stat_files.append(stat_file_path)
         self.log.info(
             "Step 3: Checked that system level stat files are collected")
@@ -994,3 +1007,17 @@ class TestSupportBundle:
             "Step 4 : Verified that system level stat files are not empty")
         self.log.info(
             "ENDED: Validate Support bundle collects system information and stats")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-31677")
+    def test_31677_support_bundle_status(self):
+        """
+        Validate status of support bundle collection for each of the components/nodes
+        """
+        self.log.info("Step 1: Generating support bundle through cli")
+        resp = sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_31677", comp_list="s3server")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 1: Generated support bundle through cli")
+        self.log.info("Step 2: Validated status of Support bundle")
