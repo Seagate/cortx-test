@@ -22,6 +22,7 @@
 
 import logging
 import os
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -34,7 +35,11 @@ from scripts.locust import locust_runner
 error_strings = ["InternalError", "Gateway Timeout", "Service Unavailable", "ValueError",
                  "bad interpreter", "exceptions", "stderr", "error"]
 
-DURATION = "10m"
+INPUT_DURATION = "00:10:00"  # HH:MM:SS
+duration_t = datetime.strptime(INPUT_DURATION, "%H:%M:%S")
+delta = timedelta(hours=duration_t.hour, minutes=duration_t.minute, seconds=duration_t.second)
+DURATION_S = int(delta.total_seconds())
+DURATION = str(DURATION_S)+"s"
 
 
 class TestS3Load:
@@ -276,6 +281,7 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(60)
         os.environ["STEP_LOAD"] = str(50)
         os.environ["SPAWN_RATE"] = str(3)
+        os.environ["DURATION"] = str(DURATION_S)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
@@ -305,6 +311,7 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(1800)
         os.environ["STEP_LOAD"] = str(150)
         os.environ["SPAWN_RATE"] = str(10)
+        os.environ["DURATION"] = str(DURATION_S)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")
@@ -330,6 +337,7 @@ class TestS3Load:
         os.environ["STEP_TIME"] = str(1800)
         os.environ["STEP_LOAD"] = str(150)
         os.environ["SPAWN_RATE"] = str(10)
+        os.environ["DURATION"] = str(DURATION_S)
         os.environ["MIN_OBJECT_SIZE"] = os.environ["MAX_OBJECT_SIZE"] = str(10*Sizes.KB)
         self.log.info("Configurations completed successfully.")
         self.log.info("Starting locust run.")

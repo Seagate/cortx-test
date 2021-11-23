@@ -100,6 +100,7 @@ class StepLoadShape(LoadTestShape):
             'SPAWN_RATE',
             LOCUST_CFG['default']['HATCH_RATE']))
     time_limit = int(os.getenv('DURATION', step_time * 2))
+    max_user = int(os.getenv('MAX_USERS', 30))
 
     def tick(self):
         run_time = self.get_run_time()
@@ -108,4 +109,8 @@ class StepLoadShape(LoadTestShape):
             return None
 
         current_step = math.floor(run_time / self.step_time) + 1
-        return current_step * self.step_load, self.spawn_rate
+        total_new_users = current_step * self.step_load
+        if total_new_users > self.max_user:
+            total_new_users = self.max_user
+
+        return total_new_users, self.spawn_rate
