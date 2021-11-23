@@ -25,39 +25,39 @@ from common import app
 from Performance.backend import *
 
 
-@app.callback(
-    Output('statistics_workload', 'children'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
-)
-def update_workload(release_combined, branch, build, nodes,
-                    pfull, itrns, custom, n_clicks, sessions, buckets):
-    workload = None
-    if not (all([
-        release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
-    ])) and pfull is None:
-        raise PreventUpdate
+# @app.callback(
+#     Output('statistics_workload', 'children'),
+#     Input('perf_release_dropdown', 'value'),
+#     Input('perf_branch_dropdown', 'value'),
+#     Input('perf_build_dropdown', 'value'),
+#     Input('perf_nodes_dropdown', 'value'),
+#     Input('perf_pfull_dropdown', 'value'),
+#     Input('perf_iteration_dropdown', 'value'),
+#     Input('perf_custom_dropdown', 'value'),
+#     Input('perf_submit_button', 'n_clicks'),
+#     Input('perf_sessions_dropdown', 'value'),
+#     Input('perf_buckets_dropdown', 'value'),
+# )
+# def update_workload(release_combined, branch, build, nodes,
+#                     pfull, itrns, custom, n_clicks, sessions, buckets):
+#     workload = None
+#     if not (all([
+#         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
+#     ])) and pfull is None:
+#         raise PreventUpdate
 
-    if n_clicks > 0:
-        release = release_combined.split("_")[0]
-        op_sys = release_combined.split("_")[1]
-        data = {
-            'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
-            'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
-            'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
-        }
+#     if n_clicks > 0:
+#         release = release_combined.split("_")[0]
+#         op_sys = release_combined.split("_")[1]
+#         data = {
+#             'release': release, 'OS': op_sys, 'build': build, 'branch': branch,
+#             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
+#             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
+#         }
 
-        workload = get_workload_headings(data)
+#         workload = get_workload_headings(data)
 
-    return workload
+#     return workload
 
 
 @app.callback(
@@ -91,9 +91,9 @@ def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench'
         }
 
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 's3bench', 'Object Sizes')
+            dataframe, 's3bench', 'Object Sizes', states)
 
     return table
 
@@ -128,9 +128,9 @@ def update_metadata(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'S3bench',
         }
-        dataframe = get_metadata_latencies(data)
+        dataframe, run_states = get_metadata_latencies(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'metadata_s3bench', 'Statistics')
+            dataframe, 'metadata_s3bench', 'Statistics', run_states)
 
     return table
 
@@ -164,9 +164,9 @@ def update_hsbench(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Hsbench'
         }
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'hsbench', 'Object Sizes')
+            dataframe, 'hsbench', 'Object Sizes', states)
 
     return table
 
@@ -174,16 +174,16 @@ def update_hsbench(release_combined, branch, build, nodes,
 @app.callback(
     Output('statistics_bucketops_table', 'children'),
     [Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
-    Input('perf_bucketops_dropdown', 'value')],
+     Input('perf_branch_dropdown', 'value'),
+     Input('perf_build_dropdown', 'value'),
+     Input('perf_nodes_dropdown', 'value'),
+     Input('perf_pfull_dropdown', 'value'),
+     Input('perf_iteration_dropdown', 'value'),
+     Input('perf_custom_dropdown', 'value'),
+     Input('perf_submit_button', 'n_clicks'),
+     Input('perf_sessions_dropdown', 'value'),
+     Input('perf_buckets_dropdown', 'value'),
+     Input('perf_bucketops_dropdown', 'value')],
     prevent_initial_call=True
 )
 def update_bucketops(release_combined, branch, build, nodes,
@@ -200,9 +200,9 @@ def update_bucketops(release_combined, branch, build, nodes,
             'pfull': pfull, 'itrns': itrns, 'custom': custom, 'buckets': buckets,
             'sessions': sessions, 'name': 'Hsbench', 'objsize': objsize
         }
-        dataframe = get_bucktops(data)
+        dataframe, run_states = get_bucktops(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'bucketops_hsbench', 'Operations')
+            dataframe, 'bucketops_hsbench', 'Operations', run_states)
 
     return table
 
@@ -236,8 +236,8 @@ def update_cosbench(release_combined, branch, build, nodes,
             'nodes': nodes, 'pfull': pfull, 'itrns': itrns, 'custom': custom,
             'buckets': buckets, 'sessions': sessions, 'name': 'Cosbench'
         }
-        dataframe = get_data_for_stats(data)
+        dataframe, states = get_data_for_stats(data)
         table = get_dash_table_from_dataframe(
-            dataframe, 'cosbench', 'Object Sizes')
+            dataframe, 'cosbench', 'Object Sizes', states)
 
     return table

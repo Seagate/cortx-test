@@ -49,13 +49,12 @@ LOGGER = logging.getLogger(__name__)
 class S3TestLib(S3Lib):
     """Class initialising s3 connection and including methods for S3 core operations."""
 
-    def __init__(
-            self,
-            access_key: str = ACCESS_KEY,
-            secret_key: str = SECRET_KEY,
-            endpoint_url: str = S3_CFG["s3_url"],
-            s3_cert_path: str = S3_CFG["s3_cert_path"],
-            **kwargs) -> None:
+    def __init__(self,
+                 access_key: str = ACCESS_KEY,
+                 secret_key: str = SECRET_KEY,
+                 endpoint_url: str = S3_CFG["s3_url"],
+                 s3_cert_path: str = S3_CFG["s3_cert_path"],
+                 **kwargs) -> None:
         """
         Initialize members of SS3TestLib and its parent class.
 
@@ -162,13 +161,12 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    def copy_object(
-            self,
-            source_bucket: str = None,
-            source_object: str = None,
-            dest_bucket: str = None,
-            dest_object: str = None,
-            **kwargs) -> tuple:
+    def copy_object(self,
+                    source_bucket: str = None,
+                    source_object: str = None,
+                    dest_bucket: str = None,
+                    dest_object: str = None,
+                    **kwargs) -> tuple:
         """
         Copy of an object that is already stored in Seagate S3 with different permissions.
 
@@ -514,13 +512,12 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    def put_random_size_objects(
-            self,
-            bucket_name: str = None,
-            object_name: str = None,
-            min_size: int = None,
-            max_size: int = None,
-            **kwargs) -> tuple:
+    def put_random_size_objects(self,
+                                bucket_name: str = None,
+                                object_name: str = None,
+                                min_size: int = None,
+                                max_size: int = None,
+                                **kwargs) -> tuple:
         """
         Put random size objects into the bucket.
 
@@ -569,12 +566,11 @@ class S3TestLib(S3Lib):
 
         return True, objects_list
 
-    def create_bucket_put_object(
-            self,
-            bucket_name: str = None,
-            object_name: str = None,
-            file_path: str = None,
-            mb_count: int = None) -> tuple:
+    def create_bucket_put_object(self,
+                                 bucket_name: str = None,
+                                 object_name: str = None,
+                                 file_path: str = None,
+                                 mb_count: int = None) -> tuple:
         """
         The function will create a bucket and uploads an object to it.
 
@@ -677,12 +673,11 @@ class S3TestLib(S3Lib):
 
         return True, response
 
-    def put_object_with_storage_class(
-            self,
-            bucket_name: str = None,
-            object_name: str = None,
-            file_path: str = None,
-            storage_class: str = None) -> tuple:
+    def put_object_with_storage_class(self,
+                                      bucket_name: str = None,
+                                      object_name: str = None,
+                                      file_path: str = None,
+                                      storage_class: str = None) -> tuple:
         """
         Add an object to a bucket with specified storage class.
 
@@ -762,13 +757,12 @@ class S3LibNoAuth(S3TestLib, S3AclTestLib, S3BucketPolicyTestLib):
     Including methods for bucket and object without authentication operations.
     """
 
-    def __init__(
-            self,
-            access_key: str = None,
-            secret_key: str = None,
-            endpoint_url: str = S3_CFG["s3_url"],
-            s3_cert_path: str = None,
-            **kwargs) -> None:
+    def __init__(self,
+                 access_key: str = None,
+                 secret_key: str = None,
+                 endpoint_url: str = S3_CFG["s3_url"],
+                 s3_cert_path: str = None,
+                 **kwargs) -> None:
         """S3 connection initializer for bucket and object without authentication."""
         kwargs["region"] = kwargs.get("region", S3_CFG["region"])
         kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)

@@ -147,6 +147,21 @@ class Multipart(S3Lib):
 
         return result
 
+    def list_multipart_uploads_with_keymarker(
+            self,
+            bucket: str = None,
+            keymarker: str = None) -> dict:
+        """
+        List all initiated multipart uploads.
+        :param bucket: Name of the bucket.
+        :keymarker: key marker of more than >1000 mpu
+        :return: response.
+        """
+        result = self.s3_client.list_multipart_uploads(Bucket=bucket, KeyMarker=keymarker)
+        LOGGER.debug(result)
+
+        return result
+
     def abort_multipart_upload(
             self,
             bucket: str = None,
