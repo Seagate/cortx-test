@@ -728,7 +728,7 @@ class ProvDeployK8sCortxLib:
                 # resp = worker.execute_cmd(cmd=cmd4, read_lines=True)
                 # LOGGER.debug("resp : %s", resp)
             return True, resp
-
+        # pylint: disable=broad-except
         except BaseException as error:
             return False, error
 
@@ -996,7 +996,7 @@ class ProvDeployK8sCortxLib:
                 return False
         return True
 
-    # pylint: disable=too-many-arguments, too-many-locals
+    # pylint: disable=too-many-arguments,too-many-locals
     def test_deployment(self, sns_data, sns_parity,
                         sns_spare, dix_data,
                         dix_parity, dix_spare,
