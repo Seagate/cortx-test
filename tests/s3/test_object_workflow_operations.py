@@ -40,6 +40,7 @@ from libs.s3 import s3_multipart_test_lib
 class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
@@ -50,7 +51,7 @@ class TestObjectWorkflowOperations:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup method")
         self.s3_test_obj = s3_test_lib.S3TestLib()
-        self.s3_cmd_obj = s3_cmd_test_lib.S3CmdTestLib(init_s3_connection=False)
+        self.s3_cmd_obj = s3_cmd_test_lib.S3CmdTestLib()
         self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.buckets_list = list()
         self.bkt_name_prefix = "obj-workflow-bkt"
