@@ -211,13 +211,6 @@ graphs_perf_tabs = html.Div(
         Card(
             CardBody(
                 [
-                    html.P(html.U(
-                        "Graphical Representation of Performance Data",
-                        id="graphs_headings"),
-                        style={
-                        'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-                    html.P("Note: Each data point represents PER CLUSTER data. Data is displayed for the builds on which PerfPro has run.",  style={
-                        "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
                     html.P([ # html.I(className="fa fa-info-circle"),
                             "Note: Each data point is PER CLUSTER."],
                            style={'font-size': '20px', 'color': '#3131b0'}),

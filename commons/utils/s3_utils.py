@@ -27,12 +27,12 @@ import datetime
 import hashlib
 import logging
 import json
-
+import xmltodict
 from hashlib import md5
 from random import shuffle
 from typing import Any
 
-import xmltodict
+
 
 
 LOGGER = logging.getLogger(__name__)
