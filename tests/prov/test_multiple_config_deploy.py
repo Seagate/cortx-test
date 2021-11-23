@@ -22,21 +22,14 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os
-import time
-from multiprocessing import Pool
 
 import pytest
 
-from commons import commands as common_cmd
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
-from commons.utils import assert_utils
-from commons.utils import system_utils
-from commons.utils import ext_lbconfig_utils
 from config import CMN_CFG, HA_CFG, PROV_CFG, DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
-from libs.s3 import S3H_OBJ
-from libs.s3.s3_test_lib import S3TestLib
+
 
 # pylint: disable = too-many-lines
 
@@ -48,12 +41,19 @@ class TestMultipleConfDeploy:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.git_id = os.getenv("GIT_ID")
-        cls.git_token = os.getenv("GIT_PASSWORD")
-        cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
-        cls.cortx_image = os.getenv("CORTX_IMAGE")
-        cls.docker_username = os.getenv("DOCKER_USERNAME")
-        cls.docker_password = os.getenv("DOCKER_PASSWORD")
+        # cls.git_id = os.getenv("GIT_ID")
+        # cls.git_token = os.getenv("GIT_PASSWORD")
+        # cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
+        # cls.cortx_image = os.getenv("CORTX_IMAGE")
+        cls.setup_k8s_cluster_flag = os.getenv("setup_k8s_cluster")
+        cls.setup_client_config_flag = os.getenv("setup_client_config")
+        cls.run_basic_s3_io_flag = os.getenv("run_basic_s3_io")
+        cls.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
+        cls.collect_support_bundle = os.getenv("collect_support_bundle")
+        cls.destroy_setup_flag = os.getenv("destroy_setup")
+        cls.raise_jira = os.getenv("raise_jira")
+        # cls.docker_username = os.getenv("DOCKER_USERNAME")
+        # cls.docker_password = os.getenv("DOCKER_PASSWORD")
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
@@ -73,10 +73,10 @@ class TestMultipleConfDeploy:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        cls.control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
-        cls.data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
-        cls.control_lb_ip = cls.control_lb_ip.split(",")
-        cls.data_lb_ip = cls.data_lb_ip.split(",")
+        # cls.control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
+        # cls.data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
+        # cls.control_lb_ip = cls.control_lb_ip.split(",")
+        # cls.data_lb_ip = cls.data_lb_ip.split(",")
 
     def setup_method(self):
         """Revert the VM's before starting the deployment tests"""
@@ -92,115 +92,124 @@ class TestMultipleConfDeploy:
         #
         # assert_utils.assert_true(resp[0], resp[1])
 
+    def teardown_method(self):
+        """
+        Teardown method
+        """
+        # TODO collect support bundle.
+
     # pylint: disable=too-many-arguments, too-many-locals
-    def test_deployment(self, sns_data, sns_parity,
-                        sns_spare, dix_data,
-                        dix_parity, dix_spare,
-                        cvg_count, data_disk_per_cvg):
-        """
-        This method is used for deployment with various config on N nodes
-        """
-        self.log.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
-                      "k8s based Cortx Deployment", len(self.worker_node_list),
-                      sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
-
-        # self.log.info("Step 1: Perform k8s Cluster Deployment")
-        # resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
-        # assert_utils.assert_true(resp[0], resp[1])
-        #
-        self.log.info("Step 2: Taint master nodes if not already done.")
-        for node in self.master_node_list:
-            resp = self.deploy_lc_obj.validate_master_tainted(node)
-            if not resp:
-                self.deploy_lc_obj.taint_master(node)
-
-        self.log.info("Step 3: Download solution file template")
-        path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
-        self.log.info("Step 4 : Update solution file template")
-        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
-                                                  cortx_image=self.cortx_image,
-                                                  control_lb_ip=self.control_lb_ip,
-                                                  data_lb_ip=self.data_lb_ip,
-                                                  sns_data=sns_data, sns_parity=sns_parity,
-                                                  sns_spare=sns_spare, dix_data=dix_data,
-                                                  dix_parity=dix_parity,
-                                                  dix_spare=dix_spare, cvg_count=cvg_count,
-                                                  data_disk_per_cvg=data_disk_per_cvg,
-                                                  size_data_disk="20Gi",
-                                                  size_metadata="20Gi",
-                                                  glusterfs_size="20Gi")
-        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
-        sol_file_path = resp[1]
-        system_disk_dict = resp[2]
-
-        self.log.info("Step 5: Perform Cortx Cluster Deployment")
-        resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
-                                                       self.worker_node_list, system_disk_dict,
-                                                       self.docker_username,
-                                                       self.docker_password, self.git_id,
-                                                       self.git_token, self.git_script_tag)
-        assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 6: Check s3 server status")
-        start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
-        while int(time.time()) < end_time:
-            resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
-            if resp[0]:
-                self.log.info("####All the services online. Time Taken : %s",
-                              (int(time.time()) - start_time))
-                break
-            time.sleep(60)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
-        eth1_ip = resp[1].strip("'\\n'b'")
-        self.log.info("Step 7: Configure HAproxy on client")
-        ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
-                                                self.master_node_list[0].username,
-                                                self.master_node_list[0].password, eth1_ip,
-                                                PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
-
-        self.log.info("Step 8: Create S3 account and configure credentials")
-        resp = self.deploy_lc_obj.post_deployment_steps_lc()
-        assert_utils.assert_true(resp[0], resp[1])
-        access_key,secret_key = S3H_OBJ.get_local_keys()
-        s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
-
-        self.log.info("Step 9: Perform basic IO operations")
-        bucket_name = "bucket-"+ str(int(time.time()))
-        self.deploy_lc_obj.basic_io_with_parity_check_enabled(s3t_obj,bucket_name)
-
-        self.log.info("Step 10: Perform S3bench IO")
-        self.deploy_lc_obj.io_workload(access_key=access_key,
-                                       secret_key=secret_key,
-                                       bucket_prefix=bucket_name)
-        self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
-
-        self.log.info("Step 11: Destroy setup")
-        self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
-                                         self.worker_node_list)
-
+    # def test_deployment(self, sns_data, sns_parity,
+    #                     sns_spare, dix_data,
+    #                     dix_parity, dix_spare,
+    #                     cvg_count, data_disk_per_cvg):
+    #     """G
+    #     This method is used for deployment with various config on N nodes
+    #     """
+    #     self.log.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
+    #                   "k8s based Cortx Deployment", len(self.worker_node_list),
+    #                   sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
+    #
+    #     self.log.info("Step 1: Perform k8s Cluster Deployment")
+    #     resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
+    #     assert_utils.assert_true(resp[0], resp[1])
+    #
+    #     self.log.info("Step 2: Taint master nodes if not already done.")
+    #     for node in self.master_node_list:
+    #         resp = self.deploy_lc_obj.validate_master_tainted(node)
+    #         if not resp:
+    #             self.deploy_lc_obj.taint_master(node)
+    #
+    #     self.log.info("Step 3: Download solution file template")
+    #     path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
+    #     self.log.info("Step 4 : Update solution file template")
+    #     resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
+    #                                               cortx_image=self.cortx_image,
+    #                                               control_lb_ip=self.control_lb_ip,
+    #                                               data_lb_ip=self.data_lb_ip,
+    #                                               sns_data=sns_data, sns_parity=sns_parity,
+    #                                               sns_spare=sns_spare, dix_data=dix_data,
+    #                                               dix_parity=dix_parity,
+    #                                               dix_spare=dix_spare, cvg_count=cvg_count,
+    #                                               data_disk_per_cvg=data_disk_per_cvg,
+    #                                               size_data_disk="20Gi",
+    #                                               size_metadata="20Gi",
+    #                                               glusterfs_size="20Gi")
+    #     assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+    #     sol_file_path = resp[1]
+    #     system_disk_dict = resp[2]
+    #
+    #     self.log.info("Step 5: Perform Cortx Cluster Deployment")
+    #     resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
+    #                                                    self.worker_node_list, system_disk_dict,
+    #                                                    self.docker_username,
+    #                                                    self.docker_password, self.git_id,
+    #                                                    self.git_token, self.git_script_tag)
+    #     assert_utils.assert_true(resp[0], resp[1])
+    #     self.log.info("Step 6: Check s3 server status")
+    #     start_time = int(time.time())
+    #     end_time = start_time + 1800  # 30 mins timeout
+    #     while int(time.time()) < end_time:
+    #         resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
+    #         if resp[0]:
+    #             self.log.info("####All the services online. Time Taken : %s",
+    #                           (int(time.time()) - start_time))
+    #             break
+    #         time.sleep(60)
+    #     assert_utils.assert_true(resp[0], resp[1])
+    #
+    #     resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
+    #     eth1_ip = resp[1].strip("'\\n'b'")
+    #
+    #     self.log.info("Step 7: Configure HAproxy on client")
+    #     ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
+    #                                             self.master_node_list[0].username,
+    #                                             self.master_node_list[0].password, eth1_ip,
+    #                                             PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
+    #
+    #     self.log.info("Step 8: Create S3 account and configure credentials")
+    #     resp = self.deploy_lc_obj.post_deployment_steps_lc()
+    #     assert_utils.assert_true(resp[0], resp[1])
+    #     access_key,secret_key = S3H_OBJ.get_local_keys()
+    #     s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
+    #
+    #     self.log.info("Step 9: Perform basic IO operations")
+    #     bucket_name = "bucket-"+ str(int(time.time()))
+    #     self.deploy_lc_obj.basic_io_with_parity_check_enabled(s3t_obj,bucket_name)
+    #
+    #     self.log.info("Step 10: Perform S3bench IO")
+    #     self.deploy_lc_obj.io_workload(access_key=access_key,
+    #                                    secret_key=secret_key,
+    #                                    bucket_prefix=bucket_name)
+    #     self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
+    #                   len(self.worker_node_list), sns_data, sns_parity, sns_spare)
+    #
+    #     self.log.info("Step 11: Destroy setup")
+    #     self.deploy_lc_obj.destroy_setup(self.master_node_list[0],
+    #                                      self.worker_node_list)
+    #
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
     @pytest.mark.tags("TEST-31875")
     def test_31875(self):
         """
-        Deployment- 3node - SNS- 4+2+0 dix 1+2+0
+        Deployment- 3node config_1
         """
         row_list = list()
         row_list.append(['3N'])
         config = DEPLOY_CFG['nodes_3']['config_1']
         self.log.info("Running 3 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -208,21 +217,23 @@ class TestMultipleConfDeploy:
     @pytest.mark.tags("TEST-29975")
     def test_29975(self):
         """
-        Deployment- 3node - SNS- 4+2+0 dix 1+2+0
+        Deployment- 3node config_2
         """
         row_list = list()
         row_list.append(['3N'])
         config = DEPLOY_CFG['nodes_3']['config_2']
         self.log.info("Running 3 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -230,21 +241,23 @@ class TestMultipleConfDeploy:
     @pytest.mark.tags("TEST-31382")
     def test_31382(self):
         """
-        Deployment- 3node - SNS- 3+3+0 dix 1+2+0
+        Deployment- 3node config_3
         """
         row_list = list()
         row_list.append(['3N'])
         config = DEPLOY_CFG['nodes_3']['config_3']
         self.log.info("Running 3 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -252,21 +265,23 @@ class TestMultipleConfDeploy:
     @pytest.mark.tags("TEST-31384")
     def test_31384(self):
         """
-        Deployment- 3node - SNS- 1+2+0 dix 1+1+0
+        Deployment- 3node config_4
         """
         row_list = list()
         row_list.append(['3N'])
         config = DEPLOY_CFG['nodes_3']['config_4']
         self.log.info("Running 3 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -274,21 +289,23 @@ class TestMultipleConfDeploy:
     @pytest.mark.tags("TEST-31385")
     def test_31385(self):
         """
-        Deployment- 4node
+        Deployment- 4node config_1
         """
         row_list = list()
         row_list.append(['4N'])
         config = DEPLOY_CFG['nodes_4']['config_1']
         self.log.info("Running 4 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -303,14 +320,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_4']['config_2']
         self.log.info("Running 4 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -325,14 +344,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_4']['config_3']
         self.log.info("Running 4 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -347,14 +368,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_4']['config_4']
         self.log.info("Running 4 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -369,14 +392,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_1']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -391,14 +416,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_2']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -413,14 +440,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_3']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -435,14 +464,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_4']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -457,14 +488,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_5']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -479,14 +512,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_5']['config_6']
         self.log.info("Running 5 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -501,14 +536,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_1']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -523,14 +560,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_2']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -545,14 +584,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_3']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -567,14 +608,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_4']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -589,14 +632,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_5']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -611,14 +656,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_6']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -633,14 +680,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_6']['config_7']
         self.log.info("Running 6 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_7'])
 
     @pytest.mark.lc
@@ -655,14 +704,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_1']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -677,14 +728,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_2']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -699,14 +752,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_3']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -721,14 +776,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_4']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -743,14 +800,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_5']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -765,14 +824,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_7']['config_6']
         self.log.info("Running 7 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -787,14 +848,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_1']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -809,14 +872,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_2']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -831,14 +896,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_3']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -853,14 +920,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_4']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -875,14 +944,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_5']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -897,14 +968,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_8']['config_6']
         self.log.info("Running 8 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -919,14 +992,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_9']['config_5']
         self.log.info("Running 9 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -941,14 +1016,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_9']['config_1']
         self.log.info("Running 9 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -963,14 +1040,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_9']['config_2']
         self.log.info("Running 9 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -985,14 +1064,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_9']['config_3']
         self.log.info("Running 9 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1007,14 +1088,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_9']['config_4']
         self.log.info("Running 9 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -1029,14 +1112,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_1']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -1052,14 +1137,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_2']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -1075,14 +1162,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_3']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1097,14 +1186,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_4']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -1119,14 +1210,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_5']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -1141,14 +1234,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_6']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -1163,14 +1258,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_7']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_7'])
 
     @pytest.mark.lc
@@ -1185,14 +1282,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_10']['config_8']
         self.log.info("Running 10 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_8'])
 
     @pytest.mark.lc
@@ -1207,20 +1306,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_4']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31588")
-    def test_31588(self):
+    @pytest.mark.tags("TEST-31788")
+    def test_31788(self):
         """
         Deployment- 12node
         """
@@ -1230,21 +1331,23 @@ class TestMultipleConfDeploy:
             config = DEPLOY_CFG['nodes_12'][num]
             self.log.info("Running 12 N with config %s+%s+%s",
                           config['sns_data'], config['sns_parity'], config['sns_spare'])
-            self.test_deployment(sns_data=config['sns_data'],
-                                 sns_parity=config['sns_parity'],
-                                 sns_spare=config['sns_spare'],
-                                 dix_data=config['dix_data'],
-                                 dix_parity=config['dix_parity'],
-                                 dix_spare=config['dix_spare'],
-                                 cvg_count=config['cvg_per_node'],
-                                 data_disk_per_cvg=config['data_disk_per_cvg'])
+            self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                               sns_parity=config['sns_parity'],
+                                               sns_spare=config['sns_spare'],
+                                               dix_data=config['dix_data'],
+                                               dix_parity=config['dix_parity'],
+                                               dix_spare=config['dix_spare'],
+                                               cvg_count=config['cvg_per_node'],
+                                               data_disk_per_cvg=config['data_disk_per_cvg'],
+                                               master_node_list=self.master_node_list,
+                                               worker_node_list=self.worker_node_list)
             row_list.append([num])
             self.deploy_lc_obj.dump_in_csv(row_list, PROV_CFG["k8s_cortx_deploy"]["report"])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31589")
-    def test_31589(self):
+    @pytest.mark.tags("TEST-31789")
+    def test_31789(self):
         """
         Deployment- 12node
         """
@@ -1253,20 +1356,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_2']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31590")
-    def test_31590(self):
+    @pytest.mark.tags("TEST-31790")
+    def test_31790(self):
         """
         Deployment- 12node
         """
@@ -1275,20 +1380,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_3']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31591")
-    def test_31591(self):
+    @pytest.mark.tags("TEST-31791")
+    def test_31791(self):
         """
         Deployment- 12node
         """
@@ -1297,20 +1404,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_4']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31592")
-    def test_31592(self):
+    @pytest.mark.tags("TEST-31792")
+    def test_31792(self):
         """
         Deployment- 12node
         """
@@ -1319,20 +1428,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_5']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31593")
-    def test_31593(self):
+    @pytest.mark.tags("TEST-31793")
+    def test_31793(self):
         """
         Deployment- 12node
         """
@@ -1341,20 +1452,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_6']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31594")
-    def test_31594(self):
+    @pytest.mark.tags("TEST-31794")
+    def test_31794(self):
         """
         Deployment- 12node
         """
@@ -1363,20 +1476,22 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_7']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_7'])
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment
-    @pytest.mark.tags("TEST-31595")
-    def test_31595(self):
+    @pytest.mark.tags("TEST-31795")
+    def test_31795(self):
         """
         Deployment- 12node
         """
@@ -1385,14 +1500,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_12']['config_8']
         self.log.info("Running 12 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_8'])
 
     @pytest.mark.lc
@@ -1407,14 +1524,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_1']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -1429,14 +1548,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_2']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -1451,14 +1572,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_3']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1473,14 +1596,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_5']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -1495,14 +1620,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_11']['config_6']
         self.log.info("Running 11 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -1517,14 +1644,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_1']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -1539,14 +1668,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_2']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -1561,14 +1692,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_3']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1583,14 +1716,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_4']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -1605,14 +1740,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_5']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -1627,14 +1764,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_13']['config_6']
         self.log.info("Running 13 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -1649,14 +1788,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_1']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -1671,14 +1812,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_2']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -1693,14 +1836,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_3']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1715,14 +1860,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_4']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -1737,14 +1884,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_5']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -1759,14 +1908,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_14']['config_6']
         self.log.info("Running 14 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])
 
     @pytest.mark.lc
@@ -1780,16 +1931,20 @@ class TestMultipleConfDeploy:
         row_list = list()
         row_list.append(['15N'])
         config = DEPLOY_CFG['nodes_15']['config_1']
-        self.log.info("Running 15 N with config %s+%s+%s",
-                      config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.log.info("Running 15 N with config %s+%s+%s , %s" ,
+                      config['sns_data'], config['sns_parity'], config['sns_spare'],
+                      self.setup_k8s_cluster_flag)
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list,
+                                           setup_k8s_cluster_flag=self.setup_k8s_cluster_flag)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
@@ -1805,14 +1960,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_15']['config_2']
         self.log.info("Running 15 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_2'])
 
     @pytest.mark.lc
@@ -1828,14 +1985,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_15']['config_3']
         self.log.info("Running 15 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_3'])
 
     @pytest.mark.lc
@@ -1851,14 +2010,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_15']['config_4']
         self.log.info("Running 15 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_4'])
 
     @pytest.mark.lc
@@ -1873,14 +2034,16 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_15']['config_5']
         self.log.info("Running 15 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_5'])
 
     @pytest.mark.lc
@@ -1895,12 +2058,14 @@ class TestMultipleConfDeploy:
         config = DEPLOY_CFG['nodes_15']['config_6']
         self.log.info("Running 15 N with config %s+%s+%s",
                       config['sns_data'], config['sns_parity'], config['sns_spare'])
-        self.test_deployment(sns_data=config['sns_data'],
-                             sns_parity=config['sns_parity'],
-                             sns_spare=config['sns_spare'],
-                             dix_data=config['dix_data'],
-                             dix_parity=config['dix_parity'],
-                             dix_spare=config['dix_spare'],
-                             cvg_count=config['cvg_per_node'],
-                             data_disk_per_cvg=config['data_disk_per_cvg'])
+        self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                           sns_parity=config['sns_parity'],
+                                           sns_spare=config['sns_spare'],
+                                           dix_data=config['dix_data'],
+                                           dix_parity=config['dix_parity'],
+                                           dix_spare=config['dix_spare'],
+                                           cvg_count=config['cvg_per_node'],
+                                           data_disk_per_cvg=config['data_disk_per_cvg'],
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_6'])

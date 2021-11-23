@@ -150,7 +150,13 @@ k8s_cortx_deploy:
     s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
     csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
     csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
-
+  setup_k8s_cluster_flag: "True"
+  setup_client_config_flag: "True"
+  run_basic_s3_io_flag: "True"
+  run_s3bench_workload_flag: "True"
+  destroy_setup_flag: "True"
+  cortx_cluster_deploy_flag: "True"
+  
 config_metallb:
   check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \
