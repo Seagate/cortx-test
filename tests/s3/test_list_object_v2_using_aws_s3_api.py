@@ -38,6 +38,7 @@ from libs.s3.s3_awscli import AWScliS3api
 class TestListObjectV2:
     """List-Object-V2 TestSuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
