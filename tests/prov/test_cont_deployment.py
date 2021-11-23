@@ -25,6 +25,7 @@ import os
 
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
+from commons.utils import assert_utils
 from config import CMN_CFG, HA_CFG, DEPLOY_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
@@ -66,11 +67,6 @@ class TestContDeployment:
             else:
                 cls.worker_node_list.append(node_obj)
 
-    def setup_method(self):
-        """
-        setup method
-        """
-
     def test_n(self):
         """
         test to run continuous deployment
@@ -79,20 +75,21 @@ class TestContDeployment:
         node = "nodes_{}".format(len(self.worker_node_list))
         config = DEPLOY_CFG[node][self.conf]
         while count > 0:
-            self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                               sns_parity=config['sns_parity'],
-                                               sns_spare=config['sns_spare'],
-                                               dix_data=config['dix_data'],
-                                               dix_parity=config['dix_parity'],
-                                               dix_spare=config['dix_spare'],
-                                               cvg_count=config['cvg_per_node'],
-                                               data_disk_per_cvg=config['data_disk_per_cvg'],
-                                               master_node_list=self.master_node_list,
-                                               worker_node_list=self.worker_node_list,
-                                               setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
-                                               cortx_cluster_deploy_flag=self.cortx_cluster_deploy_flag,
-                                               setup_client_config_flag=self.setup_client_config_flag,
-                                               destroy_setup_flag=self.destroy_setup_flag,
-                                               run_s3bench_workload_flag=self.run_s3bench_workload_flag,
-                                               run_basic_s3_io_flag=self.run_basic_s3_io_flag)
+            resp = self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
+                                                      sns_parity=config['sns_parity'],
+                                                      sns_spare=config['sns_spare'],
+                                                      dix_data=config['dix_data'],
+                                                      dix_parity=config['dix_parity'],
+                                                      dix_spare=config['dix_spare'],
+                                                      cvg_count=config['cvg_per_node'],
+                                                      data_disk_per_cvg=config['data_disk_per_cvg'],
+                                                      master_node_list=self.master_node_list,
+                                                      worker_node_list=self.worker_node_list,
+                                                      setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
+                                                      cortx_cluster_deploy_flag=self.cortx_cluster_deploy_flag,
+                                                      setup_client_config_flag=self.setup_client_config_flag,
+                                                      destroy_setup_flag=self.destroy_setup_flag,
+                                                      run_s3bench_workload_flag=self.run_s3bench_workload_flag,
+                                                      run_basic_s3_io_flag=self.run_basic_s3_io_flag)
             count = count - 1
+            assert_utils.assert_true(resp[0], resp[1])
