@@ -156,7 +156,7 @@ k8s_cortx_deploy:
   run_s3bench_workload_flag: "True"
   destroy_setup_flag: "True"
   cortx_cluster_deploy_flag: "True"
-  
+
 config_metallb:
   check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \

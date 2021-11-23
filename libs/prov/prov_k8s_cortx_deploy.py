@@ -1,4 +1,4 @@
-# !/usr/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -58,13 +58,6 @@ class ProvDeployK8sCortxLib:
         self.git_token = os.getenv("GIT_PASSWORD")
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.cortx_image = os.getenv("CORTX_IMAGE")
-        # self.setup_k8s_cluster_flag = os.getenv("setup_k8s_cluster")
-        # self.setup_client_config_flag = os.getenv("setup_client_config")
-        # self.run_basic_s3_io_flag = os.getenv("run_basic_s3_io")
-        # self.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
-        # self.collect_support_bundle_flag = os.getenv("collect_support_bundle")
-        # self.destroy_setup_flag = os.getenv("destroy_setup")
-        # self.raise_jira_flag = os.getenv("raise_jira")
         self.docker_username = os.getenv("DOCKER_USERNAME")
         self.docker_password = os.getenv("DOCKER_PASSWORD")
         self.test_config = TEST_FAILURE_CFG
@@ -648,42 +641,6 @@ class ProvDeployK8sCortxLib:
                       sort_keys=False, Dumper=noalias_dumper)
             soln.close()
         return True, filepath
-
-    # def update_lb_ip(self, filepath, data_ip: list, control_ip: list):
-    #     """
-    #     This Method is used to update the lb IP's
-    #     :Param: filepath: solution.yaml file path
-    #     :Param: data_ip: list of ip of data lb pod
-    #     :Param: control_ip: ip of data lb pod
-    #     """
-    #     with open(filepath) as soln:
-    #         conf = yaml.safe_load(soln)
-    #         parent_key = conf['solution']  # Parent key
-    #         loadbal = parent_key['common']['loadbal']
-    #         control_lb_dict = loadbal['control']
-    #         cip_dict = {}
-    #         for num, c_ip in zip(range(len(control_ip)), control_ip):
-    #             control_schema = {"ip{}".format(num + 1): c_ip}
-    #             LOGGER.debug("Control %s", control_schema)
-    #             cip_dict.update(control_schema)
-    #         control_lb_dict.update({"externalips": cip_dict})
-    #
-    #         data_lb_dict = loadbal['data']
-    #         ip_dict = {}
-    #         for num, d_ip in zip(range(len(data_ip)), data_ip):
-    #             ip_schema = {"ip{}".format(num + 1): d_ip}
-    #             LOGGER.debug("data %s", ip_schema)
-    #             ip_dict.update(ip_schema)
-    #         data_lb_dict.update({"externalips": ip_dict})
-    #         soln.close()
-    #         LOGGER.debug("Load balancer : %s", loadbal)
-    #     noalias_dumper = yaml.dumper.SafeDumper
-    #     noalias_dumper.ignore_aliases = lambda self, data: True
-    #     with open(filepath, 'w') as soln:
-    #         yaml.dump(conf, soln, default_flow_style=False,
-    #                   sort_keys=False, Dumper=noalias_dumper)
-    #         soln.close()
-    #     return True, filepath
 
     @staticmethod
     def deploy_cortx_k8s_cluster(master_node_list: list, worker_node_list: list,
