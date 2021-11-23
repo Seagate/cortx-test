@@ -36,6 +36,7 @@ SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_ad
                       "common_admin_secret"]
 PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils"]
 
+
 class TestProvK8Cortx:
 
     @classmethod
@@ -212,4 +213,37 @@ class TestProvK8Cortx:
         node_list = resp[2:]
         LOGGER.info("Identify pods and nodes are equal.")
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
+        LOGGER.info("Test Completed.")
+
+    @pytest.mark.lc
+    @pytest.mark.comp_prov
+    @pytest.mark.tags("TEST-28436")
+    def test_28436(self):
+        """
+        Verify cluster id from cluster.yaml matches with cluster.conf file.
+        """
+        LOGGER.info("Test Started.")
+        LOGGER.info("Step 1: Get all running data pods from cluster.")
+        data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+        assert_utils.assert_true(data_pod_list[0])
+        cluster_yaml_cmd = "cat " + self.deploy_cfg["cluster_yaml_path"] + " | grep id"
+        cluster_conf_cmd = "cat " + self.deploy_cfg["cluster_conf_path"] + " | grep cluster_id"
+        LOGGER.info("Step 2: Fetch Cluster ID from cluster.yaml and cluster.conf.")
+        for pod_name in data_pod_list[1]:
+            cluster_id_yaml = self.master_node_obj.execute_cmd(cmd=commands.
+                                                               K8S_POD_INTERACTIVE_CMD.
+                                                               format(pod_name,
+                                                                      cluster_yaml_cmd),
+                                                               read_lines=True)
+            assert_utils.assert_is_not_none(cluster_id_yaml)
+            cluster_id_yaml = cluster_id_yaml[0].split("\n")[0].strip().split(":")[1].strip()
+            cluster_id_conf = self.master_node_obj.execute_cmd(cmd=commands.
+                                                               K8S_POD_INTERACTIVE_CMD.
+                                                               format(pod_name,
+                                                                      cluster_conf_cmd),
+                                                               read_lines=True)
+            assert_utils.assert_is_not_none(cluster_id_conf)
+            cluster_id_conf = cluster_id_conf[0].split("\n")[0].strip().split(":")[1].strip()
+            assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
+                                             "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
