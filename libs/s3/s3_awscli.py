@@ -33,10 +33,11 @@ LOGGER = logging.getLogger(__name__)
 
 class S3LibCmd:
     """Class containing methods to implement aws cmd functionality."""
+
     def __init__(self):
         """AWS cli constructor."""
-        self.cmd_endpoint = f" --endpoint-url {S3_CFG['s3_url']}" \
-                            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
+        self.cmd_endpoint_options = f" --endpoint-url {S3_CFG['s3_url']}" \
+            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
 
     def upload_object_cli(
             self,
@@ -52,7 +53,7 @@ class S3LibCmd:
         :return: response.
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(file_path, bucket_name, object_name)
-        cmd += self.cmd_endpoint
+        cmd += self.cmd_endpoint_options
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
@@ -72,7 +73,7 @@ class S3LibCmd:
         :return: response.
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(folder_path, bucket_name, profile_name)
-        cmd += self.cmd_endpoint
+        cmd += self.cmd_endpoint_options
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
@@ -94,7 +95,7 @@ class S3LibCmd:
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(bucket_name, folder_path, profile_name)
-        cmd += self.cmd_endpoint
+        cmd += self.cmd_endpoint_options
         response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
@@ -103,10 +104,11 @@ class S3LibCmd:
 
 class AWScliS3api:
     """Class including methods related to aws cli s3api operations."""
+
     def __init__(self):
         """AWS cli s3api constructor."""
-        self.cmd_endpoint = f" --endpoint-url {S3_CFG['s3_url']}" \
-                            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
+        self.cmd_endpoint_options = f" --endpoint-url {S3_CFG['s3_url']}" \
+            f"{'' if S3_CFG['validate_certs'] else ' --no-verify-ssl'}"
 
     def create_bucket(self, bucket_name: str) -> tuple:
         """
@@ -117,7 +119,7 @@ class AWScliS3api:
         """
         LOGGER.info("Create bucket: %s", bucket_name)
         cmd_create_bkt = commands.CMD_AWSCLI_CREATE_BUCKET.format(bucket_name)
-        cmd_create_bkt += self.cmd_endpoint
+        cmd_create_bkt += self.cmd_endpoint_options
         _, output = run_local_cmd(cmd_create_bkt, chk_stderr=True)
         if bucket_name in output:
             return True, output
@@ -135,7 +137,7 @@ class AWScliS3api:
         LOGGER.info("Delete bucket: %s", bucket_name)
         cmd_del_bkt = commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name)
         cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]) if force else cmd_del_bkt
-        cmd_del_bkt += self.cmd_endpoint
+        cmd_del_bkt += self.cmd_endpoint_options
         _, output = run_local_cmd(cmd_del_bkt, chk_stderr=True)
         if bucket_name in output:
             return True, output
@@ -150,7 +152,7 @@ class AWScliS3api:
         """
         LOGGER.info("List buckets")
         bktlist = list()
-        cmd_list_bkt = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint
+        cmd_list_bkt = commands.CMD_AWSCLI_LIST_BUCKETS + self.cmd_endpoint_options
         status, output = run_local_cmd(cmd_list_bkt, chk_stderr=True)
         if status:
             bktlist = [bkt.split(-1) for bkt in output.split("\n") if bkt]
@@ -168,7 +170,7 @@ class AWScliS3api:
         """
         LOGGER.info("Download s3 object.")
         dwn_object = commands.CMD_AWSCLI_DOWNLOAD_OBJECT.format(
-            bucket_name, object_name, file_path) + self.cmd_endpoint
+            bucket_name, object_name, file_path) + self.cmd_endpoint_options
         _, output = run_local_cmd(dwn_object, chk_stderr=True)
 
         return os.path.exists(file_path), output
@@ -183,7 +185,7 @@ class AWScliS3api:
         """
         LOGGER.info("Upload  directory to S3 bucket.")
         upload_dir = commands.CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET.format(
-            directory_path, bucket_name) + self.cmd_endpoint
+            directory_path, bucket_name) + self.cmd_endpoint_options
         status, output = run_local_cmd(upload_dir, chk_stderr=True)
         upload_list = [out.split("\\r")[-1] for out in output.split("\\n") if out][:-1]
         LOGGER.info("Upload list: %s", upload_list)
@@ -208,11 +210,11 @@ class AWScliS3api:
                 else:
                     options += " --{}".format(key)
             cmd_list_v2_objects = commands.CMD_AWSCLI_LIST_OBJECTS_V2_OPTIONS_BUCKETS.format(
-                bucket_name, options) + self.cmd_endpoint
+                bucket_name, options) + self.cmd_endpoint_options
             status, output = run_local_cmd(cmd_list_v2_objects, chk_stderr=True)
         else:
             cmd_list_v2_objects = commands.CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS.format(
-                bucket_name) + self.cmd_endpoint
+                bucket_name) + self.cmd_endpoint_options
             status, output = run_local_cmd(cmd_list_v2_objects, chk_stderr=True)
         output = ast.literal_eval(ast.literal_eval(output.strip('b'))) if output else output
         LOGGER.info("list-objects-v2: %s", output)
