@@ -729,7 +729,7 @@ class ProvDeployK8sCortxLib:
                 # LOGGER.debug("resp : %s", resp)
             return True, resp
 
-        except Exception as error:
+        except BaseException as error:
             return False, error
 
     # use check_cluster_status from ha_common_libs once hctl status issue is resolved,
@@ -996,6 +996,7 @@ class ProvDeployK8sCortxLib:
                 return False
         return True
 
+    # pylint: disable=too-many-arguments, too-many-locals
     def test_deployment(self, sns_data, sns_parity,
                         sns_spare, dix_data,
                         dix_parity, dix_spare,
@@ -1004,16 +1005,21 @@ class ProvDeployK8sCortxLib:
         """
         This method is used for deployment with various config on N nodes
         """
-        setup_k8s_cluster_flag = kwargs.get("setup_k8s_cluster_flag",
-                                            PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
-        cortx_cluster_deploy_flag = kwargs.get("cortx_cluster_deploy_flag",
-                                               PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
-        setup_client_config_flag = kwargs.get("setup_client_config_flag",
-                                              PROV_CFG['k8s_cortx_deploy']['setup_client_config_flag'])
-        run_basic_s3_io_flag = kwargs.get("run_basic_s3_io_flag",
-                                          PROV_CFG['k8s_cortx_deploy']['run_basic_s3_io_flag'])
-        run_s3bench_workload_flag = kwargs.get("run_s3bench_workload_flag",
-                                               PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
+        setup_k8s_cluster_flag = \
+            kwargs.get("setup_k8s_cluster_flag",
+                       PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
+        cortx_cluster_deploy_flag = \
+            kwargs.get("cortx_cluster_deploy_flag",
+                       PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
+        setup_client_config_flag = \
+            kwargs.get("setup_client_config_flag",
+                       PROV_CFG['k8s_cortx_deploy']['setup_client_config_flag'])
+        run_basic_s3_io_flag = \
+            kwargs.get("run_basic_s3_io_flag",
+                       PROV_CFG['k8s_cortx_deploy']['run_basic_s3_io_flag'])
+        run_s3bench_workload_flag = \
+            kwargs.get("run_s3bench_workload_flag",
+                       PROV_CFG['k8s_cortx_deploy']['run_s3bench_workload_flag'])
         destroy_setup_flag = kwargs.get("destroy_setup_flag",
                                         PROV_CFG['k8s_cortx_deploy']['destroy_setup_flag'])
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "

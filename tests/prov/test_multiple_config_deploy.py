@@ -89,7 +89,7 @@ class TestMultipleConfDeploy:
         """
         Teardown method
         """
-        # TODO collect support bundle.
+        # TODO: collect support bundle
 
     @pytest.mark.lc
     @pytest.mark.cluster_deployment

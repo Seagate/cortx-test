@@ -85,11 +85,17 @@ class TestContDeployment:
                                                       data_disk_per_cvg=config['data_disk_per_cvg'],
                                                       master_node_list=self.master_node_list,
                                                       worker_node_list=self.worker_node_list,
-                                                      setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
-                                                      cortx_cluster_deploy_flag=self.cortx_cluster_deploy_flag,
-                                                      setup_client_config_flag=self.setup_client_config_flag,
-                                                      destroy_setup_flag=self.destroy_setup_flag,
-                                                      run_s3bench_workload_flag=self.run_s3bench_workload_flag,
-                                                      run_basic_s3_io_flag=self.run_basic_s3_io_flag)
+                                                      setup_k8s_cluster_flag=
+                                                      self.setup_k8s_cluster_flag,
+                                                      cortx_cluster_deploy_flag=
+                                                      self.cortx_cluster_deploy_flag,
+                                                      setup_client_config_flag=
+                                                      self.setup_client_config_flag,
+                                                      destroy_setup_flag=
+                                                      self.destroy_setup_flag,
+                                                      run_s3bench_workload_flag=
+                                                      self.run_s3bench_workload_flag,
+                                                      run_basic_s3_io_flag=
+                                                      self.run_basic_s3_io_flag)
             count = count - 1
             assert_utils.assert_true(resp[0], resp[1])
