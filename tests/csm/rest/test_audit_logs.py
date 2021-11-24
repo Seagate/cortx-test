@@ -23,9 +23,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import logging
 import os
 import time
+import logging
 from builtins import round
 from time import perf_counter_ns
 
@@ -43,7 +43,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import run_remote_cmd
 from config import CMN_CFG, PROV_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.csm.rest.csm_rest_audit_logs import RestAuditLogs

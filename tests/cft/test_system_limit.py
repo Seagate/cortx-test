@@ -714,10 +714,10 @@ class TestS3IOSystemLimits:
                     res = S3_TEST_OBJ.object_info(bucket_name, object_name)
                     assert_utils.assert_true(res[0], res[1])
                     assert_utils.assert_in("Metadata", res[1], res[1])
-                    assert_utils.assert_in(m_key, res[1]["Metadata"], res[1]["Metadata"])
+                    assert_utils.assert_in(m_key.lower(), res[1]["Metadata"], res[1]["Metadata"])
                     assert_utils.assert_equals(m_value,
-                                               res[1]["Metadata"][m_key],
-                                               res[1]["Metadata"][m_key])
+                                               res[1]["Metadata"][m_key.lower()],
+                                               res[1]["Metadata"][m_key.lower()])
                 else:
                     self.log.error(f"Could not see exception while uploading object with "
                                    f"metadata size of {metadata} > {metadata_limit}")

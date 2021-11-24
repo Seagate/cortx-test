@@ -27,8 +27,10 @@ import os
 import pytest
 
 from commons import configmanager
+from commons import constants as const
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
@@ -60,14 +62,25 @@ class TestIntelISAIO:
         cls.node_list = []
         cls.hlt_list = []
         cls.reset_s3config = False
+        cls.master_node_list = []
+        cls.worker_node_list = []
         for node in range(cls.num_nodes):
             cls.host = CMN_CFG["nodes"][node]["hostname"]
             cls.uname = CMN_CFG["nodes"][node]["username"]
             cls.passwd = CMN_CFG["nodes"][node]["password"]
             cls.hlt_list.append(Health(hostname=cls.host, username=cls.uname,
                                        password=cls.passwd))
-            cls.node_list.append(Node(hostname=cls.host,
-                                      username=cls.uname, password=cls.passwd))
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR \
+                    and CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+                cls.node_list.append(Node(hostname=cls.host,
+                                          username=cls.uname, password=cls.passwd))
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+                node_obj = LogicalNode(hostname=cls.host, username=cls.uname, password=cls.passwd)
+                if CMN_CFG["nodes"][node]["node_type"].lower() == "master":
+                    cls.master_node_list.append(node_obj)
+                else:
+                    cls.worker_node_list.append(node_obj)
+
             cls.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestIntelISAIO")
             if not os.path.exists(cls.test_dir_path):
                 os.makedirs(cls.test_dir_path)
@@ -79,6 +92,7 @@ class TestIntelISAIO:
         """
         self.log.info("STARTED: Setup Operations")
         self.reset_s3config = False
+        # TODO Fix
         self.log.info("Checking if all nodes are reachable and PCS clean.")
         for hlt_obj in self.hlt_list:
             res = hlt_obj.check_node_health()
@@ -92,18 +106,25 @@ class TestIntelISAIO:
         """
         self.log.info("STARTED: Teardown Operations")
         if self.reset_s3config:
-            self.log.info("Set S3_MOTR_IS_READ_VERIFY to false on all the %s nodes", self.num_nodes)
-            for node in range(self.num_nodes):
-                S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
-                                        parameter=self.test_config["test_basic_io"][
-                                            "parity_check_flag"],
-                                        value=False,
-                                        host=CMN_CFG["nodes"][node]["hostname"],
-                                        username=CMN_CFG["nodes"][node]["username"],
-                                        password=CMN_CFG["nodes"][node]["password"]
-                                        )
-            self.log.info("Restart the cluster")
-            self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+                self.log.info("Set S3_MOTR_IS_READ_VERIFY to false on all the %s nodes",
+                              self.num_nodes)
+                for node in range(self.num_nodes):
+                    S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
+                                            parameter=self.test_config["test_basic_io"][
+                                                "parity_check_flag"],
+                                            value=False,
+                                            host=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"]
+                                            )
+                self.log.info("Restart the cluster")
+                self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+                # TODO : restart s3 and motr services
+                self.log.info(
+                    "Procedure yet to be defined for restarting services in the containers")
 
         self.log.info("Deleting all buckets/objects created during TC execution")
         resp = self.s3t_obj.bucket_list()
@@ -165,26 +186,36 @@ class TestIntelISAIO:
         self.log.info("Delete downloaded file")
         system_utils.remove_file(file_path)
 
-    def basic_io_with_parity_check_enabled(self, bucket_name, skip_parity_check: bool = True):
+    def basic_io_with_parity_check_enabled(self, bucket_name, parity_check: bool = True):
         """
         Set the read verify flag to true
         Restart the S3 and motr services
         """
+        self.log.info("STARTED: Basic IO with parity check")
+        self.log.info("Parity Check :%s", parity_check)
+
         basic_io_config = self.test_config["test_basic_io"]
 
-        if skip_parity_check:
-            self.log.info("Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
-            for node in range(self.num_nodes):
-                S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
-                                        parameter=basic_io_config["parity_check_flag"],
-                                        value=True,
-                                        host=CMN_CFG["nodes"][node]["hostname"],
-                                        username=CMN_CFG["nodes"][node]["username"],
-                                        password=CMN_CFG["nodes"][node]["password"]
-                                        )
-                self.reset_s3config = True
-            self.log.info("Step 2: Restart the cluster")
-            self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
+        if parity_check:
+            if CMN_CFG["product_family"] == const.PROD_FAMILY_LR and \
+                    CMN_CFG["product_type"] == const.PROD_TYPE_NODE:
+                self.log.info(
+                    "Step 1: Set the S3_MOTR_IS_READ_VERIFY flag to true on all the nodes")
+                for node in range(self.num_nodes):
+                    S3H_OBJ.update_s3config(section="S3_MOTR_CONFIG",
+                                            parameter=basic_io_config["parity_check_flag"],
+                                            value=True,
+                                            host=CMN_CFG["nodes"][node]["hostname"],
+                                            username=CMN_CFG["nodes"][node]["username"],
+                                            password=CMN_CFG["nodes"][node]["password"]
+                                            )
+                    self.reset_s3config = True
+                self.log.info("Step 2: Restart the cluster")
+                self.ha_obj.restart_cluster(self.node_list[0], self.hlt_list)
+            elif CMN_CFG["product_family"] == const.PROD_FAMILY_LC:
+                # TODO : restart s3 and motr services
+                self.log.info(
+                    "Procedure yet to be defined for restarting services within containers")
 
         self.log.info("Step 3: Creating bucket %s", bucket_name)
         resp = self.s3t_obj.create_bucket(bucket_name)
@@ -203,11 +234,13 @@ class TestIntelISAIO:
         self.log.info("Step 5: Delete bucket %s", bucket_name)
         resp = self.s3t_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("ENDED: Basic IO with parity check")
 
     def io_workload(self, bucket_prefix):
         """
         S3 bench workload test executed for each of Erasure coding config
         """
+        self.log.info("STARTED: S3 bench workload test")
         workloads = [
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
             "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
@@ -232,8 +265,16 @@ class TestIntelISAIO:
             assert not s3bench.check_log_file_error(resp[1]), \
                 f"S3bench workload for object size {workload} failed. " \
                 f"Please read log file {resp[1]}"
+            self.log.info("ENDED: S3 bench workload test")
 
+    # Ordering maintained for LR2
+    # Order - 1  TEST-23540
+    # Order - 2  TEST-24673
+    # Order - 3  TEST-25016
+    # Order - 4  TEST-22901
+    # Order - 5  TEST-26959
     @pytest.mark.run(order=6)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26963")
     def test_26963(self):
@@ -246,46 +287,8 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26963")
         self.basic_io_with_parity_check_enabled(bucket_name)
 
-    @pytest.mark.run(order=9)
-    @pytest.mark.data_durability
-    @pytest.mark.tags("TEST-26964")
-    def test_26964(self):
-        """ Basic IO test
-            N+K+S: 3+2+0
-            CVG’s per node : 2
-            Data Devices per CVG: 3
-            Metadata Device per CVG : 1
-        """
-        bucket_name = self.test_config["test_bucket_prefix"] + str("26964")
-        self.basic_io_with_parity_check_enabled(bucket_name)
-
-    @pytest.mark.run(order=13)
-    @pytest.mark.data_durability
-    @pytest.mark.tags("TEST-26967")
-    def test_26967(self):
-        """ Basic IO test
-            N+K+S: 8+4+0
-            CVG’s per node : 2
-            Data Devices per CVG: 3
-            Metadata Device per CVG : 1
-        """
-        bucket_name = self.test_config["test_bucket_prefix"] + str("26967")
-        self.basic_io_with_parity_check_enabled(bucket_name)
-
-    @pytest.mark.run(order=17)
-    @pytest.mark.data_durability
-    @pytest.mark.tags("TEST-26968")
-    def test_26968(self):
-        """ Basic IO test
-            N+K+S: 10+5+0
-            CVG’s per node : 2
-            Data Devices per CVG: 3
-            Metadata Device per CVG : 1
-        """
-        bucket_name = self.test_config["test_bucket_prefix"] + str("269638")
-        self.basic_io_with_parity_check_enabled(bucket_name)
-
     @pytest.mark.run(order=7)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26969")
     def test_26969(self):
@@ -299,7 +302,24 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26969")
         self.io_workload(bucket_name)
 
+    # Order 8 : TEST-26960 (deployment test)
+
+    @pytest.mark.run(order=9)
+    @pytest.mark.lr
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-26964")
+    def test_26964(self):
+        """ Basic IO test
+            N+K+S: 3+2+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("26964")
+        self.basic_io_with_parity_check_enabled(bucket_name)
+
     @pytest.mark.run(order=10)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26970")
     def test_26970(self):
@@ -313,7 +333,24 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26970")
         self.io_workload(bucket_name)
 
+    # Order 11 : TEST-26973 (Placeholder for degraded test - Marked R2 Future)
+    # Order 12 : TEST-26961
+    @pytest.mark.run(order=13)
+    @pytest.mark.lr
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-26967")
+    def test_26967(self):
+        """ Basic IO test
+            N+K+S: 8+4+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("26967")
+        self.basic_io_with_parity_check_enabled(bucket_name)
+
     @pytest.mark.run(order=14)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26971")
     def test_26971(self):
@@ -327,7 +364,24 @@ class TestIntelISAIO:
         bucket_name = self.test_config["test_bucket_prefix"] + str("26971")
         self.io_workload(bucket_name)
 
+    # Order 15 : TEST-26974 (Placeholder for degraded test - Marked R2 Future)
+    # Order 16 : TEST-26962
+    @pytest.mark.run(order=17)
+    @pytest.mark.lr
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-26968")
+    def test_26968(self):
+        """ Basic IO test
+            N+K+S: 10+5+0
+            CVG’s per node : 2
+            Data Devices per CVG: 3
+            Metadata Device per CVG : 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("269638")
+        self.basic_io_with_parity_check_enabled(bucket_name)
+
     @pytest.mark.run(order=18)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-26972")
     def test_26972(self):
@@ -339,4 +393,160 @@ class TestIntelISAIO:
         Metadata Device per CVG : 1
         """
         bucket_name = self.test_config["test_bucket_prefix"] + str("26972")
+        self.io_workload(bucket_name)
+
+    # Ordering maintained for K8s based Cortx
+    # Order 1 -  TEST-29485 (Deployment test)
+    @pytest.mark.run(order=2)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29486")
+    def test_29486(self):
+        """ Basic IO test
+            3 Node Cluster
+            Data Pool : NKS : 4+2+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29486")
+        self.basic_io_with_parity_check_enabled(bucket_name, parity_check=False)
+
+    @pytest.mark.run(order=3)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29487")
+    def test_29487(self):
+        """ S3bench workload test
+            3 Node Cluster
+            Data Pool : NKS : 4+2+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29487")
+        self.io_workload(bucket_name)
+
+    # Order 4 -  TEST-29488 (Deployment test)
+    @pytest.mark.run(order=5)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29489")
+    def test_29489(self):
+        """ Basic IO test
+            5 Node Cluster
+            Data Pool : NKS : 10+5+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 3
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29489")
+        self.basic_io_with_parity_check_enabled(bucket_name, parity_check=False)
+
+    @pytest.mark.run(order=6)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29490")
+    def test_29490(self):
+        """ S3Bench workload test
+            5 Node Cluster
+            Data Pool : NKS : 10+5+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 3
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29490")
+        self.io_workload(bucket_name)
+
+    # Order 7 -  TEST-29491 (Deployment test)
+    @pytest.mark.run(order=8)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29492")
+    def test_29492(self):
+        """ Basic IO test
+            5 Node Cluster
+            Data Pool : NKS : 6+4+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29492")
+        self.basic_io_with_parity_check_enabled(bucket_name, parity_check=False)
+
+    @pytest.mark.run(order=9)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29493")
+    def test_29493(self):
+        """  S3bench workload test
+            5 Node Cluster
+            Data Pool : NKS : 6+4+0
+            Metadata Pool : NKS : 1+2+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29493")
+        self.io_workload(bucket_name)
+
+    # Order 10 -  TEST-29494 (Deployment test)
+    @pytest.mark.run(order=11)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29495")
+    def test_29495(self):
+        """ Basic IO test
+            16 Node Cluster
+            Data Pool : NKS : 8+8+0
+            Metadata Pool : NKS : 1+8+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29495")
+        self.basic_io_with_parity_check_enabled(bucket_name, parity_check=False)
+
+    @pytest.mark.run(order=12)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29496")
+    def test_29496(self):
+        """ S3bench workload test
+            16 Node Cluster
+            Data Pool : NKS : 8+8+0
+            Metadata Pool : NKS : 1+8+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29496")
+        self.io_workload(bucket_name)
+
+    # Order 13 -  TEST-29497 (Deployment test)
+    @pytest.mark.run(order=14)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29498")
+    def test_29498(self):
+        """ Basic IO test
+            16 Node Cluster
+            Data Pool : NKS : 16+4+0
+            Metadata Pool : NKS : 1+4+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29498")
+        self.basic_io_with_parity_check_enabled(bucket_name, parity_check=False)
+
+    @pytest.mark.run(order=15)
+    @pytest.mark.lc
+    @pytest.mark.data_durability
+    @pytest.mark.tags("TEST-29499")
+    def test_29499(self):
+        """ S3bench workload test
+            16 Node Cluster
+            Data Pool : NKS : 16+4+0
+            Metadata Pool : NKS : 1+4+0
+            No of CVG per node: 2
+            No of data disk per CVG : Min 1
+        """
+        bucket_name = self.test_config["test_bucket_prefix"] + str("29499")
         self.io_workload(bucket_name)

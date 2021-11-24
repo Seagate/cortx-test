@@ -4,5 +4,46 @@ test_1914:
     reset_access_key: "false" 
 test_1915:
   response_msg:
-    error_code: "4101"
-    message: "Access denied. Verify account name."   
+    error_code: 4101
+    message_id: "Access denied for account"
+    message: "Access denied. Cannot modify another S3 account."
+test_28924:
+  response_msg:
+    error_code: 4099
+    message_id: "Invalid request body"
+    message: "Invalid request body: {'secret_key': ['Length must be between 8 and 40.']}"
+test_28773:
+  response_msg:
+    error_code: 4099
+    message_id: "Invalid request body"
+    message: "Invalid request body: {'access_key': ['Access key can only contain Alphanumeric and _ .Length Must be between 16-128 Characters']}"
+test_28925:
+  response_msg:
+    error_code: 4099
+    message_id: "NA"
+    message: 'Only access_key or secret_key is provided.'
+test_28926:
+  response_msg:
+    error_code: 4099
+    message_id: "NA"
+    message: 'Only access_key or secret_key is provided.'
+test_28927:
+  response_msg:
+    error_code: 12288
+    message_id: "EntityAlreadyExists"
+    message: 'The request was rejected because it attempted to create an account that already exists.'
+test_28928:
+  response_msg:
+    error_code: 12288
+    message_id: "EmailAlreadyExists"
+    message: 'The request was rejected because account with this email already exists.'
+test_28929:
+  response_msg:
+    error_code: 12288
+    message_id: "AccessKeyAlreadyExists"
+    message: 'The request was rejected because account with this access key already exists.'
+test_28931:
+  response_msg:
+    error_code: 12288
+    message_id: "MaxAccountLimitExceeded"
+    message: 'The request was rejected because maximum limit(i.e 1000) of account creation has exceeded.'

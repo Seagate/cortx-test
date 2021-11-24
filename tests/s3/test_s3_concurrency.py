@@ -34,8 +34,8 @@ from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.config_utils import get_config
-from config import S3CMD_CNF
-from config import S3_CFG
+from config.s3 import S3CMD_CNF
+from config.s3 import S3_CFG
 from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
@@ -55,7 +55,7 @@ class TestS3Concurrency:
         """
         self.log = logging.getLogger(__name__)
         self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3cmdt_obj = S3CmdTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3cmdt_obj = S3CmdTestLib()
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "concurrency-{}".format(time.perf_counter_ns())
         self.bucket_url = "s3://{}".format(self.bucket_name)
@@ -317,6 +317,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7954")
     @CTFailOn(error_handler)
     def test_existing_objects_being_overwritten_by_multiple_client_2128(self):
@@ -351,6 +352,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7962")
     @CTFailOn(error_handler)
     def test_obj_download_triggered_from_client_and_delete_triggered_from_other_client_2129(
@@ -387,6 +389,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7956")
     @CTFailOn(error_handler)
     def test_object_download_in_progress_on_one_client_delete_bucket_triggered_from_other_2130(
@@ -425,6 +428,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7957")
     @CTFailOn(error_handler)
     def test_parallel_bucket_creation_of_same_name_from_two_different_clients_2131(
@@ -452,6 +456,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7958")
     @CTFailOn(error_handler)
     def test_parallel_deletion_of_same_object_from_two_different_clients_2132(
@@ -482,6 +487,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7959")
     @CTFailOn(error_handler)
     def test_upload_object_to_bucket_from_one_client_and_parallel_delete_bkt_from_other_client_2133(
@@ -522,6 +528,7 @@ class TestS3Concurrency:
             "try to delete the same bucket from other s3 client")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7960")
     @CTFailOn(error_handler)
     def test_parallel_deletion_of_bucket_from_two_different_clients_2134(self):
@@ -551,6 +558,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7961")
     @CTFailOn(error_handler)
     def test_put_object_through_one_s3_client_try_deleting_it_from_other_client_2135(
@@ -584,6 +592,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7963")
     @CTFailOn(error_handler)
     def test_download_an_already_existing_obj_from_one_client_parallel_overwrite_it_2136(

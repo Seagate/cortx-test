@@ -87,6 +87,7 @@ class TestPostDeploySingleNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22639")
     @CTFailOn(error_handler)
     def test_verify_services_ports_single_node_vm(self):
@@ -124,6 +125,7 @@ class TestPostDeploySingleNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22858")
     @CTFailOn(error_handler)
     def test_confstore_validate_single_node(self):
@@ -149,6 +151,7 @@ class TestPostDeploySingleNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.singlenode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22965")
     @CTFailOn(error_handler)
     def test_ntpconfg_validate_single_node(self):
@@ -293,6 +296,7 @@ class TestPostDeployMultiNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.multinode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-21919")
     @CTFailOn(error_handler)
     def test_verify_services_multi_node_vm(self):
@@ -355,6 +359,7 @@ class TestPostDeployMultiNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.multinode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-21717")
     @CTFailOn(error_handler)
     def test_confstore_validate_multi_node(self):
@@ -381,6 +386,7 @@ class TestPostDeployMultiNode:
 
     @pytest.mark.cluster_management_ops
     @pytest.mark.multinode
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-21736")
     @CTFailOn(error_handler)
     def test_ntpconfg_validate_multi_node(self):

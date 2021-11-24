@@ -32,6 +32,7 @@ from commons.utils import assert_utils
 from commons.utils import system_utils
 from config import CMN_CFG, PROV_CFG
 from libs.csm.csm_setup import CSMConfigsCheck
+from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3.cortxcli_test_lib import CortxCliTestLib
 
 LOGGER = logging.getLogger(__name__)
