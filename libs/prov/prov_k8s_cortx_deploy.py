@@ -996,7 +996,7 @@ class ProvDeployK8sCortxLib:
                 return False
         return True
 
-    # pylint: disable=R0904
+    # pylint: disable=R0915
     # pylint: disable=too-many-arguments,too-many-locals
     def test_deployment(self, sns_data, sns_parity,
                         sns_spare, dix_data,
