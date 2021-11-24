@@ -53,7 +53,7 @@ class MotrCoreK8s():
         """
         Returns all the cortx nodes endpoints in a dict format
         """
-        data_pod = self.get_data_pod_list()[0]
+        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
         node_dict = {}
         if self.cortx_node_list is None:
             self.cortx_node_list = []
@@ -96,7 +96,7 @@ class MotrCoreK8s():
         :returns: Primary(RC) node name in the cluster
         :rtype: str
         """
-        data_pod = self.get_data_pod_list()[0]
+        data_pod = self.node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)[1]
         cmd = " | awk -F ' '  '/(RC)/ { print $1 }'"
         primary_cortx_node = self.node_obj.send_k8s_cmd(
             operation="exec", pod=data_pod, namespace=common_const.NAMESPACE,
