@@ -362,7 +362,7 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
-    GB = MB * MB
+    GB = MB * KB
 
 
 # Support Bundle

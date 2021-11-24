@@ -24,6 +24,7 @@ Utility methods written for use accross all the locust test scenarios
 import logging
 import os
 import time
+from distutils.util import strtobool
 
 import boto3
 from boto3.exceptions import Boto3Error
@@ -57,8 +58,12 @@ class LocustUtils:
             LOCUST_CFG['default']['SECRET_KEY'])
         endpoint_url = os.getenv(
             'ENDPOINT_URL', LOCUST_CFG['default']['ENDPOINT_URL'])
-        s3_cert_path = os.getenv(
-            'CA_CERT', LOCUST_CFG['default']['S3_CERT_PATH'])
+        self.use_ssl = bool(strtobool(os.getenv('USE_SSL')))
+        if os.getenv('CA_CERT').lower() == "false":
+            self.s3_cert_path = False
+        else:
+            self.s3_cert_path = os.getenv('CA_CERT')
+        LOGGER.info("use_ssl: %s s3_cert_path: %s", self.use_ssl, self.s3_cert_path)
         max_pool_connections = int(
             LOCUST_CFG['default']['MAX_POOL_CONNECTIONS'])
         self.bucket_list = list()
@@ -66,7 +71,8 @@ class LocustUtils:
 
         self.s3_client = session.client(
             service_name="s3",
-            verify=s3_cert_path,
+            use_ssl=self.use_ssl,
+            verify=self.s3_cert_path,
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             endpoint_url=endpoint_url,
@@ -74,7 +80,8 @@ class LocustUtils:
 
         self.s3_resource = session.resource(
             service_name="s3",
-            verify=s3_cert_path,
+            use_ssl=self.use_ssl,
+            verify=self.s3_cert_path,
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             endpoint_url=endpoint_url,
