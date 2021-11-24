@@ -16,6 +16,7 @@ pipeline {
 		Platform_Type = 'VM'
 		Server_Type = 'SMC'
 		Enclosure_Type = '5U84'
+		Num_Nodes = "${NUM_NODES}"
 		DB_Update = false
 		Current_TP = "None"
 		Sanity_Failed = true
@@ -56,7 +57,7 @@ deactivate
 			steps{
 				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
-python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${env.NUM_NODES} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
+python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -n=${Num_Nodes} -s=${Setup_Type} -n=${env.NUM_NODES} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
 '''
 }
