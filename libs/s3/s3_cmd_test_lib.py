@@ -29,7 +29,6 @@ from commons import errorcodes as err
 from commons.exceptions import CTException
 from commons.utils.system_utils import create_file
 from config.s3 import S3_CFG
-from libs.s3 import ACCESS_KEY, SECRET_KEY
 from libs.s3.s3_awscli import S3LibCmd
 
 LOGGER = logging.getLogger(__name__)
@@ -37,33 +36,6 @@ LOGGER = logging.getLogger(__name__)
 
 class S3CmdTestLib(S3LibCmd):
     """Class initialising s3 connection and including methods for s3 using CLI."""
-
-    def __init__(self,
-                 access_key: str = ACCESS_KEY,
-                 secret_key: str = SECRET_KEY,
-                 endpoint_url: str = S3_CFG["s3_url"],
-                 s3_cert_path: str = S3_CFG["s3_cert_path"],
-                 **kwargs) -> None:
-        """
-        Method to initializes members of S3CmdTestLib and its parent class.
-
-        :param access_key: access key.
-        :param secret_key: secret key.
-        :param endpoint_url: endpoint url.
-        :param s3_cert_path: s3 certificate path.
-        :param region: region.
-        :param aws_session_token: aws_session_token.
-        :param debug: debug mode.
-        """
-        kwargs["region"] = kwargs.get("region", S3_CFG["region"])
-        kwargs["aws_session_token"] = kwargs.get("aws_session_token", None)
-        kwargs["debug"] = kwargs.get("debug", S3_CFG["debug"])
-        super().__init__(
-            access_key,
-            secret_key,
-            endpoint_url,
-            s3_cert_path,
-            **kwargs)
 
     def object_upload_cli(
             self,

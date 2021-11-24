@@ -67,9 +67,9 @@ single-node:
   cluster_start_delay: 180
 
 system_ntp:
-  ntp_data: ['time_server:', 'time_zone:']
-  timeserver: ['10.30.127.102', 'time.seagate.com']
-  timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
+    ntp_data: ['time_server:', 'time_zone:']
+    timeserver: ['10.30.127.102', 'time.seagate.com']
+    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
 
 deploy_ff:
   deployment_template: "config/prov/three_node_config.ini"
@@ -131,6 +131,8 @@ k8s_cortx_deploy:
   pem_file_path: "/root/cortx-k8s/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/ssl-cert/s3.seagate.com.pem"
   k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
+  cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
+  cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
     openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
     consul: 'hashicorp/consul:1.10.0'
