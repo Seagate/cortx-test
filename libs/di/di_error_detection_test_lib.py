@@ -28,7 +28,7 @@ from libs.di.di_feature_control import DIFeatureControl
 from commons.constants import const
 
 
-class DIErrorDetectionLib:
+class DIErrorDetection:
     """
     class having lib methods for DI
     error detection
@@ -91,3 +91,5 @@ class DIErrorDetectionLib:
         if write_flag[0] and read_flag[0] and integrity_flag[0]:
             skip_mark = True
         return skip_mark
+
+

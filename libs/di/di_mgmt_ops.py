@@ -272,3 +272,16 @@ class ManagementOPs:
             bkts = [cli.create_bucket('{}bucket{}'.format(k, i)) for i in
                     range(1, maxbuckets + 1)]
             buckets[k] = bkts
+    
+    @classmethod
+    def create_s3_user_csm_rest(cls, user_name, passwd):
+        udict = dict()
+        s3acc_obj = RestS3user()
+        resp = s3acc_obj.create_an_account(user_name, passwd)
+        assert_utils.assert_equal(resp.status_code, 200, 'S3 account user not created.')
+        acc_details = json.loads(resp.text)
+        LOGGER.info("Created s3 account %s", user_name)
+        udict.update({'accesskey': acc_details["access_key"]})
+        udict.update({'secretkey': acc_details["secret_key"]})
+        return udict
+
