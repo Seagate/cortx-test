@@ -993,8 +993,8 @@ class IamTestLib(IamLib):
 
         return status, temp_auth_dict
 
-    @staticmethod
     def change_user_password(
+            self,
             old_pwd: str = None,
             new_pwd: str = None) -> tuple:
         """
@@ -1005,13 +1005,8 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Change current IAM user's password")
-            super().change_password(old_password=old_pwd,
-                                    new_password=new_pwd)
-        except (self.iam.exceptions.PasswordPolicyViolationException,
-                self.iam.exceptions.NoSuchEntityException,
-                self.iam.exceptions.InvalidUserTypeException,
-                ClientError,
-                Exception) as error:
+            self.change_password(old_pwd, new_pwd)
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.change_user_password.__name__,
                          error)

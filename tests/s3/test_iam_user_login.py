@@ -153,7 +153,6 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_auth
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
@@ -419,13 +418,13 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_auth
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)
     def test_2858(self):
         """Create a login profile for the existing IAM user."""
-        self.log.info("STARTED: Create a login profile for the existing IAM user")
+        self.log.info(
+            "STARTED: Create a login profile for the existing IAM user")
         resp = self.iam_test_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
         resp = self.iam_test_obj.create_user_login_profile(

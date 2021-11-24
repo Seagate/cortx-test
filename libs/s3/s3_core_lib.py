@@ -24,9 +24,9 @@
 
 import os
 import logging
-from typing import Union
 import boto3
 import boto3.s3
+from typing import Union
 from botocore.config import Config
 
 from config.s3 import S3_CFG

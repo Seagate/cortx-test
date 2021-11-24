@@ -27,16 +27,21 @@ from multiprocessing import Process, Manager
 
 import logging
 import pytest
+from commons.exceptions import CTException
 from commons.constants import const
 from commons import commands as cmd
 from commons.ct_fail_on import CTFailOn
 from commons.utils.system_utils import run_remote_cmd
 from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_false, assert_true
+from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
 from config import CMN_CFG as CM_CFG
-from config.s3 import S3_CFG
-from libs.s3 import S3H_OBJ
+from libs.s3 import S3H_OBJ, S3_CFG
+from commons.params import LOG_DIR
+from commons.utils import support_bundle_utils as sb
+from commons.utils import system_utils
+from commons.utils import assert_utils
 
 manager = Manager()
 
@@ -68,11 +73,7 @@ class TestSupportBundle:
         cls.m0postfix = "m0trace"
         cls.common_dir = "s3"
         cls.log.info("ENDED: Setup operations")
-        cls.host = CM_CFG["nodes"][0]["host"]
-        cls.uname = CM_CFG["nodes"][0]["username"]
-        cls.passwd = CM_CFG["nodes"][0]["password"]
-        cls.node_obj = Node(hostname=cls.host, username=cls.uname,
-                            password=cls.passwd)
+        cls.bundle_dir = os.path.join(LOG_DIR, "latest", "support_bundle")
 
     def setup_method(self):
         """
@@ -85,6 +86,10 @@ class TestSupportBundle:
         self.pysftp_obj = self.host_obj.open_sftp()
         self.bundle_prefix = "auto_bundle_{}"
         self.common_dir = "s3"
+        if system_utils.path_exists(self.bundle_dir):
+            self.log.info("Removing existing directory %s", self.bundle_dir)
+            system_utils.remove_dirs(self.bundle_dir)
+        system_utils.make_dirs(self.bundle_dir)
 
     def create_support_bundle(
             self,
@@ -511,9 +516,8 @@ class TestSupportBundle:
             resp = self.create_support_bundle(
                 bundle_name, remote_path, hostname)
             assert_true(resp[0], resp[1])
-            resp = node_obj.path_exists(tar_file_path)
-            assert_true(resp, f"Support bundle does not exist at "
-                              f"{tar_file_path} on node {hostname}")
+            resp = S3H_OBJ.is_s3_server_path_exists(tar_file_path, host=hostname)
+            assert_true(resp[0], resp[1])
             self.log.info(
                 "Step : Created support bundle %s on node %s",
                 bundle_tar_name, hostname)
@@ -1004,3 +1008,17 @@ class TestSupportBundle:
             "Step 4 : Verified that system level stat files are not empty")
         self.log.info(
             "ENDED: Validate Support bundle collects system information and stats")
+
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.support_bundle
+    @pytest.mark.tags("TEST-31677")
+    def test_31677_support_bundle_status(self):
+        """
+        Validate status of support bundle collection for each of the components/nodes
+        """
+        self.log.info("Step 1: Generating support bundle through cli")
+        resp = sb.create_support_bundle_single_cmd(
+            self.bundle_dir, bundle_name="test_31677", comp_list="s3server")
+        assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Step 1: Generated support bundle through cli")
+        self.log.info("Step 2: Validated status of Support bundle")

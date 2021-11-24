@@ -716,8 +716,8 @@ def is_utility_present(utility_name: str, filepath: str) -> bool:
 
 
 def backup_or_restore_files(action,
-        backup_path,
-        backup_list):
+                            backup_path,
+                            backup_list):
     """
     Used to take backup or restore mentioned files at the required path
     """
@@ -842,7 +842,7 @@ def install_new_cli_rpm(
 
 
 def list_rpms(*remoteargs, filter_str="", remote=False,
-        **remoteKwargs) -> Tuple[bool, list]:
+              **remoteKwargs) -> Tuple[bool, list]:
     """
     This function lists the rpms installed on a given host and filters by given string.
     :param str filter_str: string to search in rpm names for filtering results,
@@ -995,7 +995,7 @@ def insert_into_builtins(name, obj):
 
 
 def mount_upload_to_server(host_dir: str = None, mnt_dir: str = None,
-        remote_path: str = None, local_path: str = None) \
+                           remote_path: str = None, local_path: str = None) \
         -> tuple:
     """Mount NFS directory and upload file to NFS
     :param host_dir: Link of NFS server directory
@@ -1103,7 +1103,7 @@ def create_file_fallocate(filepath=None, size="1MB", option="l"):
 
 
 def toggle_nw_status(device: str, status: str, host: str, username: str,
-        pwd: str):
+                     pwd: str):
     """
     Toggle network device status using ip set command.
     :param str device: Name of the ip network device
@@ -1127,10 +1127,10 @@ def toggle_nw_status(device: str, status: str, host: str, username: str,
 
 
 def create_dir_hierarchy_and_objects(directory_path=None,
-        obj_prefix=None,
-        depth: int = 1,
-        obj_count: int = 1,
-        **kwargs) -> list:
+                                     obj_prefix=None,
+                                     depth: int = 1,
+                                     obj_count: int = 1,
+                                     **kwargs) -> list:
     """
     Create directory hierarchy as per depth and create number of objects in each folder.
 
@@ -1216,7 +1216,7 @@ def validate_s3bench_parallel_execution(log_dir, log_prefix) -> tuple:
 
 
 def toggle_nw_infc_status(device: str, status: str, host: str, username: str,
-        pwd: str):
+                          pwd: str):
     """
     Toggle network interface status using ip set command.
     :param str device: Name of the ip network device

@@ -266,6 +266,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_key
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-23321")
     @CTFailOn(error_handler)
     def test_23321(self):

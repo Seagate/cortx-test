@@ -548,6 +548,11 @@ class TestMultipartUploadGetPut:
                 part_list = [{'PartNumber': p['PartNumber'], 'ETag': p['ETag']} for p in j['Parts']]
                 new_list.extend(part_list)
         sorted_lst = sorted(new_list, key=lambda d: d['PartNumber'])
+        new_lst = []
+        for k in new_list:
+            for j in k:
+                new_lst.append(j)
+        sorted_lst = sorted(new_lst, key=lambda d: d['PartNumber'])
         res = self.list_parts_completempu(mpu_id, self.bucket_name,
                                           object_name=self.object_name,
                                           parts_list=sorted_lst)
@@ -674,6 +679,7 @@ class TestMultipartUploadGetPut:
         """
         This test is for uploading 5TB max size object using multipart upload
         """
+        # TODO FIX
         self.log.info("STARTED: Multipart upload of 5TB object ")
         mp_config = MPART_CFG["test_28526"]
         mpu_id = self.initiate_multipart(self.bucket_name, self.object_name)
