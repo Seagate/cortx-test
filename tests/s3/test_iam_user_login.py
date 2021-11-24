@@ -154,7 +154,6 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_auth
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5664")
     @CTFailOn(error_handler)
@@ -424,7 +423,6 @@ class TestUserLoginProfileTests:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_auth
-    @pytest.mark.release_regression
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5703")
     @CTFailOn(error_handler)

@@ -683,6 +683,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-6100")
     @CTFailOn(error_handler)
     def test_261(self):
@@ -949,6 +950,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6069")
     @CTFailOn(error_handler)
     def test_679(self):
@@ -1030,6 +1032,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6063")
     @CTFailOn(error_handler)
     def test_688(self):
@@ -1198,6 +1201,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6000")
     @CTFailOn(error_handler)
     def test_1307(self):
@@ -1497,6 +1501,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6093")
     @CTFailOn(error_handler)
     def test_566(self):
@@ -1540,6 +1545,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6091")
     @CTFailOn(error_handler)
     def test_569(self):
@@ -1583,6 +1589,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6089")
     @CTFailOn(error_handler)
     def test_570(self):
@@ -1628,6 +1635,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6087")
     @CTFailOn(error_handler)
     def test_574(self):
@@ -1820,6 +1828,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6053")
     @CTFailOn(error_handler)
     def test_693(self):
@@ -1859,6 +1868,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6051")
     @CTFailOn(error_handler)
     def test_694(self):
@@ -2321,6 +2331,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-6015")
     @CTFailOn(error_handler)
     def test_1080(self):
@@ -3651,6 +3662,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6119")
     @CTFailOn(error_handler)
     def test_360(self):
@@ -3801,6 +3813,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6124")
     @CTFailOn(error_handler)
     def test_366(self):
@@ -3831,6 +3844,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6125")
     @CTFailOn(error_handler)
     def test_367(self):
@@ -3924,6 +3938,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6128")
     @CTFailOn(error_handler)
     def test_370(self):
@@ -4826,6 +4841,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5969")
     @CTFailOn(error_handler)
     def test_4170(self):
@@ -4887,6 +4903,7 @@ class TestBucketPolicy:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5955")
     @CTFailOn(error_handler)
     def test_4183(self):
@@ -5495,6 +5512,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6931")
     @CTFailOn(error_handler)
     def test_5832(self):
@@ -5522,6 +5540,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-6932")
     @CTFailOn(error_handler)
     def test_5778(self):
@@ -13086,6 +13105,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-8706")
     @CTFailOn(error_handler)
     def test_7015(self):
@@ -13246,6 +13266,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-8709")
     @CTFailOn(error_handler)
     def test_7850(self):
@@ -13351,6 +13372,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-8711")
     @CTFailOn(error_handler)
     def test_7852(self):
@@ -13445,6 +13467,7 @@ _date."""
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_policy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-9662")
     @CTFailOn(error_handler)
     def test_6923(self):
