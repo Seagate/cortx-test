@@ -91,7 +91,8 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         json.dump(json_data, file)
     return setup_name
 
-
+# pylint: disable-msg=too-many-locals
+# pylint: disable=broad-except
 def main():
     """
     Main Function.
@@ -114,7 +115,7 @@ def main():
             .format(cfg['new_json_file'], json_data['DB_USER'], json_data['DB_PASSWORD'])
         resp, output = execute_cmd(cmd=cmd)
         print("resp :",resp)
-        if not resp[0]:
+        if not resp:
             raise Exception("Error during adding db entry")
 
         if "Entry already exits" in str(output):
