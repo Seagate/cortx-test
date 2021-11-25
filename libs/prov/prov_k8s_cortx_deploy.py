@@ -57,8 +57,10 @@ class ProvDeployK8sCortxLib:
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
         self.setup_k8s_cluster_flag = bool(distutils.util.strtobool(os.getenv("setup_k8s_cluster")))
-        self.cortx_cluster_deploy_flag = bool(distutils.util.strtobool(os.getenv("cortx_cluster_deploy_flag")))
-        self.setup_client_config_flag = bool(distutils.util.strtobool(os.getenv("setup_client_config")))
+        self.cortx_cluster_deploy_flag = \
+            bool(distutils.util.strtobool(os.getenv("cortx_cluster_deploy_flag")))
+        self.setup_client_config_flag = \
+            bool(distutils.util.strtobool(os.getenv("setup_client_config")))
         self.run_basic_s3_io_flag = bool(distutils.util.strtobool(os.getenv("run_basic_s3_io")))
         self.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
         self.cortx_image = os.getenv("CORTX_IMAGE")
@@ -335,6 +337,9 @@ class ProvDeployK8sCortxLib:
         return resp
 
     def checkout_solution_file(self, git_tag):
+        """
+        Method to checkout solution.yaml file
+        """
         url = self.deploy_cfg["git_k8_repo_file"].format(git_tag)
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
