@@ -43,7 +43,7 @@ def execute_cmd(cmd) -> tuple:
         return False, str(error)
     return True, str(output)
 
-
+# pylint: disable-msg=too-many-locals
 def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
     """
     Create setup entry in Database
@@ -91,7 +91,6 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         json.dump(json_data, file)
     return setup_name
 
-# pylint: disable-msg=too-many-locals
 # pylint: disable=broad-except
 def main():
     """
