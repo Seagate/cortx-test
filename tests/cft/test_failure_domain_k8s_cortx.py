@@ -177,8 +177,8 @@ class TestFailureDomainK8Cortx:
         """
         Intel ISA  - 3node - SNS- 4+2+0 dix 1+2+0 Deployment
         """
-        self.test_deployment(sns_data=1, sns_parity=0, sns_spare=0, dix_data=1,
-                             dix_parity=0, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
+        self.test_deployment(sns_data=4, sns_parity=2, sns_spare=0, dix_data=1,
+                             dix_parity=2, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
 
     @pytest.mark.run(order=4)
     @pytest.mark.lc
@@ -225,4 +225,3 @@ class TestFailureDomainK8Cortx:
         """
         self.test_deployment(sns_data=16, sns_parity=4, sns_spare=0, dix_data=1,
                              dix_parity=4, dix_spare=0, cvg_count=2, data_disk_per_cvg=2)
-
