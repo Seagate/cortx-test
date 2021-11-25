@@ -737,28 +737,6 @@ class ProvDeployK8sCortxLib:
         except BaseException as error:
             return False, error
 
-    # use check_cluster_status from ha_common_libs once hctl status issue is resolved,
-    @staticmethod
-    def s3_service_status(master_node_obj):
-        """
-        This method is used to fetch the s3 services status
-        param: master_node_obj : Master Node object
-        """
-        resp = master_node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
-        pod_name = resp[1]
-        res = master_node_obj.send_k8s_cmd(
-            operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
-            command_suffix=f"-c {common_const.HAX_CONTAINER_NAME} "
-                           f"-- {'consul kv get -recurse | grep s3 | grep name'}",
-            decode=True)
-        resp = res.split('\n')
-        LOGGER.info("Response for cortx cluster status: %s", resp)
-        for line in resp:
-            if "online" not in line:
-                LOGGER.debug("Line: %s", line)
-                return False, resp
-        return True, resp
-
     @staticmethod
     # pylint: disable-msg=too-many-locals
     def configure_metallb(node_obj: LogicalNode, data_ip: list, control_ip: list):
@@ -1064,10 +1042,12 @@ class ProvDeployK8sCortxLib:
                                              self.docker_password, self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Check s3 server status")
+            resp = master_node_list[0].get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+            pod_name = resp[1]
             start_time = int(time.time())
             end_time = start_time + 1800  # 30 mins timeout
             while int(time.time()) < end_time:
-                resp = self.s3_service_status(master_node_list[0])
+                resp = self.get_hctl_status(master_node_list[0], pod_name)
                 if resp[0]:
                     LOGGER.info("####All the services online. Time Taken : %s",
                                 (int(time.time()) - start_time))
