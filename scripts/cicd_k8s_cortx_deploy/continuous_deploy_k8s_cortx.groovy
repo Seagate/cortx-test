@@ -43,9 +43,9 @@ pipeline {
         }
         stage('CREATE_SETUP_ENTRY') {
             steps {
+            withCredentials([usernamePassword(credentialsId: 'cortxadmin', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
+
             sh label: '', script: ''' source venv/bin/activate
-                export ADMIN_USER="cortxadmin"
-                export ADMIN_PASSWORD="Cortxadmin@123"
                 SETUP_FILE="cicd_setup_name.txt"
                 ALL_SETUP_ENTRY="all_setup_entry.txt"
 
@@ -64,6 +64,7 @@ pipeline {
                 done
                 deactivate
                 '''
+                }
             }
         }
         stage('TEST_EXECUTION') {
