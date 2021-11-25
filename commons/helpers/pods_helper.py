@@ -352,3 +352,36 @@ class LogicalNode(Host):
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
+
+    def get_all_pods_and_ips(self,pod_prefix):
+        """
+        Helper function to get pods name with pod_prefix and their IPs
+        :param: pod_prefix: Prefix to define the pod category
+        :return: dict
+        """
+        pod_dict = {}
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS,read_lines=True)
+        for lines in output:
+            if pod_prefix in lines:
+                data = lines.strip()
+                pod_name = data.split(" ")[0]
+                pod_ip = data.split(" ")[1]
+                pod_dict[pod_name]= pod_ip
+        return  pod_dict
+
+    def get_container_of_pod(self,pod_name,container_prefix):
+        """
+        Helper function to get container with container_prefix from the specified pod_name
+        :param: pod_name : Pod name to query container of
+        :param: container_prefix: Prefix to define container catergory
+        :return: list
+        """
+        cmd = commands.KUBECTL_GET_POD_CONTAINERS.format(pod_name)
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        output = output[0].split()
+        container_list = []
+        for each in output:
+            if container_prefix in each:
+                container_list.append(each)
+
+        return container_list
