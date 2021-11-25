@@ -23,11 +23,18 @@ Create DB entry for Continuous deployment Jenkins Job.
 """
 import json
 import os
+import sys
 from subprocess import Popen, PIPE
 
 import yaml
 
-def execute_cmd(cmd):
+
+def execute_cmd(cmd) -> tuple:
+    """
+    Execute Command
+    param: cmd : Command to be executed.
+    return: Boolean, output/error
+    """
     proc = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     output, error = proc.communicate()
     print("Output = ", str(output))
@@ -61,13 +68,13 @@ def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
         host_list.append(
             {"host": host_1, "hostname": hostname, "username": username, "password": password,
              "node_type": node_type})
-        if count == int(nodes_cnt)+1:
+        if count == int(nodes_cnt) + 1:
             break
-    if len(host_list) != int(nodes_cnt)+1:
+    if len(host_list) != int(nodes_cnt) + 1:
         raise Exception("Mismatch in Hosts and no of worker nodes given")
 
     setup_name = host_list[0]["hostname"]
-    setup_name = f"CICD_Deploy_{setup_name.split('.')[0]}_{len(host_list)-1}"
+    setup_name = f"CICD_Deploy_{setup_name.split('.')[0]}_{len(host_list) - 1}"
 
     json_data["setupname"] = setup_name
     json_data["product_family"] = "LC"
@@ -95,9 +102,9 @@ def main():
         admin_pswd = os.getenv("ADMIN_PASSWORD")
         nodes_cnt = os.getenv("NODES_COUNT")
         cfg = ""
-        with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as f1:
-            cfg = yaml.safe_load(f1)
-        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd,nodes_cnt)
+        with open("scripts/cicd_k8s_cortx_deploy/config.yaml") as file:
+            cfg = yaml.safe_load(file)
+        setupname = create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt)
 
         print(f"target_name: {setupname}")
         with open("secrets.json", 'r') as file:
@@ -106,6 +113,9 @@ def main():
         cmd = "python tools/setup_update/setup_entry.py --fpath {} --dbuser {} --dbpassword {}" \
             .format(cfg['new_json_file'], json_data['DB_USER'], json_data['DB_PASSWORD'])
         resp, output = execute_cmd(cmd=cmd)
+        print("resp :",resp)
+        if not resp[0]:
+            raise Exception("Error during adding db entry")
 
         if "Entry already exits" in str(output):
             print(f"\nDB already exists for Setupname :{setupname} , Updating it.\n")
@@ -116,8 +126,9 @@ def main():
             file.write(setupname)
     except Exception as ex:
         print(f"Exception Occured : {ex}")
-        exit(1)
-    exit(0)
+        sys.exit(1)
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

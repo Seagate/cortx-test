@@ -54,6 +54,9 @@ def create_payload(cortx_build, job_name, log_path, jenkins_build_no, jenkins_bu
 
 
 def main():
+    """
+    Main function for creating eos jira
+    """
     jira_id = os.environ['JIRA_ID']
     jira_pswd = os.environ['JIRA_PASSWORD']
     cortx_build = os.environ['BUILD']

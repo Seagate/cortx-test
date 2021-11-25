@@ -68,8 +68,8 @@ pipeline {
         }
         stage('TEST_EXECUTION') {
             steps {
-                script{
-                    try{
+                script {
+                    try {
                        sh label: '', script: ''' source venv/bin/activate
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
                         cat $ALL_SETUP_ENTRY
@@ -79,7 +79,7 @@ pipeline {
                         deactivate
                         '''
                     }
-                    catch(err)
+                    catch (err)
                     {
                         currentBuild.result = "FAILURE"
                         sh label: '', script: '''source venv/bin/activate
