@@ -71,6 +71,7 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5514")
     @CTFailOn(error_handler)
     def test_2432(self):
@@ -152,6 +153,7 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5519")
     @CTFailOn(error_handler)
     def test_2434(self):
@@ -376,6 +378,7 @@ class TestBucketTagging:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_tags
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5528")
     @CTFailOn(error_handler)
     def test_2439(self):
@@ -572,6 +575,7 @@ class TestBucketTagging:
                 tag_key,
                 "testval")
             self.log.info(resp)
+            time.sleep(S3_CFG["sync_delay"])
             assert_utils.assert_true(resp[0], resp[1])
             resp = self.tag_obj.get_bucket_tags(self.bucket_name)
             self.log.info(resp)
@@ -824,6 +828,7 @@ class TestBucketTagging:
             tag_count=2)
         self.log.info(resp)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info("Step 3: Set tag for an object %s", obj_name)
         self.log.info("Step 4: Verifying tag is set for a bucket")
         resp = self.tag_obj.get_bucket_tags(self.bucket_name)

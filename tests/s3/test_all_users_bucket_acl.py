@@ -110,6 +110,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6094')
     @CTFailOn(error_handler)
     def test_375(self):
@@ -505,6 +506,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6078')
     @CTFailOn(error_handler)
     def test_383(self):
@@ -572,6 +574,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6076')
     @CTFailOn(error_handler)
     def test_384(self):
@@ -1065,6 +1068,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_read_acp=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info("Step 2: Changed bucket permission to AllUsers READ_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
         resp = self.acl_obj.get_bucket_acl(
@@ -1275,6 +1279,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_write_acp=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers WRITE_ACP")
         self.log.info("Step 3: Verifying bucket permission is changed")
@@ -1816,6 +1821,7 @@ class TestAllUsersBucketAcl:
             self.bucket_name,
             grant_full_control=self.group_uri)
         assert_utils.assert_true(resp[0], resp[1])
+        time.sleep(S3_CFG["sync_delay"])
         self.log.info(
             "Step 2: Changed bucket permission to AllUsers FULL_CONTROL")
         self.log.info("Step 3: Verifying bucket permission is changed")

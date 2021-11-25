@@ -31,9 +31,11 @@ import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
+from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
+from config import CMN_CFG
 from config.s3 import S3_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.s3 import S3H_OBJ
@@ -121,6 +123,21 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
         del self.s3acc_op_rest
         del self.s3_accounts
         self.log.info("ENDED: test teardown.")
+
+    def check_cluster_health(self):
+        """Check the cluster health."""
+        self.log.info("Check cluster status, all services are running.")
+        nodes = CMN_CFG["nodes"]
+        self.log.info(nodes)
+        for _, node in enumerate(nodes):
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
+            resp = health_obj.check_node_health(resource_cleanup=True)
+            self.log.info(resp)
+            assert_utils.assert_true(resp[0], resp[1])
+            health_obj.disconnect()
+        self.log.info("Checked cluster status, all services are running.")
 
     def s3_ios(self,
                bucket=None,
@@ -249,6 +266,7 @@ class TestAccountUserMgmtDeleteAccountCreateAccessKey:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_key
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-23321")
     @CTFailOn(error_handler)
     def test_23321(self):

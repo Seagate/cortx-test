@@ -31,10 +31,10 @@ service_ports:
   salt-master: ["4505", "4506"]
   smtp: ["25"]
   s3: ["9443"]
-build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/"
-build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso"
-build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/iso/cortx-2.0.0-{2}-upgrade.iso.sig"
-build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-7.8.2003/{1}/cortx_iso/RPM-GPG-KEY-Seagate"
+build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/"
+build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso"
+build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso.sig"
+build_key: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/cortx_iso/RPM-GPG-KEY-Seagate"
 iso_repo: "cortx-2.0.0-{}-upgrade.iso"
 sig_repo: "cortx-2.0.0-{}-upgrade.iso.sig"
 key_repo: "RPM-GPG-KEY-Seagate"
@@ -109,6 +109,7 @@ post_deployment_steps:
 
 k8s_cluster_deploy:
   job_name: "setup-kubernetes-cluster"
+  cortx_job_name: "deploy-cortx-k8-cluster"
   jenkins_url: "http://eos-jenkins.mero.colo.seagate.com/job/Cortx-kubernetes/"
   auth_token: "$eagate@123"
 
@@ -120,20 +121,26 @@ k8s_cortx_deploy:
     cpu_cores: 8
     memory: 16
   local_path_prov: "/mnt/fs-local-volume/"
+  s3_max_start_timeout: 900
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
   git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
   git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
+  pem_file_path: "/root/cortx-k8s/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/ssl-cert/s3.seagate.com.pem"
+  k8s_dir: "/root/deploy-scripts/k8_cortx_cloud/"
   new_file_path: "solution.yaml"
+  cluster_yaml_path: "/etc/cortx/solution/cluster.yaml"
+  cluster_conf_path: "/etc/cortx/cluster.conf"
   third_party_images:
-    openldap: 'ghcr.io/seagate/symas-openldap:standalone'
+    openldap: 'ghcr.io/seagate/symas-openldap:2.4.58'
     consul: 'hashicorp/consul:1.10.0'
-    kafka: 'bitnami/kafka:3.0.0-debian-10-r7'
-    zookeeper: 'bitnami/zookeeper:3.7.0-debian-10-r182'
+    kafka: '3.0.0-debian-10-r7'
+    zookeeper: '3.7.0-debian-10-r182'
     gluster: 'docker.io/gluster/gluster-centos:latest'
     rancher: 'rancher/local-path-provisioner:v0.0.20'
+    busybox: 'busybox'
   cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
@@ -143,3 +150,18 @@ k8s_cortx_deploy:
     s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
     csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
     csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
+
+config_metallb:
+  check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                    sed -e "s/strictARP: false/strictARP: true/" | \
+                    kubectl diff -f - -n kube-system'
+  enable_strict_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                  sed -e "s/strictARP: false/strictARP: true/" | \
+                  kubectl apply -f - -n kube-system'
+  apply_manifest_namespace: 'kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml'
+  apply_manifest_metallb: 'kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml'
+  check_namespace: 'kubectl get all -n metallb-system'
+  config_path: 'config/prov/metallb_config.yaml'
+  new_config_file: 'metallb_config.yaml'
+  remote_path: '/root/metallb_config.yaml'
+  apply_config: 'kubectl apply -f metallb_config.yaml'

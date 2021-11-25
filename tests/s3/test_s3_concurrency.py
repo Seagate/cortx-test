@@ -55,7 +55,7 @@ class TestS3Concurrency:
         """
         self.log = logging.getLogger(__name__)
         self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3cmdt_obj = S3CmdTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3cmdt_obj = S3CmdTestLib()
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "concurrency-{}".format(time.perf_counter_ns())
         self.bucket_url = "s3://{}".format(self.bucket_name)
