@@ -22,6 +22,7 @@
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import csv
+import distutils.util
 import json
 import logging
 import os
@@ -36,7 +37,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import system_utils, assert_utils, ext_lbconfig_utils
-from config import PROV_CFG, INTEL_ISA_CFG, TEST_FAILURE_CFG
+from config import PROV_CFG
 from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 from libs.s3 import S3H_OBJ
@@ -54,15 +55,16 @@ class ProvDeployK8sCortxLib:
 
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
-        self.git_id = os.getenv("GIT_ID")
-        self.git_token = os.getenv("GIT_PASSWORD")
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
+        self.setup_k8s_cluster_flag = bool(distutils.util.strtobool(os.getenv("setup_k8s_cluster")))
+        self.cortx_cluster_deploy_flag = bool(distutils.util.strtobool(os.getenv("cortx_cluster_deploy_flag")))
+        self.setup_client_config_flag = bool(distutils.util.strtobool(os.getenv("setup_client_config")))
+        self.run_basic_s3_io_flag = bool(distutils.util.strtobool(os.getenv("run_basic_s3_io")))
+        self.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.docker_username = os.getenv("DOCKER_USERNAME")
         self.docker_password = os.getenv("DOCKER_PASSWORD")
-        self.test_config = TEST_FAILURE_CFG
-        self.s3_test_config = INTEL_ISA_CFG
-        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestIntelISAIO")
+        self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "testDeployment")
 
     @staticmethod
     def setup_k8s_cluster(master_node_list: list, worker_node_list: list,
@@ -194,19 +196,18 @@ class ProvDeployK8sCortxLib:
         resp = node_obj.execute_cmd(common_cmd.CMD_DOCKER_LOGIN.format(docker_user, docker_pswd))
         LOGGER.debug("resp: %s", resp)
 
-    def prereq_git(self, node_obj: LogicalNode, git_id: str, git_token: str, git_tag: str):
+    def prereq_git(self, node_obj: LogicalNode, git_tag: str):
         """
         Checkout cortx-k8s code on the  node. Delete is any previous exists.
         param: node_obj : Node object to checkout code - node.
-        param: git_id : Git ID
-        param: git_token : Git token for accessing cortx-k8s repo.
+        param: git tag: tag of service repo
         """
         LOGGER.info("Delete cortx-k8s repo on node")
         resp = node_obj.execute_cmd(common_cmd.CMD_REMOVE_DIR.format("cortx-k8s"))
         LOGGER.debug("resp: %s", resp)
 
         LOGGER.info("Git clone cortx-k8s repo")
-        url = self.deploy_cfg["git_k8_repo"].format(git_id, git_token)
+        url = self.deploy_cfg["git_k8_repo"]
         resp = node_obj.execute_cmd(common_cmd.CMD_GIT_CLONE.format(url))
         LOGGER.debug("resp: %s", resp)
 
@@ -294,8 +295,8 @@ class ProvDeployK8sCortxLib:
 
     def deploy_cortx_cluster(self, sol_file_path: str, master_node_list: list,
                              worker_node_list: list, system_disk_dict: dict,
-                             docker_username: str, docker_password: str, git_id: str,
-                             git_token: str, git_tag) -> tuple:
+                             docker_username: str, docker_password: str,
+                             git_tag) -> tuple:
         """
         Perform cortx cluster deployment
         param: solution_file_path: Local Solution file path
@@ -303,8 +304,7 @@ class ProvDeployK8sCortxLib:
         param: worker_node_list : List of all worker nodes(Logical Node object)
         param: docker_username: Docker Username
         param: docker_password: Docker password
-        param: git_id: Git ID to access Cortx-k8s repo
-        param: git_token: Git token to access Cortx-k8s repo
+        param: git tag: tag of service repo
         return : True/False and resp
         """
         if len(master_node_list) == 0:
@@ -317,14 +317,14 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(resp[0], resp[1])
             system_disk = system_disk_dict[node.hostname]
             self.docker_login(node, docker_username, docker_password)
-            self.prereq_git(node, git_id, git_token, git_tag)
+            self.prereq_git(node, git_tag)
             self.copy_sol_file(node, sol_file_path, self.deploy_cfg["git_remote_dir"])
             # system disk will be used mount /mnt/fs-local-volume on worker node
             self.execute_prereq_cortx(node, self.deploy_cfg["git_remote_dir"], system_disk)
         self.pull_third_party_images(worker_node_list)
 
         self.docker_login(master_node_list[0], docker_username, docker_password)
-        self.prereq_git(master_node_list[0], git_id, git_token, git_tag)
+        self.prereq_git(master_node_list[0], git_tag)
         self.copy_sol_file(master_node_list[0], sol_file_path, self.deploy_cfg["git_remote_dir"])
         resp = self.deploy_cluster(master_node_list[0], self.deploy_cfg["git_remote_dir"])
         if resp[0]:
@@ -334,8 +334,8 @@ class ProvDeployK8sCortxLib:
             return resp
         return resp
 
-    def checkout_solution_file(self, token, git_tag):
-        url = self.deploy_cfg["git_k8_repo_file"].format(token, git_tag)
+    def checkout_solution_file(self, git_tag):
+        url = self.deploy_cfg["git_k8_repo_file"].format(git_tag)
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
         system_utils.execute_cmd(cmd=cmd)
         return self.deploy_cfg["new_file_path"]
@@ -892,13 +892,12 @@ class ProvDeployK8sCortxLib:
         resp = system_utils.remove_file(file_path)
         assert_utils.assert_true(resp[0], resp[1])
 
-    def basic_io_with_parity_check_enabled(self, s3t_obj: S3TestLib, bucket_name: str):
+    def basic_io_write_read_validate(self, s3t_obj: S3TestLib, bucket_name: str):
         """
-        Set the read verify flag to true
-        Restart the S3 and motr services
+        This method write, read and validate the object.
         """
         LOGGER.info("STARTED: Basic IO")
-        basic_io_config = self.s3_test_config["test_basic_io"]
+        basic_io_config = PROV_CFG["test_basic_io"]
 
         LOGGER.info("Creating bucket %s", bucket_name)
         resp = s3t_obj.create_bucket(bucket_name)
@@ -917,10 +916,10 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("Delete bucket %s", bucket_name)
         resp = s3t_obj.delete_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("ENDED: Basic IO with parity check")
+        LOGGER.info("Basic IO Completed")
 
     @staticmethod
-    def io_workload(access_key, secret_key, bucket_prefix):
+    def io_workload(access_key, secret_key, bucket_prefix, clients=5):
         """
         S3 bench workload test executed for each of Erasure coding config
         """
@@ -929,7 +928,6 @@ class ProvDeployK8sCortxLib:
             "1Kb", "4Kb", "8Kb", "16Kb", "32Kb", "64Kb", "128Kb", "256Kb", "512Kb",
             "1Mb", "4Mb", "8Mb", "16Mb", "32Mb", "64Mb", "128Mb", "256Mb", "512Mb", "1Gb", "2Gb"
         ]
-        clients = INTEL_ISA_CFG["test_io_workload"]["clients"]
         resp = s3bench.setup_s3bench()
         assert (resp, resp), "Could not setup s3bench."
         for workload in workloads:
@@ -1026,10 +1024,10 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
-        LOGGER.debug("k8s_setup flag is %s,%s,%s,%s", setup_k8s_cluster_flag,
+        LOGGER.debug("flag value are %s,%s,%s,%s", setup_k8s_cluster_flag,
                      setup_client_config_flag, run_basic_s3_io_flag,
                      destroy_setup_flag)
-        if setup_k8s_cluster_flag == 'True':
+        if setup_k8s_cluster_flag:
             LOGGER.info("Step to Perform k8s Cluster Deployment")
             resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
             assert_utils.assert_true(resp[0], resp[1])
@@ -1039,9 +1037,9 @@ class ProvDeployK8sCortxLib:
                 if not resp:
                     self.taint_master(node)
 
-        if cortx_cluster_deploy_flag == "True":
+        if cortx_cluster_deploy_flag:
             LOGGER.info("Step to Download solution file template")
-            path = self.checkout_solution_file(self.git_token, self.git_script_tag)
+            path = self.checkout_solution_file(self.git_script_tag)
             LOGGER.info("Step to Update solution file template")
             resp = self.update_sol_yaml(worker_obj=worker_node_list, filepath=path,
                                         cortx_image=self.cortx_image,
@@ -1058,8 +1056,7 @@ class ProvDeployK8sCortxLib:
             resp = self.deploy_cortx_cluster(sol_file_path, master_node_list,
                                              worker_node_list, system_disk_dict,
                                              self.docker_username,
-                                             self.docker_password, self.git_id,
-                                             self.git_token, self.git_script_tag)
+                                             self.docker_password, self.git_script_tag)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step to Check s3 server status")
             start_time = int(time.time())
@@ -1073,7 +1070,7 @@ class ProvDeployK8sCortxLib:
                 time.sleep(60)
             assert_utils.assert_true(resp[0], resp[1])
 
-        if setup_client_config_flag == 'True':
+        if setup_client_config_flag:
             resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
             eth1_ip = resp[1].strip("'\\n'b'")
             LOGGER.info("Configure HAproxy on client")
@@ -1089,7 +1086,7 @@ class ProvDeployK8sCortxLib:
             if run_basic_s3_io_flag == 'True':
                 LOGGER.info("Step to Perform basic IO operations")
                 bucket_name = "bucket-" + str(int(time.time()))
-                self.basic_io_with_parity_check_enabled(s3t_obj, bucket_name)
+                self.basic_io_write_read_validate(s3t_obj, bucket_name)
             if run_s3bench_workload_flag == 'True':
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
@@ -1097,7 +1094,7 @@ class ProvDeployK8sCortxLib:
                                  bucket_prefix=bucket_name)
         LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
                     len(worker_node_list), sns_data, sns_parity, sns_spare)
-        if destroy_setup_flag == 'True':
+        if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list)
             assert_utils.assert_true(resp[0], resp[1])

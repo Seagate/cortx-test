@@ -22,7 +22,7 @@
 """Continuous Deployment on N nodes config."""
 import logging
 import os
-
+import pytest
 from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from config import CMN_CFG, HA_CFG, DEPLOY_CFG
@@ -66,6 +66,8 @@ class TestContDeployment:
             else:
                 cls.worker_node_list.append(node_obj)
 
+    @pytest.mark.tags("TEST-N-NODE")
+    @pytest.mark.lc
     def test_n(self):
         """
         test to run continuous deployment

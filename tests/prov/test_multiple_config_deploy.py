@@ -26,14 +26,14 @@ from multiprocessing import Pool
 
 import pytest
 
-from commons import pswdmanager
+from commons import pswdmanager, configmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import system_utils, assert_utils
 from commons import commands as common_cmd
-from config import CMN_CFG, HA_CFG, PROV_CFG, DEPLOY_CFG
+from config import CMN_CFG, HA_CFG, PROV_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
-
+DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
 # pylint: disable = too-many-lines
 
 
@@ -44,14 +44,6 @@ class TestMultipleConfDeploy:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.setup_k8s_cluster_flag = os.getenv("setup_k8s_cluster")
-        cls.cortx_cluster_deploy_flag = os.getenv("cortx_cluster_deploy")
-        cls.setup_client_config_flag = os.getenv("setup_client_config")
-        cls.run_basic_s3_io_flag = os.getenv("run_basic_s3_io")
-        cls.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
-        cls.collect_support_bundle = os.getenv("collect_support_bundle")
-        cls.destroy_setup_flag = os.getenv("destroy_setup")
-        cls.raise_jira = os.getenv("raise_jira")
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
@@ -79,8 +71,10 @@ class TestMultipleConfDeploy:
             proc_pool.map(self.revert_vm_snapshot, self.host_list)
 
     def revert_vm_snapshot(self, host):
-        """Revert VM snapshot
-        #    host: VM name """
+        """
+        Revert VM snapshot
+        param: host: VM name
+        """
         resp = system_utils.execute_cmd(cmd=common_cmd.CMD_VM_REVERT.format(
             self.vm_username, self.vm_password, host), read_lines=True)
 
@@ -1835,9 +1829,8 @@ class TestMultipleConfDeploy:
         row_list = list()
         row_list.append(['15N'])
         config = DEPLOY_CFG['nodes_15']['config_1']
-        self.log.info("Running 15 N with config %s+%s+%s , %s" ,
-                      config['sns_data'], config['sns_parity'], config['sns_spare'],
-                      self.setup_k8s_cluster_flag)
+        self.log.info("Running 15 N with config %s+%s+%s",
+                      config['sns_data'], config['sns_parity'], config['sns_spare'])
         self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
                                            sns_parity=config['sns_parity'],
                                            sns_spare=config['sns_spare'],
@@ -1847,8 +1840,7 @@ class TestMultipleConfDeploy:
                                            cvg_count=config['cvg_per_node'],
                                            data_disk_per_cvg=config['data_disk_per_cvg'],
                                            master_node_list=self.master_node_list,
-                                           worker_node_list=self.worker_node_list,
-                                           setup_k8s_cluster_flag=self.setup_k8s_cluster_flag)
+                                           worker_node_list=self.worker_node_list)
         row_list.append(['config_1'])
 
     @pytest.mark.lc
