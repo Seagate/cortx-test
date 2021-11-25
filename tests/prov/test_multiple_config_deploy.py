@@ -45,6 +45,7 @@ class TestMultipleConfDeploy:
         """Setup class"""
         cls.log = logging.getLogger(__name__)
         cls.setup_k8s_cluster_flag = os.getenv("setup_k8s_cluster")
+        cls.cortx_cluster_deploy_flag = os.getenv("cortx_cluster_deploy")
         cls.setup_client_config_flag = os.getenv("setup_client_config")
         cls.run_basic_s3_io_flag = os.getenv("run_basic_s3_io")
         cls.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
