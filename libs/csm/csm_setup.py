@@ -115,7 +115,7 @@ class CSMConfigsCheck:
         responses = self._s3account.list_all_created_s3account().json()["s3_accounts"]
         for resp in responses:
             if (resp["account_name"] != self._s3account.config["s3account_user"]["username"] and
-               "nightly_s3acc" not in resp["account_name"]):
+                "nightly_s3acc" not in resp["account_name"]):
                 self._s3account.delete_s3_account_user(resp["account_name"])
 
     def preboarding(self, username, old_password, new_password):
