@@ -93,9 +93,9 @@ class S3FailureInjection(EnableFailureInjection):
             LOGGER.error("Exception: %s",ex)
             return False
 
-    def enable_disable_fi(self,flag: bool):
+    def set_fault_injection(self,flag: bool):
         """
-        Enable/Disable Fault Injections. Controls the fault injection flag
+        Enable/Disable Fault Injections.(Controls the fault injection flag)
         param: flag:  If true- enable FI
                       False- disable FI
         """
