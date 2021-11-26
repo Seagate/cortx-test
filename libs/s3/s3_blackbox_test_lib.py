@@ -71,8 +71,9 @@ class JCloudClient:
         run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
         res_ls = run_local_cmd(f"ls {destination}")[1]
         # Run commands to set cert files in client Location.
-        run_local_cmd(commands.CMD_KEYTOOL1)
-        run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
+        if S3_CFG['validate_certs']:
+            run_local_cmd(commands.CMD_KEYTOOL1)
+            run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
 
         return bool(".jar" in res_ls)
 
@@ -94,10 +95,10 @@ class JCloudClient:
                 if prop_dict['s3_endpoint'] != S3_CFG["s3_url"]:
                     s3_endpoint = S3_CFG["s3_url"].split('//')[1]
                     prop_dict['s3_endpoint'] = s3_endpoint
-                if S3_CFG['use_ssl']:
-                    prop_dict['use_https'] = 'true'
-                else:
-                    prop_dict['use_https'] = 'false'
+                prop_dict['use_https'] = 'true' if S3_CFG['use_ssl'] else 'false'
+                # Skip certificate validation with https/ssl is unsupported option in jcloud/jclient
+                prop_dict['use_https'] = 'true' if S3_CFG['validate_certs'] else 'false'
+
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
