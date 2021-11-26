@@ -347,6 +347,7 @@ class S3FS:
         return bucket_name, dir_name
 
 
+# pylint: disable=too-few-public-methods
 class S3CMD:
     """Class for s3cmd Tools operations."""
 

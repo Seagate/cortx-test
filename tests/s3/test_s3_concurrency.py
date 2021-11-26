@@ -55,6 +55,7 @@ class TestS3Concurrency:
         cls.manager = Manager()
         cls.log.info("ENDED: Setup suite level operation.")
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
