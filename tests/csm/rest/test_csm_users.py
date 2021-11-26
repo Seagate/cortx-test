@@ -3373,6 +3373,9 @@ class TestCsmUser():
         response = self.csm_user.create_csm_user(login_as="csm_user_manage",
                                                  user_type="valid", user_role="monitor")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST, "Status code check failed."
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
@@ -3506,12 +3509,12 @@ class TestCsmUser():
         assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Creating csm user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="admin")
-        self.log.info("Step 2: Verifying if manage user was created successfully")
+        self.log.info("Verifying if admin user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
         password = self.csm_user.config["csm_admin_user"]["password"]
-        assert response.json()['role'] == 'admin', "User is not created with manage role"
+        assert response.json()['role'] == 'admin', "User is not created with admin role"
         self.log.info("Verified User %s got created successfully", username)
         response = self.csm_user.custom_rest_login(username=username, password=password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -3523,6 +3526,20 @@ class TestCsmUser():
         response = self.csm_user.edit_csm_user(login_as=new_user,user=username,
                                                role="manage")
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
+        self.log.info("Creating csm user")
+        response = self.csm_user.create_csm_user(user_type="valid", user_role="admin")
+        self.log.info("Verifying if admin user was created successfully")
+        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
+        username = response.json()["username"]
+        user_id = response.json()["id"]
+        password = self.csm_user.config["csm_admin_user"]["password"]
+        assert response.json()['role'] == 'admin', "User is not created with admin role"
+        self.log.info("Verified User %s got created successfully", username)
+        response = self.csm_user.custom_rest_login(username=username, password=password)
+        self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        new_user = {}
+        new_user['username']=username
+        new_user['password']=password
         self.log.info("Step 4: Verify if other admin user"
                       "is able to edit the self role to monitor")
         response = self.csm_user.edit_csm_user(login_as=new_user,user=username,
@@ -3530,7 +3547,7 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         self.log.info(
             "Sending request to delete csm user %s", user_id)
-        response = self.csm_user.delete_csm_user(username)
+        response = self.csm_user.delete_csm_user(user_id)
         assert response.status_code == const.SUCCESS_STATUS, "User Deleted Successfully."
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
