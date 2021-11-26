@@ -42,32 +42,33 @@ from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG as S3CMD_CNF
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
+from libs.s3.s3_blackbox_test_lib import S3CMD
+from libs.s3 import SECRET_KEY, ACCESS_KEY
 
 
 class TestS3cmdClient:
     """Blackbox s3cmd testsuite"""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.log.info("Check, configure and update s3cmd config.")
+        s3cmd_obj = S3CMD(ACCESS_KEY, SECRET_KEY)
+        cls.log.info("Setting access and secret key & other options in s3cfg.")
+        resp = s3cmd_obj.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
+        assert_true(resp, f"Failed to update s3cfg.")
+        cls.log.info("ENDED: Setup suite level operation.")
+
     def setup_method(self):
         """
         This function will be invoked before each test case execution
         It will perform prerequisite test steps if any
         """
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.s3cmd_test_obj = S3CmdTestLib()
         self.s3_test_obj = S3TestLib()
-        resp = system_utils.is_rpm_installed(const.S3CMD)
-        assert_true(resp[0], resp[1])
-        resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
-        assert_true(resp, "config path not exists: {}".format(S3_CFG["s3cfg_path"]))
-        s3cmd_access = get_config(
-            S3_CFG["s3cfg_path"], "default", "access_key")
-        s3cmd_secret = get_config(
-            S3_CFG["s3cfg_path"], "default", "secret_key")
-        if s3cmd_access != ACCESS_KEY or s3cmd_secret != SECRET_KEY:
-            self.log.info("Setting access and secret key in s3cfg.")
-            resp = S3H_OBJ.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
-            assert_true(resp, f"Failed to update s3cfg.")
         self.root_path = os.path.join(
             os.getcwd(), TEST_DATA_FOLDER, "TestS3cmdClient")
         if not system_utils.path_exists(self.root_path):
