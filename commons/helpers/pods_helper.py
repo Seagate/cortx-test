@@ -319,7 +319,7 @@ class LogicalNode(Host):
             return True, backup_path
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.delete_pod.__name__, error)
+                      LogicalNode.backup_deployment.__name__, error)
             return False, error
 
     def get_helm_rel_name_rev(self, deployment_name):
@@ -351,37 +351,4 @@ class LogicalNode(Host):
         except Exception as error:
             log.error("*ERROR* An exception occurred in %s: %s",
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
-            return False, error
-
-    def get_pod_svc_status(self, pod_list, fail=True):
-        """
-        Helper function to get pod wise service status
-        :param pod_list: List pof pods
-        :param fail: Flag to check failed/started status of services
-        :return: Bool, list
-        """
-        try:
-            results = []
-            if fail:
-                search_str = ["failed", "offline"]
-            else:
-                search_str = ["started", "online"]
-            for pod in pod_list:
-                log.info("Getting pod hostname for pod %s", pod)
-                cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod)
-                output = self.execute_cmd(cmd=cmd, read_lines=True)
-                hostname = output[0].strip()
-                log.info("Getting services status on pod %s", pod)
-                cmd = commands.K8S_POD_INTERACTIVE_CMD.format(pod, f"hctl status | grep {hostname}")
-                output = self.execute_cmd(cmd=cmd, read_lines=True)
-                output.pop(0)
-                for line in output:
-                    log.info("%s", line.strip())
-                    status = True if any(string in line for string in search_str) else False
-                    if not status:
-                        results.append(status)
-            return True, results
-        except Exception as error:
-            log.error("*ERROR* An exception occurred in %s: %s",
-                      LogicalNode.get_pod_svc_status.__name__, error)
             return False, error
