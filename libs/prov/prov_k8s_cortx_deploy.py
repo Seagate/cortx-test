@@ -1026,6 +1026,8 @@ class ProvDeployK8sCortxLib:
                                         size_data_disk="20Gi", size_metadata="20Gi",
                                         glusterfs_size="20Gi")
             assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
+            with open(resp[1]) as file:
+                LOGGER.info("The solution yaml file is %s\n", file)
             sol_file_path = resp[1]
             system_disk_dict = resp[2]
             LOGGER.info("Step to Perform Cortx Cluster Deployment")

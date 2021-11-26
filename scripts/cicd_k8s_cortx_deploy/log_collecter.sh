@@ -5,35 +5,36 @@
   cmd="mkdir -p $dir_path"
   cmd2="mount -l|grep nfs4"
   mount_cmd="mount cftic2.pun.seagate.com:/cftshare_temp $dir_path"
+  mv_cmd="mv $3/log/latest/TEST-N* $LOG_PATH"
 
   if [ -d $dir_path ]
   then
-      echo "Directory exists."
+      echo "INFO: Directory exists."
   else
-      echo "INFO: Directory does not exists.Will create the dir"
+      echo "DEBUG: Directory does not exists.Will create the dir"
       eval $cmd
   fi
 
   if [[ $(mount -l|grep "$dir_path") ]]; then
-      echo "Mounted"
+      echo "INFO: Mounted"
   else
-      echo "Not mounted"
-          echo "Mount the dir"
-          $mount_cmd
-          echo "Verify the nfs share is mounted"
+      echo "DEBUG: Not mounted"
+          echo "INFO: Mount the dir"
+          eval $mount_cmd
+          echo "INFO: Verify the nfs share is mounted"
           eval $cmd2
 
   fi
   if [ -d $LOG_PATH ]
   then
-      echo "Directory exists"
-      echo "Copying logs to nfs share"
-      mv $3/log/latest/TEST-N* $LOG_PATH
-      echo "Copied the logs: $LOG_PATH"
+      echo "INFO: Directory exists"
+      echo "INFO: Copying logs to nfs share"
+      eval $mv_cmd
+      echo "INFO: Copied the logs: $LOG_PATH"
   else
-      echo "Directory not exists"
-      echo "Creating dir"
-      mkdir -p $LOG_PATH
-      mv $3/log/latest/TEST-N* $LOG_PATH
-	  echo "Copied the logs: $LOG_PATH"
+      echo "INFO: Directory not exists"
+      echo "INFO: Creating dir"
+      `mkdir -p $LOG_PATH`
+      eval $mv_cmd
+	  echo "INFO: Copied the logs: $LOG_PATH"
   fi
