@@ -11,7 +11,28 @@ Make sure you brush up your Git knowledge if you are coming from svn or other ve
 
 You may need a separate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
 
+## increase client root space size should be at lease 200 GB using following commands
+## Please utilize free disks from the output of lsblk
+```
+df -h
+lsblk 
+pvcreate /dev/sdb /dev/sdc /dev/sdd /dev/sde
+vgextend vg_sysvol /dev/sdb /dev/sdc /dev/sdd /dev/sde
+lvextend /dev/mapper/vg_sysvol-lv_root -L +190G
+resize2fs /dev/mapper/vg_sysvol-lv_root
+df -h
+```
 
+## increase the swap space, Please utilize free disks from the output of lsblk
+```
+lsblk 
+pvcreate /dev/sdi
+vgextend vg_sysvol /dev/sdi
+lvextend /dev/mapper/vg_sysvol-lv_swap -l +100%FREE
+swapoff /dev/mapper/vg_sysvol-lv_swap
+mkswap /dev/mapper/vg_sysvol-lv_swap
+swapon /dev/mapper/vg_sysvol-lv_swap
+```
 ## Get the Sources
 Fork local repository from Seagate's Cortx-Test. Clone Cortx-Test repository from your local/forked repository.
 ```
@@ -99,8 +120,8 @@ optional arguments:
     CA_CRT=<certificate_file_path>
     NFS_SHARE=<NFS_share_jclient_path>
     APACHE_J_METER=apache-jmeter-5.4.1.tgz
-    VERIFY_SSL='True' 
-    VALIDATE_CERTS='True'
+    VERIFY_SSL='True'  # This is used to whether https/ssl be used or not
+    VALIDATE_CERTS='True' # This is used whether given certificate should be verified or not.
 
 make help --makefile=scripts/s3_tools/Makefile
     all           : Install & configure tools like aws, s3fs, s3cmd, minio, call in case its a new machine. Eg: make all ACCESS=<new-accesskey> SECRET=<new-secretkey>
@@ -112,16 +133,24 @@ make help --makefile=scripts/s3_tools/Makefile
     s3cmd        : Install & configure s3cmd tool. Eg: make s3cmd ACCESS=<new-accesskey> SECRET=<new-secretkey>
     jcloud-client: Setup jcloud-client. Eg: make jcloud-client
     minio        : Install & configure minio tool. Eg: make minio ACCESS=<new-accesskey> SECRET=<new-secretkey>
+    s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
+	apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
     bashrc-configure : Configure ~/.bashrc for updating ulimit -n for allowing file descriptors 
     
 To increase ulimit for allowing maximum file descriptors
 make bashrc-configure
 
 To install & configure all tools:
-make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+make all --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
+
+To just configure instaled tools:
+make configure-tools --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
 To install & configure specific tool(i.e aws):
-make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key>
+make aws --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
+
+To just configure speific tool(i.e. aws):
+make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS=<aws_access_key_id> SECRET=<aws_secret_access_key> ENDPOINT=<lb ipaddress> VALIDATE_CERTS=<Tree/False> VERIFY_SSL=<True/False>
 
 To cleanup all tools:
 make clean --makefile=scripts/s3_tools/Makefile
@@ -346,6 +375,15 @@ usage: testrunner.py [-h] [-j JSON_FILE] [-r HTML_REPORT] [-d DB_UPDATE]
    -i DATA_INTEGRITY_CHK, --data_integrity_chk DATA_INTEGRITY_CHK
                          Helps set DI check enabled so that tests perform
                          additional checksum check
+   -pf PRODUCT_FAMILY, --product_family
+                        Helps to select product family type whether LR or local
+   -c  VALIDATE_CERTS, --validate_certs
+                        This gives option whetherValidate HTTPS/SSL certificate 
+                        to S3 endpoint needs to be validated or not.
+   -s USE_SSL,  --use_ssl
+                     Option whether HTTPS/SSL connection for S3 endpoint should be used or not.
+   -hc HEALTH_CHECK --health_check
+                     Decide whether to do health check (on server) or not with tests execution.
   ```
 #### Running Test locally in distributed mode
 ```commandline
