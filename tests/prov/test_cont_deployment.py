@@ -45,7 +45,7 @@ class TestContDeployment:
         cls.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
         cls.collect_support_bundle = os.getenv("collect_support_bundle")
         cls.destroy_setup_flag = os.getenv("destroy_setup")
-        cls.conf = (os.getenv("CONFIG")).lower()
+        cls.conf = (os.getenv("EC_CONFIG")).lower()
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = os.getenv("raise_jira")
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
