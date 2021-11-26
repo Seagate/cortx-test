@@ -156,7 +156,7 @@ class HAK8s:
         """
         if is_safe:
             resp = pod_obj.execute_cmd(cmd="shutdown -P now", exc=False)
-            LOGGER.debug("Response for shutdown: {}".format(resp))
+            LOGGER.debug("Response for shutdown: %s", resp)
         else:
             if self.setup_type == "VM":
                 vm_name = host.split(".")[0]
@@ -249,6 +249,7 @@ class HAK8s:
             return False, error
 
     # pylint: disable=too-many-arguments
+    # pylint: disable-msg=too-many-locals
     def perform_ios_ops(
             self,
             prefix_data: str = None,
@@ -365,7 +366,7 @@ class HAK8s:
             "0B", "1KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB",
             "1MB", "4MB", "8MB", "16MB", "32MB", "64MB", "128MB", "256MB", "512MB"]
         if self.setup_type == "HW":
-            workloads.extend(["1GB", "2GB", "3GB" "4GB", "5GB"])
+            workloads.extend(["1GB", "2GB", "3GB", "4GB", "5GB"])
 
         resp = s3bench.setup_s3bench()
         if not resp:
@@ -405,7 +406,7 @@ class HAK8s:
         LOGGER.info("Stop the cluster")
         resp = pod_obj.execute_cmd(common_cmd.CLSTR_STOP_CMD.format(self.dir_path),
                                    read_lines=True, exc=False)
-        LOGGER.info("Cluster stop response: {}".format(resp))
+        LOGGER.info("Cluster stop response: %s", resp)
         if resp[0]:
             return True, resp
         return False, resp
@@ -601,6 +602,7 @@ class HAK8s:
 
         return parts
 
+    # pylint: disable-msg=too-many-locals
     @staticmethod
     def create_bucket_copy_obj(s3_test_obj=None, bucket_name=None, object_name=None,
                                bkt_obj_dict=None, output=None, **kwargs):
@@ -646,9 +648,7 @@ class HAK8s:
                 return resp if not background else sys.exit(1)
 
         LOGGER.info("Copy object to different bucket with different object name.")
-        for k, v in bkt_obj_dict.items():
-            bkt_name = k
-            obj_name = v
+        for bkt_name, obj_name in bkt_obj_dict.items():
             resp, bktlist = s3_test_obj.bucket_list()
             if bkt_name not in bktlist:
                 resp = s3_test_obj.create_bucket(bkt_name)
@@ -671,6 +671,7 @@ class HAK8s:
 
         return True, put_etag if not background else output.put((True, put_etag))
 
+    # pylint: disable-msg=too-many-locals
     def start_random_mpu(self, s3_data, bucket_name, object_name, file_size, total_parts,
                          multipart_obj_path, part_numbers, parts_etag, output):
         """

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python # pylint: disable=C0302
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
@@ -270,6 +270,7 @@ class TestClusterShutdownStart:
         LOGGER.info(
             "Completed: Test to verify cluster shutdown and restart functionality in loop.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29472")
@@ -575,6 +576,7 @@ class TestClusterShutdownStart:
         LOGGER.info("Step 5: Deleted all the test objects, buckets and s3 user")
         LOGGER.info("Completed: Test to check WRITEs after cluster restart.")
 
+    # pylint: disable-msg=too-many-locals
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-29473")
@@ -724,7 +726,7 @@ class TestClusterShutdownStart:
                                     'user_name': self.s3acc_name}}
 
         LOGGER.info("Step 1: Create multiple buckets and upload object to %s and copy to other "
-                    "buckets".format(self.bucket_name))
+                    "buckets", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -733,7 +735,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
-                    "and copied to other buckets", format(self.bucket_name))
+                    "and copied to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
@@ -795,7 +797,7 @@ class TestClusterShutdownStart:
                                     'user_name': self.s3acc_name}}
 
         LOGGER.info("Step 1: Create multiple buckets and upload object to %s and copy to other "
-                    "buckets".format(self.bucket_name))
+                    "buckets", self.bucket_name)
         resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                   bucket_name=self.bucket_name,
                                                   object_name=self.object_name,
@@ -804,7 +806,7 @@ class TestClusterShutdownStart:
         assert_utils.assert_true(resp[0], resp[1])
         put_etag = resp[1]
         LOGGER.info("Step 1: Successfully Created multiple buckets and uploaded object to %s "
-                    "and copied to other buckets", format(self.bucket_name))
+                    "and copied to other buckets", self.bucket_name)
 
         LOGGER.info("Step 2: Send the cluster shutdown signal through CSM REST.")
         resp = SystemHealth.cluster_operation_signal(operation="shutdown_signal",
@@ -816,7 +818,7 @@ class TestClusterShutdownStart:
         bkt_obj_dict1["ha-bkt-{}".format(perf_counter_ns())] = "ha-obj-{}".format(perf_counter_ns())
         bkt_obj_dict.update(bkt_obj_dict1)
         LOGGER.info("Step 3: Create multiple buckets and copy object from %s to other buckets in "
-                    "background".format(self.bucket_name))
+                    "background", self.bucket_name)
         args = {'s3_test_obj': s3_test_obj, 'bucket_name': self.bucket_name,
                 'object_name': self.object_name, 'bkt_obj_dict': bkt_obj_dict1, 'output': output,
                 'file_path': self.multipart_obj_path, 'background': True, 'bkt_op': False,
@@ -833,7 +835,7 @@ class TestClusterShutdownStart:
         prc.join()
         if output.empty():
             LOGGER.error("Failed in Copy Object process")
-            LOGGER.info("Retrying copy object to bucket %s".format(bkt_obj_dict1.keys()[0]))
+            LOGGER.info("Retrying copy object to bucket %s", list(bkt_obj_dict1.keys())[0])
             resp = self.ha_obj.create_bucket_copy_obj(s3_test_obj=s3_test_obj,
                                                       bucket_name=self.bucket_name,
                                                       object_name=self.object_name,
