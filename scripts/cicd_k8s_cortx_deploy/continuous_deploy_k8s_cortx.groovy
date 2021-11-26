@@ -49,7 +49,7 @@ pipeline {
                 SETUP_FILE="cicd_setup_name.txt"
                 ALL_SETUP_ENTRY="all_setup_entry.txt"
 
-                for each in $(echo ${NO_OF_WORKER_NODES})
+                for each in $(echo ${WORKER_NODE_CONFIG})
                 do
                     export NODES_COUNT=$each
                     rm -rf $SETUP_FILE
