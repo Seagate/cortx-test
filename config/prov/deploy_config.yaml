@@ -826,16 +826,16 @@ nodes_14:
     total_n_k_s : 14
     total_disk_per_cluster : 42
   config_2:
-    sns_data : 4
-    sns_parity : 2
+    sns_data : 8
+    sns_parity : 7
     sns_spare : 0
     dix_data : 1
-    dix_parity : 2
+    dix_parity : 7
     dix_spare : 0
     cvg_per_node : 2
     data_disk_per_cvg : 2
     total_disk_per_node : 7
-    total_n_k_s : 6
+    total_n_k_s : 15
     total_disk_per_cluster : 56
   config_3:
     sns_data : 11
