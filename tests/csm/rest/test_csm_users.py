@@ -4536,39 +4536,3 @@ class TestCsmUser():
             response = self.csm_user.delete_csm_user(user_id)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
         self.log.info("##### Test completed -  %s #####", test_case_name)
-
-    @pytest.mark.lr
-    @pytest.mark.lc
-    @pytest.mark.csmrest
-    @pytest.mark.cluster_user_ops
-    @pytest.mark.parallel
-    @pytest.mark.tags('TEST-32171')
-    def test_32171(self):
-        """
-        Function to test Monitor user is not able to edit the roles of the
-        admin, manage and other monitor user
-        """
-        test_case_name = cortxlogging.get_frame()
-        self.log.info("##### Test started -  %s #####", test_case_name)
-        self.log.info("Step 1: Creating csm manage user")
-        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
-        self.log.info("Step 2: Verifying if user was created successfully")
-        assert response.status_code == const.SUCCESS_STATUS_FOR_POST
-        username = response.json()["username"]
-        self.log.info("Verified User %s got created successfully", username)
-        self.log.info("Step 3: Change role of other manage user from manage to monitor")
-        response = self.csm_user.edit_csm_user(login_as="csm_user_manage",
-                                               user=username,
-                                               role="monitor")
-        assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
-        self.log.info("Step 4: Change role of other manage user from manage to admin")
-        response = self.csm_user.edit_csm_user(login_as="csm_user_manage", user=username,
-                                               role="admin")
-        assert response.status_code == const.FORBIDDEN, "Status code check failed."
-        assert response.json()["error_code"] == str(resp_error_code), (
-            + "Error code check failed.")
-        if CSM_REST_CFG["msg_check"] == "enable":
-            assert response.json()["message"] == msg.format("csm_user_manage",
-                                                            "csm_user_manage"), "Message check failed."
-        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
-        self.log.info("##### Test completed -  %s #####", test_case_name)
