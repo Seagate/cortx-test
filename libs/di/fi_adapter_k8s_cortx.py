@@ -145,6 +145,7 @@ class S3FailureInjection(EnableFailureInjection):
         try:
             fault_op = commands.FI_ENABLE if fault_operation else commands.FI_DISABLE
             data_pods = self.master_node_list[0].get_all_pods_and_ips(POD_NAME_PREFIX)
+            LOGGER.debug("Data pods and ips : %s",data_pods)
             for pod_name, pod_ip in data_pods.items():
                 s3_containers = self.master_node_list[0].get_container_of_pod(pod_name,
                                                                               "cortx-s3-0")

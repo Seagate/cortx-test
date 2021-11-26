@@ -85,6 +85,6 @@ retries: 3
 
 fault_injection_script: "scripts/server_scripts/enable_disable_fault_injection.sh"
 enable_fi_k8s: "scripts/server_scripts/s3_fi_k8s_cortx_enable.sh"
-remote_enable_fi_k8s: "/root/s3_fi_k8s_cortx_enable.sh"
+remote_enable_fi_k8s: "s3_fi_k8s_cortx_enable.sh"
 disable_fi_k8s: "scripts/server_scripts/s3_fi_k8s_cortx_disable.sh"
-remote_disable_fi_k8s: "/root/s3_fi_k8s_cortx_disable.sh"
+remote_disable_fi_k8s: "s3_fi_k8s_cortx_disable.sh"
