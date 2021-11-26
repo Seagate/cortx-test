@@ -228,6 +228,7 @@ class MinIOClient:
 
 class S3FS:
     """Class for s4fs Tools operations."""
+
     def __init__(self, access: str = None, secret: str = None,) -> None:
         """
         method initializes members for s3fs client.
@@ -343,3 +344,49 @@ class S3FS:
             resp[1])
         LOGGER.info("Checked the mounted directory present")
         return bucket_name, dir_name
+
+
+class S3CMD:
+    """Class for s3cmd Tools operations."""
+
+    def __init__(self, access: str = None, secret: str = None) -> None:
+        """method initializes members for s3cms client."""
+        self.access = access
+        self.secret = secret
+        self.s3cf_path = S3_CFG["s3cfg_path"]
+        self.use_ssl = S3_CFG['use_ssl']
+        self.validate_certs = S3_CFG['validate_certs']
+        self.endpoint = S3_CFG['s3_url'].strip('https://').strip('http://')
+
+    def configure_s3cfg(self, access: str = None, secret: str = None) -> bool:
+        """
+        Function to configure access and secret keys in s3cfg file.
+
+        :param access: aws access key.
+        :param secret: aws secret key.
+        :return: True if s3cmd configured else False.
+        """
+        access = access if access else self.access
+        secret = secret if secret else self.secret
+        status, resp = run_local_cmd("s3cmd --version")
+        LOGGER.info(resp)
+        if not (status and system_utils.path_exists(self.s3cf_path)):
+            LOGGER.critical(
+                "S3cmd is not present, please install & configuration it through Makefile.")
+            return False
+
+        LOGGER.info("Updating config: %s", self.s3cf_path)
+        s3cmd_params = {
+            "access_key": access, "secret_key": secret, "host_base": self.endpoint,
+            "host_bucket": self.endpoint, "check_ssl_certificate": self.validate_certs,
+            "use_https": self.use_ssl
+        }
+        for key, value in s3cmd_params.items():
+            status = config_utils.update_config_ini(self.s3cf_path, "default", key, value)
+            if not status:
+                LOGGER.error("Failed to update key: %s with %s", key, value)
+                return status
+
+            LOGGER.info("Updated key: %s with %s", key, value)
+
+        return status
