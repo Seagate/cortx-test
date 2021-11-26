@@ -22,7 +22,7 @@
 Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 """
 import csv
-import distutils.util
+
 import json
 import logging
 import os
@@ -56,13 +56,6 @@ class ProvDeployK8sCortxLib:
     def __init__(self):
         self.deploy_cfg = PROV_CFG["k8s_cortx_deploy"]
         self.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
-        self.setup_k8s_cluster_flag = bool(distutils.util.strtobool(os.getenv("setup_k8s_cluster")))
-        self.cortx_cluster_deploy_flag = \
-            bool(distutils.util.strtobool(os.getenv("cortx_cluster_deploy_flag")))
-        self.setup_client_config_flag = \
-            bool(distutils.util.strtobool(os.getenv("setup_client_config")))
-        self.run_basic_s3_io_flag = bool(distutils.util.strtobool(os.getenv("run_basic_s3_io")))
-        self.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
         self.cortx_image = os.getenv("CORTX_IMAGE")
         self.docker_username = os.getenv("DOCKER_USERNAME")
         self.docker_password = os.getenv("DOCKER_PASSWORD")
@@ -991,7 +984,7 @@ class ProvDeployK8sCortxLib:
             kwargs.get("setup_k8s_cluster_flag",
                        PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
         cortx_cluster_deploy_flag = \
-            kwargs.get("cortx_cluster_deploy_flag",
+            kwargs.get("cortx_cluster_deploy",
                        PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
         setup_client_config_flag = \
             kwargs.get("setup_client_config_flag",
@@ -1007,9 +1000,9 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
-        LOGGER.debug("flag value are %s,%s,%s,%s", setup_k8s_cluster_flag,
-                     setup_client_config_flag, run_basic_s3_io_flag,
-                     destroy_setup_flag)
+        LOGGER.debug("flag value are %s,%s,%s,%s,%s", setup_k8s_cluster_flag,
+                     cortx_cluster_deploy_flag, setup_client_config_flag,
+                     run_basic_s3_io_flag, destroy_setup_flag)
         if setup_k8s_cluster_flag:
             LOGGER.info("Step to Perform k8s Cluster Deployment")
             resp = self.setup_k8s_cluster(master_node_list, worker_node_list)

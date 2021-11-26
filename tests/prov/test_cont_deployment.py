@@ -22,6 +22,7 @@
 """Continuous Deployment on N nodes config."""
 import logging
 import os
+import distutils.util
 import pytest
 from commons import pswdmanager, configmanager
 from commons.helpers.pods_helper import LogicalNode
@@ -38,16 +39,16 @@ class TestContDeployment:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.setup_k8s_cluster_flag = os.getenv("setup_k8s_cluster")
-        cls.setup_client_config_flag = os.getenv("setup_client_config")
-        cls.cortx_cluster_deploy_flag = os.getenv("cortx_cluster_deploy")
-        cls.run_basic_s3_io_flag = os.getenv("run_basic_s3_io")
-        cls.run_s3bench_workload_flag = os.getenv("run_s3bench_workload")
-        cls.collect_support_bundle = os.getenv("collect_support_bundle")
-        cls.destroy_setup_flag = os.getenv("destroy_setup")
+        cls.setup_k8s_cluster_flag = bool(distutils.util.strtobool(os.getenv("setup_k8s_cluster")))
+        cls.setup_client_config_flag = bool(distutils.util.strtobool(os.getenv("setup_client_config")))
+        cls.cortx_cluster_deploy_flag = bool(distutils.util.strtobool(os.getenv("cortx_cluster_deploy")))
+        cls.run_basic_s3_io_flag = bool(distutils.util.strtobool(os.getenv("run_basic_s3_io")))
+        cls.run_s3bench_workload_flag = bool(distutils.util.strtobool(os.getenv("run_s3bench_workload")))
+        cls.collect_support_bundle = bool(distutils.util.strtobool(os.getenv("collect_support_bundle")))
+        cls.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
         cls.conf = (os.getenv("EC_CONFIG")).lower()
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
-        cls.raise_jira = os.getenv("raise_jira")
+        cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
