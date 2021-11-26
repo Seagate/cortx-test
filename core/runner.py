@@ -243,6 +243,10 @@ class LRUCache:
         finally:
             self._lock.release()
 
+
+class InMemoryDB(LRUCache):
+    """In memory storage"""
+
     def pop_one(self) -> tuple:
         """
         Pop one table entry randomly.
