@@ -378,8 +378,8 @@ class S3CMD:
         LOGGER.info("Updating config: %s", self.s3cf_path)
         s3cmd_params = {
             "access_key": access, "secret_key": secret, "host_base": self.endpoint,
-            "host_bucket": self.endpoint, "check_ssl_certificate": self.validate_certs,
-            "use_https": self.use_ssl
+            "host_bucket": self.endpoint, "check_ssl_certificate": str(self.validate_certs),
+            "use_https": str(self.use_ssl)
         }
         for key, value in s3cmd_params.items():
             status = config_utils.update_config_ini(self.s3cf_path, "default", key, value)
