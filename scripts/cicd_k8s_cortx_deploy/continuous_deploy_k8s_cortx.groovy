@@ -20,6 +20,7 @@ pipeline {
 			    echo "${WORKSPACE}"
 			    echo "BUILD : ${params.BUILD}"
      			echo "Setup k8s cluster ${params.setup_k8s_cluster}"
+     			echo "Deploy Cortx Cluster ${params.cortx_cluster_deploy}"
      			echo "Setup Client Config ${params.setup_client_config}"
     		    echo "Run Basic S3 IO ${params.run_basic_s3_io}"
     		    echo "Run S3 bench workload ${params.run_s3bench_workload}"
@@ -75,7 +76,7 @@ pipeline {
                         ALL_SETUP_ENTRY="all_setup_entry.txt"
                         cat $ALL_SETUP_ENTRY
                         while IFS= read -r line; do
-                           pytest -k test_29485 --local True --target $line
+                           pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line
                         done < $ALL_SETUP_ENTRY
                         deactivate
                         '''
