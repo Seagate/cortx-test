@@ -1063,11 +1063,11 @@ class ProvDeployK8sCortxLib:
             assert_utils.assert_true(resp[0], resp[1])
             access_key, secret_key = S3H_OBJ.get_local_keys()
             s3t_obj = S3TestLib(access_key=access_key, secret_key=secret_key)
-            if run_basic_s3_io_flag == 'True':
+            if run_basic_s3_io_flag:
                 LOGGER.info("Step to Perform basic IO operations")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.basic_io_write_read_validate(s3t_obj, bucket_name)
-            if run_s3bench_workload_flag == 'True':
+            if run_s3bench_workload_flag:
                 LOGGER.info("Step to Perform S3bench IO")
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
