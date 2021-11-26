@@ -29,12 +29,14 @@ from Performance.styles import style_sub_tab, style_table_caption,\
 
 
 release = [
+    {'label': 'LC-K8S-CentOS-7.9',
+        'value': 'LC_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.9',
-        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.8',
-        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-CentOS',
-        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
 
 ]
@@ -42,17 +44,12 @@ release = [
 
 statistics_layout = Card(
     CardBody([
-        html.P(html.U("Performance Metrics Statistics Summary"),
-               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data. \
-            Data is displayed for the builds on which PerfPro has run.",
-               style={"font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-        html.P("Run Details", style=style_perf_captions),
-        Markdown('''
-            ___
-            '''),
-        html.P(id="statistics_workload",
-               style=style_workload_captions),
+        html.P(["Note: Each data point is PER CLUSTER. \
+                Red colored row(s) highlight error(s) encountered during that test."],
+               style={'font-size': '20px', 'color': '#3131b0'}),
+        # html.P(id="statistics_workload", style=style_workload_captions),
+        # html.I(className="fa fa-info-circle"),
+
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -173,11 +170,10 @@ stats_input_options = [
 
 degraded_read_layout = Card(
     CardBody([
-        html.P(html.U("Read Performance of Degraded Cluster"),
-               style={'text-align': 'center', 'font-size': '30px', 'font-weight': 'bold'}),
-        html.P("Note: Each data point represents PER CLUSTER data.",  style={
-            "font-weight": "bold", 'font-size': '20px', 'color': '#D00000'}),
-
+        html.P(["Note: Each data point is PER CLUSTER. \
+                Red colored row(s) highlight error(s) encountered during that test."],
+               style={'font-size': '20px', 'color': '#3131b0'}),
+        # html.I(className="fa fa-info-circle"),
         html.P("S3Bench", style=style_perf_captions),
         Markdown('''
             ___
@@ -224,7 +220,7 @@ degraded_read_layout = Card(
         html.Div(id="statistics_hsbench_degraded_latency"),
         html.P("IOPS Chart",
                style=style_table_caption),
-        html.Div(id="statistics_hsbench_degraded_iops"),
+        html.Div(id="statistics_hsbench_degraded_iops")
     ]),
     className="flex-sm-fill nav-link"
 )

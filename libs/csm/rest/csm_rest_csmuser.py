@@ -898,6 +898,27 @@ class RestCsmUser(RestTestLib):
                                           headers=self.headers)
         return response
 
+    def edit_user_with_custom_login(self, user: str = None, role: str = None,
+                      email: str = None, password: str = None, current_password: str = None,
+                                    header: str = None):
+        """
+        Functionality to edit csm user details with custom login
+        """
+        endpoint = self.config["csmuser_endpoint"] + "/" + user
+        patch_payload = {}
+        if role is not None:
+            patch_payload.update({"role": role})
+        if email is not None:
+            patch_payload.update({"email": email})
+        if password is not None:
+            patch_payload.update({"password": password})
+        if current_password is not None:
+            patch_payload.update({"current_password": current_password})
+        self.log.info(patch_payload)
+        response = self.restapi.rest_call("patch", data=patch_payload, endpoint=endpoint,
+                                          headers=header)
+        return response
+
     def reset_user_password(self, username, new_password, reset_password, headers):
         """
         Reset user password with external auth token

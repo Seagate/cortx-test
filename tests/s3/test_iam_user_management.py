@@ -29,6 +29,8 @@ import pytest
 import time
 from commons import constants as cons
 from commons.helpers import node_helper
+from commons import constants as cons
+from commons.helpers import node_helper
 from commons.utils import assert_utils, system_utils
 from commons.configmanager import config_utils
 from commons import cortxlogging as log
@@ -404,6 +406,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-23463")
     def test_23463_crud_with_another_access_key(self):
         """
@@ -505,6 +508,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-27277")
     def test_27277(self):
         """use REST API call to perform CRUD operations on s3iamuser."""
@@ -538,6 +542,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-27278")
     def test_27278(self):
         """use REST API call to perform accesskey CRUD operations for s3iamuser."""

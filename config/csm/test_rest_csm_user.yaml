@@ -112,7 +112,7 @@ test_5005:
 test_5002:
   response_msg:
     error_code: 4099
-    message_id: "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time.']}"
+    message_id: "{'sortby': ['Must be one of: user_id, username, email, user_type, role, created_time, updated_time, email_address, user_role.']}"
     message: "Invalid Parameter for user"
 test_5020:
   response_msg:

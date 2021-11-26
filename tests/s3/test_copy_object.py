@@ -50,6 +50,7 @@ LOGGER = logging.getLogger(__name__)
 class TestCopyObjects:
     """S3 copy object class."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.yield_fixture(autouse=True)
     def setup(self):
         """
@@ -60,7 +61,7 @@ class TestCopyObjects:
         """
         LOGGER.info("STARTED: test setup.")
         self.s3_obj = s3_test_lib.S3TestLib()
-        self.s3_cmd_obj = S3CmdTestLib(init_s3_connection=False)
+        self.s3_cmd_obj = S3CmdTestLib()
         LOGGER.info("Check s3 bench tool installed.")
         res = system_utils.path_exists(s3bench.S3_BENCH_PATH)
         assert_utils.assert_true(
@@ -263,6 +264,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-19841")
     @CTFailOn(error_handler)
     def test_19841(self):
@@ -333,6 +335,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19842")
     @CTFailOn(error_handler)
     def test_19842(self):
@@ -405,6 +408,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19843")
     @CTFailOn(error_handler)
     def test_19843(self):
@@ -788,6 +792,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19849")
     @CTFailOn(error_handler)
     def test_19849(self):
@@ -928,6 +933,7 @@ class TestCopyObjects:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_object_copy
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-19851")
     @CTFailOn(error_handler)
     def test_19851(self):

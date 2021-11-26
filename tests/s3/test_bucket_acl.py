@@ -153,6 +153,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5717")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3012(self):
@@ -211,6 +212,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5718")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3015(self):
@@ -284,6 +286,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5716")
     @CTFailOn(error_handler)
     def test_verify_get_bucket_acl_3018(self):
@@ -422,6 +425,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5728")
     @CTFailOn(error_handler)
     def test_add_canned_acl_bucket_3527(self):
@@ -470,6 +474,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5737")
     @CTFailOn(error_handler)
     def test_add_canned_acl_private_3530(self):
@@ -487,6 +492,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5732")
     @CTFailOn(error_handler)
     def test_add_canned_acl_public_read_3531(self):
@@ -1010,6 +1016,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5721")
     @CTFailOn(error_handler)
     def test_perform_head_bucket_acl_3580(self):
@@ -1147,6 +1154,7 @@ class TestBucketACL:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-8712")
     @CTFailOn(error_handler)
     def test_full_control_acl_6423(self):
