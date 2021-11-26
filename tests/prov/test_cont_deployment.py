@@ -76,7 +76,9 @@ class TestContDeployment:
         """
         count = self.iterations
         node = "nodes_{}".format(len(self.worker_node_list))
+        self.log.debug("nodes are %s", node)
         config = DEPLOY_CFG[node][self.conf]
+        self.log.debug("config is %s", self.conf)
         while count > 0:
             self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
                                                sns_parity=config['sns_parity'],
