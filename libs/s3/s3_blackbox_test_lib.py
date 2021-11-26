@@ -274,20 +274,35 @@ class S3FS:
         tool = S3FS_CNF["s3fs_cfg"]["s3fs_tool"]
         cmd_elements.append(tool)
         cmd_elements.append(operation)
-        if S3_CFG["use_ssl"]:
-            if S3FS_CNF["s3fs_cfg"]["no_check_certificate"]:
-                cmd_arguments.append("-o no_check_certificate")
-            if not S3FS_CNF["s3fs_cfg"]["ssl_verify_hostname"]:
-                cmd_arguments.append("-o ssl_verify_hostname=0")
-            else:
-                cmd_arguments.append("-o ssl_verify_hostname=2")
-            if S3FS_CNF["s3fs_cfg"]["nosscache"]:
-                cmd_arguments.append("-o nosscache")
+        if not S3_CFG["validate_certs"]:
+            cmd_arguments.append("-o no_check_certificate")
+        if S3FS_CNF["s3fs_cfg"]["nosscache"]:
+            cmd_arguments.append("-o nosscache")
         if cmd_arguments:
             for argument in cmd_arguments:
                 cmd_elements.append(argument)
         cmd = " ".join(cmd_elements)
+        LOGGER.info("s3fs command: %s", cmd)
+
         return cmd
+
+    @staticmethod
+    def check_bucket_mounted(mount_path=None) -> tuple:
+        """
+        Check the bucket mounted on client.
+        :param: mount_path: Mount path of the bucket.
+        :return: True if bucket mounted successfully else False.
+        """
+        if not system_utils.path_exists(mount_path):
+            return False, f"Mount path '{mount_path}' does not exit"
+        command = S3FS_CNF["s3fs_cfg"]["cmd_check_mount"].format(mount_path)
+        resp = execute_cmd(command)
+        if not resp[0]:
+            return False, f"Failed to execute command: {command}"
+        if f"s3fs on {mount_path} type fuse.s3fs" not in resp[1]:
+            return False, resp[1]
+
+        return True, resp[1]
 
     def create_and_mount_bucket(self, bucket_name=None):
         """
@@ -311,12 +326,13 @@ class S3FS:
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
             S3FS_CNF["s3fs_cfg"]["passwd_file"],
-            S3FS_CNF["s3fs_cfg"]["url"],
+            S3FS_CNF["s3fs_cfg"]["url"].format(S3_CFG['s3_url']),
             S3FS_CNF["s3fs_cfg"]["path_style"],
             S3FS_CNF["s3fs_cfg"]["dbglevel"]]
-        command = self.create_cmd(
-            operation, cmd_arguments)
+        command = self.create_cmd(operation, cmd_arguments)
         resp = execute_cmd(command)
+        assert_true(resp[0], resp[1])
+        resp = self.check_bucket_mounted(dir_name)
         assert_true(resp[0], resp[1])
         LOGGER.info("Mount bucket successfully")
         LOGGER.info("Check the mounted directory present")
