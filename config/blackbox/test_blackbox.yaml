@@ -21,7 +21,7 @@ minio_cfg:
     dlt_obj: "./mc rm s3/{0}/{1}"
     display_cont: "./mc cat s3/{0}/{1}"
     head_obj_n_lines: "./mc head -n {0} s3/{1}/{2}"
-    head_obj: "./mc head s3/{1}/{2}"
+    head_obj: "./mc head s3/{0}/{1}"
     upload_data: "Blaclbox minio client Testsuite\nMinio client operations\nPerforming head operation on object"
 s3cmd_cfg:
     s3cmd_tool: "s3cmd"
