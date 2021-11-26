@@ -22,6 +22,7 @@
 """Failure Injection adapter. Handles S3 FI and Motr FI.
 """
 import logging
+import time
 from abc import ABC, abstractmethod
 
 from commons import commands
@@ -92,39 +93,23 @@ class S3FailureInjection(EnableFailureInjection):
             LOGGER.error("Exception: %s",ex)
             return False
 
-    def enable_fi(self):
+    def enable_disable_fi(self,flag: bool):
         """
-        Enable Fault Injection (Restarts S3 server with fault_injection flag)
-        Note: Check POD status and hctl status online before and after this call
+        Enable/Disable Fault Injections. Controls the fault injection flag
+        param: flag:  If true- enable FI
+                      False- disable FI
         """
+        fi_op = "enable" if flag else "disable"
         try:
-            LOGGER.info("Enabling Fault Injection : ")
-            local_path = DI_CFG["enable_fi_k8s"]
-            remote_path = DI_CFG["remote_enable_fi_k8s"]
-            cmd = f"chmod +x {remote_path} && ./{remote_path}"
+            LOGGER.info("%s fault injection",fi_op)
+            local_path = DI_CFG["fi_k8s"]
+            remote_path = DI_CFG["remote_fi_k8s"]
+            cmd = f"chmod +x {remote_path} && ./{remote_path} {fi_op}"
             self.master_node_list[0].copy_file_to_remote(local_path=local_path,
                                                          remote_path=remote_path)
             resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
             LOGGER.debug("Resp: %s", resp)
-            return True, resp
-        except IOError as ex:
-            LOGGER.error("Exception :%s", ex)
-            return False, ex
-
-    def disable_fi(self):
-        """
-        Disable Fault Injection (Restarts S3 server without fault_injection flag)
-        Note: Check POD status and hctl status online before and after this call
-        """
-        try:
-            LOGGER.info("Disabling Fault Injection : ")
-            local_path = DI_CFG["disable_fi_k8s"]
-            remote_path = DI_CFG["remote_disable_fi_k8s"]
-            cmd = f"chmod +x {remote_path} && ./{remote_path}"
-            self.master_node_list[0].copy_file_to_remote(local_path=local_path,
-                                                         remote_path=remote_path)
-            resp = self.master_node_list[0].execute_cmd(cmd=cmd, read_lines=True)
-            LOGGER.debug("Resp: %s", resp)
+            time.sleep(30)
             return True, resp
         except IOError as ex:
             LOGGER.error("Exception :%s", ex)

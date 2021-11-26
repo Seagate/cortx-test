@@ -361,12 +361,13 @@ class LogicalNode(Host):
         """
         pod_dict = {}
         output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS,read_lines=True)
+        log.debug("output : %s",output)
         for lines in output:
             if pod_prefix in lines:
                 data = lines.strip()
-                pod_name = data.split(" ")[0]
-                pod_ip = data.split(" ")[1]
-                pod_dict[pod_name]= pod_ip
+                pod_name = data.split()[0]
+                pod_ip = data.split()[1].replace("\n","")
+                pod_dict[pod_name.strip()] = pod_ip.strip()
         return  pod_dict
 
     def get_container_of_pod(self,pod_name,container_prefix):
