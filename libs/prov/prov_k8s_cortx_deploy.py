@@ -1000,9 +1000,12 @@ class ProvDeployK8sCortxLib:
         LOGGER.info("STARTED: {%s node (SNS-%s+%s+%s) (DIX-%s+%s+%s) "
                     "k8s based Cortx Deployment", len(worker_node_list),
                     sns_data, sns_parity, sns_spare, dix_data, dix_parity, dix_spare)
-        LOGGER.debug("flag value are %s,%s,%s,%s,%s", setup_k8s_cluster_flag,
-                     cortx_cluster_deploy_flag, setup_client_config_flag,
-                     run_basic_s3_io_flag, destroy_setup_flag)
+        LOGGER.debug("setup_k8s_cluster_flag = %s", setup_k8s_cluster_flag)
+        LOGGER.debug("cortx_cluster_deploy_flag = %s", cortx_cluster_deploy_flag)
+        LOGGER.debug("setup_client_config_flag = %s", setup_client_config_flag)
+        LOGGER.debug("run_basic_s3_io_flag = %s", run_basic_s3_io_flag)
+        LOGGER.debug("run_s3bench_workload_flag = %s", run_s3bench_workload_flag)
+        LOGGER.debug("destroy_setup_flag = %s", destroy_setup_flag)
         if setup_k8s_cluster_flag:
             LOGGER.info("Step to Perform k8s Cluster Deployment")
             resp = self.setup_k8s_cluster(master_node_list, worker_node_list)
