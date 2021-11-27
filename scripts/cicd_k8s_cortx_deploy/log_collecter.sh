@@ -1,4 +1,4 @@
-#!/bin/bash/
+#!/bin/bash
   dir_path=/mnt/nfs_share
   log_path=$1/$2/
   LOG_PATH=$dir_path/$log_path
@@ -16,6 +16,7 @@
       eval "$cmd"
   fi
 
+  # shellcheck disable=SC2143
   if [[ $(mount -l|grep "$dir_path") ]]; then
       echo "INFO: Mounted"
   else
@@ -26,7 +27,7 @@
           eval "$cmd2"
 
   fi
-  if [ -d $LOG_PATH ]
+  if [ -d "$LOG_PATH" ]
   then
       echo "INFO: Directory exists"
       echo "INFO: Copying logs to nfs share"
