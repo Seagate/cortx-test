@@ -241,7 +241,8 @@ AWS_CLI_ERROR = ["ServiceUnavailable",
                  "InvalidArgument",
                  "AccessDenied",
                  "Failed:",
-                 "An error occurred"]
+                 "An error occurred",
+                 "S3 error: "]
 
 
 # cortxcli constants
