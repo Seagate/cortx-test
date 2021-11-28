@@ -454,8 +454,22 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
+KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
+KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
+KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
+KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
+KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
+KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
+
+# Helm commands
+HELM_LIST = "helm list"
+HELM_STATUS = "helm status {}"
+HELM_HISTORY = "helm history {}"
+HELM_ROLLBACK = "helm rollback {} {}"
+HELM_GET_VALUES = "helm get values {}"
 
 # LC commands
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
