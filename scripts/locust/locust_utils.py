@@ -33,14 +33,14 @@ from botocore.exceptions import BotoCoreError, ClientError, ConnectionClosedErro
 from locust import events
 
 from commons.utils import system_utils
-from core.runner import LRUCache
+from core.runner import InMemoryDB
 from scripts.locust import LOCUST_CFG
 
 LOGGER = logging.getLogger(__name__)
 
 OBJ_NAME = LOCUST_CFG['default']['OBJ_NAME']
 GET_OBJ_PATH = LOCUST_CFG['default']['GET_OBJ_PATH']
-OBJECT_CACHE = LRUCache(1024*1024)
+OBJECT_CACHE = InMemoryDB(1024*1024)
 
 
 class LocustUtils:
