@@ -134,13 +134,12 @@ class TestAwsIam:
         secret_key = resp[1]["AccessKey"]["SecretAccessKey"]
         return access_key, secret_key
 
-    @pytest.mark.skip("Duplicate of TEST-2077")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7166")
     @CTFailOn(error_handler)
     def test_update_user_2419(self):
-        """Update User using aws iam."""
+        """Update User using aws iam. Duplicate of TEST-2077"""
         self.log.info("STARTED: Update User using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
@@ -185,13 +184,12 @@ class TestAwsIam:
         self.log.info("Step 3: Listed users and verified user name is updated")
         self.log.info("ENDED: Update User using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2078")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7167")
     @CTFailOn(error_handler)
     def test_list_user_2420(self):
-        """list user using aws iam."""
+        """list user using aws iam. Duplicate of TEST-2078."""
         self.log.info(
             "STARTED: list user using aws iam")
         self.log.info("Step 1: Create new account and new user in it")
@@ -220,12 +218,11 @@ class TestAwsIam:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: list user using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2079")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7168")
     def test_del_user_2421(self):
-        """Delete User using aws iam."""
+        """Delete User using aws iam. Duplicate of TEST-2079."""
         self.log.info(
             "STARTED: Delete User using aws iam")
         self.log.info("Step 1: Create new account and new user in it")
@@ -254,13 +251,12 @@ class TestAwsIam:
         self.del_iam_user = False
         self.log.info("ENDED: Delete User using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2080")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7169")
     @CTFailOn(error_handler)
     def test_create_100_users_per_account_2422(self):
-        """Create 100 Users per account using aws iam."""
+        """Create 100 Users per account using aws iam. Duplicate of TEST-2080."""
         self.log.info(
             "STARTED: Create 100 Users per account using aws iam")
         resp = self.create_account()
@@ -284,13 +280,12 @@ class TestAwsIam:
         self.log.info(
             "ENDED: Create 100 Users per account using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2083")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7170")
     @CTFailOn(error_handler)
     def test_list_accesskeys_2425(self):
-        """List accesskeys for the user using aws iam."""
+        """List accesskeys for the user using aws iam. Duplicate of TEST-2083."""
         self.log.info("STARTED: list accesskeys for the user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
@@ -324,13 +319,12 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: list accesskeys for the user using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2084")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7171")
     @CTFailOn(error_handler)
     def test_delete_accesskeys_2426(self):
-        """Delete Accesskey of a user using aws iam."""
+        """Delete Accesskey of a user using aws iam. Duplicate of TEST-2084."""
         self.log.info("STARTED: Delete Accesskey of a user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
@@ -356,13 +350,12 @@ class TestAwsIam:
             "ENDED: Delete Accesskey of a user using aws iam %s",
             resp)
 
-    @pytest.mark.skip("Duplicate of TEST-2082")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7172")
     @CTFailOn(error_handler)
     def test_create_accesskey_2424(self):
-        """Create Access key to the user using aws iam."""
+        """Create Access key to the user using aws iam. Duplicate of TEST-2082."""
         self.log.info("STARTED: Create Access key to the user using aws iam")
         self.log.info(
             "Step 1: Create new account and new user and new profile in it")
@@ -397,13 +390,12 @@ class TestAwsIam:
         assert_true(resp[0], resp[1])
         self.log.info("ENDED: Create Access key to the user using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2076")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7173")
     @CTFailOn(error_handler)
     def test_create_new_user_2418(self):
-        """Create new user for current Account AWS IAM."""
+        """Create new user for current Account AWS IAM. Duplicate of TEST-2076."""
         self.log.info(
             "STARTED: Create new user for current Account AWS IAM")
         self.log.info("Step 1: Create new account and new user in it")
@@ -432,13 +424,12 @@ class TestAwsIam:
         self.log.info("Step 2: Listed users and verified user name is present")
         self.log.info("ENDED: Create new user for current Account AWS IAM")
 
-    @pytest.mark.skip("Duplicate of TEST-2081")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7191")
     @CTFailOn(error_handler)
     def test_create_user_existing_name_2423(self):
-        """Creating user with existing name With AWS IAM client."""
+        """Creating user with existing name With AWS IAM client. Duplicate of TEST-2081."""
         self.log.info(
             "STARTED: creating user with existing name With AWS IAM client")
         self.log.info("Step 1: Create new account")
@@ -474,13 +465,12 @@ class TestAwsIam:
         self.log.info(
             "ENDED: creating user with existing name With AWS IAM client")
 
-    @pytest.mark.skip("Duplicate of TEST-2085")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7174")
     @CTFailOn(error_handler)
     def test_update_accesskey_2427(self):
-        """Update Accesskey of a user with active mode using aws iam."""
+        """Update Accesskey of a user with active mode using aws iam. Duplicate of TEST-2085."""
         self.log.info(
             "STARTED: Update Accesskey of a user with active mode using aws iam")
         self.log.info(
@@ -525,13 +515,12 @@ class TestAwsIam:
         self.log.info(
             "ENDED: Update Accesskey of a user with active mode using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2086")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7175")
     @CTFailOn(error_handler)
     def test_update_accesskey_userinactive_2428(self):
-        """Update accesskey of a user with inactive mode using aws iam."""
+        """Update accesskey of a user with inactive mode using aws iam. Duplicate of TEST-2086."""
         self.log.info(
             "STARTED: update accesskey of a user with inactive mode using aws iam")
         self.log.info(
@@ -574,13 +563,12 @@ class TestAwsIam:
         self.log.info(
             "ENDED: update access key of a user with inactive mode using aws iam")
 
-    @pytest.mark.skip("Duplicate of TEST-2087")
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7176")
     @CTFailOn(error_handler)
     def test_create_accesskey_existinguser_2429(self):
-        """Create access key key with existing user name using aws iam."""
+        """Create access key key with existing user name using aws iam. Duplicate of TEST-2087."""
         self.log.info(
             "STARTED: create access key key with existing user name using aws iam")
         self.log.info(
