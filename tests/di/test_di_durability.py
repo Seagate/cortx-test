@@ -34,7 +34,6 @@ from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.params import TEST_DATA_FOLDER, VAR_LOG_SYS
 from commons.constants import const
-from commons.utils import system_utils as sys_util
 from libs.di.di_error_detection_test_lib import DIErrorDetectionLib
 from libs.s3 import CMN_CFG, S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -271,15 +270,12 @@ class TestDIDurability:
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info(
-            "Step 1: Created %s objects of size 10 MB", len(self.file_lst))
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 " 
-                      "checksum ) for all obj")
+        self.log.info("Step 1: Created %s objects of size 10 MB", len(self.file_lst))
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum) for all obj")
         checksum_dict = {}
         for file in self.file_lst:
             checksum_dict[file] = system_utils.calculate_checksum(file, filter_resp=True)
-        self.log.info("Step 2: Calculate MD5checksum ("
-                      "base64-encoded MD5 checksum ) for all obj")
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for all obj")
         self.log.info(
             "Step 3: Put objects into a bucket with a calculated checksum"
             " pass in content-md5 field")
@@ -1072,25 +1068,25 @@ class TestDIDurability:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
         self.log.info("Step 3: upload a file using multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.obj_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         parts = list()
-        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
-                                          split_count=5, random_part_size=False)
+        res_sp_file = system_utils.split_file(filename=location, size=25, split_count=5,
+                                              random_part_size=False)
         i = 0
         while i < 5:
             with open(res_sp_file[i]["Output"], "rb") as file_pointer:
                 data = file_pointer.read()
             resp = self.s3_mp_test_obj.upload_part(body=data,
                                                    bucket_name=self.bucket_name,
-                                                   object_name=self.obj_name,
+                                                   object_name=self.object_name,
                                                    upload_id=mpu_id, part_number=i + 1)
             parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
             i += 1
         self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
                                                       bucket=self.bucket_name,
-                                                      object_name=self.obj_name)
+                                                      object_name=self.object_name)
         self.log.info("Step 4: verify download object fails with 5xx error code")
         # resp = self.s3_test_obj.object_download(file_path=self.file_path,
         #                                         bucket_name=self.bucket_name,
@@ -1126,25 +1122,25 @@ class TestDIDurability:
             self.log.info("Step 2: failed to enable data corruption")
             assert False
         self.log.info("Step 3: upload a file using multipart upload")
-        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.obj_name)
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         mpu_id = res[1]["UploadId"]
         self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
         parts = list()
-        res_sp_file = sys_util.split_file(filename=self.F_PATH, size=25,
-                                          split_count=5, random_part_size=False)
+        res_sp_file = system_utils.split_file(filename=location, size=25, split_count=5,
+                                              random_part_size=False)
         i = 0
         while i < 5:
             with open(res_sp_file[i]["Output"], "rb") as file_pointer:
                 data = file_pointer.read()
             resp = self.s3_mp_test_obj.upload_part(body=data,
                                                    bucket_name=self.bucket_name,
-                                                   object_name=self.obj_name,
+                                                   object_name=self.object_name,
                                                    upload_id=mpu_id, part_number=i + 1)
             parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
             i += 1
         self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
                                                       bucket=self.bucket_name,
-                                                      object_name=self.obj_name)
+                                                      object_name=self.object_name)
         self.log.info("Step 4: verify download object fails with 5xx error code")
         # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
         #                                                     my_key=self.object_name,
