@@ -124,3 +124,19 @@ class MotrCoreK8s():
             if node == cortx_node:
                 return self.node_dict[node]
         return None
+
+    def get_number_of_m0clients(self, cluster_info_dic=None):
+        """
+        To get the number of m0clients in a node
+
+        :param cluster_info_dic- Dictionray containing cluster info
+        :type: dictionary
+        :returns: Number of m0clients present in given node
+        :rtype: integer
+        """
+        if cluster_info_dic == None:
+           return len(self.node_dict[self.get_primary_cortx_node()]["m0client"])
+        else:
+           return len(cluster_info_dic[self.get_primary_cortx_node()]["m0client"])
+        return None
+
