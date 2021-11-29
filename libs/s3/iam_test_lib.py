@@ -86,7 +86,6 @@ class IamTestLib(IamLib):
             # Adding sleep in sec due to ldap sync issue EOS-6783
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
-
         except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -103,7 +102,6 @@ class IamTestLib(IamLib):
             LOGGER.info("listing all users")
             response = super().list_users()["Users"]
             LOGGER.info(response)
-
         except (self.iam.exceptions.UserNotFoundException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users.__name__,
@@ -152,7 +150,7 @@ class IamTestLib(IamLib):
             response = poll(super().delete_access_key, user_name, access_key_id)
             LOGGER.info(response)
             # Adding sleep in ms due to ldap sync issue EOS-25140
-            #time.sleep(S3_CFG["access_key_delay"])
+            time.sleep(S3_CFG["access_key_delay"])
         except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
@@ -239,7 +237,6 @@ class IamTestLib(IamLib):
                 new_user_name)
             response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
-
         except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user.__name__,

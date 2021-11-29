@@ -64,7 +64,7 @@ def build_s3_endpoints() -> dict:
     ssl_flg = ast.literal_eval(str(use_ssl).title())
     cert_flg = ast.literal_eval(str(validate_certs).title())
     s3_conf["s3_url"] = f"{'https' if ssl_flg else 'http'}://{s3_url}"
-    if cert_flg:
+    if ssl_flg:
         s3_conf["iam_url"] = f"https://{iam_url}:{s3_conf['https_iam_port']}"
     else:
         s3_conf["iam_url"] = f"http://{iam_url}:{s3_conf['http_iam_port']}"
