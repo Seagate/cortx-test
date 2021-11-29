@@ -9,7 +9,7 @@ ARG GIT_BRANCH
 RUN git clone --branch $GIT_BRANCH https://$GIT_ID:$GIT_PASSWORD@github.com/$GIT_USERNAME/$GIT_REPO
 
 RUN mkdir -p /etc/ssl/stx-s3-clients/s3/
-COPY ca.crt /etc/ssl/stx-s3-clients/s3/
+COPY ci_tools/ca.crt /etc/ssl/stx-s3-clients/s3/
 
 RUN mkdir /root/.aws
 WORKDIR /cortx-test
