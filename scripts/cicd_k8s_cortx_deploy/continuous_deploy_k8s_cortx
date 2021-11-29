@@ -78,6 +78,8 @@ pipeline {
                         while IFS= read -r line; do
                            pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line
                         done < $ALL_SETUP_ENTRY
+                        chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
+                        sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
                         deactivate
                         '''
                     }
@@ -92,6 +94,8 @@ pipeline {
                             echo "Raise Jira on Failure"
                             python scripts/cicd_k8s_cortx_deploy/create_jira_issue.py
                         fi
+                        chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
+                        sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
                         deactivate
                         '''
                     }
