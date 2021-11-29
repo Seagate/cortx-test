@@ -28,13 +28,13 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import system_utils
+from commons.utils import assert_utils
 from commons.utils.assert_utils import \
     assert_true, assert_false, assert_equal, assert_list_item
 from commons.utils.assert_utils import assert_list_equal
 from config.s3 import S3_CFG
 from config.s3 import S3_BLKBOX_CFG
 from libs.s3 import iam_test_lib
-from libs.s3.cortxcli_test_lib import CortxCliTestLib
 from libs.s3.s3_restapi_test_lib import S3AccountOperationsRestAPI
 
 
@@ -54,8 +54,7 @@ class TestAwsIam:
         cls.iam_obj = iam_test_lib.IamTestLib()
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
         assert_true(
-            resp, "config path not exists: {}".format(
-                S3_CFG["aws_config_path"]))
+            resp, "config path not exists: {}".format(S3_CFG["aws_config_path"]))
         cls.log.info("ENDED: setup test suite operations.")
 
     def setup_method(self):
@@ -64,7 +63,6 @@ class TestAwsIam:
         self.account_name = "seagateaccount_{}".format(time.perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
         self.user_name = "seagate_user{}".format(time.perf_counter_ns())
-        self.cortx_obj = CortxCliTestLib()
         self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
         self.s3_accounts_list = list()
         self.iam_users_list = list()
@@ -79,27 +77,23 @@ class TestAwsIam:
         This function will delete IAM accounts and users.
         """
         self.log.info("STARTED: Teardown Operations")
-        try:
-            for acc in self.s3_accounts_list:
-                self.cortx_obj.login_cortx_cli(username=acc, password=self.s3acc_password)
-                if self.del_iam_user:
-                    for iam_user in self.iam_users_list:
-                        self.cortx_obj.delete_iam_user(iam_user)
-                self.cortx_obj.delete_s3account_cortx_cli(account_name=acc)
-                self.cortx_obj.logout_cortx_cli()
-            self.cortx_obj.close_connection()
-            self.log.info("ENDED: Teardown Operations")
-        except Exception as error:
-            self.log.error("Teardown failed with error: %s", error)
+        usr_list = self.iam_obj.list_users()[1]
+        all_users = [usr["UserName"] for usr in usr_list if self.user_name in usr["UserName"]]
+        if all_users:
+            resp = self.iam_obj.delete_users_with_access_key(all_users)
+            assert_utils.assert_true(resp, "Failed to Delete IAM users")
+        for acc in self.s3_accounts_list:
+            self.rest_obj.delete_s3_account(acc)
+        self.log.info("ENDED: Test teardown Operations.")
 
     def create_account(self):
-        """Function will create IAM account."""
-        self.log.info(
-            "Account name: %s, Account email: %s",
-            self.account_name,
-            self.email_id)
-        return self.cortx_obj.create_account_cortxcli(
-           self.account_name, self.email_id, self.s3acc_password)
+        """Function will create s3 account."""
+        self.log.info("Account name: %s, Account email: %s", self.account_name, self.email_id)
+        resp = self.rest_obj.create_s3_account(
+            self.account_name, self.email_id, self.s3acc_password)
+        assert_utils.assert_true(resp[0], resp)
+
+        return resp
 
     def create_user_and_access_key(
             self,
@@ -443,27 +437,19 @@ class TestAwsIam:
         self.s3_accounts_list.append(self.account_name)
         self.iam_users_list.append(self.user_name)
         new_iam_obj = iam_test_lib.IamTestLib(
-            access_key=access_key,
-            secret_key=secret_key)
-        self.s3_accounts_list.append(self.account_name)
-        self.cortx_obj.login_cortx_cli(self.account_name, self.s3acc_password)
-        resp = self.cortx_obj.create_user_cortxcli(
-           self.user_name, self.s3acc_password, self.s3acc_password)
+            access_key=access_key, secret_key=secret_key)
+        resp = new_iam_obj.create_user(self.user_name)
         assert_true(resp[0], resp[1])
-        self.cortx_obj.logout_cortx_cli()
-        self.log.info(
-            "Step 1: Created user with name %s", self.user_name)
-        self.log.info(
-            "Step 2: Creating user with existing name %s", self.user_name)
+        self.log.info("Step 1: Created user with name %s", self.user_name)
+        self.log.info("Step 2: Creating user with existing name %s", self.user_name)
         try:
             resp = new_iam_obj.create_user(self.user_name)
             assert_false(resp[0], "EntityAlreadyExists")
         except CTException as error:
             self.log.error("EntityAlreadyExists: %s", error)
-            self.log.info(
-                "Step 2: Could not create user with existing name %s", self.user_name)
-        self.log.info(
-            "ENDED: creating user with existing name With AWS IAM client")
+            assert_utils.assert_in("EntityAlreadyExists", error, error)
+            self.log.info("Step 2: Could not create user with existing name %s", self.user_name)
+        self.log.info("ENDED: creating user with existing name With AWS IAM client")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
