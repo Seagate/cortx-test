@@ -80,6 +80,7 @@ class TestContDeployment:
         test to run continuous deployment
         """
         count = int(self.iterations)
+        self.log.info("Iterations no is %s", count)
         node = "nodes_{}".format(len(self.worker_node_list))
         self.log.debug("nodes are %s", node)
         config = DEPLOY_CFG[node][self.conf]

@@ -332,6 +332,7 @@ class ProvDeployK8sCortxLib:
     def checkout_solution_file(self, git_tag):
         """
         Method to checkout solution.yaml file
+        param: git tag: tag of service repo
         """
         url = self.deploy_cfg["git_k8_repo_file"].format(git_tag)
         cmd = common_cmd.CMD_CURL.format(self.deploy_cfg["new_file_path"], url)
@@ -709,6 +710,8 @@ class ProvDeployK8sCortxLib:
     def destroy_setup(self, master_node_obj, worker_node_obj):
         """
         Method used to run destroy script
+        param: master node obj list
+        param: worker node obj list
         """
         cmd1 = "cd {} && {} --force".format(self.deploy_cfg["git_remote_dir"],
                                             self.deploy_cfg["destroy_cluster"])
@@ -827,6 +830,11 @@ class ProvDeployK8sCortxLib:
         """
         Create test_file with file_size(count*blocksize) and upload to bucket_name
         validate checksum after download and deletes the file
+        param:s3t_obj: s3 obj to fetch access_key and secret_key
+        param:bucket_name: bucket name
+        param: test_file: test file
+        param: count: no. of objects
+        param block size: block size of the object
         """
         file_path = os.path.join(self.test_dir_path, test_file)
         if not os.path.isdir(self.test_dir_path):
@@ -871,6 +879,8 @@ class ProvDeployK8sCortxLib:
     def basic_io_write_read_validate(self, s3t_obj: S3TestLib, bucket_name: str):
         """
         This method write, read and validate the object.
+        param: s3t_obj: s3 obj to fetch access_key and secret key
+        param: bucket_name:bucket name
         """
         LOGGER.info("STARTED: Basic IO")
         basic_io_config = PROV_CFG["test_basic_io"]
@@ -898,6 +908,10 @@ class ProvDeployK8sCortxLib:
     def io_workload(access_key, secret_key, bucket_prefix, clients=5):
         """
         S3 bench workload test executed for each of Erasure coding config
+        param: access_key: s3 user access key
+        param: secret_key: s3 user secret keys
+        param: bucket_prefix: bucket prefix
+        param: client: no clients request
         """
         LOGGER.info("STARTED: S3 bench workload test")
         workloads = [
@@ -929,6 +943,9 @@ class ProvDeployK8sCortxLib:
     def dump_in_csv(test_list: List, csv_filepath):
         """
         Method to dump the data in csv file
+        param: list of data which needs to be added in row of csv file
+        param: csv_filepath: csv file path
+        returns: updated csv file with its path
         """
         fields = ['ITERATION', 'POD STATUS']
         with open(csv_filepath, 'w')as fptr:
@@ -979,6 +996,23 @@ class ProvDeployK8sCortxLib:
                         worker_node_list, **kwargs):
         """
         This method is used for deployment with various config on N nodes
+        param: sns_data
+        param: sns_parity
+        param: sns_spare
+        param: dix_data
+        param: dix_parity
+        param: dix_spare
+        param: cvg_count
+        param: data disk per cvg
+        param: master node obj list
+        param: worker node obj list
+        keyword:setup_k8s_cluster_flag: flag to deploy k8s setup
+        keyword:cortx_cluster_deploy: flag to deploy cortx cluster
+        keyword:setup_client_config_flag: flsg to setup client with haproxy
+        keyword:run_basic_s3_io_flag: flag to run basic s3 io
+        keyword:run_s3bench_workload_flag: flag to run s3bench IO
+        keyword:destroy_setup_flag:flag to destroy cortx cluster
+
         """
         setup_k8s_cluster_flag = \
             kwargs.get("setup_k8s_cluster_flag",
