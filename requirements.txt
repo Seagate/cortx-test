@@ -5,7 +5,6 @@ certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
 confluent_kafka
-dataclasses~=0.6
 defusedxml~=0.7.1
 docutils==0.14
 fastavro

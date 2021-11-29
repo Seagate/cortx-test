@@ -43,8 +43,7 @@ def get_db_details(release=1):
     try:
         db_hostname = config["PerfDB"]["hostname"]
         db_name = config["PerfDB"]["database"]
-        db_collection = config["PerfDB"]["collection"]["R{}".format(
-            int(release))]
+        db_collection = config["PerfDB"]["collection"]["{}".format(release)]
         db_username = config["PerfDB"]["auth"]["full_access_user"]
         db_password = config["PerfDB"]["auth"]["full_access_password"]
 

@@ -92,6 +92,7 @@ class TestFailureDomain:
         assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.run(order=1)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.tags("TEST-23540")
     def test_23540(self):
@@ -110,6 +111,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=4)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 1, [6, 2, 0])])
@@ -135,6 +137,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.deploy_3node_vm_ff(self.build_no, self.build_url, resp[1])
 
     @pytest.mark.run(order=5)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(1, 7, [8, 2, 0])])
@@ -165,6 +168,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=8)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [3, 2, 0])])
@@ -195,6 +199,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=12)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [8, 4, 0])])
@@ -225,6 +230,7 @@ class TestFailureDomain:
         self.deploy_ff_obj.post_deployment_steps()
 
     @pytest.mark.run(order=16)
+    @pytest.mark.lr
     @pytest.mark.data_durability
     @pytest.mark.parametrize("cvg_count_per_node, data_disk_per_cvg, sns_config",
                              [(2, 3, [10, 5, 0])])
