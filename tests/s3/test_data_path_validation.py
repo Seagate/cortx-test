@@ -148,7 +148,7 @@ class TestDataPathValidation:
             self.access_key,
             self.secret_key,
             bucket,
-            S3_CFG["s3_url"],
+            S3_CFG["s3b_url"],
             100,
             100,
             obj_prefix,

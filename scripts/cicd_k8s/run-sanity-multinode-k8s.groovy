@@ -7,8 +7,8 @@ pipeline {
     }
     environment {
 		Target_Node = 'multi-node-' + "${"${M_NODE}".split("\\.")[0]}"
-		Build_Branch = "${"${CORTX_BUILD}".split("\\#")[0]}"
-		Build_VER = "${"${CORTX_BUILD}".split("\\#")[1]}"
+		Build_Branch = "${"${CORTX_IMAGE}".split(":")[0]}"
+		Build_VER = "${"${CORTX_IMAGE}".split(":")[1]}"
 		Sequential_Execution = true
 		Original_TP = 'TEST-31310'
 		Sanity_TE = 'TEST-31311'
@@ -36,7 +36,6 @@ source venv/bin/activate
 python --version
 export ADMIN_USR="${ADMIN_USR}"
 export ADMIN_PWD="${ADMIN_PWD}"
-export MGMT_VIP="${MGMT_VIP}"
 export HOST_PASS="${HOST_PASS}"
 export Target_Node="${Target_Node}"
 deactivate
@@ -49,14 +48,14 @@ deactivate
 export PYTHONPATH=$WORKSPACE:$PYTHONPATH
 echo $PYTHONPATH
 sh scripts/cicd_k8s/lb_haproxy.sh
-python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}" --mgmt_vip "${MGMT_VIP}" --node_count "${NUM_NODES}"
+python3.7 scripts/cicd_k8s/client_multinode_conf.py --master_node "${M_NODE}" --password "${HOST_PASS}"
 deactivate
 '''
 			}
 	    }
 		stage('COPY_TP_TE') {
 			steps{
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					sh label: '', script: '''source venv/bin/activate
 python3.7 -u tools/clone_test_plan/clone_test_plan.py -tp=${Original_TP} -b=${Build_VER} -br=${Build_Branch} -s=${Setup_Type} -n=${Nodes_In_Target} -sr=${Server_Type} -e=${Enclosure_Type} -p=${Platform_Type}
 deactivate
@@ -69,7 +68,7 @@ deactivate
 				script {
 			        env.Sanity_Failed = true
 
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -89,7 +88,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check=False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -113,7 +112,7 @@ deactivate
 				script {
 			        env.Sanity_Failed = false
 
-				withCredentials([usernamePassword(credentialsId: 'ea9a9c11-7f66-43c5-8a32-5311b0cb9cf4', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
+				withCredentials([usernamePassword(credentialsId: 'e8d4e498-3a9b-4565-985a-abd90ac37350', passwordVariable: 'JIRA_PASSWORD', usernameVariable: 'JIRA_ID')]) {
 					status = sh (label: '', returnStatus: true, script: '''#!/bin/sh
 source venv/bin/activate
 set +x
@@ -130,7 +129,7 @@ do
 			echo "tp_id : $tp_id"
 			echo "te_id : $te_id"
 			echo "old_te : $old_te"
-			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check=False)
+			(set -x; python3 -u testrunner.py -te=$te_id -tp=$tp_id -tg=${Target_Node} -b=${Build_VER} -t=${Build_Branch} --force_serial_run ${Sequential_Execution} -d=${DB_Update} --xml_report True --health_check False --validate_certs False)
 		fi
 done < $INPUT
 IFS=$OLDIFS
@@ -152,7 +151,6 @@ deactivate
         		  /* if ( currentBuild.currentResult == "FAILURE" || currentBuild.currentResult == "UNSTABLE" ) {
         		  try {
         		      sh label: '', script: '''source venv/bin/activate
-export MGMT_VIP="${HOSTNAME}"
 pytest scripts/jenkins_job/aws_configure.py::test_collect_support_bundle_single_cmd --local True --health_check False --target ${Target_Node}
 deactivate
 '''
@@ -171,7 +169,7 @@ deactivate
 		     } */
 			catchError(stageResult: 'FAILURE') {
 			    archiveArtifacts allowEmptyArchive: true, artifacts: 'log/*report.xml, log/*report.html, support_bundle/*.tar, crash_files/*.gz', followSymlinks: false
-				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_BUILD - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
+				emailext body: '${SCRIPT, template="REL_QA_SANITY_CUS_EMAIL_3.template"}', subject: '$PROJECT_NAME on Build # $CORTX_IMAGE - $BUILD_STATUS!', to: 'sonal.kalbende@seagate.com'
 			}
 		}
 	}
