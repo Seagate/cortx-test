@@ -52,7 +52,7 @@ CliConfig:
   csm_conf_file: "/etc/csm/csm.conf"
 
 JMeterConfig:
-  jmeter_path: "/root/apache-jmeter-5.4/bin"
+  jmeter_path: "/usr/apachejmeter/bin"
   jmx_path: "scripts/jmx_files"
   jtl_log_path: "log/jmeter/"
   test_data_csv: "test_config.csv"
