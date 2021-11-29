@@ -47,8 +47,12 @@ def execute_cmd(cmd) -> tuple:
 def create_db_entry(hosts, cfg, admin_user, admin_pswd, nodes_cnt) -> str:
     """
     Create setup entry in Database
-    hosts_list: Multiple Hosts string received input from jenkins
-    format: hostname=<hostname>,user=<user>,pass=<password>
+    hosts: Multiple Hosts string received input from jenkins
+           (format: hostname=<hostname>,user=<user>,pass=<password>)
+    cfg: Config file for create db entry
+    admin_user : Admin username for CSM admin
+    admin_pswd: Admin Password for CSM admin
+    nodes_cnt: Number of Nodes to be used for db_entry from the hosts pool.
     return: setup_name :
     """
     print("********Creating DB entry for setup**************")
