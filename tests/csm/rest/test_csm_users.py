@@ -3472,7 +3472,7 @@ class TestCsmUser():
             user_id = user['id']
             if user["role"] == "admin" and user_id != CSM_REST_CFG["csm_admin_user"]["username"]:
                 self.log.info("Deleting extra admin user : %s", user_id)
-                self.csm_user.delete_csm_user(user_id)
+                resp = self.csm_user.delete_csm_user(user_id)
                 assert resp.status_code == HTTPStatus.OK, f"Delete user {user_id} failed"
         self.log.info("Step 1: Verify delete last admin user functionality")
         response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
