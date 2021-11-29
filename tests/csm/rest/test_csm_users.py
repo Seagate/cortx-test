@@ -3465,6 +3465,15 @@ class TestCsmUser():
         resp_msg_id = test_cfg["message_id"]
         resp_data = self.rest_resp_conf[resp_error_code][resp_msg_id]
         msg = resp_data[2]
+        self.log.info("Pre-requistile: Checking for admin users")
+        resp = self.csm_user.list_csm_users(HTTPStatus.OK, return_actual_response=True)
+        assert resp.status_code == HTTPStatus.OK, "List user failed"
+        for user in resp.json()["users"]:
+            user_id = user['id']
+            if user["role"] == "admin" and user_id != "cortxadmin":
+                self.log.info("Deleting extra admin user : %s", user_id)
+                self.csm_user.delete_csm_user(user_id)
+                assert resp.status_code == HTTPStatus.OK, f"Delete user {user_id} failed"
         self.log.info("Step 1: Verify delete last admin user functionality")
         response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
