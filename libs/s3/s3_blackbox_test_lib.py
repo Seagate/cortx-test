@@ -71,8 +71,9 @@ class JCloudClient:
         run_local_cmd(f"yes | cp -rf {source}*.jar {destination}")
         res_ls = run_local_cmd(f"ls {destination}")[1]
         # Run commands to set cert files in client Location.
-        run_local_cmd(commands.CMD_KEYTOOL1)
-        run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
+        if S3_CFG['validate_certs']:
+            run_local_cmd(commands.CMD_KEYTOOL1)
+            run_local_cmd(commands.CMD_KEYTOOL2.format(ca_crt_path))
 
         return bool(".jar" in res_ls)
 
@@ -94,10 +95,10 @@ class JCloudClient:
                 if prop_dict['s3_endpoint'] != S3_CFG["s3_url"]:
                     s3_endpoint = S3_CFG["s3_url"].split('//')[1]
                     prop_dict['s3_endpoint'] = s3_endpoint
-                if S3_CFG['use_ssl']:
-                    prop_dict['use_https'] = 'true'
-                else:
-                    prop_dict['use_https'] = 'false'
+                prop_dict['use_https'] = 'true' if S3_CFG['use_ssl'] else 'false'
+                # Skip certificate validation with https/ssl is unsupported option in jcloud/jclient
+                prop_dict['use_https'] = 'true' if S3_CFG['validate_certs'] else 'false'
+
                 resp = config_utils.write_properties_file(prop_path, prop_dict)
 
         return resp
@@ -228,6 +229,7 @@ class MinIOClient:
 
 class S3FS:
     """Class for s4fs Tools operations."""
+
     def __init__(self, access: str = None, secret: str = None,) -> None:
         """
         method initializes members for s3fs client.
@@ -274,20 +276,35 @@ class S3FS:
         tool = S3FS_CNF["s3fs_cfg"]["s3fs_tool"]
         cmd_elements.append(tool)
         cmd_elements.append(operation)
-        if S3_CFG["use_ssl"]:
-            if S3FS_CNF["s3fs_cfg"]["no_check_certificate"]:
-                cmd_arguments.append("-o no_check_certificate")
-            if not S3FS_CNF["s3fs_cfg"]["ssl_verify_hostname"]:
-                cmd_arguments.append("-o ssl_verify_hostname=0")
-            else:
-                cmd_arguments.append("-o ssl_verify_hostname=2")
-            if S3FS_CNF["s3fs_cfg"]["nosscache"]:
-                cmd_arguments.append("-o nosscache")
+        if not S3_CFG["validate_certs"]:
+            cmd_arguments.append("-o no_check_certificate")
+        if S3FS_CNF["s3fs_cfg"]["nosscache"]:
+            cmd_arguments.append("-o nosscache")
         if cmd_arguments:
             for argument in cmd_arguments:
                 cmd_elements.append(argument)
         cmd = " ".join(cmd_elements)
+        LOGGER.info("s3fs command: %s", cmd)
+
         return cmd
+
+    @staticmethod
+    def check_bucket_mounted(mount_path=None) -> tuple:
+        """
+        Check the bucket mounted on client.
+        :param: mount_path: Mount path of the bucket.
+        :return: True if bucket mounted successfully else False.
+        """
+        if not system_utils.path_exists(mount_path):
+            return False, f"Mount path '{mount_path}' does not exit"
+        command = S3FS_CNF["s3fs_cfg"]["cmd_check_mount"].format(mount_path)
+        resp = execute_cmd(command)
+        if not resp[0]:
+            return False, f"Failed to execute command: {command}"
+        if f"s3fs on {mount_path} type fuse.s3fs" not in resp[1]:
+            return False, resp[1]
+
+        return True, resp[1]
 
     def create_and_mount_bucket(self, bucket_name=None):
         """
@@ -311,12 +328,13 @@ class S3FS:
         operation = " ".join([bucket_name, dir_name])
         cmd_arguments = [
             S3FS_CNF["s3fs_cfg"]["passwd_file"],
-            S3FS_CNF["s3fs_cfg"]["url"],
+            S3FS_CNF["s3fs_cfg"]["url"].format(S3_CFG['s3_url']),
             S3FS_CNF["s3fs_cfg"]["path_style"],
             S3FS_CNF["s3fs_cfg"]["dbglevel"]]
-        command = self.create_cmd(
-            operation, cmd_arguments)
+        command = self.create_cmd(operation, cmd_arguments)
         resp = execute_cmd(command)
+        assert_true(resp[0], resp[1])
+        resp = self.check_bucket_mounted(dir_name)
         assert_true(resp[0], resp[1])
         LOGGER.info("Mount bucket successfully")
         LOGGER.info("Check the mounted directory present")
@@ -327,3 +345,50 @@ class S3FS:
             resp[1])
         LOGGER.info("Checked the mounted directory present")
         return bucket_name, dir_name
+
+
+# pylint: disable=too-few-public-methods
+class S3CMD:
+    """Class for s3cmd Tools operations."""
+
+    def __init__(self, access: str = None, secret: str = None) -> None:
+        """method initializes members for s3cms client."""
+        self.access = access
+        self.secret = secret
+        self.s3cf_path = S3_CFG["s3cfg_path"]
+        self.use_ssl = S3_CFG['use_ssl']
+        self.validate_certs = S3_CFG['validate_certs']
+        self.endpoint = S3_CFG['s3_url'].strip('https://').strip('http://')
+
+    def configure_s3cfg(self, access: str = None, secret: str = None) -> bool:
+        """
+        Function to configure access and secret keys in s3cfg file.
+
+        :param access: aws access key.
+        :param secret: aws secret key.
+        :return: True if s3cmd configured else False.
+        """
+        access = access if access else self.access
+        secret = secret if secret else self.secret
+        status, resp = run_local_cmd("s3cmd --version")
+        LOGGER.info(resp)
+        if not (status and system_utils.path_exists(self.s3cf_path)):
+            LOGGER.critical(
+                "S3cmd is not present, please install & configuration it through Makefile.")
+            return False
+
+        LOGGER.info("Updating config: %s", self.s3cf_path)
+        s3cmd_params = {
+            "access_key": access, "secret_key": secret, "host_base": self.endpoint,
+            "host_bucket": self.endpoint, "check_ssl_certificate": str(self.validate_certs),
+            "use_https": str(self.use_ssl)
+        }
+        for key, value in s3cmd_params.items():
+            status = config_utils.update_config_ini(self.s3cf_path, "default", key, value)
+            if not status:
+                LOGGER.error("Failed to update key: %s with %s", key, value)
+                return status
+
+            LOGGER.info("Updated key: %s with %s", key, value)
+
+        return status

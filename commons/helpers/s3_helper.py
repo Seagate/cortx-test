@@ -72,32 +72,6 @@ class S3Helper:
             S3Helper(cmn_cfg, s3_cfg)
         return S3Helper.__instance
 
-    def configure_s3cfg(
-            self,
-            access: str = None,
-            secret: str = None,
-            path: str = None) -> bool:
-        """
-        Function to configure access and secret keys in s3cfg file.
-
-        :param access: aws access key.
-        :param secret: aws secret key.
-        :param path: path to s3cfg file.
-        :return: True if s3cmd configured else False.
-        """
-        path = path if path else self.s3_cfg["s3cfg_path"]
-        status, resp = run_local_cmd("s3cmd --version")
-        LOGGER.info(resp)
-        if status:
-            res1 = config_utils.update_config_ini(path, "default", "access_key", access)
-            res2 = config_utils.update_config_ini(path, "default", "secret_key", secret)
-            status = res1 and res2 and status
-        else:
-            LOGGER.warning(
-                "S3cmd is not present, please install it and then run the configuration.")
-
-        return status
-
     def check_s3services_online(self, host: str = None,
                                 user: str = None,
                                 pwd: str = None) -> tuple:

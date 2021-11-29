@@ -39,6 +39,26 @@ from libs.s3.s3_blackbox_test_lib import S3FS
 class TestS3fs:
     """Blackbox s3fs testsuite."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.log.info("Check, configure and update s3fs config.")
+        resp = system_utils.is_rpm_installed(const.S3FS)
+        assert_true(resp[0], resp[1])
+        cls.s3fs_obj = S3FS(access=ACCESS_KEY, secret=SECRET_KEY)
+        cls.s3_test_obj = S3TestLib(access_key=ACCESS_KEY, secret_key=SECRET_KEY)
+        res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
+        if f"{ACCESS_KEY}:{SECRET_KEY}" != res[1]:
+            cls.log.info("Setting access and secret key for s3fs.")
+            resp = cls.s3fs_obj.configure_s3fs(ACCESS_KEY, SECRET_KEY)
+            assert_true(resp, f"Failed to update keys in {S3_CFG['s3fs_path']}")
+        resp = system_utils.path_exists(S3_CFG['s3fs_path'])
+        assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
+        cls.log.info("ENDED: Setup suite level operation.")
+
+    # pylint: disable=attribute-defined-outside-init
     def setup_method(self):
         """
         Function will be invoked before each test case execution.
@@ -47,22 +67,9 @@ class TestS3fs:
         """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup test operations.")
-        self.random_time = int(time.perf_counter_ns())
-        resp = system_utils.is_rpm_installed(const.S3FS)
-        assert_true(resp[0], resp[1])
-        access, secret = ACCESS_KEY, SECRET_KEY
-        self.s3fs_obj = S3FS(access=access, secret=secret)
-        self.s3_test_obj = S3TestLib(access_key=access, secret_key=secret,
-                                     endpoint_url=S3_CFG["s3_url"])
-        res = execute_cmd(f"cat {S3_CFG['s3fs_path']}")
-        if f"{access}:{secret}" != res[1]:
-            self.log.info("Setting access and secret key for s3fs.")
-            resp = self.s3fs_obj.configure_s3fs(access, secret)
-            assert_true(resp, f"Failed to update keys in {S3_CFG['s3fs_path']}")
         self.s3fs_cfg = S3FS_CNF["s3fs_cfg"]
-        resp = system_utils.path_exists(S3_CFG['s3fs_path'])
-        assert_true(resp, "config path not exists: {}".format(S3_CFG['s3fs_path']))
-        self.bucket_name = "s3fs-bkt-{}".format(self.random_time)
+        self.bucket_name = "s3fs-bkt-{}".format(time.perf_counter_ns())
+        self.log.info("Bucket name: %s", self.bucket_name)
         self.s3fs_bucket_list = list()
         self.log.info("ENDED: Setup operations")
 
@@ -79,12 +86,15 @@ class TestS3fs:
         self.log.info("unmount the bucket directory and remove it")
         dir_to_del = "".join([self.s3fs_cfg["dir_to_rm"], "*"])
         command = " ".join([self.s3fs_cfg["unmount_cmd"], dir_to_del])
-        execute_cmd(command)
+        resp = execute_cmd(command)
+        self.log.info(resp)
         command = " ".join([self.s3fs_cfg["rm_file_cmd"], dir_to_del])
-        execute_cmd(command)
+        resp = execute_cmd(command)
+        self.log.info(resp)
         self.log.info("unmounted the bucket directory and remove it")
         if self.s3fs_bucket_list:
             self.s3_test_obj.delete_multiple_buckets(self.s3fs_bucket_list)
+            self.log.info("Removed all buckets: %s", self.s3fs_bucket_list)
         self.log.info("ENDED: Teardown Operations")
 
     def create_and_mount_bucket(self):
