@@ -1,6 +1,5 @@
 import pytest
 import logging
-import pdb
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +10,6 @@ def setup_multipart_fixture(request):
     Part before yield will be invoked prior to each test case and
     part after yield will be invoked after test call i.e as teardown.
     """
-    pdb.set_trace()
-
     request.cls.hostnames = list()
     request.cls.connections = list()
     request.cls.hostnames.append('me')
@@ -34,7 +31,6 @@ class TestCheck:
         Part before yield will be invoked prior to each test case and
         part after yield will be invoked after test call i.e as teardown.
         """
-        pdb.set_trace()
         self.log = logging.getLogger(__name__)
         self.log.info("ENDED: setup test data. %s" % self.hostnames)
 
@@ -44,7 +40,6 @@ class TestCheck:
         Part before yield will be invoked prior to each test case and
         part after yield will be invoked after test call i.e as teardown.
         """
-        pdb.set_trace()
         self.log.info("STARTED: Teardown of test data %s" % self.hostnames)
         self.log.info("Deleting the file created locally for object")
 
@@ -90,5 +85,4 @@ class TestCheck:
             "ENDED: Enable / disable checksum feature (data and metadata "
             "check flags and combinations) and time to enable it "
             "(immediate effect). No I/O drops should be observed.")
-        pdb.set_trace()
         self.log.info(self.hostnames)
