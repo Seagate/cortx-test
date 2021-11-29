@@ -915,59 +915,108 @@ class TestDIDurability:
             "threshold to value greater than the object size.")
 
 
+@pytest.fixture(scope="class", autouse=False)
+def setup_multipart_fixture(request):
+    """
+    Yield fixture to setup pre requisites and teardown them.
+    Part before yield will be invoked prior to each test case and
+    part after yield will be invoked after test call i.e as teardown.
+    """
+    request.cls.log = logging.getLogger(__name__)
+    request.cls.log.info("STARTED: Setup test operations.")
+    request.cls.secure_range = secrets.SystemRandom()
+    request.cls.s3_test_obj = S3TestLib()
+    request.cls.s3_mp_test_obj = S3MultipartTestLib()
+    request.cls.hostnames = list()
+    request.cls.connections = list()
+    # request.cls.host_ip = CMN_CFG["nodes"][0]["host"]
+    # request.cls.uname = CMN_CFG["nodes"][0]["username"]
+    # request.cls.passwd = CMN_CFG["nodes"][0]["password"]
+    request.cls.nodes = CMN_CFG["nodes"]
+    if request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
+            request.cls.cmn_cfg["product_type"] == PROD_TYPE_NODE:
+        for node in request.cls.nodes:
+            node_obj = Node(hostname=node["hostname"],
+                            username=node["username"],
+                            password=node["password"])
+            node_obj.connect()
+            request.cls.connections.append(node_obj)
+            request.cls.hostnames.append(node["hostname"])
+    elif request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
+            request.cls.cmn_cfg["product_type"] == PROD_TYPE_K8S:
+        request.cls.log.error("Product family: LC")
+        # TODO: Add LC related calls. Check for k8s master.
+
+    request.cls.test_dir_path = os.path.join(
+        VAR_LOG_SYS, TEST_DATA_FOLDER, "TestDataDurability")
+    request.cls.file_path = os.path.join(request.cls.test_dir_path, di_lib.get_random_file_name())
+    if not system_utils.path_exists(request.cls.test_dir_path):
+        system_utils.make_dirs(request.cls.test_dir_path)
+        request.cls.log.info("Created path: %s", request.cls.test_dir_path)
+    account_name = di_lib.get_random_account_name()
+    s3_acc_passwd = di_cfg.s3_acc_passwd
+    request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(account_name, s3_acc_passwd)
+    request.cls.acc_del = False
+    request.cls.log.info("ENDED: setup test operations.")
+    yield
+    request.cls.log.info("STARTED: Teardown operations")
+    request.cls.log.info("Deleting the file created locally for object")
+    if system_utils.path_exists(request.cls.file_path):
+        system_utils.remove_dirs(request.cls.test_dir_path)
+    request.cls.log.info("Local file was deleted")
+    request.cls.log.info("Deleting all buckets/objects created during TC execution")
+    resp = request.cls.s3_test_obj.bucket_list()
+    if request.cls.bucket_name in resp[1]:
+        resp = request.cls.s3_test_obj.delete_bucket(request.cls.bucket_name, force=True)
+        assert_utils.assert_true(resp[0], resp[1])
+    request.cls.log.info("All the buckets/objects deleted successfully")
+    request.cls.log.info("Deleting the IAM accounts and users")
+    request.cls.log.debug(request.cls.s3_account)
+    if request.cls.s3_account:
+        for acc in request.cls.s3_account:
+            request.cls.cli_obj = cortxcli_test_lib.CortxCliTestLib()
+            resp = request.cls.cli_obj.login_cortx_cli(
+                username=acc, password=request.cls.s3acc_passwd)
+            request.cls.log.debug("Deleting %s account", acc)
+            request.cls.cli_obj.delete_all_iam_users()
+            request.cls.cli_obj.logout_cortx_cli()
+            request.cls.cli_obj.delete_account_cortxcli(
+                account_name=acc, password=request.cls.s3acc_passwd)
+            request.cls.log.info("Deleted %s account successfully", acc)
+    request.cls.log.info("Deleted the IAM accounts and users")
+    request.cls.cli_obj.close_connection()
+    request.cls.hobj.disconnect()
+    request.cls.log.info("ENDED: Teardown operations")
+
+
+@pytest.mark.usefixtures("setup_multipart_fixture")
 class TestDICheckMultiPart:
     """DI Test suite for F23B Multipart files."""
 
-    @pytest.fixture(scope="class", autouse=False)
-    def setup_multipart_fixture(self):
+    def setup_method(self):
         """
-        Yield fixture to setup pre requisites and teardown them.
-        Part before yield will be invoked prior to each test case and
-        part after yield will be invoked after test call i.e as teardown.
+        Test method level setup.
         """
-        self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup test operations.")
-        self.secure_range = secrets.SystemRandom()
-        self.s3_test_obj = S3TestLib()
-        self.s3_mp_test_obj = S3MultipartTestLib()
-        self.hostnames = list()
-        self.connections = list()
-        # self.host_ip = CMN_CFG["nodes"][0]["host"]
-        # self.uname = CMN_CFG["nodes"][0]["username"]
-        # self.passwd = CMN_CFG["nodes"][0]["password"]
-        self.nodes = CMN_CFG["nodes"]
-        if self.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
-                self.cmn_cfg["product_type"] == PROD_TYPE_NODE:
-            for node in self.nodes:
-                node_obj = Node(hostname=node["hostname"],
-                                username=node["username"],
-                                password=node["password"])
-                node_obj.connect()
-                self.connections.append(node_obj)
-                self.hostnames.append(node["hostname"])
-        elif self.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
-                self.cmn_cfg["product_type"] == PROD_TYPE_K8S:
-            self.log.error("Product family: LC")
-            # TODO: Add LC related calls. Check for k8s master.
-
         self.test_dir_path = os.path.join(
             VAR_LOG_SYS, TEST_DATA_FOLDER, "TestDataDurability")
         self.file_path = os.path.join(self.test_dir_path, di_lib.get_random_file_name())
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
-        account_name = di_lib.get_random_account_name()
-        s3_acc_passwd = di_cfg.s3_acc_passwd
-        self.s3_account = ManagementOPs.create_s3_user_csm_rest(account_name, s3_acc_passwd)
-        self.acc_del = False
-        self.log.info("ENDED: setup test operations.")
-        yield
-        self.log.info("STARTED: Teardown operations")
+
+        self.log.info("ENDED: setup test data.")
+
+    def teardown_method(self):
+        """
+        Test method level teardown.
+        """
+        self.log.info("STARTED: Teardown of test data")
         self.log.info("Deleting the file created locally for object")
         if system_utils.path_exists(self.file_path):
             system_utils.remove_dirs(self.test_dir_path)
         self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
+
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
             resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
@@ -1037,100 +1086,10 @@ class TestDICheckMultiPart:
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22483')
-    def test_toggle_checksum_feature_with_no_data_loss_22483(self):
-        """
-        Enable / disable checksum feature (data and metadata check flags and
-        combinations) and time to enable it (immediate effect). No I/O drops
-        should be observed.
-        """
-        self.log.info(
-            "STARTED: Enable / disable checksum feature (data and metadata "
-            "check flags and combinations) and time to enable it "
-            "(immediate effect). No I/O drops should be observed.")
-        self.log.info("Step 1: Start IO in background")
-        # start IO in background
-        self.log.info("Step 1: IO started")
-        self.log.info("Step 2: Disable checksum feature combination of data "
-                      "and metadata check flags")
-        # resp = toggle_checksum_feature("disable")
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Checksum feature disabled successfully ")
-        self.log.info("Step 3: Verify checksum feature is disable and total "
-                      "time taken")
-        # resp = get_checksum_feature_status()
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 3: verified time taken to disable the feature")
-        self.log.info("Step 4: Enabled checksum feature combination of data "
-                      "and metadata check flags")
-        # resp = toggle_checksum_feature("enable")
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 4: Checksum feature enabled successfully ")
-        self.log.info("Step 5: Verify checksum feature is enable and total"
-                      " time taken")
-        # resp = get_checksum_feature_status()
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 5: verified time taken to enable the feature")
-        self.log.info("Step 6: Stop IO and Verify no IO failure/drop observed")
-        # verify started IO in background, logs
-        self.log.info("Step 6: IO stopped and verified no IO error")
-        self.log.info(
-            "ENDED: Enable / disable checksum feature (data and metadata "
-            "check flags and combinations) and time to enable it "
-            "(immediate effect). No I/O drops should be observed.")
-
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22492')
-    def test_verify_read_corrupt_metadata_at_motr_lvl_22492(self):
-        """
-        Corrupt metadata of an object at Motr level and verify read (Get).
-        """
-        self.log.info(
-            "STARTED: Corrupt metadata of an object at Motr level and verify "
-            "read (Get).")
-        self.log.info("Step 1: Create a bucket and put N object into the "
-                      "bucket")
-        self.file_lst = []
-        for i in range(self.secure_range.randint(2, 8)):
-            file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
-            system_utils.create_file(file_path, self.file_size)
-            self.file_lst.append(file_path)
-        resp = self.s3_test_obj.create_bucket(self.bucket_name)
-        assert_utils.assert_true(resp[0], resp[1])
-        for obj in self.file_lst:
-            resp = self.s3_test_obj.put_object(
-                self.bucket_name, obj, obj)
-            assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 1: Successfully put N obj into created bucket.")
-        self.log.info("Step 2: Corrupt metadata of an object at Motr level")
-        # resp = corrupt_metadata_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Step 2: Metadata of an obj corrupted at Motr level "
-                      "successfully ")
-        self.log.info("Step 3: Verify Get/read of an object whose metadata is "
-                      "corrupted")
-        for obj in self.file_lst:
-            resp = self.s3_test_obj.get_object(
-                self.bucket_name, obj)
-            assert_utils.assert_false(resp[0], resp[1])
-        self.log.info("Step 3: Read(get) of an object failed with an error")
-        self.log.info("Step 4: Check for expected errors in logs.")
-        # resp = get_motr_logs()
-        # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
-        self.log.info("Step 4: Successfully checked Motr logs")
-        self.log.info(
-            "ENDED: Corrupt metadata of an object at Motr level and verify "
-            "read (Get).")
-
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22912')
-    def test_verify_data_integrity_with_correct_checksum_22912(self):
+    @pytest.mark.tags('TEST-22501')
+    def test_verify_data_integrity_with_correct_checksum_22501(self):
         """
         Test to verify object integrity during an upload with correct checksum.
         Specify checksum and checksum algorithm or ETAG during
@@ -1169,13 +1128,15 @@ class TestDICheckMultiPart:
             "ENDED: Test to verify object integrity during an upload with correct checksum."
             "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
             "digest, CRC ( check multi-part))")
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-29812')
-    def test_29812(self):
+    @pytest.mark.tags('TEST-22912')
+    def test_22912(self):
         """
-        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
+        Test to verify object integrity during the the upload with correct checksum.
+        Specify checksum and checksum algorithm or ETAG during
+        PUT(MD5 with and without digest, CRC ( check multi-part))
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
@@ -1202,39 +1163,3 @@ class TestDICheckMultiPart:
         # to do verify object download failure
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
-
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-29813')
-    def test_29813(self):
-        """
-        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
-        and verify range read (Get).
-        """
-        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
-                      "and verify range read (Get).")
-        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
-            section=self.config_section, flag=self.read_param)
-        if read_flag[0]:
-            pytest.skip()
-        self.log.info("Step 1: create a file")
-        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
-                                           seed=self.data_gen.get_random_seed())
-        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
-                                                  data_folder_prefix=self.test_dir_path)
-        self.log.info("Step 1: created a file at location %s", location)
-        self.log.info("Step 2: enable checksum feature")
-        # to do enabling checksum feature
-        self.log.info("Step 3: upload a file with incorrect checksum")
-        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
-                                    object_name=self.object_name,
-                                    file_path=location)
-        self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
-                                                     my_key=self.object_name,
-                                                     start_byte=8888,
-                                                     stop_byte=9999)
-        self.log.info("Step 4: verify download object fails with 5xx error code")
-        # to do verify object download failure
-        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
-                      "and verify range read (Get).")
