@@ -4425,7 +4425,7 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-32176')
     def test_32176(self):
         """
-        Test that manage user should be able to change role of user with monitor role to manage role
+        Test that manage and monitor user should able to login
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -4461,8 +4461,8 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-32171')
     def test_32171(self):
         """
-        Function to test Monitor user is not able to edit the roles of the
-        admin, manage and other monitor user
+        Test that manage user should be able to change role of other manage role user 
+        (NOT self) from manage role to monitor role and not to admin role
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -4474,7 +4474,7 @@ class TestCsmUser():
         users = []
         self.log.info("Creating csm user")
         response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
-        self.log.info("Step 2: Verifying if manage user was created successfully")
+        self.log.info("Verifying if manage user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
@@ -4486,17 +4486,28 @@ class TestCsmUser():
         new_user = {}
         new_user['username'] = username
         new_user['password'] = password
-        self.log.info("Step 1: Creating 4 manage users")
+        self.log.info('New user dict is %s', new_user)
+        self.log.info("Creating 4 manage users")
         for _ in range(4):
             response = self.csm_user.create_csm_user(login_as="csm_user_manage", user_type="valid",
                                                      user_role="manage")
-            self.log.info("Step 2: Verifying if manage user was created successfully")
+            self.log.info("Verifying if manage user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
             user_id = response.json()["id"]
             assert response.json()['role'] == 'manage', "User is not created with manager role"
             self.log.info("Verified User %s got created successfully", username)
             users.append(username)
+        self.log.info("Step 1: Change role of first manage user from manage to monitor %s", username)
+        response = self.csm_user.edit_csm_user(login_as=new_user, user=username,
+                                               role="monitor")
+        assert response.status_code == const.FORBIDDEN, "Status code check failed."
+        assert response.json()["error_code"] == str(resp_error_code), (
+            + "Error code check failed.")
+        if CSM_REST_CFG["msg_check"] == "enable":
+            assert response.json()["message"] == msg.format("csm_user_manage",
+                                                            "csm_user_manage"), "Message check failed."
+        assert response.json()["message_id"] == resp_msg_id, "Message ID check failed."
         self.log.info("Step 2: Change role of second manage user from manage to monitor")
         response = self.csm_user.edit_csm_user(login_as=new_user,
                                                user=users[1],
