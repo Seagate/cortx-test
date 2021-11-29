@@ -11,7 +11,7 @@ Make sure you brush up your Git knowledge if you are coming from svn or other ve
 
 You may need a separate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
 
-## increase client root space size should be at lease 200 GB using following commands
+## increase client root space size should be at least 200 GB using following commands
 ## Please utilize free disks from the output of lsblk
 ```
 df -h
@@ -96,7 +96,18 @@ Following steps helps to setup client side env, where test framework runs. These
     
     Alternatively by skipping step 8 to 10, you can also set python environment by using virtual env.
 
-## Script to setup client environemnt (Alternate option to manual steps)
+## Steps to copy certificate
+```
+mkdir -p /etc/ssl/stx
+
+mkdir -p /etc/ssl/stx-s3-clients/s3/
+
+curl https://raw.githubusercontent.com/Seagate/cortx-s3server/kubernetes/scripts/haproxy/ssl/s3.seagate.com.crt -o /etc/ssl/stx-s3-clients/s3/ca.crt
+
+curl https://raw.githubusercontent.com/Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/srv/components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem
+```
+
+## Script to setup client environment (Alternate option to manual steps)
 Change dir to your local repository root folder. If you have checked out your code 
 in clean_dev directory created in your home on Linux machine (RHEL Flavour), then
 /home/<yourname>/clean_dev is the local repository root folder. 
