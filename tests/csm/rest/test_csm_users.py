@@ -3470,7 +3470,7 @@ class TestCsmUser():
         assert resp.status_code == HTTPStatus.OK, "List user failed"
         for user in resp.json()["users"]:
             user_id = user['id']
-            if user["role"] == "admin" and user_id != "cortxadmin":
+            if user["role"] == "admin" and user_id != CSM_REST_CFG["csm_admin_user"]["username"]:
                 self.log.info("Deleting extra admin user : %s", user_id)
                 self.csm_user.delete_csm_user(user_id)
                 assert resp.status_code == HTTPStatus.OK, f"Delete user {user_id} failed"
