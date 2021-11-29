@@ -6,7 +6,7 @@ ARG GIT_ID
 ARG GIT_PASSWORD
 ARG GIT_BRANCH
 
-RUN git clone --$GIT_BRANCH https://$GIT_ID:$GIT_PASSWORD@github.com/$GIT_USERNAME/$GIT_REPO
+RUN git clone --branch $GIT_BRANCH https://$GIT_ID:$GIT_PASSWORD@github.com/$GIT_USERNAME/$GIT_REPO
 
 RUN mkdir -p /etc/ssl/stx-s3-clients/s3/
 COPY ca.crt /etc/ssl/stx-s3-clients/s3/
