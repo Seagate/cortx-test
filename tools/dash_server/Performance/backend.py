@@ -50,9 +50,12 @@ def get_average_data(count, data, stat, subparam, multiplier):
     returns:
         rounded off value
     """
-    if count > 0 and keys_exists(data[0], stat):
-        return round_off(data[0][stat][subparam] * multiplier)
-    else:
+    try:
+        if count > 0 and keys_exists(data[0], stat):
+            return round_off(data[0][stat][subparam] * multiplier)
+        else:
+            return "NA"
+    except KeyError:
         return "NA"
 
 
@@ -319,7 +322,8 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
     temp_data = []
     run_state = "successful"
     added_objects = False
-    operations = ["Write", "Read"]
+    skipttfb = True
+    operations = ["Read", "Write"]
 
     # if data_needed_for_query["name"] == 'S3bench':
     #     stats = ["Throughput", "IOPS", "Latency", "TTFB"]
@@ -361,10 +365,13 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             temp_data.append(get_data(count, db_data, "Latency", 1))
         elif data_needed_for_query["name"] == 'S3bench':
             temp_data.append(get_average_data(count, db_data, "Latency", "Avg", 1000))
-            temp_data.append(get_average_data(count, db_data, "TTFB", "Avg", 1000))
+            if skipttfb:
+                temp_data.append(get_average_data(count, db_data, "TTFB", "Avg", 1000))
+                temp_data.append(get_average_data(count, db_data, "TTFB", "99p", 1000))
         else:
             temp_data.append(get_average_data(count, db_data, "Latency", "Avg", 1))
 
+        skipttfb = False
         # for stat in stats:
         #     if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
 
