@@ -84,6 +84,12 @@ class TestContDeployment:
         self.log.debug("nodes are %s", node)
         config = DEPLOY_CFG[node][self.conf]
         self.log.debug("config is %s", self.conf)
+        self.log.debug("TEST file setup_k8s_cluster_flag = %s", self.setup_k8s_cluster_flag)
+        self.log.debug("TEST file cortx_cluster_deploy_flag = %s", self.cortx_cluster_deploy_flag)
+        self.log.debug("TEST file setup_client_config_flag = %s", self.setup_client_config_flag)
+        self.log.debug("TEST file run_basic_s3_io_flag = %s", self.run_basic_s3_io_flag)
+        self.log.debug("TEST file run_s3bench_workload_flag = %s", self.run_s3bench_workload_flag)
+        self.log.debug("TEST file destroy_setup_flag = %s", self.destroy_setup_flag)
         while count > 0:
             self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
                                                sns_parity=config['sns_parity'],
