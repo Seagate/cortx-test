@@ -325,10 +325,6 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
     skipttfb = True
     operations = ["Read", "Write"]
 
-    # if data_needed_for_query["name"] == 'S3bench':
-    #     stats = ["Throughput", "IOPS", "Latency", "TTFB"]
-    # else:
-    #     stats = ["Throughput", "IOPS", "Latency"]
 
     uri, db_name, db_collection = get_db_details(
         data_needed_for_query['release'])
@@ -372,28 +368,9 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             temp_data.append(get_average_data(count, db_data, "Latency", "Avg", 1))
 
         skipttfb = False
-        # for stat in stats:
-        #     if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
-
-        #         temp_data.append(get_average_data(
-        #             count, db_data, stat, "Avg", 1000))
-        #     elif data_needed_for_query["name"] == 'S3bench':
-        #         temp_data.append(get_data(count, db_data, stat, 1))
-        #     else:
-        #         try:
-        #             temp_data.append(get_data(count, db_data, stat, 1))
-        #         except TypeError:
-        #             temp_data.append(get_average_data(
-        #                 count, db_data, stat, "Avg", 1))
 
     return temp_data, run_state
-    # if not check_empty_list(temp_data) and keys_exists(data_needed_for_query, 'xfilter'):
-    #     if data_needed_for_query['xfilter'] == 'Build':
-    #         results[data_needed_for_query['objsize']] = temp_data
-    #     else:
-    #         results[data_needed_for_query['build']] = temp_data
-    # elif not check_empty_list(temp_data):
-    #     results[data_needed_for_query['objsize']] = temp_data
+
 
 
 def get_dash_table_from_dataframe(dataframe, bench, column_id, states=None):
