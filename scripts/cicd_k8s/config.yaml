@@ -1,3 +1,0 @@
-csm_port: "31169"
-ori_json_file: "tools/setup_update/setup_entry_lc.json"
-new_json_file: "setup_entry_lc.json"
