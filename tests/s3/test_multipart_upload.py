@@ -168,6 +168,7 @@ class TestMultipartUpload:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_multipart_ops
+    @pytest.mark.sanity
     @pytest.mark.tags('TEST-5588')
     @CTFailOn(error_handler)
     def test_multipart_upload_for_file_2061_2065_2066_2069(self):
@@ -308,7 +309,7 @@ class TestMultipartUpload:
 
     @pytest.mark.s3_ops
     @pytest.mark.s3_multipart_ops
-    @pytest.mark.release_regression
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-5599')
     @CTFailOn(error_handler)
     def test_verify_max_no_parts_listed_using_part_command_2067(self):

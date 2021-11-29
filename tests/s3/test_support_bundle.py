@@ -36,7 +36,8 @@ from commons.errorcodes import error_handler
 from commons.utils.assert_utils import assert_false, assert_true
 from commons.utils.config_utils import read_yaml
 from commons.helpers.node_helper import Node
-from libs.s3 import S3H_OBJ, CM_CFG, S3_CFG
+from config import CMN_CFG as CM_CFG
+from libs.s3 import S3H_OBJ, S3_CFG
 from commons.params import LOG_DIR
 from commons.utils import support_bundle_utils as sb
 from commons.utils import system_utils

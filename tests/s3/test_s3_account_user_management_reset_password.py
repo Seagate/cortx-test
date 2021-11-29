@@ -749,7 +749,6 @@ class TestAccountUserManagementResetPassword:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_acc_mgnt_pwd
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-21502")
     @CTFailOn(error_handler)
     def test_21502(self):
@@ -784,7 +783,6 @@ class TestAccountUserManagementResetPassword:
     @pytest.mark.s3_ops
     @pytest.mark.lr
     @pytest.mark.s3_acc_mgnt_pwd
-    @pytest.mark.sanity
     @pytest.mark.tags("TEST-21514")
     @CTFailOn(error_handler)
     def test_21514(self):

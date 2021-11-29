@@ -110,6 +110,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6094')
     @CTFailOn(error_handler)
     def test_375(self):
@@ -505,6 +506,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6078')
     @CTFailOn(error_handler)
     def test_383(self):
@@ -572,6 +574,7 @@ class TestAllUsersBucketAcl:
     @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.s3_bucket_acl
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-6076')
     @CTFailOn(error_handler)
     def test_384(self):

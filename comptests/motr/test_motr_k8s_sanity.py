@@ -49,9 +49,9 @@ class TestExecuteK8Sanity:
         Sample test
         """
         # TODO: This a sample test for the usage, need to delete it later
-        logger.info(cls.motr_obj.cluster_info)
+        logger.info(cls.motr_obj.get_data_pod_list())
         logger.info(cls.motr_obj.profile_fid)
         logger.info(cls.motr_obj.node_dict)
-        logger.info(cls.motr_obj.storage_nodes)
-        logger.info(cls.motr_obj.get_primary_podNode())
-        logger.info(cls.motr_obj.get_podNode_endpoints())
+        logger.info(cls.motr_obj.cortx_node_list)
+        logger.info(cls.motr_obj.get_primary_cortx_node())
+        logger.info(cls.motr_obj.get_cortx_node_endpoints())
