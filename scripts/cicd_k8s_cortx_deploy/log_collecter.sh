@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
   dir_path=/mnt/nfs_share
-  log_path=$1/$2/
+  log_path=deployment_logs/$1/$2/
   LOG_PATH=$dir_path/$log_path
   cmd="mkdir -p $dir_path"
   cmd2="mount -l|grep nfs4"
