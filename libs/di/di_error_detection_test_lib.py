@@ -29,7 +29,7 @@ from libs.di.data_generator import DataGenerator
 from libs.di.di_feature_control import DIFeatureControl
 
 
-class DIErrorDetectionLib:
+class DIErrorDetection:
     """
     class having lib methods for DI
     error detection
@@ -137,3 +137,4 @@ class DIErrorDetectionLib:
             skip_mark = True
 
         return True, skip_mark
+

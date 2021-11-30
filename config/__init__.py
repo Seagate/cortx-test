@@ -98,7 +98,7 @@ RAS_TEST_CFG = configmanager.get_config_wrapper(fpath=SSPL_TEST_CONFIG_PATH)
 PROV_CFG = configmanager.get_config_wrapper(fpath=PROV_TEST_CONFIG_PATH)
 HA_CFG = configmanager.get_config_wrapper(fpath=HA_TEST_CONFIG_PATH)
 
-DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH, target=target)
+DI_CFG = configmanager.get_config_wrapper(fpath=DI_CONFIG_PATH)
 DATA_PATH_CFG = configmanager.get_config_wrapper(fpath=DATA_PATH_CONFIG_PATH, target=target)
 
 # Munched configs. These can be used by dot "." operator.

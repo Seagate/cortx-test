@@ -24,6 +24,10 @@ import time
 import random
 import logging
 import json
+import boto3
+from config import CMN_CFG
+from config import CSM_CFG
+from config import S3_CFG
 from config import DI_CFG
 from commons.utils import assert_utils
 from libs.s3 import cortxcli_test_lib as cctl
@@ -264,3 +268,33 @@ class ManagementOPs:
         users = cls.create_account_users(nusers=maxusers)
         users = cls.create_buckets(nbuckets=maxbuckets, users=users)
         return users
+
+    @classmethod
+    def create_s3_user_csm_rest(cls, user_name, passwd):
+        udict = dict()
+        s3acc_obj = RestS3user()
+        resp = s3acc_obj.create_an_account(user_name, passwd)
+        assert_utils.assert_equal(resp.status_code, 200, 'S3 account user not created.')
+        acc_details = json.loads(resp.text)
+        LOGGER.info("Created s3 account %s", user_name)
+        udict.update({'accesskey': acc_details["access_key"]})
+        udict.update({'secretkey': acc_details["secret_key"]})
+        return udict
+
+    @classmethod
+    def delete_s3_users_csm_rest(cls, prefix):
+        """Function will delete all csm s3 accounts with prefix.
+        """
+        s3acc_obj = RestS3user()
+        responses = s3acc_obj.list_all_created_s3account().json()["s3_accounts"]
+        for resp in responses:
+            acc_name = resp["account_name"]
+            if acc_name.startswith(prefix):
+                s3acc_obj.delete_s3_account_user(acc_name)
+
+    @classmethod
+    def delete_s3_user_csm_rest(cls, acc_name):
+        """Function will delete all csm s3 accounts with prefix.
+        """
+        s3acc_obj = RestS3user()
+        s3acc_obj.delete_s3_account_user(acc_name)
