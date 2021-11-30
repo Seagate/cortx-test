@@ -72,7 +72,7 @@ class TestDIDurability:
         self.s3_mp_test_obj = S3MultipartTestLib()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         self.data_gen = DataGenerator()
-        self.di_err_lib = DIErrorDetectionLib()
+        self.di_err_lib = DIErrorDetection()
         self.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         self.account_name = "data_durability_acc{}".format(perf_counter_ns())
         self.email_id = "{}@seagate.com".format(self.account_name)
