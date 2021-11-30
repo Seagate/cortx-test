@@ -11,14 +11,15 @@ Make sure you brush up your Git knowledge if you are coming from svn or other ve
 
 You may need a separate client vm with any Linux Flavour to install client side pre requisites and start using automation framework. This VM should have connectivity to Cortx Setup. If you have VM/HW crunch you may use one of the node as as client as well.     
 
-## increase client root space size should be at least 200 GB using following commands
+## Increase client root space size should be at least 50 GB using following commands
 ## Please utilize free disks from the output of lsblk
+## Note: In case of multipart/Big object upload, disk space requirement may change/increase.
 ```
 df -h
 lsblk 
-pvcreate /dev/sdb /dev/sdc /dev/sdd /dev/sde
-vgextend vg_sysvol /dev/sdb /dev/sdc /dev/sdd /dev/sde
-lvextend /dev/mapper/vg_sysvol-lv_root -L +190G
+pvcreate /dev/sdb
+vgextend vg_sysvol /dev/sdb
+lvextend /dev/mapper/vg_sysvol-lv_root -L +50G
 resize2fs /dev/mapper/vg_sysvol-lv_root
 df -h
 ```
