@@ -88,13 +88,17 @@ class TestCsmUser():
         """
         self.log.info("[STARTED] ######### Teardown #########")
         self.log.info("Deleting all csm users except predefined ones...")
+        delete_failed = []
         for usr in self.created_users:
             self.log.info("Sending request to delete csm user %s", usr)
             try:
-                self.csm_user.delete_csm_user(usr), "Failed to delete user."
+                response = self.csm_user.delete_csm_user(usr)
+                if response.status_code != HTTPStatus.OK
+                   delete_failed.append(usr)
             except BaseException as err:
                 self.log.warning("Ignoring %s while deleting user: %s", err, usr)
-        self.config.delete_csm_users()
+        self.log.info("delete failed list %s", delete_failed)
+        assert len(delete_failed) == 0, "Delete failed for users"
         self.log.info("Users except pre-defined ones deleted.")
         self.log.info("[COMPLETED] ######### Teardown #########")
     
@@ -4472,6 +4476,11 @@ class TestCsmUser():
         self.log.info("Verified User %s got created successfully", username)
         response = self.csm_user.custom_rest_login(username=username, password=password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
+        self.log.info("Sending request to delete csm user %s", username)
+        response = self.csm_user.delete_csm_user(user_id)
+        assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+        self.log.info("Removing user from list if delete is successful")
+        self.created_users.remove(user_id)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr
@@ -4568,4 +4577,6 @@ class TestCsmUser():
             self.log.info("Sending request to delete csm user %s", username)
             response = self.csm_user.delete_csm_user(user_id)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
+            self.log.info("Removing user from list if delete is successful")
+            self.created_users.remove(user_id)
         self.log.info("##### Test completed -  %s #####", test_case_name)
