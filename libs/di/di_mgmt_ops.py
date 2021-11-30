@@ -280,3 +280,21 @@ class ManagementOPs:
         udict.update({'accesskey': acc_details["access_key"]})
         udict.update({'secretkey': acc_details["secret_key"]})
         return udict
+
+    @classmethod
+    def delete_s3_users_csm_rest(cls, prefix):
+        """Function will delete all csm s3 accounts with prefix.
+        """
+        s3acc_obj = RestS3user()
+        responses = s3acc_obj.list_all_created_s3account().json()["s3_accounts"]
+        for resp in responses:
+            acc_name = resp["account_name"]
+            if acc_name.startswith(prefix):
+                s3acc_obj.delete_s3_account_user(acc_name)
+
+    @classmethod
+    def delete_s3_user_csm_rest(cls, acc_name):
+        """Function will delete all csm s3 accounts with prefix.
+        """
+        s3acc_obj = RestS3user()
+        s3acc_obj.delete_s3_account_user(acc_name)

@@ -33,6 +33,7 @@ from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
 from commons.helpers.node_helper import Node
+from commons.helpers.node_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
@@ -51,6 +52,7 @@ from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
+
 
 class TestDIDurability:
     """DI Durability Test suite."""
@@ -126,7 +128,7 @@ class TestDIDurability:
                     account_name=acc, password=self.s3acc_passwd)
                 self.log.info("Deleted %s account successfully", acc)
         self.log.info("Deleted the IAM accounts and users")
-        #self.cli_obj.close_connection()
+        # self.cli_obj.close_connection()
         self.hobj.disconnect()
         self.log.info("ENDED: Teardown operations")
 
@@ -929,9 +931,6 @@ def setup_multipart_fixture(request):
     request.cls.s3_mp_test_obj = S3MultipartTestLib()
     request.cls.hostnames = list()
     request.cls.connections = list()
-    # request.cls.host_ip = CMN_CFG["nodes"][0]["host"]
-    # request.cls.uname = CMN_CFG["nodes"][0]["username"]
-    # request.cls.passwd = CMN_CFG["nodes"][0]["password"]
     request.cls.nodes = CMN_CFG["nodes"]
     if request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LR and \
             request.cls.cmn_cfg["product_type"] == PROD_TYPE_NODE:
@@ -945,17 +944,22 @@ def setup_multipart_fixture(request):
     elif request.cls.cmn_cfg["product_family"] == PROD_FAMILY_LC and \
             request.cls.cmn_cfg["product_type"] == PROD_TYPE_K8S:
         request.cls.log.error("Product family: LC")
-        # TODO: Add LC related calls. Check for k8s master.
+        # Add k8s masters
+        for node in request.cls.nodes:
+            if node["node_type"].lower() == "master":
+                node_obj = LogicalNode(hostname=node["hostname"],
+                                       username=node["username"],
+                                       password=node["password"])
+                request.cls.connections.append(node_obj)
+                request.cls.hostnames.append(node["hostname"])
 
-    request.cls.test_dir_path = os.path.join(
-        VAR_LOG_SYS, TEST_DATA_FOLDER, "TestDataDurability")
-    request.cls.file_path = os.path.join(request.cls.test_dir_path, di_lib.get_random_file_name())
-    if not system_utils.path_exists(request.cls.test_dir_path):
-        system_utils.make_dirs(request.cls.test_dir_path)
-        request.cls.log.info("Created path: %s", request.cls.test_dir_path)
-    account_name = di_lib.get_random_account_name()
+    request.cls.account_name = di_lib.get_random_account_name()
     s3_acc_passwd = di_cfg.s3_acc_passwd
-    request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(account_name, s3_acc_passwd)
+    request.cls.s3_account = ManagementOPs.create_s3_user_csm_rest(request.cls.account_name,
+                                                                   s3_acc_passwd)
+    request.cls.bucket_name = di_lib.get_random_bucket_name()
+    # create bucket
+
     request.cls.acc_del = False
     request.cls.log.info("ENDED: setup test operations.")
     yield
@@ -964,28 +968,6 @@ def setup_multipart_fixture(request):
     if system_utils.path_exists(request.cls.file_path):
         system_utils.remove_dirs(request.cls.test_dir_path)
     request.cls.log.info("Local file was deleted")
-    request.cls.log.info("Deleting all buckets/objects created during TC execution")
-    resp = request.cls.s3_test_obj.bucket_list()
-    if request.cls.bucket_name in resp[1]:
-        resp = request.cls.s3_test_obj.delete_bucket(request.cls.bucket_name, force=True)
-        assert_utils.assert_true(resp[0], resp[1])
-    request.cls.log.info("All the buckets/objects deleted successfully")
-    request.cls.log.info("Deleting the IAM accounts and users")
-    request.cls.log.debug(request.cls.s3_account)
-    if request.cls.s3_account:
-        for acc in request.cls.s3_account:
-            request.cls.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-            resp = request.cls.cli_obj.login_cortx_cli(
-                username=acc, password=request.cls.s3acc_passwd)
-            request.cls.log.debug("Deleting %s account", acc)
-            request.cls.cli_obj.delete_all_iam_users()
-            request.cls.cli_obj.logout_cortx_cli()
-            request.cls.cli_obj.delete_account_cortxcli(
-                account_name=acc, password=request.cls.s3acc_passwd)
-            request.cls.log.info("Deleted %s account successfully", acc)
-    request.cls.log.info("Deleted the IAM accounts and users")
-    request.cls.cli_obj.close_connection()
-    request.cls.hobj.disconnect()
     request.cls.log.info("ENDED: Teardown operations")
 
 
@@ -997,6 +979,7 @@ class TestDICheckMultiPart:
         """
         Test method level setup.
         """
+        self.log = logging.getLogger(__name__)
         self.test_dir_path = os.path.join(
             VAR_LOG_SYS, TEST_DATA_FOLDER, "TestDataDurability")
         self.file_path = os.path.join(self.test_dir_path, di_lib.get_random_file_name())
@@ -1011,34 +994,17 @@ class TestDICheckMultiPart:
         Test method level teardown.
         """
         self.log.info("STARTED: Teardown of test data")
-        self.log.info("Deleting the file created locally for object")
-        if system_utils.path_exists(self.file_path):
-            system_utils.remove_dirs(self.test_dir_path)
-        self.log.info("Local file was deleted")
         self.log.info("Deleting all buckets/objects created during TC execution")
-
         resp = self.s3_test_obj.bucket_list()
         if self.bucket_name in resp[1]:
             resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("All the buckets/objects deleted successfully")
-        self.log.info("Deleting the IAM accounts and users")
-        self.log.debug(self.s3_account)
         if self.s3_account:
-            for acc in self.s3_account:
-                self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
-                resp = self.cli_obj.login_cortx_cli(
-                    username=acc, password=self.s3acc_passwd)
-                self.log.debug("Deleting %s account", acc)
-                self.cli_obj.delete_all_iam_users()
-                self.cli_obj.logout_cortx_cli()
-                self.cli_obj.delete_account_cortxcli(
-                    account_name=acc, password=self.s3acc_passwd)
-                self.log.info("Deleted %s account successfully", acc)
-        self.log.info("Deleted the IAM accounts and users")
-        self.cli_obj.close_connection()
-        self.hobj.disconnect()
-        self.log.info("ENDED: Teardown operations")
+            self.log.debug(f"Deleting the s3 account {self.s3_account}")
+            ManagementOPs.delete_s3_user_csm_rest(self.account_name)
+        self.log.info("Deleted the s3 accounts and users")
+        self.log.info("ENDED: Teardown method")
 
     @pytest.fixture(scope="function", autouse=False)
     def create_testdir_cleanup(self):
