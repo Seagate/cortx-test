@@ -20,16 +20,19 @@
 """S3 utility Library."""
 import base64
 import os
+import time
 import urllib
 import hmac
 import datetime
 import hashlib
 import logging
 import json
+import xmltodict
 from hashlib import md5
 from random import shuffle
+from typing import Any
 
-import xmltodict
+
 
 
 LOGGER = logging.getLogger(__name__)
@@ -192,6 +195,24 @@ def convert_xml_to_dict(xml_response) -> dict:
         return xml_response
 
 
+def poll(target, *args, **kwargs) -> Any:
+    """Method to wait for a function/target to return a certain expected condition."""
+    timeout = kwargs.pop("timeout", 60)
+    step = kwargs.pop("step", 10)
+    expected = kwargs.pop("expected", dict)
+    end_time = time.time() + timeout
+    while time.time() <= end_time:
+        try:
+            response = target(*args, **kwargs)
+            if isinstance(response, expected) or response:
+                return response
+        except Exception as response:
+            LOGGER.error(response)
+        time.sleep(step)
+
+    return target(*args, **kwargs)
+
+
 def calc_checksum(file_path, part_size=0):
     """Calculating an checksum using encryption algorithm."""
     try:
@@ -217,6 +238,20 @@ def calc_contentmd5(data) -> str:
     :return: String literal representing the base64 encoded MD5 checksum of the data
     """
     return base64.b64encode(md5(data).digest()).decode('utf-8')
+
+
+def get_multipart_etag(parts):
+    """
+    Calculate expected ETag for a multipart upload
+
+    :param parts: List of dict with the format {part_number: (data_bytes, content_md5), ...}
+    """
+    md5_digests = []
+    for part_number in sorted(parts.keys()):
+        md5_digests.append(md5(parts[part_number][0]).digest())
+    multipart_etag = md5(b''.join(md5_digests)).hexdigest() + '-' + str(len(md5_digests))
+    return '"%s"' % multipart_etag
+
 
 def get_aligned_parts(file_path, total_parts=1, chunk_size=5242880, random=False) -> dict:
     """

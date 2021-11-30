@@ -70,7 +70,7 @@ test_8924:
     total_parts: 5
     err_msg: "EntityTooSmall"
 
-test_8925:
+test_2297:
     file_size: 11000
     total_parts: 2
     err_msg: "EntityTooLarge"
@@ -112,9 +112,17 @@ test_28532:
     error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
     One or more of the specified parts could not be found. The part might not have been uploaded,
     or the specified entity tag might not have matched the part's entity tag."
-    file_size: 20000
-    total_parts: 10
-    chunk_size: 3221225472
+    file_size: 200
+    chunk_size: 1048576
+    part_sizes:
+      - part_size: 70
+        count: 1
+      - part_size: 39.7
+        count: 1
+      - part_size: 40.3
+        count: 1
+      - part_size: 50
+        count: 1
     wrong_json_file:
         - ETag: d41d8cd98f00b204e9800998ecf8427e
           PartNumber: 1
@@ -122,50 +130,133 @@ test_28532:
           PartNumber: 2
 
 test_28538:
-    file_size: 1000
-    total_parts: 2
-    chunk_size: 6291456
+    file_size: 150
+    chunk_size: 1048576
+    part_sizes:
+        - part_size: 70.5
+          count: 1
+        - part_size: 79.5
+          count: 1
     error_msg: "An error occurred (InvalidPart) when calling the CompleteMultipartUpload operation:
     One or more of the specified parts could not be found. The part might not have been uploaded,
     or the specified entity tag might not have matched the part's entity tag."
 
 test_28539:
     file_size: 150
-    total_parts: 2
-    chunk_size: 288358400
+    chunk_size: 1048576
+    part_sizes:
+        - part_size: 70
+          count: 1
+        - part_size: 39.7
+          count: 1
+        - part_size: 40.3
+          count: 1
 
 test_28540:
-    file_size: 500
-    total_parts: 2
-    chunk_size: 262144000
-    file_size2: 600
-    total_parts2: 3
-    chunk_size2: 209715200
+    file_size: 150
+    chunk_size: 1048576
+    part_sizes:
+          - part_size: 70
+            count: 1
+          - part_size: 39.7
+            count: 1
+          - part_size: 40.3
+            count: 1
 
 test_28537:
     multipart_uploads: 1900
 
 test_28534:
-    file_size: 40000
-    total_parts: 25
-    chunk_size: 419430400
+    file_size: 1024
+    chunk_size: 1048576
+    part_sizes:
+      - part_size: 35
+        count: 4
+      - part_size: 39.7
+        count: 2
+      - part_size: 40.3
+        count: 2
+      - part_size: 100
+        count: 7
+      - part_size: 24
+        count: 1
 
 test_28535:
-    file_size: 40000
-    total_parts: 25
-    chunk_size: 419430400
+  file_size: 500
+  chunk_size: 1048576
+  part_sizes:
+    - part_size: 35
+      count: 4
+    - part_size: 39.7
+      count: 2
+    - part_size: 40.3
+      count: 2
+    - part_size: 30
+      count: 1
+    - part_size: 30
+      count: 1
+    - part_size: 30
+      count: 1
+    - part_size: 30
+      count: 1
+    - part_size: 30
+      count: 1
+    - part_size: 30
+      count: 1
+    - part_size: 20
+      count: 1
+
 
 test_28530:
-    file_size: 2000
+    file_size: 150
     total_parts: 5
+    chunk_size: 1048576
+    part_sizes:
+        - part_size: 70
+          count: 1
+        - part_size: 39.7
+          count: 1
+        - part_size: 40.3
+          count: 1
+    error_msg: "An error occurred (NoSuchUpload) when calling the ListParts
+    operation: The specified multipart upload does not exist. The upload ID might be invalid, or
+    the multipart upload might have been aborted or completed."
+
 
 test_28526:
-    file_size: 5000000
-    total_parts: 1035
+    file_size: 5242880
+    chunk_size: 1048576
+    part_sizes:
+          - part_size: 50.5
+            count: 1
+          - part_size: 5.9
+            count: 1
+          - part_size: 43.5
+            count: 2
+          - part_size: 6.6
+            count: 1
+          - part_size: 5120
+            count: 990
+          - part_size: 4300.8
+            count: 20
+          - part_size: 900
+            count: 90
+          - part_size: 870
+            count: 7
+          - part_size: 824
+            count: 1
+
 
 test_28528:
-    file_size: 81766
-    total_parts: 10000
+  file_size: 50300
+  chunk_size: 1048576
+  part_sizes:
+        - part_size: 5
+          count: 8000
+        - part_size: 5.1
+          count: 1000
+        - part_size: 5.2
+          count: 1000
 
 test_29163:
     file_size: 5000000
@@ -187,8 +278,13 @@ test_29172:
 
 test_29173:
     file_size: 20000
-    total_parts: 20
     delay: 3600
+    chunk_size: 1048576
+    part_sizes:
+      - part_size: 990.5
+        count: 10
+      - part_size: 1009.5
+        count: 10
 
 test_29167:
     file_size: 300
@@ -217,10 +313,10 @@ test_29165:
           count: 1
 
 test_29166:
-    file_size: 5120
+    file_size: 500
     chunk_size: 1048576
     total_parts: 20
-    error_msg: "Not Found"
+    error_msg: "An error occurred (404) when calling the HeadObject operation: Not Found"
 
 test_29168:
     file_size: 5242880

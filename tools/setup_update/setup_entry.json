@@ -5,12 +5,15 @@
 "in_use_for_parallel": false,
 "parallel_client_cnt": 0,
 "is_setup_free": true,
+"product_family":"LR",
+"product_type":"node",
 "lb": "FQDN without protocol(http/s)",
 "nodes":[
     {
         "host": "srv-node-0",
         "hostname": "node 0 hostname",
         "ip": "node 0 ip",
+        "fqdn": "node 0 fqdn",
         "username": "node 0 username",
         "password": "node 0 password",
         "public_data_ip":"",
@@ -51,6 +54,7 @@
         "host": "srv-node-1",
         "hostname": "node 1 hostname",
         "ip": "node 1 ip address",
+        "fqdn": "node 1 fqdn",
         "username": "node 1 username",
         "password": "node 1 password",
         "public_data_ip":"",

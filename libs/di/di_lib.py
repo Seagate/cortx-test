@@ -21,22 +21,26 @@
 
 """Data Integrity test library"""
 import os
+import datetime
 import time
 import sys
 import logging
 import hashlib
+import random
+from time import perf_counter_ns
 from pathlib import Path
 from fabric import Connection
 from fabric import Config
 from fabric import ThreadingGroup, SerialGroup
 from paramiko.ssh_exception import SSHException
-from libs.di.di_mgmt_ops import ManagementOPs
-from libs.di.di_base import _init_s3_conn
 from commons.exceptions import CortxTestException
 from commons import params
 from commons.utils import assert_utils
 from commons import constants as const
 from commons.helpers.node_helper import Node
+from libs.di.di_mgmt_ops import ManagementOPs
+from libs.di.di_base import _init_s3_conn
+from libs.di.file_formats import all_extensions
 
 IAM_UTYPE = 1
 S3_ACC_UTYPE = 2
@@ -190,3 +194,44 @@ def copy_local_to_s3_config(self, **kwargs) -> tuple:
         LOGGER.error(
             "Error in %s: %s", copy_local_to_s3_config, error)
         return False, error
+
+
+def get_random_bucket_name():
+    """
+    Function will return a random bucket name.
+    This function is not thread safe or does not work for nano sec granularity.
+    """
+    return "di-test-bkt-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+
+
+def get_random_object_name():
+    """
+    Function will return a random object name.
+    This function is not thread safe or does not work for nano sec granularity.
+    """
+    return "di-test-obj-{}".format(datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+
+
+def get_random_account_name():
+    """
+    Function will return a random account name.
+    This function is not thread safe or does not work for nano sec granularity.
+    """
+    return "data_durability_acc{}".format(perf_counter_ns())
+
+
+def get_email_id(account_name: str):
+    """
+    Function will return an email id with account_name
+    This function is not thread safe or does not work for nano sec granularity.
+    """
+    return "{}@seagate.com".format(account_name)
+
+
+def get_random_file_name():
+    """
+    Function will return a random filename name.
+    This function is not thread safe or does not work for nano sec granularity.
+    """
+    return "data_durability{}.{}".format(perf_counter_ns(), random.sample(all_extensions, 1))
+

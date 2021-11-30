@@ -24,6 +24,7 @@ import os
 import time
 import logging
 from multiprocessing import Process
+from time import perf_counter_ns
 import pytest
 
 from commons.ct_fail_on import CTFailOn
@@ -31,15 +32,14 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils.s3_utils import get_unaligned_parts
 from commons.utils.s3_utils import get_precalculated_parts
+from commons.utils.s3_utils import get_multipart_etag
 from commons.utils.system_utils import create_file, remove_file, path_exists
 from commons.utils.system_utils import backup_or_restore_files, make_dirs, remove_dirs
-from commons.utils.system_utils import calculate_checksum
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
 from config.s3 import S3_CFG
 from config.s3 import MPART_CFG
 from libs.s3 import S3H_OBJ
-from libs.s3.s3_common_test_lib import check_cluster_health
 from libs.s3.s3_common_test_lib import S3BackgroundIO
 from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_multipart_test_lib import S3MultipartTestLib
@@ -151,7 +151,6 @@ class TestMultipartAbortCopy:
         self.log.info("Deleted a backup file and directory")
         self.log.info("Cleanup S3 background IO artifacts")
         self.s3_background_io.cleanup()
-        check_cluster_health()
         self.log.info("ENDED: Teardown operations")
 
     @pytest.mark.s3_ops
@@ -168,7 +167,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test uploading parts to an aborted multipart upload")
         mp_config = MPART_CFG["test_29167"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29167_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29167_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -216,7 +215,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test aborting multipart upload that is in progress")
         mp_config = MPART_CFG["test_29164"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29164_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29164_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -247,11 +246,13 @@ class TestMultipartAbortCopy:
         self.log.info("Step 4: Check list multipart uploads result does not contain "
                       "upload id")
         assert_utils.assert_not_in(mpu_id, resp[1], resp[1])
+        process.join()
         self.log.info("Stop background S3 IOs")
         self.s3_background_io.stop()
         self.log.info("ENDED: Test aborting multipart upload that is in progress")
 
     @pytest.mark.s3_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-29165')
     @CTFailOn(error_handler)
     def test_copy_of_copied_multipart_object_29165(self):
@@ -265,7 +266,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test copying a copied object uploaded using multipart")
         mp_config = MPART_CFG["test_29165"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29165_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29165_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiating multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(
             self.bucket_name, self.object_name)
@@ -275,15 +276,17 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_precalculated_parts(
             self.mp_obj_path, mp_config["part_sizes"], chunk_size=mp_config["chunk_size"])
-        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
+        source_etag = get_multipart_etag(parts)
+        status, uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
+        assert_utils.assert_true(status, uploaded_parts)
+        sorted_part_list = sorted(uploaded_parts, key=lambda x: x['PartNumber'])
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, parts=uploaded_parts[1], bucket=self.bucket_name,
+            mpu_id=mpu_id, parts=sorted_part_list, bucket=self.bucket_name,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
@@ -292,7 +295,7 @@ class TestMultipartAbortCopy:
         self.log.info("Step 4: Copy multipart object 10 times")
         src_bkt = self.bucket_name
         for _ in range(10):
-            dst_bkt = "mp-bkt-{}".format(self.random_time)
+            dst_bkt = "mp-bkt-{}".format(perf_counter_ns())
             self.log.info("Creating a bucket with name : %s",dst_bkt)
             resp = self.s3_test_obj.create_bucket(dst_bkt)
             assert_utils.assert_true(resp[0], resp[1])
@@ -324,7 +327,7 @@ class TestMultipartAbortCopy:
         self.log.info("STARTED: Test deleting completed multipart object during copy operation")
         mp_config = MPART_CFG["test_29166"]
         self.log.info("Start background S3 IOs")
-        self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h5m")
+        self.s3_background_io.start(log_prefix="TEST-29166_s3bench_ios", duration="0h2m")
         self.log.info("Step 1: Initiate multipart upload")
         resp = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
@@ -333,22 +336,24 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
                                     chunk_size=mp_config["chunk_size"], random=True)
-        uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
+        source_etag = get_multipart_etag(parts)
+        status, uploaded_parts = self.s3_mp_test_obj.upload_parts_sequential(
             upload_id=mpu_id, bucket_name=self.bucket_name, object_name=self.object_name,
             parts=parts)
+        assert_utils.assert_true(status, uploaded_parts)
+        sorted_part_list = sorted(uploaded_parts, key=lambda x: x['PartNumber'])
         self.log.info("Step 3: Complete multipart upload")
         resp = self.s3_mp_test_obj.complete_multipart_upload(
-            mpu_id=mpu_id, bucket=self.bucket_name, parts=uploaded_parts,
+            mpu_id=mpu_id, bucket=self.bucket_name, parts=sorted_part_list,
             object_name=self.object_name)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(source_etag, resp[1]["ETag"])
         resp = self.s3_test_obj.object_list(self.bucket_name)
         assert_utils.assert_in(self.object_name, resp[1], resp[1])
         self.log.info("Step 4: Copy multipart object in a separate process")
-        dst_bkt = "mp-bkt-{}".format(self.random_time)
+        dst_bkt = "mp-bkt-{}".format(perf_counter_ns())
         resp = self.s3_test_obj.create_bucket(dst_bkt)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(resp[1], dst_bkt, resp[1])
@@ -392,9 +397,9 @@ class TestMultipartAbortCopy:
         res = create_file(self.mp_obj_path, mp_config["file_size"], b_size="1M")
         assert_utils.assert_true(res[0], res[1])
         assert_utils.assert_true(path_exists(self.mp_obj_path))
-        source_etag = calculate_checksum(self.mp_obj_path, binary_bz64=True)
         parts = get_unaligned_parts(self.mp_obj_path, total_parts=mp_config["total_parts"],
                                     chunk_size=mp_config["chunk_size"], random=True)
+        source_etag = get_multipart_etag(parts)
         mpu_list = []
         process_list = []
         for i in range(mp_config["mpu_count"]):
