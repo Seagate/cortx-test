@@ -93,7 +93,7 @@ class TestCsmUser():
             self.log.info("Sending request to delete csm user %s", usr)
             try:
                 response = self.csm_user.delete_csm_user(usr)
-                if response.status_code != HTTPStatus.OK
+                if response.status_code != HTTPStatus.OK:
                    delete_failed.append(usr)
             except BaseException as err:
                 self.log.warning("Ignoring %s while deleting user: %s", err, usr)
