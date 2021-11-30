@@ -135,7 +135,7 @@ graphs_input_options = [
             ),
             Dropdown(
                 id='graphs_sessions_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style=style_dropdown_medium
             ),
             Dropdown(
@@ -193,7 +193,7 @@ graphs_input_options = [
             ),
             Dropdown(
                 id='graphs_sessions_compare_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style={'display': 'none'}
             ),
             Dropdown(

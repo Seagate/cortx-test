@@ -186,10 +186,10 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch
         figs = []
 
         if sessions1 == 'all' and xfilter == 'Build':
-            plot_data['x_heading'] = 'Sessions'
+            plot_data['x_heading'] = 'Concurrency'
             xfilter_tag = 'build'
         elif sessions1 == 'all' and xfilter == 'Object_Size':
-            plot_data['x_heading'] = 'Sessions'
+            plot_data['x_heading'] = 'Concurrency'
             xfilter_tag = 'objsize'
         elif xfilter == 'Build':
             plot_data['x_heading'] = 'Object Sizes'
