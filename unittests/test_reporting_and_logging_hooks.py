@@ -3,6 +3,7 @@ import os
 import logging
 import pytest
 
+
 # Do not set logging after imports
 # log = logging.getLogger(__name__)
 # cortxlogging.init_loghandler(log)
@@ -78,8 +79,7 @@ def test_max_lc(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17413")
 def test_min(logger):
@@ -89,7 +89,7 @@ def test_min(logger):
     :param logger:
     :return:
     """
-    logger.info(str(os.environ.get('PYTEST_XDIST_WORKER')))
+    logger.info("PYTEST_XDIST_WORKER value is" + str(os.environ.get('PYTEST_XDIST_WORKER')))
     values = (2, 3, 1, 4, 6)
     val = min(values)
     logger.debug("min is %s" % val)
@@ -99,7 +99,7 @@ def test_min(logger):
     assert val == 1
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17414")
 def test_max(logger):
@@ -109,7 +109,7 @@ def test_max(logger):
     logger.info("max is %s" % val)
     assert val == 6
 
-
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17498")
 def test_max2(logger):
@@ -121,7 +121,7 @@ def test_max2(logger):
     logger.info("xdist" + str(os.environ.get('PYTEST_XDIST_WORKER')))
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17497")
 def test_max4(logger):
@@ -129,7 +129,7 @@ def test_max4(logger):
     logger.info("test pass executed")
 
 
-@pytest.mark.ha
+@pytest.mark.s3_ops
 @pytest.mark.parallel
 @pytest.mark.tags("TEST-17499")
 def test_max3(logger):

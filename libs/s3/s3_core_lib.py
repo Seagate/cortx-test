@@ -101,6 +101,16 @@ class S3Lib:
 
         return response
 
+    def put_object_with_all_kwargs(self, **kwargs):
+        """
+        Putting Object to the Bucket.
+        :return: response.
+        """
+        LOGGER.debug("input for put_object are: %s ", kwargs)
+        response = self.s3_client.put_object(**kwargs)
+        LOGGER.debug("output: %s ", response)
+        return response
+
     def put_object(self,
                    bucket_name: str = None,
                    object_name: str = None,
@@ -112,10 +122,13 @@ class S3Lib:
         :param bucket_name: Name of the bucket
         :param object_name: Name of the object
         :param file_path: Path of the file
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return: response.
         """
         m_key = kwargs.get("m_key", None)
         m_value = kwargs.get("m_value", None)
+        metadata = kwargs.get("metadata", None)  # metadata dict.
+        content_md5 = kwargs.get("content_md5")  # base64-encoded 128-bit MD5 digest of the message.
         LOGGER.debug("bucket_name: %s, object_name: %s, file_path: %s, m_key: %s, m_value: %s",
                      bucket_name, object_name, file_path, m_key, m_value)
         with open(file_path, "rb") as data:
@@ -126,6 +139,18 @@ class S3Lib:
                     Body=data,
                     Metadata={
                         m_key: m_value})
+            elif metadata:
+                response = self.s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=object_name,
+                    Body=data,
+                    Metadata=metadata)
+            elif content_md5:
+                response = self.s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=object_name,
+                    Body=data,
+                    ContentMD5=content_md5)
             else:
                 response = self.s3_client.put_object(
                     Bucket=bucket_name, Key=object_name, Body=data)
@@ -145,10 +170,8 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        LOGGER.info("Uploading object")
         self.s3_resource.meta.client.upload_file(
             file_path, bucket_name, object_name)
-        LOGGER.info("Uploading object done")
 
         return file_path
 
@@ -256,7 +279,8 @@ class S3Lib:
     def object_download(self,
                         bucket_name: str = None,
                         obj_name: str = None,
-                        file_path: str = None) -> str:
+                        file_path: str = None,
+                        **kwargs) -> str:
         """
         Downloading Object of the required Bucket.
 
@@ -265,7 +289,7 @@ class S3Lib:
         :param file_path: Path of the file.
         :return: response.
         """
-        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path)
+        self.s3_resource.Bucket(bucket_name).download_file(obj_name, file_path, **kwargs)
         LOGGER.debug(
             "The %s has been downloaded successfully at mentioned file path %s",
             obj_name,
@@ -312,21 +336,17 @@ class S3Lib:
 
         return response
 
-    def get_object(
-            self,
-            bucket: str = None,
-            key: str = None) -> dict:
+    def get_object(self, bucket: str = None, key: str = None) -> dict:
         """
         Getting byte range of the object.
 
         :param bucket: Name of the bucket.
         :param key: Key of object.
-        :param ranges: Range in bytes.
         :return: response.
         """
         response = self.s3_client.get_object(
             Bucket=bucket, Key=key)
-        logging.debug(response)
+        LOGGER.debug(response)
 
         return response
 
@@ -401,13 +421,21 @@ class Multipart(S3Lib):
         :param body: content of the object.
         :param bucket_name: Name of the bucket.
         :param object_name: Name of the object.
+        :keyword content_md5: base64-encoded MD5 digest of message
         :return:
         """
         upload_id = kwargs.get("upload_id", None)
         part_number = kwargs.get("part_number", None)
-        response = self.s3_client.upload_part(
-            Body=body, Bucket=bucket_name, Key=object_name,
-            UploadId=upload_id, PartNumber=part_number)
+        content_md5 = kwargs.get("content_md5", None)
+        if content_md5:
+            response = self.s3_client.upload_part(
+                Body=body, Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number,
+                ContentMD5=content_md5)
+        else:
+            response = self.s3_client.upload_part(
+                Body=body, Bucket=bucket_name, Key=object_name,
+                UploadId=upload_id, PartNumber=part_number)
         logging.debug(response)
 
         return response
@@ -1041,6 +1069,43 @@ class Acl(S3Lib):
 
         return response
 
+    def put_bucket_multiple_permission(self,
+                                       bucket_name: str = None,
+                                       **kwargs) -> bool:
+        """
+        Set the permissions on a bucket using access control lists (ACL).
+
+        :param bucket_name: Name of the bucket
+        :param grant_full_control: Allows grantee the read, write, read ACP, and write ACP
+         permissions on the bucket.
+        :param grant_read: Allows grantee to list the objects in the bucket.
+        :param grant_read_acp: Allows grantee to read the bucket ACL.
+        :param grant_write: Allows grantee to create, overwrite, and delete any object
+         in the bucket.
+        :param grant_write_acp: Allows grantee to write the ACL for the applicable bucket.
+        :return: True or False
+        """
+        grantee = {}
+        grant_full_control = kwargs.get("grant_full_control", None)
+        grant_read = kwargs.get("grant_read", None)
+        grant_read_acp = kwargs.get("grant_read_acp", None)
+        grant_write = kwargs.get("grant_write", None)
+        grant_write_acp = kwargs.get("grant_write_acp", None)
+
+        if grant_full_control:
+            grantee["GrantFullControl"] = grant_full_control
+        if grant_read:
+            grantee["GrantRead"] = grant_read
+        if grant_read_acp:
+            grantee["GrantReadACP"] = grant_read_acp
+        if grant_write:
+            grantee["GrantWrite"] = grant_write
+        if grant_write_acp:
+            grantee["GrantWriteACP"] = grant_write_acp
+        response = self.s3_client.put_bucket_acl(Bucket=bucket_name, **grantee)
+
+        return response
+
 
 class BucketPolicy(S3Lib):
     """Class containing methods to implement bucket policy functionality."""
@@ -1107,7 +1172,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FILE_CMD.format(
             file_path, bucket_name, object_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1127,7 +1192,7 @@ class S3LibCmd(S3Lib):
         """
         cmd = commands.S3_UPLOAD_FOLDER_CMD.format(
             folder_path, bucket_name, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response
@@ -1149,7 +1214,7 @@ class S3LibCmd(S3Lib):
             os.mkdir(folder_path)
         cmd = commands.S3_DOWNLOAD_BUCKET_CMD.format(
             bucket_name, folder_path, profile_name)
-        response = run_local_cmd(cmd, flg=True)
+        response = run_local_cmd(cmd, chk_stderr=True)
         LOGGER.debug("Response: %s", str(response))
 
         return response

@@ -28,6 +28,7 @@ import logging
 import os
 import re
 import shutil
+import csv
 from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 
 import yaml
@@ -56,7 +57,12 @@ def read_yaml(fpath: str) -> tuple:
             except yaml.YAMLError as exc:
                 err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
                 LOG.error(err_msg)
-                return False, exc
+                try:
+                    data = yaml.load(fin.read(), Loader=yaml.Loader)
+                except yaml.YAMLError as exc:
+                    err_msg = "Failed to parse: {}\n{}".format(fpath, str(exc))
+                    LOG.error(err_msg)
+                    return False, exc
 
     else:
         err_msg = "Specified file doesn't exist: {}".format(fpath)
@@ -99,6 +105,7 @@ def create_content_json(path: str, data: object, ensure_ascii=True) -> str:
     """
     Function to create json file.
 
+    :param ensure_ascii:
     :param path: json file path is to be created.
     :param data: Data to write in json file
     :return: path of the file.
@@ -113,6 +120,7 @@ def read_content_json(fpath: str, mode='r') -> dict:
     """
     Function to read json file.
 
+    :param mode:
     :param fpath: Path of the json file
     :return: Data of the json file
     """
@@ -199,7 +207,7 @@ def get_config(path: str, section: str = None, key: str = None) -> list or str:
         return None
 
 
-def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
+def update_config_ini(path: str, section: str, key: str, value: str, add_section: bool = True) -> bool:
     """
     Update config file value as per the section and key.
 
@@ -207,6 +215,7 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
     :param section: Section name
     :param key: Section key name
     :param value: new value
+    :param add_section: If true will add given missing section in given config
     :return: boolean
     """
     config = ConfigParser()
@@ -216,8 +225,11 @@ def update_config_ini(path: str, section: str, key: str, value: str) -> bool:
             config.set(section, key, value)
         except NoSectionError as error:
             LOG.warning(error)
-            config.add_section(section)
-            config.set(section, key, value)
+            if add_section:
+                config.add_section(section)
+                config.set(section, key, value)
+            else:
+                raise error
         with open(path, "w") as configfile:
             config.write(configfile)
     except TypeError as error:
@@ -447,3 +459,31 @@ def write_properties_file(fpath: str, prop_dict: dict):
     except Exception as error:
         LOG.error(error)
         return False
+
+def convert_to_seconds(time_str:str):
+    """ Converts <num>|postfix from s/m/h/d to seconds
+    :param time_str:  <num>|postfix from s/m/h/d
+    :return int: time in seconds
+    """
+    seconds_per_unit = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+    return int(time_str[:-1]) * seconds_per_unit[time_str[-1]]
+
+def read_csv(fpath:str):
+    """Reads the csv file
+    :param fpath: file path
+    """
+    with open(fpath, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+    return reader
+
+def write_csv(fpath:str, fieldnames:list, rows:list):
+    """ Creates and writes the csv file
+    :param fpath: file path
+    :param fieldnames: list of header
+    :param row_dict: list of dictionary of [{fieldname1:value,fieldname2:value},{..}]
+    """
+    with open(fpath, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)

@@ -40,8 +40,10 @@ DISK_ALERT_KEY = "diskUsedPercentage"
 LAST_SEL_INDEX = "cd /var/cortx/sspl/data/server && cat last_sel_index"
 CHECK_SSPL_LOG_FILE = "tail -f /var/log/cortx/sspl/sspl.log > '{}' 2>&1 &"
 RABBIT_MQ_FILE = "/root/rabbitmq_reader.py"
+MSG_BUS_READER_PATH = "/root/read_message_bus.py"
 MANUAL_PATH = "/opt/seagate/sspl/low-level/tests/manual/"
 RABBIT_MQ_LOCAL_PATH = "scripts/server_scripts/rabbitmq_reader.py"
+MSG_BUS_READER_LOCAL_PATH = "scripts/server_scripts/read_message_bus.py"
 ENCRYPTOR_FILE_PATH = "scripts/server_scripts/encryptor.py"
 STORAGE_ENCLOSURE_PATH = "/opt/seagate/cortx/provisioner/pillar/components" \
                         "/storage_enclosure.sls"
@@ -78,9 +80,29 @@ CLUSTER_STATUS_MSG = "cluster is not currently running on this node"
 NODE_RANGE_START = 1
 NODE_RANGE_END = 3
 NODE_PREFIX = "eosnode-"
+CONF_STORE_ENCL_KEY = "storage_enclosure>enc_614f595926904dd0ab0f68395bfa7f11>controller"
+CONF_PRIMARY_IP = CONF_STORE_ENCL_KEY + ">primary>ip"
+CONF_PRIMARY_PORT = CONF_STORE_ENCL_KEY + ">primary>port"
+CONF_SECONDARY_IP = CONF_STORE_ENCL_KEY + ">secondary>ip"
+CONF_SECONDARY_PORT = CONF_STORE_ENCL_KEY + ">secondary>port"
+CONF_ENCL_USER = CONF_STORE_ENCL_KEY + ">secret"
+CONF_ENCL_SECRET = CONF_STORE_ENCL_KEY + ">user"
+CONF_SSPL_LOG_LEVEL = "SYSTEM_INFORMATION>log_level"
+CONF_CPU_USAGE = "NODEDATAMSGHANDLER>cpu_usage_threshold"
+CONF_MEM_USAGE = "NODEDATAMSGHANDLER>host_memory_usage_threshold"
+CONF_DISK_USAGE = "NODEDATAMSGHANDLER>disk_usage_threshold"
+CONF_SSPL_SRV_THRS_INACT_TIME = "SERVICEMONITOR>threshold_inactive_time"
+CONF_CPU_FAULT_EN = "CPUFAULTSENSOR>monitor"
+SSPL_GLOBAL_CONF_URL = 'yaml:///etc/sspl_global_config_copy.yaml'
+SSPL_CFG_URL = "yaml:///etc/sspl.conf"
+SVC_COPY_CONFG_PATH = "/tmp/svc_backup/"
+CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
+CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 
 """ S3 constants """
+LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -94,6 +116,14 @@ const.CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"],
 const.AUTHSERVER_LOG_PATH = "/var/log/seagate/auth/server/app.log"
 const.S3CMD = "s3cmd"
 const.S3FS = "s3fs-fuse"
+const.SLAPD = "slapd"
+const.HAPROXY = "haproxy"
+const.S3AUTHSERVER = "s3authserver"
+const.HAPROXY_LOG_PATH = "/var/log/haproxy.log"
+const.S3_LOG_PATH = "/var/log/seagate/s3"
+const.SUPPORT_BUNDLE_SUCCESS_MSG = "S3 support bundle generated successfully"
+const.CLUSTER_NOT_RUNNING_MSG = "Cluster is not running"
+const.LOG_MSG_PATH = "/var/log/messages"
 
 
 class Rest:
@@ -122,9 +152,9 @@ class Rest:
     METHOD_NOT_FOUND = 404
     SUCCESS_STATUS_FOR_POST = 201
     USER_DATA = "{\"username\": \"testusername\", \"password\": \"Testuser@123\"," \
-                " \"roles\": [\"user_role\"],\"email\":\"testmonitoruser@seagate.com\"," \
+                " \"role\": \"user_role\",\"email\":\"testmonitoruser@seagate.com\"," \
                 "\"alert_notification\":true}"
-    MISSING_USER_DATA = "{\"username\": \"testusername\", \"roles\": [\"user_role\"]}"
+    MISSING_USER_DATA = "{\"username\": \"testusername\", \"role\": \"user_role\"}"
     CONTENT_TYPE = {'Content-Type': 'application/json'}
     BUCKET_NAME = "bucket_name"
     BUCKET = "buckets"
@@ -153,7 +183,7 @@ class Rest:
     CSM_NUM_OF_USERS_TO_CREATE = 5
     RANDOM_NUM_START = 3
     RANDOM_NUM_END = 9
-    SORT_DIR_ERROR = "{\'sort_dir\': [\'Must be one of: desc, asc.\']}"
+    SORT_DIR_ERROR = "{\'dir\': [\'Must be one of: desc, asc.\']}"
     SORT_BY_EMPTY_PARAM_ERROR_RESPONSE = {
         'error_code': '4099', 'message_id': "{'sort_by': ['Must be one of: user_id,"
                                             " username, user_type, created_time, updated_time.']}",
@@ -205,9 +235,10 @@ S3ACCOUNT_HELP_CMDS = [
         "s3accounts",
         "s3bucketpolicy"]
 S3ACCOUNT_HELP = ["positional arguments:",
-                  "{show,create}",
-                  "show         Displays S3 Accounts On the cli",
-                  "create       Create a new S3 Account."]
+                  "{show,create,reset_password}",
+                  "show                Displays S3 Accounts On the cli",
+                  "create              Create a new S3 Account",
+                  "reset_password      Reset password for S3 Account"]
 S3ACC_CREATE_HELP = ["positional arguments:",
                      "account_name   Name to be given to S3 account",
                      "account_email  Email to be given to S3 account"]
@@ -243,7 +274,53 @@ JENKINS_USERNAME = "6LS9f5yJ1IFpxbasg/wPKG4p5ycaBT6x/j7Kj7anTSk="
 JENKINS_PASSWORD = "/AxML7GgiVqRSmKGcPSJSorUq0X9FLZrfrlEyw6tjKnccwT67II+SwOcKBWPV6SWoBwM/46rAky+fXKumyX41Q=="
 TOKEN_NAME = "10Mnx/XE4tEN8xrzQTNp2iSGQxPjpcHXbIdZgJyIN7Y="
 PARAMS = {"CORTX_BUILD": "{0}", "HOST": "{1}", "HOST_PASS": "{2}", "DEBUG": "True"}
+PIP_CONFIG = "/etc/pip.conf"
 
 #Locking server
 SHARED_LOCK = 'shared'
 EXCLUSIVE_LOCK = 'exclusive'
+
+class SwAlerts:
+    SVCS_3P = [
+#        "elasticsearch.service", # brings down the csm
+#        "hare-consul-agent.service", # Disabled on VM EOS-20861
+#        "slapd.service", # brings down the csm
+        "statsd.service",
+        "rsyslog.service",
+#        "lnet.service", brings down motr-io service
+        "salt-master.service",
+        "salt-minion.service",
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"
+    ]
+
+    SVCS_3P_UNAVAIL_VM = [
+        "glusterd.service",
+        "multipathd.service",
+        "scsi-network-relay.service"]
+
+    SVCS_3P_ENABLED_VM = list(set(SVCS_3P) - set(SVCS_3P_UNAVAIL_VM))
+
+    SVC_LOAD_TIMEOUT_SEC = 30
+    class AlertType:
+        FAULT = "fault"
+        RESOLVED = "fault_resolved"
+
+    class Severity:
+        CRITICAL = "critical"
+        INFO = "informational"
+
+    class ResourceType:
+        SW_SVC = "node:sw:os:service"
+        NW_INTFC = "node:interface:nw"
+
+
+class Sizes:
+    KB = 1024
+    MB = KB * KB
+
+# Support Bundle
+R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
+SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
+                "manifest", "uds", "elasticsearch", "utils", "HA"]

@@ -108,7 +108,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Restarting sspl service")
         self.health_obj2.restart_pcs_resource(self.cm_cfg["sspl_resource_id"])
-        time.sleep(self.cm_cfg["after_service_restart_sleep_val"])
+        time.sleep(self.cm_cfg["sspl_timeout"])
         LOGGER.info(
             "Verifying the status of sspl and rabittmq service is online")
 
@@ -185,7 +185,7 @@ class TestSSPLSecondary:
 
         LOGGER.info("Successfully performed Teardown operation")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14034")
     @pytest.mark.skip
@@ -294,9 +294,10 @@ class TestSSPLSecondary:
             "ENDED: Pacemaker Resource Agents for SSPL service(Stop sspl "
             "service on Node)")
 
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14035")
+    @pytest.mark.skip
     @CTFailOn(error_handler)
     def test_1783(self):
         """
@@ -402,7 +403,7 @@ class TestSSPLSecondary:
             "service on Node)")
 
     @pytest.mark.skip
-    @pytest.mark.ras
+    @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     @pytest.mark.tags("TEST-14794")
     @CTFailOn(error_handler)

@@ -20,8 +20,9 @@
 
 """PUT Bucket test module."""
 
-import time
 import logging
+import time
+
 import pytest
 
 from commons.ct_fail_on import CTFailOn
@@ -29,51 +30,36 @@ from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
 from libs.s3 import S3_CFG
-from libs.s3.s3_test_lib import S3TestLib
 from libs.s3.s3_test_lib import S3LibNoAuth
-
-S3T_OBJ = S3TestLib()
-NO_AUTH_OBJ = S3LibNoAuth(s3_cert_path=S3_CFG["s3_cert_path"])
-NO_AUTH_OBJ_WITHOUT_CERT = S3LibNoAuth(s3_cert_path=None)
+from libs.s3.s3_test_lib import S3TestLib
 
 
 class TestPutBucket:
     """PUT Bucket Test suite."""
 
-    @classmethod
-    def setup_class(cls):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
-        Function will be invoked prior to each test case.
+        Summary: Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test suite steps if any.
+        Description: It will perform all prerequisite and cleanup test.
         """
-        cls.log = logging.getLogger(__name__)
-        cls.log.info("STARTED: setup test suite operations.")
-        cls.bucket_name = None
-        cls.log.info("ENDED: setup test suite operations.")
-
-    def setup_method(self):
-        """
-        Function will be invoked before each test case execution.
-
-        It will perform prerequisite test steps if any.
-        """
-        self.log.info("STARTED: Test setup operations.")
-        self.bucket_name = "-".join(["putbk", str(time.time())])
-        self.log.info("ENDED: Test setup operations.")
-
-    def teardown_method(self):
-        """
-        Function will be invoked after running each test case.
-
-        It will clean all resources such as S3 buckets and the objects present into that bucket
-        which are getting created during test execution .
-        """
+        self.log = logging.getLogger(__name__)
+        self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.no_auth_obj = S3LibNoAuth(
+            endpoint_url=S3_CFG["s3_url"],
+            s3_cert_path=S3_CFG["s3_cert_path"])
+        self.no_auth_obj_without_cert = S3LibNoAuth(
+            endpoint_url=S3_CFG["s3_url"], s3_cert_path=None)
+        self.log.info("STARTED: setup test operations.")
+        self.bucket_name = "putbkt-{}".format(time.perf_counter_ns())
+        self.log.info("ENDED: setup test operations.")
+        yield
         self.log.info("STARTED: Test teardown operations.")
-        status, bktlist = S3T_OBJ.bucket_list()
+        status, bktlist = self.s3t_obj.bucket_list()
         assert_utils.assert_true(status, bktlist)
         if self.bucket_name in bktlist:
-            resp = S3T_OBJ.delete_bucket(self.bucket_name, force=True)
+            resp = self.s3t_obj.delete_bucket(self.bucket_name, force=True)
             assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: Test teardown operations.")
 
@@ -87,7 +73,7 @@ class TestPutBucket:
         self.log.info("Step 1: Creating bucket without authorization header.")
         self.log.info("Bucket name: %s", bucket_name)
         try:
-            resp = NO_AUTH_OBJ.create_bucket(bucket_name)
+            resp = self.no_auth_obj.create_bucket(bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_equal(
@@ -100,7 +86,7 @@ class TestPutBucket:
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
         try:
-            resp = NO_AUTH_OBJ.bucket_list()
+            resp = self.no_auth_obj.bucket_list()
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_in(bucket_name, resp[1], resp)
@@ -111,6 +97,7 @@ class TestPutBucket:
                 error.message,
                 error.message)
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5838')
     @CTFailOn(error_handler)
@@ -123,6 +110,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5839')
     @CTFailOn(error_handler)
@@ -137,6 +125,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Verify put-bucket with ip address format where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5840')
     @CTFailOn(error_handler)
@@ -149,6 +138,7 @@ class TestPutBucket:
         self.log.info(
             "ENDED: Create multiple buckets where authorization header is missing")
 
+    @pytest.mark.parallel
     @pytest.mark.s3_ops
     @pytest.mark.tags('TEST-5841')
     @CTFailOn(error_handler)
@@ -165,7 +155,8 @@ class TestPutBucket:
         self.log.info(
             "Step 1: Creating bucket without authorization header and without ca.cert")
         try:
-            resp = NO_AUTH_OBJ_WITHOUT_CERT.create_bucket(self.bucket_name)
+            resp = self.no_auth_obj_without_cert.create_bucket(
+                self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_equal(
@@ -178,7 +169,7 @@ class TestPutBucket:
                 error.message)
         self.log.info("Step 2: Listing buckets without authorization header")
         try:
-            resp = NO_AUTH_OBJ_WITHOUT_CERT.bucket_list()
+            resp = self.no_auth_obj_without_cert.bucket_list()
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
             assert_utils.assert_not_in(self.bucket_name, resp[1], resp)

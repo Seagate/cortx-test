@@ -1,3 +1,4 @@
+# !/usr/bin/env python3
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -16,109 +17,60 @@
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
-# !/usr/bin/env python3
-import os
+"""DI Test Cases."""
+
 import logging
 import pytest
-import pytest_ordering
-import pytest_metadata
-import config as cfg
-#from libs.di.di_test_framework import Uploader
-#from libs.di.di_test_framework import DIChecker
-#from libs.di.di_mgmt_ops import ManagementOPs
-#from libs.di.di_lib import create_iter_content_json
-from libs.di.di_lib import init_loghandler
+from libs.di.di_test_framework import Uploader
+from libs.di.di_test_framework import DIChecker
+from libs.di.di_mgmt_ops import ManagementOPs
+from commons.ct_fail_on import CTFailOn
+from commons.errorcodes import error_handler
+from config import DATA_PATH_CFG
 
-logger = logging.getLogger(__name__)
-#init_loghandler(logger)
+LOGGER = logging.getLogger(__name__)
 
-
-def setup_module(module):
-    """ setup any state specific to the execution of the given module."""
-
-
-def teardown_module(module):
-    """ teardown any state that was previously setup with a setup_module
-    method.
-    """
 
 class TestDataIntegrity:
-    """ log sys event when doing node operation
-       log test hooks and actions/events
+    """ Data Integrity test plan. Log test hooks and actions/events.
     """
-    HOME = os.getcwd()
 
-    @classmethod
-    def setup_class(cls):
-        """ setup any state specific to the execution of the given class (which
-        usually contains tests).
-        """
+    @pytest.mark.di
+    @pytest.mark.tags("TEST-0")
+    def test_di_sanity(self):
+        ops = ManagementOPs()
+        users = ops.create_account_users(nusers=4)
+        uploader = Uploader()
+        uploader.start(users)
+        DIChecker.init_s3_conn(users)
+        DIChecker.verify_data_integrity(users)
 
-    @classmethod
-    def teardown_class(cls):
-        """ teardown any state that was previously setup with a call to
-        setup_class.
-        """
-
-    def setUp(self) -> None:
-        #users = ManagementOPs.create_account_users()
-        #create_iter_content_json(DataIntegrityTest.HOME, users)
-        pass
-
-    def setup_method(self, method) -> None:
-        """ setup any state tied to the execution of the given method in a
-        class.  setup_method is invoked for every test method of a class.
-        """
-
-    def teardown_method(self, method) -> None:
-        """ teardown any state that was previously setup with a setup_method
-        call.
-        """
     @pytest.mark.skip
-    @pytest.mark.run(order=2)
-    @pytest.mark.test(test_id=12345, tag='di')
-    @pytest.mark.dataprovider('', conn=300)
-    def test_di_large_number_s3_connection(self):
+    @pytest.mark.di
+    @pytest.mark.tags("TEST-1")
+    @CTFailOn(error_handler)
+    def test_large_number_s3_connection(self):
         """
         300 * 3, 300 * 6, 300 * 9, 300 * 12
+        Assuming scale of 300 connections per node. For 3 node, 6 node cluster, etc.
         :return:
         """
-        cmn_cfg = cfg.CMN_CFG
-        users = cfg.constants.USER_JSON
+        ops = ManagementOPs()
+        users = ops.create_account_users(nusers=4)
+        LOGGER.info("Start large number of S3 connections.")
+        test_conf = DATA_PATH_CFG["test_1703"]
+        bucket = ops.create_buckets(nbuckets=10)
+        self.run_s3bench(test_conf, bucket)
+        LOGGER.info("ENDED: large # of s3 connections.")
 
     @pytest.mark.skip
-    @pytest.mark.test(test_id=12345, tag='di')
-    @pytest.mark.run(order=2)
-    def test_very_large_number_s3_connection(self):
-        assert True
-
-    """
-    @pytest.mark.test(test_id=1234, tag='di')
-    def test_di_large_number_s3_connection(self):
-        uploader = Uploader()
-        uploader.start()
-        dichecker = DIChecker()
-        dichecker.verify_data_integrity()
-    
-    
+    @pytest.mark.di
+    @pytest.mark.tags("TEST-2")
+    @CTFailOn(error_handler)
     def test_di_large_number_s3_connection_with_deletes(self):
+        ops = ManagementOPs()
+        users = ops.create_account_users(nusers=4)
         uploader = Uploader()
-        uploader.start()
-        destructive_step()
-        dichecker = DIChecker()
-        dichecker.verify_data_integrity()
-
-    def test_di_for_mixed_ops_with_sas_hba_fault(self):
-        uploader = Uploader()
-        uploader.start()
-        destructive_step()
-        dichecker = DIChecker()
-        dichecker.verify_data_integrity()
-    """
-
-    def tearDown(self) -> None:
-        pass
-
-
-if __name__ == '__main__':
-    pass
+        uploader.start(users)
+        DIChecker.init_s3_conn(users)
+        DIChecker.verify_data_integrity(users)

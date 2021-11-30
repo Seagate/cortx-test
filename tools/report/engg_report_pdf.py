@@ -31,38 +31,16 @@ import common_pdf
 
 def build_component_table(data: List[list]):
     """Build component table."""
-    col_width = 10 * [0.71 * inch]
-    col_width[0] = 1.25 * inch
+    col_width = 5 * [1.3 * inch]
+    col_width[0] = 2.4 * inch
     component_table = Table(data, col_width, len(data) * [0.25 * inch],
                             style=common_pdf.common_table_style)
-    component_table.setStyle(TableStyle([
-        ('SPAN', (0, 1), (0, 2)),  # Merge Cells for Component
-        ('SPAN', (1, 1), (1, 2)),  # Merge Cells for Total
-        ('SPAN', (2, 1), (3, 1)),  # Merge Cells for Build
-        ('SPAN', (4, 1), (5, 1)),  # Merge Cells for Build-1
-        ('SPAN', (6, 1), (7, 1)),  # Merge Cells for Build-2
-        ('SPAN', (8, 1), (9, 1)),  # Merge Cells for Build-3
-        ('BACKGROUND', (2, 2), (3, -1), colors.HexColor(0xededed)),  # Grey bg 3rd & 4th column
-        ('BACKGROUND', (0, 1), (1, 2), colors.HexColor(0xa5a5a5)),  # Dark Grey bg for 2nd row
-        ('BACKGROUND', (0, 3), (0, -1), colors.HexColor(0xededed)),  # Grey bg 1st column
-        ('BACKGROUND', (1, 3), (1, -1), colors.HexColor(0xd9e2f3)),  # Blue bg 2nd row
-
-        ('TEXTCOLOR', (1, 3), (1, -1), colors.HexColor(0x0070c0)),  # Blue for 2nd column
-        ('TEXTCOLOR', (2, 2), (2, -1), colors.HexColor(0x009933)),  # Green for 3rd column
-        ('TEXTCOLOR', (3, 2), (3, -1), colors.HexColor(0xff0000)),  # Red for 4th column
-        ('TEXTCOLOR', (4, 2), (4, -1), colors.HexColor(0x009933)),  # Green for 5th column
-        ('TEXTCOLOR', (5, 2), (5, -1), colors.HexColor(0xff0000)),  # Red for 6th column
-        ('TEXTCOLOR', (6, 2), (6, -1), colors.HexColor(0x009933)),  # Green for 7th column
-        ('TEXTCOLOR', (7, 2), (7, -1), colors.HexColor(0xff0000)),  # Red for 8th column
-        ('TEXTCOLOR', (8, 2), (8, -1), colors.HexColor(0x009933)),  # Green for 9th column
-        ('TEXTCOLOR', (9, 2), (9, -1), colors.HexColor(0xff0000)),  # Red for 10th column
-    ]))
     return component_table
 
 
 def build_single_bucket_perf_stats(data: List[list]):
     """Build single bucket performance table."""
-    col_width = 9 * [0.71 * inch]
+    col_width = 9 * [0.57 * inch]
     col_width[0] = 2 * inch
     single_bucket_perf_stats = Table(data, col_width, 10 * [0.24 * inch],
                                      style=common_pdf.common_table_style)
@@ -71,7 +49,7 @@ def build_single_bucket_perf_stats(data: List[list]):
 
 def build_multi_bucket_perf_stats(data: List[list]):
     """Build multi bucket performance table."""
-    col_width = 10 * [0.71 * inch]
+    col_width = 10 * [0.57 * inch]
     col_width[0] = 1 * inch
     col_width[1] = 1.25 * inch
 
@@ -125,7 +103,8 @@ def build_defect_table(data: List[list]):
 
 def main():
     """Generate PDF engineering report from csv executive report."""
-    all_data = common_pdf.get_data_from_csv('../engg_report.csv')
+    build = common_pdf.get_args()
+    all_data = common_pdf.get_data_from_csv(f'Engg_Report_{build}.csv')
 
     main_table_data, table2_start = common_pdf.get_table_data(all_data, 0)
     reported_bugs_table_data, table3_start = common_pdf.get_table_data(all_data, table2_start)
@@ -138,8 +117,6 @@ def main():
     defect_table_data, _ = common_pdf.get_table_data(all_data, table9_start)
 
     main_table = common_pdf.build_main_table(main_table_data)
-
-    build = main_table_data[2][1]
 
     two_tables = common_pdf.build_two_tables(reported_bugs_table_data, qa_report_table_data)
 
@@ -162,7 +139,7 @@ def main():
                 Paragraph("<em>NA signifies the data is Not Available.</em>"),
                 Spacer(15, 15), defect_table]
 
-    doc = SimpleDocTemplate(f"../Engg_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
+    doc = SimpleDocTemplate(f"Engg_Report_{build}.pdf", pagesize=letter, leftMargin=0.5 * inch,
                             rightMargin=0.5 * inch, topMargin=0.5 * inch, bottomMargin=0.5 * inch)
     doc.build(elements)
 

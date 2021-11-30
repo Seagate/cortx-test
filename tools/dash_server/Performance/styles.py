@@ -1,3 +1,4 @@
+"""UI styles for Performance tab and formatting"""
 #
 # Copyright (c) 2020 Seagate Technology LLC and/or its Affiliates
 #
@@ -19,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-dict_style_table_caption = {
+style_table_caption = {
     'font-size': '23px',
     'color': '#3131b0',
     'margin-top': '18px',
@@ -31,7 +32,15 @@ style_workload_captions = {
     'color': '#000000',
     'margin-top': '15px',
     'margin-bottom': '8px',
-    'text-align': 'left'
+    'text-align': 'left',
+    'font-size': '20px',
+}
+
+style_filters_captions = {
+    'font-size': '20px',
+    'color': '#FFFFFF',
+    'margin-top': '25px',
+    'margin-right': '15px'
 }
 
 style_perf_captions = {
@@ -43,7 +52,7 @@ style_perf_captions = {
     'text-align': 'center'
 }
 
-dict_style_header = {
+style_dashtable_header = {
     'backgroundColor': '#7F8C8D',
     'textAlign': 'center',
     'font-size': '18px',
@@ -52,7 +61,7 @@ dict_style_header = {
     'font-family': 'sans-serif'
 }
 
-dict_style_cell = {
+style_table_cell = {
     'textAlign': 'center',
     'border': '1px solid black',
     'fontWeight': 'bold',
@@ -60,26 +69,14 @@ dict_style_cell = {
     'font-family': 'sans-serif'
 }
 
-dict_style_tab = {
-    'margin-left': 10,
-    'margin-right': 10
-}
 
-dict_style_label = {
-    'font-size': '22px',
-    'color': '#44cc00',
-    'background-color': '#343a40',
-    'border-style': 'solid',
-    'border-color': '#ffffff'
-}
-
-dict_style_sub_tab = {
+style_sub_tab = {
     'margin-left': 10,
     'margin-right': 10,
     'margin-top': '10px'
 }
 
-dict_style_sub_label = {
+style_sub_label = {
     'font-size': '18px',
     'color': '#44cc00',
     'background-color': '#343a40',
@@ -87,24 +84,53 @@ dict_style_sub_label = {
     'margin-top': '20px'
 }
 
-dict_style_dropdown_medium = {
-    'width': '160px',
+style_dropdown_small = {
+    'width': '100px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px",
 }
 
-dict_dropdown_normal_Style = {
-    'width': '200px',
+style_dropdown_small_2 = {
+    'width': '125px',
+    'verticalAlign': 'middle',
+    "margin-right": "10px",
+    "margin-top": "10px",
+}
+
+
+style_dropdown_medium = {
+    'width': '150px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px"
 }
 
-dict_style_dropdown_large = {
+style_dropdown_large = {
     'width': '250px',
     'verticalAlign': 'middle',
     "margin-right": "10px",
     "margin-top": "10px",
     "margin-bottom": "10px"
+}
+
+dict_style_profiles = {
+    'width': '340px',
+    'verticalAlign': 'middle',
+    "margin-right": "10px",
+    "margin-top": "10px"
+}
+
+dict_Style_Stats_input_options = {
+    'width': '200px',
+    'verticalAlign': 'middle',
+    "margin-right": "15px",
+    "margin-top": "10px"
+}
+
+dict_button_style = {
+    'height': '35px',
+    'margin-top': '20px',
+    'background-color': "#81DD59",
+    'color': '#000000'
 }

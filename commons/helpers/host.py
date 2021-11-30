@@ -130,11 +130,12 @@ class Host:
         while retry_count:
             try:
                 self.connect(**kwargs)
-                break
-            except socket.timeout as error:
+                return True
+            except Exception as error:
                 LOGGER.debug("Attempting to reconnect: %s", str(error))
                 retry_count -= 1
                 time.sleep(wait_time)
+        return False
 
     def execute_cmd(self,
                     cmd: str,
@@ -160,6 +161,7 @@ class Host:
         exc = kwargs.get('exc', True)
         if 'exc' in kwargs.keys():
             kwargs.pop('exc')
+        LOGGER.debug(f"Executing {cmd}")
         self.connect(timeout=timeout, **kwargs)
         stdin, stdout, stderr = self.host_obj.exec_command(
             cmd, timeout=timeout)
@@ -172,8 +174,13 @@ class Host:
             if exc:
                 if err:
                     raise IOError(err)
-                raise IOError(stdout.readlines())
-            return err
+                else:
+                    raise IOError(stdout.readlines())
+            else:
+                if err:
+                    return stdout.read(read_nbytes), err
+                else:
+                    return stdout.read(read_nbytes)
         if inputs:
             stdin.write('\n'.join(inputs))
             stdin.write('\n')

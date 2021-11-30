@@ -23,10 +23,15 @@
 import logging
 import json
 import time
+import xmltodict
 import re
 from typing import Tuple, List, Any
 from commons.helpers.host import Host
 from commons import commands
+from commons.utils.system_utils import check_ping
+from commons.utils.system_utils import run_remote_cmd
+from config import RAS_VAL
+from config import CMN_CFG
 
 LOG = logging.getLogger(__name__)
 
@@ -54,13 +59,17 @@ class Health(Host):
         Find all ports exposed through firewall permanent service for given
         component
         """
-        output = self.execute_cmd(
-            commands.FIREWALL_CMD.format(service), read_lines=True)
-        ports = []
-        for word in output:
-            ports.append(word.split())
-        if not ports:
-            LOG.error("Does Not Found Running Service %s", service)
+        try:
+            output = self.execute_cmd(
+                commands.FIREWALL_CMD.format(service), read_lines=True)
+            ports = []
+            for port in output[0].split():
+                ports.append(port.split("/")[0])
+            if not ports:
+                LOG.error("Does Not Found Running Service %s", service)
+                return None
+        except OSError as error:
+            LOG.error(error)
             return None
         return ports
 
@@ -267,11 +276,11 @@ class Health(Host):
         """
         hctl_command = commands.HCTL_STATUS_CMD_JSON
         LOG.info("Executing Command %s on node %s",
-            hctl_command, self.hostname)
-        result = self.execute_cmd(hctl_command,read_lines=False)
+                 hctl_command, self.hostname)
+        result = self.execute_cmd(hctl_command, read_lines=False)
         result = result.decode("utf-8")
-        LOG.info("Response of the command %s:\n %s ",
-            hctl_command, result)
+        # LOG.info("Response of the command %s:\n %s ",
+        #          hctl_command, result)
         result = json.loads(result)
 
         return result
@@ -282,11 +291,11 @@ class Health(Host):
         :return [tuple]: total_cap,avail_cap,used_cap
         """
         response = self.hctl_status_json()
-        LOG.info("HCTL response : \n%s", response)
+        # LOG.info("HCTL response : \n%s", response)
         avail_cap = response['filesystem']['stats']['fs_avail_disk']
-        LOG.info("Available Capacity : %s",avail_cap)
+        LOG.info("Available Capacity : %s", avail_cap)
         total_cap = response['filesystem']['stats']['fs_total_disk']
-        LOG.info("Total Capacity : %s",total_cap)
+        LOG.info("Total Capacity : %s", total_cap)
         used_cap = total_cap - avail_cap
         LOG.info("Used Capacity : %s", used_cap)
         return total_cap, avail_cap, used_cap
@@ -333,3 +342,444 @@ class Health(Host):
             return False, resp
 
         return True, resp
+
+    def check_node_health(self, resource_cleanup: bool = False) -> tuple:
+        """
+        Check the node health (pcs and hctl status) and return True if all services up and running.
+        1. Checking online status of node.
+        2. Check hctl status response for all resources
+        3. Check pcs status response for all resources
+        :param resource_cleanup: If True will do pcs resources cleanup.
+        :return: True or False, response/dictionary of failed hctl/pcs resources status.
+        """
+        LOG.info("Checking online status of %s node", self.hostname)
+        response = check_ping(self.hostname)
+        if not response:
+            return response, "Node {} is offline.".format(self.hostname)
+        LOG.info("Node %s is online.", self.hostname)
+
+        LOG.info("Checking hctl status for %s node", self.hostname)
+        status, hctl_result = run_remote_cmd(
+            cmd=commands.MOTR_STATUS_CMD,
+            hostname=self.hostname,
+            username=self.username,
+            password=self.password,
+            read_lines=True)
+        if not status:
+            return False, f"Failed to get HCTL status {hctl_result}"
+
+        resp = self.hctl_status_json()
+        hctl_services_failed = {}
+        svcs_elem = {'service': None, 'status': None}
+        for node_data in resp['nodes']:
+            hctl_services_failed[node_data['name']] = list()
+            for svcs in node_data['svcs']:
+                temp_svc = svcs_elem.copy()
+                is_data = False
+                if svcs['name'] != "m0_client" and svcs['status'] != 'started':
+                    temp_svc['service'] = svcs['name']
+                    temp_svc['status'] = svcs['status']
+                    is_data = True
+                if is_data:
+                    hctl_services_failed[node_data['name']].append(temp_svc)
+        node_hctl_failure = {}
+        for key, val in hctl_services_failed.items():
+            if val:
+                node_hctl_failure[key] = val
+
+        if resource_cleanup:
+            LOG.info("cleanup pcs resources for %s node", self.hostname)
+            response = self.pcs_resource_cleanup(options="--all")
+            if "Cleaned up all resources on all nodes" not in str(response):
+                return False, "Failed to clean up all resources on all nodes"
+            time.sleep(10)
+
+        LOG.info("Checking pcs status for %s node", self.hostname)
+        status, pcs_result = run_remote_cmd(
+            cmd=commands.PCS_STATUS_CMD,
+            hostname=self.hostname,
+            username=self.username,
+            password=self.password,
+            read_lines=True)
+        if not status:
+            return False, f"Failed to get PCS status {pcs_result}"
+
+        pcs_failed_data = {}
+        daemons = ["corosync:", "pacemaker:", "pcsd:"]
+        LOG.info("Checking status of Daemons: %s", daemons)
+        for daemon in daemons:
+            for line in pcs_result:
+                if daemon in line:
+                    if "active/enabled" not in line:
+                        pcs_failed_data[daemon] = line
+                        LOG.debug("Daemon %s status: %s", daemon, line)
+
+        response = self.execute_cmd(cmd=commands.CMD_PCS_GET_XML, read_lines=False, exc=False)
+        if isinstance(response, bytes):
+            response = str(response, 'UTF-8')
+        json_format = self.get_node_health_xml(pcs_response=response)
+        crm_mon_res = json_format['crm_mon']['resources']
+        no_node = int(json_format['crm_mon']['summary']['nodes_configured']['@number'])
+
+        clone_set_dict = self.get_clone_set_status(crm_mon_res, no_node)
+        for key, val in clone_set_dict.items():
+            if "stonith" in key:
+                for srvnode, status in val.items():
+                    currentnode = "srvnode-{}".format(key.split("-")[2])
+                    if srvnode != currentnode and status != "Started":
+                        pcs_failed_data[key] = val
+                continue
+            for status in val.values():
+                if status != "Started":
+                    pcs_failed_data[key] = val
+
+        resource_dict = self.get_resource_status(crm_mon_res)
+        for resource, value in resource_dict.items():
+            if value['status'] != 'Started':
+                pcs_failed_data[resource] = value
+
+        group_dict = self.get_group_status(crm_mon_res)
+        for group, value in group_dict.items():
+            if value['status'] != 'Started':
+                pcs_failed_data[group] = value
+        node_health_failure = {}
+        if pcs_failed_data:
+            LOG.debug(" ********* PCS status Response for %s ********* \n %s \n", self.hostname,
+                      pcs_result)
+            LOG.debug(" ********* PCS Clone set Response for %s ********* \n %s \n",
+                      self.hostname, clone_set_dict)
+            LOG.debug(" ********* PCS Resource Response for %s ********* \n %s \n",
+                      self.hostname, resource_dict)
+            LOG.debug(" ********* PCS Group Response for %s ********* \n %s \n",
+                      self.hostname, group_dict)
+            node_health_failure['PCS_STATUS'] = pcs_failed_data
+        if node_hctl_failure:
+            LOG.debug(" ********* HCTL status Response for %s ********* \n %s \n", self.hostname,
+                      hctl_result)
+            node_health_failure['HCTL_STATUS'] = node_hctl_failure
+        if node_health_failure:
+            LOG.error("Node health failure: %s", node_health_failure)
+            return False, node_health_failure
+
+        return True, "cluster on {} up and running.".format(self.hostname)
+
+    def reboot_node(self):
+        """Reboot node
+        """
+        LOG.info("Restarting Node")
+        cmd = commands.REBOOT_NODE_CMD
+        resp = self.execute_cmd(cmd, read_lines=True, exc=False)
+        LOG.info("Waiting for Node to Come UP %s", resp)
+        time.sleep(RAS_VAL["ras_sspl_alert"]["reboot_delay"])
+        return True
+
+    @staticmethod
+    def get_node_health_xml(pcs_response: str):
+        """
+        Get the node health pcs response in xml
+        param: pcs_response: pcs response from pcs status xml command
+        return: dict conversion of pcs status xml response command
+        """
+        formatted_data = pcs_response.replace("\n  ", "").replace(
+            "\n", ",").replace(",</", "</").split(",")[1:-1]
+        temp_dict = json.dumps(xmltodict.parse(formatted_data[0]))
+        json_format = json.loads(temp_dict)
+        return json_format
+
+    # pylint: disable-msg=too-many-nested-blocks
+    # pylint: disable-msg=too-many-statements
+    # pylint: disable-msg=too-many-branches
+    # pylint: disable=broad-except
+    @staticmethod
+    def get_clone_set_status(crm_mon_res: dict, no_node: int):
+        """
+        Get the clone set from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        param: no_node: no of nodes
+        return: dict
+        """
+        clone_set = {}
+        node_dflt = [f'srvnode-{node}.data.private' for node in range(1, no_node + 1)]
+        setup_type = ''
+        try:
+            setup_type = CMN_CFG["setup_type"]
+        except Exception as error:
+            LOG.debug("setup_type not found %s", error)
+        if setup_type == "OVA":
+            for clone_elem_resp in crm_mon_res['clone']:
+                resources = []
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    resources.append(clone_elem_resp['group']['resource'])
+                elif clone_elem_resp["@id"] == 'io_group-clone':
+                    for resource_ele in clone_elem_resp['group']['resource']:
+                        resources.append(resource_ele)
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                for resource in resources:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
+                            temp_dict[node] = 'FAILED'
+                        else:
+                            temp_dict[node] = resource['@role']
+                    else:
+                        temp_dict[node_dflt[0]] = resource['@role']
+                clone_set[clone_elem_resp["@id"]] = temp_dict
+        else:
+            for clone_elem_resp in crm_mon_res['clone']:
+                if clone_elem_resp["@id"] == 'monitor_group-clone':
+                    if no_node != 1:
+                        resource = []
+                        for val in clone_elem_resp['group']:
+                            resource.append(val['resource'])
+                    else:
+                        resource = clone_elem_resp['group']['resource']
+                else:
+                    resource = clone_elem_resp['resource']
+                temp_dict = {}
+                clone_set[clone_elem_resp["@id"]] = {}
+                if no_node == 1:
+                    if int(resource['@nodes_running_on']):
+                        node = resource['node']['@name']
+                        if resource['@blocked'] == 'true':
+                            temp_dict[node] = 'FAILED'
+                        else:
+                            temp_dict[node] = resource['@role']
+                    else:
+                        temp_dict[node_dflt[0]] = resource['@role']
+                    clone_set[clone_elem_resp["@id"]] = temp_dict
+                else:
+                    temp_nodes = node_dflt[:]
+                    for elem in resource:
+                        if int(elem['@nodes_running_on']):
+                            node = elem['node']['@name']
+                            if elem['@blocked'] == 'true':
+                                temp_dict[node] = 'FAILED'
+                            else:
+                                temp_dict[node] = elem['@role']
+                            temp_nodes.remove(node)
+                        else:
+                            for node in temp_nodes:
+                                temp_dict[node] = elem['@role']
+                                clone_set[clone_elem_resp["@id"]] = temp_dict
+                        clone_set[clone_elem_resp["@id"]] = temp_dict
+        return clone_set
+
+    @staticmethod
+    def get_resource_status(crm_mon_res: dict):
+        """
+        Get the resource status from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        return: dict
+        """
+        clone_set = {}
+        for resource_elem in crm_mon_res['resource']:
+            temp_dict = {'status': None, 'srvnode': None}
+            clone_set[resource_elem["@id"]] = {}
+            if int(resource_elem['@nodes_running_on']):
+                if resource_elem['@blocked'] == 'true':
+                    temp_dict['status'] = 'FAILED'
+                    temp_dict['srvnode'] = resource_elem['node']['@name']
+                else:
+                    temp_dict['status'] = resource_elem['@role']
+                    temp_dict['srvnode'] = resource_elem['node']['@name']
+            else:
+                temp_dict['status'] = resource_elem['@role']
+            clone_set[resource_elem["@id"]] = temp_dict
+        return clone_set
+
+    @staticmethod
+    def get_group_status(crm_mon_res: dict):
+        """
+        Get the group status from node health pcs response
+        param: crm_mon_res: pcs response from pcs status xml command
+        return: dict
+        """
+        clone_set = {}
+        for group in crm_mon_res['group']:
+            resource = []
+            if isinstance(group['resource'], dict):
+                resource.append(group['resource'])
+            elif isinstance(group['resource'], list):
+                resource = group['resource']
+            else:
+                LOG.warning("Resource group info format is not as expected : %s",
+                            group['resource'])
+
+            for group_elem in resource:
+                temp_dict = {'status': None, 'srvnode': None}
+                clone_set[group_elem["@id"]] = {}
+                if int(group_elem['@nodes_running_on']):
+                    if group_elem['@blocked'] == 'true':
+                        temp_dict['status'] = 'FAILED'
+                        temp_dict['srvnode'] = group_elem['node']['@name']
+                    else:
+                        temp_dict['status'] = group_elem['@role']
+                        temp_dict['srvnode'] = group_elem['node']['@name']
+                else:
+                    temp_dict['status'] = group_elem['@role']
+                clone_set[group_elem["@id"]] = temp_dict
+        return clone_set
+
+    def pcs_restart_cluster(self):
+        """
+        Function starts and stops the cluster using the pcs command.
+
+        command used:
+            pcs cluster stop --all
+            pcs cluster start --all
+            pcs resource cleanup --all
+        :return: (Boolean and response)
+        """
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=True)
+        LOG.info(resp)
+        time.sleep(10)
+        resp = self.pcs_cluster_start_stop("--all", stop_flag=False)
+        LOG.info(resp)
+        time.sleep(30)  # Hardcoded: Default time is between 10 to 30 seconds.
+        response = self.pcs_resource_cleanup(options="--all")
+        if "Cleaned up all resources on all nodes" not in str(response):
+            return False, "Failed to clean up all resources on all nodes"
+        time.sleep(10)
+        response = self.check_node_health()
+        time.sleep(10)
+        LOG.info(response)
+
+        return response
+
+    def pcs_resource_ops_cmd(self, command: str, resources: list, srvnode: str = "",
+                             wait_time: int = 30) -> bool:
+        """
+        Perform given operation on pcs resource using pcs resource command
+
+        :param command: pcs operation to be performed on resource
+        :param resources: list of resource names from pcs resource
+        :param srvnode: Name of the server on which command to be performed
+        :param wait_time: Wait time in sec after performing operation
+        :return: boolean
+        :rtype: bool
+        """
+        valid_commands = {"ban", "clear", "enable", "disable", "restart"}
+        if command not in valid_commands:
+            raise ValueError("Invalid command")
+        for rsrc in resources:
+            LOG.info("Performing %s on resource %s", command, rsrc)
+            cmd = commands.PCS_RESOURCE_CMD.format(command, rsrc, srvnode)
+            LOG.info("Running command: %s", cmd)
+            resp = self.execute_cmd(cmd, read_lines=True)
+            LOG.debug("Response: %s", resp)
+            time.sleep(wait_time)
+            LOG.info("Successfully performed %s on %s", command, rsrc)
+
+        return True
+
+    def check_nw_interface_status(self, nw_infcs: list = None):
+        """
+        Function to get status of all available network interfaces on node.
+        """
+        LOG.info("Getting all network interfaces on host")
+        if nw_infcs is None:
+            LOG.debug("Running command: %s", commands.GET_ALL_NW_IFCS_CMD)
+            res = self.execute_cmd(commands.GET_ALL_NW_IFCS_CMD)
+            nw_infcs = list(filter(None, res.decode("utf-8").split('\n')))
+        LOG.debug(nw_infcs)
+        LOG.info("Check status of all available network interfaces")
+        status = {}
+        for nw in nw_infcs:
+            stat_cmd = commands.IP_LINK_SHOW_CMD.format(nw, "DOWN")
+            nw_st = self.execute_cmd(stat_cmd, exc=False)
+            nw_st = list(filter(None, nw_st.decode("utf-8").split('\n')))
+            status[nw] = nw_st
+
+        return status
+
+    def get_current_srvnode(self) -> dict:
+        """
+        Returns: Bool, Name of current server
+        rtype: bool, str
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])|:')
+        node = []
+        h_list = []
+        cmd = commands.CMD_SALT_GET_HOST
+        LOG.info("Running command: %s", cmd)
+        resp = self.execute_cmd(cmd)
+        resp = (resp.decode("utf-8").split('\n'))
+        for ele in resp:
+            if 'srvnode' not in ansi_escape.sub('', ele).strip():
+                node.append(ansi_escape.sub('', ele).strip())
+            else:
+                h_string = ansi_escape.sub('', ele).strip() + ".data.private"
+                h_list.append(h_string)
+
+        d_node = dict(zip(node, h_list))
+        return d_node
+
+    def disable_pcs_resource(self, resource: str, wait_time: int = 30) \
+            -> Tuple[bool, str]:
+        """
+        Disable given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :param wait_time: Wait time in sec after restart
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        LOG.info("Disabling resource : %s", resource)
+        cmd = commands.PCS_RESOURCE_DISABLE_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        time.sleep(wait_time)
+
+        return True
+
+    def enable_pcs_resource(self, resource: str, wait_time: int = 30) \
+            -> Tuple[bool, str]:
+        """
+        Enable given resource using pcs resource command
+
+        :param resource: resource name from pcs resource
+        :param wait_time: Wait time in sec after restart
+        :return: tuple with boolean and response/error
+        :rtype: tuple
+        """
+        LOG.info("Enabling resource : %s", resource)
+        cmd = commands.PCS_RESOURCE_ENABLE_CMD.format(resource)
+
+        resp = self.execute_cmd(cmd, read_lines=True)
+        time.sleep(wait_time)
+
+        return True
+
+    @staticmethod
+    def check_cortx_cluster_health(node, retry=3):
+        """
+        :param node: node of a cluster
+        :param retry: number of attempts to perform health check
+        :return bool
+        :True for healthy
+        """
+        r_try = 1
+        hostname = node['hostname']
+        health = Health(hostname=hostname,
+               username=node['username'],
+               password=node['password'])
+        health_result = False
+        capacity_result = False
+        while r_try <= retry:
+            try:
+                health_result = health.check_node_health(node)
+                ha_result = health.get_sys_capacity()
+                ha_used_percent = round((ha_result[2] / ha_result[0]) * 100, 1)
+                capacity_result = ha_used_percent < 98.0
+                health.disconnect()
+                break
+            except BaseException as exec:
+                LOG.warning("%s exception occurred while performing Health check", exec)
+                delay = pow(r_try, 4)
+                LOG.info("Retrying in %s seconds", delay)
+                time.sleep(delay)
+                r_try += 1
+        if health_result and capacity_result:
+            return True
+        return False

@@ -58,6 +58,7 @@ class TestS3Bucket():
         assert self.s3_buckets.create_and_verify_new_bucket(
             const.SUCCESS_STATUS)
 
+    @pytest.mark.skip("Known Issue EOS-23139")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -105,6 +106,7 @@ class TestS3Bucket():
             start_with_uppercase)
         assert start_with_uppercase and start_with_underscore
 
+    @pytest.mark.skip("Known Issue EOS-23139")
     @pytest.mark.parallel
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops

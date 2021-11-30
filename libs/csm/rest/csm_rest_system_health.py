@@ -21,6 +21,9 @@
 """Test library for System Health related operations.
    Author: Divya Kachhwaha
 """
+import json
+import time
+from http import HTTPStatus
 from commons.constants import Rest as const
 import commons.errorcodes as err
 from commons.exceptions import CTException
@@ -382,3 +385,202 @@ class SystemHealth(RestTestLib):
                             error)
             raise CTException(
                 err.CSM_REST_VERIFICATION_FAILED, error) from error
+
+    @RestTestLib.authenticate_and_login
+    def get_health_status(self, resource: str, parameters: dict = None):
+        """
+        This method will Get rest API response for the resource system health
+        :param parameters: filter the node status response with specific param values
+        :param resource: endpoint parameters for rest call
+        :return: System health resource Get rest API response
+        """
+        try:
+            # Building request url to get resource Health status
+            self.log.info("Reading health of %s ...", resource)
+            endpoint = self.config["health_resource_endpoint"].format(resource)
+            self.log.info(
+                "Endpoint for reading capacity is %s", endpoint)
+            self.log.info(
+                "Filter get response with parameters %s", parameters)
+
+            # Fetching api response
+            response = self.restapi.rest_call(
+                request_type="get",
+                endpoint=endpoint,
+                headers=self.headers,
+                params=parameters,
+                save_json=True)
+            if response.status_code != HTTPStatus.OK:
+                self.log.error(f'Response ={response.text}\n'
+                               f'Request Headers={response.request.headers}\n'
+                               f'Request Body={response.request.body}')
+                raise CTException(err.CSM_REST_GET_REQUEST_FAILED,
+                                  msg=f"Failed to get {endpoint} response.")
+
+            self.log.info(
+                "Response returned is:\n %s", response.json())
+            return response
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                         const.EXCEPTION_ERROR,
+                         SystemHealth.get_health_status.__name__,
+                         error)
+            raise CTException(
+                err.CSM_REST_GET_REQUEST_FAILED, error) from error
+
+    def verify_node_health_status_rest(
+            self,
+            exp_status: list,
+            node_id: int = None,
+            single_node: bool = False):
+        """
+        This method will get and verify health status of node
+        :param exp_status: List of expected node health status
+        :param node_id: To get and verify node health status for node_id
+        :param single_node: To get for single node status
+        :return: bool, Response Message
+        """
+        if single_node:
+            param = dict()
+            param["resource_id"] = node_id
+            node_resp = self.get_health_status(
+                resource="node", parameters=param)
+            if node_resp.json()["data"][0]["status"] != exp_status[0].lower():
+                return False, f'Node health status is {node_resp.json()["data"][0]["status"]}'
+        else:
+            node_resp = self.get_health_status(resource="node")
+            for index, node_dict in enumerate(node_resp.json()["data"]):
+                if node_dict['status'] == exp_status[index].lower():
+                    self.log.info(
+                        'Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                        index + 1,
+                        node_dict['status'],
+                        exp_status[index])
+                else:
+                    self.log.info(
+                        'Node-"%s" health status \nActual: "%s" \nExpected: "%s"',
+                        index + 1,
+                        node_dict['status'],
+                        exp_status[index])
+                    return False, f'Node-"{index + 1}" health status is {node_dict["status"]}'
+        return True, "Node health status is as expected"
+
+    def check_resource_health_status_rest(self, resource: str, exp_status: str):
+        """
+        This method will get and check health status of resource health status
+        :param resource: Get the health status for resource
+        :param exp_status: Expected health status of resource
+        :return: bool, Response Message
+        """
+        health_resp = self.get_health_status(resource=resource)
+        health_dict = health_resp.json()["data"][0]
+        if health_dict['status'] != exp_status.lower():
+            return False, f"{resource}'s health status is {health_dict['status']}"
+        return True, f"{resource}'s health status is {health_dict['status']}"
+
+    def check_csr_health_status_rest(self, exp_status: str):
+        """
+        This method will get and check cluster, site and rack health status
+        :param exp_status: Expected health status of cluster, site and rack
+        :return: bool, Response Message
+        """
+        cls_resp = self.check_resource_health_status_rest(resource="cluster", exp_status=exp_status)
+        self.log.debug(cls_resp[1])
+        if not cls_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=cls_resp[1])
+        site_resp = self.check_resource_health_status_rest(resource="site", exp_status=exp_status)
+        self.log.debug(site_resp[1])
+        if not site_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=site_resp[1])
+        rack_resp = self.check_resource_health_status_rest(resource="rack", exp_status=exp_status)
+        self.log.debug(rack_resp[1])
+        if not rack_resp[0]:
+            raise CTException(err.CSM_REST_VERIFICATION_FAILED, msg=rack_resp[1])
+        if rack_resp[0] and site_resp[0] and cls_resp[0]:
+            return True, f"Cluster, site and rack health status is {exp_status}"
+        return False, f"Cluster, site and rack health status is not as expected"
+
+    # pylint: disable=too-many-arguments
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def perform_cluster_operation(
+            self,
+            operation: str,
+            resource: str,
+            resource_id: int,
+            storage_off: bool = False,
+            force_op: bool = False,
+            sleep_time: int = 300):
+        """
+        This method performs cluster operation like stop/start/poweroff with rest API
+        :param operation: Operation to be performed on cluster resource
+        :param resource: resource type like cluster, node etc
+        :param resource_id: Resource ID for the operation
+        :param storage_off: If true, The poweroff operation will be performed along
+        with powering off the storage. (Valid only with poweroff operation on node.)
+        :param force_op: Specifying this enables force operation.
+        :param sleep_time: Sleep time for stop/start/poweroff operation to be completed
+        :return: bool/cluster operation POST API response
+        """
+        # Building request url to perform cluster operation
+        self.log.info("Performing %s operation on %s ...", operation, resource)
+        endpoint = "{}/{}".format(self.config["cluster_operation_endpoint"], resource)
+        headers = self.headers
+        conf_headers = self.config["Login_headers"]
+        headers.update(conf_headers)
+        self.log.info(
+            "Endpoint for cluster operation is %s", endpoint)
+        data_val = {"operation": operation,
+                "arguments": {"resource_id": f"{resource_id}"}}
+        if operation == "stop":
+            data_val['arguments']['force'] = force_op
+        elif operation == "poweroff":
+            data_val['arguments']["storageoff"] = storage_off
+            data_val['arguments']['force'] = force_op
+        # Fetching api response
+        response = self.restapi.rest_call(
+            "post",
+            endpoint=endpoint,
+            data=json.dumps(data_val),
+            headers=headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response)
+            return False, response
+        self.log.info("%s operation on %s POST REST API response : %s",
+                      operation,
+                      resource,
+                      response)
+        self.log.info("Sleep for node to %s for %s sec", operation, sleep_time)
+        time.sleep(sleep_time)
+        return True, response
+
+    @RestTestLib.authenticate_and_login
+    @RestTestLib.rest_logout
+    def check_on_cluster_effect(self, resource_id: int):
+        """
+        This method Get the effect of node stop/poweroff operation on cluster with rest API
+        :param resource_id: Id of the node for which cluster status is to be checked.
+        :return: bool/GET effect status of node operation on cluster rest API response
+        """
+        # Building request url to perform cluster status operation
+        self.log.info("Check the effect of node %s stop/poweroff operation on cluster...",
+                      resource_id)
+        endpoint = "{}/{}".format(self.config["cluster_status_endpoint"], resource_id)
+        self.log.info(
+            "Endpoint for cluster status operation is %s", endpoint)
+        # Fetching api response
+        response = self.restapi.rest_call(
+            request_type="get",
+            endpoint=endpoint,
+            headers=self.headers)
+        if response.status_code != HTTPStatus.OK:
+            self.log.error("cluster status operation response = %s",
+                           response.json())
+            return False, response
+        self.log.info("cluster status operation response = %s",
+                      response.json())
+        return True, response

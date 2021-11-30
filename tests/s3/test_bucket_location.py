@@ -28,51 +28,46 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import LDAP_USERNAME, LDAP_PASSWD
-from libs.s3 import s3_test_lib, iam_test_lib, s3_acl_test_lib
-
-IAM_OBJ = iam_test_lib.IamTestLib()
-S3_OBJ = s3_test_lib.S3TestLib()
-S3_ACL_OBJ = s3_acl_test_lib.S3AclTestLib()
+from libs.s3 import s3_test_lib
+from libs.s3 import s3_acl_test_lib
+from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
+from config import S3_CFG
 
 
 class TestBucketLocation:
     """Bucket Location Test suite."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """
-        Function will be invoked prior to each test case.
+        Summary: Function will be invoked prior to each test case.
 
-        It will perform all prerequisite test steps if any.
-        Initializing common variable which will be used in test and
-        teardown for cleanup
+        Description: It will perform all prerequisite and cleanup test.
         """
         self.log = logging.getLogger(__name__)
-        self.log.info("STARTED: Setup operations.")
-        self.bucket_name = "{}{}".format("location-bkt", str(time.time()))
-        self.account_name = "location-acct"
-        self.email_id = "@seagate.com"
-        self.log.info("ENDED: Setup operations.")
-
-    def teardown_method(self):
-        """
-        Function will be invoked after each test case.
-
-        It will perform all cleanup operations.
-        This function will delete buckets and accounts created for tests.
-        """
-        self.log.info("STARTED: Teardown operations.")
+        self.log.info("STARTED : Setup test operations.")
+        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
+        self.account_name1 = "location-acc1{}".format(time.perf_counter_ns())
+        self.email_id1 = "{}@seagate.com".format(time.perf_counter_ns())
+        self.account_name2 = "location-acc2{}".format(time.perf_counter_ns())
+        self.email_id2 = "{}@seagate.com".format(time.perf_counter_ns())
+        self.bucket_name = "location-bkt{}".format(time.perf_counter_ns())
+        self.s3acc_password = S3_CFG["CliConfig"]["s3_account"]["password"]
+        self.rest_obj = S3AccountOperations()
+        self.account_list = []
+        self.log.info("ENDED : Setup test operations.")
+        yield
+        self.log.info("STARTED: Teardown test operations.")
         self.log.info("Delete bucket: %s", self.bucket_name)
-        resp = S3_OBJ.bucket_list()
+        resp = self.s3_test_obj.bucket_list()[1]
         self.log.info("Bucket list: %s", resp)
-        if resp:
-            pref_list = [each_bucket for each_bucket in resp[1]
-                         if each_bucket == self.bucket_name]
-            if pref_list:
-                resp = S3_OBJ.delete_multiple_buckets(pref_list)
-                assert_utils.assert_true(resp[0], resp[1])
-                self.log.info("Buckets deleted successfully: %s", pref_list)
-        self.log.info("ENDED: Teardown operations.")
+        if self.bucket_name in resp:
+            resp = self.s3_test_obj.delete_bucket(self.bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
+        self.log.info("Account list: %s", self.account_list)
+        for acc in self.account_list:
+            self.rest_obj.delete_s3_account(acc)
+        self.log.info("ENDED: Teardown test operations.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
@@ -85,10 +80,10 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating a bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
         self.log.info(resp)
-        assert resp[0], resp[1]
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
             self.bucket_name,
             resp[1],
@@ -98,10 +93,10 @@ class TestBucketLocation:
         self.log.info(
             "Step 2 : Retrieving bucket location on existing bucket %s",
             self.bucket_name)
-        resp = S3_OBJ.bucket_location(
+        resp = self.s3_test_obj.bucket_location(
             self.bucket_name)
         self.log.info(resp)
-        assert resp[0], resp[1]
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
             resp[1]["LocationConstraint"],
             "us-west-2",
@@ -123,21 +118,20 @@ class TestBucketLocation:
             "Step 1 : Check the bucket location on non existing bucket %s ",
             self.bucket_name)
         try:
-            resp = S3_OBJ.bucket_location(
-                self.bucket_name)
+            resp = self.s3_test_obj.bucket_location(self.bucket_name)
             self.log.info(resp)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.info(error)
-            assert "NoSuchBucket" in str(
-                error.message), error.message
+            assert_utils.assert_in("NoSuchBucket", str(
+                error.message), error.message)
         self.log.info(
             "Step 1 : Get bucket location on non existing bucket failed with error %s",
             "NoSuchBucket")
         self.log.info(
             "Verify get bucket location for the bucket which is not present")
 
-    @pytest.mark.parallel
+    # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
@@ -152,32 +146,40 @@ class TestBucketLocation:
             "STARTED: Verify for the bucket which is present in account1 and give read"
             "permissions to account2 and check get bucket location")
         self.log.info(
-            "Creating account2 with name prefix as %s",
-            self.account_name)
-        resp = IAM_OBJ.create_multiple_accounts(
-            2, self.account_name)
-        assert resp[0], resp[1]
-        canonical_id_user_1 = resp[1][0][1]["canonical_id"]
-        access_key_u1 = resp[1][0][1]["access_key"]
-        secret_key_u1 = resp[1][0][1]["secret_key"]
-        canonical_id_user_2 = resp[1][1][1]["canonical_id"]
-        access_key_u2 = resp[1][1][1]["access_key"]
-        secret_key_u2 = resp[1][1][1]["secret_key"]
+            "Creating account1 with name prefix as %s",
+            self.account_name1)
+        acc1_resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name1, email_id=self.email_id1,
+            passwd=self.s3acc_password)
+        assert_utils.assert_true(acc1_resp[0], acc1_resp[1])
         s3_acl_obj_1 = s3_acl_test_lib.S3AclTestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
+            endpoint_url=S3_CFG['s3_url'],
+            access_key=acc1_resp[1]["access_key"],
+            secret_key=acc1_resp[1]["secret_key"])
         s3_obj_1 = s3_test_lib.S3TestLib(
-            access_key=access_key_u1, secret_key=secret_key_u1)
-        s3_obj_2 = s3_test_lib.S3TestLib(
-            access_key=access_key_u2, secret_key=secret_key_u2)
+            access_key=acc1_resp[1]["access_key"],
+            secret_key=acc1_resp[1]["secret_key"])
+        self.account_list.append(self.account_name1)
+        self.log.info("Created account1 with name %s", self.account_name1)
         self.log.info(
-            "Created account2 with name %s", self.account_name)
+            "Creating account2 with name prefix as %s",
+            self.account_name2)
+        acc2_resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name2, email_id=self.email_id2,
+            passwd=self.s3acc_password)
+        assert_utils.assert_true(acc2_resp[0], acc2_resp[1])
+        self.account_list.append(self.account_name2)
+        s3_obj_2 = s3_test_lib.S3TestLib(
+            access_key=acc2_resp[1]["access_key"],
+            secret_key=acc2_resp[1]["secret_key"])
+        self.log.info("Created account2 with name %s", self.account_name2)
         self.log.info("Step 1 : Creating bucket with name %s and setting read"
                       "permission to account2", self.bucket_name)
         resp = s3_acl_obj_1.create_bucket_with_acl(
             bucket_name=self.bucket_name,
-            grant_full_control="id={}".format(canonical_id_user_1),
-            grant_read="id={}".format(canonical_id_user_2))
-        assert resp[0], resp[1]
+            grant_full_control="id={}".format(acc1_resp[1]["canonical_id"]),
+            grant_read="id={}".format(acc2_resp[1]["canonical_id"]))
+        assert_utils.assert_true(resp[0], resp[1])
         self.log.info("Step 1 : Created bucket with name %s and set read"
                       "permission to account2", self.bucket_name)
         self.log.info(
@@ -198,21 +200,12 @@ class TestBucketLocation:
             resp[1])
         self.log.info(
             "Step 3 : Verified get bucket location with account2 login")
+        # Cleanup activity
         self.log.info("Step 4: Performing cleanup.")
         if s3_obj_1:
             res_bkt = s3_obj_1.bucket_list()
             for bkt in res_bkt[1]:
                 s3_obj_1.delete_bucket(bkt)
-        acc_resp = IAM_OBJ.list_accounts_s3iamcli(
-            LDAP_USERNAME,
-            LDAP_PASSWD)
-        acc_list = [each_acc["AccountName"] for each_acc in acc_resp[1]
-                    if each_acc["AccountName"].startswith(self.account_name)]
-        self.log.info("Deleting account %s", acc_list)
-        if acc_list:
-            resp = IAM_OBJ.delete_multiple_accounts(acc_list)
-            self.log.info(resp)
-            assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "ENDED: Verify for the bucket which is present in account1 and give read"
             "permissions to account2 and check get bucket location")
@@ -229,9 +222,9 @@ class TestBucketLocation:
         self.log.info(
             "Step 1 : Creating bucket with name %s",
             self.bucket_name)
-        resp = S3_OBJ.create_bucket(
+        resp = self.s3_test_obj.create_bucket(
             self.bucket_name)
-        assert resp[0], resp[1]
+        assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equals(
             self.bucket_name,
             resp[1],
@@ -239,20 +232,16 @@ class TestBucketLocation:
         self.log.info("Step 1 : Created bucket with name %s", self.bucket_name)
         self.log.info(
             "Step 2 : Creating second account to retrieve bucket location")
-        account_name = "{}{}".format(
-            self.account_name, str(time.time()))
-        email_id = "{}{}".format(account_name,
-                                 self.email_id)
-        resp = IAM_OBJ.create_account_s3iamcli(
-            account_name,
-            email_id,
-            LDAP_USERNAME,
-            LDAP_PASSWD)
-        assert resp[0], resp[1]
+        resp = self.rest_obj.create_s3_account(
+            acc_name=self.account_name1,
+            email_id=self.email_id1,
+            passwd=self.s3acc_password)
+        assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
-        s3_obj_2 = s3_test_lib.S3TestLib(
-            access_key=access_key, secret_key=secret_key)
+        self.account_list.append(self.account_name1)
+        s3_obj_2 = s3_test_lib.S3TestLib(endpoint_url=S3_CFG['s3_url'],
+                                         access_key=access_key, secret_key=secret_key)
         self.log.info(
             "Step 2 : Created second account to retrieve bucket location")
         self.log.info(
@@ -261,16 +250,11 @@ class TestBucketLocation:
             s3_obj_2.bucket_location(
                 self.bucket_name)
         except CTException as error:
-            assert "AccessDenied" in str(
-                error.message), error.message
+            assert_utils.assert_in("AccessDenied", str(
+                error.message), error.message)
         self.log.info(
             "Step 3 : Get bucket location with another account is failed"
             " with error %s", "AccessDenied")
-        # Cleanup activity
-        self.log.info("Deleting account %s", account_name)
-        resp = IAM_OBJ.delete_account_s3iamcli(
-            account_name, access_key, secret_key, force=True)
-        assert resp[0], resp[1]
         self.log.info(
             "Verify for the bucket which is present in account1 "
             "and get bucket location in account2")

@@ -29,6 +29,7 @@ from commons import commands
 from commons.helpers.node_helper import Node
 from config import CMN_CFG
 from libs.csm.cli.cortx_cli import CortxCli
+from libs.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,10 +38,6 @@ class CortxCliS3BktPolicyOperations(CortxCli):
     """
     This class has all s3 bucket policy operations
     """
-    node1_helper_obj = Node(
-        hostname=CMN_CFG["nodes"][0]["host"],
-        username=CMN_CFG["nodes"][0]["username"],
-        password=CMN_CFG["nodes"][0]["password"])
 
     def __init__(self, session_obj: object = None):
         """
@@ -65,10 +62,11 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         command = " ".join(
             [commands.CMD_CREATE_BUCKET_POLICY, bucket_name, policy_id, file_path])
 
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd="Y")[1]
+            output = self.execute_cli_commands(cmd="Y", patterns=["Bucket Policy Updated Successfully"])[1]
             if "Bucket Policy Updated Successfully" in output:
+                time.sleep(S3_CFG["delay"]["put_bkt_policy"])
                 return True, output
 
         return False, output
@@ -85,9 +83,9 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         command = " ".join(
             [commands.CMD_DELETE_BUCKET_POLICY, bucket_name])
 
-        output = self.execute_cli_commands(cmd=command)[1]
+        output = self.execute_cli_commands(cmd=command, patterns=["[Y/n]"])[1]
         if "[Y/n]" in output:
-            output = self.execute_cli_commands(cmd="Y")[1]
+            output = self.execute_cli_commands(cmd="Y", patterns=["Bucket policy deleted"])[1]
             if "Bucket policy deleted" in output:
                 return True, output
 
@@ -110,7 +108,7 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         if output_format:
             show_bkt_policy = "{} -f {}".format(
                 show_bkt_policy, output_format)
-        output = self.execute_cli_commands(cmd=show_bkt_policy)[1]
+        output = self.execute_cli_commands(cmd=show_bkt_policy, patterns=["Statement"])[1]
         if "error" in output.lower() or "exception" in output.lower():
             return False, output
 
@@ -128,10 +126,16 @@ class CortxCliS3BktPolicyOperations(CortxCli):
         :param remote_file_path: Remote file path
         :return: None
         """
+        csm = CMN_CFG.get("csm")
+        nodes = CMN_CFG.get("nodes")
+        node1_helper_obj = Node(
+            hostname=csm["mgmt_vip"],
+            username=nodes[0]["username"],
+            password=nodes[0]["password"])
         if os.path.exists(local_file_path):
             os.remove(local_file_path)
         with open(local_file_path, "w") as data:
             json.dump(bkt_policy, data, indent=4)
-        self.node1_helper_obj.copy_file_to_remote(
+        node1_helper_obj.copy_file_to_remote(
             local_file_path, remote_file_path)
         time.sleep(2)

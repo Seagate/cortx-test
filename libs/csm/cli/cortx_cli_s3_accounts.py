@@ -22,6 +22,7 @@ This library contains methods for S3 Account operations using CORTX CLI
 """
 
 import logging
+from typing import Tuple
 from commons import commands
 from libs.csm.cli.cortx_cli import CortxCli
 
@@ -58,14 +59,18 @@ class CortxCliS3AccountOperations(CortxCli):
         command = " ".join(
             [commands.CMD_CREATE_S3ACC, account_name, account_email])
         LOGGER.info("Creating S3 account with name %s", account_name)
-        response = self.execute_cli_commands(cmd=command)[1]
+        response = self.execute_cli_commands(
+            cmd=command, patterns=["Password:"])[1]
 
         if "Password:" in response:
-            response = self.execute_cli_commands(cmd=password)[1]
+            response = self.execute_cli_commands(
+                cmd=password, patterns=["Confirm Password:"])[1]
             if "Confirm Password:" in response:
-                response = self.execute_cli_commands(cmd=confirm_password)[1]
+                response = self.execute_cli_commands(
+                    cmd=confirm_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd="Y")[1]
+                    response = self.execute_cli_commands(
+                        cmd="Y", patterns=[account_name])[1]
                     if account_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response
@@ -84,7 +89,9 @@ class CortxCliS3AccountOperations(CortxCli):
             show_s3accounts_cmd = "{} -f {}".format(
                 show_s3accounts_cmd, output_format)
         LOGGER.info("Listing s3 accounts with cmd: %s", show_s3accounts_cmd)
-        response = self.execute_cli_commands(cmd=show_s3accounts_cmd)
+        response = self.execute_cli_commands(
+            cmd=show_s3accounts_cmd, patterns=[
+                "Account Name", "account_email"])
         LOGGER.info("Response returned: \n%s", response)
 
         return response
@@ -98,9 +105,11 @@ class CortxCliS3AccountOperations(CortxCli):
         """
         delete_s3acc_cmd = commands.CMD_DELETE_S3ACC.format(account_name)
         LOGGER.info("Deleting s3 account %s", account_name)
-        response = self.execute_cli_commands(cmd=delete_s3acc_cmd)[1]
+        response = self.execute_cli_commands(
+            cmd=delete_s3acc_cmd, patterns=["[Y/n]"])[1]
         if "[Y/n]" in response:
-            response = self.execute_cli_commands(cmd="Y")[1]
+            response = self.execute_cli_commands(
+                cmd="Y", patterns=["Account Deleted"])[1]
             if "Account Deleted" in response:
                 LOGGER.info("Response returned: \n%s", response)
                 return True, response
@@ -122,15 +131,32 @@ class CortxCliS3AccountOperations(CortxCli):
         reset_password = kwargs.get("reset_password", "Y")
         reset_pwd_cmd = commands.CMD_RESET_S3ACC_PWD.format(account_name)
         LOGGER.info("Resetting s3 account password to %s", new_password)
-        response = self.execute_cli_commands(cmd=reset_pwd_cmd)[1]
+        response = self.execute_cli_commands(
+            cmd=reset_pwd_cmd, patterns=["Password:"])[1]
         if "Password:" in response:
-            response = self.execute_cli_commands(cmd=new_password)[1]
+            response = self.execute_cli_commands(
+                cmd=new_password, patterns=["Confirm Password:"])[1]
             if "Confirm Password:" in response:
-                response = self.execute_cli_commands(cmd=new_password)[1]
+                response = self.execute_cli_commands(
+                    cmd=new_password, patterns=["[Y/n]"])[1]
                 if "[Y/n]" in response:
-                    response = self.execute_cli_commands(cmd=reset_password)[1]
+                    response = self.execute_cli_commands(cmd=reset_password, patterns=[
+                                                         account_name, "cortxcli"])[1]
                     if account_name in response:
                         LOGGER.info("Response returned: \n%s", response)
                         return True, response
 
         return False, response
+
+    def help_option(self, command: str = None) -> Tuple[bool, str]:
+        """
+        This function will check the help response
+        :param str command: Command whose help response to be validated
+        :return: (Boolean, response)
+        """
+        LOGGER.info("Performing help option on command %s", command)
+        output = self.execute_cli_commands(cmd=command, patterns=["usage:"])[1]
+        if "error" in output.lower() or "exception" in output.lower():
+            return False, output
+
+        return True, output

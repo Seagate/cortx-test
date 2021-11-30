@@ -23,16 +23,18 @@ Pass,61,62,
 ToDo,71,72
 
 Feature Breakdown Summary
-Features,Total,Pass,Failed,% Pass,% Failed
-User Operations,1,2,201,88,88
-Scalability,4,5,202,102,100,
-Availability,7,100,203,102,100
-Longevity,8,101,204,102,100
-Use Cases,9,102,205,102,100
-Data Recovery,10,103,206,102,100
-Cross Connect,11,104,207,102,100
-Orphans,12,105,208,102,100
-Total,13,106,209,102,100
+Feature,Pass,Fail,Total,% Pass,% Fail
+Longevity,1,0,1,100.0,0.0
+Cluster Manager Operation (Provision),1,0,1,100.0,0.0
+"Cluster Support (Logging, support bundle, health schema)",14,1,15,94.0,6.0
+Cluster User Operation (CSM),121,3,125,97.0,2.0
+CSM GUI Cluster User Operation Tests,1,0,2,50.0,0.0
+Functionality,2,0,2,100.0,0.0
+IO Workload,10,0,11,91.0,0.0
+S3 Operations,687,61,759,91.0,8.0
+Scalability,0,2,6,0.0,33.0
+System Integration,0,0,4,0.0,0.0
+Total,837,67,926,-,-
 
 Code Maturity
 ,#Build,#Build-1,#Build-2
@@ -66,4 +68,3 @@ Node Failback,160.0,NA,205.0,NA,NA
 Start All Services,196.0,NA,205.0,NA,NA
 Bucket Creation,1.0,NA,1.0,NA,NA
 Bucket Deletion,5.0,NA,4.0,NA,NA
-

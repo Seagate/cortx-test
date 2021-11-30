@@ -32,6 +32,7 @@ try:
     cmi_collection = config["MongoDB"]["cmi_collection"]
     system_collection = config["MongoDB"]["system_info_collection"]
     timing_collection = config["MongoDB"]["timing_collection"]
+    vm_pool_collection = config["MongoDB"]["pool_vm_collection"]
 except KeyError:
     print("Could not start REST server. Please verify config.ini file")
     sys.exit(1)
