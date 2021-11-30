@@ -349,8 +349,11 @@ def get_benchmark_data(data_needed_for_query):  # pylint: disable=too-many-branc
             temp_data.append(num_objects)
             added_objects = True
 
-        if "Run_State" in db_data[0].keys() and db_data[0]['Run_State'].lower() == "failed":
-            run_state = "failed"
+        try:
+            if "Run_State" in db_data[0].keys() and db_data[0]['Run_State'].lower() == "failed":
+                run_state = "failed"
+        except IndexError:
+            run_state = "successful"
 
         for stat in stats:
             if data_needed_for_query["name"] == 'S3bench' and stat in ["Latency", "TTFB"]:
