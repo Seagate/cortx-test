@@ -194,7 +194,7 @@ def check_aws_cli_error(str_error: str):
     err_check = True
     # InsecureRequestWarning: Unverified HTTPS request is being made to host 'public data ip'.
     # Adding certificate verification is strongly advised.
-    if "InsecureRequestWarning" in str_error:
+    if "InsecureRequestWarning" in str_error or "WARNING: " in str_error:
         err_check = False
     for error in AWS_CLI_ERROR:
         if error in str_error:

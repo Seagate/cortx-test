@@ -347,12 +347,11 @@ class S3Lib(S3Rest):
             LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
                 "objects in it")
-            bucket.objects.all().delete()
+            response = bucket.objects.all().delete()
             LOGGER.debug(
-                "Bucket : %s , got deleted successfully with objects in it",
-                bucket_name)
+                "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
         response = bucket.delete()
-        logging.debug(response)
+        LOGGER.debug("Bucket deleted '%s' successfully. Response: %s", bucket_name,response)
 
         return response
 
