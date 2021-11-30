@@ -114,9 +114,10 @@ def update_nodes_dropdown(release_combined, branch, build):
         nodes = get_distinct_keys(release, 'Count_of_Servers', {'OS': op_sys,
                                   'Branch': branch, 'Build': build})
         nodes = list(map(int, nodes))
+        nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[0]['value']
+            value = options[-1]['value']
             if len(nodes) == 1:
                 disabled = True
         else:
@@ -215,8 +216,9 @@ def update_iteration_dropdown(release_combined, branch, build, nodes, pfull, cus
         iterations = get_distinct_keys(release, 'Iteration', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull,  'Custom': custom})
+        iterations.sort()
         if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
+            options = get_dict_from_array(iterations, True, 'itrns')
             value = options[0]['value']
             if len(iterations) == 1:
                 disabled = True
@@ -252,10 +254,14 @@ def update_sessions_dropdown(release_combined, branch, build, nodes, pfull, itrn
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
+        sessions.sort()
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            value = options[0]['value']
+            if 600 in sessions:
+                value = 600
+            else:
+                value = options[-1]['value']
             if len(sessions) == 1:
                 disabled = True
         else:
@@ -291,6 +297,7 @@ def update_buckets_dropdown(release_combined, branch, build, nodes, pfull, itrns
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
         })
+        buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']

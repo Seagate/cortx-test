@@ -114,7 +114,7 @@ def update_options_dropdown(xfilter, release_combined, branch):
             else:
                 obj_sizes = sort_object_sizes_list(options)
                 versions = get_dict_from_array(obj_sizes, False)
-                value = versions[0]['value']
+                value = versions[-1]['value']
 
             if len(options) == 1:
                 disabled = True
@@ -148,9 +148,10 @@ def update_nodes_first(xfilter, release_combined, branch, option1, bench):
         nodes = get_distinct_keys(release, 'Count_of_Servers', {
                                   'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench})
         nodes = list(map(int, nodes))
+        nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[0]['value']
+            value = options[-1]['value']
             if len(options) == 1:
                 disabled = True
         else:
@@ -261,8 +262,9 @@ def update_iterations_dropdown(xfilter, release_combined,
                                        {'OS': op_sys, 'Branch': branch, xfilter: option1,
                                        'Name': bench, 'Count_of_Servers': nodes,
                                        'Percentage_full': pfill, 'Custom': custom})
+        iterations.sort()
         if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
+            options = get_dict_from_array(iterations, True, 'itrns')
             value = options[0]['value']
             if len(iterations) == 1:
                 disabled = True
@@ -302,10 +304,14 @@ def update_sessions_dropdown(xfilter, release_combined, branch,
             'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench,
             'Count_of_Servers': nodes, 'Percentage_full': pfill,
             'Iteration': itrns, 'Custom': custom})
+        sessions.sort()
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            value = options[0]['value']
+            if 600 in sessions:
+                value = 600
+            else:
+                value = options[-1]['value']
             options.append({'label': 'All', 'value': 'all'})
         else:
             raise PreventUpdate
@@ -343,6 +349,7 @@ def update_buckets_dropdown(xfilter, release_combined, branch, option1, bench,
             'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench,
             'Count_of_Servers': nodes, 'Percentage_full': pfill,
             'Iteration': itrns, 'Custom': custom})
+        buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
@@ -488,9 +495,10 @@ def update_nodes_dropdown_2(xfilter, release_combined, branch, option1, bench, f
         nodes = get_distinct_keys(release, 'Count_of_Servers', {
                                   'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench})
         nodes = list(map(int, nodes))
+        nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[0]['value']
+            value = options[-1]['value']
             if len(options) == 1:
                 disabled = True
         else:
@@ -609,9 +617,10 @@ def update_iterations_dropdown_2(xfilter, release_combined, branch, option1, ben
         iterations = get_distinct_keys(release, 'Iteration', {
             'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench,
             'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Custom': custom})
+        iterations.sort()
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[0]['value']
+            value = options[-1]['value']
             if len(iterations) == 1:
                 disabled = True
         else:
@@ -652,14 +661,17 @@ def update_sessions_dropdown_2(xfilter, release_combined, branch, option1, bench
             'OS': release_combined.split("_")[1], 'Branch': branch, xfilter: option1, 'Name': bench,
             'Count_of_Servers': nodes, 'Percentage_full': pfill,
             'Iteration': itrns, 'Custom': custom})
+        sessions.sort()
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
             if sessions_first == 'all':
                 value = 'all'
                 disabled = True
+            elif 600 in sessions:
+                value = 600
             else:
-                value = options[0]['value']
+                value = options[-1]['value']
             options.append({'label': 'All', 'value': 'all', 'disabled': True})
         else:
             raise PreventUpdate
@@ -700,6 +712,7 @@ def update_buckets_dropdown_2(xfilter, release_combined, branch, option1, bench,
             'OS': op_sys, 'Branch': branch, xfilter: option1, 'Name': bench,
             'Count_of_Servers': nodes, 'Percentage_full': pfill, 'Iteration': itrns,
             'Custom': custom})
+        buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
             value = options[0]['value']
@@ -746,7 +759,7 @@ def update_object_size_dropdown(xfilter, release_combined, branch, build, bench,
 
             if options:
                 dict_options = get_dict_from_array(options, False)
-                value = dict_options[0]['value']
+                value = dict_options[-1]['value']
                 if len(options) == 1:
                     disabled = True
             else:
