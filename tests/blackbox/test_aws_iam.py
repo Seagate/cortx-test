@@ -252,7 +252,8 @@ class TestAwsIam:
             resp = new_iam_obj.create_user(new_user_name)
             assert_utils.assert_true(resp[0], resp[1])
         all_users = new_iam_obj.list_users()[1]
-        assert_utils.assert_true(len(all_users) >= 100, f"Failed to create 100 users")
+        assert_utils.assert_true(
+            len(all_users) >= 100, f"Failed to create 100 users: {len(all_users)}")
         self.log.info("ENDED: Create 100 Users per account using aws iam")
 
     @pytest.mark.parallel
