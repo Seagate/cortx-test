@@ -96,10 +96,10 @@ class TestBucketPolicy:
         self.file_path_2 = os.path.join(
             self.folder_path, "bkt2_policy{}.txt".format(time.perf_counter_ns()))
         self.s3acc_passwd = S3_CFG["CliConfig"]["s3_account"]["password"]
-        self.s3t_obj_list.append(self.s3test_obj_1)
         self.log.info("ENDED: Test setup operations.")
         yield
         self.log.info("STARTED: Test teardown operations.")
+        self.s3t_obj_list.append(self.s3test_obj_1)  # To remove the resources created in tests.
         for fpath in [self.file_path, self.file_path_1, self.file_path_2]:
             if system_utils.path_exists(fpath):
                 system_utils.remove_file(fpath)
