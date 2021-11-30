@@ -121,6 +121,7 @@ CORTX_CSM_POD = "cortx-csm-agent"
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.S3_CONFIG_K8s = "/etc/cortx/s3/conf/s3config.yaml"
 const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
@@ -240,7 +241,9 @@ AWS_CLI_ERROR = ["ServiceUnavailable",
                  "InternalError",
                  "InvalidArgument",
                  "AccessDenied",
-                 "Failed:"]
+                 "Failed:",
+                 "An error occurred",
+                 "S3 error: "]
 
 
 # cortxcli constants

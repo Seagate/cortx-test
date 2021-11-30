@@ -968,3 +968,37 @@ class Health(Host):
         if health_result and capacity_result:
             return True
         return False
+
+    def get_pod_svc_status(self, pod_list, fail=True):
+        """
+        Helper function to get pod wise service status
+        :param pod_list: List pof pods
+        :param fail: Flag to check failed/started status of services
+        :return: Bool, list
+        """
+        try:
+            results = []
+            if fail:
+                search_str = ["failed", "offline", "unknown"]
+            else:
+                search_str = ["started", "online"]
+            LOG.info("Getting services status for all pods")
+            hctl_output = self.hctl_status_json()
+            for pod in pod_list:
+                LOG.info("Getting pod hostname for pod %s", pod)
+                cmd = commands.KUBECTL_GET_POD_HOSTNAME.format(pod)
+                output = self.execute_cmd(cmd=cmd, read_lines=True)
+                hostname = output[0].strip()
+                for node in hctl_output["nodes"]:
+                    if hostname == node["name"]:
+                        services = node["svcs"]
+                        for svc in services:
+                            status = True if svc["status"] in search_str else False
+                            if not status:
+                                results.append(status)
+                        break
+            return True, results
+        except Exception as error:
+            LOG.error("*ERROR* An exception occurred in %s: %s",
+                      Health.get_pod_svc_status.__name__, error)
+            return False, error

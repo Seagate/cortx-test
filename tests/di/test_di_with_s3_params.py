@@ -24,7 +24,7 @@ import os
 import logging
 from datetime import datetime
 import pytest
-from libs.di.di_error_detection_test_lib import DIErrorDetectionLib
+from libs.di.di_error_detection_test_lib import DIErrorDetection
 from libs.s3 import S3H_OBJ
 from libs.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
@@ -56,7 +56,7 @@ class TestDIWithChangingS3Params:
         cls.s3obj = S3TestLib()
         cls.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         cls.data_gen = DataGenerator()
-        cls.di_err_lib = DIErrorDetectionLib()
+        cls.di_err_lib = DIErrorDetection()
         cls.fi_adapter = S3FailureInjection(cmn_cfg=CMN_CFG)
         cls.s3_mp_test_obj = S3MultipartTestLib(endpoint_url=S3_CFG["s3_url"])
         cls.config_section = "S3_SERVER_CONFIG"

@@ -21,16 +21,16 @@ services:
     - "multipathd.service"
     - "scsi-network-relay.service"
 service_ports:
-  csm: ["28100"]
-  dns: ["53"]
-  elasticsearch: ["9200", "9300"]
-  https: ["443"]
-  ntp: ["123"]
-  ldap: ["389"]
-  redis: ["6379"]
-  salt-master: ["4505", "4506"]
-  smtp: ["25"]
-  s3: ["9443"]
+  csm: [ "28100" ]
+  dns: [ "53" ]
+  elasticsearch: [ "9200", "9300" ]
+  https: [ "443" ]
+  ntp: [ "123" ]
+  ldap: [ "389" ]
+  redis: [ "6379" ]
+  salt-master: [ "4505", "4506" ]
+  smtp: [ "25" ]
+  s3: [ "9443" ]
 build_url: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/"
 build_iso: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso"
 build_sig: "http://cortx-storage.colo.seagate.com/releases/cortx/github/{0}/centos-{1}/{2}/iso/cortx-2.0.0-{3}-upgrade.iso.sig"
@@ -41,7 +41,7 @@ key_repo: "RPM-GPG-KEY-Seagate"
 key1_repo: "RPM-GPG-KEY-Seagate.gpg"
 build_def: "last_successful_prod"
 cluster_start_msg: "Cluster start operation performed"
-confstore_list: ["host", "enclosure_id", "machine_id", "cluster_id"]
+confstore_list: [ "host", "enclosure_id", "machine_id", "cluster_id" ]
 
 single-node:
   prereq:
@@ -67,9 +67,9 @@ single-node:
   cluster_start_delay: 180
 
 system_ntp:
-    ntp_data: ['time_server:', 'time_zone:']
-    timeserver: ['10.30.127.102', 'time.seagate.com']
-    timezone: ['Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam']
+  ntp_data: [ 'time_server:', 'time_zone:' ]
+  timeserver: [ '10.30.127.102', 'time.seagate.com' ]
+  timezone: [ 'Europe/Sofia', 'Iceland', 'Europe/Dublin', 'Europe/Jersey', 'Portugal', 'Europe/Amsterdam' ]
 
 deploy_ff:
   deployment_template: "config/prov/three_node_config.ini"
@@ -124,8 +124,8 @@ k8s_cortx_deploy:
   s3_max_start_timeout: 900
   deploy_cluster: "sh deploy-cortx-cloud.sh"
   destroy_cluster: "sh destroy-cortx-cloud.sh"
-  git_k8_repo: "https://{}:{}@github.com/Seagate/cortx-k8s.git"
-  git_k8_repo_file: "https://{}@raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
+  git_k8_repo: "https://github.com/Seagate/cortx-k8s.git"
+  git_k8_repo_file: "https://raw.githubusercontent.com/Seagate/cortx-k8s/{}/k8_cortx_cloud/solution.yaml"
   exe_prereq: "sh prereq-deploy-cortx-cloud.sh"
   git_remote_dir: "/root/cortx-k8s/k8_cortx_cloud/"
   pem_file_path: "/root/cortx-k8s/k8_cortx_cloud/cortx-cloud-helm-pkg/cortx-configmap/ssl-cert/s3.seagate.com.pem"
@@ -141,7 +141,7 @@ k8s_cortx_deploy:
     gluster: 'docker.io/gluster/gluster-centos:latest'
     rancher: 'rancher/local-path-provisioner:v0.0.20'
     busybox: 'busybox'
-  cortx_images_key: ['cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata']
+  cortx_images_key: [ 'cortxcontrolprov', 'cortxcontrol', 'cortxdataprov', 'cortxdata' ]
   password:
     openldap_admin_secret: '/xGV7UTf3CteLOeM/WIv3usW40bu+1HJdXTF5PhHQwE='
     kafka_admin_secret: 'ODWxmQtdAzBE7YN19iPoPD0WP2VKGbwDcvnxgPAmD9c='
@@ -150,7 +150,16 @@ k8s_cortx_deploy:
     s3_auth_admin_secret: 'B+cVuyLECx9taLLC9lNA+gVeLpSG9XDBgd0E5KEvOFc='
     csm_auth_admin_secret: 'hPknkG1peaPHKdEdL5xCV4eguDl9Fgq1C513lpIKzFc='
     csm_mgmt_admin_secret: '50e4j0exZRRpDTkh+t5wuktLv+SmxpwL//3uamQCCM0='
-
+  setup_k8s_cluster_flag: "True"
+  setup_client_config_flag: "True"
+  run_basic_s3_io_flag: "True"
+  run_s3bench_workload_flag: "True"
+  destroy_setup_flag: "True"
+  cortx_cluster_deploy_flag: "True"
+test_basic_io:
+  io_upper_limits:
+    Kb: 130
+    Mb: 50
 config_metallb:
   check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \

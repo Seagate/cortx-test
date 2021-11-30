@@ -33,8 +33,7 @@ import pytest
 
 from commons.params import TEST_DATA_FOLDER
 from commons.ct_fail_on import CTFailOn
-from commons.exceptions import CTException
-from commons.errorcodes import error_handler, S3_CLIENT_ERROR
+from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from config.s3 import S3_CFG
@@ -47,6 +46,28 @@ from libs.s3.s3_blackbox_test_lib import JCloudClient
 class TestJcloudAndJclient:
     """Blaclbox jcloud and jclient Testsuite."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.jc_obj = JCloudClient()
+        cls.log.info("setup jClientCloud on runner.")
+        res_ls = system_utils.execute_cmd("ls scripts/jcloud/")[1]
+        res = ".jar" in res_ls
+        if not res:
+            res = cls.jc_obj.configure_jclient_cloud(
+                source=S3_CFG["jClientCloud_path"]["source"],
+                destination=S3_CFG["jClientCloud_path"]["dest"],
+                nfs_path=S3_CFG["nfs_path"],
+                ca_crt_path=S3_CFG["s3_cert_path"]
+            )
+            cls.log.info(res)
+            assert_utils.assert_true(
+                res, "Error: jcloudclient.jar or jclient.jar file does not exists")
+        resp = cls.jc_obj.update_jclient_jcloud_properties()
+        assert_utils.assert_true(resp, resp)
+
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -55,10 +76,8 @@ class TestJcloudAndJclient:
         Initializing common variable which will be used in test and
         teardown for cleanup
         """
-        self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations.")
         self.s3_test_obj = s3_test_lib.S3TestLib()
-        self.jc_obj = JCloudClient()
         self.random_id = str(time.time())
         self.access_key = ACCESS_KEY
         self.secret_key = SECRET_KEY
@@ -68,26 +87,6 @@ class TestJcloudAndJclient:
         if not system_utils.path_exists(self.root_path):
             system_utils.make_dirs(self.root_path)
             self.log.info("Created path: %s", self.root_path)
-        self.log.info("setup jClientCloud on runner.")
-        res_ls = system_utils.execute_cmd(
-            "ls scripts/jcloud/")[1]
-        res = ".jar" in res_ls
-        if not res:
-            res = self.jc_obj.configure_jclient_cloud(
-                source=S3_CFG["jClientCloud_path"]["source"],
-                destination=S3_CFG["jClientCloud_path"]["dest"],
-                nfs_path=S3_CFG["nfs_path"],
-                ca_crt_path=S3_CFG["s3_cert_path"]
-                )
-            self.log.info(res)
-            if not res:
-                raise CTException(
-                    S3_CLIENT_ERROR,
-                    "Error: jcloudclient.jar or jclient.jar file does not exists")
-        self.s3_url = S3_CFG['s3_url'].replace("https://", "").replace("http://", "")
-        self.s3_iam = S3_CFG['iam_url'].strip("https://").strip("http://").strip(":9443")
-        resp = self.jc_obj.update_jclient_jcloud_properties()
-        assert_utils.assert_true(resp, resp)
         self.bucket_name = "jcloudjclientbucket-{}".format(time.perf_counter_ns())
         self.obj_name = "objkey{}".format(time.perf_counter_ns())
         self.test_file = "testfile{}.txt".format(time.perf_counter_ns())

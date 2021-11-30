@@ -42,6 +42,31 @@ from libs.s3.s3_blackbox_test_lib import MinIOClient
 class TestMinioClient:
     """Black box minio client Testsuite."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.minio_obj = MinIOClient()
+        resp = MinIOClient.configre_minio_cloud(
+            minio_repo=S3_CFG["minio_repo"],
+            endpoint_url=S3_CFG["s3_url"],
+            s3_cert_path=S3_CFG["s3_cert_path"],
+            minio_cert_path_list=S3_CFG["minio_crt_path_list"],
+            access=ACCESS_KEY,
+            secret=SECRET_KEY)
+        assert_utils.assert_true(resp, "failed to setup minio: {}".format(resp))
+        resp = system_utils.path_exists(S3_CFG["minio_path"])
+        assert_utils.assert_true(
+            resp, "minio config not exists: {}".format(S3_CFG["minio_path"]))
+        minio_dict = config_utils.read_content_json(S3_CFG["minio_path"], mode='rb')
+        cls.log.info(minio_dict)
+        if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
+                or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
+            resp = MinIOClient.configure_minio(ACCESS_KEY, SECRET_KEY)
+            assert_utils.assert_true(resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
+        cls.log.info("ENDED: Setup suite level operation.")
+
     def setup_method(self):
         """
         Function will be invoked prior to each test case.
@@ -52,28 +77,6 @@ class TestMinioClient:
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: Setup operations")
         self.s3t_obj = s3_test_lib.S3TestLib()
-        self.minio_obj = MinIOClient()
-        resp = MinIOClient.configre_minio_cloud(
-            minio_repo=S3_CFG["minio_repo"],
-            endpoint_url=S3_CFG["s3_url"],
-            s3_cert_path=S3_CFG["s3_cert_path"],
-            minio_cert_path_list=S3_CFG["minio_crt_path_list"],
-            access=ACCESS_KEY,
-            secret=SECRET_KEY)
-        assert_utils.assert_true(
-            resp, "failed to setup minio: {}".format(resp))
-        resp = system_utils.path_exists(S3_CFG["minio_path"])
-        assert_utils.assert_true(
-            resp, "minio config not exists: {}".format(
-                S3_CFG["minio_path"]))
-        minio_dict = config_utils.read_content_json(
-            S3_CFG["minio_path"], mode='rb')
-        self.log.info(minio_dict)
-        if (ACCESS_KEY != minio_dict["aliases"]["s3"]["accessKey"]
-                or SECRET_KEY != minio_dict["aliases"]["s3"]["secretKey"]):
-            resp = MinIOClient.configure_minio(ACCESS_KEY, SECRET_KEY)
-            assert_utils.assert_true(
-                resp, f'Failed to update keys in {S3_CFG["minio_path"]}')
         self.root_path = os.path.join(
             os.getcwd(), TEST_DATA_FOLDER, "TestMinioClient")
         if not system_utils.path_exists(self.root_path):
@@ -438,7 +441,7 @@ class TestMinioClient:
         list_obj_cmd = self.minio_cnf["list_obj_cmd"].format(self.bucket_name) \
             + self.minio_obj.validate_cert
         head_obj_cmd = self.minio_cnf["head_obj"].format(
-            2, self.bucket_name, self.file_path.split("/")[-1])
+            self.bucket_name, self.file_path.split("/")[-1]) + self.minio_obj.validate_cert
         self.create_bucket(self.bucket_name)
         self.minio_bucket_list.append(self.bucket_name)
         self.log.info(
@@ -461,6 +464,7 @@ class TestMinioClient:
         self.log.info("Step 4: Performing head object")
         resp = system_utils.run_local_cmd(head_obj_cmd)
         assert_utils.assert_true(resp[0], resp[1])
-        self.log.info("Displaying first few lines of a text file : %s", resp[1])
+        self.log.info("Head object output : %s", resp[1])
+        assert_utils.assert_in(self.minio_cnf["upload_data"][10], resp[1], resp[1])
         self.log.info("Step 4: Performed head object")
         self.log.info("ENDED: Display the first few lines of a text file using Minion Client")
