@@ -3350,6 +3350,7 @@ class TestCsmUser():
         self.created_users.remove(user_id)
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -3672,6 +3673,7 @@ class TestCsmUser():
         self.log.info(
             "##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.lc
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
