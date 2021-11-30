@@ -166,11 +166,13 @@ def get_dropdown_labels(dropdown_type):
         string: corresponding mapping for the input string
     """
     mapping = {
+        'branch': ' Branch',
+        'build': ' Build',
         'nodes': ' Nodes',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
-        'sessions': ' Session(s)'
+        'sessions': ' Concurrency'
     }
 
     return mapping[dropdown_type]
