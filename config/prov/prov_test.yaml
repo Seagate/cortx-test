@@ -160,9 +160,6 @@ test_basic_io:
   io_upper_limits:
     Kb: 130
     Mb: 50
-  s3config_path: '/opt/seagate/cortx/s3/conf/s3config.yaml'
-  parity_check_flag: S3_MOTR_IS_READ_VERIFY
-
 config_metallb:
   check_ARP: 'kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \
