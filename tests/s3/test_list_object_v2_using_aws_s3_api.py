@@ -30,16 +30,15 @@ from commons.errorcodes import error_handler
 from commons.utils import system_utils
 from commons.utils import assert_utils
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3TestLib
-from libs.s3.s3_test_lib import AWScliS3api
-
-AWS_CLI_OBJ = AWScliS3api()
+from libs.s3.s3_awscli import AWScliS3api
 
 
 class TestListObjectV2:
     """List-Object-V2 TestSuite."""
 
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
@@ -49,6 +48,7 @@ class TestListObjectV2:
         prerequisite test steps if any and cleanup.
         """
         self.log = logging.getLogger(__name__)
+        self.awscli_s3api_obj = AWScliS3api()
         self.s3_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
         self.log.info("STARTED: setup test operations.")
         resp = system_utils.path_exists(S3_CFG["aws_config_path"])
@@ -84,7 +84,7 @@ class TestListObjectV2:
         :return: Upload file response.
         """
         self.log.info("Create a bucket '%s' using aws s3 mb.", bucket_name)
-        resp = AWS_CLI_OBJ.create_bucket(bucket_name)
+        resp = self.awscli_s3api_obj.create_bucket(bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "Upload few object in hierarchical and non-hierarchical list.")
@@ -93,7 +93,7 @@ class TestListObjectV2:
         self.log.info("File list: %s", fpathlist)
         assert_utils.assert_equal(
             20, len(fpathlist), "Failed to create hierarchy.")
-        resp = AWS_CLI_OBJ.upload_directory(bucket_name, self.folder_path)
+        resp = self.awscli_s3api_obj.upload_directory(bucket_name, self.folder_path)
         assert_utils.assert_true(resp[0], resp[1])
         assert_utils.assert_equal(
             len(fpathlist), len(
@@ -103,6 +103,8 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-15187")
     @CTFailOn(error_handler)
     def test_15187(self):
@@ -112,13 +114,14 @@ class TestListObjectV2:
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info(
             "Run list-objects-v2 to lists the objects in the specified bucket.")
-        resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name)
+        resp = self.awscli_s3api_obj.list_objects_v2(self.bucket_name)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "END: Test to lists the objects in the specified bucket using list-objects-v2.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15188")
     @CTFailOn(error_handler)
     def test_15188(self):
@@ -127,13 +130,14 @@ class TestListObjectV2:
             "START: Test list-objects-v2--delimiter options using aws s3api.")
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info("Run list-objects-v2 --delimiter to group keys.")
-        resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name, delimiter="//")
+        resp = self.awscli_s3api_obj.list_objects_v2(self.bucket_name, delimiter="//")
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
             "END: Test list-objects-v2--delimiter options using aws s3api.")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15189")
     @CTFailOn(error_handler)
     def test_15189(self):
@@ -144,7 +148,7 @@ class TestListObjectV2:
         self.log.info(
             "Run list-objects-v2 --prefix to Limits the response to keys that begin "
             "with the specified prefix.")
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name, prefix=self.object_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         for rdict in resp[1]["Contents"]:
@@ -154,6 +158,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15190")
     @CTFailOn(error_handler)
     def test_15190(self):
@@ -164,7 +169,7 @@ class TestListObjectV2:
         self.log.info(
             "Run list-objects-v2  --delimiter and --prefix to Limits the response to keys"
             " that begin with the specified prefix and group similar key with delimiter")
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name, prefix=self.object_prefix, delimiter='//')
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -172,6 +177,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15191")
     @CTFailOn(error_handler)
     def test_15191(self):
@@ -183,11 +189,11 @@ class TestListObjectV2:
             "Run list-objects-v2 --max-items and --starting-token option for total number"
             " of items to return in the command's output and then token to specify where"
             " to start paginating. This is the NextToken from a previously truncated response.")
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name, prefix=self.object_prefix, max_items=2)
         assert_utils.assert_true(resp[0], resp[1])
         NextToken = resp[1]["NextToken"]
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name,
             prefix=self.object_prefix,
             starting_token=NextToken)
@@ -197,6 +203,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15194")
     @CTFailOn(error_handler)
     def test_15194(self):
@@ -206,9 +213,9 @@ class TestListObjectV2:
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info(
             "Run list-objects-v2 to test --fetch-owner and --no-fetch-owner using existing bucket.")
-        resp = AWS_CLI_OBJ.list_objects_v2(self.bucket_name, fetch_owner=None)
+        resp = self.awscli_s3api_obj.list_objects_v2(self.bucket_name, fetch_owner=None)
         assert_utils.assert_true(resp[0], resp[1])
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name, no_fetch_owner=None)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(
@@ -216,6 +223,7 @@ class TestListObjectV2:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-15192")
     @CTFailOn(error_handler)
     def test_15192(self):
@@ -225,7 +233,7 @@ class TestListObjectV2:
         self.create_bucket_upload_folder(self.bucket_name)
         self.log.info(
             "Run list-objects-v2 --start-after to list all keys after the key specified.")
-        resp = AWS_CLI_OBJ.list_objects_v2(
+        resp = self.awscli_s3api_obj.list_objects_v2(
             self.bucket_name, start_after=self.object_prefix)
         assert_utils.assert_true(resp[0], resp[1])
         self.log.info(

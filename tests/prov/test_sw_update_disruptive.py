@@ -112,6 +112,7 @@ class TestSWUpdateDisruptive:
         LOGGER.info("ENDED: Setup Operations")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23175")
     @CTFailOn(error_handler)
     def test_sw_upgrade(self):
@@ -168,6 +169,7 @@ class TestSWUpdateDisruptive:
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components.")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23206")
     @CTFailOn(error_handler)
     def test_sw_upgrade_multiple(self):
@@ -234,6 +236,7 @@ class TestSWUpdateDisruptive:
         LOGGER.info("Completed: SW upgrade disruptive for CORTX sw components in succession.")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23176")
     @CTFailOn(error_handler)
     def test_sw_upgrade_with_incompatible_ISO(self):
@@ -289,6 +292,7 @@ class TestSWUpdateDisruptive:
         LOGGER.info("Completed: SW upgrade disruptive with incompatible ISO for CORTX sw components.")
 
     @pytest.mark.cluster_management_ops
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23177")
     @CTFailOn(error_handler)
     def test_sw_upgrade_when_cluster_not_healthy(self):

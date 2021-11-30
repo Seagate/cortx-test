@@ -66,8 +66,8 @@ class TestCliSecurity:
         Test that password should be in encrypted format in csm.conf file
         """
         self.logger.info("Verifying csm conf file is exist")
-        resp = S3H_OBJ.is_s3_server_path_exists(path=self.file_path)
-        assert_utils.assert_true(resp[0], resp[1])
+        resp = self.node_obj.path_exists(path=self.file_path)
+        assert_utils.assert_true(resp, f"csm conf file does not exist at {self.file_path}")
         self.logger.info("Verified csm conf file is exist")
         self.logger.info("Retrieving ldap passwords in encrypted format")
         s3_resp = self.sal_obj.get_pillar_values(

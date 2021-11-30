@@ -23,58 +23,57 @@
 import os
 import time
 import logging
-import shutil
 import pytest
 
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
-from config import S3_OBJ_TST
-from config import S3_CFG
 from commons.params import TEST_DATA_FOLDER
-from libs.s3 import s3_test_lib, s3_cmd_test_lib, s3_multipart_test_lib
-from commons.utils.system_utils import create_file, remove_file, path_exists, make_dirs
+from commons.utils import system_utils
+from commons.utils import assert_utils
+from config.s3 import S3_OBJ_TST
+from libs.s3 import s3_test_lib
+from libs.s3 import s3_cmd_test_lib
+from libs.s3 import s3_multipart_test_lib
 
 
 class TestObjectWorkflowOperations:
     """Object Workflow Operations Testsuite."""
 
-    def setup_method(self):
-        """Setup method."""
+    # pylint: disable=attribute-defined-outside-init
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """
+        Summary: Function will be invoked prior to each test case.
+
+        Description: It will perform all prerequisite and cleanup test.
+        """
         self.log = logging.getLogger(__name__)
         self.log.info("STARTED: setup method")
-        self.s3_test_obj = s3_test_lib.S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3_cmd_obj = s3_cmd_test_lib.S3CmdTestLib(
-            endpoint_url=S3_CFG["s3_url"])
-        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib(
-            endpoint_url=S3_CFG["s3_url"])
+        self.s3_test_obj = s3_test_lib.S3TestLib()
+        self.s3_cmd_obj = s3_cmd_test_lib.S3CmdTestLib()
+        self.s3_mp_obj = s3_multipart_test_lib.S3MultipartTestLib()
         self.buckets_list = list()
-        self.objects_list = list()
-        self.bkt_name_prefix = "objworkflowbkt"
+        self.bkt_name_prefix = "obj-workflow-bkt"
         self.bucket_name = "{0}{1}".format(self.bkt_name_prefix, time.perf_counter_ns())
-        self.obj_name_prefix = "objworkflowobj"
+        self.obj_name_prefix = "obj_workflow_obj"
         self.obj_name = "{0}{1}".format(self.obj_name_prefix, time.perf_counter_ns())
-        self.folder_path_prefix = "{0}{1}".format("test_data", time.perf_counter_ns())
-        self.folder_path = os.path.join(TEST_DATA_FOLDER, self.folder_path_prefix)
+        self.folder_path = os.path.join(TEST_DATA_FOLDER, "TestObjectWorkflowOperations")
         file_name = "{0}{1}".format("obj_workflow", time.perf_counter_ns())
         self.file_path = os.path.join(self.folder_path, file_name)
-        if not path_exists(self.folder_path):
-            resp = make_dirs(self.folder_path)
+        if not system_utils.path_exists(self.folder_path):
+            resp = system_utils.make_dirs(self.folder_path)
             self.log.info("Created path: %s", resp)
         self.log.info("ENDED: setup method")
-
-    def teardown_method(self):
-        """Teardown method."""
+        yield
         self.log.info("STARTED: teardown method")
         self.log.info("Clean : %s", self.folder_path)
-        if path_exists(self.file_path):
-            resp = remove_file(self.file_path)
-            self.log.info(
-                "cleaned path: %s, resp: %s",
-                self.folder_path,
-                resp)
+        if system_utils.path_exists(self.file_path):
+            resp = system_utils.remove_file(self.file_path)
+            self.log.info("cleaned path: %s, resp: %s", self.file_path, resp)
         for bucket_name in self.buckets_list:
-            self.s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
+            resp = self.s3_test_obj.delete_bucket(bucket_name=bucket_name, force=True)
+            assert_utils.assert_true(resp[0], resp[1])
         self.log.info("ENDED: teardown method")
 
     def create_bucket_put_objects(self, bucket_name, object_count):
@@ -88,95 +87,67 @@ class TestObjectWorkflowOperations:
         :rtype: list
         """
         obj_list = []
-        self.log.info(
-            "Step 1: Creating a bucket with name %s", bucket_name)
+        self.log.info("Step 1: Creating a bucket with name %s", bucket_name)
         resp = self.s3_test_obj.create_bucket(bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == bucket_name, resp[0]
-        self.log.info(
-            "Step 1: Created a bucket with name %s", bucket_name)
-        self.log.info(
-            "Step 2: Uploading %s objects to the bucket ",
-            object_count)
+        self.log.info("Step 1: Created a bucket with name %s", bucket_name)
+        self.log.info("Step 2: Uploading %s objects to the bucket ",  object_count)
         for cnt in range(object_count):
             obj_name = f"{self.obj_name_prefix}{cnt}"
-            create_file(
-                self.file_path,
-                S3_OBJ_TST["s3_object"]["mb_count"])
+            system_utils.create_file(self.file_path, S3_OBJ_TST["s3_object"]["mb_count"])
             resp = self.s3_test_obj.put_object(
                 bucket_name,
                 obj_name,
                 self.file_path)
             assert resp[0], resp[1]
             obj_list.append(obj_name)
-        self.log.info(
-            "Step 2: Uploaded %s objects to the bucket ", object_count)
+        self.log.info("Step 2: Uploaded %s objects to the bucket ", object_count)
 
         return obj_list
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_object_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5498")
     @CTFailOn(error_handler)
     def test_put_file_2208(self):
         """Copying/PUT a local file to s3."""
         self.log.info("Copying/PUT a local file to s3")
-        self.log.info(
-            "STARTED: Creating a bucket with name %s",
-            self.bucket_name)
-        resp = self.s3_test_obj.create_bucket(
-            self.bucket_name)
+        self.log.info("STARTED: Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[0]
-        self.log.info(
-            "Created a bucket with name %s",
-            self.bucket_name)
-        create_file(
-            self.file_path,
-            S3_OBJ_TST["s3_object"]["mb_count"])
-        self.log.info(
-            "Uploading an object %s to a bucket %s",
-            self.obj_name,
-            self.bucket_name)
-        resp = self.s3_test_obj.put_object(
-            self.bucket_name,
-            self.obj_name,
-            self.file_path)
+        self.log.info("Created a bucket with name %s", self.bucket_name)
+        system_utils.create_file(self.file_path,  S3_OBJ_TST["s3_object"]["mb_count"])
+        self.log.info("Uploading an object %s to a bucket %s", self.obj_name, self.bucket_name)
+        resp = self.s3_test_obj.put_object(self.bucket_name, self.obj_name, self.file_path)
         assert resp[0], resp[1]
         self.log.info("Uploaded an object to a bucket")
         self.log.info("Verifying object is successfully uploaded")
-        resp = self.s3_test_obj.object_list(
-            self.bucket_name)
+        resp = self.s3_test_obj.object_list(self.bucket_name)
         assert resp[0], resp[1]
         assert self.obj_name in resp[1], resp[1]
         self.log.info("Verified that object is uploaded successfully")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Copying/PUT a local file to s3")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5499")
     @CTFailOn(error_handler)
     def test_copy_different_sizes_2209(self):
         """Copying file/object of different type & size to s3."""
-        self.log.info(
-            "STARTED: Copying file/object of different type & size to s3")
-        self.log.info(
-            "Creating a bucket with name %s",
-            self.bucket_name)
-        resp = self.s3_test_obj.create_bucket(
-            self.bucket_name)
+        self.log.info("STARTED: Copying file/object of different type & size to s3")
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[0]
-        self.log.info(
-            "Created a bucket with name %s",
-            self.bucket_name)
-        self.log.info(
-            "Uploading different size objects to a bucket %s",
-            self.bucket_name)
+        self.log.info("Created a bucket with name %s", self.bucket_name)
+        self.log.info("Uploading different size objects to a bucket %s", self.bucket_name)
         put_object = self.s3_test_obj.put_random_size_objects(
             self.bucket_name,
             self.obj_name,
@@ -187,39 +158,29 @@ class TestObjectWorkflowOperations:
         assert put_object[0], put_object[1]
         self.log.info("Uploaded different size of objects")
         self.log.info("Validating objects are uploaded or not")
-        obj_list = self.s3_test_obj.object_list(
-            self.bucket_name)
+        obj_list = self.s3_test_obj.object_list(self.bucket_name)
         assert obj_list[0], obj_list[1]
         assert obj_list[1] == put_object[1], obj_list[1]
         self.buckets_list.append(self.bucket_name)
         self.log.debug("Deleting multiple objects created")
         for obj in put_object[1]:
             self.s3_test_obj.delete_object(self.bucket_name, obj)
-        # for obj in self.s3_test_obj.list_objects_with_prefix(self.bucket_name, self.obj_name)[1]:
-        #     self.s3_test_obj.delete_object(self.bucket_name, obj)
-        self.log.info(
-            "ENDED: Copying file/object of different type & size to s3")
+        self.log.info("ENDED: Copying file/object of different type & size to s3")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5496")
     @CTFailOn(error_handler)
     def test_recursive_copy_2210(self):
         """Recursively copying local files to s3."""
         self.log.info("STARTED: Recursively copying local files to s3")
-        self.log.info(
-            "Creating a bucket with name %s",
-            self.bucket_name)
-        resp = self.s3_test_obj.create_bucket(
-            self.bucket_name)
+        self.log.info("Creating a bucket with name %s", self.bucket_name)
+        resp = self.s3_test_obj.create_bucket(self.bucket_name)
         assert resp[0], resp[1]
         assert resp[1] == self.bucket_name, resp[0]
-        self.log.info(
-            "Created a bucket with name %s",
-            self.bucket_name)
-        self.log.info(
-            "Recursively copying local files to a bucket %s",
-            self.bucket_name)
+        self.log.info("Created a bucket with name %s", self.bucket_name)
+        self.log.info("Recursively copying local files to a bucket %s", self.bucket_name)
         resp = self.s3_cmd_obj.upload_folder_cli(
             self.bucket_name,
             self.folder_path,
@@ -231,19 +192,16 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5502")
     def test_add_object_non_existing_bucket2211(self):
         """Add Object to non existing bucket."""
         self.log.info("STARTED: Add Object to non existing bucket")
         self.log.info("Uploading an object to non existing bucket")
-        create_file(
-            self.file_path,
-            S3_OBJ_TST["s3_object"]["mb_count"])
+        system_utils.create_file(self.file_path, S3_OBJ_TST["s3_object"]["mb_count"])
         try:
-            self.s3_test_obj.object_upload(
-                self.bucket_name,
-                self.obj_name,
-                self.file_path)
+            resp = self.s3_test_obj.object_upload(self.bucket_name, self.obj_name, self.file_path)
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             assert S3_OBJ_TST["test_2211"]["error_message"] in str(
                 error.message), error.message
@@ -252,6 +210,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5500")
     @CTFailOn(error_handler)
     def test_copy_object_local_file_2213(self):
@@ -267,7 +226,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
@@ -300,16 +259,12 @@ class TestObjectWorkflowOperations:
         assert os.path.exists(self.file_path), resp[1]
         self.log.info("Objects are downloaded from a bucket")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
-        self.log.info("Cleanup activity")
-        if os.path.exists(self.file_path):
-            remove_file(self.file_path)
         self.log.info("ENDED: Copying an s3 object to a local file")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
-    @pytest.mark.sanity
+    @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5495")
     @CTFailOn(error_handler)
     def test_recursive_copy_local_dir_2214(self):
@@ -349,6 +304,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5501")
     @CTFailOn(error_handler)
     def test_download_byte_range_2215(self):
@@ -364,7 +320,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["test_2215"]["file_size"])
         self.log.info(
@@ -385,12 +341,11 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         self.log.info("Byte range of an object is downloaded")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Copy/Download byte range of object")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_object_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5493")
     @CTFailOn(error_handler)
@@ -407,7 +362,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
@@ -432,11 +387,12 @@ class TestObjectWorkflowOperations:
         assert resp[0], resp[1]
         self.log.info("Retrieved metadata of an object")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
         self.log.info("ENDED: Retrieve Metadata of object")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-5503")
     @CTFailOn(error_handler)
     def test_add_metadata_verify_object_2218(self):
@@ -454,7 +410,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
@@ -499,12 +455,12 @@ class TestObjectWorkflowOperations:
         assert S3_OBJ_TST["test_2218"]["key"] in resp[1]["Metadata"], resp[1]
         self.log.info("Retrieved new metadata of an object")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
         self.log.info(
             "ENDED: Add new metadata to the object and check if the new data is getting reflected")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5494")
     @CTFailOn(error_handler)
     def test_remove_metadata_2219(self):
@@ -521,7 +477,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info("Uploading an object with metadata")
@@ -548,21 +504,19 @@ class TestObjectWorkflowOperations:
         self.log.info("Deleted metadata")
         self.log.info("Retrieving metadata of an object")
         try:
-            self.s3_test_obj.object_info(
-                self.bucket_name,
-                self.obj_name)
+            resp = self.s3_test_obj.object_info(self.bucket_name, self.obj_name)
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             assert S3_OBJ_TST["test_2219"]["error_message"] in str(
                 error.message), error.message
         self.log.info("Retrieving of metadata is failed")
         self.buckets_list.append(self.bucket_name)
-        self.objects_list.append(self.obj_name)
         self.log.info(
             "Remove the existing metadata and check if the entry is not shown")
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
-    @pytest.mark.release_regression
+    @pytest.mark.s3_object_ops
     @pytest.mark.sanity
     @pytest.mark.tags("TEST-5497")
     @CTFailOn(error_handler)
@@ -579,7 +533,7 @@ class TestObjectWorkflowOperations:
         self.log.info(
             "Created a bucket with name %s",
             self.bucket_name)
-        create_file(
+        system_utils.create_file(
             self.file_path,
             S3_OBJ_TST["s3_object"]["mb_count"])
         self.log.info(
@@ -618,6 +572,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-5492")
     @CTFailOn(error_handler)
     def test_delete_non_existing_object_2221(self):
@@ -645,6 +600,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8713")
     @CTFailOn(error_handler)
     def test_del_object_verbose_mode_7653(self):
@@ -676,6 +632,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8714")
     @CTFailOn(error_handler)
     def test_delete_object_quiet_mode_7655(self):
@@ -712,6 +669,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8715")
     @CTFailOn(error_handler)
     def test_delete_objects_and_mention_1001_objects_7656(self):
@@ -725,8 +683,9 @@ class TestObjectWorkflowOperations:
             "Step 3: Deleting %s objects from a bucket",
             cfg_7656["del_obj_cnt"])
         try:
-            self.s3_test_obj.delete_multiple_objects(
+            resp = self.s3_test_obj.delete_multiple_objects(
                 bucket_name, obj_list[:cfg_7656["del_obj_cnt"]])
+            assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
             self.log.error(error.message)
             assert cfg_7656["err_message"] in error.message, error.message
@@ -739,6 +698,7 @@ class TestObjectWorkflowOperations:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_object_ops
     @pytest.mark.tags("TEST-8716")
     @CTFailOn(error_handler)
     def test_delete_objects_and_mention_1000_objects_7657(self):

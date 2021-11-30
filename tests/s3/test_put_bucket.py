@@ -29,7 +29,7 @@ from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.exceptions import CTException
 from commons.utils import assert_utils
-from libs.s3 import S3_CFG
+from config.s3 import S3_CFG
 from libs.s3.s3_test_lib import S3LibNoAuth
 from libs.s3.s3_test_lib import S3TestLib
 
@@ -99,6 +99,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5838')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_authorization_header_missing_412(self):
@@ -112,6 +113,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5839')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_ip_address_format_authorization_header_missing_415(
@@ -127,6 +129,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5840')
     @CTFailOn(error_handler)
     def test_create_multiple_buckets_authorization_header_missing_416(self):
@@ -140,6 +143,7 @@ class TestPutBucket:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_put
     @pytest.mark.tags('TEST-5841')
     @CTFailOn(error_handler)
     def test_verify_put_bucket_without_giving_cacert_417(self):

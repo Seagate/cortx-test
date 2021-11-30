@@ -26,6 +26,9 @@ from time import perf_counter_ns
 from multiprocessing import Process
 
 import pytest
+import time
+from commons import constants as cons
+from commons.helpers import node_helper
 from commons import constants as cons
 from commons.helpers import node_helper
 from commons.utils import assert_utils, system_utils
@@ -39,6 +42,7 @@ from config.s3 import S3_CFG
 from scripts.s3_bench import s3bench
 from libs.s3 import S3H_OBJ, s3_test_lib
 from libs.s3 import iam_test_lib
+from commons.exceptions import CTException
 from libs.s3.s3_restapi_test_lib import S3AuthServerRestAPI
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
 
@@ -90,12 +94,14 @@ class TestIAMUserManagement:
         self.s3acc_name = "{}_{}".format("cli_s3acc", int(perf_counter_ns()))
         self.s3acc_email = "{}@seagate.com".format(self.s3acc_name)
         self.log.info("Creating s3 account with name %s", self.s3acc_name)
-        resp = self.rest_obj.create_s3_account(
-            acc_name=self.s3acc_name, email_id=self.s3acc_email, passwd=self.acc_password)
+        resp = self.rest_obj.create_s3_account(acc_name=self.s3acc_name,
+                                               email_id=self.s3acc_email, passwd=self.acc_password)
         assert_utils.assert_true(resp[0], resp[1])
         access_key = resp[1]["access_key"]
         secret_key = resp[1]["secret_key"]
+
         self.iam_test_obj = iam_test_lib.IamTestLib(access_key=access_key, secret_key=secret_key)
+
         self.log.info("Created s3 account")
         self.parallel_ios = None
         self.account_dict = dict()
@@ -107,6 +113,7 @@ class TestIAMUserManagement:
         self.file_path = os.path.join(self.test_dir_path, self.object_name)
         self.auth_file_change = False
         self.del_iam_user = False
+
         self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
         self.START_LOG_FORMAT = "##### Test started -  "
         self.END_LOG_FORMAT = "##### Test Ended -  "
@@ -190,7 +197,7 @@ class TestIAMUserManagement:
             access_key,
             secret_key,
             bucket=bucket,
-            end_point=kwargs["end_point"],
+            end_point=S3_CFG["s3b_url"],
             num_clients=kwargs["num_clients"],
             num_sample=kwargs["num_sample"],
             obj_name_pref=kwargs["obj_name_pref"],
@@ -228,6 +235,7 @@ class TestIAMUserManagement:
                 assert_utils.assert_true(resp[0], resp[1])
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23398")
     def test_23398_create_iam_user(self):
         """
@@ -251,6 +259,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23399")
     def test_23399_list_user(self):
         """
@@ -278,6 +287,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23400")
     def test_23400_create_access_key(self):
         """
@@ -314,6 +324,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23401")
     def test_23401_delete_iam_user(self):
         """
@@ -339,6 +350,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-23402")
     def test_23402_check_access_key_count(self):
         """
@@ -379,6 +391,8 @@ class TestIAMUserManagement:
             create_access_key2 = self.iam_test_obj.create_access_key(self.user_name)
             assert_utils.assert_false(create_access_key2[0], create_access_key2[1])
         except CTException as error:
+            assert_utils.assert_in("AccessKeyQuotaExceeded", error.message,
+                                   f"Expected error: AccessKeyQuotaExceeded Actual error: {error}")
             self.log.error("IAM user already has two access keys: %s", error)
             self.log.info("Verified IAM user can not have more than two access keys")
         self.log.info("Step 7: Stop S3 IO & Validate logs.")
@@ -391,6 +405,8 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-23463")
     def test_23463_crud_with_another_access_key(self):
         """
@@ -433,6 +449,7 @@ class TestIAMUserManagement:
         self.log.info("%s %s", self.END_LOG_FORMAT, log.get_frame())
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-22150")
     def test_22150(self):
         """use REST API call to create s3iamuser with special characters."""
@@ -458,6 +475,7 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to create s3iamuser with special characters.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-22148")
     def test_22148(self):
         """REST API to Update Login Profile without mentioning new Password for the s3iamuser."""
@@ -489,6 +507,8 @@ class TestIAMUserManagement:
             "ENDED: Update Login Profile without mentioning new Password for the s3iamuser.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-27277")
     def test_27277(self):
         """use REST API call to perform CRUD operations on s3iamuser."""
@@ -521,6 +541,8 @@ class TestIAMUserManagement:
         self.log.info("ENDED: use REST API call to perform CRUD operations on s3iamuser.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-27278")
     def test_27278(self):
         """use REST API call to perform accesskey CRUD operations for s3iamuser."""
@@ -569,6 +591,7 @@ class TestIAMUserManagement:
             "ENDED: use REST API call to perform accesskey CRUD operations for s3iamuser.")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-21644")
     def test_21644(self):
         """use REST API call to create more than 2 Accesskeys for s3iamuser."""
@@ -608,6 +631,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28776")
     def test_28776(self):
         """
@@ -666,7 +690,7 @@ class TestIAMUserManagement:
         assert_utils.assert_true(status[0], "Service did not restart successfully")
         self.log.info("Step 7: Creating 6 iam users.")
         for i in range(6):
-            self.user_name = "{0}{1}-{2}".format("iam_user", str(perf_counter_ns()), i)
+            self.user_name = "{0}{1}-{2}".format("iam_user", str(time.time()), i)
             resp = self.iam_test_obj.create_user(user_name=self.user_name)
             assert_utils.assert_exact_string(resp[1]['User']['UserName'], self.user_name)
             iam_users.append(self.user_name)
@@ -674,7 +698,7 @@ class TestIAMUserManagement:
         self.log.info("6 iam users creation successful")
         self.log.info("Step 8: Try creating one more iam user")
         try:
-            self.user_name = "{0}{1}".format("iam_user", str(perf_counter_ns()))
+            self.user_name = "{0}{1}".format("iam_user", str(time.time()))
             resp = self.iam_test_obj.create_user(user_name=self.user_name)
             assert_utils.assert_false(resp[0], resp[1])
         except CTException as error:
@@ -689,6 +713,7 @@ class TestIAMUserManagement:
 
     @pytest.mark.skip("EOS-24624")
     @pytest.mark.s3_ops
+    @pytest.mark.s3_iam_user_mgnt
     @pytest.mark.tags("TEST-28852")
     def test_28852(self):
         """s3accounts creation with different maxIAMAccountLimit values"""
