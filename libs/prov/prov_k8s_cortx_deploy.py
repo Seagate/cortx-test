@@ -695,7 +695,8 @@ class ProvDeployK8sCortxLib:
         return: True/False and success/failure message
         """
         LOGGER.info("Get Cluster status")
-        cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.format(pod_name)).decode('UTF-8')
+        cluster_status = node_obj.execute_cmd(cmd=common_cmd.K8S_HCTL_STATUS.
+                                              format(pod_name)).decode('UTF-8')
         cluster_status = json.loads(cluster_status)
         if cluster_status is not None:
             nodes_data = cluster_status["nodes"]
@@ -707,7 +708,7 @@ class ProvDeployK8sCortxLib:
             return True, "Cluster is up and running."
         return False, "Cluster status is not retrieved."
 
-    def destroy_setup(self, master_node_obj, worker_node_obj):
+    def destroy_setup(self, master_node_obj: LogicalNode, worker_node_obj: list):
         """
         Method used to run destroy script
         param: master node obj list
@@ -1109,9 +1110,11 @@ class ProvDeployK8sCortxLib:
                 bucket_name = "bucket-" + str(int(time.time()))
                 self.io_workload(access_key=access_key, secret_key=secret_key,
                                  bucket_prefix=bucket_name)
-        LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                    len(worker_node_list), sns_data, sns_parity, sns_spare)
+
         if destroy_setup_flag:
             LOGGER.info("Step to Destroy setup")
             resp = self.destroy_setup(master_node_list[0], worker_node_list)
             assert_utils.assert_true(resp[0], resp[1])
+
+        LOGGER.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
+                    len(worker_node_list), sns_data, sns_parity, sns_spare)

@@ -21,7 +21,6 @@
 """Failure Domain (k8s based Cortx) Test Suite."""
 import logging
 import os
-import time
 from multiprocessing import Pool
 
 import pytest
@@ -32,8 +31,7 @@ from commons import pswdmanager
 from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons.utils import ext_lbconfig_utils
-from config import CMN_CFG, HA_CFG, PROV_CFG
+from config import CMN_CFG, HA_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 
@@ -44,12 +42,6 @@ class TestFailureDomainK8Cortx:
     def setup_class(cls):
         """Setup class"""
         cls.log = logging.getLogger(__name__)
-        cls.git_id = os.getenv("GIT_ID")
-        cls.git_token = os.getenv("GIT_PASSWORD")
-        cls.git_script_tag = os.getenv("GIT_SCRIPT_TAG")
-        cls.cortx_image = os.getenv("CORTX_IMAGE")
-        cls.docker_username = os.getenv("DOCKER_USERNAME")
-        cls.docker_password = os.getenv("DOCKER_PASSWORD")
         cls.vm_username = os.getenv("QA_VM_POOL_ID",
                                     pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
         cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
@@ -69,10 +61,6 @@ class TestFailureDomainK8Cortx:
                 cls.master_node_list.append(node_obj)
             else:
                 cls.worker_node_list.append(node_obj)
-        cls.control_lb_ip = CMN_CFG["load_balancer_ip"]["control_ip"]
-        cls.data_lb_ip = CMN_CFG["load_balancer_ip"]["data_ip"]
-        cls.control_lb_ip = cls.control_lb_ip.split(",")
-        cls.data_lb_ip = cls.data_lb_ip.split(",")
         test_config = "config/cft/test_failure_domain_k8s_cortx.yaml"
         cls.test_config = configmanager.get_config_wrapper(fpath=test_config)
 
@@ -82,6 +70,9 @@ class TestFailureDomainK8Cortx:
             self.log.info("Reverting all the VM before deployment")
             with Pool(self.num_nodes) as proc_pool:
                 proc_pool.map(self.revert_vm_snapshot, self.host_list)
+        self.log.info("Destroy the cluster from master node")
+        resp = self.deploy_lc_obj.destroy_setup(self.master_node_list[0],self.worker_node_list)
+        assert_utils.assert_true(resp[0],resp[1])
 
     def revert_vm_snapshot(self, host):
         """Revert VM snapshot
@@ -99,75 +90,19 @@ class TestFailureDomainK8Cortx:
         """
         This method is used for deployment with various config on N nodes
         """
-        self.log.info("STARTED: {%s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
-
-        self.log.info("Step 1: Perform k8s Cluster Deployment")
-        resp = self.deploy_lc_obj.setup_k8s_cluster(self.master_node_list, self.worker_node_list)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 2: Taint master nodes if not already done.")
-        for node in self.master_node_list:
-            resp = self.deploy_lc_obj.validate_master_tainted(node)
-            if not resp:
-                self.deploy_lc_obj.taint_master(node)
-
-        self.log.info("Step 3: Download solution file template")
-        path = self.deploy_lc_obj.checkout_solution_file(self.git_token, self.git_script_tag)
-        self.log.info("Step 4 : Update solution file template")
-        resp = self.deploy_lc_obj.update_sol_yaml(worker_obj=self.worker_node_list, filepath=path,
-                                                  cortx_image=self.cortx_image,
-                                                  control_lb_ip=self.control_lb_ip,
-                                                  data_lb_ip=self.data_lb_ip,
-                                                  sns_data=sns_data, sns_parity=sns_parity,
-                                                  sns_spare=sns_spare, dix_data=dix_data,
-                                                  dix_parity=dix_parity,
-                                                  dix_spare=dix_spare, cvg_count=cvg_count,
-                                                  data_disk_per_cvg=data_disk_per_cvg,
-                                                  size_data_disk="20Gi",
-                                                  size_metadata="20Gi",
-                                                  glusterfs_size="20Gi")
-        assert_utils.assert_true(resp[0], "Failure updating solution.yaml")
-        sol_file_path = resp[1]
-        system_disk_dict = resp[2]
-
-        self.log.info("Step 5: Perform Cortx Cluster Deployment")
-        resp = self.deploy_lc_obj.deploy_cortx_cluster(sol_file_path, self.master_node_list,
-                                                       self.worker_node_list, system_disk_dict,
-                                                       self.docker_username,
-                                                       self.docker_password, self.git_id,
-                                                       self.git_token, self.git_script_tag)
-        assert_utils.assert_true(resp[0], resp[1])
-
-        self.log.info("Step 6: Check s3 server status")
-        start_time = int(time.time())
-        end_time = start_time + 1800  # 30 mins timeout
-        while int(time.time()) < end_time:
-            resp = self.deploy_lc_obj.s3_service_status(self.master_node_list[0])
-            if resp[0]:
-                self.log.info("####All the services online. Time Taken : %s",
-                              (int(time.time()) - start_time))
-                break
-            time.sleep(60)
-        else:
-            self.log.error("Service are not online in 30 mins.Start time: %s, Current time : %s",
-                           start_time,time.time())
-        assert_utils.assert_true(resp[0], resp[1])
-
-        resp = system_utils.execute_cmd(common_cmd.CMD_GET_IP_IFACE.format('eth1'))
-        eth1_ip = resp[1].strip("'\\n'b'")
-        self.log.info("Step 7: Configure HAproxy on client")
-        ext_lbconfig_utils.configure_haproxy_lb(self.master_node_list[0].hostname,
-                                                       self.master_node_list[0].username,
-                                                       self.master_node_list[0].password,eth1_ip,
-                                                    PROV_CFG['k8s_cortx_deploy']['pem_file_path'])
-
-        self.log.info("Step 8: Create S3 account and configure credentials")
-        resp = self.deploy_lc_obj.post_deployment_steps_lc()
-        assert_utils.assert_true(resp[0],resp[1])
-
-        self.log.info("ENDED: %s node (SNS-%s+%s+%s) k8s based Cortx Deployment",
-                      len(self.worker_node_list), sns_data, sns_parity, sns_spare)
+        self.deploy_lc_obj.test_deployment(sns_data=sns_data, sns_parity=sns_parity,
+                                           sns_spare=sns_spare, dix_data=dix_data,
+                                           dix_parity=dix_parity,
+                                           dix_spare=dix_spare, cvg_count=cvg_count,
+                                           data_disk_per_cvg=data_disk_per_cvg,
+                                           master_node_list=self.master_node_list,
+                                           worker_node_list=self.worker_node_list,
+                                           setup_k8s_cluster_flag=True,
+                                           cortx_cluster_deploy=True,
+                                           setup_client_config_flag=True,
+                                           run_basic_s3_io_flag=False,
+                                           run_s3bench_workload_flag=False,
+                                           destroy_setup_flag=False)
 
     @pytest.mark.run(order=1)
     @pytest.mark.lc
