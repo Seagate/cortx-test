@@ -26,9 +26,9 @@ import os
 import sys
 import logging
 import threading
-from libs.s3.s3_core_lib import S3Lib
 from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
+from libs.s3.s3_core_lib import S3Lib
 
 LOGGER = logging.getLogger(__name__)
 
