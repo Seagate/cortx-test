@@ -164,6 +164,7 @@ class TestHANodeHealth:
         LOGGER.info("ENDED: Teardown Operations.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22544")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_os_shutdown(self):
@@ -266,6 +267,7 @@ class TestHANodeHealth:
             "Completed: Test to check node status one by one for all nodes with os shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22574")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_unsafe_shutdown(self):
@@ -367,6 +369,7 @@ class TestHANodeHealth:
             "Completed: Test to check node status one by one for all nodes with unsafe shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-23274")
     @CTFailOn(error_handler)
     def test_nodes_one_by_one_nw_down(self):
@@ -484,6 +487,7 @@ class TestHANodeHealth:
             "down and comes back up")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22623")
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_os_shutdown(self):
@@ -597,6 +601,7 @@ class TestHANodeHealth:
             "Completed: Test to check single node status with multiple os shutdown.")
 
     @pytest.mark.ha
+    @pytest.mark.lr
     @pytest.mark.tags("TEST-22626")
     @CTFailOn(error_handler)
     def test_single_node_multiple_times_unsafe_shutdown(self):

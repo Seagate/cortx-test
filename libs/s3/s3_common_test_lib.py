@@ -27,10 +27,11 @@ from multiprocessing import Process
 from time import perf_counter_ns
 
 from config import CMN_CFG
-from config import S3_CFG
+from config.s3 import S3_CFG
 from commons.exceptions import CTException
 from commons.helpers.health_helper import Health
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.utils.system_utils import calculate_checksum
@@ -52,26 +53,32 @@ def check_cluster_health() -> None:
     LOG.info("Check cluster status, all services are running.")
     nodes = CMN_CFG["nodes"]
     LOG.info(nodes)
-    for _, node in enumerate(nodes):
-        health_obj = Health(hostname=node["hostname"],
-                            username=node["username"],
-                            password=node["password"])
-        resp = health_obj.check_node_health()
-        LOG.info(resp)
-        health_obj.disconnect()
-        assert_utils.assert_true(resp[0], resp[1])
+    if CMN_CFG["product_type"] == "node":
+        for _, node in enumerate(nodes):
+            health_obj = Health(hostname=node["hostname"],
+                                username=node["username"],
+                                password=node["password"])
+            resp = health_obj.check_node_health()
+            LOG.info(resp)
+            health_obj.disconnect()
+            assert_utils.assert_true(resp[0], resp[1])
+    else:
+        pass  # TODO: will update as per health helper changes for LC/k8s.
     LOG.info("Cluster is healthy, all services are running.")
 
 
 def get_ldap_creds() -> tuple:
     """Get the ldap credentials from node."""
     nodes = CMN_CFG["nodes"]
-    node_hobj = Node(hostname=nodes[0]["hostname"],
-                     username=nodes[0]["username"],
-                     password=nodes[0]["password"])
-    node_hobj.connect()
-    resp = node_hobj.get_ldap_credential()
-    node_hobj.disconnect()
+    if CMN_CFG["product_type"] == "node":
+        node_hobj = Node(hostname=nodes[0]["hostname"],
+                         username=nodes[0]["username"],
+                         password=nodes[0]["password"])
+        node_hobj.connect()
+        resp = node_hobj.get_ldap_credential()
+        node_hobj.disconnect()
+    else:
+        resp = (None, None)  # TODO: will create method for LC/k8s once available.
 
     return resp
 
@@ -100,7 +107,6 @@ def create_s3_acc(
     :param str account_name: Name of account to be created.
     :param str email_id: Email id for account creation.
     :param password: account password.
-    :param account_dict:
     :return tuple: It returns multiple values such as access_key,
     secret_key and s3 objects which required to perform further operations.
     """
@@ -254,7 +260,7 @@ def s3_ios(
     kwargs.setdefault("num_clients", 2)
     kwargs.setdefault("num_sample", 5)
     kwargs.setdefault("obj_name_pref", "load_gen_")
-    kwargs.setdefault("end_point", S3_CFG["s3_url"])
+    kwargs.setdefault("end_point", S3_CFG["s3b_url"])
     LOG.info("STARTED: s3 io's operations.")
     access_key, secret_key = S3H_OBJ.get_local_keys()
     resp = s3bench.s3bench(
@@ -324,7 +330,7 @@ class S3BackgroundIO:
         kwargs.setdefault("num_clients", 2)
         kwargs.setdefault("num_sample", 5)
         kwargs.setdefault("obj_name_pref", "load_gen_")
-        kwargs.setdefault("end_point", S3_CFG["s3_url"])
+        kwargs.setdefault("end_point", S3_CFG["s3b_url"])
         LOG.info("STARTED: s3 io's operations.")
         access_key, secret_key = S3H_OBJ.get_local_keys()
         resp = s3bench.s3bench(
