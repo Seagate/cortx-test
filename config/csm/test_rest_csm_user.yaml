@@ -256,3 +256,7 @@ test_28509:
     status_code: 400
 test_28508:
     status_code: 400
+test_32171:
+    error_code: 4101
+    message: "{} can not update the role for {}"
+    message_id: "update_not_allowed"
