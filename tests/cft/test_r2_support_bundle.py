@@ -235,7 +235,6 @@ class TestR2SupportBundle:
             args=(self.pod_name, dest_dir, SB_identifier, msg))
 
         generate_SB_process.start()
-
         time.sleep(5)
 
         self.LOGGER.info("Step 2: checking Inprogress status of support bundle")
