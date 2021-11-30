@@ -441,6 +441,7 @@ K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedu
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
+K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
 K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
 K8S_GET_MGNT = "kubectl get pods -o wide"
@@ -454,6 +455,8 @@ K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
 KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
+KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
+                      'custom-columns=":metadata.name,:.status.podIP"'
 KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
 KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
 KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
