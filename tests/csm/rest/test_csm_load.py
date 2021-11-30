@@ -24,6 +24,7 @@ import logging
 import os
 import time
 import pytest
+import shutil
 from commons import cortxlogging
 from commons.utils import config_utils
 from commons.constants import SwAlerts as const
@@ -64,6 +65,10 @@ class TestCsmLoad():
         cls.log.info("[Completed]: Setup class")
         cls.default_cpu_usage = False
 
+    def setup_method(self):
+        self.log.info("Deleting older jmeter logs : %s",self.jmx_obj.jtl_log_path )
+        shutil.rmtree(self.jmx_obj.jtl_log_path)
+
     def teardown_method(self):
         """Teardown method
         """
@@ -90,6 +95,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -128,6 +134,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -149,6 +156,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -179,6 +187,7 @@ class TestCsmLoad():
         assert resp, "Jmeter Execution Failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
+    @pytest.mark.lr
     @pytest.mark.jmeter
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
@@ -244,4 +253,41 @@ class TestCsmLoad():
         assert resp[0], resp[1]
         self.log.info("\nStep 3: Successfully verified CPU usage fault alert on CSM REST API. \n")
 
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lc
+    @pytest.mark.jmeter
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.tags('TEST-32547')
+    def test_32547(self):
+        """Test maximum number of same users which can login per second using CSM REST.
+        """
+        test_case_name = cortxlogging.get_frame()
+        self.log.info("##### Test started -  %s #####", test_case_name)
+        test_cfg = self.test_cfgs["test_32547"]
+        fpath = os.path.join(self.jmx_obj.jmeter_path, self.jmx_obj.test_data_csv)
+        content = []
+        os.remove(fpath)
+        fieldnames = ["role", "user", "pswd"]
+        content.append({fieldnames[0]: "admin",
+                        fieldnames[1]: CSM_REST_CFG["csm_admin_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["csm_admin_user"]["password"]})
+        content.append({fieldnames[0]: "s3",
+                        fieldnames[1]: CSM_REST_CFG["s3account_user"]["username"],
+                        fieldnames[2]: CSM_REST_CFG["s3account_user"]["password"]})
+        self.log.info("Test data file path : %s", fpath)
+        self.log.info("Test data content : %s", content)
+        config_utils.write_csv(fpath, fieldnames, content)
+        jmx_file = "CSM_Concurrent_Same_User_Login_lc.jmx"
+        self.log.info("Running jmx script: %s", jmx_file)
+        resp = self.jmx_obj.run_jmx(
+            jmx_file,
+            threads=test_cfg["threads"],
+            rampup=test_cfg["rampup"],
+            loop=test_cfg["loop"])
+        assert resp, "Jmeter Execution Failed."
+        err_cnt, total_cnt = self.jmx_obj.get_err_cnt(os.path.join(self.jmx_obj.jtl_log_path,
+                                                      "statistics.json"))
+        assert err_cnt == 0, f"{err_cnt} of {total_cnt} requests have failed."
         self.log.info("##### Test completed -  %s #####", test_case_name)

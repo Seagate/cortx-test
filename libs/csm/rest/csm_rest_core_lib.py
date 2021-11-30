@@ -20,12 +20,15 @@
 #
 """ This is the core module for REST API. """
 
-import logging
 import json
-import requests
+import logging
 
+import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from commons import constants
 from commons.constants import Rest as const
+from config import CMN_CFG
 
 
 class RestClient:
@@ -48,8 +51,10 @@ class RestClient:
             self._config["mgmt_vip"], str(self._config["port"]))
         self._json_file_path = self._config[
             "jsonfile"] if 'jsonfile' in self._config else const.JOSN_FILE
+        self.secure_connection = self._config["secure"]
 
-    def rest_call(self, request_type, endpoint, secure_connection=True,
+    # pylint: disable=too-many-arguments
+    def rest_call(self, request_type, endpoint=None,
                   data=None, headers=None, params=None, json_dict=None,
                   save_json=False):
         """
@@ -64,14 +69,22 @@ class RestClient:
         :return: response of the request
         """
         # Building final endpoint request url
-        set_secure = const.SSL_CERTIFIED if secure_connection else const.NON_SSL
-        request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
+        set_secure = const.SSL_CERTIFIED if self.secure_connection else const.NON_SSL
+        if endpoint is None:
+            request_url = "{}{}".format(set_secure, self._base_url)
+        else:
+            request_url = "{}{}{}".format(set_secure, self._base_url, endpoint)
         self.log.debug("Request URL : %s", request_url)
         self.log.debug("Request type : %s", request_type.upper())
         self.log.debug("Header : %s", headers)
-        self.log.debug("Data : %s", data)
         self.log.debug("Parameters : %s", params)
         self.log.debug("json_dict: %s", json_dict)
+        # TODO: Need to be verified and fix by CSM team. Temporary fix for s3 failures
+        if CMN_CFG.get("product_family") == constants.PROD_FAMILY_LC:
+            # To Resolve {'error_code': '4099', 'message': 'Invalid request message received.',
+            # 'error_format_args': 'Request body missing'}
+            data = json.dumps(data) if isinstance(data, dict) else data
+        self.log.debug("Data : %s", data)
         # Request a REST call
         response_object = self._request[request_type](
             request_url, headers=headers,

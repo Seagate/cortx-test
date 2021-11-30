@@ -60,63 +60,9 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 
-# S3IAMCLI Commands
+# aws s3 commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
 CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
-CREATE_ACC_USR_S3IAMCLI = "s3iamcli CreateUser -n {} --access_key={} --secret_key={}"
-CMD_LIST_ACC = "s3iamcli Listaccounts --ldapuser={} --ldappasswd={}"
-CMD_LST_USR = "s3iamcli ListUsers --access_key={} --secret_key={}"
-CMD_CREATE_ACC = "s3iamcli CreateAccount -n {} -e {} --ldapuser={} --ldappasswd={}"
-CMD_DEL_ACC = "s3iamcli deleteaccount -n {} --access_key={} --secret_key={}"
-CMD_DEL_ACC_FORCE = "s3iamcli deleteaccount -n {} --access_key={} --secret_key={} --force"
-UPDATE_ACC_LOGIN_PROFILE = "s3iamcli UpdateAccountLoginProfile -n {} --access_key={}" \
-                           " --secret_key={}"
-UPDATE_USR_LOGIN_PROFILE = "s3iamcli UpdateUserLoginProfile -n {} --access_key={} --secret_key={}"
-GET_ACC_PROFILE = "s3iamcli GetAccountLoginProfile -n {} --access_key={} --secret_key={}"
-GET_TEMP_ACC_DURATION = "s3iamcli GetTempAuthCredentials -a {} --password {} -d {}"
-GET_TEMP_ACC = "s3iamcli GetTempAuthCredentials -a {} --password {}"
-GET_TEMP_USR_DURATION = "s3iamcli GetTempAuthCredentials -a {} -n {} --password {} -d {}"
-GET_TEMP_USR = "s3iamcli GetTempAuthCredentials -a {} -n {} --password {}"
-CMD_CHANGE_PWD = "s3iamcli ChangePassword --old_password {} --new_password {} --access_key={} " \
-                 "--secret_key={}"
-CREATE_USR_PROFILE_PWD_RESET = "s3iamcli CreateUserLoginProfile -n {} --password={}" \
-                               " --access_key={} --secret_key={} --password-reset-required"
-CREATE_USR_PROFILE_NO_PWD_RESET = "s3iamcli CreateUserLoginProfile -n {} --password={} " \
-                                  "--access_key={} --secret_key={} --no-password-reset-required"
-CREATE_ACC_PROFILE_PWD_RESET = "s3iamcli CreateAccountLoginProfile -n {} --password={} " \
-                               "--access_key={} --secret_key={} --password-reset-required"
-CREATE_ACC_PROFILE_WITHOUT_BOTH_RESET = "s3iamcli CreateAccountLoginProfile -n {} --password={}" \
-                                        " --access_key={} --secret_key={}"
-CREATE_ACC_RROFILE_NO_PWD_RESET = "s3iamcli CreateAccountLoginProfile -n {} --password={} " \
-                                  "--access_key={} --secret_key={} --no-password-reset-required"
-CREATE_ACC_RROFILE_WITH_BOTH_RESET = "s3iamcli CreateAccountLoginProfile -n {} --password={} " \
-                                     "--access_key={} --secret_key={} --password-reset-required " \
-                                     "--no-password-reset-required"
-UPDATE_ACC_PROFILE_RESET = "s3iamcli UpdateAccountLoginProfile -n {} --password={} " \
-                           "--access_key={} --secret_key={} --password-reset-required"
-UPDATE_ACC_PROFILE_NO_RESET = "s3iamcli UpdateAccountLoginProfile -n {} --password={} " \
-                              "--access_key={} --secret_key={} --no-password-reset-required"
-UPDATE_ACC_PROFILE_BOTH_RESET = "s3iamcli UpdateAccountLoginProfile -n {} --password={} " \
-                                "--access_key={} --secret_key={} --password-reset-required " \
-                                "--no-password-reset-required"
-UPDATE_USR_PROFILE_RESET = "s3iamcli UpdateUserLoginProfile -n {} --password={} --access_key={} " \
-                           "--secret_key={} --password-reset-required"
-UPDATE_ACC_PROFILE = "s3iamcli UpdateUserLoginProfile -n {} --password={} --access_key={} " \
-                     "--secret_key={} --no-password-reset-required"
-UPDATE_USR_PROFILE_BOTH_RESET = "s3iamcli UpdateUserLoginProfile -n {0} --password={1} " \
-                                "--access_key={2} --secret_key={3} --password-reset-required " \
-                                "--no-password-reset-required"
-GET_USRLOGING_PROFILE = "s3iamcli GetUserLoginProfile -n {} --access_key={} --secret_key={}"
-CREATE_USR_LOGIN_PROFILE_NO_RESET = "s3iamcli CreateUserLoginProfile -n {} --password={} " \
-                                    "--access_key={} --secret_key={} --password-reset-required " \
-                                    "--no-password-reset-required"
-CREATE_USR_LOGIN_PROFILE = "s3iamcli CreateUserLoginProfile -n {} --password={} --access_key={} " \
-                           "--secret_key={}"
-RESET_ACCESS_ACC = "s3iamcli resetaccountaccesskey -n {} --ldapuser={} --ldappasswd={}"
-DEL_ACNT_USING_TEMP_CREDS = "s3iamcli deleteaccount -n {} --access_key={} --secret_key={} " \
-                            "--session_token={}"
-DEL_ACNT_USING_TEMP_CREDS_FORCE = "s3iamcli deleteaccount -n {} --access_key={} --secret_key={} " \
-                                  "--session_token={} --force"
 S3_UPLOAD_FILE_CMD = "aws s3 cp {0} s3://{1}/{2}"
 S3_UPLOAD_FOLDER_CMD = "aws s3 cp {0} s3://{1}/ --recursive --profile {2}"
 S3_DOWNLOAD_BUCKET_CMD = "aws s3 cp --recursive s3://{} {} --profile {}"
@@ -249,10 +195,12 @@ CMD_UMOUNT = "umount {}"
 CMD_TAR = "tar -zxvf {} -C {}"
 CMD_REMOVE_DIR = "rm -rf {}"
 CMD_IFACE_IP = "netstat -ie | grep -B1 \"{}\" | head -n1 | awk '{{print $1}}'"
+CMD_GET_IP_IFACE = "/sbin/ifconfig \"{}\" | awk '/inet / {{print $2}}'"
 CMD_HOSTS = "cat /etc/hosts"
 CMD_GET_NETMASK = "ifconfig | grep \"{}\" | awk '{{print $4}}'"
 # Provisioner commands
 CMD_LSBLK = "lsblk -S | grep disk | wc -l"
+CMD_NUM_CPU = "nproc"
 CMD_OS_REL = "cat /etc/redhat-release"
 CMD_KRNL_VER = "uname -r"
 CMD_PRVSNR_VER = "provisioner --version"
@@ -457,8 +405,8 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
 CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
-CLSTR_RESET_COMMAND="cortx_setup cluster reset --type all"
-CLSTR_RESET_H_COMMAND="cortx_setup cluster reset -h"
+CLSTR_RESET_COMMAND = "cortx_setup cluster reset --type all"
+CLSTR_RESET_H_COMMAND = "cortx_setup cluster reset -h"
 
 # Maintenance mode for DI
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
@@ -470,10 +418,6 @@ S3_FI_FLAG_DC_ON_WRITE = 'di_data_corrupted_on_write'
 S3_FI_FLAG_DC_ON_READ = 'di_data_corrupted_on_read'
 S3_FI_FLAG_CSUM_CORRUPT = 'di_obj_md5_corrupted'
 
-FI_ENABLE = 'enable'
-FI_DISABLE = 'disable'
-FI_TEST = 'test'
-
 S3_SRV_PORT = S3_SRV_START_PORT = 28081
 
 # corrupts file before storing;
@@ -484,6 +428,73 @@ DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
 
 # instead of md5 hash of the object stores md5 hash of empty string.
 DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
+
+FI_ENABLE = 'enable'
+FI_DISABLE = 'disable'
+FI_TEST = 'test'
+# Kubernetes commands to interact with service/pods.
+LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
+                    + " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
+K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
+K8S_SVC_CMD = "kubectl get svc"
+K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
+K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
+K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
+K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
+K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
+K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
+K8S_GET_PODS = "kubectl get pods"
+K8S_GET_MGNT = "kubectl get pods -o wide"
+K8S_DELETE_POD = "kubectl delete pod {}"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- hctl status --json"
+K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
+K8S_GET_SVC_JSON = "kubectl get svc -o json"
+K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
+
+K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
+# Kubectl command prefix
+KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
+KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
+                      'custom-columns=":metadata.name,:.status.podIP"'
+KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
+KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
+KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
+KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
+KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
+KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
+# Fetch logs of a pod/service in a namespace.
+FETCH_LOGS = ""
+
+# Helm commands
+HELM_LIST = "helm list"
+HELM_STATUS = "helm status {}"
+HELM_HISTORY = "helm history {}"
+HELM_ROLLBACK = "helm rollback {} {}"
+HELM_GET_VALUES = "helm get values {}"
+
+# LC commands
+CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
+CLSTR_STOP_CMD = "cd {}; sh shutdown-cortx-cloud.sh"
+CLSTR_STATUS_CMD = "cd {}; sh status-cortx-cloud.sh"
+
+CMD_POD_STATUS = "kubectl get pods"
+CMD_SRVC_STATUS = "kubectl get services"
+CMD_GET_NODE = "kubectl get nodes"
+
+# LC deployment
+CMD_MKFS_EXT4 = "mkfs.ext4 -F {}"
+CMD_MOUNT_EXT4 = "mount -t ext4 {} {}"
+CMD_CURL = "curl -o {} {}"
+
+# Git commands
+CMD_GIT_CLONE = "git clone {}"
+CMD_GIT_CHECKOUT = "git checkout {}"
+
+# docker commands
+CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"
+CMD_DOCKER_PULL = "docker pull {}"
 
 # Deployment using Field User
 FIELD_PREPARE_NODE = "node prepare server --site_id {} --rack_id {} --node_id {}"

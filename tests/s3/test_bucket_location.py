@@ -31,7 +31,7 @@ from commons.utils import assert_utils
 from libs.s3 import s3_test_lib
 from libs.s3 import s3_acl_test_lib
 from libs.s3.s3_rest_cli_interface_lib import S3AccountOperations
-from config import S3_CFG
+from config.s3 import S3_CFG
 
 
 class TestBucketLocation:
@@ -71,6 +71,8 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
+    @pytest.mark.sanity
     @pytest.mark.tags("TEST-5310")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_valid_bkt_272(self):
@@ -108,6 +110,7 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5311")
     @CTFailOn(error_handler)
     def test_get_bkt_loc_bkt_not_present_273(self):
@@ -133,6 +136,8 @@ class TestBucketLocation:
 
     # @pytest.mark.parallel This test cause worker crash in bucket policy test suites.
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
+    @pytest.mark.regression
     @pytest.mark.tags("TEST-7419")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_with_permission_274(self):
@@ -212,6 +217,7 @@ class TestBucketLocation:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_bucket_location
     @pytest.mark.tags("TEST-5312")
     @CTFailOn(error_handler)
     def test_cross_account_get_bkt_loc_275(self):
