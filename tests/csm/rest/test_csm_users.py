@@ -72,6 +72,7 @@ class TestCsmUser():
         if not s3acc_already_present:
             s3acc_already_present = cls.config.setup_csm_s3()
         assert s3acc_already_present
+        cls.created_users = []
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
         cls.csm_conf_path = cons.CSM_CONF_PATH
@@ -81,6 +82,22 @@ class TestCsmUser():
         cls.s3_accounts = RestS3user()
         cls.log.info("Initiating Rest Client ...")
 
+    def teardown_method(self):
+        """"
+        Teardown for deleting any csm user which is not deleted due to test failure.
+        """
+        self.log.info("[STARTED] ######### Teardown #########")
+        self.log.info("Deleting all csm users except predefined ones...")
+        for usr in self.created_users:
+            self.log.info("Sending request to delete csm user %s", usr)
+            try:
+                self.csm_user.delete_csm_user(usr), "Failed to delete user."
+            except BaseException as err:
+                self.log.warning("Ignoring %s while deleting user: %s", err, usr)
+        self.config.delete_csm_users()
+        self.log.info("Users except pre-defined ones deleted.")
+        self.log.info("[COMPLETED] ######### Teardown #########")
+    
     @pytest.mark.lc
     @pytest.mark.cluster_user_ops
     @pytest.mark.csmrest
@@ -4435,6 +4452,8 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
         password = CSM_REST_CFG["csm_user_manage"]["password"]
         assert response.json()['role'] == 'manage', "User is not created with manage role"
         self.log.info("Verified User %s got created successfully", username)
@@ -4446,6 +4465,8 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
         password = CSM_REST_CFG["csm_user_monitor"]["password"]
         assert response.json()['role'] == 'monitor', "User is not created with monitor role"
         self.log.info("Verified User %s got created successfully", username)
@@ -4478,6 +4499,8 @@ class TestCsmUser():
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
         user_id = response.json()["id"]
+        self.created_users.append(user_id)
+        self.log.info("users list is %s", self.created_users)
         password = CSM_REST_CFG["csm_user_manage"]["password"]
         assert response.json()['role'] == 'manage', "User is not created with manage role"
         self.log.info("Verified User %s got created successfully", username)
@@ -4495,6 +4518,8 @@ class TestCsmUser():
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
             user_id = response.json()["id"]
+            self.created_users.append(user_id)
+            self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'manage', "User is not created with manager role"
             self.log.info("Verified User %s got created successfully", username)
             users.append(username)
