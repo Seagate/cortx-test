@@ -33,7 +33,7 @@ from commons.constants import PROD_FAMILY_LR
 from commons.constants import PROD_TYPE_K8S
 from commons.constants import PROD_TYPE_NODE
 from commons.helpers.node_helper import Node
-from commons.helpers.node_helper import LogicalNode
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils
 from commons.exceptions import CTException
