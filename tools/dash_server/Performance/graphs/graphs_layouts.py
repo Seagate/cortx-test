@@ -101,7 +101,8 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_large
+                style=style_dropdown_large,
+                clearable=False
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
@@ -148,7 +149,7 @@ graphs_input_options = [
                 label="Compare",
                 labelPosition="bottom",
                 style={'color': '#FFFFFF', 'margin-top': '15px',
-                       'margin-right': '10px'}
+                       'margin-right': '10px', }
             ),
         ],
         justify='center'
