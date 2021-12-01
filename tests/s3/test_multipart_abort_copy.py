@@ -252,6 +252,7 @@ class TestMultipartAbortCopy:
         self.log.info("ENDED: Test aborting multipart upload that is in progress")
 
     @pytest.mark.s3_ops
+    @pytest.mark.regression
     @pytest.mark.tags('TEST-29165')
     @CTFailOn(error_handler)
     def test_copy_of_copied_multipart_object_29165(self):

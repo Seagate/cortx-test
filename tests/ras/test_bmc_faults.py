@@ -281,6 +281,7 @@ class TestBMCAlerts:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23728")
@@ -405,6 +406,7 @@ class TestBMCAlerts:
         LOGGER.info("ENDED: Test alerts when BMC IP is changed.")
 
     @pytest.mark.tags("TEST-23729")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_bmc_ip_port_fault_23729(self):
