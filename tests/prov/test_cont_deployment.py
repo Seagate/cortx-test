@@ -53,10 +53,6 @@ class TestContDeployment:
         cls.conf = (os.getenv("EC_CONFIG")).lower()
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
-        cls.vm_username = os.getenv("QA_VM_POOL_ID",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["uname"]))
-        cls.vm_password = os.getenv("QA_VM_POOL_PASSWORD",
-                                    pswdmanager.decrypt(HA_CFG["vm_params"]["passwd"]))
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
         cls.num_nodes = len(CMN_CFG["nodes"])
         cls.worker_node_list = []
