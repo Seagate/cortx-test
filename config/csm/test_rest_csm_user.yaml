@@ -260,3 +260,9 @@ test_32171:
     error_code: 4101
     message: "{} can not update the role for {}"
     message_id: "update_not_allowed"
+test_32180:
+    error_code: 4101
+    message: "Cannot delete the last {} user"
+    message_id: "user_permission_denied"
+test_32181:
+    current_password: "Seagate@123"
