@@ -282,8 +282,6 @@ class ProvDeployK8sCortxLib:
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
             for key, value in data.items():
-                if key in ("kafka", "zookeeper"):
-                    value = "bitnami/" + key + ":" + value
                 cmd = common_cmd.CMD_DOCKER_PULL.format(value)
                 obj.execute_cmd(cmd=cmd)
         return True
@@ -1008,7 +1006,7 @@ class ProvDeployK8sCortxLib:
         param: master node obj list
         param: worker node obj list
         keyword:setup_k8s_cluster_flag: flag to deploy k8s setup
-        keyword:cortx_cluster_deploy: flag to deploy cortx cluster
+        keyword:cortx_cluster_deploy_flag: flag to deploy cortx cluster
         keyword:setup_client_config_flag: flsg to setup client with haproxy
         keyword:run_basic_s3_io_flag: flag to run basic s3 io
         keyword:run_s3bench_workload_flag: flag to run s3bench IO
@@ -1019,7 +1017,7 @@ class ProvDeployK8sCortxLib:
             kwargs.get("setup_k8s_cluster_flag",
                        PROV_CFG['k8s_cortx_deploy']['setup_k8s_cluster_flag'])
         cortx_cluster_deploy_flag = \
-            kwargs.get("cortx_cluster_deploy",
+            kwargs.get("cortx_cluster_deploy_flag",
                        PROV_CFG['k8s_cortx_deploy']['cortx_cluster_deploy_flag'])
         setup_client_config_flag = \
             kwargs.get("setup_client_config_flag",
