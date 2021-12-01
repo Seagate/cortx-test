@@ -150,11 +150,5 @@
 {
     "s3_io": "fqdn:port",
     "s3_auth": "fqdn:port"
-},
-"load_balancer_ip":
-{
-    "data_ip":  "ip_1,ip_2,ip_3",
-    "control_ip": "control_ip_1"
 }
-
 }
