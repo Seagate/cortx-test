@@ -282,6 +282,8 @@ class ProvDeployK8sCortxLib:
         for obj in worker_obj_list:
             obj.execute_cmd(common_cmd.CMD_DOCKER_PULL.format(self.cortx_image))
             for key, value in data.items():
+                if key in ("kafka", "zookeeper"):
+                    value = "bitnami/" + key + ":" + value
                 cmd = common_cmd.CMD_DOCKER_PULL.format(value)
                 obj.execute_cmd(cmd=cmd)
         return True
