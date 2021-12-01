@@ -363,32 +363,37 @@ class TestDIDurability:
         self.log.info(
             "STARTED: Corrupt data blocks of an object at Motr level and "
             "verify read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        self.log.info("Step 1: Create a bucket.")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.info("Step 2: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 2: created a corrupted file at location %s", location)
+        self.log.info("Step 3: enable data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 3: enabled data corruption")
+        else:
+            self.log.info("Step 3: failed to enable data corruption")
+            assert False
+        self.log.info("Step 4: Put object in a bucket.")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        self.log.info("Step 5: Verify get object.")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_false(resp[0], resp)
         self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        self.s3_test_obj.create_bucket_put_object(
-            self.bucket_name, self.object_name, self.file_path, self.file_size)
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        self.log.info(
-            "Step 3: Verify read (Get) of an object whose metadata is "
+            "Step 5: Verified read (Get) of an object whose metadata is "
             "corrupted.")
-        res = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verified read (Get) of an object whose metadata is "
-            "corrupted.")
-        self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 6: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Checked expected errors in logs or notification.")
+            "Step 6: Checked expected errors in logs or notification.")
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and verify "
             "read (Get).")
@@ -403,37 +408,44 @@ class TestDIDurability:
         self.log.info(
             "STARTED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        self.log.info("Step 1: Create a bucket.")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.info("Step 2: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 2: created a corrupted file at location %s", location)
+        self.log.info("Step 3: enable data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 3: enabled data corruption")
+        else:
+            self.log.info("Step 3: failed to enable data corruption")
+            assert False
+        self.log.info("Step 4: Put object in a bucket.")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
         self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        self.s3_test_obj.create_bucket_put_object(
-            self.bucket_name, self.object_name, self.file_path, self.file_size)
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Corrupted data blocks of an object at motr level.")
-        self.log.info(
-            "Step 3: Verify range read (Get) of an object whose metadata"
+            "Step 5: Verify range read (Get) of an object whose metadata"
             " is corrupted.")
         res = self.s3_mp_test_obj.get_byte_range_of_object(
             self.bucket_name, self.object_name, 2025, 9216)
         assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verified range read (Get) of an object whose metadata"
-            " is corrupted.")
+            "Step 5: Verified read (Get) of an object whose data is "
+            "corrupted.")
         self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 6: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Checked for expected errors in logs or notification.")
+            "Step 6: Checked expected errors in logs or notification.")
         self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
-
+            "ENDED: Corrupt data blocks of an object at Motr level and verify "
+            "range read (Get).")
+    
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22913')
