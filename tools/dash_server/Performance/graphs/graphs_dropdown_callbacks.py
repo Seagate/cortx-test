@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 
 from Performance.global_functions import get_dict_from_array,\
@@ -36,9 +36,10 @@ from common import app
     Output('graphs_branch_dropdown', 'value'),
     Output('graphs_branch_dropdown', 'disabled'),
     Input('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_branches_dropdown(release_combined):
+def update_branches_dropdown(release_combined, current_value):
     """updates branches in default select dropdown"""
     options = None
     value = None
@@ -51,7 +52,9 @@ def update_branches_dropdown(release_combined):
         branches = get_distinct_keys(release, 'Branch', {'OS': op_sys})
         if branches:
             options = get_dict_from_array(branches, False)
-            if 'stable' in branches:
+            if current_value in branches:
+                value = current_value
+            elif 'stable' in branches:
                 value = 'stable'
             elif 'cortx-1.0' in branches:
                 value = 'cortx-1.0'
@@ -89,12 +92,13 @@ def update_placeholder(xfilter):
     Output('graphs_build_dropdown', 'options'),
     Output('graphs_build_dropdown', 'value'),
     Output('graphs_build_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
     Input('graphs_branch_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_options_dropdown(xfilter, release_combined, branch):
+def update_options_dropdown(branch, xfilter, release_combined, current_value):
     """updates builds/ object sizes in default select dropdown"""
     versions = None
     value = None
@@ -110,11 +114,17 @@ def update_options_dropdown(xfilter, release_combined, branch):
             if xfilter == 'Build':
                 builds = sort_builds_list(options)
                 versions = get_dict_from_array(builds, True)
-                value = versions[0]['value']
+                if current_value in versions:
+                    value = current_value
+                else:
+                    value = versions[0]['value']
             else:
                 obj_sizes = sort_object_sizes_list(options)
                 versions = get_dict_from_array(obj_sizes, False)
-                value = versions[-1]['value']
+                if current_value in versions:
+                    value = current_value
+                else:
+                    value = versions[-1]['value']
 
             if len(options) == 1:
                 disabled = True
@@ -128,14 +138,15 @@ def update_options_dropdown(xfilter, release_combined, branch):
     Output('graphs_nodes_dropdown', 'options'),
     Output('graphs_nodes_dropdown', 'value'),
     Output('graphs_nodes_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
     Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_nodes_first(xfilter, release_combined, branch, option1, bench):
+def update_nodes_first(option1, xfilter, release_combined, branch, bench, current_value):
     """updates nodes in default select dropdown"""
     options = None
     value = None
@@ -151,7 +162,10 @@ def update_nodes_first(xfilter, release_combined, branch, option1, bench):
         nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[-1]['value']
+            if current_value in nodes:
+                value = current_value
+            else:
+                value = options[-1]['value']
             if len(options) == 1:
                 disabled = True
         else:
@@ -164,15 +178,17 @@ def update_nodes_first(xfilter, release_combined, branch, option1, bench):
     Output('graphs_pfull_dropdown', 'options'),
     Output('graphs_pfull_dropdown', 'value'),
     Output('graphs_pfull_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_nodes_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_pfull_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_percentfill_dropdown(xfilter, release_combined, branch, option1, bench, nodes):
+def update_percentfill_dropdown(nodes, xfilter, release_combined, branch,
+                                option1, bench, current_value):
     """updates percentage fill in cluster in default select dropdown"""
     options = None
     value = None
@@ -187,7 +203,10 @@ def update_percentfill_dropdown(xfilter, release_combined, branch, option1, benc
             'Name': bench, 'Count_of_Servers': nodes})
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
-            value = options[0]['value']
+            if current_value in pfulls:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(pfulls) == 1:
                 disabled = True
         else:
@@ -200,16 +219,18 @@ def update_percentfill_dropdown(xfilter, release_combined, branch, option1, benc
     Output('graphs_custom_dropdown', 'options'),
     Output('graphs_custom_dropdown', 'value'),
     Output('graphs_custom_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
     Input('graphs_pfull_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
+    State('graphs_custom_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_custom_dropdown(xfilter, release_combined, branch, option1, bench, nodes, pfill):
+def update_custom_dropdown(pfill, xfilter, release_combined, branch,
+                           option1, bench, nodes, current_value):
     """updates custom field in default select dropdown"""
     options = None
     value = None
@@ -224,7 +245,10 @@ def update_custom_dropdown(xfilter, release_combined, branch, option1, bench, no
             'Count_of_Servers': nodes, 'Percentage_full': pfill})
         if custom:
             options = get_dict_from_array(custom, False)
-            value = options[0]['value']
+            if current_value in custom:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(custom) == 1:
                 disabled = True
         else:
@@ -237,18 +261,19 @@ def update_custom_dropdown(xfilter, release_combined, branch, option1, bench, no
     Output('graphs_iteration_dropdown', 'options'),
     Output('graphs_iteration_dropdown', 'value'),
     Output('graphs_iteration_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
-    Input('graphs_pfull_dropdown', 'value'),
     Input('graphs_custom_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
+    State('graphs_pfull_dropdown', 'value'),
+    State('graphs_iteration_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_iterations_dropdown(xfilter, release_combined,
-                               branch, option1, bench, nodes, pfill, custom):
+def update_iterations_dropdown(custom, xfilter, release_combined,
+                               branch, option1, bench, nodes, pfill, current_value):
     """updates iterations of run in default select dropdown"""
     options = None
     value = None
@@ -260,12 +285,15 @@ def update_iterations_dropdown(xfilter, release_combined,
         op_sys = release_combined.split("_")[1]
         iterations = get_distinct_keys(release, 'Iteration',
                                        {'OS': op_sys, 'Branch': branch, xfilter: option1,
-                                       'Name': bench, 'Count_of_Servers': nodes,
-                                       'Percentage_full': pfill, 'Custom': custom})
+                                        'Name': bench, 'Count_of_Servers': nodes,
+                                        'Percentage_full': pfill, 'Custom': custom})
         iterations.sort()
         if iterations:
             options = get_dict_from_array(iterations, True, 'itrns')
-            value = options[0]['value']
+            if current_value in iterations:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(iterations) == 1:
                 disabled = True
         else:
@@ -278,19 +306,20 @@ def update_iterations_dropdown(xfilter, release_combined,
     Output('graphs_sessions_dropdown', 'options'),
     Output('graphs_sessions_dropdown', 'value'),
     Output('graphs_sessions_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
-    Input('graphs_pfull_dropdown', 'value'),
     Input('graphs_iteration_dropdown', 'value'),
-    Input('graphs_custom_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
+    State('graphs_pfull_dropdown', 'value'),
+    State('graphs_custom_dropdown', 'value'),
+    State('graphs_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_sessions_dropdown(xfilter, release_combined, branch,
-                             option1, bench, nodes, pfill, itrns, custom):
+def update_sessions_dropdown(itrns, xfilter, release_combined, branch,
+                             option1, bench, nodes, pfill, custom, current_value):
     """updates sessions in default select dropdown"""
     options = None
     value = None
@@ -308,7 +337,9 @@ def update_sessions_dropdown(xfilter, release_combined, branch,
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            if 600 in sessions:
+            if current_value in sessions:
+                value = current_value
+            elif 600 in sessions:
                 value = 600
             else:
                 value = options[-1]['value']
@@ -323,19 +354,20 @@ def update_sessions_dropdown(xfilter, release_combined, branch,
     Output('graphs_buckets_dropdown', 'options'),
     Output('graphs_buckets_dropdown', 'value'),
     Output('graphs_buckets_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
-    Input('graphs_pfull_dropdown', 'value'),
     Input('graphs_iteration_dropdown', 'value'),
-    Input('graphs_custom_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
+    State('graphs_pfull_dropdown', 'value'),
+    State('graphs_custom_dropdown', 'value'),
+    State('graphs_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_buckets_dropdown(xfilter, release_combined, branch, option1, bench,
-                            nodes, pfill, itrns, custom):
+def update_buckets_dropdown(itrns, xfilter, release_combined, branch, option1, bench,
+                            nodes, pfill, custom, current_value):
     """updates buckets in default select dropdown"""
     options = None
     value = None
@@ -352,7 +384,10 @@ def update_buckets_dropdown(xfilter, release_combined, branch, option1, bench,
         buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
-            value = options[0]['value']
+            if current_value in buckets:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(buckets) == 1:
                 disabled = True
         else:
@@ -395,9 +430,10 @@ def update_compare_dropdown_styles(flag):
     Output('graphs_branch_compare_dropdown', 'disabled'),
     Input('graphs_release_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_branches_dropdown_2(release_combined, flag):
+def update_branches_dropdown_2(release_combined, flag, current_value):
     """updates branches in comparison select dropdown"""
     options = None
     value = None
@@ -412,7 +448,9 @@ def update_branches_dropdown_2(release_combined, flag):
         branches = get_distinct_keys(release, 'Branch', {'OS': op_sys})
         if branches:
             options = get_dict_from_array(branches, False)
-            if 'stable' in branches:
+            if current_value in branches:
+                value = current_value
+            elif 'stable' in branches:
                 value = 'stable'
             elif 'cortx-1.0' in branches:
                 value = 'cortx-1.0'
@@ -430,13 +468,14 @@ def update_branches_dropdown_2(release_combined, flag):
     Output('graphs_build_compare_dropdown', 'options'),
     Output('graphs_build_compare_dropdown', 'value'),
     Output('graphs_build_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
     Input('graphs_branch_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_options_dropdown_2(xfilter, release_combined, branch, flag):
+def update_options_dropdown_2(branch, flag, xfilter, release_combined, current_value):
     """updates build/ object sizes in comparison select dropdown"""
     versions = None
     value = None
@@ -454,11 +493,17 @@ def update_options_dropdown_2(xfilter, release_combined, branch, flag):
             if xfilter == 'Build':
                 builds = sort_builds_list(options)
                 versions = get_dict_from_array(builds, True)
-                value = versions[0]['value']
+                if current_value in builds:
+                    value = current_value
+                else:
+                    value = versions[0]['value']
             else:
                 obj_sizes = sort_object_sizes_list(options)
                 versions = get_dict_from_array(obj_sizes, False)
-                value = versions[0]['value']
+                if current_value in obj_sizes:
+                    value = current_value
+                else:
+                    value = versions[0]['value']
 
             if len(options) == 1:
                 disabled = True
@@ -472,15 +517,16 @@ def update_options_dropdown_2(xfilter, release_combined, branch, flag):
     Output('graphs_nodes_compare_dropdown', 'options'),
     Output('graphs_nodes_compare_dropdown', 'value'),
     Output('graphs_nodes_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
     Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_nodes_dropdown_2(xfilter, release_combined, branch, option1, bench, flag):
+def update_nodes_dropdown_2(option1, flag, xfilter, release_combined, branch, bench, current_value):
     """updates nodes in comparison select dropdown"""
     options = None
     value = None
@@ -498,7 +544,10 @@ def update_nodes_dropdown_2(xfilter, release_combined, branch, option1, bench, f
         nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[-1]['value']
+            if current_value in nodes:
+                value = current_value
+            else:
+                value = options[-1]['value']
             if len(options) == 1:
                 disabled = True
         else:
@@ -511,16 +560,18 @@ def update_nodes_dropdown_2(xfilter, release_combined, branch, option1, bench, f
     Output('graphs_pfull_compare_dropdown', 'options'),
     Output('graphs_pfull_compare_dropdown', 'value'),
     Output('graphs_pfull_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_nodes_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_pfull_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_percentfill_dropdown_2(xfilter, release_combined, branch, option1, bench, nodes, flag):
+def update_percentfill_dropdown_2(nodes, flag, xfilter, release_combined, branch, option1,
+                                  bench, current_value):
     """updates percent fill in cluster in comparison select dropdown"""
     options = None
     value = None
@@ -537,7 +588,10 @@ def update_percentfill_dropdown_2(xfilter, release_combined, branch, option1, be
             'Name': bench, 'Count_of_Servers': nodes})
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
-            value = options[0]['value']
+            if current_value in pfulls:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(pfulls) == 1:
                 disabled = True
         else:
@@ -550,17 +604,19 @@ def update_percentfill_dropdown_2(xfilter, release_combined, branch, option1, be
     Output('graphs_custom_compare_dropdown', 'options'),
     Output('graphs_custom_compare_dropdown', 'value'),
     Output('graphs_custom_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
     Input('graphs_pfull_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
+    State('graphs_custom_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_custom_dropdown_2(xfilter, release_combined, branch, option1, bench, nodes, pfill, flag):
+def update_custom_dropdown_2(pfill, flag, xfilter, release_combined, branch, option1, bench, nodes,
+                             current_value):
     """updates custom field in comparison select dropdown"""
     options = None
     value = None
@@ -577,7 +633,10 @@ def update_custom_dropdown_2(xfilter, release_combined, branch, option1, bench, 
             'Name': bench, 'Count_of_Servers': nodes, 'Percentage_full': pfill})
         if custom:
             options = get_dict_from_array(custom, False)
-            value = options[0]['value']
+            if current_value in custom:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(custom) == 1:
                 disabled = True
         else:
@@ -590,19 +649,20 @@ def update_custom_dropdown_2(xfilter, release_combined, branch, option1, bench, 
     Output('graphs_iteration_compare_dropdown', 'options'),
     Output('graphs_iteration_compare_dropdown', 'value'),
     Output('graphs_iteration_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
-    Input('graphs_pfull_compare_dropdown', 'value'),
     Input('graphs_custom_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
+    State('graphs_pfull_compare_dropdown', 'value'),
+    State('graphs_iteration_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_iterations_dropdown_2(xfilter, release_combined, branch, option1, bench, nodes, pfill,
-                                 custom, flag):
+def update_iterations_dropdown_2(custom, flag, xfilter, release_combined, branch, option1, bench,
+                                 nodes, pfill, current_value):
     """updates iterations of run in comparison select dropdown"""
     options = None
     value = None
@@ -620,7 +680,10 @@ def update_iterations_dropdown_2(xfilter, release_combined, branch, option1, ben
         iterations.sort()
         if iterations:
             options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[-1]['value']
+            if current_value in iterations:
+                value = current_value
+            else:
+                value = options[-1]['value']
             if len(iterations) == 1:
                 disabled = True
         else:
@@ -633,21 +696,22 @@ def update_iterations_dropdown_2(xfilter, release_combined, branch, option1, ben
     Output('graphs_sessions_compare_dropdown', 'options'),
     Output('graphs_sessions_compare_dropdown', 'value'),
     Output('graphs_sessions_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
-    Input('graphs_pfull_compare_dropdown', 'value'),
     Input('graphs_iteration_compare_dropdown', 'value'),
-    Input('graphs_custom_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
-    Input('graphs_sessions_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
+    State('graphs_pfull_compare_dropdown', 'value'),
+    State('graphs_custom_compare_dropdown', 'value'),
+    State('graphs_sessions_dropdown', 'value'),
+    State('graphs_sessions_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_sessions_dropdown_2(xfilter, release_combined, branch, option1, bench,
-                               nodes, pfill, itrns, custom, flag, sessions_first):
+def update_sessions_dropdown_2(itrns, flag, xfilter, release_combined, branch, option1, bench,
+                               nodes, pfill, custom, sessions_first, current_value):
     """updates sessions in comparison select dropdown"""
     options = None
     value = None
@@ -665,7 +729,9 @@ def update_sessions_dropdown_2(xfilter, release_combined, branch, option1, bench
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            if sessions_first == 'all':
+            if current_value in sessions:
+                value = current_value
+            elif sessions_first == 'all':
                 value = 'all'
                 disabled = True
             elif 600 in sessions:
@@ -683,20 +749,21 @@ def update_sessions_dropdown_2(xfilter, release_combined, branch, option1, bench
     Output('graphs_buckets_compare_dropdown', 'options'),
     Output('graphs_buckets_compare_dropdown', 'value'),
     Output('graphs_buckets_compare_dropdown', 'disabled'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
-    Input('graphs_pfull_compare_dropdown', 'value'),
     Input('graphs_iteration_compare_dropdown', 'value'),
-    Input('graphs_custom_compare_dropdown', 'value'),
     Input('compare_flag', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
+    State('graphs_pfull_compare_dropdown', 'value'),
+    State('graphs_custom_compare_dropdown', 'value'),
+    State('graphs_buckets_compare_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_buckets_dropdown_2(xfilter, release_combined, branch, option1, bench, nodes,
-                              pfill, itrns, custom, flag):
+def update_buckets_dropdown_2(itrns, flag, xfilter, release_combined, branch, option1, bench,
+                              nodes, pfill, custom, current_value):
     """updates buckets in comparison select dropdown"""
     options = None
     value = None
@@ -715,7 +782,10 @@ def update_buckets_dropdown_2(xfilter, release_combined, branch, option1, bench,
         buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
-            value = options[0]['value']
+            if current_value in buckets:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(buckets) == 1:
                 disabled = True
         else:
@@ -734,9 +804,10 @@ def update_buckets_dropdown_2(xfilter, release_combined, branch, option1, bench,
     Input('graphs_build_dropdown', 'value'),
     Input('graphs_benchmark_dropdown', 'value'),
     Input('graphs_sessions_dropdown', 'value'),
+    State('graphs_obj_size_dropdown', 'value'),
     prevent_initial_call=True
 )  # pylint: disable=too-many-arguments
-def update_object_size_dropdown(xfilter, release_combined, branch, build, bench, sessions):
+def update_object_size_dropdown(xfilter, release_combined, branch, build, bench, sessions, c_val):
     """updates a object size dropdown when sessions all is chosen"""
     dict_options = None
     value = None
@@ -759,7 +830,10 @@ def update_object_size_dropdown(xfilter, release_combined, branch, build, bench,
 
             if options:
                 dict_options = get_dict_from_array(options, False)
-                value = dict_options[-1]['value']
+                if c_val in options:
+                    value = c_val
+                else:
+                    value = dict_options[-1]['value']
                 if len(options) == 1:
                     disabled = True
             else:
