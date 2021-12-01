@@ -83,11 +83,11 @@ else:
 if target and proc_name in ["testrunner.py", "testrunner", "pytest"]:
     _use_ssl = '-s' if '-s' in pytest_args else '--use_ssl' if '--use_ssl' in pytest_args else None
     use_ssl = pytest_args[pytest_args.index(_use_ssl) + 1] if _use_ssl else True
-    os.environ["USE_SSL"] = use_ssl
+    os.environ["USE_SSL"] = str(use_ssl)
 
     _validate_certs = '-c' if '-c' in pytest_args else '--validate_certs' if '--validate_certs' in pytest_args else None
     validate_certs = pytest_args[pytest_args.index(_validate_certs) + 1] if _validate_certs else True
-    os.environ["VALIDATE_CERTS"] = validate_certs
+    os.environ["VALIDATE_CERTS"] = str(validate_certs)
 
 
 def build_s3_endpoints() -> dict:
