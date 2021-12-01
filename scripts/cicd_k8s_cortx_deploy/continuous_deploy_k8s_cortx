@@ -78,7 +78,8 @@ pipeline {
                            pytest tests/prov/test_cont_deployment.py::TestContDeployment::test_n --local True --target $line
                         done < $ALL_SETUP_ENTRY
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
-                        sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
+                        . ./scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
+                        echo $LOG_PATH
                         deactivate
                         '''
                     }
@@ -91,7 +92,8 @@ pipeline {
                             echo "Collect support bundle"
                         fi
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
-                        sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
+                        . ./scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
+                        echo $LOG_PATH
 
                         if [ "${raise_jira}" = "$var_true" ]; then
                             echo "Raise Jira on Failure"
