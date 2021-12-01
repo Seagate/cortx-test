@@ -1,7 +1,7 @@
 pipeline {
 	agent {
         node {
-			label "${Client_node}"
+			label "${CLIENT_NODE}"
  			customWorkspace "/root/${JOB_BASE_NAME}/cortx-test"
 		}
     }
@@ -20,7 +20,6 @@ pipeline {
 			    echo "${WORKSPACE}"
 			    echo "BUILD : ${params.BUILD}"
      			echo "Setup k8s cluster ${params.setup_k8s_cluster}"
-     			echo "Deploy Cortx Cluster ${params.cortx_cluster_deploy}"
      			echo "Setup Client Config ${params.setup_client_config}"
     		    echo "Run Basic S3 IO ${params.run_basic_s3_io}"
     		    echo "Run S3 bench workload ${params.run_s3bench_workload}"
@@ -44,27 +43,27 @@ pipeline {
         }
         stage('CREATE_SETUP_ENTRY') {
             steps {
-            withCredentials([usernamePassword(credentialsId: 'cortxadmin', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
+                withCredentials([usernamePassword(credentialsId: 'cortxadmin', passwordVariable: 'ADMIN_PASSWORD', usernameVariable: 'ADMIN_USER')]) {
 
-            sh label: '', script: ''' source venv/bin/activate
-                SETUP_FILE="cicd_setup_name.txt"
-                ALL_SETUP_ENTRY="all_setup_entry.txt"
+                sh label: '', script: ''' source venv/bin/activate
+                    SETUP_FILE="cicd_setup_name.txt"
+                    ALL_SETUP_ENTRY="all_setup_entry.txt"
 
-                for each in $(echo ${WORKER_NODE_CONFIG})
-                do
-                    export NODES_COUNT=$each
-                    rm -rf $SETUP_FILE
-                    python scripts/cicd_k8s_cortx_deploy/create_db_entry.py
+                    for each in $(echo ${WORKER_NODE_CONFIG})
+                    do
+                        export NODES_COUNT=$each
+                        rm -rf $SETUP_FILE
+                        python scripts/cicd_k8s_cortx_deploy/create_db_entry.py
 
-                    if [ -f "$SETUP_FILE" ]
-                    then
-                        echo "****DB entry successful****"
-                        target_name=`cat $SETUP_FILE`
-                        echo $target_name >> $ALL_SETUP_ENTRY
-                    fi
-                done
-                deactivate
-                '''
+                        if [ -f "$SETUP_FILE" ]
+                        then
+                            echo "****DB entry successful****"
+                            target_name=`cat $SETUP_FILE`
+                            echo $target_name >> $ALL_SETUP_ENTRY
+                        fi
+                    done
+                    deactivate
+                    '''
                 }
             }
         }
@@ -87,15 +86,17 @@ pipeline {
                     {
                         currentBuild.result = "FAILURE"
                         sh label: '', script: '''source venv/bin/activate
-                        if [ ${collect_support_bundle}=='true' ]; then
+                        var_true="true"
+                        if [ "${collect_support_bundle}" = "$var_true" ]; then
                             echo "Collect support bundle"
-                        fi
-                        if [ ${raise_jira}=='true' ]; then
-                            echo "Raise Jira on Failure"
-                            python scripts/cicd_k8s_cortx_deploy/create_jira_issue.py
                         fi
                         chmod a+x scripts/cicd_k8s_cortx_deploy/log_collecter.sh
                         sh scripts/cicd_k8s_cortx_deploy/log_collecter.sh ${BUILD} ${BUILD_NUMBER} ${WORKSPACE}
+
+                        if [ "${raise_jira}" = "$var_true" ]; then
+                            echo "Raise Jira on Failure"
+                            python scripts/cicd_k8s_cortx_deploy/create_jira_issue.py
+                        fi
                         deactivate
                         '''
                     }
@@ -105,7 +106,7 @@ pipeline {
     }
 	post {
         always {
-            echo "End of jenkins_job"
+            echo "End of jenkins job"
         }
     }
 }
