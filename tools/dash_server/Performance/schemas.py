@@ -143,8 +143,8 @@ def get_degraded_schema(data):
 
 
 statistics_column_headings = [
-    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read Avg TTFB (ms)',
-    'Read 99% TTFB (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
+    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB Avg (ms)',
+    'Read TTFB 99% (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
     'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
@@ -166,11 +166,13 @@ def get_dropdown_labels(dropdown_type):
         string: corresponding mapping for the input string
     """
     mapping = {
+        'branch': ' Branch',
+        'build': ' Build',
         'nodes': ' Nodes',
         'pfill': '% Fill',
         'itrns': ' Iteration',
         'buckets': ' Bucket(s)',
-        'sessions': ' Session(s)'
+        'sessions': ' Concurrency'
     }
 
     return mapping[dropdown_type]
