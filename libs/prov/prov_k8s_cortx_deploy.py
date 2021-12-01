@@ -24,7 +24,6 @@ Provisioner utiltiy methods for Deployment of k8s based Cortx Deployment
 import json
 import logging
 import os
-
 import yaml
 
 from commons import commands as common_cmd
@@ -37,7 +36,6 @@ from libs.csm.rest.csm_rest_s3user import RestS3user
 from libs.prov.provisioner import Provisioner
 
 LOGGER = logging.getLogger(__name__)
-
 
 class ProvDeployK8sCortxLib:
     """
@@ -672,7 +670,7 @@ class ProvDeployK8sCortxLib:
         return True, filepath
 
     @staticmethod
-    def deploy_cortx_k8s_cluster(master_node_list: list, worker_node_list: list,
+    def deploy_cortx_k8s_re_job(master_node_list: list, worker_node_list: list,
                                  deploy_target: str = "CORTX-CLUSTER") -> tuple:
         """
         Setup k8s cluster using RE jenkins job
@@ -699,12 +697,9 @@ class ProvDeployK8sCortxLib:
                     f'user={each.username},' \
                     f'pass={each.password}'
                 hosts_input_str.append(input_str)
-        else:
-            return False, "Worker Node List is empty"
         hosts = "\n".join(each for each in hosts_input_str)
         jen_parameter["hosts"] = hosts
         jen_parameter["DEPLOY_TARGET"] = deploy_target
-
         output = Provisioner.build_job(
             k8s_deploy_cfg["cortx_job_name"], jen_parameter, k8s_deploy_cfg["auth_token"],
             k8s_deploy_cfg["jenkins_url"])
@@ -762,6 +757,7 @@ class ProvDeployK8sCortxLib:
         param: master_node_obj : Master Node object
         """
         resp = master_node_obj.get_pod_name(pod_prefix=common_const.POD_NAME_PREFIX)
+        print(resp)
         pod_name = resp[1]
         res = master_node_obj.send_k8s_cmd(
             operation="exec", pod=pod_name, namespace=common_const.NAMESPACE,
