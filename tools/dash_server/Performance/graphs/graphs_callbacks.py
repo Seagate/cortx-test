@@ -99,17 +99,19 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
 
 @app.callback(
     Output('plot_TTFB', 'style'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_operations_dropdown', 'value'),
+    Input('graphs_submit_button', 'n_clicks'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_operations_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_Ttfb_Style(bench, operation):
+def update_Ttfb_Style(n_clicks, bench, operation):
     """hides ttfb plot for non s3bench data"""
     style = None
-    if bench != 'S3bench':
-        style = {'display': 'none'}
-    elif operation == "Write":
-        style = {'display': 'none'}
+    if n_clicks > 0:
+        if bench != 'S3bench':
+            style = {'display': 'none'}
+        elif operation == "Write":
+            style = {'display': 'none'}
 
     return style
 
