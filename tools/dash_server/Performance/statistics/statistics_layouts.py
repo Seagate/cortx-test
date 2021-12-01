@@ -29,12 +29,14 @@ from Performance.styles import style_sub_tab, style_table_caption,\
 
 
 release = [
+    {'label': 'LC-K8S-CentOS-7.9',
+        'value': 'LC_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.9',
-        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.8',
-        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-CentOS',
-        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
 
 ]
@@ -150,7 +152,7 @@ stats_input_options = [
             html.P("Benchmark Configuration » ", style=style_filters_captions),
             Dropdown(
                 id='perf_sessions_dropdown',
-                placeholder="Select Sessions",
+                placeholder="Select Concurrency",
                 style=dict_Style_Stats_input_options
             ),
             Dropdown(

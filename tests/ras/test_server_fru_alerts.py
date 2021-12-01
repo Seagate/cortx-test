@@ -325,6 +325,7 @@ class TestServerFruAlerts:
 
         LOGGER.info("Successfully performed Teardown operation")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23606")
@@ -510,6 +511,7 @@ class TestServerFruAlerts:
             "step.")
         LOGGER.info("ENDED: Test alerts for OS disk removal and insertion")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23622")
@@ -732,6 +734,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23624")
@@ -1012,6 +1015,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alerts for OS disk are persistent across "
                     "sspl stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23715")
@@ -1112,6 +1116,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: TEST-23715: Test alerts for assembling and dissembling RAID array")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23723")
@@ -1291,6 +1296,7 @@ class TestServerFruAlerts:
             "ENDED: Test alerts for failing drive, removing drive"
             "from RAID array and adding drive in RAID array")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23724")
@@ -1481,6 +1487,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test alert persistence of RAID array alerts across node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23725")
@@ -1713,6 +1720,7 @@ class TestServerFruAlerts:
             "ENDED: Test alert persistence of RAID array alerts across sspl "
             "stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23679")
@@ -1908,6 +1916,7 @@ class TestServerFruAlerts:
         LOGGER.info("ENDED: Test alert when one of the node's power cable is "
                     "disconnected and connected")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23682")
@@ -2007,6 +2016,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test alerts for server psu faults")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23685")
@@ -2110,6 +2120,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across node reboot")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23686")
@@ -2290,6 +2301,7 @@ class TestServerFruAlerts:
         LOGGER.info(
             "ENDED: Test system power supply alert persistency across sspl stop and start")
 
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.hw_alert
     @pytest.mark.tags("TEST-23633")

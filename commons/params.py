@@ -35,6 +35,9 @@ VAR_LOG_SYS = '/var/log/'
 
 COMMON_CONFIG = os.path.join(CONFIG_DIR, 'common_config.yaml')
 S3_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_config.yaml')
+S3_MPART_CFG_PATH = os.path.join(CONFIG_DIR,  "s3", "test_multipart_upload.yaml")
+S3_TEMP_CRED_CONFIG_PATH = os.path.join(CONFIG_DIR, "s3", "test_delete_account_temp_cred.yaml")
+S3_BLACK_BOX_CONFIG_PATH = os.path.join(CONFIG_DIR, "blackbox", "test_blackbox.yaml")
 S3_USER_ACC_MGMT_CONFIG_PATH = os.path.join(CONFIG_DIR, 's3', 's3_user_acc_management_test_config.yaml')
 S3_OBJ_TEST_CONFIG = os.path.join(CONFIG_DIR, 's3', 's3_object_test.yaml')
 S3_BKT_TEST_CONFIG = os.path.join(CONFIG_DIR, "s3", "s3_bucket_test.yaml")
@@ -118,4 +121,5 @@ S3_INSTANCES_PER_NODE = 1
 LOCAL_S3_CONFIG = os.path.join(tempfile.gettempdir(), 's3config.yaml')
 DT_PATTERN_PREFIX = '%Y%m%d-%H%M%S'
 
-PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain']
+PROV_SKIP_TEST_FILES_HEALTH_CHECK_PREFIX = ['test_prov', 'test_failure_domain',
+                                            'test_multiple_config_deploy', 'test_cont_deployment']

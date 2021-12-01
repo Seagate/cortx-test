@@ -36,13 +36,16 @@ Xfilter = [
 ]
 
 release = [
+    {'label': 'LC-K8S-CentOS-7.9',
+        'value': 'LC_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.9',
-        'value': '2_CentOS Linux release 7.9.2009 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.9.2009 (Core)'},
     {'label': 'LR-R2-CentOS-7.8',
-        'value': '2_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR2_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-CentOS',
-        'value': '1_CentOS Linux release 7.8.2003 (Core)'},
+        'value': 'LR1_CentOS Linux release 7.8.2003 (Core)'},
     {'label': 'LR-R1-RHEL', 'value': '1_RHEL'},
+
 ]
 
 benchmarks = [  # get from database
@@ -98,7 +101,8 @@ graphs_input_options = [
                 id="graphs_release_dropdown",
                 options=release,
                 placeholder="Release",
-                style=style_dropdown_large
+                style=style_dropdown_large,
+                clearable=False
             ),
             Dropdown(
                 id="graphs_branch_dropdown",
@@ -132,7 +136,7 @@ graphs_input_options = [
             ),
             Dropdown(
                 id='graphs_sessions_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style=style_dropdown_medium
             ),
             Dropdown(
@@ -145,7 +149,7 @@ graphs_input_options = [
                 label="Compare",
                 labelPosition="bottom",
                 style={'color': '#FFFFFF', 'margin-top': '15px',
-                       'margin-right': '10px'}
+                       'margin-right': '10px', }
             ),
         ],
         justify='center'
@@ -190,7 +194,7 @@ graphs_input_options = [
             ),
             Dropdown(
                 id='graphs_sessions_compare_dropdown',
-                placeholder="Sessions",
+                placeholder="Concurrency",
                 style={'display': 'none'}
             ),
             Dropdown(

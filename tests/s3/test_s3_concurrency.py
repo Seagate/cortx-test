@@ -26,26 +26,36 @@ import time
 from multiprocessing import Process, Manager
 
 import pytest
-
-from commons.constants import const
 from commons.ct_fail_on import CTFailOn
 from commons.errorcodes import error_handler
 from commons.params import TEST_DATA_FOLDER
 from commons.utils import assert_utils
 from commons.utils import system_utils
-from commons.utils.config_utils import get_config
-from config import S3CMD_CNF
-from config import S3_CFG
-from libs.s3 import SECRET_KEY, ACCESS_KEY, S3H_OBJ
+from config.s3 import S3CMD_CNF
+from config.s3 import S3_CFG
+from libs.s3 import SECRET_KEY, ACCESS_KEY
+from libs.s3.s3_blackbox_test_lib import S3CMD
 from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 from libs.s3.s3_test_lib import S3TestLib
-
-MANAGER = Manager()
 
 
 class TestS3Concurrency:
     """S3 Concurrency Operations Test suite."""
 
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.log = logging.getLogger(__name__)
+        cls.log.info("STARTED: Setup suite level operation.")
+        cls.log.info("Check, configure and update s3cmd config.")
+        s3cmd_obj = S3CMD(ACCESS_KEY, SECRET_KEY)
+        cls.log.info("Setting access and secret key & other options in s3cfg.")
+        resp = s3cmd_obj.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
+        assert_utils.assert_true(resp, f"Failed to update s3cfg.")
+        cls.manager = Manager()
+        cls.log.info("ENDED: Setup suite level operation.")
+
+    # pylint: disable=attribute-defined-outside-init
     @pytest.fixture(autouse=True)
     def setup(self):
         """
@@ -55,19 +65,18 @@ class TestS3Concurrency:
         """
         self.log = logging.getLogger(__name__)
         self.s3t_obj = S3TestLib(endpoint_url=S3_CFG["s3_url"])
-        self.s3cmdt_obj = S3CmdTestLib(endpoint_url=S3_CFG["s3_url"])
+        self.s3cmdt_obj = S3CmdTestLib()
         self.log.info("STARTED: Setup operations.")
         self.bucket_name = "concurrency-{}".format(time.perf_counter_ns())
         self.bucket_url = "s3://{}".format(self.bucket_name)
         self.obj_name = "obj{}.txt".format(time.perf_counter_ns())
         self.file_name = "concurrency{}.txt".format(time.perf_counter_ns())
-        self.resp_lst = MANAGER.list()
+        self.resp_lst = self.manager.list()
         self.test_dir_path = os.path.join(TEST_DATA_FOLDER, "TestS3Concurrency")
         self.file_path = os.path.join(self.test_dir_path, self.file_name)
         if not system_utils.path_exists(self.test_dir_path):
             system_utils.make_dirs(self.test_dir_path)
             self.log.info("Created path: %s", self.test_dir_path)
-        self.check_update_s3cmd_config()
         self.log.info("ENDED: Setup operations")
         yield
         self.log.info("STARTED: Teardown operations")
@@ -83,25 +92,6 @@ class TestS3Concurrency:
             system_utils.remove_file(self.file_path)
         self.log.info("Local directory was deleted")
         self.log.info("ENDED: Teardown Operations")
-
-    def check_update_s3cmd_config(self):
-        """
-        This method will check and update s3 config.
-        """
-        resp = system_utils.is_rpm_installed(const.S3CMD)
-        assert_utils.assert_true(resp[0], resp[1])
-        resp = system_utils.path_exists(S3_CFG["s3cfg_path"])
-        assert_utils.assert_true(
-            resp, "config path not exists: {}".format(
-                S3_CFG["s3cfg_path"]))
-        s3cmd_access = get_config(
-            S3_CFG["s3cfg_path"], "default", "access_key")
-        s3cmd_secret = get_config(
-            S3_CFG["s3cfg_path"], "default", "secret_key")
-        if s3cmd_access != ACCESS_KEY or s3cmd_secret != SECRET_KEY:
-            self.log.info("Setting access and secret key in s3cfg.")
-            resp = S3H_OBJ.configure_s3cfg(ACCESS_KEY, SECRET_KEY)
-            assert_utils.assert_true(resp, f"Failed to update s3cfg.")
 
     def create_bucket_thread(self, bkt_name, resp_lst):
         """
@@ -317,6 +307,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7954")
     @CTFailOn(error_handler)
     def test_existing_objects_being_overwritten_by_multiple_client_2128(self):
@@ -351,6 +342,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7962")
     @CTFailOn(error_handler)
     def test_obj_download_triggered_from_client_and_delete_triggered_from_other_client_2129(
@@ -387,6 +379,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7956")
     @CTFailOn(error_handler)
     def test_object_download_in_progress_on_one_client_delete_bucket_triggered_from_other_2130(
@@ -425,6 +418,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7957")
     @CTFailOn(error_handler)
     def test_parallel_bucket_creation_of_same_name_from_two_different_clients_2131(
@@ -452,6 +446,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7958")
     @CTFailOn(error_handler)
     def test_parallel_deletion_of_same_object_from_two_different_clients_2132(
@@ -482,6 +477,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7959")
     @CTFailOn(error_handler)
     def test_upload_object_to_bucket_from_one_client_and_parallel_delete_bkt_from_other_client_2133(
@@ -522,6 +518,7 @@ class TestS3Concurrency:
             "try to delete the same bucket from other s3 client")
 
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7960")
     @CTFailOn(error_handler)
     def test_parallel_deletion_of_bucket_from_two_different_clients_2134(self):
@@ -551,6 +548,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7961")
     @CTFailOn(error_handler)
     def test_put_object_through_one_s3_client_try_deleting_it_from_other_client_2135(
@@ -584,6 +582,7 @@ class TestS3Concurrency:
 
     @pytest.mark.parallel
     @pytest.mark.s3_ops
+    @pytest.mark.s3_concurrency
     @pytest.mark.tags("TEST-7963")
     @CTFailOn(error_handler)
     def test_download_an_already_existing_obj_from_one_client_parallel_overwrite_it_2136(
