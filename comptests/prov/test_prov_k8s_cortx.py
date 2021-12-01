@@ -21,6 +21,7 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
+import time
 import pytest
 
 from commons import commands
@@ -34,8 +35,8 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils"]
 
+PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils", "log"]
 
 class TestProvK8Cortx:
 
@@ -69,24 +70,30 @@ class TestProvK8Cortx:
         """
         LOGGER.info("STARTED: N-Node k8s based Cortx Deployment.")
         LOGGER.info("Step 1: Perform k8s Cluster Deployment.")
-        resp = self.deploy_lc_obj.deploy_cortx_k8s_cluster(self.master_node_list,
+        resp = self.deploy_lc_obj.deploy_cortx_k8s_re_job(self.master_node_list,
                                                            self.worker_node_list)
         assert_utils.assert_true(resp[0], resp[1])
         LOGGER.info("Step 1: Cluster Deployment completed.")
-
-        LOGGER.info("Step 2: Check Pods Status.")
-        path = self.deploy_cfg["k8s_dir"]
-        for node in self.master_node_list:
-            resp = self.deploy_lc_obj.validate_cluster_status(node, path)
+        LOGGER.info("Step 2: Check s3 server status.")
+        start_time = int(time.time())
+        end_time = start_time + 1800  # 30 mins timeout
+        while int(time.time()) < end_time:
+            data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
+            for pod_name in data_pod_list[1]:
+                resp = self.deploy_lc_obj.get_hctl_status(self.master_node_list[0], pod_name)
+                if resp[0]:
+                    LOGGER.info("All the services online. Time Taken : %s",
+                                (int(time.time()) - start_time))
+                    break
+            time.sleep(60)
             assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 2: Done.")
-
-        LOGGER.info("Step 3: Check hctl Status.")
-        pod_name = self.master_node_obj.get_pod_name()
-        assert_utils.assert_true(pod_name[0], pod_name[1])
-        resp = self.deploy_lc_obj.get_hctl_status(self.master_node_obj, pod_name[1])
-        assert_utils.assert_true(resp[0], resp[1])
-        LOGGER.info("Step 3: Done.")
+            LOGGER.info("Step 2: Done.")
+            LOGGER.info("Step 3: Check Pods Status.")
+            path = self.deploy_cfg["k8s_dir"]
+            for node in self.master_node_list:
+                resp = self.deploy_lc_obj.validate_cluster_status(node, path)
+            assert_utils.assert_true(resp[0], resp[1])
+            LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
 
     @pytest.mark.lc
@@ -208,9 +215,11 @@ class TestProvK8Cortx:
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
         assert_utils.assert_true(data_pod_list[0])
         data_pod_count = (data_pod_list[1:])
+        print(data_pod_count)
         LOGGER.info("Step 2: Get all running data nodes from cluster.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE, read_lines=True)
-        node_list = resp[2:]
+        print(resp)
+        node_list = resp[1:]
         LOGGER.info("Identify pods and nodes are equal.")
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
         LOGGER.info("Test Completed.")
@@ -247,3 +256,4 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
+        
