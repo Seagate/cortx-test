@@ -21,8 +21,8 @@
 """Provisioner Component level test cases for CORTX deployment in k8s environment."""
 
 import logging
-import pytest
 import time
+import pytest
 
 from commons import commands
 from commons.helpers.pods_helper import LogicalNode

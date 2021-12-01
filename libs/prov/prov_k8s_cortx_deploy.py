@@ -26,9 +26,9 @@ import json
 import logging
 import os
 import time
+from typing import List
 import yaml
 
-from typing import List
 from commons import commands as common_cmd
 from commons import constants as common_const
 from commons import pswdmanager
