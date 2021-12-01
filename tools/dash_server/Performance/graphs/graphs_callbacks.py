@@ -21,7 +21,7 @@
 # !/usr/bin/python
 
 from __future__ import division
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 
 from common import app
@@ -71,8 +71,10 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
         x_data_combined: list of combined x axis data with comparison plot
     """
 
-    if plot_data['ops_option'] == 'both':
+    if plot_data['ops_option'] == 'both' and plot_data['metric'] != "TTFB":
         operations = ['Read', 'Write']
+    elif plot_data['metric'] == "TTFB":
+        operations = ['Read']
     else:
         operations = [plot_data['ops_option']]
 
@@ -97,14 +99,19 @@ def get_graphs(fig, fig_all, data_frame, plot_data, x_data_combined):
 
 @app.callback(
     Output('plot_TTFB', 'style'),
-    Input('graphs_benchmark_dropdown', 'value'),
+    Input('graphs_submit_button', 'n_clicks'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_operations_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_Ttfb_Style(bench):
+def update_Ttfb_Style(n_clicks, bench, operation):
     """hides ttfb plot for non s3bench data"""
     style = None
-    if bench != 'S3bench':
-        style = {'display': 'none'}
+    if n_clicks > 0:
+        if bench != 'S3bench':
+            style = {'display': 'none'}
+        elif operation == "Write":
+            style = {'display': 'none'}
 
     return style
 
@@ -116,29 +123,29 @@ def update_Ttfb_Style(bench):
     Output('plot_TTFB', 'figure'),
     Output('plot_all', 'figure'),
     Input('graphs_submit_button', 'n_clicks'),
-    Input('graphs_filter_dropdown', 'value'),
-    Input('graphs_benchmark_dropdown', 'value'),
-    Input('graphs_operations_dropdown', 'value'),
-    Input('graphs_release_dropdown', 'value'),
-    Input('graphs_branch_dropdown', 'value'),
-    Input('graphs_build_dropdown', 'value'),
-    Input('graphs_nodes_dropdown', 'value'),
-    Input('graphs_pfull_dropdown', 'value'),
-    Input('graphs_iteration_dropdown', 'value'),
-    Input('graphs_custom_dropdown', 'value'),
-    Input('graphs_sessions_dropdown', 'value'),
-    Input('graphs_buckets_dropdown', 'value'),
-    Input('graphs_release_compare_dropdown', 'value'),
-    Input('graphs_branch_compare_dropdown', 'value'),
-    Input('graphs_build_compare_dropdown', 'value'),
-    Input('graphs_nodes_compare_dropdown', 'value'),
-    Input('graphs_pfull_compare_dropdown', 'value'),
-    Input('graphs_iteration_compare_dropdown', 'value'),
-    Input('graphs_custom_compare_dropdown', 'value'),
-    Input('graphs_sessions_compare_dropdown', 'value'),
-    Input('graphs_buckets_compare_dropdown', 'value'),
-    Input('compare_flag', 'value'),
-    Input('graphs_obj_size_dropdown', 'value'),
+    State('graphs_filter_dropdown', 'value'),
+    State('graphs_benchmark_dropdown', 'value'),
+    State('graphs_operations_dropdown', 'value'),
+    State('graphs_release_dropdown', 'value'),
+    State('graphs_branch_dropdown', 'value'),
+    State('graphs_build_dropdown', 'value'),
+    State('graphs_nodes_dropdown', 'value'),
+    State('graphs_pfull_dropdown', 'value'),
+    State('graphs_iteration_dropdown', 'value'),
+    State('graphs_custom_dropdown', 'value'),
+    State('graphs_sessions_dropdown', 'value'),
+    State('graphs_buckets_dropdown', 'value'),
+    State('graphs_release_compare_dropdown', 'value'),
+    State('graphs_branch_compare_dropdown', 'value'),
+    State('graphs_build_compare_dropdown', 'value'),
+    State('graphs_nodes_compare_dropdown', 'value'),
+    State('graphs_pfull_compare_dropdown', 'value'),
+    State('graphs_iteration_compare_dropdown', 'value'),
+    State('graphs_custom_compare_dropdown', 'value'),
+    State('graphs_sessions_compare_dropdown', 'value'),
+    State('graphs_buckets_compare_dropdown', 'value'),
+    State('compare_flag', 'value'),
+    State('graphs_obj_size_dropdown', 'value'),
     prevent_initial_call=True
 )
 def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch1, option1,
@@ -186,10 +193,10 @@ def update_graphs(n_clicks, xfilter, bench, operation, release1_combined, branch
         figs = []
 
         if sessions1 == 'all' and xfilter == 'Build':
-            plot_data['x_heading'] = 'Sessions'
+            plot_data['x_heading'] = 'Concurrency'
             xfilter_tag = 'build'
         elif sessions1 == 'all' and xfilter == 'Object_Size':
-            plot_data['x_heading'] = 'Sessions'
+            plot_data['x_heading'] = 'Concurrency'
             xfilter_tag = 'objsize'
         elif xfilter == 'Build':
             plot_data['x_heading'] = 'Object Sizes'

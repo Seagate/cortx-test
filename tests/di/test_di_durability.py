@@ -52,6 +52,7 @@ from libs.di.data_generator import DataGenerator
 from libs.di.fi_adapter import S3FailureInjection
 from libs.di import di_lib
 from libs.di.di_mgmt_ops import ManagementOPs
+from libs.s3.s3_cmd_test_lib import S3CmdTestLib
 
 
 class TestDIDurability:
@@ -70,6 +71,7 @@ class TestDIDurability:
         # self.cli_obj = cortxcli_test_lib.CortxCliTestLib()
         self.s3_test_obj = S3TestLib()
         self.s3_mp_test_obj = S3MultipartTestLib()
+        self.s3_cmd_test_obj = S3CmdTestLib()
         self.di_control = DIFeatureControl(cmn_cfg=CMN_CFG)
         self.data_gen = DataGenerator()
         self.di_err_lib = DIErrorDetection()
@@ -279,15 +281,12 @@ class TestDIDurability:
             file_path = os.path.join(self.test_dir_path, f"file{i}.txt")
             system_utils.create_file(file_path, 10)
             self.file_lst.append(file_path)
-        self.log.info(
-            "Step 1: Created %s objects of size 10 MB", len(self.file_lst))
-        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 "
-                      "checksum ) for all obj")
+        self.log.info("Step 1: Created %s objects of size 10 MB", len(self.file_lst))
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum) for all obj")
         checksum_dict = {}
         for file in self.file_lst:
             checksum_dict[file] = system_utils.calculate_checksum(file, filter_resp=True)
-        self.log.info("Step 2: Calculate MD5checksum ("
-                      "base64-encoded MD5 checksum ) for all obj")
+        self.log.info("Step 2: Calculate MD5checksum (base64-encoded MD5 checksum ) for all obj")
         self.log.info(
             "Step 3: Put objects into a bucket with a calculated checksum"
             " pass in content-md5 field")
@@ -364,32 +363,37 @@ class TestDIDurability:
         self.log.info(
             "STARTED: Corrupt data blocks of an object at Motr level and "
             "verify read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        self.log.info("Step 1: Create a bucket.")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.info("Step 2: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 2: created a corrupted file at location %s", location)
+        self.log.info("Step 3: enable data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 3: enabled data corruption")
+        else:
+            self.log.info("Step 3: failed to enable data corruption")
+            assert False
+        self.log.info("Step 4: Put object in a bucket.")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        self.log.info("Step 5: Verify get object.")
+        resp = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
+        assert_utils.assert_false(resp[0], resp)
         self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        self.s3_test_obj.create_bucket_put_object(
-            self.bucket_name, self.object_name, self.file_path, self.file_size)
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        self.log.info(
-            "Step 3: Verify read (Get) of an object whose metadata is "
+            "Step 5: Verified read (Get) of an object whose metadata is "
             "corrupted.")
-        res = self.s3_test_obj.get_object(self.bucket_name, self.object_name)
-        assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verified read (Get) of an object whose metadata is "
-            "corrupted.")
-        self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 6: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Checked expected errors in logs or notification.")
+            "Step 6: Checked expected errors in logs or notification.")
         self.log.info(
             "ENDED: Corrupt data blocks of an object at Motr level and verify "
             "read (Get).")
@@ -404,37 +408,44 @@ class TestDIDurability:
         self.log.info(
             "STARTED: Corrupt data blocks of an object at Motr level and "
             "verify range read (Get.")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        self.log.info("Step 1: Create a bucket.")
+        self.s3_test_obj.create_bucket(self.bucket_name)
+        self.log.info("Step 2: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 2: created a corrupted file at location %s", location)
+        self.log.info("Step 3: enable data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 3: enabled data corruption")
+        else:
+            self.log.info("Step 3: failed to enable data corruption")
+            assert False
+        self.log.info("Step 4: Put object in a bucket.")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
         self.log.info(
-            "Step 1: Create a bucket and upload object into a bucket.")
-        self.s3_test_obj.create_bucket_put_object(
-            self.bucket_name, self.object_name, self.file_path, self.file_size)
-        self.log.info(
-            "Step 1: Created a bucket and upload object into a bucket.")
-        self.log.info(
-            "Step 2: Corrupt data blocks of an object at motr level.")
-        # resp = corrupt_data_block_of_an_obj(object)
-        # assert_utils.assert_true(resp[0], resp[1])
-        self.log.info(
-            "Step 2: Corrupted data blocks of an object at motr level.")
-        self.log.info(
-            "Step 3: Verify range read (Get) of an object whose metadata"
+            "Step 5: Verify range read (Get) of an object whose metadata"
             " is corrupted.")
         res = self.s3_mp_test_obj.get_byte_range_of_object(
             self.bucket_name, self.object_name, 2025, 9216)
         assert_utils.assert_false(res[0], res)
         self.log.info(
-            "Step 3: Verified range read (Get) of an object whose metadata"
-            " is corrupted.")
+            "Step 5: Verified read (Get) of an object whose data is "
+            "corrupted.")
         self.log.info(
-            "Step 4: Check for expected errors in logs or notification.")
+            "Step 6: Check for expected errors in logs or notification.")
         # resp = get_motr_s3_logs()
         # assert_utils.assert_equal(resp[1], "error pattern", resp[1])
         self.log.info(
-            "Step 4: Checked for expected errors in logs or notification.")
+            "Step 6: Checked expected errors in logs or notification.")
         self.log.info(
-            "ENDED: Corrupt data blocks of an object at Motr level and "
-            "verify range read (Get.")
-
+            "ENDED: Corrupt data blocks of an object at Motr level and verify "
+            "range read (Get).")
+    
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22913')
@@ -903,6 +914,115 @@ def setup_multipart_fixture(request):
     request.cls.log.info("Local file was deleted")
     request.cls.log.info("ENDED: Teardown operations")
 
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29813')
+    def test_29813(self):
+        """
+        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
+        and verify range read (Get).
+        """
+        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify range read (Get).")
+        read_flag = self.di_control.verify_s3config_flag_enable_all_nodes(
+            section=self.config_section, flag=self.read_param)
+        if read_flag[0]:
+            pytest.skip()
+        self.log.info("Step 1: create a file")
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a file at location %s", location)
+        self.log.info("Step 2: enable checksum feature")
+        # to do enabling checksum feature
+        self.log.info("Step 3: upload a file with incorrect checksum")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
+                                                     my_key=self.object_name,
+                                                     start_byte=8888,
+                                                     stop_byte=9999)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # to do verify object download failure
+        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
+                      "and verify range read (Get).")
+
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29816')
+    def test_29816(self):
+        """
+        S3 Put through AWS CLI and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
+        and verify read (Get).
+        SZ <= Data Unit Sz
+        """
+        self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
+                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 2: enabled data corruption")
+        else:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        self.log.info("Step 3: upload a file")
+        self.s3_cmd_test_obj.object_upload_cli(bucket_name=self.bucket_name,
+                                               object_name=self.object_name,
+                                               obj_size=1024 * 1024 * 5,
+                                               file_path=location)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # resp = self.s3_test_obj.object_download(file_path=self.file_path,
+        #                                         bucket_name=self.bucket_name,
+        #                                         obj_name=self.object_name)
+        # to do verify object download failure
+        self.log.info("STARTED: S3 Put through AWS CLI and Corrupt checksum of an object"
+                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29817')
+    def test_29817(self):
+        """
+        S3 Put through S3CMD and Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
+        and verify read (Get).
+        SZ <= Data Unit Sz
+        """
+        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
+                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: upload a object")
+        self.s3_cmd_test_obj.put_object(bucket_name=self.bucket_name, file_path=location,
+                                        object_name=self.object_name)
+        self.log.info("Step 3: download a object")
+        # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
+        #                                                     my_key=self.object_name,
+        #                                                     start_byte=8888,
+        #                                                     stop_byte=9999)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # to do verify object download failure
+        self.log.info("STARTED: S3 Put through S3CMD and Corrupt checksum of an object"
+                      "256KB to 31 MB (at s3 checksum) and verify read (Get).")
+
 
 @pytest.mark.usefixtures("setup_multipart_fixture")
 class TestDICheckMultiPart:
@@ -1064,3 +1184,112 @@ class TestDICheckMultiPart:
         # to do verify object download failure
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
                       "(at s3 checksum) and verify read (Get).")
+
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29814')
+    def test_29814(self):
+        """
+        Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
+        and verify read (Get).
+        """
+        self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
+                      "MB (at s3 checksum) and verify read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 2: enabled data corruption")
+        else:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        self.log.info("Step 3: upload a file using multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        parts = list()
+        res_sp_file = system_utils.split_file(filename=location, size=25, split_count=5,
+                                              random_part_size=False)
+        i = 0
+        while i < 5:
+            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
+                data = file_pointer.read()
+            resp = self.s3_mp_test_obj.upload_part(body=data,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   upload_id=mpu_id, part_number=i + 1)
+            parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
+            i += 1
+        self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
+                                                      bucket=self.bucket_name,
+                                                      object_name=self.object_name)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # resp = self.s3_test_obj.object_download(file_path=self.file_path,
+        #                                         bucket_name=self.bucket_name,
+        #                                         obj_name=self.object_name)
+        # to do verify object download failure
+        self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
+                      "MB (at s3 checksum) and verify read (Get).")
+
+    @pytest.mark.skip(reason="not tested hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29815')
+    def test_29815(self):
+        """
+        Corrupt data chunk checksum of an multi part object 32 MB to 128 MB (at s3 checksum)
+        and verify range read (Get).
+        """
+        self.log.info("Started: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
+                      "MB (at s3 checksum) and verify range read (Get).")
+        if self.di_err_lib.validate_default_config():
+            pytest.skip()
+        # simulating checksum corruption with data corruption
+        # to do enabling checksum feature
+        self.log.info("Step 1: Create a corrupted file.")
+        location = self.di_err_lib.create_corrupted_file(size=1024 * 1024 * 5, first_byte='z',
+                                                         data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a corrupted file at location %s", location)
+        self.log.info("Step 2: enabling data corruption")
+        status = self.fi_adapter.enable_data_block_corruption()
+        if status:
+            self.log.info("Step 2: enabled data corruption")
+        else:
+            self.log.info("Step 2: failed to enable data corruption")
+            assert False
+        self.log.info("Step 3: upload a file using multipart upload")
+        res = self.s3_mp_test_obj.create_multipart_upload(self.bucket_name, self.object_name)
+        mpu_id = res[1]["UploadId"]
+        self.log.info("Multipart Upload initiated with mpu_id %s", mpu_id)
+        parts = list()
+        res_sp_file = system_utils.split_file(filename=location, size=25, split_count=5,
+                                              random_part_size=False)
+        i = 0
+        while i < 5:
+            with open(res_sp_file[i]["Output"], "rb") as file_pointer:
+                data = file_pointer.read()
+            resp = self.s3_mp_test_obj.upload_part(body=data,
+                                                   bucket_name=self.bucket_name,
+                                                   object_name=self.object_name,
+                                                   upload_id=mpu_id, part_number=i + 1)
+            parts.append({"PartNumber": i + 1, "ETag": resp[1]["ETag"]})
+            i += 1
+        self.s3_mp_test_obj.complete_multipart_upload(mpu_id=mpu_id, parts=parts,
+                                                      bucket=self.bucket_name,
+                                                      object_name=self.object_name)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # resp = self.s3_mp_test_obj.get_byte_range_of_object(bucket_name=self.bucket_name,
+        #                                                     my_key=self.object_name,
+        #                                                     start_byte=8888,
+        #                                                     stop_byte=9999)
+        # to do verify object download failure
+        self.log.info("Ended: Corrupt data chunk checksum of an multi part object 32 MB to 128 "
+                      "MB (at s3 checksum) and verify range read (Get).")

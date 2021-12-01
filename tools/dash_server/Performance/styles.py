@@ -131,5 +131,6 @@ dict_button_style = {
     'margin-top': '20px',
     'background-color': "#81DD59",
     'color': '#000000',
-    'margin-bottom': '20px'
+    'margin-bottom': '20px',
+    'width': '75px'
 }
