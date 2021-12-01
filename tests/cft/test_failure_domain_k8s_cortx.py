@@ -98,7 +98,7 @@ class TestFailureDomainK8Cortx:
                                            master_node_list=self.master_node_list,
                                            worker_node_list=self.worker_node_list,
                                            setup_k8s_cluster_flag=True,
-                                           cortx_cluster_deploy=True,
+                                           cortx_cluster_deploy_flag=True,
                                            setup_client_config_flag=True,
                                            run_basic_s3_io_flag=False,
                                            run_s3bench_workload_flag=False,
