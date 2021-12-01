@@ -4,7 +4,7 @@ FIREWALL_CMD = "firewall-cmd --service={} --get-ports --permanent"
 GREP_PCS_SERVICE_CMD = "pcs status | grep {}"
 LS_CMD = "ls {}"
 LST_PRVSN_DIR = "ls /opt/seagate/"
-LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
+LST_RPM_CMD = "rpm -qa | grep eos-prvsnr"
 MEM_USAGE_CMD = "python3 -c 'import psutil; print(psutil.virtual_memory().percent)'"
 MOTR_START_FIDS = "hctl mero process start --fid {}"
 MOTR_STATUS_CMD = "hctl status"
@@ -58,6 +58,7 @@ FILE_COMPARE_CMD = "diff {} {}"
 CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--config \'json:///opt/seagate/cortx_configs/provisioner_cluster.json\' " \
                  "--file /var/lib/hare/cluster.yaml"
+PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 
 # aws s3 commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
@@ -250,6 +251,8 @@ CMD_SALT_GET_NODE_ID = "salt '*' grains.get node_id"
 CMD_SALT_GET_CLUSTER_ID = "salt '*' grains.get cluster_id"
 CMD_SALT_GET_ROLES = "salt '*' grains.get roles"
 CMD_START_CLSTR = "cortx cluster start"
+CMD_START_CLSTR_NEW = "cortx_setup cluster start"
+CMD_STATUS_CLSTR = "cortx_setup cluster status"
 CMD_STOP_CLSTR = "cortx cluster stop"
 CMD_RD_LOG = "cat {0}"
 CMD_PCS_STATUS_FULL = "pcs status --full"
@@ -282,6 +285,7 @@ CMD_AWSCLI_COMPLETE_MULTIPART = "aws s3api complete-multipart-upload --multipart
                                 "file://{0} --bucket {1} --key {2} --upload-id {3}"
 CMD_AWSCLI_DOWNLOAD_OBJECT = "aws s3 cp s3://{0}/{1} {2}"
 CMD_AWS_CONF_KEYS = "make aws-configure --makefile=scripts/s3_tools/Makefile ACCESS={} SECRET={}"
+CMD_AWSCLI_CONF = "aws configure"
 # Upload directory recursively to s3.
 CMD_AWSCLI_UPLOAD_DIR_TO_BUCKET = "aws s3 sync {0} s3://{1}"
 CMD_AWSCLI_LIST_OBJECTS_V2_BUCKETS = "aws s3api list-objects-v2 --bucket {0}"
@@ -303,7 +307,7 @@ CMD_RESOURCE_SHOW_HEALTH_RES = "cortx_setup resource show --health --resource_ty
 
 # FailtTolerance commands.
 UPDATE_FAULTTOLERANCE = 'curl -i -H "x-seagate-faultinjection:{},offnonm,motr_obj_write_fail,2,1"' \
-                        ' -X PUT http://127.0.0.1:28081​'
+                        ' -X PUT http://127.0.0.1:28081'
 
 # VM power operations:
 CMD_VM_POWER_ON = "python3 scripts/ssc_cloud/ssc_vm_ops.py -a \"power_on\" " \
@@ -375,6 +379,7 @@ STORAGE_CFG_NAME = "cortx_setup storage config --name {} --type virtual"
 STORAGE_CFG_CVG = "cortx_setup storage config --cvg {} --data-devices {} --metadata-devices {}"
 SECURITY_CFG = "cortx_setup security config --certificate {}"
 FEATURE_CFG = "cortx_setup config set --key {} --val {}"
+FEATURE_GET_CFG = "cortx_setup config get --key {}"
 INITIALIZE_NODE = "cortx_setup node initialize"
 SET_NODE_SIGN = "cortx_setup signature set --key LR_SIGNATURE --value {}"
 NODE_FINALIZE = "cortx_setup node finalize --force"
@@ -388,6 +393,8 @@ CFG_NTP = "cortx_setup node prepare time --server time.seagate.com --timezone {}
 NODE_PREP_FINALIZE = "cortx_setup node prepare finalize"
 CLUSTER_CREATE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
                  "--storageset_count 1 --virtual_host {} --target_build {}"
+CLUSTER_CREATE_SINGLE_NODE = "cortx_setup cluster create {} --name cortx_cluster --site_count 1 " \
+                             "--storageset_count 1 --target_build {}"
 CLUSTER_PREPARE = "cortx_setup cluster prepare"
 
 STORAGE_SET_CREATE = "cortx_setup storageset create --name {} --count {}"
@@ -398,6 +405,8 @@ STORAGE_SET_CONFIG = "cortx_setup storageset config durability {} --type {} --da
 CLUSTER_CFG_COMP = "cortx_setup cluster config component --type {}"
 CORTX_SETUP_HELP = "cortx_setup -h"
 CORTX_CLUSTER_SHOW = "cortx_setup cluster show"
+CLSTR_RESET_COMMAND = "cortx_setup cluster reset --type all"
+CLSTR_RESET_H_COMMAND = "cortx_setup cluster reset -h"
 
 # Maintenance mode for DI
 HCTL_MAINTENANCE_MODE_CMD = "hctl node maintenance --all"
@@ -408,10 +417,6 @@ RUN_FI_FLAG = 'curl -X PUT -H "x-seagate-faultinjection: {},always,{},0,0" {}'
 S3_FI_FLAG_DC_ON_WRITE = 'di_data_corrupted_on_write'
 S3_FI_FLAG_DC_ON_READ = 'di_data_corrupted_on_read'
 S3_FI_FLAG_CSUM_CORRUPT = 'di_obj_md5_corrupted'
-
-FI_ENABLE = 'enable'
-FI_DISABLE = 'disable'
-FI_TEST = 'test'
 
 S3_SRV_PORT = S3_SRV_START_PORT = 28081
 
@@ -424,19 +429,24 @@ DI_DATA_CORRUPT_ON_READ = 'di_data_corrupted_on_read'
 # instead of md5 hash of the object stores md5 hash of empty string.
 DI_MD5_CORRUPT = 'di_obj_md5_corrupted'
 
+FI_ENABLE = 'enable'
+FI_DISABLE = 'disable'
+FI_TEST = 'test'
 # Kubernetes commands to interact with service/pods.
 LDAP_SEARCH_DATA = ("ldapsearch -x -b \"dc=s3,dc=seagate,dc=com\" -H ldap://{0}"
-                    +  " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
+                    + " -D \"cn={1},dc=seagate,dc=com\" -w {2}")
 K8S_LDAP_CMD = "kubectl exec -it openldap-0 -- /bin/bash -c \"{}\""
 K8S_SVC_CMD = "kubectl get svc"
 K8S_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule"
 K8S_REMOVE_TAINT_NODE = "kubectl taint node {} node-role.kubernetes.io/master=:NoSchedule-"
 K8S_CHK_TAINT = "kubectl describe node {} | grep Taints"
 K8S_CP_TO_LOCAL_CMD = "kubectl cp {}:{} {} -c {}"
+K8S_CP_PV_FILE_TO_LOCAL_CMD = "kubectl cp {}:{} {}"
 K8S_CP_TO_CONTAINER_CMD = "kubectl cp {} {}:{} -c {}"
 K8S_GET_PODS = "kubectl get pods"
+K8S_GET_MGNT = "kubectl get pods -o wide"
 K8S_DELETE_POD = "kubectl delete pod {}"
-K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- /bin/bash -- hctl status --json"
+K8S_HCTL_STATUS = "kubectl exec -it {} -c cortx-motr-hax -- hctl status --json"
 K8S_WORKER_NODES = "kubectl get nodes -l node-role.kubernetes.io/worker=worker | awk '{print $1}'"
 K8S_GET_SVC_JSON = "kubectl get svc -o json"
 K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
@@ -444,11 +454,25 @@ K8S_POD_INTERACTIVE_CMD = "kubectl exec -it {} -c cortx-motr-hax -- {}"
 K8S_DATA_POD_SERVICE_STATUS = "consul kv get -recurse | grep s3 | grep name"
 # Kubectl command prefix
 KUBECTL_CMD = "kubectl {} {} -n {} {}"
+KUBECTL_GET_POD_CONTAINERS = "kubectl get pods {} -o jsonpath='{{.spec.containers[*].name}}'"
+KUBECTL_GET_POD_IPS = 'kubectl get pods --no-headers -o ' \
+                      'custom-columns=":metadata.name,:.status.podIP"'
+KUBECTL_GET_REPLICASET = "kubectl get rs | grep '{}'"
+KUBECTL_GET_POD_DETAILS = "kubectl get pods --show-labels | grep '{}'"
+KUBECTL_CREATE_REPLICA = "kubectl scale --replicas={} deployment/{}"
+KUBECTL_DEL_DEPLOY = "kubectl delete deployment {}"
+KUBECTL_DEPLOY_BACKUP = "kubectl get deployment {} -o yaml > {}"
+KUBECTL_RECOVER_DEPLOY = "kubectl create -f {}"
+KUBECTL_GET_POD_HOSTNAME = "kubectl exec -it {} -c cortx-motr-hax -- hostname"
 # Fetch logs of a pod/service in a namespace.
 FETCH_LOGS = ""
 
-# Restart pod/ service in a namespace.
-RESTART_POD_CMD = ""
+# Helm commands
+HELM_LIST = "helm list"
+HELM_STATUS = "helm status {}"
+HELM_HISTORY = "helm history {}"
+HELM_ROLLBACK = "helm rollback {} {}"
+HELM_GET_VALUES = "helm get values {}"
 
 # LC commands
 CLSTR_START_CMD = "cd {}; sh start-cortx-cloud.sh"
@@ -471,3 +495,24 @@ CMD_GIT_CHECKOUT = "git checkout {}"
 # docker commands
 CMD_DOCKER_LOGIN = "docker login -u '{}' -p '{}'"
 CMD_DOCKER_PULL = "docker pull {}"
+
+# Deployment using Field User
+FIELD_PREPARE_NODE = "node prepare server --site_id {} --rack_id {} --node_id {}"
+FIELD_PREPARE_NETWORK = "node prepare network --hostname {} --search_domains {} " \
+                        "--dns_servers {}"
+FIELD_PREPARE_NETWORK_TYPE = "node prepare network --type {} --ip_address {} --netmask {} " \
+                             "--gateway {}"
+FIELD_CFG_FIREWALL = "node prepare firewall --config {}"
+FIELD_CFG_NTP = "node prepare time --server time.seagate.com --timezone {}"
+FIELD_NODE_PREP_FINALIZE = "node prepare finalize"
+FIELD_CLUSTER_CREATE = "cluster create {} --name cortx_cluster --site_count 1 " \
+                       "--storageset_count 1 --virtual_host {} --target_build {}"
+FIELD_CLUSTER_CREATE_SINGLE_NODE = "cluster create {} --name cortx_cluster --site_count 1 " \
+                                   "--storageset_count 1 --target_build {}"
+FIELD_STORAGE_SET_CREATE = "storageset create --name {} --count {}"
+FIELD_STORAGE_SET_ADD_NODE = "storageset add node {} {}"
+FIELD_STORAGE_SET_ADD_ENCL = "storageset add enclosure {} {}"
+FIELD_STORAGE_SET_CONFIG = "storageset config durability {} --type {} --data {} " \
+                           "--parity {} --spare {}"
+FIELD_CLUSTER_PREPARE = "cluster prepare"
+FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"

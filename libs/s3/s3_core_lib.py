@@ -23,12 +23,16 @@
 """Python Library using boto3 module to perform Bucket and object Operations."""
 
 import os
+import sys
 import logging
-from typing import Union
+import threading
 import boto3
 import boto3.s3
+from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
-
+from typing import Union
+from commons import commands
+from commons.utils.system_utils import run_local_cmd, create_file
 from config.s3 import S3_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -343,12 +347,11 @@ class S3Lib(S3Rest):
             LOGGER.info(
                 "This might cause data loss as you have opted for bucket deletion with "
                 "objects in it")
-            bucket.objects.all().delete()
+            response = bucket.objects.all().delete()
             LOGGER.debug(
-                "Bucket : %s , got deleted successfully with objects in it",
-                bucket_name)
+                "Objects deleted successfully from bucket %s, response: %s", bucket_name, response)
         response = bucket.delete()
-        logging.debug(response)
+        LOGGER.debug("Bucket deleted '%s' successfully. Response: %s", bucket_name,response)
 
         return response
 

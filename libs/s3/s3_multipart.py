@@ -22,7 +22,12 @@
 
 """Python Library using boto3 module to perform multipart Operations."""
 
+import os
+import sys
 import logging
+import threading
+from boto3.s3.transfer import TransferConfig
+from botocore.config import Config
 from libs.s3.s3_core_lib import S3Lib
 
 LOGGER = logging.getLogger(__name__)
@@ -147,6 +152,21 @@ class Multipart(S3Lib):
 
         return result
 
+    def list_multipart_uploads_with_keymarker(
+            self,
+            bucket: str = None,
+            keymarker: str = None) -> dict:
+        """
+        List all initiated multipart uploads.
+        :param bucket: Name of the bucket.
+        :keymarker: key marker of more than >1000 mpu
+        :return: response.
+        """
+        result = self.s3_client.list_multipart_uploads(Bucket=bucket, KeyMarker=keymarker)
+        LOGGER.debug(result)
+
+        return result
+
     def abort_multipart_upload(
             self,
             bucket: str = None,
@@ -185,3 +205,72 @@ class Multipart(S3Lib):
         LOGGER.debug(response)
 
         return response
+
+
+class ProgressPercentage:
+    """Call back for sending progress"""
+
+    def __init__(self, filename):
+        self._filename = filename
+        self._size = float(os.path.getsize(filename))
+        self._seen_so_far = 0
+        self._lock = threading.Lock()
+
+    def __call__(self, bytes_amount):
+        # To simplify we'll assume this is hooked up
+        # to a single filename.
+        with self._lock:
+            self._seen_so_far += bytes_amount
+            percentage = (self._seen_so_far / self._size) * 100
+            sys.stdout.write(
+                "\r%s  %s / %s  (%.2f%%)" % (
+                    self._filename, self._seen_so_far, self._size,
+                    percentage))
+            sys.stdout.flush()
+
+
+class MultipartUsingBoto(S3Lib):
+    """Multipart lib using boto3 high level multi part functionality.
+    """
+
+    def get_transfer_config(self):
+        """Create a transfer config."""
+        config = TransferConfig(multipart_threshold=1024 * 1024,
+                                max_concurrency=10,
+                                multipart_chunksize=1024 * 1024,
+                                use_threads=True)
+
+        return config
+
+    def multipart_upload(self, **kwargs):
+        """Multipart upload with HL API."""
+        bucket_name = kwargs.get('bucket')
+        file_path = kwargs.get('file_path')
+        s3_prefix = kwargs.get('s3prefix')  # s3prefix should not start with /
+        config = self.get_transfer_config()
+        assert not bucket_name
+        assert not file_path
+        assert not config
+        key = os.path.split(file_path)[-1]
+        if s3_prefix is not None:
+            key = '/'.join([s3_prefix, key])
+        self.s3_resource.Object(bucket_name, key). \
+            upload_file(file_path,
+                        ExtraArgs={'ContentType': 'text/plain'},
+                        Config=config,
+                        Callback=ProgressPercentage(file_path)
+                        )
+        return key
+
+    def multipart_download(self, **kwargs):
+        """Download file using high level download API."""
+        bucket_name = kwargs.get('bucket')
+        file_path = kwargs.get('file_path')  # Local download file path
+        config = self.get_transfer_config()
+        key = kwargs.get('key')  # key is s3 server side name with prefix.
+        assert not key
+        self.s3_resource.Object(bucket_name, key). \
+            download_file(file_path,
+                          Config=config,
+                          Callback=ProgressPercentage(file_path)
+                          )

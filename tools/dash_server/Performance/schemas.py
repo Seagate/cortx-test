@@ -20,6 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
+
 def get_common_schema(data):
     """
     function for getting common performance schema wrt database
@@ -115,7 +116,7 @@ def get_complete_schema(data):
     entry['Object_Size'] = data['objsize']
     entry['Operation'] = data['operation']
     entry['Name'] = data['name']
-    entry['Cluster_State'] = {"$exists": False }
+    entry['Cluster_State'] = {"$exists": False}
     # entry['Count_of_Clients'] = data['clients'],
 
     return entry
@@ -142,12 +143,12 @@ def get_degraded_schema(data):
 
 
 statistics_column_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)', 'Write TTFB (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read TTFB (ms)']
+    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)', 'Read Avg TTFB (ms)',
+    'Read 99% TTFB (ms)', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 multiple_buckets_headings = [
-    'Objects', 'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)',
-    'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)']
+    'Objects', 'Read Throughput (MBps)', 'Read IOPS', 'Read Latency (ms)',
+    'Write Throughput (MBps)', 'Write IOPS', 'Write Latency (ms)']
 
 bucketops_headings = [
     'Create Buckets (BINIT)', 'Put Objects (PUT)', 'Listing Objects (LIST)', 'Get Objects (GET)',

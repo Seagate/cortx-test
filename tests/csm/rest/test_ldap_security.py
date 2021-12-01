@@ -60,7 +60,7 @@ class TestS3accountK8s:
         cls.remote_path = cons.CLUSTER_CONF_PATH
         cls.local_path = cons.LOCAL_CONF_PATH
         cls.csm_cluster = RestCsmCluster()
-    
+ 
     def ldap_search(self, ip_addr: str = None, user_name: str = None,
                     password: str = None):
         """Functionality to form and execute ldapsearch command"""

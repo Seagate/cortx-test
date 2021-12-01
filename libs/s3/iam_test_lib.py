@@ -38,6 +38,7 @@ from libs.s3 import LDAP_USERNAME, LDAP_PASSWD, ACCESS_KEY, SECRET_KEY
 from libs.s3.iam_core_lib import IamLib
 from libs.s3.s3_core_lib import S3Lib
 
+
 LOGGER = logging.getLogger(__name__)
 
 ACC_ACCESS_KEY = list()
@@ -85,7 +86,6 @@ class IamTestLib(IamLib):
             # Adding sleep in sec due to ldap sync issue EOS-6783
             time.sleep(S3_CFG["create_user_delay"])
             LOGGER.info(response)
-
         except (self.iam.exceptions.EntityAlreadyExistsException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s", IamTestLib.create_user.__name__, error)
             raise CTException(err.S3_CLIENT_ERROR, error.args[0])
@@ -102,7 +102,6 @@ class IamTestLib(IamLib):
             LOGGER.info("listing all users")
             response = super().list_users()["Users"]
             LOGGER.info(response)
-
         except (self.iam.exceptions.UserNotFoundException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.list_users.__name__,
@@ -122,6 +121,8 @@ class IamTestLib(IamLib):
             LOGGER.info("Creating %s user access key.", user_name)
             response = super().create_access_key(user_name)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            time.sleep(S3_CFG["access_key_delay"])
         except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.create_access_key.__name__,
@@ -148,6 +149,8 @@ class IamTestLib(IamLib):
                 access_key_id)
             response = poll(super().delete_access_key, user_name, access_key_id)
             LOGGER.info(response)
+            # Adding sleep in ms due to ldap sync issue EOS-25140
+            time.sleep(S3_CFG["access_key_delay"])
         except (self.iam.exceptions.NoSuchEntityException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.delete_access_key.__name__,
@@ -234,7 +237,6 @@ class IamTestLib(IamLib):
                 new_user_name)
             response = poll(super().update_user, new_user_name, user_name)
             LOGGER.info(response)
-
         except (self.iam.exceptions.ServiceFailureException, ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.update_user.__name__,
@@ -1000,13 +1002,8 @@ class IamTestLib(IamLib):
         """
         try:
             LOGGER.info("Change current IAM user's password")
-            super().change_password(old_password=old_pwd,
-                                    new_password=new_pwd)
-        except (self.iam.exceptions.PasswordPolicyViolationException,
-                self.iam.exceptions.NoSuchEntityException,
-                self.iam.exceptions.InvalidUserTypeException,
-                ClientError,
-                Exception) as error:
+            self.change_password(old_pwd, new_pwd)
+        except (ClientError, Exception) as error:
             LOGGER.error("Error in %s: %s",
                          IamTestLib.change_user_password.__name__,
                          error)

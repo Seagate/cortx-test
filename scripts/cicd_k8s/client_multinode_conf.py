@@ -41,14 +41,13 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=too-many-arguments
 # pylint: disable-msg=too-many-locals
-def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
+def create_db_entry(m_node, username: str, password: str,
                     admin_user: str, admin_passwd: str, ext_ip) -> str:
     """
     Creation of new host entry in database.
     :param str m_node: hostname of master node
     :param str username: username of nodes
     :param str password: password of nodes
-    :param str mgmt_vip: csm mgmt vip
     :param str admin_user: admin user for cortxcli
     :param str admin_passwd: admin password for cortxcli
     :param str ext_ip: external LB IP
@@ -59,11 +58,18 @@ def create_db_entry(m_node, username: str, password: str, mgmt_vip: str,
     json_file = config['default']['setup_entry_json']
     new_setupname = os.getenv("Target_Node")
     node_obj = LogicalNode(hostname=m_node, username=username, password=password)
+    mgnt_resp = node_obj.execute_cmd(com_cmds.K8S_GET_MGNT, read_lines=True)
+    for line in mgnt_resp:
+        if "cortx-control-pod" in line:
+            mgmt_vip = line.split()[6]
+    print("Cortx control pod running on: %s", mgmt_vip)
     output_node = node_obj.execute_cmd(com_cmds.CMD_GET_NODE, read_lines=True)
     for line in output_node:
         if "worker" in line:
             out = line.split()[0]
             host_list.append(out)
+    num_nodes = len(host_list) - 1
+    print("Total number of nodes in cluster: %d", num_nodes)
     print("Creating DB entry for setup: %s", new_setupname)
     with open(json_file, 'r') as file:
         json_data = json.load(file)
@@ -111,15 +117,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Multinode server and client configuration for executing the R2 regression")
     parser.add_argument("--master_node", help="Hostname for master node", required=True)
-    parser.add_argument("--node_count", help="Number of worker nodes in cluster",
-                        required=False, type=int)
     parser.add_argument("--password", help="password for nodes", required=True)
-    parser.add_argument("--mgmt_vip", help="csm mgmt vip", required=True)
-    parser.add_argument("--ext_ip_list", help="External IPs list for LB", required=False)
     args = parser.parse_args()
     master_node = args.master_node
-    node_count = args.node_count
-    print("Total number of nodes in cluster: {}".format(node_count))
     username = "root"
     admin_user = os.getenv("ADMIN_USR")
     admin_passwd = os.getenv("ADMIN_PWD")
@@ -128,15 +128,15 @@ def main():
     ext_ip = resp[1].strip("'\\n'b'")
     print("External LB IP: {}".format(ext_ip))
     print("Creating haproxy.cfg for {} Node setup".format(args.master_node))
+    haproxy_cfg = config['default']['haproxy_config']
     extlb_utils.configure_haproxy_lb(
         master_node, username=username, password=args.password, ext_ip=ext_ip)
-    with open(config['default']['haproxy_config'], 'r') as f_read:
+    with open(haproxy_cfg, 'r') as f_read:
         print((45*"*" + "haproxy.cfg" + 45*"*" + "\n"))
         print(f_read.read())
         print((100*"*" + "\n"))
     setupname = create_db_entry(master_node, username=username, password=args.password,
-                                mgmt_vip=args.mgmt_vip, admin_user=admin_user,
-                                admin_passwd=admin_passwd, ext_ip=ext_ip)
+                                admin_user=admin_user, admin_passwd=admin_passwd, ext_ip=ext_ip)
     print("target_name: {}".format(setupname))
     sysutils.execute_cmd(cmd="cp /root/secrets.json .")
     with open("/root/secrets.json", 'r') as file:
