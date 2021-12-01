@@ -35,7 +35,6 @@ LOGGER = logging.getLogger(__name__)
 SECRETS_FILES_LIST = ["s3_auth_admin_secret", "openldap_admin_secret", "kafka_admin_secret",
                       "csm_mgmt_admin_secret", "csm_auth_admin_secret", "consul_admin_secret",
                       "common_admin_secret"]
-
 PVC_LIST = ["auth", "cluster.conf", "hare", "motr", "s3", "solution", "utils", "log"]
 
 class TestProvK8Cortx:
@@ -215,10 +214,8 @@ class TestProvK8Cortx:
         data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
         assert_utils.assert_true(data_pod_list[0])
         data_pod_count = (data_pod_list[1:])
-        print(data_pod_count)
         LOGGER.info("Step 2: Get all running data nodes from cluster.")
         resp = self.master_node_obj.execute_cmd(cmd=commands.CMD_GET_NODE, read_lines=True)
-        print(resp)
         node_list = resp[1:]
         LOGGER.info("Identify pods and nodes are equal.")
         assert_utils.assert_true(len(list(data_pod_count[0])) == len(node_list))
@@ -256,4 +253,3 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
-        
