@@ -59,6 +59,7 @@ class TestProvK8Cortx:
             else:
                 cls.worker_node_list.append(node_obj)
         LOGGER.info("Done: Setup operations finished.")
+        print("Done")
 
     @pytest.mark.lc
     @pytest.mark.comp_prov
