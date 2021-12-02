@@ -87,15 +87,20 @@ class JiraTask:
         self.http.mount("https://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
         self.http.mount("http://", TimeoutHTTPAdapter(max_retries=self.retry_strategy))
 
-    def check_test_environment_platform(self, tests, tp_env, tp_platform):
+    def check_test_environment_platform(self, tests, tp_info):
         """
-        Check environment and platform of test case and test plan.
+        Check environment, core category and platform of test case and test plan.
         If it matches then add test to test plan.
         """
         valid_tests = []
+        tp_env = tp_info['env']
+        tp_platform = tp_info['platform']
+        num_nodes = tp_info['nodes']
+        core_category = tp_info['core_category']
         for test_id in tests:
             is_valid_platform = False
             is_valid_env = False
+            is_valid_category = False
             details = self.get_issue_details(test_id)
             if details:
                 tp_platform = tp_platform.lower()
@@ -113,11 +118,24 @@ class JiraTask:
                 if env_field:
                     env_field = env_field.lower()
                     tp_env = tp_env.lower()
-                    if tp_env.strip() == env_field.strip():
+                    if env_field.strip() == "multinode":
+                        is_valid_env = True
+                    elif env_field.strip() == "1node" and num_nodes == 1:
+                        is_valid_env = True
+                    elif tp_env.strip() == env_field.strip():
                         is_valid_env = True
                 else:
                     is_valid_env = True
-            if is_valid_platform and is_valid_env:
+                if core_category == 'NA':
+                    is_valid_category = True
+                else:
+                    if details.fields.customfield_21085:
+                        test_category = details.fields.customfield_21085.value
+                        if core_category.lower().strip() in test_category.lower():
+                            is_valid_category = True
+                    else:
+                        is_valid_category = True
+            if is_valid_platform and is_valid_env and is_valid_category:
                 valid_tests.append(test_id)
             else:
                 print("{} is not valid for this test plan".format(test_id))
@@ -180,7 +198,7 @@ class JiraTask:
         test_plan_details = self.get_issue_details(test_plan)
 
         # description = test_plan_details.fields.description
-        description = "Test Plan for Build : {}, Build Branch: {}, Setup type: {}, Nodes: {}".\
+        description = "Test Plan for Build : {}, Build Branch: {}, Setup type: {}, Nodes: {}". \
             format(tp_info['build'], tp_info['build_branch'], tp_info['setup_type'],
                    tp_info['nodes'])
         components = []
@@ -204,6 +222,8 @@ class JiraTask:
             affect_ver_dict['name'] = test_plan_details.fields.versions[i].name
             affect_ver.append(affect_ver_dict)
 
+        env_field = str(tp_info['nodes']) + 'Node'
+
         if tp_info['product_family'] == 'LR':
             if not fix_versions:
                 fix_dict['name'] = tp_info['fix_version']
@@ -212,11 +232,6 @@ class JiraTask:
             if not affect_ver:
                 affect_ver_dict['name'] = tp_info['affect_version']
                 affect_ver.append(affect_ver_dict)
-
-            if int(tp_info['nodes']) > 1:
-                env_field = 'MultiNode'
-            else:
-                env_field = str(tp_info['nodes']) + 'Node'
 
             # TP LR2 {Environment}_{Platform Type}_{Branch}_{Build}
             summary = "TP LR2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" + tp_info[
@@ -230,9 +245,9 @@ class JiraTask:
                 affect_ver_dict['name'] = 'CORTX-R2'
                 affect_ver.append(affect_ver_dict)
 
-            env_field = 'K8'
+            # env_field = 'K8'
             # TP CORTX-R2 {Environment}_{Platform Type}_{Branch}_{Build}
-            summary = "TP CORTX-R2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" \
+            summary = "TP K8 CORTX-R2 " + str(env_field) + "_" + str(tp_info['platform']) + "_" \
                       + tp_info['build_branch'] + "_" + tp_info['build']
 
         tp_dict = {'project': 'TEST',
@@ -297,7 +312,7 @@ class JiraTask:
         except Exception as e:
             print(f"Exception {e} in adding te to tp")
 
-    def add_tests_to_te_tp(self, new_te, new_tp, tp_env, tp_platform, test_list):
+    def add_tests_to_te_tp(self, new_te, new_tp, tp_info, test_list):
         """
         Add tests to test execution and test plan
         """
@@ -315,8 +330,8 @@ class JiraTask:
                           range(0, len(test_list), sub_list_len)]
 
             with concurrent.futures.ProcessPoolExecutor() as executor:
-                valid_list = {executor.submit(self.check_test_environment_platform, tests, tp_env,
-                                              tp_platform): tests for tests in test_lists}
+                valid_list = {executor.submit(self.check_test_environment_platform, tests, tp_info):
+                                  tests for tests in test_lists}
                 for future in concurrent.futures.as_completed(valid_list):
                     try:
                         data = future.result()
