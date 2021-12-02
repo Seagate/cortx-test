@@ -4804,7 +4804,7 @@ class TestCsmUser():
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
-        self.log.info("Step 3: Creating csm manage users")
+        self.log.info("Step 2: Creating csm manage users")
         for _ in range(2):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="manage")
@@ -4820,7 +4820,7 @@ class TestCsmUser():
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
-        self.log.info("Step 4: Creating csm monitor users")
+        self.log.info("Step 3: Creating csm monitor users")
         for _ in range(2):
             response = self.csm_user.create_csm_user(user_type="valid",
                                                      user_role="monitor")
@@ -4836,7 +4836,7 @@ class TestCsmUser():
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
-        self.log.info("Step 5: Sending request to delete self admin user")
+        self.log.info("Step 4: Sending request to delete self admin user")
         response = self.csm_user.delete_csm_user(CSM_REST_CFG["csm_admin_user"]["username"])
         assert response.status_code == const.FORBIDDEN, "Status code check failed."
         assert response.json()["error_code"] == str(resp_error_code), (
@@ -4870,7 +4870,7 @@ class TestCsmUser():
         self.log.info("Step 1: Creating csm admin users")
         for _ in range(4):
             response = self.csm_user.create_csm_user(user_type="valid",
-                                                     user_role="admin")
+                                                     user_role="admin",user_password=passwd)
             self.log.info("Verifying if admin user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
@@ -4893,7 +4893,7 @@ class TestCsmUser():
         self.log.info("Step 2: Creating csm manage users")
         for _ in range(4):
             response = self.csm_user.create_csm_user(user_type="valid",
-                                                     user_role="manage")
+                                                     user_role="manage",user_password=passwd)
             self.log.info("Verifying if manage user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
@@ -4916,7 +4916,7 @@ class TestCsmUser():
         self.log.info("Step 3: Creating csm monitor users")
         for _ in range(4):
             response = self.csm_user.create_csm_user(user_type="valid",
-                                                     user_role="monitor")
+                                                     user_role="monitor",user_password=passwd)
             self.log.info("Verifying if monitor user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
