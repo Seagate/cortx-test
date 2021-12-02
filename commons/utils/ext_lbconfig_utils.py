@@ -50,8 +50,8 @@ def configure_rsyslog():
                     f_write.write(
                         f"$ModLoad imudp\n$UDPServerAddress 127.0.0.1\n$UDPServerRun 514\n")
                     continue
-                if "$ModLoad imudp" in line or "#$UDPServerAddress 127.0.0.1" in line\
-                        or "#$UDPServerRun 514" in line:
+                if "$ModLoad imudp" in line or "$UDPServerAddress 127.0.0.1" in line\
+                        or "$UDPServerRun 514" in line:
                     continue
                 f_write.write(line)
         sys_utils.execute_cmd("rm -f {}".format(rsysconf_path))
@@ -133,21 +133,21 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
             if "# 443 cortx_setup_https" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server ha-s3-ssl-{index} {worker_node[worker]['eth1']}:" \
-                           f"{worker_node[worker]['443']} check ssl verify none    #port mapped to 443\n"
+                           f"{worker_node[worker]['443']} ssl verify none    #port mapped to 443\n"
                     f_write.write(line)
                 continue
             if "# 9080 s3_auth" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server s3authserver-instance{index} " \
-                           f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']}    " \
-                           f" check ssl verify none #port mapped to 9080\n"
+                           f"{worker_node[worker]['eth1']}:{worker_node[worker]['9080']} " \
+                           f"#port mapped to 9080\n"
                     f_write.write(line)
                 continue
             if "# 9443 s3_auth_https" in line:
                 for index, worker in enumerate(worker_node.keys(), 1):
                     line = f"    server s3authserver-instance-ssl-{index} " \
                            f"{worker_node[worker]['eth1']}:{worker_node[worker]['9443']} " \
-                           f" check ssl verify none    #port mapped to 9443\n"
+                           f"ssl verify none    #port mapped to 9443\n"
                     f_write.write(line)
                 continue
             f_write.write(line)
