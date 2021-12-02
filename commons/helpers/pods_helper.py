@@ -26,6 +26,7 @@ import logging
 import os
 import time
 from typing import Tuple
+
 from commons import commands
 from commons import constants as const
 from commons.helpers.host import Host
@@ -353,24 +354,23 @@ class LogicalNode(Host):
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
 
-    def get_all_pods_and_ips(self,pod_prefix):
+    def get_all_pods_and_ips(self, pod_prefix):
         """
         Helper function to get pods name with pod_prefix and their IPs
         :param: pod_prefix: Prefix to define the pod category
         :return: dict
         """
         pod_dict = {}
-        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS,read_lines=True)
-        log.debug("output : %s",output)
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_IPS, read_lines=True)
         for lines in output:
             if pod_prefix in lines:
                 data = lines.strip()
                 pod_name = data.split()[0]
-                pod_ip = data.split()[1].replace("\n","")
+                pod_ip = data.split()[1].replace("\n", "")
                 pod_dict[pod_name.strip()] = pod_ip.strip()
-        return  pod_dict
+        return pod_dict
 
-    def get_container_of_pod(self,pod_name,container_prefix):
+    def get_container_of_pod(self, pod_name, container_prefix):
         """
         Helper function to get container with container_prefix from the specified pod_name
         :param: pod_name : Pod name to query container of
@@ -386,3 +386,21 @@ class LogicalNode(Host):
                 container_list.append(each)
 
         return container_list
+
+    def get_all_pods(self, pod_prefix=None) -> list:
+        """
+        Helper function to get all pods name with pod_prefix
+        :param: pod_prefix: Prefix to define the pod category
+        :return: list
+        """
+        pods_list = []
+        output = self.execute_cmd(cmd=commands.KUBECTL_GET_POD_NAMES, read_lines=True)
+        pods = [line.strip().replace("\n", "") for line in output]
+        if pod_prefix is not None:
+            for each in pods:
+                if pod_prefix in each:
+                    pods_list.append(each)
+        else:
+            pods_list = pods
+        log.debug("Pods list : %s", pods_list)
+        return pods_list
