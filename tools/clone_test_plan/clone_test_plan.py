@@ -181,7 +181,7 @@ def parse_args():
     parser.add_argument("-sc", "--skip_te_clone", nargs='+', type=str,
                         help="Space separated te tickets to skip from cloning")
     parser.add_argument("-cc", "--core_category", type=str, default='NA',
-                        help="weekly/biweekly regression test cases")
+                        help="gold/silver")
     return parser.parse_args()
 
 
