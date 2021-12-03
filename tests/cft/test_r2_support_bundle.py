@@ -142,8 +142,8 @@ class TestR2SupportBundle:
 
         self.LOGGER.debug("Verified logs are generated on each node")
 
-        def generate_support_bundle_LC(self, pod_name: str = None, dest_dir: str = None,
-                                   SB_identifier: str = None, msg: str = "SB"):
+        def generate_support_bundle_LC(self, pod_name: str, dest_dir: str,
+                                   SB_identifier: str, msg: str = "SB"):
         """
         This function is used to generate support bundle
         :param pod_name: name of the pod in which support bundle is generated
@@ -161,8 +161,8 @@ class TestR2SupportBundle:
             decode=True)
         return resp
 
-    def support_bundle_status_LC(self, pod_name: str = None,
-                                          SB_identifier: str = None):
+    def support_bundle_status_LC(self, pod_name: str,
+                                          SB_identifier: str):
         """
         This function is used to get the support bundle status
         :param pod_name: name of the pod in which support bundle is generated
@@ -219,6 +219,7 @@ class TestR2SupportBundle:
             "Step 2: Verified logs are generated for each component on each node")
 
     @pytest.mark.cluster_user_ops
+    @pytest.mark.lc
     @pytest.mark.support_bundle
     @pytest.mark.tags("TEST-32752")
     def test_32752(self):
