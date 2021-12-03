@@ -833,6 +833,37 @@ class RestCsmUser(RestTestLib):
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
     @RestTestLib.authenticate_and_login
+    def delete_user_with_header(self, user_id, header):
+        """
+        This function will create new CSM user
+        :param user_type: type of user required
+        :param user_role: User role type.
+        :param save_new_user: to store newly created user to config
+        :header: for csm user authentication
+        :return obj: response of delete user operation
+        """
+        try:
+            # Building request url
+            self.log.debug("Deleting CSM user")
+            endpoint = self.config["csmuser_endpoint"]
+            endpoint = f"{endpoint}/{user_id}"
+            self.log.debug(
+                "Endpoint for CSM user creation is  %s", endpoint)
+
+            # Fetching api response
+            self.headers.update(const.CONTENT_TYPE)
+            return self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+
+        except BaseException as error:
+            self.log.error("%s %s: %s",
+                           const.EXCEPTION_ERROR,
+                           RestCsmUser.delete_csm_user.__name__,
+                           error)
+            raise CTException(
+                err.CSM_REST_AUTHENTICATION_ERROR, error) from error
+
+
+    @RestTestLib.authenticate_and_login
     def update_csm_account_password(self, username, old_password, new_password):
         """
         This function will update csm account user password

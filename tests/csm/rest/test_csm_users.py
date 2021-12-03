@@ -4878,15 +4878,17 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'admin', "User is not created with admin role"
             self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
             self.log.info("Verify password change for users")
-            response = self.csm_user.edit_csm_user(user=username,
+            response = self.csm_user.edit_user_with_custom_login(user=username,
                                                    password=new_password,
-                                                   current_password=passwd)
+                                                   current_password=passwd,header=header)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username=username, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             self.log.info("Sending request to delete csm admin user %s", username)
-            response = self.csm_user.delete_csm_user(username)
+            response = self.csm_user.delete_user_with_header(username,header)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
@@ -4901,15 +4903,17 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'manage', "User is not created with manage role"
             self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
             self.log.info("Verify password change for users")
-            response = self.csm_user.edit_csm_user(user=username,
+            response = self.csm_user.edit_user_with_custom_login(user=username,
                                                    password=new_password,
-                                                   current_password=passwd)
+                                                   current_password=passwd,header=header)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username=username, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             self.log.info("Sending request to delete csm manage user %s", username)
-            response = self.csm_user.delete_csm_user(username)
+            response = self.csm_user.delete_user_with_header(username,header)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
@@ -4924,15 +4928,17 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'monitor', "User is not created with monitor role"
             self.log.info("Verified User %s got created successfully", username)
+            self.log.info("Get header")
+            header = self.csm_user.get_headers(username, passwd)
             self.log.info("Verify password change for users")
-            response = self.csm_user.edit_csm_user(user=username,
+            response = self.csm_user.edit_user_with_custom_login(user=username,
                                                    password=new_password,
-                                                   current_password=passwd)
+                                                   current_password=passwd,header=header)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username=username, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             self.log.info("Sending request to delete csm monitor user %s", username)
-            response = self.csm_user.delete_csm_user(username)
+            response = self.csm_user.delete_user_with_header(username,header)
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
