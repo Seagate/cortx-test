@@ -242,9 +242,9 @@ class TestR2SupportBundle:
         if ("In-Progress" in resp):
             self.LOGGER.info("support bundle generation is In-progress status")
         elif("Successfully generated" in resp):
-            self.assertTrue(False, "Support bundle got generated very quickly need to check manually")
+            self.assertTrue(False, f"Support bundle got generated very quickly need to check manually: {resp}")
         else:
-            self.assertTrue(False, "Support bundle is not generated")
+            self.assertTrue(False, f"Support bundle is not generated: {resp}")
 
         generate_SB_process.join()
 
@@ -253,7 +253,7 @@ class TestR2SupportBundle:
         if ("Successfully generated" in resp):
             self.LOGGER.info("support bundle generation completed")
         elif("In-Progress" in resp):
-            self.assertTrue(False, "Support bundle is In-progress state, which is unexpected")
+            self.assertTrue(False, f"Support bundle is In-progress state, which is unexpected: {resp}")
         else:
-            self.assertTrue(False, "Support bundle is not generated")
+            self.assertTrue(False, f"Support bundle is not generated: {resp}")
 
