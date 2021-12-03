@@ -285,3 +285,31 @@ class IamLib(IAMRest):
         :return: None
         """
         self.iam.change_password(OldPassword=old_password, NewPassword=new_password)
+
+
+class IamPolicy(IAMRest):
+    """Class initialising s3 connection and including functions for iam policy operations."""
+
+    def create_policy(self, policy_name: str = None, policy_document: str = None) -> object:
+        """
+        Creates a policy as per policy document.
+
+        :param policy_name: The name of the policy to create.
+        :param policy_document: The policy document.
+        """
+        response = self.iam.create_policy(
+            PolicyName=policy_name,
+            PolicyDocument=policy_document
+        )
+
+        return response
+
+    def delete_policy(self, policy_arn: str = None) -> dict:
+        """
+        Deletes a policy.
+
+        :param policy_arn: The ARN of the policy to delete.
+        """
+        response = self.iam_resource.Policy(policy_arn).delete()
+
+        return response
