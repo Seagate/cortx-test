@@ -893,6 +893,37 @@ class TestDIDurability:
         self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
 
+    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
+    @pytest.mark.data_integrity
+    @pytest.mark.data_durability
+    @pytest.mark.tags('TEST-29812')
+    def test_29812(self):
+        """
+        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) and verify read (Get).
+        """
+        self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB "
+                      "(at s3 checksum) and verify read (Get).")
+        # to do read flag check
+        self.log.info("Step 1: create a file")
+        buff, csm = self.data_gen.generate(size=1024 * 1024 * 5,
+                                           seed=self.data_gen.get_random_seed())
+        location = self.data_gen.save_buf_to_file(fbuf=buff, csum=csm, size=1024 * 1024 * 5,
+                                                  data_folder_prefix=self.test_dir_path)
+        self.log.info("Step 1: created a file at location %s", location)
+        self.log.info("Step 2: enable checksum feature")
+        # to do enabling checksum feature
+        self.log.info("Step 3: upload a file with incorrect checksum")
+        self.s3_test_obj.put_object(bucket_name=self.bucket_name,
+                                    object_name=self.object_name,
+                                    file_path=location)
+        self.s3_test_obj.object_download(file_path=self.file_path,
+                                         obj_name=self.object_name,
+                                         bucket_name=self.bucket_name)
+        self.log.info("Step 4: verify download object fails with 5xx error code")
+        # to do verify object download failure
+        self.log.info("ENDED: Corrupt checksum of an object 256KB to 31 MB "
+                      "(at s3 checksum) and verify read (Get).")
+
     @pytest.mark.skip(reason="not tested hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
