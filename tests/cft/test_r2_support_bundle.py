@@ -179,6 +179,7 @@ class TestR2SupportBundle:
         return resp
 
     @pytest.mark.cluster_user_ops
+    @pytest.mark.lr
     @pytest.mark.support_bundle
     @pytest.mark.tags("TEST-20114")
     def test_20114_generate_support_bundle_single_command(self):
@@ -199,6 +200,7 @@ class TestR2SupportBundle:
             "Step 2: Verified logs are generated for each component on each node")
 
     @pytest.mark.cluster_user_ops
+    @pytest.mark.lr
     @pytest.mark.support_bundle
     @pytest.mark.tags("TEST-20115")
     def test_20115_generate_support_bundle_component(self):
