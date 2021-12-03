@@ -227,7 +227,7 @@ class TestR2SupportBundle:
         """
         self.LOGGER.info("Step 1: Generating support bundle ")
         dest_dir = "file:///var/log/cortx/support_bundle"
-        SB_identifier = ''.join(random.sample(string.ascii_letters + string.digits, 10))
+        SB_identifier = system_utils.random_string_generator(10)
         msg = "TEST-20115"
         self.LOGGER.info("Support Bundle identifier of : %s ", SB_identifier)
         generate_SB_process = Process(
