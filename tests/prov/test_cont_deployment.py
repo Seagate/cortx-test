@@ -24,9 +24,9 @@ import logging
 import os
 import distutils.util
 import pytest
-from commons import pswdmanager, configmanager
+from commons import configmanager
 from commons.helpers.pods_helper import LogicalNode
-from config import CMN_CFG, HA_CFG
+from config import CMN_CFG
 from libs.prov.prov_k8s_cortx_deploy import ProvDeployK8sCortxLib
 
 DEPLOY_CFG = configmanager.get_config_wrapper(fpath="config/prov/deploy_config.yaml")
@@ -50,7 +50,13 @@ class TestContDeployment:
         cls.collect_support_bundle = \
             bool(distutils.util.strtobool(os.getenv("collect_support_bundle")))
         cls.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
-        cls.conf = (os.getenv("EC_CONFIG")).lower()
+        # cls.conf = (os.getenv("EC_CONFIG")).lower()
+        cls.sns = (os.getenv("SNS")).split("+")
+        cls.sns = [int(sns_item) for sns_item in cls.sns]
+        cls.dix = (os.getenv("DIX")).split("+")
+        cls.dix = [int(dix_item) for dix_item in cls.dix]
+        cls.cvg_per_node = int(os.getenv("CVG_PER_NODE"))
+        cls.data_disk_per_cvg = int(os.getenv("DATA_DISK_PER_CVG"))
         cls.iterations = os.getenv("NO_OF_ITERATIONS")
         cls.raise_jira = bool(distutils.util.strtobool(os.getenv("raise_jira")))
         cls.deploy_lc_obj = ProvDeployK8sCortxLib()
@@ -76,38 +82,42 @@ class TestContDeployment:
         test to run continuous deployment
         """
         count = int(self.iterations)
-        self.log.info("Iterations no is %s", count)
-        node = "nodes_{}".format(len(self.worker_node_list))
-        self.log.debug("nodes are %s", node)
-        config = DEPLOY_CFG[node][self.conf]
-        self.log.debug("config is %s", self.conf)
+        total_cvg = int(self.cvg_per_node*len(self.worker_node_list))
+        self.log.debug("sum of sns is %s total value is %s", sum(self.sns), total_cvg)
+        if sum(self.sns) > total_cvg:
+            self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
+            assert False, "The sns value are invalid"
+        self.log.error("The dix %s %s %s", self.dix[0], self.dix[1], self.dix[2])
+        if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list)-1):
+            self.log.debug("The dix %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
+            assert False, "The dix values are invalid"
+
+        # node = "nodes_{}".format(len(self.worker_node_list))
+        # self.log.debug("nodes are %s", node)
+        # config = DEPLOY_CFG[node][self.conf]
         self.log.debug("TEST file setup_k8s_cluster_flag = %s", self.setup_k8s_cluster_flag)
         self.log.debug("TEST file cortx_cluster_deploy_flag = %s", self.cortx_cluster_deploy_flag)
         self.log.debug("TEST file setup_client_config_flag = %s", self.setup_client_config_flag)
         self.log.debug("TEST file run_basic_s3_io_flag = %s", self.run_basic_s3_io_flag)
         self.log.debug("TEST file run_s3bench_workload_flag = %s", self.run_s3bench_workload_flag)
         self.log.debug("TEST file destroy_setup_flag = %s", self.destroy_setup_flag)
+        self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
+        self.log.debug("DIX %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
         while count > 0:
-            self.deploy_lc_obj.test_deployment(sns_data=config['sns_data'],
-                                               sns_parity=config['sns_parity'],
-                                               sns_spare=config['sns_spare'],
-                                               dix_data=config['dix_data'],
-                                               dix_parity=config['dix_parity'],
-                                               dix_spare=config['dix_spare'],
-                                               cvg_count=config['cvg_per_node'],
-                                               data_disk_per_cvg=config['data_disk_per_cvg'],
+            self.deploy_lc_obj.test_deployment(sns_data=self.sns[0],
+                                               sns_parity=self.sns[1],
+                                               sns_spare=self.sns[2],
+                                               dix_data=self.dix[0],
+                                               dix_parity=self.dix[1],
+                                               dix_spare=self.dix[2],
+                                               cvg_count=self.cvg_per_node,
+                                               data_disk_per_cvg=self.data_disk_per_cvg,
                                                master_node_list=self.master_node_list,
                                                worker_node_list=self.worker_node_list,
-                                               setup_k8s_cluster_flag=
-                                               self.setup_k8s_cluster_flag,
-                                               cortx_cluster_deploy_flag=
-                                               self.cortx_cluster_deploy_flag,
-                                               setup_client_config_flag=
-                                               self.setup_client_config_flag,
-                                               destroy_setup_flag=
-                                               self.destroy_setup_flag,
-                                               run_s3bench_workload_flag=
-                                               self.run_s3bench_workload_flag,
-                                               run_basic_s3_io_flag=
-                                               self.run_basic_s3_io_flag)
+                                               setup_k8s_cluster_flag=self.setup_k8s_cluster_flag,
+                                               cortx_cluster_deploy_flag=self.cortx_cluster_deploy_flag,
+                                               setup_client_config_flag=self.setup_client_config_flag,
+                                               run_s3bench_workload_flag=self.run_s3bench_workload_flag,
+                                               run_basic_s3_io_flag=self.run_basic_s3_io_flag,
+                                               destroy_setup_flag=self.destroy_setup_flag,)
             count = count - 1
