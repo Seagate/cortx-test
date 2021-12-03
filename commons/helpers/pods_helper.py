@@ -353,7 +353,7 @@ class LogicalNode(Host):
                       LogicalNode.get_helm_rel_name_rev.__name__, error)
             return False, error
 
-    def get_all_pods_and_ips(self,pod_prefix):
+    def get_all_pods_and_ips(self, pod_prefix):
         """
         Helper function to get pods name with pod_prefix and their IPs
         :param: pod_prefix: Prefix to define the pod category
@@ -386,3 +386,13 @@ class LogicalNode(Host):
                 container_list.append(each)
 
         return container_list
+
+    def get_recent_pod_name(self):
+        """
+
+        """
+        log.info("Get most recently created pod name")
+        cmd = commands.KUBECTL_GET_RECENT_POD
+        output = self.execute_cmd(cmd=cmd, read_lines=True)
+        pod_name = output[0].strip()
+        return pod_name
