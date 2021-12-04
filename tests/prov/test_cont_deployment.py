@@ -50,10 +50,9 @@ class TestContDeployment:
         cls.collect_support_bundle = \
             bool(distutils.util.strtobool(os.getenv("collect_support_bundle")))
         cls.destroy_setup_flag = bool(distutils.util.strtobool(os.getenv("destroy_setup")))
-        cls.conf = (os.getenv("EC_CONFIG")).lower()
-        cls.sns = (os.getenv("SNS")).split("+")
-        cls.dix = (os.getenv("DIX")).split("+")
-        logging.info("sns dix value are %s %s", cls.sns, cls.dix)
+        cls.conf = (os.getenv("EC_CONFIG", "")).lower()
+        cls.sns = (os.getenv("SNS", "")).split("+")
+        cls.dix = (os.getenv("DIX", "")).split("+")
         if not cls.sns and not cls.dix:
             cls.sns = [int(sns_item) for sns_item in cls.sns]
             cls.dix = [int(dix_item) for dix_item in cls.dix]
@@ -99,6 +98,8 @@ class TestContDeployment:
             node = "nodes_{}".format(len(self.worker_node_list))
             self.log.debug("nodes are %s", node)
             config = DEPLOY_CFG[node][self.conf]
+            self.sns = []
+            self.dix = []
             self.log.debug("SNS and DIX config are %s", config)
             self.sns.append(config['sns_data'])
             self.sns.append(config['sns_parity'])
