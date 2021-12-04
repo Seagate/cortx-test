@@ -87,7 +87,6 @@ class TestContDeployment:
         if sum(self.sns) > total_cvg:
             self.log.debug("SNS %s+%s+%s", self.sns[0], self.sns[1], self.sns[2])
             assert False, "The sns value are invalid"
-        self.log.error("The dix %s %s %s", self.dix[0], self.dix[1], self.dix[2])
         if self.dix[0] > 1 or self.dix[1] > (len(self.worker_node_list)-1):
             self.log.debug("The dix %s+%s+%s", self.dix[0], self.dix[1], self.dix[2])
             assert False, "The dix values are invalid"
