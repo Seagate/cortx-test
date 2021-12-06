@@ -32,7 +32,7 @@ from multiprocessing import Manager
 
 import boto3
 
-from config import S3_CFG
+from config.s3 import S3_CFG
 from libs.di import di_lib
 from libs.di import di_params
 

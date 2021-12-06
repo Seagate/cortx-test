@@ -160,6 +160,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("############ Successfully performed Teardown operation ############")
 
     @pytest.mark.tags("TEST-21265")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -269,6 +270,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21257")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -329,6 +331,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21256")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -389,6 +392,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21258")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -450,6 +454,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21260")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -510,6 +515,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21266")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -572,6 +578,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21264")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.sw_alert
     def test_21264_3ps_monitoring_gui(self):
@@ -631,6 +638,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21261")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -697,6 +705,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21263")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -757,6 +766,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21267")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -818,6 +828,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.tags("TEST-21259")
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert
@@ -883,6 +894,7 @@ class Test3PSvcMonitoringGUI:
         LOGGER.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.skip
+    @pytest.mark.lr
     @pytest.mark.cluster_monitor_ops
     @pytest.mark.csm_gui
     @pytest.mark.sw_alert

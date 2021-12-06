@@ -19,7 +19,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 from common import app
 from Performance.backend import *
@@ -62,20 +62,20 @@ from Performance.backend import *
 
 @app.callback(
     Output('statistics_s3bench_table', 'children'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
+    State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
-                   custom, n_clicks, sessions, buckets):
+def update_s3bench(n_clicks, release_combined, branch, build, nodes, pfull, itrns,
+                   custom, sessions, buckets):
     table = None
     if not (all([
         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
@@ -100,20 +100,20 @@ def update_s3bench(release_combined, branch, build, nodes, pfull, itrns,
 
 @app.callback(
     Output('statistics_metadata_table', 'children'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
+    State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_metadata(release_combined, branch, build, nodes,
-                    pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_metadata(n_clicks, release_combined, branch, build, nodes,
+                    pfull, itrns, custom, sessions, buckets):
     table = None
     if not (all([
         release_combined, branch, build, nodes, itrns, custom, n_clicks, sessions, buckets
@@ -137,20 +137,20 @@ def update_metadata(release_combined, branch, build, nodes,
 
 @app.callback(
     Output('statistics_hsbench_table', 'children'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
+    State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_hsbench(release_combined, branch, build, nodes,
-                   pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_hsbench(n_clicks, release_combined, branch, build, nodes,
+                   pfull, itrns, custom, sessions, buckets):
     table = None
     if not (all([release_combined, branch, build, nodes,
                  itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
@@ -173,21 +173,21 @@ def update_hsbench(release_combined, branch, build, nodes,
 
 @app.callback(
     Output('statistics_bucketops_table', 'children'),
-    [Input('perf_release_dropdown', 'value'),
-     Input('perf_branch_dropdown', 'value'),
-     Input('perf_build_dropdown', 'value'),
-     Input('perf_nodes_dropdown', 'value'),
-     Input('perf_pfull_dropdown', 'value'),
-     Input('perf_iteration_dropdown', 'value'),
-     Input('perf_custom_dropdown', 'value'),
-     Input('perf_submit_button', 'n_clicks'),
-     Input('perf_sessions_dropdown', 'value'),
-     Input('perf_buckets_dropdown', 'value'),
-     Input('perf_bucketops_dropdown', 'value')],
+    [Input('perf_submit_button', 'n_clicks'),
+     State('perf_release_dropdown', 'value'),
+     State('perf_branch_dropdown', 'value'),
+     State('perf_build_dropdown', 'value'),
+     State('perf_nodes_dropdown', 'value'),
+     State('perf_pfull_dropdown', 'value'),
+     State('perf_iteration_dropdown', 'value'),
+     State('perf_custom_dropdown', 'value'),
+     State('perf_sessions_dropdown', 'value'),
+     State('perf_buckets_dropdown', 'value'),
+     State('perf_bucketops_dropdown', 'value')],
     prevent_initial_call=True
 )
-def update_bucketops(release_combined, branch, build, nodes,
-                     pfull, itrns, custom, n_clicks, sessions, buckets, objsize):
+def update_bucketops(n_clicks, release_combined, branch, build, nodes,
+                     pfull, itrns, custom, sessions, buckets, objsize):
     table = None
     if not (all([release_combined, branch, build, nodes,
                  itrns, custom, n_clicks, sessions, buckets])) and pfull is None:
@@ -209,20 +209,20 @@ def update_bucketops(release_combined, branch, build, nodes,
 
 @app.callback(
     Output('statistics_cosbench_table', 'children'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
     Input('perf_submit_button', 'n_clicks'),
-    Input('perf_sessions_dropdown', 'value'),
-    Input('perf_buckets_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
+    State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_cosbench(release_combined, branch, build, nodes,
-                    pfull, itrns, custom, n_clicks, sessions, buckets):
+def update_cosbench(n_clicks, release_combined, branch, build, nodes,
+                    pfull, itrns, custom, sessions, buckets):
     table = None
     if not (all([release_combined, branch, build, nodes,
                  itrns, custom, n_clicks, sessions, buckets])) and pfull is None:

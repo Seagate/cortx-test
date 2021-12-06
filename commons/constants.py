@@ -37,6 +37,11 @@ PROD_FAMILY_LR = "LR"
 PROD_TYPE_K8S = "k8s"
 PROD_TYPE_NODE = "node"
 
+# K8s for cortx
+POD_NAME_PREFIX = "cortx-data-pod"
+HAX_CONTAINER_NAME = "cortx-motr-hax"
+NAMESPACE = "default"
+
 # RAS Paths
 BYTES_TO_READ = 8000
 ONE_BYTE_TO_READ = 1
@@ -107,10 +112,17 @@ CONF_SYSFS_BASE_PATH = "SYSTEM_INFORMATION>sysfs_base_path"
 CONF_RAID_INTEGRITY = "RAIDINTEGRITYSENSOR>retry_interval"
 AUTHSERVER_CONFIG = "/opt/seagate/cortx/auth/resources/authserver.properties"
 LOCAL_COPY_PATH = tempfile.gettempdir()+"/authserver.properties"
+LOCAL_CONF_PATH = tempfile.gettempdir()+"/cluster.conf"
+CLUSTER_CONF_PATH = "/etc/cortx/cluster.conf"
+CSM_CONF_PATH = "/etc/cortx/csm/csm.conf"
+CSM_COPY_PATH = tempfile.gettempdir()+"/csm.conf"
+CORTX_CSM_POD = "cortx-csm-agent"
 
 """ S3 constants """
 LOCAL_S3_CERT_PATH = "/etc/ssl/stx-s3-clients/s3/ca.crt"
 const.S3_CONFIG = "/opt/seagate/cortx/s3/conf/s3config.yaml"
+const.S3_CONFIG_K8s = "/etc/cortx/s3/conf/s3config.yaml"
+const.LOCAL_S3_CONFIG = "/tmp/s3config.yaml"
 const.CA_CERT_PATH = "/opt/seagate/cortx/provisioner/srv/components/s3clients/files/ca.crt"
 const.REMOTE_DEFAULT_DIR = "/var/motr"
 const.CFG_FILES = ["/etc/haproxy/haproxy.cfg",
@@ -187,6 +199,14 @@ class Rest:
                                   "\"Principal\": {\"AWS\":\"$principal\"}}]}"
     SORT_BY_ERROR = "{\'sort_by\': [\'Must be one of: user_id, username," \
                     " user_type, created_time, updated_time.\']}"
+    CUSTOM_S3_USER = ["account_name", "account_email", "password", "access_key", "secret_key"]
+    S3_ACCESS_UL = 128
+    S3_ACCESS_LL = 16
+    S3_SECRET_UL = 40
+    S3_SECRET_LL = 8
+    MAX_S3_USERS = 1000
+    MAX_BUCKETS = 1000
+    MAX_IAM_USERS = 1000
     CSM_USER_LIST_OFFSET = 1
     CSM_USER_LIST_LIMIT = 5
     CSM_USER_LIST_SORT_BY = "username"
@@ -210,6 +230,23 @@ class Rest:
         },
         "required": ["total", "good"]
     }
+
+
+# aws cli errors
+AWS_CLI_ERROR = ["ServiceUnavailable",
+                 "MalformedPolicy",
+                 "InvalidRequest",
+                 "Forbidden",
+                 "Conflict",
+                 "InternalError",
+                 "InvalidArgument",
+                 "AccessDenied",
+                 "Failed:",
+                 "An error occurred",
+                 "S3 error: ",
+                 "Read timeout"
+                 "Connection was closed"]
+
 
 # cortxcli constants
 S3BUCKET_HELP = [
@@ -330,8 +367,18 @@ class SwAlerts:
 class Sizes:
     KB = 1024
     MB = KB * KB
+    GB = MB * KB
+
 
 # Support Bundle
 R2_SUPPORT_BUNDLE_PATH = "/var/log/cortx/support_bundle/"
 SUPPORT_BUNDLE_COMPONENT_LIST = ["csm", "sspl", "s3", "motr", "hare", "provisioner",
                 "manifest", "uds", "elasticsearch", "utils", "HA"]
+
+# K8s env
+K8S_SCRIPTS_PATH = "/root/deploy-scripts/k8_cortx_cloud/"
+K8S_PEM_PATH = K8S_SCRIPTS_PATH + "cortx-cloud-helm-pkg/" \
+               "cortx-configmap/ssl-cert/s3.seagate.com.pem"
+
+# haproxy.cfg dummy file Path
+HAPROXY_DUMMY_CONFIG = "scripts/cicd_k8s/haproxy_dummy.cfg"

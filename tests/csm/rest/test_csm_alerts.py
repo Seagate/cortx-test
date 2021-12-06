@@ -22,12 +22,16 @@
 """
 import logging
 import random
+
 import pytest
+
+from commons import configmanager
+from commons import constants as consts
 from commons import cortxlogging
 from commons.constants import Rest as const
-from commons.utils import assert_utils
-from commons import configmanager
 from commons.helpers.node_helper import Node
+from commons.helpers.pods_helper import LogicalNode
+from commons.utils import assert_utils
 from config import CMN_CFG
 from libs.csm.rest.csm_rest_alert import SystemAlerts
 from libs.ras.ras_test_lib import RASTestLib
@@ -43,9 +47,15 @@ class TestCsmAlerts():
         """ This is method is for test suite set-up """
         cls.log = logging.getLogger(__name__)
         cls.log.info("Initializing test setups ......")
-        cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
-                            username=CMN_CFG["nodes"][0]["username"],
-                            password=CMN_CFG["nodes"][0]["password"])
+        if CMN_CFG["product_family"] == consts.PROD_FAMILY_LR and \
+                CMN_CFG["product_type"] == consts.PROD_TYPE_NODE:
+            cls.node_obj = Node(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                username=CMN_CFG["nodes"][0]["username"],
+                                password=CMN_CFG["nodes"][0]["password"])
+        else:
+            cls.node_obj = LogicalNode(hostname=CMN_CFG["nodes"][0]["hostname"],
+                                username=CMN_CFG["nodes"][0]["username"],
+                                password=CMN_CFG["nodes"][0]["password"])
         cls.csm_alerts = SystemAlerts(cls.node_obj)
         cls.log.info("Checking if predefined CSM users are present...")
         cls.csm_conf = configmanager.get_config_wrapper(fpath="config/csm/test_rest_csm_alert.yaml")
