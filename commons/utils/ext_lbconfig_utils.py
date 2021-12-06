@@ -48,7 +48,7 @@ def configure_rsyslog():
                 if "# Provides UDP syslog reception" in line:
                     f_write.write(line)
                     f_write.write(
-                        f"$ModLoad imudp\n$UDPServerAddress 127.0.0.1\n$UDPServerRun 514\n")
+                        "$ModLoad imudp\n$UDPServerAddress 127.0.0.1\n$UDPServerRun 514\n")
                     continue
                 if "$ModLoad imudp" in line or "$UDPServerAddress 127.0.0.1" in line\
                         or "$UDPServerRun 514" in line:
@@ -58,7 +58,7 @@ def configure_rsyslog():
         sys_utils.execute_cmd("mv {} {}".format("/etc/rsyslog_dummy.conf", rsysconf_path))
         sys_utils.execute_cmd("rm -f {}".format("/etc/rsyslog_dummy.conf"))
     else:
-        LOGGER.info(f"Couldn't find {rsysconf_path}")
+        LOGGER.info("Couldn't find %s ", rsysconf_path)
     rsyslogd_path = "/etc/rsyslog.d/haproxy.conf"
     haproxylog_path = "/var/log/haproxy.log"
     if os.path.exists(rsyslogd_path):
@@ -158,12 +158,8 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     if os.path.exists(pem_local_path):
         sys_utils.execute_cmd("rm -f {}".format(pem_local_path))
     sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
-    sys_utils.execute_cmd("curl https://raw.githubusercontent.com/Seagate/cortx-s3server/"
-                          "kubernetes/scripts/haproxy/ssl/s3.seagate.com.crt"
-                          " -o /etc/ssl/stx-s3-clients/s3/ca.crt")
-    sys_utils.execute_cmd("curl https://raw.githubusercontent.com/"
-                          "Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/srv/"
-                          "components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem")
+    sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_CRT_FILE)
+    sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_PEM_FILE)
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd("puppet agent --disable")
