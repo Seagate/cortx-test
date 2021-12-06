@@ -4793,7 +4793,6 @@ class TestCsmUser():
     @pytest.mark.csmrest
     @pytest.mark.cluster_user_ops
     @pytest.mark.parallel
-<<<<<<< HEAD
     @pytest.mark.tags('TEST-32180')
     def test_32180(self):
         """
@@ -4868,7 +4867,13 @@ class TestCsmUser():
         self.log.info("Response : %s", response)
         self.log.info("Verifying response code 200 was returned for get users")
         assert response.status_code == const.SUCCESS_STATUS
-=======
+        self.log.info("##### Test completed -  %s #####", test_case_name)
+    
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest
+    @pytest.mark.cluster_user_ops
+    @pytest.mark.parallel
     @pytest.mark.tags('TEST-32182')
     def test_32182(self):
         """
@@ -5075,7 +5080,11 @@ class TestCsmUser():
             assert response.status_code == HTTPStatus.OK, "User Not Deleted Successfully."
             self.log.info("Removing user from list if delete is successful")
             self.created_users.remove(username)
-=======
+            self.log.info("##### Test completed -  %s #####", test_case_name)
+
+    @pytest.mark.lr
+    @pytest.mark.lc
+    @pytest.mark.csmrest     
     @pytest.mark.parallel
     @pytest.mark.cluster_user_ops
     @pytest.mark.tags('TEST-32242')
