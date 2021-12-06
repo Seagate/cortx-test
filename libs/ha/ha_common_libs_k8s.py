@@ -812,13 +812,12 @@ class HAK8s:
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
 
-        if way_to_restore is "scale_replicas":
+        if way_to_restore == "scale_replicas":
             resp = pod_obj.create_pod_replicas(num_replica=1, deploy=deployment_name)
-            return resp
-        elif way_to_restore is "k8s":
+        elif way_to_restore == "k8s":
             resp = pod_obj.recover_deployment_k8s(deployment_name=deployment_name,
                                                   backup_path=deployment_backup)
-            return resp
-        elif way_to_restore is "helm":
+        elif way_to_restore == "helm":
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
-            return resp
+
+        return resp
