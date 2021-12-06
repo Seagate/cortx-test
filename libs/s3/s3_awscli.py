@@ -135,6 +135,7 @@ class AWScliS3api:
         :return: True/False and output of command execution
         """
         LOGGER.info("Delete bucket: %s", bucket_name)
+        LOGGER.info("List objects: %s", self.list_objects_v2(bucket_name))
         cmd_del_bkt = commands.CMD_AWSCLI_DELETE_BUCKET.format(bucket_name)
         cmd_del_bkt = " ".join([cmd_del_bkt, "--force"]) if force else cmd_del_bkt
         cmd_del_bkt += self.cmd_endpoint_options

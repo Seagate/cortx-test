@@ -50,8 +50,7 @@ def process_te(te, tp_info, skip_tes, new_tp_key, new_skipped_te, new_te_keys, o
                                                                  product_family)
     if new_te_id != '':
         print("New TE created, now add tests to te and tp")
-        response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info['env'],
-                                         tp_info['platform'], test_list)
+        response = jt.add_tests_to_te_tp(new_te_id, new_tp_key, tp_info, test_list)
         if response:
             print("Tests added to TE {} and TP {}".format(new_te_id, new_tp_key))
             new_te_keys.append(new_te_id)
@@ -84,6 +83,7 @@ def main(args):
     tp_info['affect_version'] = args.affect_version
     tp_info['fix_version'] = args.fix_version
     tp_info['product_family'] = args.product_family
+    tp_info['core_category'] = args.core_category
 
     new_tp_key, env_field = jira_task.create_new_test_plan(test_plan, tp_info)
     if new_tp_key == '':
@@ -180,6 +180,8 @@ def parse_args():
     parser.add_argument("-pf", "--product_family", type=str, default='LR', help="LR or K8")
     parser.add_argument("-sc", "--skip_te_clone", nargs='+', type=str,
                         help="Space separated te tickets to skip from cloning")
+    parser.add_argument("-cc", "--core_category", type=str, default='NA',
+                        help="gold/silver")
     return parser.parse_args()
 
 
