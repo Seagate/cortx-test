@@ -20,7 +20,7 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/python
 
-from dash.dependencies import Output, Input
+from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 from common import app
 
@@ -33,9 +33,10 @@ from Performance.global_functions import get_dict_from_array, get_distinct_keys,
     Output('perf_branch_dropdown', 'value'),
     Output('perf_branch_dropdown', 'disabled'),
     Input('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_branches_dropdown(release_combined):
+def update_branches_dropdown(release_combined, current_value):
     options = None
     value = None
     disabled = False
@@ -46,8 +47,10 @@ def update_branches_dropdown(release_combined):
         op_sys = release_combined.split("_")[1]
         branches = get_distinct_keys(release, 'Branch', {'OS': op_sys})
         if branches:
-            options = get_dict_from_array(branches, False)
-            if 'stable' in branches:
+            options = get_dict_from_array(branches, False, 'branch')
+            if current_value in branches:
+                value = current_value
+            elif 'stable' in branches:
                 value = 'stable'
             elif 'cortx-1.0' in branches:
                 value = 'cortx-1.0'
@@ -66,11 +69,12 @@ def update_branches_dropdown(release_combined):
     Output('perf_build_dropdown', 'options'),
     Output('perf_build_dropdown', 'value'),
     Output('perf_build_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
     Input('perf_branch_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_builds_dropdown(release_combined, branch):
+def update_builds_dropdown(branch, release_combined, current_value):
     versions = None
     value = None
     disabled = False
@@ -83,8 +87,11 @@ def update_builds_dropdown(release_combined, branch):
             release, 'Build', {'OS': op_sys, 'Branch': branch})
         if builds:
             builds = sort_builds_list(builds)
-            versions = get_dict_from_array(builds, True)
-            value = versions[0]['value']
+            versions = get_dict_from_array(builds, True, 'build')
+            if current_value in builds:
+                value = current_value
+            else:
+                value = versions[0]['value']
             if len(builds) == 1:
                 disabled = True
         else:
@@ -97,12 +104,13 @@ def update_builds_dropdown(release_combined, branch):
     Output('perf_nodes_dropdown', 'options'),
     Output('perf_nodes_dropdown', 'value'),
     Output('perf_nodes_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
     Input('perf_build_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_nodes_dropdown(release_combined, branch, build):
+def update_nodes_dropdown(build, release_combined, branch, current_value):
     options = None
     value = None
     disabled = False
@@ -114,9 +122,13 @@ def update_nodes_dropdown(release_combined, branch, build):
         nodes = get_distinct_keys(release, 'Count_of_Servers', {'OS': op_sys,
                                   'Branch': branch, 'Build': build})
         nodes = list(map(int, nodes))
+        nodes.sort()
         if nodes:
             options = get_dict_from_array(nodes, False, 'nodes')
-            value = options[0]['value']
+            if current_value in nodes:
+                value = current_value
+            else:
+                value = options[-1]['value']
             if len(nodes) == 1:
                 disabled = True
         else:
@@ -129,13 +141,14 @@ def update_nodes_dropdown(release_combined, branch, build):
     Output('perf_pfull_dropdown', 'options'),
     Output('perf_pfull_dropdown', 'value'),
     Output('perf_pfull_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
     Input('perf_nodes_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_percentfill_dropdown(release_combined, branch, build, nodes):
+def update_percentfill_dropdown(nodes, release_combined, branch, build, current_value):
     options = None
     value = None
     disabled = False
@@ -148,7 +161,10 @@ def update_percentfill_dropdown(release_combined, branch, build, nodes):
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes})
         if pfulls:
             options = get_dict_from_array(pfulls, False, 'pfill')
-            value = options[0]['value']
+            if current_value in pfulls:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(pfulls) == 1:
                 disabled = True
         else:
@@ -161,14 +177,15 @@ def update_percentfill_dropdown(release_combined, branch, build, nodes):
     Output('perf_custom_dropdown', 'options'),
     Output('perf_custom_dropdown', 'value'),
     Output('perf_custom_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
     Input('perf_pfull_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_custom_dropdown(release_combined, branch, build, nodes, pfull):
+def update_custom_dropdown(pfull, release_combined, branch, build, nodes, current_value):
     options = None
     value = None
     disabled = False
@@ -182,7 +199,10 @@ def update_custom_dropdown(release_combined, branch, build, nodes, pfull):
             'Build': build, 'Count_of_Servers': nodes, 'Percentage_full': pfull})
         if custom:
             options = get_dict_from_array(custom, False)
-            value = options[0]['value']
+            if current_value in custom:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(custom) == 1:
                 disabled = True
         else:
@@ -195,15 +215,16 @@ def update_custom_dropdown(release_combined, branch, build, nodes, pfull):
     Output('perf_iteration_dropdown', 'options'),
     Output('perf_iteration_dropdown', 'value'),
     Output('perf_iteration_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
     Input('perf_custom_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_iteration_dropdown(release_combined, branch, build, nodes, pfull, custom):
+def update_iteration_dropdown(custom, release_combined, branch, build, nodes, pfull, current_value):
     options = None
     value = None
     disabled = False
@@ -215,9 +236,13 @@ def update_iteration_dropdown(release_combined, branch, build, nodes, pfull, cus
         iterations = get_distinct_keys(release, 'Iteration', {
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull,  'Custom': custom})
+        iterations.sort()
         if iterations:
-            options = get_dict_from_array(iterations, False, 'itrns')
-            value = options[0]['value']
+            options = get_dict_from_array(iterations, True, 'itrns')
+            if current_value in iterations:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(iterations) == 1:
                 disabled = True
         else:
@@ -230,16 +255,18 @@ def update_iteration_dropdown(release_combined, branch, build, nodes, pfull, cus
     Output('perf_sessions_dropdown', 'options'),
     Output('perf_sessions_dropdown', 'value'),
     Output('perf_sessions_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
     Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_sessions_dropdown(release_combined, branch, build, nodes, pfull, itrns, custom):
+def update_sessions_dropdown(itrns, release_combined, branch, build, nodes, pfull, custom, 
+                                current_value):
     options = None
     value = None
     disabled = False
@@ -252,10 +279,16 @@ def update_sessions_dropdown(release_combined, branch, build, nodes, pfull, itrn
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom
         })
+        sessions.sort()
         if sessions:
             sessions = sort_sessions(sessions)
             options = get_dict_from_array(sessions, False, 'sessions')
-            value = options[0]['value']
+            if current_value in sessions:
+                value = current_value
+            elif 600 in sessions:
+                value = 600
+            else:
+                value = options[-1]['value']
             if len(sessions) == 1:
                 disabled = True
         else:
@@ -268,17 +301,19 @@ def update_sessions_dropdown(release_combined, branch, build, nodes, pfull, itrn
     Output('perf_buckets_dropdown', 'options'),
     Output('perf_buckets_dropdown', 'value'),
     Output('perf_buckets_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
     Input('perf_sessions_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_buckets_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_buckets_dropdown(release_combined, branch, build, nodes, pfull, itrns, custom, sessions):
+def update_buckets_dropdown(sessions, release_combined, branch, build, nodes, pfull, custom, itrns,
+                                current_value):
     options = None
     value = None
     disabled = False
@@ -291,9 +326,14 @@ def update_buckets_dropdown(release_combined, branch, build, nodes, pfull, itrns
             'OS': op_sys, 'Branch': branch, 'Build': build, 'Count_of_Servers': nodes,
             'Percentage_full': pfull, 'Iteration': itrns, 'Custom': custom, 'Sessions': sessions
         })
+        buckets = list(map(int, buckets))
+        buckets.sort()
         if buckets:
             options = get_dict_from_array(buckets, False, 'buckets')
-            value = options[0]['value']
+            if current_value in buckets:
+                value = current_value
+            else:
+                value = options[0]['value']
             if len(buckets) == 1:
                 disabled = True
         else:
@@ -306,19 +346,20 @@ def update_buckets_dropdown(release_combined, branch, build, nodes, pfull, itrns
     Output('perf_bucketops_dropdown', 'options'),
     Output('perf_bucketops_dropdown', 'value'),
     Output('perf_bucketops_dropdown', 'disabled'),
-    Input('perf_release_dropdown', 'value'),
-    Input('perf_branch_dropdown', 'value'),
-    Input('perf_build_dropdown', 'value'),
-    Input('perf_nodes_dropdown', 'value'),
-    Input('perf_pfull_dropdown', 'value'),
-    Input('perf_iteration_dropdown', 'value'),
-    Input('perf_custom_dropdown', 'value'),
-    Input('perf_sessions_dropdown', 'value'),
     Input('perf_buckets_dropdown', 'value'),
+    State('perf_release_dropdown', 'value'),
+    State('perf_branch_dropdown', 'value'),
+    State('perf_build_dropdown', 'value'),
+    State('perf_nodes_dropdown', 'value'),
+    State('perf_pfull_dropdown', 'value'),
+    State('perf_iteration_dropdown', 'value'),
+    State('perf_custom_dropdown', 'value'),
+    State('perf_sessions_dropdown', 'value'),
+    State('perf_bucketops_dropdown', 'value'),
     prevent_initial_call=True
 )
-def update_bucketops_dropdown(release_combined, branch,
-                              build, nodes, pfull, itrns, custom, sessions, buckets):
+def update_bucketops_dropdown(buckets, release_combined, branch,
+                              build, nodes, pfull, itrns, custom, sessions, current_value):
     options = None
     value = None
     disabled = False
@@ -335,7 +376,10 @@ def update_bucketops_dropdown(release_combined, branch,
         if objsizes:
             objsizes = sort_object_sizes_list(objsizes)
             options = get_dict_from_array(objsizes, False)
-            value = options[0]['value']
+            if current_value in objsizes:
+                value = current_value
+            else:
+                value = options[-1]['value']
             if len(objsizes) == 1:
                 disabled = True
         else:

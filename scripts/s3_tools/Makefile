@@ -25,12 +25,26 @@
 
 ACCESS=None
 SECRET=None
-ENDPOINT=https://s3.seagate.com
+ENDPOINT=s3.seagate.com
+VERIFY_SSL='True'
+VALIDATE_CERTS='True'
 CA_CRT=/etc/ssl/stx-s3-clients/s3/ca.crt
 NFS_SHARE=cftic2.pun.seagate.com:/cftshare/jclientCloud/
 APACHE_J_METER=apache-jmeter-5.4.1.tgz
-VERIFY_SSL = True # for aws
 
+ifeq ($(VERIFY_SSL),'True')
+   ssl=--ssl
+   endpoint = https://$(ENDPOINT)
+else
+   ssl=--no-ssl
+   endpoint = http://$(ENDPOINT)
+endif
+
+ifeq ($(VALIDATE_CERTS),'True')
+   certificate=--check-certificate
+else
+   certificate=--no-check-certificate
+endif
 
 aws-install:
 
@@ -45,14 +59,13 @@ aws-configure:
 	@echo "### configure awscli. ###"
 	@echo "Server certificate should be exists at /etc/ssl/stx-s3-clients/s3/"
 	aws configure set plugins.endpoint awscli_plugin_endpoint
-	aws configure set s3.endpoint_url $(ENDPOINT)
-	aws configure set s3api.endpoint_url $(ENDPOINT)
+	aws configure set s3.endpoint_url $(endpoint)
+	aws configure set s3api.endpoint_url $(endpoint)
 	aws configure set default.ca_bundle $(CA_CRT)
 	aws configure set aws_access_key_id $(ACCESS)
 	aws configure set aws_secret_access_key $(SECRET)
 	aws configure set region "US"
 	aws configure set output "json"
-	aws configure set default.no-verify-ssl $(!VERIFY_SSL)
 	@echo "### configured awscli. ###"
 
 
@@ -67,16 +80,14 @@ s3cmd-configure:
 
 	@echo "###Configure s3cmd in current machine###"
 	rm -rf /root/.s3cfg
-	ifeq($VERIFY_SSL, True)
-		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --ssl --dump-config >/root/.s3cfg
-	else
-		s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt --no-ssl --dump-config >/root/.s3cfg
-	endif
+	s3cmd --configure --access_key=$(ACCESS) --secret_key=$(SECRET) -s --no-encrypt $(ssl) $(certificate) --dump-config >/root/.s3cfg
 	sed -i 's|^ca_certs_file =.*|ca_certs_file = "$(CA_CRT)"|g' /root/.s3cfg
 	sed -i 's|^progress_meter =.*|	progress_meter = True|g' /root/.s3cfg
 	sed -i 's|^proxy_port =.*|proxy_port = 0|g' /root/.s3cfg
-	sed -i 's|^host_base =.*|host_base = s3.seagate.com|g' /root/.s3cfg
-	sed -i 's|^host_bucket =.*|host_bucket = s3.seagate.com|g' /root/.s3cfg
+	sed -i 's|^host_base =.*|host_base = $(ENDPOINT)|g' /root/.s3cfg
+	sed -i 's|^host_bucket =.*|host_bucket = $(ENDPOINT)|g' /root/.s3cfg
+	sed -i 's|^check_ssl_certificate =.*|check_ssl_certificate = $(VALIDATE_CERTS)|g' /root/.s3cfg
+	sed -i 's|^use_https =.*|use_https = $(VERIFY_SSL)|g' /root/.s3cfg
 	@echo "###Configured s3cmd in current machine###"
 
 
@@ -112,7 +123,7 @@ minio-install:
 minio-configure:
 
 	@echo "###Configure minio client in current machine###"
-	./mc config host add s3 https://s3.seagate.com $(ACCESS) $(SECRET) --api S3v4
+	./mc config host add s3 $(endpoint) $(ACCESS) $(SECRET) --api S3v4
 	cp -r $(CA_CRT) /root/.mc/certs/s3.seagate.com.crt
 	@echo "###configured minio client in current machine###"
 
@@ -141,6 +152,10 @@ s3bench-install:
 	git clone https://github.com/Seagate/s3bench.git /root/go/src/s3bench
 	@echo "###Installed s3bench tool###"
 
+bashrc-configure:
+	@echo "###Configuring bashrc for setting ulimit for avoiding file-descriptor out of range issue###"
+	echo 'ulimit -n 999999' >> ~/.bashrc
+	source ~/.bashrc
 
 aws: aws-install aws-configure
 	@echo "### Installed & configured aws tool. ###"
@@ -176,7 +191,7 @@ apache-jmeter-install:
 	@echo "###Installed apache jmeter in current machine###"
 
 
-all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install
+all: clean aws s3fs s3cmd minio jcloud-client-install s3bench-install apache-jmeter-install bashrc-configure
 	@echo "### All tools are installed & configured. ###"
 
 
@@ -207,3 +222,4 @@ help :
 	@echo "minio: Install & configure minio tool. Eg: make minio --makefile=<makefile_path> ACCESS=<new-accesskey> SECRET=<new-secretkey>"
 	@echo "s3bench-install: Setup s3bench tool. Eg: make s3bench-install --makefile=<makefile_path>"
 	@echo "apache-jmeter-install: Setup apache-jmeter-install tool. Eg: make apache-jmeter-install --makefile=<makefile_path>"
+	@echo "bashrc-configure: Setup ulimit to maximum size for allowing open file descriptors. Eg:make bashrc-configure --makefile=<makefile_path>"

@@ -21,15 +21,17 @@
 """
 Locust tasks set for put object, get object and delete object from bucket
 """
-
-import os
+import glob
 import logging
+import os
 import secrets
+
 from locust import HttpUser
 from locust import events
 from locust import task, constant
-from scripts.locust import locust_utils
+
 from scripts.locust import LOCUST_CFG
+from scripts.locust import locust_utils
 
 UTILS_OBJ = locust_utils.LocustUtils()
 LOGGER = logging.getLogger(__name__)
@@ -61,25 +63,28 @@ class LocustUser(HttpUser):
         LOGGER.info("Starting test setup")
         UTILS_OBJ.create_buckets(BUCKET_COUNT)
 
-    @task(1)
+    @task(2)
     def put_object(self):
         object_size = self.secure_range.randint(MIN_OBJECT_SIZE, MAX_OBJECT_SIZE)
-        for bucket in BUCKET_LIST:
-            self.utils.put_object(bucket, object_size)
+        bucket = secrets.choice(BUCKET_LIST)
+        self.utils.put_object(bucket, object_size)
 
     @task(1)
     def get_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.download_object(bucket)
+        self.utils.download_object()
+
+    @task(1)
+    def head_object(self):
+        self.utils.head_object()
 
     @task(1)
     def delete_object(self):
-        for bucket in BUCKET_LIST:
-            self.utils.delete_object(bucket)
+        self.utils.delete_object()
 
     @events.test_stop.add_listener
     def on_test_stop(**kwargs):
         UTILS_OBJ.delete_buckets(BUCKET_LIST)
-        for local_obj in (
-                locust_utils.OBJ_NAME, locust_utils.GET_OBJ_PATH):
-            UTILS_OBJ.delete_local_obj(local_obj)
+        for object_files in glob.glob(f"{locust_utils.OBJ_NAME}*"):
+            UTILS_OBJ.delete_local_obj(object_files)
+        for object_files in glob.glob(f"{locust_utils.GET_OBJ_PATH}*"):
+            UTILS_OBJ.delete_local_obj(object_files)

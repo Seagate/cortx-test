@@ -20,16 +20,19 @@
 """S3 utility Library."""
 import base64
 import os
+import time
 import urllib
 import hmac
 import datetime
 import hashlib
 import logging
 import json
+import xmltodict
 from hashlib import md5
 from random import shuffle
+from typing import Any
 
-import xmltodict
+
 
 
 LOGGER = logging.getLogger(__name__)
@@ -190,6 +193,24 @@ def convert_xml_to_dict(xml_response) -> dict:
     except Exception as error:
         LOGGER.error(error)
         return xml_response
+
+
+def poll(target, *args, **kwargs) -> Any:
+    """Method to wait for a function/target to return a certain expected condition."""
+    timeout = kwargs.pop("timeout", 60)
+    step = kwargs.pop("step", 10)
+    expected = kwargs.pop("expected", dict)
+    end_time = time.time() + timeout
+    while time.time() <= end_time:
+        try:
+            response = target(*args, **kwargs)
+            if isinstance(response, expected) or response:
+                return response
+        except Exception as response:
+            LOGGER.error(response)
+        time.sleep(step)
+
+    return target(*args, **kwargs)
 
 
 def calc_checksum(file_path, part_size=0):
