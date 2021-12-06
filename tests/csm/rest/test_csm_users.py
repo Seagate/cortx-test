@@ -4850,6 +4850,8 @@ class TestCsmUser():
             return_actual_response=True,
             sort_by="role")
         self.log.info("Response : %s", response)
+        self.log.info("Verifying response code 200 was returned for get users")
+        assert response.status_code == const.SUCCESS_STATUS
         self.log.info("##### Test completed -  %s #####", test_case_name)
 
     @pytest.mark.lr

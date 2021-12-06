@@ -806,7 +806,7 @@ class RestCsmUser(RestTestLib):
     @RestTestLib.authenticate_and_login
     def delete_csm_user(self, user_id):
         """
-        This function will create new CSM user
+        This function will delete CSM user
         :param user_type: type of user required
         :param user_role: User role type.
         :param save_new_user: to store newly created user to config
@@ -835,7 +835,7 @@ class RestCsmUser(RestTestLib):
     @RestTestLib.authenticate_and_login
     def delete_user_with_header(self, user_id, header):
         """
-        This function will create new CSM user
+        This function will delete CSM user
         :param user_type: type of user required
         :param user_role: User role type.
         :param save_new_user: to store newly created user to config
@@ -851,8 +851,7 @@ class RestCsmUser(RestTestLib):
                 "Endpoint for CSM user creation is  %s", endpoint)
 
             # Fetching api response
-            self.headers.update(const.CONTENT_TYPE)
-            return self.restapi.rest_call("delete", endpoint=endpoint, headers=self.headers)
+            return self.restapi.rest_call("delete", endpoint=endpoint, headers=header)
 
         except BaseException as error:
             self.log.error("%s %s: %s",
