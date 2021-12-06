@@ -801,10 +801,15 @@ class ProvDeployK8sCortxLib:
         details = resp.json()
         access_key = details['access_key']
         secret_key = details["secret_key"]
+
         try:
+            LOGGER.info("Configure AWS on Client")
+            resp = system_utils.execute_cmd(common_cmd.CMD_AWS_INSTALL)
+            LOGGER.debug("resp : %s", resp)
             LOGGER.info("Configure AWS keys on Client")
-            system_utils.execute_cmd(
+            resp = system_utils.execute_cmd(
                 common_cmd.CMD_AWS_CONF_KEYS.format(access_key, secret_key))
+            LOGGER.debug("resp : %s", resp)
         except IOError as error:
             LOGGER.error(
                 "An error occurred in %s:",

@@ -60,6 +60,8 @@ CMD_HARE_RESET = "/opt/seagate/cortx/hare/bin/hare_setup reset " \
                  "--file /var/lib/hare/cluster.yaml"
 PROV_CLUSTER = "jq . /opt/seagate/cortx_configs/provisioner_cluster.json"
 
+CMD_AWS_INSTALL = "make aws-install --makefile=scripts/s3_tools/Makefile"
+
 # aws s3 commands
 BUNDLE_CMD = "sh /opt/seagate/cortx/s3/scripts/s3_bundle_generate.sh"
 CRASH_COMMANDS = ["ls -l /var/crash", "ls -lR /var/motr | grep core"]
