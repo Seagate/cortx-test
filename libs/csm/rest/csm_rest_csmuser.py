@@ -832,7 +832,6 @@ class RestCsmUser(RestTestLib):
             raise CTException(
                 err.CSM_REST_AUTHENTICATION_ERROR, error) from error
 
-    @RestTestLib.authenticate_and_login
     def delete_user_with_header(self, user_id, header):
         """
         This function will delete CSM user
