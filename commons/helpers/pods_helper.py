@@ -389,7 +389,8 @@ class LogicalNode(Host):
 
     def get_recent_pod_name(self):
         """
-
+        Helper function to get name of recently created pod
+        :return: str
         """
         log.info("Get most recently created pod name")
         cmd = commands.KUBECTL_GET_RECENT_POD

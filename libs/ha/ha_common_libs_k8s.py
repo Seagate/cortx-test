@@ -803,7 +803,11 @@ class HAK8s:
     @staticmethod
     def restore_pod(pod_obj, way_to_restore, restore_params: dict = None):
         """
-
+        Helper function to restore pod based on way_to_restore
+        :param pod_obj: Object of master node
+        :param way_to_restore: Way to restore pod
+        :param restore_params: Dict which has parameters required to restore pods
+        :return: Bool, response
         """
         deployment_name = restore_params["deployment_name"]
         deployment_backup = restore_params.get("deployment_backup", None)
@@ -818,4 +822,3 @@ class HAK8s:
         elif way_to_restore is "helm":
             resp = pod_obj.recover_deployment_helm(deployment_name=deployment_name)
             return resp
-
