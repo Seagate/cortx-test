@@ -158,14 +158,16 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
     LOGGER.info("Coping the ca.crt to %s", cm_const.LOCAL_S3_CERT_PATH)
     if os.path.exists(cm_const.LOCAL_S3_CERT_PATH):
         sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_S3_CERT_PATH))
-    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(
+        os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
     resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_CRT_FILE.format(cm_const.LOCAL_S3_CERT_PATH))
     assert_utils.assert_true(resp[0], resp[1])
 
     LOGGER.info("Coping the stx.pem to %s", cm_const.LOCAL_PEM_PATH)
     if os.path.exists(cm_const.LOCAL_PEM_PATH):
         sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
-    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(os.path.abspath(cm_const.LOCAL_PEM_PATH))))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(
+        os.path.abspath(cm_const.LOCAL_PEM_PATH))))
     resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_PEM_FILE.format(cm_const.LOCAL_PEM_PATH))
     assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
