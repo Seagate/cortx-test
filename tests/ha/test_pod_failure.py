@@ -183,8 +183,6 @@ class TestPODFailure:
             "STARTED: Test to verify degraded reads before and after safe pod shutdown.")
 
         LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
-        import pdb
-        pdb.set_trace()
         users = self.mgnt_ops.create_account_users(nusers=1)
         self.test_prefix = 'test_32443'
         self.s3_clean = self.s3bench_cleanup = users
@@ -299,3 +297,146 @@ class TestPODFailure:
 
         LOGGER.info(
             "ENDED: Test to verify degraded reads before and after unsafe pod shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-23552")
+    @CTFailOn(error_handler)
+    def test_dgrd_wrts_bfr_aftr_safe_pod_shutdown(self):
+        """
+        This test tests degraded writes before and after safe pod shutdown
+        """
+        LOGGER.info(
+            "STARTED: Test to verify degraded writes before and after safe pod shutdown.")
+
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test_23552'
+        self.s3_clean = self.s3bench_cleanup = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the data pod safely by making replicas=0")
+        LOGGER.info("Get pod name to be deleted")
+        pod_name = random.sample(list(self.node_master_list[0].get_all_pods_containers(
+            pod_prefix=const.POD_NAME_PREFIX).keys()), 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = self.node_master_list[0].create_pod_replicas(num_replica=0, pod_name=pod_name)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by making replicas=0", pod_name)
+        self.dploymnt_name = resp[1]
+        self.restore_pod = True
+        self.way_to_restore = "scale_replicas"
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod are in offline state")
+
+        LOGGER.info("Step 5: Perform READs and verify DI on the written data")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Performed READs and verified DI on the written data")
+
+        LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3bench_cleanup = None
+        LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
+                    "data")
+
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-23552', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created in IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info(
+            "ENDED: Test to verify degraded writes before and after safe pod shutdown.")
+
+    @pytest.mark.ha
+    @pytest.mark.lc
+    @pytest.mark.tags("TEST-26440")
+    @CTFailOn(error_handler)
+    def test_dgrd_wrts_bfr_aftr_unsafe_pod_shutdown(self):
+        """
+        This test tests degraded writes before and after unsafe pod shutdown
+        """
+        LOGGER.info(
+            "STARTED: Test to verify degraded writes before and after unsafe pod shutdown.")
+
+        LOGGER.info("STEP 1: Perform WRITEs with variable object sizes. 0B + (1KB - 512MB)")
+        users = self.mgnt_ops.create_account_users(nusers=1)
+        self.test_prefix = 'test_26440'
+        self.s3_clean = self.s3bench_cleanup = users
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 1: Performed WRITEs with variable sizes objects.")
+
+        LOGGER.info("Step 2: Shutdown the data pod by deleting deployment (unsafe)")
+        LOGGER.info("Get pod name to be deleted")
+        pod_name = random.sample(list(self.node_master_list[0].get_all_pods_containers(
+            pod_prefix=const.POD_NAME_PREFIX).keys()), 1)
+
+        LOGGER.info("Deleting pod %s", pod_name)
+        resp = self.node_master_list[0].delete_deployment(pod_name=pod_name)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_false(resp[0], f"Failed to delete pod {pod_name} by making replicas=0")
+        LOGGER.info("Step 2: Successfully shutdown/deleted pod %s by deleting deployment (unsafe)",
+                    pod_name)
+        self.dploymnt_backup = resp[1]
+        self.dploymnt_name = resp[2]
+        self.restore_pod = True
+        self.way_to_restore = "k8s"
+
+        LOGGER.info("Step 3: Check cluster status")
+        resp = self.ha_obj.check_cluster_status(self.node_master_list[0])
+        assert_utils.assert_false(resp[0], resp)
+        LOGGER.info("Step 3: Cluster is in degraded state")
+
+        LOGGER.info("Step 4: Check services status that were running on pod %s", pod_name)
+        resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=[pod_name], fail=True)
+        LOGGER.debug("Response: %s", resp)
+        assert_utils.assert_true(resp[0], resp)
+        LOGGER.info("Step 4: Services of pod are in offline state")
+
+        LOGGER.info("Step 5: Perform READs and verify DI on the written data.")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix, skipwrite=True,
+                                                    skipcleanup=True)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 5: Performed READs and verified DI on the written data")
+
+        LOGGER.info("Step 6: Perform WRITEs, READs and verify DI on the already created bucket")
+        resp = self.ha_obj.ha_s3_workload_operation(s3userinfo=list(users.values())[0],
+                                                    log_prefix=self.test_prefix)
+        assert_utils.assert_true(resp[0], resp[1])
+        self.s3bench_cleanup = None
+        LOGGER.info("Step 6: Successfully performed WRITEs, READs and verify DI on the written "
+                    "data")
+
+        LOGGER.info("Step 7: Create multiple buckets and run IOs")
+        resp = self.ha_obj.perform_ios_ops(prefix_data='TEST-26440', nusers=1, nbuckets=10)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Cleaning up accounts and buckets created in IO operations")
+        resp = self.ha_obj.delete_s3_acc_buckets_objects(resp[2])
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 7: Successfully created multiple buckets and ran IOs")
+
+        LOGGER.info(
+            "ENDED: Test to verify degraded writes before and after unsafe pod shutdown.")
