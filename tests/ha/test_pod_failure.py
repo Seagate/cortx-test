@@ -19,7 +19,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 
 """
-HA test suite for Cluster Shutdown: Immediate.
+HA test suite for Pod Failure
 """
 
 import logging
