@@ -118,7 +118,7 @@ class DIFeatureControl:
     def get_s3server_config_file(master_node: LogicalNode, pod: str):
 
         LOGGER.info("Copying Config file from pod %s", pod)
-        node_path = "/root/"
+        node_path = "/root/s3config.yaml"
         cmd = commands.K8S_CP_PV_FILE_TO_LOCAL_CMD.format(pod, const.S3_CONFIG_K8s, node_path)
         resp = master_node.execute_cmd(cmd=cmd, read_lines=True)
         LOGGER.debug("Resp : %s", resp)
@@ -127,11 +127,11 @@ class DIFeatureControl:
         if not resp:
             raise Exception("Error during copying file to client")
 
-        config_utils.read_yaml(LOCAL_S3_CONFIG)
         status, resp = config_utils.read_yaml(LOCAL_S3_CONFIG)
         if not status:
             raise Exception(f"Unable to read {LOCAL_S3_CONFIG} on client: {resp}")
 
+        LOGGER.debug("Remove local file")
         if os.path.exists(LOCAL_S3_CONFIG):
             os.remove(LOCAL_S3_CONFIG)
 
@@ -149,18 +149,16 @@ class DIFeatureControl:
         """
         flag_value = []
         try:
-            resp = master_node.get_pod_name(pod_prefix=POD_NAME_PREFIX)
-            if resp[0]:
-                pods_list = resp[1]
-                for pod in pods_list:
-                    resp = self.get_s3server_config_file(master_node, pod)
-                    flag_value.append(resp[section][flag])
-                if len(set(flag_value)) == 1:
-                    return True, flag_value[0]
-                else:
-                    return False, f"S3 config values for {flag} are not equal in all pods."
+            pods_list = master_node.get_all_pods(pod_prefix=POD_NAME_PREFIX)
+            for pod in pods_list:
+                resp = self.get_s3server_config_file(master_node, pod)
+                flag_value.append(resp[section][flag])
+                LOGGER.info("Pods: %s flag: %s flag_value: %s",pod,flag,resp[section][flag])
+            if len(set(flag_value)) == 1:
+                return True, flag_value[0]
             else:
-                raise Exception(resp[1])
+                return False, f"S3 config values for {flag} are not equal in all pods."
+
         except Exception as ex:
             LOGGER.error(f"Exception Occurred while reading {flag}: %s", ex)
             return False, ex
