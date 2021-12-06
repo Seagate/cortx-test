@@ -7,8 +7,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
+#    http://www.apache.org/licenses/LICENSE-2.0#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +16,6 @@
 #
 # For any questions about this software or licensing,
 # please email opensource@seagate.com or cortx-questions@seagate.com.
-
   dir_path=/mnt/nfs_share
   log_path=deployment_logs/$1/$2/
   LOG_PATH=$dir_path/$log_path
@@ -26,7 +24,7 @@
   cmd3="mkdir -p $LOG_PATH"
   mount_cmd="mount cftic2.pun.seagate.com:/cftshare_temp $dir_path"
   mv_cmd="mv $3/log/latest/TEST-N* $LOG_PATH"
-
+  export_cmd="export LOG_PATH=$LOG_PATH"
   if [ -d $dir_path ]
   then
       echo "INFO: Directory exists."
@@ -34,7 +32,6 @@
       echo "DEBUG: Directory does not exists.Will create the dir"
       eval "$cmd"
   fi
-
   # shellcheck disable=SC2143
   if [[ $(mount -l|grep "$dir_path") ]]; then
       echo "INFO: Mounted"
@@ -44,7 +41,6 @@
           eval "$mount_cmd"
           echo "INFO: Verify the nfs share is mounted"
           eval "$cmd2"
-
   fi
   if [ -d "$LOG_PATH" ]
   then
@@ -52,10 +48,12 @@
       echo "INFO: Copying logs to nfs share"
       eval "$mv_cmd"
       echo "INFO: Copied the logs: $LOG_PATH"
+      eval "$export_cmd"
   else
       echo "INFO: Directory not exists"
       echo "INFO: Creating dir"
       eval "$cmd3"
       eval "$mv_cmd"
-	  echo "INFO: Copied the logs: $LOG_PATH"
+     echo "INFO: Copied the logs: $LOG_PATH"
+     eval "$export_cmd"
   fi
