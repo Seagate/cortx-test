@@ -5024,7 +5024,8 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-32174')
     def test_32174(self):
         """
-        Test that any user with any role should be able to delete themselves, change their own password
+        Test that manage user should be able to reset password of users with manage 
+        and monitor roles , S3 Account user and self password also
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -5134,7 +5135,7 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-32178')
     def test_32178(self):
         """
-        Test that manage user should be able to create and delete users with manage and monitor role
+        Admin user should able to reset other users role ,email and password
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
