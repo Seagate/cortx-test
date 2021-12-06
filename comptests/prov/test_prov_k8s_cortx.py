@@ -78,19 +78,20 @@ class TestProvK8Cortx:
         end_time = start_time + 1800  # 30 mins timeout
         while int(time.time()) < end_time:
             data_pod_list = ProvDeployK8sCortxLib.get_data_pods(self.master_node_obj)
-            for pod_name in data_pod_list[1]:
-                resp = self.deploy_lc_obj.get_hctl_status(self.master_node_list[0], pod_name)
-                if resp[0]:
-                    LOGGER.info("All the services online. Time Taken : %s",
-                                (int(time.time()) - start_time))
-                    break
+            assert_utils.assert_true(data_pod_list[0], data_pod_list[1])
+            pod_name = ' '.join([str(elem) for elem in data_pod_list[1]])
+            resp = self.deploy_lc_obj.get_hctl_status(self.master_node_list[0], pod_name)
+            if resp[0]:
+                LOGGER.info("All the services are online. Time Taken : %s",
+                            (int(time.time()) - start_time))
+                break
             time.sleep(60)
-            assert_utils.assert_true(resp[0], resp[1])
-            LOGGER.info("Step 2: Done.")
-            LOGGER.info("Step 3: Check Pods Status.")
-            path = self.deploy_cfg["k8s_dir"]
-            for node in self.master_node_list:
-                resp = self.deploy_lc_obj.validate_cluster_status(node, path)
+        assert_utils.assert_true(resp[0], resp[1])
+        LOGGER.info("Step 2: Done.")
+        LOGGER.info("Step 3: Check Pods Status.")
+        path = self.deploy_cfg["k8s_dir"]
+        for node in self.master_node_list:
+            resp = self.deploy_lc_obj.validate_cluster_status(node, path)
             assert_utils.assert_true(resp[0], resp[1])
             LOGGER.info("Step 3: Done.")
         LOGGER.info("ENDED: Test Case Completed.")
@@ -253,4 +254,4 @@ class TestProvK8Cortx:
             assert_utils.assert_exact_string(cluster_id_yaml, cluster_id_conf,
                                              "Cluster ID does not match in both files..")
         LOGGER.info("Test Completed.")
-        
+    
