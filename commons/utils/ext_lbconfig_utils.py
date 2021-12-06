@@ -22,12 +22,13 @@
 Module to maintain External Load Balancer set utils
 """
 
-import os
-import logging
 import json
-from commons.helpers.pods_helper import LogicalNode
+import logging
+import os
+
 from commons import commands as cm_cmd
 from commons import constants as cm_const
+from commons.helpers.pods_helper import LogicalNode
 from commons.utils import assert_utils
 from commons.utils import system_utils as sys_utils
 
@@ -72,7 +73,7 @@ def configure_rsyslog():
     sys_utils.execute_cmd(f"touch {haproxylog_path}")
     sys_utils.execute_cmd(f"chmod 755 {haproxylog_path}")
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("rsyslog"))
-    assert_utils.assert_true(resp[0], resp[1])
+    return resp
 
 
 # pylint: disable=too-many-branches
@@ -152,14 +153,21 @@ def configure_haproxy_lb(m_node: str, username: str, password: str, ext_ip: str)
                 continue
             f_write.write(line)
     LOGGER.info("Configuring rsyslog to Configure Logging for HAProxy")
-    configure_rsyslog()
-    LOGGER.info("Coping the PEM from /Seagate/cortx-s3server/kubernetes/scripts/haproxy/ssl/")
-    pem_local_path = "/etc/ssl/stx/stx.pem"
-    if os.path.exists(pem_local_path):
-        sys_utils.execute_cmd("rm -f {}".format(pem_local_path))
-    sys_utils.execute_cmd(cmd="mkdir -p /etc/ssl/stx/")
-    sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_CRT_FILE)
-    sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_PEM_FILE)
+    resp = configure_rsyslog()
+    LOGGER.debug("Configuring rsyslog response = %s", resp)
+    LOGGER.info("Coping the ca.crt to %s", cm_const.LOCAL_S3_CERT_PATH)
+    if os.path.exists(cm_const.LOCAL_S3_CERT_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_S3_CERT_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(os.path.abspath(cm_const.LOCAL_S3_CERT_PATH))))
+    resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_CRT_FILE.format(cm_const.LOCAL_S3_CERT_PATH))
+    assert_utils.assert_true(resp[0], resp[1])
+
+    LOGGER.info("Coping the stx.pem to %s", cm_const.LOCAL_PEM_PATH)
+    if os.path.exists(cm_const.LOCAL_PEM_PATH):
+        sys_utils.execute_cmd("rm -f {}".format(cm_const.LOCAL_PEM_PATH))
+    sys_utils.execute_cmd(cmd="mkdir -p {}".format(os.path.dirname(os.path.abspath(cm_const.LOCAL_PEM_PATH))))
+    resp = sys_utils.execute_cmd(cmd=cm_cmd.CURL_GET_PEM_FILE.format(cm_const.LOCAL_PEM_PATH))
+    assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd(cmd=cm_cmd.SYSTEM_CTL_RESTART_CMD.format("haproxy"))
     assert_utils.assert_true(resp[0], resp[1])
     resp = sys_utils.execute_cmd("puppet agent --disable")

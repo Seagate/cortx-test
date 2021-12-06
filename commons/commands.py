@@ -520,7 +520,7 @@ FIELD_CLUSTER_CFG_COMP = "cluster config component --type {}"
 
 # Curl commands
 CURL_GET_CRT_FILE = "curl https://raw.githubusercontent.com/Seagate/cortx-s3server/kubernetes/" \
-                    "scripts/haproxy/ssl/s3.seagate.com.crt -o /etc/ssl/stx-s3-clients/s3/ca.crt"
+                    "scripts/haproxy/ssl/s3.seagate.com.crt -o {}"
 CURL_GET_PEM_FILE = "curl https://raw.githubusercontent.com/" \
                     "Seagate/cortx-prvsnr/4c2afe1c19e269ecb6fbf1cba62fdb7613508182/" \
-                    "srv/components/misc_pkgs/ssl_certs/files/stx.pem -o /etc/ssl/stx/stx.pem"
+                    "srv/components/misc_pkgs/ssl_certs/files/stx.pem -o {}"
