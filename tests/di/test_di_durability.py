@@ -866,9 +866,8 @@ class TestDIDurability:
     @pytest.mark.tags('TEST-29813')
     def test_29813(self):
         """
-        Test to verify object integrity during the the upload with correct checksum.
-        Specify checksum and checksum algorithm or ETAG during
-        PUT(MD5 with and without digest, CRC ( check multi-part))
+        Corrupt checksum of an object 256KB to 31 MB (at s3 checksum)
+        and verify range read (Get).
         """
         self.log.info("STARTED: Corrupt checksum of an object 256KB to 31 MB (at s3 checksum) "
                       "and verify range read (Get).")
