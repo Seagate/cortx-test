@@ -217,7 +217,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods", pod_list.remove(pod_name))
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -290,7 +290,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 5: Services of pod are in offline state")
 
-        LOGGER.info("Step 6: Check services status on remaining pods", pod_list.remove(pod_name))
+        LOGGER.info("Step 6: Check services status on remaining pods %s", pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -352,7 +352,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods", pod_list.remove(pod_name))
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
@@ -380,6 +380,7 @@ class TestPodFailure:
         LOGGER.info(
             "ENDED: Test to verify degraded writes before and after safe pod shutdown.")
 
+    # pylint: disable=too-many-statements
     @pytest.mark.ha
     @pytest.mark.lc
     @pytest.mark.tags("TEST-26440")
@@ -429,7 +430,7 @@ class TestPodFailure:
         assert_utils.assert_true(resp[0], resp)
         LOGGER.info("Step 4: Services of pod are in offline state")
 
-        LOGGER.info("Step 5: Check services status on remaining pods", pod_list.remove(pod_name))
+        LOGGER.info("Step 5: Check services status on remaining pods %s", pod_list.remove(pod_name))
         resp = self.hlth_master_list[0].get_pod_svc_status(pod_list=pod_list.remove(pod_name),
                                                            fail=False)
         LOGGER.debug("Response: %s", resp)
