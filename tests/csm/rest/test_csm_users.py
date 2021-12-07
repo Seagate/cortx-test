@@ -5110,7 +5110,6 @@ class TestCsmUser():
             response = self.csm_user.custom_rest_login(username=usr, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
-        #payload = {"password": "Testuser@123", "current_password": "Seagate@123"}
         payload = {"password": new_password, "current_password": current_password}
         for usr in s3_usr:
             response = self.s3user.edit_s3_account_user_invalid_password(
@@ -5217,7 +5216,7 @@ class TestCsmUser():
     @pytest.mark.tags('TEST-32177')
     def test_32177(self):
         """
-        Test that manage user should be able to create and delete users with manage and monitor role
+        Verify the limit to create 100 users
         """
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
@@ -5247,7 +5246,6 @@ class TestCsmUser():
                                                      user_role=role)
             self.log.info("Verifying if user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
-            new_users[roles.index(role)].append(response.json()["username"])
             self.created_users.append(response.json()["username"])
         self.log.info("Deleting all random csm users except predefined ones...")
         for usr in self.created_users:
