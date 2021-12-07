@@ -5030,11 +5030,12 @@ class TestCsmUser():
         test_case_name = cortxlogging.get_frame()
         self.log.info("##### Test started -  %s #####", test_case_name)
         test_cfg = self.csm_conf["test_32174"]
-        password = test_cfg["current_password"]
-        new_password = CSM_REST_CFG["csm_user_manage"]["password"]
+        new_password = test_cfg["new_password"]
+        current_password = CSM_REST_CFG["csm_user_manage"]["password"]
         monitor_usr = s3_usr = []
         self.log.info("Creating a csm manage user and fetch its password for further use")
-        response = self.csm_user.create_csm_user(user_type="valid", user_role="manage")
+        response = self.csm_user.create_csm_user(user_type="valid", 
+                                                 user_role="manage", user_password=current_password)
         self.log.info("Verifying if manage user was created successfully")
         assert response.status_code == const.SUCCESS_STATUS_FOR_POST
         username = response.json()["username"]
@@ -5042,15 +5043,16 @@ class TestCsmUser():
         self.log.info("users list is %s", self.created_users)
         assert response.json()['role'] == 'manage', "User is not created with manage role"
         self.log.info("Verified User %s got created successfully", username)
-        response = self.csm_user.custom_rest_login(username=username, password=new_password)
+        response = self.csm_user.custom_rest_login(username=username, password=current_password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
         new_user = {}
         new_user['username'] = username
-        new_user['password'] = new_password
+        new_user['password'] = current_password
         self.log.info("Step 1: Creating 2 other csm manage users")
         for _ in range(2):
             response = self.csm_user.create_csm_user(user_type="valid",
-                                                     user_role="manage")
+                                                     user_role="manage",
+                                                     user_password=current_password)
             self.log.info("Verifying if manage user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
@@ -5058,10 +5060,11 @@ class TestCsmUser():
             self.log.info("users list is %s", self.created_users)
             assert response.json()['role'] == 'manage', "User is not created with manage role"
             self.log.info("Verified User %s got created successfully", username)
-            self.log.info("Step 2: Creating 3 csm monitor users")
+        self.log.info("Step 2: Creating 3 csm monitor users")
         for _ in range(3):
             response = self.csm_user.create_csm_user(user_type="valid",
-                                                     user_role="monitor")
+                                                     user_role="monitor",
+                                                     user_password=current_password)
             self.log.info("Verifying if monitor user was created successfully")
             assert response.status_code == const.SUCCESS_STATUS_FOR_POST
             username = response.json()["username"]
@@ -5085,7 +5088,7 @@ class TestCsmUser():
         response = self.csm_user.edit_csm_user(login_as=new_user,
                                                user=self.created_users[1],
                                                password=new_password,
-                                               current_password=password)
+                                               current_password=current_password)
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         response = self.csm_user.custom_rest_login(username=self.created_users[1], password=new_password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -5093,7 +5096,7 @@ class TestCsmUser():
         response = self.csm_user.edit_csm_user(login_as=new_user,
                                                user=self.created_users[2],
                                                password=new_password,
-                                               current_password=password)
+                                               current_password=current_password)
         assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
         response = self.csm_user.custom_rest_login(username=self.created_users[2], password=new_password)
         self.csm_user.check_expected_response(response, HTTPStatus.OK)
@@ -5102,12 +5105,13 @@ class TestCsmUser():
             response = self.csm_user.edit_csm_user(login_as=new_user,
                                                    user=usr,
                                                    password=new_password,
-                                                   current_password=password)
+                                                   current_password=current_password)
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username=usr, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
         self.log.info("Step 7: Login with first manage user and change password for all s3 account users")
-        payload = {"password": "Testuser@123", "current_password": "Seagate@123"}
+        #payload = {"password": "Testuser@123", "current_password": "Seagate@123"}
+        payload = {"password": new_password, "current_password": current_password}
         for usr in s3_usr:
             response = self.s3user.edit_s3_account_user_invalid_password(
                 username=usr,
@@ -5117,12 +5121,6 @@ class TestCsmUser():
             response = self.s3auth_obj.custom_rest_login(username, new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
             response = self.s3_account_obj.delete_s3_account_user(username=usr)
-            if response.status_code == HTTPStatus.OK:
-                self.created_users.remove(usr)
-        self.log.info("Step 8: Delete all created users")
-        for usr in self.created_users:
-            self.log.info("Sending request to delete csm user %s", usr)
-            response = self.csm_user.delete_csm_user(usr)
             if response.status_code == HTTPStatus.OK:
                 self.created_users.remove(usr)
         self.log.info("##### Test completed -  %s #####", test_case_name)
@@ -5202,7 +5200,7 @@ class TestCsmUser():
             assert response.status_code == const.SUCCESS_STATUS, "Status code check failed."
             response = self.csm_user.custom_rest_login(username=usr, password=new_password)
             self.csm_user.check_expected_response(response, HTTPStatus.OK)
-        self.log.info("Step 9: Change passwords and emails of all 10 monitor users and try login")
+        self.log.info("Step 9: Change passwords and emails of all 3 admin users and try login")
         for usr in admin_usr[2:6]:
             response = self.csm_user.edit_csm_user(user=usr, email=test_cfg["email_id"],
                                                    password=new_password, current_password=password)
