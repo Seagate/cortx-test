@@ -863,50 +863,6 @@ class TestDIDurability:
     @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
     @pytest.mark.data_integrity
     @pytest.mark.data_durability
-    @pytest.mark.tags('TEST-22501')
-    def test_verify_data_integrity_with_correct_checksum_22501(self):
-        """
-        Test to verify object integrity during an upload with correct checksum.
-        Specify checksum and checksum algorithm or ETAG during
-        PUT(SHA1, MD5 with and without digest, CRC ( check multi-part)).
-
-        Multi part Put
-        with data 64 MB file
-        provide correct etag during put
-        Verify that get does not fail with internal error
-        ** Check CRC/checksum passed header. or s3 logs, Motr logs
-        Verify checksum at client side
-
-
-        """
-        self.log.info("STARTED: Verify data integrity check during read with correct checksum.")
-        self.log.info("Step 1: Create a bucket.")
-        self.s3_test_obj.create_bucket(self.bucket_name)
-        self.log.info("Step 1: Created a bucket.")
-        self.log.info("Step 2: Put and object with checksum algo or ETAG.")
-        system_utils.create_file(self.file_path, 8)
-        file_checksum = system_utils.calculate_checksum(self.file_path, filter_resp=True)[1]
-        res = self.s3_test_obj.put_object_with_all_kwargs(
-            Bucket=self.bucket_name, Key=self.object_name, Body=self.file_path,
-            ServerSideEncryption='AES256')
-        assert_utils.assert_equal(res["ResponseMetadata"]["HTTPStatusCode"], 200, res)
-        self.log.info(
-            "Step 2: Put and object with md5 checksum.")
-        res = self.s3_test_obj.put_object(
-            self.bucket_name, self.object_name, self.file_path,
-            content_md5=file_checksum)
-        assert_utils.assert_true(
-            res[0], f"Failed to put an object with md5 checksum and reason is:{res}")
-        self.log.info(
-            "Step 3: Put an object with checksum, checksum algo or ETAG.")
-        self.log.info(
-            "ENDED: Test to verify object integrity during an upload with correct checksum."
-            "Specify checksum and checksum algorithm or ETAG during PUT(SHA1, MD5 with and without"
-            "digest, CRC ( check multi-part))")
-
-    @pytest.mark.skip(reason="Feature is not in place hence marking skip.")
-    @pytest.mark.data_integrity
-    @pytest.mark.data_durability
     @pytest.mark.tags('TEST-22912')
     def test_22913(self):
         """
