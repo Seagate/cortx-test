@@ -373,7 +373,7 @@ class HAK8s:
             return resp, "Couldn't setup s3bench on client machine."
         for workload in workloads:
             resp = s3bench.s3bench(
-                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket_{log_prefix}",
+                s3userinfo['accesskey'], s3userinfo['secretkey'], bucket=f"bucket-{log_prefix}",
                 num_clients=nclients, num_sample=nsamples, obj_name_pref=f"ha_{log_prefix}",
                 obj_size=workload, skip_write=skipwrite, skip_read=skipread,
                 skip_cleanup=skipcleanup, log_file_prefix=f"log_{log_prefix}",
